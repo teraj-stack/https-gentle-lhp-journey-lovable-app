@@ -175,7 +175,7 @@ const ServiceCards = () => (
   <section className="py-20 md:py-28">
     <div className="max-w-7xl mx-auto px-4 md:px-8">
       <motion.div {...fadeUp} className="text-center mb-14">
-        <p className="text-sm font-sans uppercase tracking-[0.15em] text-primary mb-4">Specjalizacje</p>
+        <p className="text-sm font-sans uppercase tracking-[0.15em] text-primary mb-4">Obszary leczenia</p>
         <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">Zaawansowane leczenie laserowe</h2>
         <div className="premium-divider mb-6" />
         <p className="text-muted-foreground max-w-2xl mx-auto">
