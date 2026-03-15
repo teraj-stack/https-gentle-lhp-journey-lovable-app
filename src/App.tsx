@@ -6,6 +6,10 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import Layout from "@/components/layout/Layout";
 import Home from "@/pages/Home";
 import LHP from "@/pages/LHP";
+import About from "@/pages/About";
+import Szczelina from "@/pages/Szczelina";
+import Plastyka from "@/pages/Plastyka";
+import Anusitis from "@/pages/Anusitis";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -19,7 +23,11 @@ const App = () => (
         <Routes>
           <Route element={<Layout />}>
             <Route path="/" element={<Home />} />
+            <Route path="/o-nas" element={<About />} />
             <Route path="/leczenie/lhp" element={<LHP />} />
+            <Route path="/leczenie/szczelina" element={<Szczelina />} />
+            <Route path="/leczenie/plastyka" element={<Plastyka />} />
+            <Route path="/leczenie/anusitis" element={<Anusitis />} />
           </Route>
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

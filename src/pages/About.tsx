@@ -117,7 +117,7 @@ const About = () => (
             {
               icon: Heart,
               title: "Empatia",
-              desc: "Dla nas pacjent nie jest „przypadkiem medycznym", ale człowiekiem potrzebującym holistycznego wsparcia. W gabinecie stawiamy na czas, uwagę i szczerą rozmowę.",
+              desc: "Dla nas pacjent nie jest przypadkiem medycznym, ale człowiekiem potrzebującym holistycznego wsparcia. W gabinecie stawiamy na czas, uwagę i szczerą rozmowę.",
             },
             {
               icon: Award,
