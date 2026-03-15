@@ -33,16 +33,16 @@ const HeroHome = () => (
           Bujok Medical · Dr Jan Bujok
         </p>
         <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-foreground leading-[1.1] mb-2">
-          Medycyna premium.
+          Nowoczesne technologie.
         </h1>
         <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold leading-[1.1] mb-2 italic text-primary">
-          Trzy specjalizacje.
+          Proktologia & Flebologia.
         </h1>
         <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-foreground leading-[1.1] mb-8">
           Jeden standard.
         </h1>
         <p className="text-lg md:text-xl text-muted-foreground leading-relaxed max-w-2xl mb-10">
-          Proktologia laserowa, flebologia i medycyna estetyczna — pod jedną marką, w jednym standardzie premium.
+          Laserowe leczenie proktologiczne i flebologiczne — prowadzone przez specjalistę chirurgii ogólnej z pasją do nowoczesnych technologii medycznych.
         </p>
         <div className="flex flex-col sm:flex-row gap-4">
           <Button variant="hero" size="lg" className="px-8 py-6 text-base" asChild>
@@ -175,7 +175,7 @@ const ServiceCards = () => (
   <section className="py-20 md:py-28">
     <div className="max-w-7xl mx-auto px-4 md:px-8">
       <motion.div {...fadeUp} className="text-center mb-14">
-        <p className="text-sm font-sans uppercase tracking-[0.15em] text-primary mb-4">Specjalizacje</p>
+        <p className="text-sm font-sans uppercase tracking-[0.15em] text-primary mb-4">Obszary leczenia</p>
         <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">Zaawansowane leczenie laserowe</h2>
         <div className="premium-divider mb-6" />
         <p className="text-muted-foreground max-w-2xl mx-auto">
@@ -240,10 +240,10 @@ const DoctorSection = () => (
           </h2>
           <div className="premium-divider !mx-0 mb-8" />
           <p className="text-muted-foreground leading-relaxed mb-4">
-            Wizjoner i twórca Mazowieckiego Centrum Proktologii Laserowej. Wieloletnie doświadczenie w zaawansowanej chirurgii laserowej połączył z głębokim zrozumieniem psychologii pacjenta, budując zupełnie nowy model opieki proktologicznej w Polsce.
+            Specjalista chirurgii ogólnej, którego zawodową pasją są nowoczesne technologie stosowane w medycynie. Twórca Centrum Medycyny Laserowej — połączył wieloletnie doświadczenie chirurgiczne z głębokim zrozumieniem psychologii pacjenta, budując nowy model opieki proktologicznej i flebologicznej w Polsce.
           </p>
           <p className="text-muted-foreground leading-relaxed mb-6">
-            Dr Bujok nie tylko operuje — prowadzi autorskie szkolenia dla chirurgów i personelu pielęgniarskiego z całego kraju, systematycznie podnosząc standardy polskiej proktologii. Jego filozofia opiera się na przekonaniu, że najlepsza technologia laserowa jest bezwartościowa bez empatii i partnerskiej relacji z pacjentem.
+            Dr Bujok nie tylko operuje — prowadzi autorskie szkolenia dla chirurgów i personelu pielęgniarskiego z całego kraju, systematycznie podnosząc standardy. Jego filozofia opiera się na przekonaniu, że najlepsza technologia laserowa jest bezwartościowa bez empatii i partnerskiej relacji z pacjentem.
           </p>
           <div className="grid grid-cols-3 gap-4 mb-8">
             {[
