@@ -10,6 +10,7 @@ import About from "@/pages/About";
 import Szczelina from "@/pages/Szczelina";
 import Plastyka from "@/pages/Plastyka";
 import Anusitis from "@/pages/Anusitis";
+import Wspolpraca from "@/pages/Wspolpraca";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -24,6 +25,7 @@ const App = () => (
           <Route element={<Layout />}>
             <Route path="/" element={<Home />} />
             <Route path="/o-nas" element={<About />} />
+            <Route path="/wspolpraca" element={<Wspolpraca />} />
             <Route path="/leczenie/lhp" element={<LHP />} />
             <Route path="/leczenie/szczelina" element={<Szczelina />} />
             <Route path="/leczenie/plastyka" element={<Plastyka />} />
