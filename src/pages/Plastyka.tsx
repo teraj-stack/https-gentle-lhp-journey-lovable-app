@@ -1,0 +1,186 @@
+import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { ArrowRight, CheckCircle2, Clock, Shield, Sparkles, Heart } from "lucide-react";
+
+const fadeUp = {
+  initial: { opacity: 0, y: 30 },
+  whileInView: { opacity: 1, y: 0 },
+  viewport: { once: true },
+  transition: { duration: 0.7 },
+};
+
+const stagger = (i: number) => ({
+  ...fadeUp,
+  transition: { duration: 0.6, delay: i * 0.12 },
+});
+
+const Plastyka = () => (
+  <div className="min-h-screen pt-20">
+    {/* Hero */}
+    <section className="relative py-20 md:py-28 gradient-hero overflow-hidden">
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -top-1/4 -right-1/4 w-[60vw] h-[60vw] rounded-full bg-primary-foreground/5 blur-3xl" />
+      </div>
+      <div className="relative max-w-7xl mx-auto px-4 md:px-8">
+        <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.9 }} className="max-w-3xl">
+          <p className="text-primary-foreground/60 text-sm font-sans uppercase tracking-[0.2em] mb-6">Proktologia Estetyczna</p>
+          <h1 className="text-4xl md:text-6xl font-bold text-primary-foreground leading-[1.1] mb-6">
+            Plastyka okolicy odbytu
+          </h1>
+          <p className="text-lg md:text-xl text-primary-foreground/70 leading-relaxed max-w-2xl mb-10">
+            Estetyka i komfort — nowoczesna, laserowa korekta przywracająca naturalny wygląd i pewność siebie.
+          </p>
+          <Button variant="hero" size="lg" className="px-8 py-6 text-base" asChild>
+            <Link to="/kontakt">Umów Konsultację Estetyczną</Link>
+          </Button>
+        </motion.div>
+      </div>
+    </section>
+
+    {/* Metrics */}
+    <section className="py-10 border-b border-border bg-card">
+      <div className="max-w-7xl mx-auto px-4 md:px-8">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+          {[
+            { icon: Clock, label: "10–20 minut", sub: "Czas trwania zabiegu" },
+            { icon: Shield, label: "Znieczulenie miejscowe", sub: "Pełna bezbolesność" },
+            { icon: Sparkles, label: "Laser", sub: "Precyzyjna korekta" },
+            { icon: Heart, label: "Dyskrecja", sub: "Pełna poufność" },
+          ].map((item, i) => (
+            <motion.div key={item.label} {...stagger(i)} className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-lg bg-accent flex items-center justify-center shrink-0">
+                <item.icon className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-foreground leading-tight">{item.label}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{item.sub}</p>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <div className="max-w-4xl mx-auto px-4 md:px-8 py-16 space-y-20">
+      {/* Intro */}
+      <motion.section {...fadeUp}>
+        <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-6 font-serif">
+          Estetyka i komfort w jednym zabiegu
+        </h2>
+        <div className="space-y-4 text-muted-foreground leading-relaxed">
+          <p>
+            Współczesna proktologia to nie tylko leczenie chorób, ale także dbałość o komfort i samopoczucie pacjenta. Doskonale rozumiemy, że zdrowie to także poczucie pewności siebie we własnym ciele.
+          </p>
+          <p>
+            Wielu pacjentów — a dotyczy to szczególnie młodych kobiet — zgłasza się do nas nie z powodu bólu, ale z powodu niechcianych zmian skórnych w okolicy odbytu. Tzw. fałdy brzeżne mogą być przyczyną frustracji, utrudniać higienę, a nawet obniżać jakość życia. W naszej klinice traktujemy ten problem z pełną powagą i dyskrecją.
+          </p>
+        </div>
+      </motion.section>
+
+      {/* Czym są fałdy */}
+      <motion.section {...fadeUp}>
+        <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-6 font-serif">
+          Czym są fałdy brzeżne?
+        </h2>
+        <div className="glass-card p-8 rounded-2xl space-y-4 text-muted-foreground leading-relaxed">
+          <p>
+            Fałdy brzeżne to luźne fragmenty skóry (anodermy) znajdujące się na zewnętrznym brzegu kanału odbytu. Przypominają niewielkie, miękkie guzki. Nie są chorobą samą w sobie, ale stanowią defekt kosmetyczny i funkcjonalny.
+          </p>
+          <p>
+            Najczęstszą przyczyną jest przebyta zakrzepica brzeżna lub stany zapalne. Gwałtowne rozciągnięcie skóry (np. podczas ciąży, porodu lub silnego parcia) powoduje, że po ustąpieniu obrzęku tkanka nie wraca do pierwotnego kształtu.
+          </p>
+        </div>
+      </motion.section>
+
+      {/* Objawy */}
+      <motion.section {...fadeUp}>
+        <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-6 font-serif">
+          Objawy, które skłaniają do zabiegu
+        </h2>
+        <ul className="space-y-3">
+          {[
+            "Wyczuwalny, miękki i zazwyczaj niebolesny guzek na zewnątrz odbytu",
+            "Wystające fałdy skóry, których nie da się odprowadzić",
+            "Trudności z utrzymaniem idealnej higieny",
+            "Dyskomfort estetyczny i psychiczny",
+          ].map((text) => (
+            <li key={text} className="flex items-start gap-3 text-sm text-foreground">
+              <CheckCircle2 className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+              {text}
+            </li>
+          ))}
+        </ul>
+      </motion.section>
+
+      {/* Zabieg */}
+      <motion.section {...fadeUp}>
+        <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-6 font-serif">
+          Na czym polega zabieg?
+        </h2>
+        <div className="glass-card p-8 rounded-2xl">
+          <div className="grid md:grid-cols-2 gap-8">
+            {[
+              { title: "Czas trwania", desc: "Zabieg zajmuje zazwyczaj 10–20 minut." },
+              { title: "Znieczulenie", desc: "Stosujemy znieczulenie miejscowe zapewniające pełen komfort i bezbolesność." },
+              { title: "Przebieg", desc: "Lekarz usuwa nadmiar tkanki przy użyciu lasera. Przy niewielkich zmianach nie ma potrzeby zakładania szwów." },
+              { title: "Efekt", desc: "Celem jest przywrócenie naturalnego wyglądu i funkcjonalności okolicy odbytu." },
+            ].map((item) => (
+              <div key={item.title}>
+                <h3 className="text-sm font-semibold text-primary mb-2 uppercase tracking-wider">{item.title}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">{item.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </motion.section>
+
+      {/* Przygotowanie */}
+      <motion.section {...fadeUp}>
+        <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-6 font-serif">
+          Przygotowanie do zabiegu
+        </h2>
+        <div className="space-y-4 text-muted-foreground leading-relaxed mb-6">
+          <p>
+            Choć sam zabieg jest krótki, odpowiednie przygotowanie organizmu przyspiesza gojenie i minimalizuje dolegliwości.
+          </p>
+        </div>
+        <div className="space-y-4">
+          {[
+            { step: "1", title: "Wsparcie diety (2 tygodnie przed)", desc: "Probiotyk CDS22-formula oraz specjalna mieszanka ziołowa poprawiająca florę bakteryjną jelit." },
+            { step: "2", title: "Zmiana nawyków żywieniowych", desc: "Warzywa korzeniowe (marchew, seler, burak) oraz produkty kiszone (ogórki, zakwas buraczany)." },
+            { step: "3", title: "Cel przygotowania", desc: "Regulacja rytmu wypróżnień i konsystencji stolca — kluczowe dla ochrony miejsca zabiegowego." },
+          ].map((item) => (
+            <div key={item.step} className="glass-card p-6 rounded-2xl flex gap-4">
+              <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-sm font-bold shrink-0">
+                {item.step}
+              </div>
+              <div>
+                <h3 className="font-semibold text-foreground mb-1 text-sm">{item.title}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">{item.desc}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </motion.section>
+
+      {/* CTA */}
+      <motion.section {...fadeUp} className="text-center py-8">
+        <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4 font-serif">
+          Odzyskaj komfort i pewność siebie
+        </h2>
+        <p className="text-muted-foreground mb-8">
+          Powrót do codziennych aktywności jest szybki, a wizyta kontrolna odbywa się po 10–14 dniach.
+        </p>
+        <Button variant="hero" size="lg" className="px-10 py-6 text-base" asChild>
+          <Link to="/kontakt">
+            Umów Konsultację Estetyczną
+            <ArrowRight className="w-4 h-4 ml-2" />
+          </Link>
+        </Button>
+      </motion.section>
+    </div>
+  </div>
+);
+
+export default Plastyka;
