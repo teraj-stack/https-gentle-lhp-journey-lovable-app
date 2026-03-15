@@ -51,7 +51,7 @@ const Footer = () => (
             </li>
             <li className="flex items-center gap-2.5">
               <Mail className="w-4 h-4 shrink-0 text-primary-foreground/50" />
-              <span>kontakt@mcpl.pl</span>
+              <span>kontakt@cml.pl</span>
             </li>
             <li className="flex items-center gap-2.5">
               <Clock className="w-4 h-4 shrink-0 text-primary-foreground/50" />
