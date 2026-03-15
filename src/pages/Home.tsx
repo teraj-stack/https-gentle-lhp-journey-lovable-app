@@ -51,7 +51,7 @@ const HeroHome = () => (
             asChild
           >
             <Link to="/o-nas">
-              Poznaj metodę MCPL
+              Poznaj metodę CML
               <ArrowRight className="w-4 h-4 ml-2" />
             </Link>
           </Button>
