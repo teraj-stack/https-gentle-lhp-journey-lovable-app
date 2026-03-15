@@ -33,16 +33,16 @@ const HeroHome = () => (
           Bujok Medical · Dr Jan Bujok
         </p>
         <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-foreground leading-[1.1] mb-2">
-          Medycyna premium.
+          Nowoczesne technologie.
         </h1>
         <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold leading-[1.1] mb-2 italic text-primary">
-          Trzy specjalizacje.
+          Proktologia & Flebologia.
         </h1>
         <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-foreground leading-[1.1] mb-8">
           Jeden standard.
         </h1>
         <p className="text-lg md:text-xl text-muted-foreground leading-relaxed max-w-2xl mb-10">
-          Proktologia laserowa, flebologia i medycyna estetyczna — pod jedną marką, w jednym standardzie premium.
+          Laserowe leczenie proktologiczne i flebologiczne — prowadzone przez specjalistę chirurgii ogólnej z pasją do nowoczesnych technologii medycznych.
         </p>
         <div className="flex flex-col sm:flex-row gap-4">
           <Button variant="hero" size="lg" className="px-8 py-6 text-base" asChild>
