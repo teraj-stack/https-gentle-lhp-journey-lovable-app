@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Shield, Award, Heart, Users, ArrowRight, BookOpen, Stethoscope, Activity, Star, CheckCircle2 } from "lucide-react";
+import drBujokImg from "@/assets/dr-bujok.jpg";
 
 const fadeUp = {
   initial: { opacity: 0, y: 30 },
