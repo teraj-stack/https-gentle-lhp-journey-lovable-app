@@ -32,7 +32,7 @@ const HeroHome = () => (
         className="max-w-3xl"
       >
         <p className="text-primary-foreground/60 text-sm font-sans uppercase tracking-[0.2em] mb-6">
-          Mazowieckie Centrum Proktologii Laserowej
+          Centrum Medycyny Laserowej
         </p>
         <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-primary-foreground leading-[1.1] mb-6">
           Nowy standard w proktologii i&nbsp;flebologii
