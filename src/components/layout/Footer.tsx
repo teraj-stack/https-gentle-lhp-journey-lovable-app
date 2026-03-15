@@ -21,6 +21,9 @@ const Footer = () => (
             <li><Link to="/leczenie/lhp" className="hover:text-primary-foreground transition-colors">Hemoroidy – LHP</Link></li>
             <li><Link to="/leczenie/filac" className="hover:text-primary-foreground transition-colors">Przetoki – FiLaC</Link></li>
             <li><Link to="/leczenie/silac" className="hover:text-primary-foreground transition-colors">Torbiel pilonidalna – SiLaC</Link></li>
+            <li><Link to="/leczenie/szczelina" className="hover:text-primary-foreground transition-colors">Szczelina odbytu</Link></li>
+            <li><Link to="/leczenie/plastyka" className="hover:text-primary-foreground transition-colors">Plastyka odbytu</Link></li>
+            <li><Link to="/leczenie/anusitis" className="hover:text-primary-foreground transition-colors">Zapalenie odbytu</Link></li>
             <li><Link to="/leczenie/evlt" className="hover:text-primary-foreground transition-colors">Żylaki – EVLT</Link></li>
             <li><Link to="/leczenie/skleroterapia" className="hover:text-primary-foreground transition-colors">Pajączki naczyniowe</Link></li>
           </ul>
