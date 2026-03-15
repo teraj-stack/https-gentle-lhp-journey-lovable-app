@@ -8,7 +8,9 @@ const proktologiaItems = [
   { label: "Hemoroidy – LHP", href: "/leczenie/lhp", desc: "Laserowa plastyka hemoroidów" },
   { label: "Przetoki – FiLaC", href: "/leczenie/filac", desc: "Laserowe zamykanie przetok" },
   { label: "Torbiel pilonidalna – SiLaC", href: "/leczenie/silac", desc: "Laserowe leczenie torbieli" },
-  { label: "Szczelina odbytu", href: "/leczenie/szczelina", desc: "Nowoczesne metody leczenia" },
+  { label: "Szczelina odbytu", href: "/leczenie/szczelina", desc: "Od diety do lasera" },
+  { label: "Plastyka odbytu", href: "/leczenie/plastyka", desc: "Estetyka i komfort" },
+  { label: "Zapalenie odbytu", href: "/leczenie/anusitis", desc: "Leczenie farmakologiczne" },
 ];
 
 const flebologiaItems = [

@@ -221,11 +221,13 @@ const DoctorSection = () => (
       <div className="grid lg:grid-cols-2 gap-16 items-center">
         {/* Photo placeholder */}
         <motion.div {...fadeUp} className="flex justify-center lg:order-2">
-          <div className="w-72 md:w-80 aspect-[3/4] rounded-2xl bg-gradient-to-br from-muted to-accent flex items-center justify-center">
-            <div className="text-center">
-              <div className="text-6xl mb-4">👨‍⚕️</div>
-              <p className="text-xs text-muted-foreground font-sans">Profesjonalne zdjęcie</p>
-            </div>
+          <div className="relative">
+            <img
+              src={drBujokImg}
+              alt="Dr Jan Bujok – chirurg, proktolog, flebolog"
+              className="w-72 md:w-80 aspect-[3/4] rounded-2xl object-cover shadow-2xl"
+            />
+            <div className="absolute -bottom-4 -right-4 w-72 md:w-80 aspect-[3/4] rounded-2xl bg-primary/20 -z-10" />
           </div>
         </motion.div>
 
