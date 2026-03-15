@@ -240,10 +240,10 @@ const DoctorSection = () => (
           </h2>
           <div className="premium-divider !mx-0 mb-8" />
           <p className="text-muted-foreground leading-relaxed mb-4">
-            Wizjoner i twórca Mazowieckiego Centrum Proktologii Laserowej. Wieloletnie doświadczenie w zaawansowanej chirurgii laserowej połączył z głębokim zrozumieniem psychologii pacjenta, budując zupełnie nowy model opieki proktologicznej w Polsce.
+            Specjalista chirurgii ogólnej, którego zawodową pasją są nowoczesne technologie stosowane w medycynie. Twórca Centrum Medycyny Laserowej — połączył wieloletnie doświadczenie chirurgiczne z głębokim zrozumieniem psychologii pacjenta, budując nowy model opieki proktologicznej i flebologicznej w Polsce.
           </p>
           <p className="text-muted-foreground leading-relaxed mb-6">
-            Dr Bujok nie tylko operuje — prowadzi autorskie szkolenia dla chirurgów i personelu pielęgniarskiego z całego kraju, systematycznie podnosząc standardy polskiej proktologii. Jego filozofia opiera się na przekonaniu, że najlepsza technologia laserowa jest bezwartościowa bez empatii i partnerskiej relacji z pacjentem.
+            Dr Bujok nie tylko operuje — prowadzi autorskie szkolenia dla chirurgów i personelu pielęgniarskiego z całego kraju, systematycznie podnosząc standardy. Jego filozofia opiera się na przekonaniu, że najlepsza technologia laserowa jest bezwartościowa bez empatii i partnerskiej relacji z pacjentem.
           </p>
           <div className="grid grid-cols-3 gap-4 mb-8">
             {[
