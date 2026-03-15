@@ -7,9 +7,9 @@ const Footer = () => (
       <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-10">
         {/* Brand */}
         <div className="lg:col-span-1">
-          <span className="text-2xl font-bold font-serif text-primary-foreground">MCPL</span>
+          <span className="text-2xl font-bold font-serif text-primary-foreground">CML</span>
           <p className="text-sm mt-3 leading-relaxed text-primary-foreground/60">
-            Mazowieckie Centrum Proktologii Laserowej. Skuteczność, empatia, zaufanie.
+            Centrum Medycyny Laserowej. Skuteczność, empatia, zaufanie.
           </p>
           <div className="premium-divider !mx-0 mt-4 !bg-primary-foreground/20" />
         </div>
