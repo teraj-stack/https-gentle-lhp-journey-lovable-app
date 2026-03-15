@@ -229,7 +229,7 @@ const DoctorSection = () => (
         </motion.div>
 
         <motion.div {...fadeUp}>
-          <p className="text-sm font-sans uppercase tracking-[0.15em] text-primary mb-4">Założyciel MCPL</p>
+          <p className="text-sm font-sans uppercase tracking-[0.15em] text-primary mb-4">Założyciel CML</p>
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-6 leading-tight">
             Dr Jan Bujok
           </h2>

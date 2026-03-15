@@ -62,7 +62,7 @@ const Footer = () => (
       </div>
 
       <div className="border-t border-primary-foreground/10 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-primary-foreground/40">
-        <p>&copy; {new Date().getFullYear()} MCPL – Mazowieckie Centrum Proktologii Laserowej. Wszelkie prawa zastrzeżone.</p>
+        <p>&copy; {new Date().getFullYear()} CML – Centrum Medycyny Laserowej. Wszelkie prawa zastrzeżone.</p>
         <div className="flex gap-6">
           <Link to="/polityka-prywatnosci" className="hover:text-primary-foreground/60 transition-colors">Polityka prywatności</Link>
           <Link to="/regulamin" className="hover:text-primary-foreground/60 transition-colors">Regulamin</Link>
