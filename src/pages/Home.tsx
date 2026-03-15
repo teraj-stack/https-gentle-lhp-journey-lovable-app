@@ -19,11 +19,8 @@ const stagger = (i: number) => ({
 /* ─── Section 1: Hero ─── */
 const HeroHome = () => (
   <section className="relative min-h-[90vh] flex items-center gradient-hero overflow-hidden">
-    {/* Organic shapes */}
-    <div className="absolute inset-0 overflow-hidden">
-      <div className="absolute -top-1/4 -right-1/4 w-[60vw] h-[60vw] rounded-full bg-primary-foreground/5 blur-3xl" />
-      <div className="absolute -bottom-1/3 -left-1/4 w-[50vw] h-[50vw] rounded-full bg-primary-foreground/3 blur-3xl" />
-    </div>
+    {/* Subtle overlay for depth */}
+    <div className="absolute inset-0 bg-gradient-to-r from-background/90 via-background/60 to-transparent" />
 
     <div className="relative max-w-7xl mx-auto px-4 md:px-8 py-32 md:py-40">
       <motion.div
@@ -32,14 +29,20 @@ const HeroHome = () => (
         transition={{ duration: 0.9 }}
         className="max-w-3xl"
       >
-        <p className="text-primary-foreground/60 text-sm font-sans uppercase tracking-[0.2em] mb-6">
-          Centrum Medycyny Laserowej
+        <p className="text-muted-foreground text-sm font-sans uppercase tracking-[0.2em] mb-6">
+          Bujok Medical · Dr Jan Bujok
         </p>
-        <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-primary-foreground leading-[1.1] mb-6">
-          Nowy standard w proktologii i&nbsp;flebologii
+        <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-foreground leading-[1.1] mb-2">
+          Medycyna premium.
         </h1>
-        <p className="text-lg md:text-xl text-primary-foreground/70 leading-relaxed max-w-2xl mb-10">
-          Innowacyjne leczenie laserowe w klinikach premium. Nie sprzedajemy technologii — zapewniamy kompleksową opiekę, w której jesteś naszym świadomym partnerem.
+        <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold leading-[1.1] mb-2 italic text-primary">
+          Trzy specjalizacje.
+        </h1>
+        <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-foreground leading-[1.1] mb-8">
+          Jeden standard.
+        </h1>
+        <p className="text-lg md:text-xl text-muted-foreground leading-relaxed max-w-2xl mb-10">
+          Proktologia laserowa, flebologia i medycyna estetyczna — pod jedną marką, w jednym standardzie premium.
         </p>
         <div className="flex flex-col sm:flex-row gap-4">
           <Button variant="hero" size="lg" className="px-8 py-6 text-base" asChild>
@@ -48,12 +51,11 @@ const HeroHome = () => (
           <Button
             variant="outline"
             size="lg"
-            className="px-8 py-6 text-base border-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"
+            className="px-8 py-6 text-base border-foreground/20 text-foreground hover:bg-foreground/10 hover:text-foreground rounded-sm uppercase tracking-wider"
             asChild
           >
             <Link to="/o-nas">
-              Poznaj metodę CML
-              <ArrowRight className="w-4 h-4 ml-2" />
+              Poznaj Dr. Bujoka
             </Link>
           </Button>
         </div>
