@@ -131,7 +131,7 @@ const Philosophy = () => (
           <div className="relative">
             <div className="w-64 md:w-72 aspect-[3/4] rounded-2xl bg-gradient-to-br from-primary/90 to-primary shadow-2xl flex flex-col items-center justify-center p-8 text-primary-foreground">
               <BookOpen className="w-12 h-12 mb-6 opacity-80" />
-              <p className="text-xs uppercase tracking-[0.15em] opacity-60 mb-2 font-sans">MCPL</p>
+              <p className="text-xs uppercase tracking-[0.15em] opacity-60 mb-2 font-sans">CML</p>
               <h3 className="text-lg font-bold text-center leading-snug font-serif">
                 Kompleksowy Przewodnik Pacjenta
               </h3>
