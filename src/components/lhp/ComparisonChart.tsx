@@ -5,7 +5,7 @@ const data = [
   { name: "LHP\n(Laser)", days: 5, label: "~5 dni" },
 ];
 
-const COLORS = ["hsl(215, 16%, 47%)", "hsl(173, 85%, 32%)"];
+const COLORS = ["hsl(222, 20%, 40%)", "hsl(43, 58%, 52%)"];
 
 const ComparisonChart = () => (
   <div className="w-full max-w-[700px] mx-auto h-[300px] md:h-[350px]">
