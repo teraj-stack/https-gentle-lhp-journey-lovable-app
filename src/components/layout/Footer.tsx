@@ -7,9 +7,9 @@ const Footer = () => (
       <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-10">
         {/* Brand */}
         <div className="lg:col-span-1">
-          <span className="text-2xl font-bold font-serif text-primary-foreground">MCPL</span>
+          <span className="text-2xl font-bold font-serif text-primary-foreground">CML</span>
           <p className="text-sm mt-3 leading-relaxed text-primary-foreground/60">
-            Mazowieckie Centrum Proktologii Laserowej. Skuteczność, empatia, zaufanie.
+            Centrum Medycyny Laserowej. Skuteczność, empatia, zaufanie.
           </p>
           <div className="premium-divider !mx-0 mt-4 !bg-primary-foreground/20" />
         </div>
@@ -51,7 +51,7 @@ const Footer = () => (
             </li>
             <li className="flex items-center gap-2.5">
               <Mail className="w-4 h-4 shrink-0 text-primary-foreground/50" />
-              <span>kontakt@mcpl.pl</span>
+              <span>kontakt@cml.pl</span>
             </li>
             <li className="flex items-center gap-2.5">
               <Clock className="w-4 h-4 shrink-0 text-primary-foreground/50" />
@@ -62,7 +62,7 @@ const Footer = () => (
       </div>
 
       <div className="border-t border-primary-foreground/10 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-primary-foreground/40">
-        <p>&copy; {new Date().getFullYear()} MCPL – Mazowieckie Centrum Proktologii Laserowej. Wszelkie prawa zastrzeżone.</p>
+        <p>&copy; {new Date().getFullYear()} CML – Centrum Medycyny Laserowej. Wszelkie prawa zastrzeżone.</p>
         <div className="flex gap-6">
           <Link to="/polityka-prywatnosci" className="hover:text-primary-foreground/60 transition-colors">Polityka prywatności</Link>
           <Link to="/regulamin" className="hover:text-primary-foreground/60 transition-colors">Regulamin</Link>

@@ -32,7 +32,7 @@ const HeroHome = () => (
         className="max-w-3xl"
       >
         <p className="text-primary-foreground/60 text-sm font-sans uppercase tracking-[0.2em] mb-6">
-          Mazowieckie Centrum Proktologii Laserowej
+          Centrum Medycyny Laserowej
         </p>
         <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-primary-foreground leading-[1.1] mb-6">
           Nowy standard w proktologii i&nbsp;flebologii
@@ -51,7 +51,7 @@ const HeroHome = () => (
             asChild
           >
             <Link to="/o-nas">
-              Poznaj metodę MCPL
+              Poznaj metodę CML
               <ArrowRight className="w-4 h-4 ml-2" />
             </Link>
           </Button>
@@ -131,7 +131,7 @@ const Philosophy = () => (
           <div className="relative">
             <div className="w-64 md:w-72 aspect-[3/4] rounded-2xl bg-gradient-to-br from-primary/90 to-primary shadow-2xl flex flex-col items-center justify-center p-8 text-primary-foreground">
               <BookOpen className="w-12 h-12 mb-6 opacity-80" />
-              <p className="text-xs uppercase tracking-[0.15em] opacity-60 mb-2 font-sans">MCPL</p>
+              <p className="text-xs uppercase tracking-[0.15em] opacity-60 mb-2 font-sans">CML</p>
               <h3 className="text-lg font-bold text-center leading-snug font-serif">
                 Kompleksowy Przewodnik Pacjenta
               </h3>
@@ -229,7 +229,7 @@ const DoctorSection = () => (
         </motion.div>
 
         <motion.div {...fadeUp}>
-          <p className="text-sm font-sans uppercase tracking-[0.15em] text-primary mb-4">Założyciel MCPL</p>
+          <p className="text-sm font-sans uppercase tracking-[0.15em] text-primary mb-4">Założyciel CML</p>
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-6 leading-tight">
             Dr Jan Bujok
           </h2>

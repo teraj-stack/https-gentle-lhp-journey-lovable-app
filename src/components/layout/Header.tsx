@@ -47,10 +47,10 @@ const Header = () => {
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2">
             <span className="text-xl md:text-2xl font-bold font-serif tracking-tight text-primary">
-              MCPL
+              CML
             </span>
             <span className="hidden sm:block text-xs text-muted-foreground leading-tight">
-              Mazowieckie Centrum<br />Proktologii Laserowej
+              Centrum<br />Medycyny Laserowej
             </span>
           </Link>
 
