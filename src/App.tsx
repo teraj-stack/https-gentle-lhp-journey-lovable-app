@@ -13,7 +13,7 @@ import Anusitis from "@/pages/Anusitis";
 import Wspolpraca from "@/pages/Wspolpraca";
 import DlaPacjenta from "@/pages/DlaPacjenta";
 import EVLT from "@/pages/EVLT";
-import KlejenieZyl from "@/pages/KlejenieZyl";
+
 import Skleroterapia from "@/pages/Skleroterapia";
 import Kontakt from "@/pages/Kontakt";
 import NotFound from "@/pages/NotFound";
