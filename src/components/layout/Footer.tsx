@@ -5,7 +5,6 @@ const Footer = () => (
   <footer className="bg-foreground text-background">
     <div className="max-w-7xl mx-auto px-4 md:px-8 py-16">
       <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-10">
-        {/* Brand */}
         <div className="lg:col-span-1">
           <span className="text-2xl font-bold font-serif text-background">CML</span>
           <p className="text-sm mt-3 leading-relaxed text-background/60">
@@ -14,7 +13,6 @@ const Footer = () => (
           <div className="premium-divider !mx-0 mt-4 !bg-background/20" />
         </div>
 
-        {/* Quick Links */}
         <div>
           <h4 className="font-semibold text-background mb-4 font-sans text-sm uppercase tracking-wider">Leczenie</h4>
           <ul className="space-y-2.5 text-sm text-background/70">
@@ -29,7 +27,6 @@ const Footer = () => (
           </ul>
         </div>
 
-        {/* Info */}
         <div>
           <h4 className="font-semibold text-background mb-4 font-sans text-sm uppercase tracking-wider">Informacje</h4>
           <ul className="space-y-2.5 text-sm text-background/70">
@@ -40,7 +37,6 @@ const Footer = () => (
           </ul>
         </div>
 
-        {/* Contact */}
         <div>
           <h4 className="font-semibold text-background mb-4 font-sans text-sm uppercase tracking-wider">Kontakt</h4>
           <ul className="space-y-3 text-sm text-background/70">
