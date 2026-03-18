@@ -17,7 +17,7 @@ const ComparisonChart = () => (
         <Tooltip contentStyle={{ backgroundColor: "#fff", border: "1px solid hsl(210, 12%, 86%)", borderRadius: "8px", color: "hsl(210, 18%, 18%)" }} />
         <Legend wrapperStyle={{ fontSize: 12, color: "hsl(210, 8%, 48%)" }} />
         <Bar dataKey="traditional" name="Chirurgia tradycyjna" fill="hsl(0, 40%, 58%)" radius={[4, 4, 0, 0]} />
-        <Bar dataKey="modern" name="EVLT / Laser" fill="hsl(178, 42%, 36%)" radius={[4, 4, 0, 0]} />
+        <Bar dataKey="modern" name="EVLT / Laser" fill="hsl(185, 55%, 42%)" radius={[4, 4, 0, 0]} />
       </BarChart>
     </ResponsiveContainer>
   </div>
