@@ -11,6 +11,7 @@ import Szczelina from "@/pages/Szczelina";
 import Plastyka from "@/pages/Plastyka";
 import Anusitis from "@/pages/Anusitis";
 import Wspolpraca from "@/pages/Wspolpraca";
+import DlaPacjenta from "@/pages/DlaPacjenta";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();

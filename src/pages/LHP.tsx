@@ -3,6 +3,9 @@ import ComparisonChart from "@/components/lhp/ComparisonChart";
 import SurvivalKit from "@/components/lhp/SurvivalKit";
 import DiscomfortChart from "@/components/lhp/DiscomfortChart";
 import Timeline from "@/components/lhp/Timeline";
+import ProcedureSteps from "@/components/lhp/ProcedureSteps";
+import QualificationScale from "@/components/lhp/QualificationScale";
+import EbookBanner from "@/components/lhp/EbookBanner";
 import CTASection from "@/components/lhp/CTASection";
 import { motion } from "framer-motion";
 
@@ -36,7 +39,17 @@ const LHP = () => {
 
         <motion.section {...sectionAnim}>
           <h2 className="section-title mb-3">
-            2. Rozbrojenie bomby: Pierwszy Stolec
+            2. Jak wygląda zabieg? Krok po kroku
+          </h2>
+          <p className="section-subtitle mb-8">
+            Cała procedura trwa 20–40 minut — krócej niż odcinek serialu. Przeprowadzamy Cię przez proces, abyś dokładnie wiedział, czego się spodziewać.
+          </p>
+          <ProcedureSteps />
+        </motion.section>
+
+        <motion.section {...sectionAnim}>
+          <h2 className="section-title mb-3">
+            3. Rozbrojenie bomby: Pierwszy Stolec
           </h2>
           <p className="section-subtitle mb-8">
             Wiemy, że boisz się pierwszej wizyty w toalecie. Nie zostawimy Cię z tym samego. Przygotowaliśmy precyzyjny "Zestaw Ratunkowy", który zamienia wielką niewiadomą w zarządzalny proces.
@@ -46,7 +59,7 @@ const LHP = () => {
 
         <motion.section {...sectionAnim}>
           <h2 className="section-title mb-3">
-            3. Logistyka i Wolność: Oś Czasu
+            4. Logistyka i Wolność: Oś Czasu
           </h2>
           <p className="section-subtitle mb-8">
             Kluczowe dla osób z branży IT, kierowców i aktywnych zawodowo. Zobacz, jak przewidywalny jest Twój powrót do życia i pełnych dochodów.
@@ -59,6 +72,18 @@ const LHP = () => {
           </div>
           <Timeline />
         </motion.section>
+
+        <motion.section {...sectionAnim}>
+          <h2 className="section-title mb-3">
+            5. Czy kwalifikujesz się do zabiegu?
+          </h2>
+          <p className="section-subtitle mb-8">
+            Skuteczność lasera zależy od stopnia zaawansowania. Czas działa na Twoją niekorzyść — każdy miesiąc zwlekania przybliża Cię do momentu, w którym laser może być już za późno.
+          </p>
+          <QualificationScale />
+        </motion.section>
+
+        <EbookBanner />
 
         <CTASection />
       </div>
