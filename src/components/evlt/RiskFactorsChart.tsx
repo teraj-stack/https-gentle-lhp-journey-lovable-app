@@ -1,4 +1,4 @@
-import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend } from "recharts";
+import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from "recharts";
 
 const data = [
   { name: "Genetyka", value: 40 },
@@ -8,10 +8,10 @@ const data = [
 ];
 
 const COLORS = [
-  "hsl(43, 58%, 52%)",
-  "hsl(43, 40%, 38%)",
-  "hsl(222, 20%, 40%)",
-  "hsl(222, 16%, 28%)",
+  "hsl(155, 28%, 48%)",
+  "hsl(155, 22%, 36%)",
+  "hsl(220, 14%, 40%)",
+  "hsl(220, 10%, 28%)",
 ];
 
 const RiskFactorsChart = () => (
@@ -27,7 +27,7 @@ const RiskFactorsChart = () => (
           paddingAngle={4}
           dataKey="value"
           label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-          labelLine={{ stroke: "hsl(215, 12%, 55%)" }}
+          labelLine={{ stroke: "hsl(220, 8%, 55%)" }}
         >
           {data.map((_, i) => (
             <Cell key={i} fill={COLORS[i]} />
@@ -35,10 +35,10 @@ const RiskFactorsChart = () => (
         </Pie>
         <Tooltip
           contentStyle={{
-            backgroundColor: "hsl(222, 26%, 14%)",
-            border: "1px solid hsl(222, 16%, 24%)",
+            backgroundColor: "hsl(220, 12%, 15%)",
+            border: "1px solid hsl(220, 10%, 22%)",
             borderRadius: "8px",
-            color: "hsl(40, 18%, 88%)",
+            color: "hsl(40, 14%, 90%)",
           }}
           formatter={(value: number) => `${value}%`}
         />
