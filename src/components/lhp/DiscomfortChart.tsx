@@ -17,8 +17,8 @@ const DiscomfortChart = () => (
       <AreaChart data={data} margin={{ top: 20, right: 30, left: 0, bottom: 20 }}>
         <defs>
           <linearGradient id="colorDiscomfort" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%" stopColor="hsl(178, 42%, 36%)" stopOpacity={0.2} />
-            <stop offset="95%" stopColor="hsl(178, 42%, 36%)" stopOpacity={0} />
+            <stop offset="5%" stopColor="hsl(185, 55%, 42%)" stopOpacity={0.2} />
+21:             <stop offset="95%" stopColor="hsl(185, 55%, 42%)" stopOpacity={0} />
           </linearGradient>
         </defs>
         <CartesianGrid strokeDasharray="3 3" stroke="hsl(210, 12%, 86%)" />
