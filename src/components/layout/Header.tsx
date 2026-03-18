@@ -15,7 +15,7 @@ const proktologiaItems = [
 
 const flebologiaItems = [
   { label: "Żylaki – EVLT", href: "/leczenie/evlt", desc: "Ablacja wewnątrzżylna laserem" },
-  { label: "Klejenie żył", href: "/leczenie/klejenie-zyl", desc: "Bezinwazyjna metoda zamykania" },
+  
   { label: "Pajączki naczyniowe", href: "/leczenie/skleroterapia", desc: "Skleroterapia precyzyjna" },
 ];
 
