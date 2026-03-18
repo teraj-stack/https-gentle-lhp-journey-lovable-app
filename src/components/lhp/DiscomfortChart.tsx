@@ -17,25 +17,25 @@ const DiscomfortChart = () => (
       <AreaChart data={data} margin={{ top: 20, right: 30, left: 0, bottom: 20 }}>
         <defs>
           <linearGradient id="colorDiscomfort" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%" stopColor="hsl(43, 58%, 52%)" stopOpacity={0.3} />
-            <stop offset="95%" stopColor="hsl(43, 58%, 52%)" stopOpacity={0} />
+            <stop offset="5%" stopColor="hsl(155, 28%, 48%)" stopOpacity={0.3} />
+            <stop offset="95%" stopColor="hsl(155, 28%, 48%)" stopOpacity={0} />
           </linearGradient>
         </defs>
-        <CartesianGrid strokeDasharray="3 3" stroke="hsl(222, 16%, 24%)" />
-        <XAxis dataKey="day" tick={{ fontSize: 11, fill: "hsl(40, 18%, 88%)" }} />
+        <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 10%, 22%)" />
+        <XAxis dataKey="day" tick={{ fontSize: 11, fill: "hsl(40, 14%, 90%)" }} />
         <YAxis
-          label={{ value: "Poziom dyskomfortu", angle: -90, position: "insideLeft", style: { fontSize: 12, fill: "hsl(40, 18%, 88%)" } }}
+          label={{ value: "Poziom dyskomfortu", angle: -90, position: "insideLeft", style: { fontSize: 12, fill: "hsl(40, 14%, 90%)" } }}
           domain={[0, 8]}
-          tick={{ fontSize: 12, fill: "hsl(40, 18%, 88%)" }}
+          tick={{ fontSize: 12, fill: "hsl(40, 14%, 90%)" }}
         />
         <Tooltip
-          contentStyle={{ borderRadius: 12, border: "1px solid hsl(222, 16%, 24%)", background: "hsl(222, 26%, 14%)", color: "hsl(40, 18%, 88%)" }}
+          contentStyle={{ borderRadius: 12, border: "1px solid hsl(220, 10%, 22%)", background: "hsl(220, 12%, 15%)", color: "hsl(40, 14%, 90%)" }}
           formatter={(value: number) => [`${value}/10`, "Dyskomfort"]}
         />
         <Area
           type="monotone"
           dataKey="value"
-          stroke="hsl(43, 58%, 52%)"
+          stroke="hsl(155, 28%, 48%)"
           strokeWidth={3}
           fill="url(#colorDiscomfort)"
         />
