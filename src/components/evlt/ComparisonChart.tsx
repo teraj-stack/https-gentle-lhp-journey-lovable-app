@@ -11,29 +11,13 @@ const ComparisonChart = () => (
   <div className="w-full h-[320px] md:h-[380px]">
     <ResponsiveContainer width="100%" height="100%">
       <BarChart data={data} barGap={8}>
-        <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 10%, 22%)" />
-        <XAxis
-          dataKey="name"
-          tick={{ fill: "hsl(220, 8%, 55%)", fontSize: 12 }}
-          axisLine={{ stroke: "hsl(220, 10%, 22%)" }}
-        />
-        <YAxis
-          tick={{ fill: "hsl(220, 8%, 55%)", fontSize: 12 }}
-          axisLine={{ stroke: "hsl(220, 10%, 22%)" }}
-        />
-        <Tooltip
-          contentStyle={{
-            backgroundColor: "hsl(220, 12%, 15%)",
-            border: "1px solid hsl(220, 10%, 22%)",
-            borderRadius: "8px",
-            color: "hsl(40, 14%, 90%)",
-          }}
-        />
-        <Legend
-          wrapperStyle={{ fontSize: 12, color: "hsl(220, 8%, 55%)" }}
-        />
-        <Bar dataKey="traditional" name="Chirurgia tradycyjna" fill="hsl(0, 35%, 50%)" radius={[4, 4, 0, 0]} />
-        <Bar dataKey="modern" name="EVLT / Laser" fill="hsl(155, 28%, 48%)" radius={[4, 4, 0, 0]} />
+        <CartesianGrid strokeDasharray="3 3" stroke="hsl(30, 16%, 82%)" />
+        <XAxis dataKey="name" tick={{ fill: "hsl(25, 10%, 48%)", fontSize: 12 }} axisLine={{ stroke: "hsl(30, 16%, 82%)" }} />
+        <YAxis tick={{ fill: "hsl(25, 10%, 48%)", fontSize: 12 }} axisLine={{ stroke: "hsl(30, 16%, 82%)" }} />
+        <Tooltip contentStyle={{ backgroundColor: "hsl(36, 30%, 97%)", border: "1px solid hsl(30, 16%, 82%)", borderRadius: "8px", color: "hsl(25, 20%, 18%)" }} />
+        <Legend wrapperStyle={{ fontSize: 12, color: "hsl(25, 10%, 48%)" }} />
+        <Bar dataKey="traditional" name="Chirurgia tradycyjna" fill="hsl(0, 35%, 55%)" radius={[4, 4, 0, 0]} />
+        <Bar dataKey="modern" name="EVLT / Laser" fill="hsl(28, 45%, 38%)" radius={[4, 4, 0, 0]} />
       </BarChart>
     </ResponsiveContainer>
   </div>

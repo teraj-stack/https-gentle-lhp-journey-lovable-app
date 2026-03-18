@@ -5,24 +5,20 @@ const data = [
   { name: "LHP\n(Laser)", days: 5, label: "~5 dni" },
 ];
 
-const COLORS = ["hsl(220, 14%, 40%)", "hsl(155, 28%, 48%)"];
+const COLORS = ["hsl(25, 12%, 55%)", "hsl(28, 45%, 38%)"];
 
 const ComparisonChart = () => (
   <div className="w-full max-w-[700px] mx-auto h-[300px] md:h-[350px]">
     <ResponsiveContainer width="100%" height="100%">
       <BarChart data={data} margin={{ top: 20, right: 30, left: 0, bottom: 20 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 10%, 22%)" />
-        <XAxis
-          dataKey="name"
-          tick={{ fontSize: 13, fill: "hsl(40, 14%, 90%)" }}
-          tickLine={false}
-        />
+        <CartesianGrid strokeDasharray="3 3" stroke="hsl(30, 16%, 82%)" />
+        <XAxis dataKey="name" tick={{ fontSize: 13, fill: "hsl(25, 20%, 18%)" }} tickLine={false} />
         <YAxis
-          label={{ value: "Dni na L4", angle: -90, position: "insideLeft", style: { fontSize: 13, fill: "hsl(40, 14%, 90%)" } }}
-          tick={{ fontSize: 12, fill: "hsl(40, 14%, 90%)" }}
+          label={{ value: "Dni na L4", angle: -90, position: "insideLeft", style: { fontSize: 13, fill: "hsl(25, 20%, 18%)" } }}
+          tick={{ fontSize: 12, fill: "hsl(25, 20%, 18%)" }}
         />
         <Tooltip
-          contentStyle={{ borderRadius: 12, border: "1px solid hsl(220, 10%, 22%)", background: "hsl(220, 12%, 15%)", color: "hsl(40, 14%, 90%)" }}
+          contentStyle={{ borderRadius: 12, border: "1px solid hsl(30, 16%, 82%)", background: "hsl(36, 30%, 97%)", color: "hsl(25, 20%, 18%)" }}
           formatter={(value: number) => [`${value} dni`, "Czas L4"]}
         />
         <Bar dataKey="days" radius={[8, 8, 0, 0]} barSize={80}>
