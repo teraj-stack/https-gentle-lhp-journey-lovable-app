@@ -8,10 +8,10 @@ const data = [
 ];
 
 const COLORS = [
-  "hsl(155, 28%, 48%)",
-  "hsl(155, 22%, 36%)",
-  "hsl(220, 14%, 40%)",
-  "hsl(220, 10%, 28%)",
+  "hsl(28, 45%, 38%)",
+  "hsl(28, 35%, 50%)",
+  "hsl(35, 18%, 58%)",
+  "hsl(30, 12%, 72%)",
 ];
 
 const RiskFactorsChart = () => (
@@ -27,19 +27,14 @@ const RiskFactorsChart = () => (
           paddingAngle={4}
           dataKey="value"
           label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-          labelLine={{ stroke: "hsl(220, 8%, 55%)" }}
+          labelLine={{ stroke: "hsl(25, 10%, 48%)" }}
         >
           {data.map((_, i) => (
             <Cell key={i} fill={COLORS[i]} />
           ))}
         </Pie>
         <Tooltip
-          contentStyle={{
-            backgroundColor: "hsl(220, 12%, 15%)",
-            border: "1px solid hsl(220, 10%, 22%)",
-            borderRadius: "8px",
-            color: "hsl(40, 14%, 90%)",
-          }}
+          contentStyle={{ backgroundColor: "hsl(36, 30%, 97%)", border: "1px solid hsl(30, 16%, 82%)", borderRadius: "8px", color: "hsl(25, 20%, 18%)" }}
           formatter={(value: number) => `${value}%`}
         />
       </PieChart>
