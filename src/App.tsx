@@ -13,6 +13,8 @@ import Anusitis from "@/pages/Anusitis";
 import Wspolpraca from "@/pages/Wspolpraca";
 import DlaPacjenta from "@/pages/DlaPacjenta";
 import EVLT from "@/pages/EVLT";
+import KlejenieZyl from "@/pages/KlejenieZyl";
+import Skleroterapia from "@/pages/Skleroterapia";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,6 +36,8 @@ const App = () => (
             <Route path="/leczenie/anusitis" element={<Anusitis />} />
             <Route path="/dla-pacjenta" element={<DlaPacjenta />} />
             <Route path="/leczenie/evlt" element={<EVLT />} />
+            <Route path="/leczenie/klejenie-zyl" element={<KlejenieZyl />} />
+            <Route path="/leczenie/skleroterapia" element={<Skleroterapia />} />
           </Route>
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
