@@ -16,8 +16,8 @@
     --popover: 0 0% 100%;
     --popover-foreground: 210 18% 18%;
 
-    /* Teal / ocean accent */
-    --primary: 178 42% 36%;
+    /* Turquoise / sea accent */
+    --primary: 185 55% 42%;
     --primary-foreground: 0 0% 99%;
 
     --secondary: 40 18% 91%;
@@ -26,8 +26,8 @@
     --muted: 40 14% 91%;
     --muted-foreground: 210 8% 48%;
 
-    --accent: 178 18% 92%;
-    --accent-foreground: 178 38% 28%;
+    --accent: 185 22% 92%;
+    --accent-foreground: 185 45% 30%;
 
     --destructive: 0 50% 50%;
     --destructive-foreground: 0 0% 98%;
