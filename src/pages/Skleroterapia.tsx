@@ -1,12 +1,6 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
 
 const fadeUp = {
   initial: { opacity: 0, y: 30 },
@@ -15,31 +9,37 @@ const fadeUp = {
   transition: { duration: 0.6 },
 };
 
-const types = [
-  { emoji: "🕸", title: "Pajączki naczyniowe", desc: "Drobne fioletowe lub czerwone naczynka widoczne tuż pod skórą, najczęściej na udach i łydkach.", color: "text-primary" },
-  { emoji: "🔵", title: "Żyły retikularne", desc: "Nieco większe, niebieskawe żyły (1–3 mm), zasilające pajączki. Ich zamknięcie zapobiega nawrotom.", color: "text-primary" },
-  { emoji: "💜", title: "Teleangiektazje twarzy", desc: "Rozszerzone naczynka na nosie i policzkach. Wymagają specjalnej techniki i stężenia środka.", color: "text-primary" },
+const indications = [
+  { emoji: "〰️", title: "Kręte żyły", desc: "Idealna tam, gdzie skomplikowany przebieg naczynia utrudnia zastosowanie innych technik zabiegowych." },
+  { emoji: "🎯", title: "Trudne perforatory", desc: "Niezastąpiona w precyzyjnym zamykaniu głęboko położonych naczyń łączących (żył przeszywających)." },
+  { emoji: "✨", title: "Efekt estetyczny", desc: "Doskonała do usuwania drobnych pajączków i żyłek, które negatywnie wpływają na wygląd nóg." },
 ];
 
-const steps = [
-  { num: "1", emoji: "🔬", title: "Ocena naczyniowa", desc: "Badanie dermoskopowe lub USG pozwala ocenić głębokość i typ zmienionych naczyń. Dobieramy stężenie i technikę indywidualnie." },
-  { num: "2", emoji: "💉", title: "Iniekcje sklerozantu", desc: "Za pomocą ultracienkich igieł (30G) podajemy środek sklerotyzujący bezpośrednio do zmienionych naczyń. Zabieg jest niemal bezbolesny." },
-  { num: "3", emoji: "🩹", title: "Kompresja i obserwacja", desc: "Po zabiegu zakładamy opatrunek uciskowy na 24–48h. Pajączki stopniowo bladną i znikają w ciągu 3–6 tygodni." },
+const stats = [
+  { value: "20", unit: "min", desc: "Minimalny czas trwania niemal bezbolesnej procedury w klinice." },
+  { value: "0", unit: "dni", desc: "Czasu spędzonego w łóżku. Wymagany jest natychmiastowy powrót do lekkiego ruchu." },
+  { value: "100", unit: "%", desc: "Naszego skupienia na wykluczeniu przeciwwskazań i zapewnieniu bezpieczeństwa." },
 ];
 
-const beforeAfter = [
-  { label: "Sesje", value: "1–3", desc: "w zależności od rozległości zmian" },
-  { label: "Czas sesji", value: "20–30 min", desc: "komfortowa procedura gabinetowa" },
-  { label: "Efekt", value: "3–6 tyg.", desc: "stopniowe zanikanie pajączków" },
-  { label: "Powrót do aktywności", value: "Natychmiast", desc: "unikaj gorących kąpieli przez 48h" },
+const preparation = [
+  { title: "Zrezygnuj z balsamów", desc: "Skóra musi być sucha i czysta dla precyzji lekarza." },
+  { title: "Nie gól nóg", desc: "Unikaj depilacji tuż przed wizytą, aby zapobiec podrażnieniom." },
+  { title: "Wybierz luźne ubranie", desc: "Po zabiegu nałożymy pończochę uciskową, luźne spodnie będą najwygodniejsze." },
 ];
 
-const faqs = [
-  { q: "Czy skleroterapia boli?", a: "Stosujemy najcieńsze igły dostępne w medycynie (30G). Większość pacjentów porównuje uczucie do lekkiego szczypania. Nie jest wymagane żadne znieczulenie." },
-  { q: "Ile sesji potrzebuję?", a: "Zwykle 1–3 sesje w odstępach 4–6 tygodni. Liczba zależy od rozległości pajączków. Już po pierwszej sesji widoczna jest znaczna poprawa." },
-  { q: "Czy pajączki mogą wrócić?", a: "Zamknięte naczynia nie otwierają się ponownie. Jednak predyspozycja genetyczna może powodować powstawanie nowych pajączków w innych miejscach. Regularna profilaktyka minimalizuje to ryzyko." },
-  { q: "Kiedy zobaczę efekty?", a: "Pierwsze efekty widoczne są po 2–3 tygodniach. Pełny rezultat — po 6–8 tygodniach, gdy organizm wchłonie zamknięte naczynia." },
-  { q: "Czy są przeciwwskazania?", a: "Ciąża, karmienie piersią, zakrzepica żył głębokich w wywiadzie oraz alergia na środek sklerotyzujący. Każdy pacjent jest indywidualnie kwalifikowany." },
+const afterCare = [
+  { emoji: "🧦", title: "Noś ucisk", desc: "Kluczowy element terapii wyznaczony przez lekarza." },
+  { emoji: "🚶‍♀️", title: "Spaceruj", desc: "Codzienny ruch wspomaga krążenie." },
+  { emoji: "🔥", title: "Unikaj gorąca", desc: "Zero sauny, gorących kąpieli i opalania przez kilka tygodni." },
+  { emoji: "🏋️‍♀️", title: "Bez wysiłku", desc: "Odłóż ciężkie treningi siłowe na później." },
+];
+
+const contraindications = [
+  "🤰 Ciąża i karmienie",
+  "🩸 Zakrzepica żył głębokich",
+  "🦠 Poważne infekcje",
+  "⚠️ Uczulenie na sklerosant",
+  "🦽 Ograniczenie poruszania się",
 ];
 
 const Skleroterapia = () => (
@@ -56,168 +56,141 @@ const Skleroterapia = () => (
           Flebologia estetyczna
         </p>
         <h1 className="text-3xl md:text-5xl font-bold text-primary-foreground mb-4 leading-tight">
-          Pajączki naczyniowe: Skleroterapia precyzyjna
+          Twoje zdrowe nogi krok po kroku
         </h1>
         <div className="w-16 h-0.5 mx-auto bg-primary-foreground/30 mb-6" />
         <p className="text-primary-foreground/80 text-base md:text-lg leading-relaxed max-w-2xl mx-auto">
-          Bezbolesna procedura gabinetowa, która przywraca gładkość i jednolity kolor skóry nóg. Bez skalpela, bez rekonwalescencji.
+          Poznaj zalety skleroterapii — bezpiecznej metody przywracania komfortu i pewności siebie.
         </p>
       </motion.div>
     </section>
 
     <div className="max-w-5xl mx-auto px-4 py-16 space-y-24">
-      {/* Typy zmian */}
+      {/* Wskazania */}
       <motion.section {...fadeUp}>
-        <h2 className="section-title mb-3 text-center">Jakie zmiany leczymy?</h2>
-        <p className="section-subtitle mb-10 text-center max-w-2xl mx-auto">
-          Skleroterapia jest złotym standardem w leczeniu drobnych zmian naczyniowych. Skutecznie zamyka pajączki, żyły retikularne i teleangiektazje.
+        <h2 className="section-title mb-3 text-center">Kiedy skleroterapia sprawdza się najlepiej?</h2>
+        <p className="section-subtitle mb-10 text-center max-w-3xl mx-auto">
+          W naszej klinice wiemy, że każdy problem z żyłami wymaga indywidualnego podejścia. Skleroterapia to jedna z najnowocześniejszych metod, będąca dla nas „metodą z wyboru" w ściśle określonych, precyzyjnych zadaniach, gdzie inne techniki mogą napotykać trudności.
         </p>
         <div className="grid md:grid-cols-3 gap-6">
-          {types.map((t, i) => (
+          {indications.map((item, i) => (
             <motion.div
-              key={t.title}
+              key={item.title}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.4, delay: i * 0.12 }}
               className="glass-card rounded-2xl p-6 text-center"
             >
-              <div className="text-4xl mb-4">{t.emoji}</div>
-              <h3 className={`font-bold text-base mb-2 ${t.color}`}>{t.title}</h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">{t.desc}</p>
+              <div className="text-4xl mb-4">{item.emoji}</div>
+              <h3 className="font-bold text-foreground text-base mb-2">{item.title}</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">{item.desc}</p>
             </motion.div>
           ))}
         </div>
       </motion.section>
 
-      {/* Jak działa */}
+      {/* Skuteczność i bezpieczeństwo */}
       <motion.section {...fadeUp}>
-        <h2 className="section-title mb-3 text-center">Jak przebiega zabieg?</h2>
-        <p className="section-subtitle mb-10 text-center">
-          Trzy proste kroki do gładkich nóg
-        </p>
-        <div className="space-y-6">
-          {steps.map((s, i) => (
-            <motion.div
-              key={s.num}
-              initial={{ opacity: 0, x: i % 2 === 0 ? -20 : 20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: i * 0.1 }}
-              className="glass-card rounded-2xl p-8"
-            >
-              <div className="flex items-center gap-4 mb-3">
-                <span className="w-10 h-10 rounded-full bg-primary/20 text-primary font-bold flex items-center justify-center text-lg">{s.num}</span>
-                <span className="text-3xl">{s.emoji}</span>
-              </div>
-              <h3 className="text-lg font-bold text-foreground mb-1">{s.title}</h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">{s.desc}</p>
-            </motion.div>
-          ))}
+        <h2 className="section-title mb-3 text-center">Skuteczność i Bezpieczeństwo</h2>
+        <div className="glass-card rounded-2xl p-8 md:p-10 max-w-3xl mx-auto">
+          <p className="text-muted-foreground leading-relaxed text-sm md:text-base">
+            Jako specjaliści dbamy o Twoje bezpieczeństwo. Choć skleroterapia jest świetna dla drobnych i krętych naczyń, jej skuteczność na głównych pniach żylnych wynosi około <span className="text-primary font-bold">50%</span>. Stosowanie jej w tych miejscach mogłoby zwiększać ryzyko powikłań. Dlatego <span className="text-foreground font-semibold">duże pnie leczymy laserem</span>, a skleroterapię stosujemy jako uzupełnienie.
+          </p>
         </div>
       </motion.section>
 
-      {/* Kluczowe liczby */}
+      {/* Zabieg w liczbach */}
       <motion.section {...fadeUp}>
-        <h2 className="section-title mb-3 text-center">Czego się spodziewać?</h2>
-        <p className="section-subtitle mb-10 text-center">
-          Kluczowe informacje w pigułce
-        </p>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {beforeAfter.map((item, i) => (
+        <h2 className="section-title mb-3 text-center">Zabieg w liczbach</h2>
+        <div className="grid md:grid-cols-3 gap-6 mt-10">
+          {stats.map((s, i) => (
             <motion.div
-              key={item.label}
+              key={s.unit}
               initial={{ opacity: 0, scale: 0.9 }}
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.4, delay: i * 0.08 }}
-              className="glass-card rounded-xl p-5 text-center"
+              transition={{ duration: 0.4, delay: i * 0.1 }}
+              className="glass-card rounded-2xl p-8 text-center"
             >
-              <div className="text-2xl font-bold text-primary mb-1">{item.value}</div>
-              <div className="text-sm font-semibold text-foreground mb-1">{item.label}</div>
-              <div className="text-xs text-muted-foreground">{item.desc}</div>
+              <div className="text-4xl md:text-5xl font-bold text-primary mb-1">
+                {s.value}<span className="text-2xl text-primary/70">{s.unit}</span>
+              </div>
+              <p className="text-sm text-muted-foreground mt-3">{s.desc}</p>
             </motion.div>
           ))}
         </div>
       </motion.section>
 
-      {/* Profilaktyka */}
+      {/* Przygotowanie */}
       <motion.section {...fadeUp}>
-        <h2 className="section-title mb-3 text-center">Profilaktyka po zabiegu</h2>
-        <p className="section-subtitle mb-10 text-center max-w-2xl mx-auto">
-          Aby efekty utrzymały się jak najdłużej, warto wprowadzić kilka prostych nawyków
+        <h2 className="section-title mb-3 text-center">Jak przygotować się do zabiegu?</h2>
+        <p className="section-subtitle mb-10 text-center">
+          Zależy nam na Twoim maksymalnym komforcie. Przygotowanie jest bardzo proste i wymaga pamiętania tylko o trzech zasadach.
         </p>
-        <div className="glass-card rounded-2xl p-8">
-          <div className="grid md:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <div className="flex items-start gap-3">
-                <span className="text-primary text-lg">✓</span>
-                <div>
-                  <h4 className="font-semibold text-foreground text-sm">Regularna aktywność fizyczna</h4>
-                  <p className="text-xs text-muted-foreground">Spacery, pływanie, jazda na rowerze wspierają krążenie żylne.</p>
-                </div>
+        <div className="grid md:grid-cols-3 gap-6">
+          {preparation.map((p, i) => (
+            <motion.div
+              key={p.title}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.4, delay: i * 0.1 }}
+              className="glass-card rounded-xl p-6"
+            >
+              <div className="w-8 h-8 rounded-full bg-primary/20 text-primary font-bold flex items-center justify-center text-sm mb-4">
+                {i + 1}
               </div>
-              <div className="flex items-start gap-3">
-                <span className="text-primary text-lg">✓</span>
-                <div>
-                  <h4 className="font-semibold text-foreground text-sm">Unoszenie nóg</h4>
-                  <p className="text-xs text-muted-foreground">15 minut dziennie z nogami powyżej poziomu serca.</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <span className="text-primary text-lg">✓</span>
-                <div>
-                  <h4 className="font-semibold text-foreground text-sm">Unikanie długiego stania/siedzenia</h4>
-                  <p className="text-xs text-muted-foreground">Co 30 minut zmień pozycję lub zrób krótki spacer.</p>
-                </div>
-              </div>
-            </div>
-            <div className="space-y-4">
-              <div className="flex items-start gap-3">
-                <span className="text-primary text-lg">✓</span>
-                <div>
-                  <h4 className="font-semibold text-foreground text-sm">Nawodnienie</h4>
-                  <p className="text-xs text-muted-foreground">Minimum 2 litry wody dziennie dla zdrowia naczyń.</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <span className="text-primary text-lg">✓</span>
-                <div>
-                  <h4 className="font-semibold text-foreground text-sm">Ochrona przed słońcem</h4>
-                  <p className="text-xs text-muted-foreground">Krem z filtrem na leczone obszary przez 4–6 tygodni.</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <span className="text-primary text-lg">✓</span>
-                <div>
-                  <h4 className="font-semibold text-foreground text-sm">Kontrola wagi</h4>
-                  <p className="text-xs text-muted-foreground">Nadwaga zwiększa ciśnienie w żyłach kończyn dolnych.</p>
-                </div>
-              </div>
-            </div>
-          </div>
+              <h4 className="font-bold text-foreground text-sm mb-2">{p.title}</h4>
+              <p className="text-sm text-muted-foreground">{p.desc}</p>
+            </motion.div>
+          ))}
         </div>
       </motion.section>
 
-      {/* FAQ */}
+      {/* Powrót do formy */}
       <motion.section {...fadeUp}>
-        <h2 className="section-title mb-3 text-center">Najczęściej zadawane pytania</h2>
+        <h2 className="section-title mb-3 text-center">Powrót do formy</h2>
         <p className="section-subtitle mb-10 text-center">
-          Rozwiewamy wątpliwości przed wizytą
+          Nie potrzebujesz zwolnienia lekarskiego. Ruch jest wręcz wskazany! Oto nasze zalecenia po zabiegu:
         </p>
-        <div className="max-w-3xl mx-auto">
-          <Accordion type="single" collapsible className="space-y-3">
-            {faqs.map((faq, i) => (
-              <AccordionItem key={i} value={`faq-${i}`} className="glass-card rounded-xl border-none px-6">
-                <AccordionTrigger className="text-sm font-semibold text-foreground hover:text-primary hover:no-underline py-5">
-                  <span className="text-primary mr-2">❓</span> {faq.q}
-                </AccordionTrigger>
-                <AccordionContent className="text-sm text-muted-foreground leading-relaxed pb-5">
-                  {faq.a}
-                </AccordionContent>
-              </AccordionItem>
-            ))}
-          </Accordion>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {afterCare.map((a, i) => (
+            <motion.div
+              key={a.title}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.4, delay: i * 0.08 }}
+              className="glass-card rounded-xl p-6 text-center"
+            >
+              <div className="text-3xl mb-3">{a.emoji}</div>
+              <h4 className="font-bold text-foreground text-sm mb-1">{a.title}</h4>
+              <p className="text-xs text-muted-foreground">{a.desc}</p>
+            </motion.div>
+          ))}
+        </div>
+      </motion.section>
+
+      {/* Przeciwwskazania */}
+      <motion.section {...fadeUp}>
+        <h2 className="section-title mb-3 text-center">Zdrowie przede wszystkim: Przeciwwskazania</h2>
+        <p className="section-subtitle mb-10 text-center max-w-2xl mx-auto">
+          Istnieją sytuacje, w których dla Twojego dobra zalecimy inną metodę lub przesuniemy zabieg w czasie.
+        </p>
+        <div className="flex flex-wrap justify-center gap-3 max-w-2xl mx-auto">
+          {contraindications.map((c, i) => (
+            <motion.span
+              key={i}
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.3, delay: i * 0.06 }}
+              className="glass-card rounded-full px-5 py-3 text-sm text-foreground font-medium"
+            >
+              {c}
+            </motion.span>
+          ))}
         </div>
       </motion.section>
 
