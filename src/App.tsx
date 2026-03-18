@@ -12,6 +12,7 @@ import Plastyka from "@/pages/Plastyka";
 import Anusitis from "@/pages/Anusitis";
 import Wspolpraca from "@/pages/Wspolpraca";
 import DlaPacjenta from "@/pages/DlaPacjenta";
+import EVLT from "@/pages/EVLT";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -32,6 +33,7 @@ const App = () => (
             <Route path="/leczenie/plastyka" element={<Plastyka />} />
             <Route path="/leczenie/anusitis" element={<Anusitis />} />
             <Route path="/dla-pacjenta" element={<DlaPacjenta />} />
+            <Route path="/leczenie/evlt" element={<EVLT />} />
           </Route>
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
