@@ -35,7 +35,7 @@ const DiscomfortChart = () => (
         <Area
           type="monotone"
           dataKey="value"
-          stroke="hsl(178, 42%, 36%)"
+          stroke="hsl(185, 55%, 42%)"
           strokeWidth={3}
           fill="url(#colorDiscomfort)"
         />
