@@ -18,7 +18,7 @@ const fadeUp = {
 };
 
 const warnings = [
-  { emoji: "🧘", title: "Ciężar nóg", desc: "Uczucie „nóg z ołowiu", nasilające się pod koniec dnia." },
+  { emoji: "🧘", title: "Ciężar nóg", desc: 'Uczucie „nóg z ołowiu", nasilające się pod koniec dnia.' },
   { emoji: "👞", title: "Opuchlizna", desc: "Gromadząca się wokół kostek, znikająca po nocy." },
   { emoji: "💤", title: "Niespokojne nogi", desc: "Utrudnione zasypianie i niszczenie jakości snu." },
   { emoji: "🕸", title: "Pajączki", desc: "Widoczna fioletowa siateczka lub wypukłe żyły." },
