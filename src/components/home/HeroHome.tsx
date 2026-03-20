@@ -60,7 +60,7 @@ const HeroHome = () => (
         <img
           src={logoImage}
           alt="Bujok Medical logo"
-          className="w-52 xl:w-64 rounded-2xl opacity-90"
+          className="w-52 xl:w-64 rounded-2xl opacity-90 -mt-5"
         />
       </motion.div>
     </div>
