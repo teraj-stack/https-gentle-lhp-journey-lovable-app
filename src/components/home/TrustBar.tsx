@@ -1,15 +1,10 @@
 import { motion } from "framer-motion";
 import { Shield, Award, Star, Users } from "lucide-react";
 
-const fadeUp = {
+const stagger = (i: number) => ({
   initial: { opacity: 0, y: 30 },
   whileInView: { opacity: 1, y: 0 },
   viewport: { once: true },
-  transition: { duration: 0.7 },
-};
-
-const stagger = (i: number) => ({
-  ...fadeUp,
   transition: { duration: 0.6, delay: i * 0.12 },
 });
 
