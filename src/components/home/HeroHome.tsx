@@ -25,7 +25,7 @@ const HeroHome = () => (
           Medycyna premium.
         </h1>
         <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold leading-[1.1] mb-2 italic text-primary">
-          Dwie specjalizacje.
+          Nowoczesne technologie laserowe.
         </h1>
         <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-foreground leading-[1.1] mb-8">
           Jeden standard.
