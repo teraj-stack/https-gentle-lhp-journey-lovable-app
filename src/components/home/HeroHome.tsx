@@ -10,7 +10,7 @@ const HeroHome = () => (
       className="absolute inset-0 bg-cover bg-center bg-no-repeat"
       style={{ backgroundImage: `url(${heroImage})` }}
     />
-    <div className="absolute inset-0 bg-background/85" />
+    <div className="absolute inset-0 bg-background/60" />
 
     <div className="relative max-w-7xl mx-auto px-4 md:px-8 py-32 md:py-40 w-full flex flex-col md:flex-row items-center gap-12 md:gap-20">
       <motion.div
