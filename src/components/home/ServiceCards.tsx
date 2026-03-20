@@ -28,7 +28,7 @@ const services = [
     icon: Activity,
     title: "Flebologia Laserowa",
     desc: "Lekkie nogi i pewność siebie. Precyzyjne zabiegi zamykające żyły laserowo — bez tradycyjnej chirurgii i długiej rekonwalescencji.",
-    treatments: ["EVLT – Ablacja żylaków", "Skleroterapia pajączków"],
+    treatments: ["EVLT – Ablacja żylaków", "Skleroterapia żylaków", "CLaCS – Pajączki i teleangiektazje"],
     cta: "Poznaj rozwiązania naczyniowe",
     href: "/leczenie/evlt",
   },
