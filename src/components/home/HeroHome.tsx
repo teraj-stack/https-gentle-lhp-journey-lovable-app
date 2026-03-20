@@ -44,7 +44,7 @@ const HeroHome = () => (
             className="px-8 py-6 text-base rounded-sm uppercase tracking-wider"
             asChild
           >
-            <Link to="/o-nas">Poznaj Dr. Bujoka</Link>
+            <Link to="/o-nas">Poznaj twórcę projektu</Link>
           </Button>
         </div>
       </motion.div>
