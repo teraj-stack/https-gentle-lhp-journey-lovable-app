@@ -9,7 +9,7 @@ const HeroHome = () => (
       className="absolute inset-0 bg-cover bg-center bg-no-repeat"
       style={{ backgroundImage: `url(${heroImage})` }}
     />
-    <div className="absolute inset-0 bg-background/80" />
+    <div className="absolute inset-0 bg-background/85" />
 
     <div className="relative max-w-7xl mx-auto px-4 md:px-8 py-32 md:py-40 w-full">
       <motion.div
@@ -17,20 +17,21 @@ const HeroHome = () => (
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.9 }}
         className="max-w-3xl"
+        style={{ textShadow: "0 2px 20px rgba(0,0,0,0.3)" }}
       >
-        <p className="text-muted-foreground text-sm font-sans uppercase tracking-[0.2em] mb-6">
+        <p className="text-foreground/50 text-sm font-sans uppercase tracking-[0.25em] mb-6" style={{ textShadow: "none" }}>
           CML · Dr Jan Bujok
         </p>
-        <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-foreground leading-[1.1] mb-2">
+        <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-foreground leading-[1.1] mb-3">
           Medycyna premium.
         </h1>
-        <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold leading-[1.1] mb-2 italic text-primary">
+        <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold leading-[1.1] mb-3 italic text-primary drop-shadow-lg">
           Nowoczesne technologie laserowe.
         </h1>
-        <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-foreground leading-[1.1] mb-8">
+        <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-foreground leading-[1.1] mb-10">
           Jeden standard.
         </h1>
-        <p className="text-lg md:text-xl text-muted-foreground leading-relaxed max-w-2xl mb-10">
+        <p className="text-lg md:text-xl text-foreground/60 leading-relaxed max-w-2xl mb-12" style={{ textShadow: "none" }}>
           Proktologia laserowa i flebologia — pod jedną marką,
           w jednym standardzie premium.
         </p>
