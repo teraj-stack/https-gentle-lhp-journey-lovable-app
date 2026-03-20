@@ -19,20 +19,20 @@ const FiLaCHero = () => (
         Fistula Laser Closure — precyzyjna energia lasera 1470 nm zamyka kanał przetoki od wewnątrz, 
         chroniąc zwieracze i skracając rekonwalescencję do minimum.
       </p>
-      <div className="flex justify-center gap-8 mt-8">
-        <div className="text-center">
-          <p className="text-3xl font-bold text-primary">93%</p>
-          <p className="text-xs text-primary-foreground/60 mt-1">Skuteczność</p>
+      <div className="flex justify-center gap-4 md:gap-8 mt-8 px-4">
+        <div className="text-center min-w-0">
+          <p className="text-2xl md:text-3xl font-bold text-primary">93%</p>
+          <p className="text-[10px] md:text-xs text-primary-foreground/60 mt-1">Skuteczność</p>
         </div>
         <div className="w-px bg-primary-foreground/20" />
-        <div className="text-center">
-          <p className="text-3xl font-bold text-primary">100%</p>
-          <p className="text-xs text-primary-foreground/60 mt-1">Ochrona zwieraczy</p>
+        <div className="text-center min-w-0">
+          <p className="text-2xl md:text-3xl font-bold text-primary">100%</p>
+          <p className="text-[10px] md:text-xs text-primary-foreground/60 mt-1">Ochrona zwieraczy</p>
         </div>
         <div className="w-px bg-primary-foreground/20" />
-        <div className="text-center">
-          <p className="text-3xl font-bold text-primary">1470nm</p>
-          <p className="text-xs text-primary-foreground/60 mt-1">Długość fali</p>
+        <div className="text-center min-w-0">
+          <p className="text-2xl md:text-3xl font-bold text-primary">1470nm</p>
+          <p className="text-[10px] md:text-xs text-primary-foreground/60 mt-1">Długość fali</p>
         </div>
       </div>
     </motion.div>
