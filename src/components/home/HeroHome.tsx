@@ -55,12 +55,12 @@ const HeroHome = () => (
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 1, delay: 0.3 }}
-        className="hidden md:flex items-center justify-center flex-shrink-0"
+        className="hidden lg:flex items-center justify-center flex-shrink-0"
       >
         <img
           src={logoImage}
           alt="Bujok Medical logo"
-          className="w-48 lg:w-60 xl:w-72 rounded-2xl opacity-90"
+          className="w-52 xl:w-64 rounded-2xl opacity-90"
         />
       </motion.div>
     </div>
