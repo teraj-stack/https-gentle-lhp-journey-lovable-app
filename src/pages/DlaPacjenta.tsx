@@ -39,6 +39,19 @@ const ebooks = [
     href: "/ebooks/Hemoroidy-od-A-do-Z-Infografika.pdf",
     color: "from-accent-foreground/80 to-accent-foreground",
   },
+  {
+    title: "FiLaC — Laserowe Zamykanie Przetok",
+    pages: "Infografika",
+    desc: "Kompaktowa infografika przedstawiająca zabieg FiLaC (Fistula Laser Closure) — laserowe zamykanie przetok odbytu laserem diodowym 1470 nm. Przebieg zabiegu w 4 krokach, parametry kliniczne i porównanie z metodami tradycyjnymi.",
+    chapters: [
+      "Przebieg zabiegu — od identyfikacji do zamknięcia",
+      "Parametry kliniczne — 93% skuteczności, 100% ochrony zwieraczy",
+      "FiLaC vs metody tradycyjne — ból, rekonwalescencja, ryzyko",
+      "Zabieg ambulatoryjny — powrót do aktywności < 24h",
+    ],
+    href: "/ebooks/FiLaC-Infografika.pdf",
+    color: "from-[hsl(var(--primary))]/70 to-accent-foreground/90",
+  },
 ];
 
 const benefits = [
