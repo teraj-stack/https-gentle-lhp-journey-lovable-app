@@ -52,6 +52,19 @@ const ebooks = [
     href: "/ebooks/FiLaC-Infografika.pdf",
     color: "from-[hsl(var(--primary))]/70 to-accent-foreground/90",
   },
+  {
+    title: "EVLT — Laserowe Leczenie Żylaków",
+    pages: "Infografika",
+    desc: "Infografika przedstawiająca zabieg EVLT (Endovenous Laser Treatment) — laserowe zamykanie żylaków kończyn dolnych laserem diodowym 1470 nm. Przebieg zabiegu w 4 krokach, parametry kliniczne (98% skuteczności) i porównanie z chirurgią tradycyjną.",
+    chapters: [
+      "Przebieg zabiegu — od diagnostyki USG po efekt końcowy",
+      "Parametry kliniczne — 98% skuteczności, 0 mm blizny",
+      "EVLT vs metody tradycyjne — ból, rekonwalescencja, narkoza",
+      "Zabieg ambulatoryjny — bez skalpela i hospitalizacji",
+    ],
+    href: "/ebooks/EVLT-Infografika.pdf",
+    color: "from-primary/60 to-primary/90",
+  },
 ];
 
 const benefits = [
