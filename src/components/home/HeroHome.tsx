@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import heroImage from "@/assets/hero-clinic.jpg";
-import logoImage from "@/assets/logo-bujok.jpg";
+import logoImage from "@/assets/logo-bujok.png";
 
 const HeroHome = () => (
   <section className="relative min-h-[90vh] flex items-center overflow-hidden">
