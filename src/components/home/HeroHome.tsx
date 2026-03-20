@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import heroImage from "@/assets/hero-clinic.jpg";
+import logoImage from "@/assets/logo-bujok.jpg";
 
 const HeroHome = () => (
   <section className="relative min-h-[90vh] flex items-center overflow-hidden">
@@ -11,12 +12,12 @@ const HeroHome = () => (
     />
     <div className="absolute inset-0 bg-background/85" />
 
-    <div className="relative max-w-7xl mx-auto px-4 md:px-8 py-32 md:py-40 w-full">
+    <div className="relative max-w-7xl mx-auto px-4 md:px-8 py-32 md:py-40 w-full flex flex-col md:flex-row items-center gap-12 md:gap-20">
       <motion.div
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.9 }}
-        className="max-w-3xl"
+        className="max-w-3xl flex-1"
         style={{ textShadow: "0 2px 20px rgba(0,0,0,0.3)" }}
       >
         <p className="text-foreground/50 text-sm font-sans uppercase tracking-[0.25em] mb-6" style={{ textShadow: "none" }}>
@@ -48,6 +49,19 @@ const HeroHome = () => (
             <Link to="/o-nas">Poznaj twórcę projektu</Link>
           </Button>
         </div>
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 1, delay: 0.3 }}
+        className="hidden md:flex items-center justify-center flex-shrink-0"
+      >
+        <img
+          src={logoImage}
+          alt="Bujok Medical logo"
+          className="w-48 lg:w-60 xl:w-72 rounded-2xl opacity-90"
+        />
       </motion.div>
     </div>
   </section>
