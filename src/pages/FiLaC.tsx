@@ -7,6 +7,7 @@ import FiLaCAdvantages from "@/components/filac/FiLaCAdvantages";
 import FiLaCComparison from "@/components/filac/FiLaCComparison";
 import FiLaCIndications from "@/components/filac/FiLaCIndications";
 import FiLaCRecovery from "@/components/filac/FiLaCRecovery";
+import FiLaCFAQ from "@/components/filac/FiLaCFAQ";
 
 const fadeUp = {
   initial: { opacity: 0, y: 24, filter: "blur(4px)" },
