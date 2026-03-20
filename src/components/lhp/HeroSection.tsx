@@ -15,7 +15,7 @@ const HeroSection = () => (
       <p className="text-xl md:text-2xl font-semibold text-primary-foreground/90 mb-4">
         Czego (NIE) musisz się bać?
       </p>
-      <p className="text-primary-foreground/80 text-base md:text-lg leading-relaxed max-w-2xl mx-auto">
+      <p className="text-primary-foreground/70 text-base md:text-lg leading-relaxed max-w-2xl mx-auto">
         Ta infografika została stworzona dla Twojego spokoju. Zdejmujemy tabu, obniżamy lęk i zastępujemy medyczny żargon przewidywalnym planem. Zrób zrzut ekranu i analizuj w bezpiecznej przestrzeni.
       </p>
     </motion.div>

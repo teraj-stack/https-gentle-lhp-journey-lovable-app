@@ -46,7 +46,6 @@ const Header = () => {
     >
       <div className="max-w-7xl mx-auto px-4 md:px-8">
         <div className="flex items-center justify-between h-16 md:h-20">
-          {/* Logo */}
           <Link to="/" className="flex items-center gap-2">
             <span className="text-xl md:text-2xl font-bold font-serif tracking-tight text-primary">
               CML
@@ -56,7 +55,6 @@ const Header = () => {
             </span>
           </Link>
 
-          {/* Desktop Nav */}
           <nav className="hidden lg:flex items-center gap-1">
             <Link
               to="/o-nas"
@@ -159,13 +157,12 @@ const Header = () => {
             </Link>
           </nav>
 
-          {/* CTA + Mobile Toggle */}
           <div className="flex items-center gap-3">
             <Button variant="hero" size="default" className="hidden sm:inline-flex" asChild>
               <Link to="/kontakt">Umów Konsultację</Link>
             </Button>
             <button
-              className="lg:hidden p-2 rounded-lg hover:bg-accent/50 transition-colors"
+              className="lg:hidden p-2 rounded-lg hover:bg-accent/50 transition-colors text-foreground"
               onClick={() => setMobileOpen(!mobileOpen)}
               aria-label="Menu"
             >
@@ -175,7 +172,6 @@ const Header = () => {
         </div>
       </div>
 
-      {/* Mobile Menu */}
       <AnimatePresence>
         {mobileOpen && (
           <motion.div
@@ -185,25 +181,25 @@ const Header = () => {
             className="lg:hidden bg-card border-t border-border overflow-hidden"
           >
             <div className="px-4 py-4 space-y-1">
-              <Link to="/o-nas" className="block px-4 py-3 rounded-lg text-sm font-medium hover:bg-accent/50">O nas</Link>
+              <Link to="/o-nas" className="block px-4 py-3 rounded-lg text-sm font-medium text-foreground hover:bg-accent/50">O nas</Link>
               
-              <div className="px-4 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Proktologia</div>
+              <div className="px-4 py-2 text-xs font-semibold text-primary uppercase tracking-wider">Proktologia</div>
               {proktologiaItems.map((item) => (
-                <Link key={item.href} to={item.href} className="block px-6 py-2.5 rounded-lg text-sm hover:bg-accent/50">
+                <Link key={item.href} to={item.href} className="block px-6 py-2.5 rounded-lg text-sm text-foreground/80 hover:bg-accent/50">
                   {item.label}
                 </Link>
               ))}
 
-              <div className="px-4 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider mt-2">Flebologia</div>
+              <div className="px-4 py-2 text-xs font-semibold text-primary uppercase tracking-wider mt-2">Flebologia</div>
               {flebologiaItems.map((item) => (
-                <Link key={item.href} to={item.href} className="block px-6 py-2.5 rounded-lg text-sm hover:bg-accent/50">
+                <Link key={item.href} to={item.href} className="block px-6 py-2.5 rounded-lg text-sm text-foreground/80 hover:bg-accent/50">
                   {item.label}
                 </Link>
               ))}
 
-              <Link to="/dla-pacjenta" className="block px-4 py-3 rounded-lg text-sm font-medium hover:bg-accent/50">Dla Pacjenta</Link>
-              <Link to="/wspolpraca" className="block px-4 py-3 rounded-lg text-sm font-medium hover:bg-accent/50">Współpraca</Link>
-              <Link to="/kontakt" className="block px-4 py-3 rounded-lg text-sm font-medium hover:bg-accent/50">Kontakt</Link>
+              <Link to="/dla-pacjenta" className="block px-4 py-3 rounded-lg text-sm font-medium text-foreground hover:bg-accent/50">Dla Pacjenta</Link>
+              <Link to="/wspolpraca" className="block px-4 py-3 rounded-lg text-sm font-medium text-foreground hover:bg-accent/50">Współpraca</Link>
+              <Link to="/kontakt" className="block px-4 py-3 rounded-lg text-sm font-medium text-foreground hover:bg-accent/50">Kontakt</Link>
 
               <div className="pt-3">
                 <Button variant="hero" className="w-full" asChild>
