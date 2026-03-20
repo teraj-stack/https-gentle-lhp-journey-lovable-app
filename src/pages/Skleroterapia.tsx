@@ -12,7 +12,7 @@ const fadeUp = {
 const indications = [
   { emoji: "〰️", title: "Kręte żyły", desc: "Idealna tam, gdzie skomplikowany przebieg naczynia utrudnia zastosowanie innych technik zabiegowych." },
   { emoji: "🎯", title: "Trudne perforatory", desc: "Niezastąpiona w precyzyjnym zamykaniu głęboko położonych naczyń łączących (żył przeszywających)." },
-  { emoji: "✨", title: "Efekt estetyczny", desc: "Doskonała do usuwania drobnych pajączków i żyłek, które negatywnie wpływają na wygląd nóg." },
+  { emoji: "🔄", title: "Uzupełnienie EVLT", desc: "Doskonała jako zabieg uzupełniający po laserowej ablacji głównych pni żylnych." },
 ];
 
 const stats = [
@@ -53,14 +53,14 @@ const Skleroterapia = () => (
         className="max-w-3xl mx-auto text-center"
       >
         <p className="text-sm font-sans uppercase tracking-[0.15em] text-primary-foreground/60 mb-4">
-          Flebologia estetyczna
+          Flebologia zabiegowa
         </p>
         <h1 className="text-3xl md:text-5xl font-bold text-primary-foreground mb-4 leading-tight">
-          Twoje zdrowe nogi krok po kroku
+          Skleroterapia żylaków
         </h1>
         <div className="w-16 h-0.5 mx-auto bg-primary-foreground/30 mb-6" />
         <p className="text-primary-foreground/80 text-base md:text-lg leading-relaxed max-w-2xl mx-auto">
-          Poznaj zalety skleroterapii — bezpiecznej metody przywracania komfortu i pewności siebie.
+          Skuteczna metoda zamykania żylakowato zmienionych naczyń — precyzyjne podanie sklerosantu pod kontrolą USG eliminuje chore żyły bez nacięć.
         </p>
       </motion.div>
     </section>
@@ -70,7 +70,7 @@ const Skleroterapia = () => (
       <motion.section {...fadeUp}>
         <h2 className="section-title mb-3 text-center">Kiedy skleroterapia sprawdza się najlepiej?</h2>
         <p className="section-subtitle mb-10 text-center max-w-3xl mx-auto">
-          W naszej klinice wiemy, że każdy problem z żyłami wymaga indywidualnego podejścia. Skleroterapia to jedna z najnowocześniejszych metod, będąca dla nas „metodą z wyboru" w ściśle określonych, precyzyjnych zadaniach, gdzie inne techniki mogą napotykać trudności.
+          Skleroterapia jest „metodą z wyboru" w precyzyjnych zadaniach, gdzie inne techniki mogą napotykać trudności — szczególnie w leczeniu dużych, żylakowato zmienionych naczyń o skomplikowanym przebiegu.
         </p>
         <div className="grid md:grid-cols-3 gap-6">
           {indications.map((item, i) => (
@@ -90,12 +90,12 @@ const Skleroterapia = () => (
         </div>
       </motion.section>
 
-      {/* Skuteczność i bezpieczeństwo */}
+      {/* Skuteczność */}
       <motion.section {...fadeUp}>
         <h2 className="section-title mb-3 text-center">Skuteczność i Bezpieczeństwo</h2>
         <div className="glass-card rounded-2xl p-8 md:p-10 max-w-3xl mx-auto">
           <p className="text-muted-foreground leading-relaxed text-sm md:text-base">
-            Jako specjaliści dbamy o Twoje bezpieczeństwo. Choć skleroterapia jest świetna dla drobnych i krętych naczyń, jej skuteczność na głównych pniach żylnych wynosi około <span className="text-primary font-bold">50%</span>. Stosowanie jej w tych miejscach mogłoby zwiększać ryzyko powikłań. Dlatego <span className="text-foreground font-semibold">duże pnie leczymy laserem</span>, a skleroterapię stosujemy jako uzupełnienie.
+            Skleroterapia piankowa pod kontrolą USG jest skuteczną metodą zamykania dużych żylaków o krętym przebiegu. W połączeniu z EVLT tworzy kompleksowy plan leczenia, który pozwala zamknąć <span className="text-primary font-bold">zarówno główne pnie, jak i bocznice żylne</span>. Jako specjaliści dobieramy odpowiednią technikę do każdego naczynia.
           </p>
         </div>
       </motion.section>
@@ -126,7 +126,7 @@ const Skleroterapia = () => (
       <motion.section {...fadeUp}>
         <h2 className="section-title mb-3 text-center">Jak przygotować się do zabiegu?</h2>
         <p className="section-subtitle mb-10 text-center">
-          Zależy nam na Twoim maksymalnym komforcie. Przygotowanie jest bardzo proste i wymaga pamiętania tylko o trzech zasadach.
+          Przygotowanie jest bardzo proste i wymaga pamiętania tylko o trzech zasadach.
         </p>
         <div className="grid md:grid-cols-3 gap-6">
           {preparation.map((p, i) => (
@@ -152,7 +152,7 @@ const Skleroterapia = () => (
       <motion.section {...fadeUp}>
         <h2 className="section-title mb-3 text-center">Powrót do formy</h2>
         <p className="section-subtitle mb-10 text-center">
-          Nie potrzebujesz zwolnienia lekarskiego. Ruch jest wręcz wskazany! Oto nasze zalecenia po zabiegu:
+          Nie potrzebujesz zwolnienia lekarskiego. Ruch jest wręcz wskazany!
         </p>
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {afterCare.map((a, i) => (
@@ -196,10 +196,10 @@ const Skleroterapia = () => (
 
       {/* CTA */}
       <motion.section {...fadeUp} className="glass-card rounded-2xl p-8 md:p-12 text-center max-w-2xl mx-auto">
-        <div className="text-4xl mb-4">✨</div>
-        <h2 className="text-2xl font-bold text-foreground mb-3">Odzyskaj piękne nogi</h2>
+        <div className="text-4xl mb-4">💉</div>
+        <h2 className="text-2xl font-bold text-foreground mb-3">Pozbądź się żylaków</h2>
         <p className="text-muted-foreground leading-relaxed mb-6">
-          Skleroterapia to szybki, bezpieczny i skuteczny sposób na pozbycie się pajączków naczyniowych. Umów się na konsultację.
+          Skleroterapia to bezpieczny sposób na zamknięcie żylakowato zmienionych naczyń. Umów się na konsultację.
         </p>
         <Button variant="hero" size="lg" asChild>
           <Link to="/kontakt">Umów konsultację</Link>

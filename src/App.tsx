@@ -15,6 +15,7 @@ import DlaPacjenta from "@/pages/DlaPacjenta";
 import EVLT from "@/pages/EVLT";
 
 import Skleroterapia from "@/pages/Skleroterapia";
+import CLaCS from "@/pages/CLaCS";
 import Kontakt from "@/pages/Kontakt";
 import NotFound from "@/pages/NotFound";
 
@@ -40,6 +41,7 @@ const App = () => (
             <Route path="/leczenie/evlt" element={<EVLT />} />
             
             <Route path="/leczenie/skleroterapia" element={<Skleroterapia />} />
+            <Route path="/leczenie/clacs" element={<CLaCS />} />
             <Route path="/kontakt" element={<Kontakt />} />
           </Route>
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

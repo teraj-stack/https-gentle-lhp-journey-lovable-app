@@ -15,8 +15,8 @@ const proktologiaItems = [
 
 const flebologiaItems = [
   { label: "Żylaki – EVLT", href: "/leczenie/evlt", desc: "Ablacja wewnątrzżylna laserem" },
-  
-  { label: "Pajączki naczyniowe", href: "/leczenie/skleroterapia", desc: "Skleroterapia precyzyjna" },
+  { label: "Skleroterapia żylaków", href: "/leczenie/skleroterapia", desc: "Zamykanie żylakowatych naczyń" },
+  { label: "Pajączki – CLaCS", href: "/leczenie/clacs", desc: "Crio Laser and Crio Sclerotherapy" },
 ];
 
 const Header = () => {
