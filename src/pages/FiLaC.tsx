@@ -7,6 +7,7 @@ import FiLaCAdvantages from "@/components/filac/FiLaCAdvantages";
 import FiLaCComparison from "@/components/filac/FiLaCComparison";
 import FiLaCIndications from "@/components/filac/FiLaCIndications";
 import FiLaCRecovery from "@/components/filac/FiLaCRecovery";
+import FiLaCFAQ from "@/components/filac/FiLaCFAQ";
 
 const fadeUp = {
   initial: { opacity: 0, y: 24, filter: "blur(4px)" },
@@ -25,6 +26,7 @@ const FiLaC = () => (
       <FiLaCComparison fadeUp={fadeUp} />
       <FiLaCIndications fadeUp={fadeUp} />
       <FiLaCRecovery fadeUp={fadeUp} />
+      <FiLaCFAQ fadeUp={fadeUp} />
 
       {/* CTA */}
       <motion.section {...fadeUp} className="glass-card rounded-2xl p-8 md:p-12 text-center max-w-2xl mx-auto">
