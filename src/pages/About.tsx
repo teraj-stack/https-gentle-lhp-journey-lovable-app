@@ -31,13 +31,13 @@ const About = () => (
           transition={{ duration: 0.9 }}
           className="max-w-3xl"
         >
-          <p className="text-primary-foreground/60 text-sm font-sans uppercase tracking-[0.2em] mb-6">
+          <p className="text-primary text-sm font-sans uppercase tracking-[0.2em] mb-6">
             O Nas
           </p>
-          <h1 className="text-4xl md:text-6xl font-bold text-primary-foreground leading-[1.1] mb-6">
+          <h1 className="text-4xl md:text-6xl font-bold text-foreground leading-[1.1] mb-6">
             Pasja, Technologia, Misja
           </h1>
-          <p className="text-lg md:text-xl text-primary-foreground/70 leading-relaxed max-w-2xl">
+          <p className="text-lg md:text-xl text-muted-foreground leading-relaxed max-w-2xl">
             Centrum Medycyny Laserowej to zespół specjalistów, dla których medycyna to przede wszystkim misja niesienia ulgi i poprawy jakości życia pacjentów.
           </p>
         </motion.div>
