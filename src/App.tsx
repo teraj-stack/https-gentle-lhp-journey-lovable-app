@@ -15,6 +15,7 @@ import DlaPacjenta from "@/pages/DlaPacjenta";
 import EVLT from "@/pages/EVLT";
 
 import Skleroterapia from "@/pages/Skleroterapia";
+import CLaCS from "@/pages/CLaCS";
 import Kontakt from "@/pages/Kontakt";
 import NotFound from "@/pages/NotFound";
 
