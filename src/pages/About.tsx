@@ -21,7 +21,8 @@ const About = () => (
     {/* Hero */}
     <section className="relative py-20 md:py-28 gradient-hero overflow-hidden">
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-1/4 -right-1/4 w-[60vw] h-[60vw] rounded-full bg-primary-foreground/5 blur-3xl" />
+        <div className="absolute -top-1/4 -right-1/4 w-[60vw] h-[60vw] rounded-full bg-primary/10 blur-3xl" />
+        <div className="absolute inset-0 bg-background/40" />
       </div>
       <div className="relative max-w-7xl mx-auto px-4 md:px-8">
         <motion.div
