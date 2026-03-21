@@ -1,14 +1,9 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
 import EVLTComparisonChart from "@/components/evlt/ComparisonChart";
 import RiskFactorsChart from "@/components/evlt/RiskFactorsChart";
+import EVLTFAQ from "@/components/evlt/EVLTFAQ";
 
 const fadeUp = {
   initial: { opacity: 0, y: 30 },
