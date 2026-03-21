@@ -233,7 +233,12 @@ const Header = () => {
                     {item.label}
                   </Link>
                 )),
-                <Link key="pacjent" to="/dla-pacjenta" className="block px-4 py-3 rounded-lg text-sm font-medium text-foreground hover:bg-accent/50">Dla Pacjenta</Link>,
+                <div key="pacjent-label" className="px-4 py-2 text-xs font-semibold text-primary uppercase tracking-wider mt-2">Dla Pacjenta</div>,
+                ...dlaPacjentaItems.map((item) => (
+                  <Link key={item.href} to={item.href} className="block px-6 py-2.5 rounded-lg text-sm text-foreground/80 hover:bg-accent/50">
+                    {item.label}
+                  </Link>
+                )),
                 <Link key="wspolpraca" to="/wspolpraca" className="block px-4 py-3 rounded-lg text-sm font-medium text-foreground hover:bg-accent/50">Współpraca</Link>,
                 <Link key="kontakt" to="/kontakt" className="block px-4 py-3 rounded-lg text-sm font-medium text-foreground hover:bg-accent/50">Kontakt</Link>,
               ].map((child, i) => (
