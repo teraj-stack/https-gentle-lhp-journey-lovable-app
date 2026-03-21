@@ -35,7 +35,7 @@ const locations = [
   },
   {
     name: "Beauty & Mind Siedlce",
-    address: "ul. Brzeska 97, 08-110 Siedlce",
+    address: "ul. Brzeska 125, 08-110 Siedlce",
     phone: "+48 25 632 00 00",
     email: "siedlce@cml.pl",
     hours: "Pon–Pt: 9:00–17:00",
