@@ -1,0 +1,1234 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Odzyskaj beztroskę – E-book o pajączkach i leczeniu CLaCS</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@300;400;500;600&display=swap');
+
+  :root {
+    --primary: #5B3A8C;
+    --primary-light: #8B6DB8;
+    --primary-dark: #3D2660;
+    --accent: #C9A0DC;
+    --accent-warm: #E8B4C8;
+    --bg: #FDF8F5;
+    --bg-section: #F5EDE8;
+    --text: #2D2D3A;
+    --text-light: #6B6B7B;
+    --vein-deep: #2B4A8C;
+    --vein-feed: #4A6DB8;
+    --vein-spider: #7B3A6E;
+    --skin-epidermis: #F5D6B8;
+    --skin-dermis: #F0C8A8;
+    --skin-hypodermis: #F5E0A0;
+    --blood: #CC3344;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html {
+    scroll-behavior: smooth;
+    font-size: 16px;
+  }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.8;
+    overflow-x: hidden;
+  }
+
+  /* ─── NAVIGATION ─── */
+  .nav-bar {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 1000;
+    background: rgba(253,248,245,0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(91,58,140,0.1);
+    padding: 0.8rem 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: transform 0.3s;
+  }
+  .nav-bar.hidden { transform: translateY(-100%); }
+  .nav-logo {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.1rem;
+    color: var(--primary);
+    font-weight: 600;
+  }
+  .nav-links { display: flex; gap: 1.2rem; flex-wrap: wrap; }
+  .nav-links a {
+    font-size: 0.78rem;
+    color: var(--text-light);
+    text-decoration: none;
+    transition: color 0.3s;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+  }
+  .nav-links a:hover { color: var(--primary); }
+
+  /* ─── HERO ─── */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 6rem 2rem 4rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: -50%; left: -50%;
+    width: 200%; height: 200%;
+    background: radial-gradient(ellipse at 30% 50%, rgba(201,160,220,0.15) 0%, transparent 50%),
+                radial-gradient(ellipse at 70% 50%, rgba(232,180,200,0.12) 0%, transparent 50%);
+    animation: heroGlow 8s ease-in-out infinite alternate;
+  }
+  @keyframes heroGlow {
+    0% { transform: translate(0,0) scale(1); }
+    100% { transform: translate(-3%,2%) scale(1.05); }
+  }
+  .hero-content { position: relative; z-index: 1; max-width: 700px; }
+  .hero h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2.2rem, 5vw, 3.6rem);
+    color: var(--primary-dark);
+    line-height: 1.2;
+    margin-bottom: 1rem;
+    opacity: 0;
+    animation: fadeUp 1s 0.3s forwards;
+  }
+  .hero .subtitle {
+    font-size: clamp(0.95rem, 2vw, 1.15rem);
+    color: var(--text-light);
+    max-width: 550px;
+    margin: 0 auto 2rem;
+    opacity: 0;
+    animation: fadeUp 1s 0.6s forwards;
+  }
+  .hero .cta-btn {
+    display: inline-block;
+    padding: 0.9rem 2.5rem;
+    background: linear-gradient(135deg, var(--primary), var(--primary-light));
+    color: #fff;
+    border-radius: 50px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.95rem;
+    letter-spacing: 0.03em;
+    box-shadow: 0 8px 30px rgba(91,58,140,0.25);
+    transition: transform 0.3s, box-shadow 0.3s;
+    opacity: 0;
+    animation: fadeUp 1s 0.9s forwards;
+  }
+  .cta-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(91,58,140,0.35); }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ─── SECTIONS ─── */
+  .section {
+    padding: 5rem 2rem;
+    max-width: 820px;
+    margin: 0 auto;
+  }
+  .section-alt {
+    background: var(--bg-section);
+    padding: 5rem 2rem;
+  }
+  .section-alt .section-inner {
+    max-width: 820px;
+    margin: 0 auto;
+  }
+  .section h2 , .section-alt h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(1.6rem, 3.5vw, 2.2rem);
+    color: var(--primary-dark);
+    margin-bottom: 1.5rem;
+    line-height: 1.3;
+  }
+  .section p, .section-alt p, .section li, .section-alt li {
+    font-size: 1rem;
+    color: var(--text);
+    margin-bottom: 1.2rem;
+  }
+  .section .highlight, .section-alt .highlight {
+    background: linear-gradient(135deg, rgba(201,160,220,0.15), rgba(232,180,200,0.12));
+    border-left: 4px solid var(--primary);
+    padding: 1.2rem 1.5rem;
+    border-radius: 0 12px 12px 0;
+    margin: 1.5rem 0;
+    font-style: italic;
+  }
+  .chapter-num {
+    display: inline-block;
+    background: var(--primary);
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.3rem 0.9rem;
+    border-radius: 20px;
+    margin-bottom: 0.8rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  /* ─── ANIMATED DIAGRAM SECTION ─── */
+  .diagram-section {
+    padding: 5rem 2rem;
+    background: linear-gradient(180deg, #F5EDE8 0%, #FDF8F5 100%);
+    text-align: center;
+  }
+  .diagram-section h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(1.6rem, 3.5vw, 2.2rem);
+    color: var(--primary-dark);
+    margin-bottom: 0.8rem;
+  }
+  .diagram-section .diagram-subtitle {
+    color: var(--text-light);
+    font-size: 0.95rem;
+    margin-bottom: 2.5rem;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .diagram-container {
+    max-width: 900px;
+    margin: 0 auto;
+    position: relative;
+  }
+
+  /* SVG Diagram Styles */
+  .vessel-diagram {
+    width: 100%;
+    max-width: 850px;
+    height: auto;
+    margin: 0 auto;
+    display: block;
+  }
+
+  /* Blood flow particles */
+  @keyframes flowUp {
+    0% { offset-distance: 0%; opacity: 0; }
+    10% { opacity: 1; }
+    90% { opacity: 1; }
+    100% { offset-distance: 100%; opacity: 0; }
+  }
+
+  @keyframes flowRight {
+    0% { offset-distance: 0%; opacity: 0; }
+    10% { opacity: 1; }
+    90% { opacity: 1; }
+    100% { offset-distance: 100%; opacity: 0; }
+  }
+
+  @keyframes pulse {
+    0%, 100% { r: 3; opacity: 0.8; }
+    50% { r: 5; opacity: 1; }
+  }
+
+  @keyframes vesselPulse {
+    0%, 100% { stroke-width: 1; }
+    50% { stroke-width: 1.5; }
+  }
+
+  @keyframes labelFadeIn {
+    from { opacity: 0; transform: translateX(-20px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  @keyframes labelFadeInRight {
+    from { opacity: 0; transform: translateX(20px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  @keyframes glowPulse {
+    0%, 100% { filter: drop-shadow(0 0 3px rgba(91,58,140,0.3)); }
+    50% { filter: drop-shadow(0 0 8px rgba(91,58,140,0.6)); }
+  }
+
+  .blood-particle {
+    fill: var(--blood);
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+
+  .vessel-wall {
+    animation: vesselPulse 3s ease-in-out infinite;
+  }
+
+  /* Interactive tooltips */
+  .diagram-tooltip {
+    position: absolute;
+    background: rgba(255,255,255,0.97);
+    border: 1px solid var(--accent);
+    border-radius: 12px;
+    padding: 1rem 1.2rem;
+    font-size: 0.85rem;
+    max-width: 280px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+    z-index: 10;
+    text-align: left;
+  }
+  .diagram-tooltip.active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .diagram-tooltip h4 {
+    color: var(--primary);
+    margin-bottom: 0.3rem;
+    font-family: 'Playfair Display', serif;
+  }
+
+  /* Legend */
+  .diagram-legend {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    flex-wrap: wrap;
+    margin-top: 2rem;
+    font-size: 0.85rem;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .legend-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+  }
+
+  /* Interaction hint */
+  .interaction-hint {
+    margin-top: 1.5rem;
+    font-size: 0.82rem;
+    color: var(--text-light);
+    font-style: italic;
+    animation: fadeUp 1s 1.5s forwards;
+    opacity: 0;
+  }
+
+  /* ─── ORIGINAL IMAGE SECTION ─── */
+  .original-image-section {
+    padding: 3rem 2rem;
+    text-align: center;
+    max-width: 820px;
+    margin: 0 auto;
+  }
+  .original-image-section img {
+    max-width: 100%;
+    border-radius: 16px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.1);
+  }
+  .original-image-section .caption {
+    font-size: 0.85rem;
+    color: var(--text-light);
+    margin-top: 1rem;
+    font-style: italic;
+  }
+
+  /* ─── CLACS STEPS ─── */
+  .steps-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin: 2rem 0;
+  }
+  .step-card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 1.8rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+    border: 1px solid rgba(91,58,140,0.08);
+    transition: transform 0.3s, box-shadow 0.3s;
+  }
+  .step-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 30px rgba(91,58,140,0.12);
+  }
+  .step-number {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    background: var(--primary);
+    color: #fff;
+    border-radius: 50%;
+    font-weight: 700;
+    font-size: 1rem;
+    margin-bottom: 0.8rem;
+  }
+  .step-card h3 {
+    font-family: 'Playfair Display', serif;
+    color: var(--primary-dark);
+    font-size: 1.1rem;
+    margin-bottom: 0.6rem;
+  }
+  .step-card p { font-size: 0.9rem; margin-bottom: 0; }
+
+  /* ─── FOOTER ─── */
+  .footer {
+    background: var(--primary-dark);
+    color: rgba(255,255,255,0.8);
+    text-align: center;
+    padding: 3rem 2rem;
+  }
+  .footer h3 {
+    font-family: 'Playfair Display', serif;
+    color: #fff;
+    font-size: 1.4rem;
+    margin-bottom: 1rem;
+  }
+  .footer p { font-size: 0.9rem; margin-bottom: 0.5rem; }
+  .footer .cta-btn {
+    margin-top: 1.5rem;
+    display: inline-block;
+    padding: 0.8rem 2rem;
+    background: var(--accent);
+    color: var(--primary-dark);
+    border-radius: 50px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: transform 0.3s;
+  }
+  .footer .cta-btn:hover { transform: translateY(-2px); }
+
+  /* ─── SCROLL ANIMATIONS ─── */
+  .reveal {
+    opacity: 0;
+    transform: translateY(40px);
+    transition: opacity 0.8s, transform 0.8s;
+  }
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* ─── PROGRESS BAR ─── */
+  .progress-bar {
+    position: fixed;
+    top: 0; left: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--primary), var(--accent-warm));
+    z-index: 1001;
+    transition: width 0.1s;
+  }
+
+  /* ─── RESPONSIVE ─── */
+  @media (max-width: 768px) {
+    .nav-links { display: none; }
+    .steps-grid { grid-template-columns: 1fr; }
+    .section, .section-alt { padding: 3rem 1.2rem; }
+    .diagram-legend { gap: 1rem; }
+  }
+
+  /* ─── BULLET LIST ─── */
+  .content-list {
+    list-style: none;
+    padding: 0;
+  }
+  .content-list li {
+    position: relative;
+    padding-left: 1.8rem;
+    margin-bottom: 1rem;
+  }
+  .content-list li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.55rem;
+    width: 8px;
+    height: 8px;
+    background: var(--primary);
+    border-radius: 50%;
+  }
+
+  /* ─── LONGITUDINAL CROSS-SECTION DIAGRAM ─── */
+  .cross-section-container {
+    position: relative;
+    max-width: 800px;
+    margin: 2rem auto;
+    background: linear-gradient(180deg, #fef5ee 0%, #f8e8d8 100%);
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 12px 50px rgba(0,0,0,0.08);
+    border: 1px solid rgba(91,58,140,0.1);
+  }
+</style>
+</head>
+<body>
+
+<!-- Progress Bar -->
+<div class="progress-bar" id="progressBar"></div>
+
+<!-- Navigation -->
+<nav class="nav-bar" id="navBar">
+  <div class="nav-logo">Odzyskaj Beztroskę</div>
+  <div class="nav-links">
+    <a href="#intro">Wstęp</a>
+    <a href="#ch1">Przyczyny</a>
+    <a href="#ch2">Ryzyko</a>
+    <a href="#diagram">Schemat</a>
+    <a href="#ch3">Leczenie</a>
+    <a href="#ch4">CLaCS</a>
+    <a href="#ch5">Fototerapia</a>
+    <a href="#ch6">Opieka</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero" id="top">
+  <div class="hero-content">
+    <h1>Odzyskaj beztroskę.</h1>
+    <p class="subtitle">Prawda o pajączkach, ukrytym ryzyku i najskuteczniejszej metodzie leczenia. Przewodnik dla kobiet, które mają dość ukrywania nóg.</p>
+    <a href="#intro" class="cta-btn">Rozpocznij lekturę</a>
+  </div>
+</section>
+
+<!-- WSTĘP -->
+<section class="section" id="intro">
+  <div class="reveal">
+    <span class="chapter-num">Wstęp</span>
+    <h2>Znamy ten scenariusz aż za dobrze...</h2>
+    <p>Wyobraź sobie ciepły, letni poranek. Pakujesz walizkę na upragniony urlop albo szykujesz się na weekendowe przyjęcie. Patrzysz na tę piękną, zwiewną sukienkę przed kolano... i z ciężkim westchnieniem odkładasz ją z powrotem do szafy. Zamiast niej wyciągasz sprawdzone, długie lniane spodnie. Przewiewne, ale to wciąż długie spodnie.</p>
+    <p>Na plaży Twoim najlepszym przyjacielem stało się pareo, a siadając w kawiarni, instynktownie krzyżujesz nogi tak, by ostre światło nie obnażyło fioletowo-czerwonej siateczki pod kolanami.</p>
+    <div class="highlight">
+      Jeśli ten scenariusz brzmi dla Ciebie znajomo, ten e-book jest właśnie dla Ciebie. Wiele z nas żyje z „pajączkami" latami, spychając swoje potrzeby na dalszy plan.
+    </div>
+    <p>Tłumaczymy sobie: „to tylko defekt kosmetyczny", „powinnam się z tym pogodzić", „są ważniejsze wydatki dla rodziny".</p>
+    <p>Czas z tym skończyć. W tym poradniku opowiemy Ci, dlaczego ukrywanie pajączków to niebezpieczna gra z własnym zdrowiem, dlaczego pozbycie się tego problemu wcale nie jest takie proste, jak sugerują internetowe reklamy, i wreszcie – jak nowoczesna medycyna może pomóc Ci odzyskać letnią beztroskę raz a dobrze.</p>
+  </div>
+</section>
+
+<!-- ROZDZIAŁ 1 -->
+<section class="section-alt" id="ch1">
+  <div class="section-inner reveal">
+    <span class="chapter-num">Rozdział 1</span>
+    <h2>Skąd one się w ogóle wzięły? Zdejmij z siebie poczucie winy</h2>
+    <p>Wiele naszych pacjentek siada w gabinecie i z rezygnacją mówi: „Zaniedbałam się, to pewnie przez brak sportu". To mit! Zanim przejdziemy do rozwiązań, musisz wiedzieć jedno: <strong>to nie jest Twoja wina.</strong></p>
+    <p>Pajączki (medycznie: <strong>teleangiektazje</strong>) nie są wynikiem Twojego zaniedbania. Twój organizm to niezwykle zapracowana maszyna. Dlaczego naczynka popękały akurat u Ciebie? To zazwyczaj splot czynników:</p>
+    <ul class="content-list">
+      <li><strong>Genetyka (spadek po przodkach):</strong> Jeśli Twoja mama lub babcia borykały się z pękającymi naczynkami, prawdopodobnie odziedziczyłaś po nich predyspozycje do słabszej tkanki łącznej budującej ściany żył.</li>
+      <li><strong>Hormony i ciąże:</strong> Kobieca gospodarka hormonalna mocno wpływa na rozszerzanie się żył. Ciąże z kolei to dla układu krążenia tytaniczny wysiłek – to właśnie wtedy u wielu z nas pojawiają się pierwsze naczynka.</li>
+      <li><strong>Twój styl życia i pracy:</strong> Godziny spędzane w pozycji siedzącej za biurkiem sprawiają, że krew musi wykonać ogromną pracę, by pokonać grawitację i wrócić do serca. Z czasem najdrobniejsze naczynka nie wytrzymują tego ciśnienia.</li>
+    </ul>
+    <div class="highlight">
+      Twoje nogi ciężko dla Ciebie pracują. Fioletowa siateczka to po prostu wizualne ślady tej pracy.
+    </div>
+  </div>
+</section>
+
+<!-- ROZDZIAŁ 2 -->
+<section class="section" id="ch2">
+  <div class="reveal">
+    <span class="chapter-num">Rozdział 2</span>
+    <h2>Pułapka kamuflażu. Dlaczego ukrywanie pajączków bywa niebezpieczne?</h2>
+    <p>Porozmawiajmy szczerze. Nakładanie grubych warstw samoopalacza, rajstop w sprayu czy chowanie nóg pod długimi spódnicami daje ulgę psychiczną, ale z medycznego punktu widzenia to najgorsze, co możesz zrobić.</p>
+    <div class="highlight">
+      Wyobraź sobie, że w Twoim samochodzie zapala się czerwona kontrolka awarii silnika, a Ty… zaklejasz ją plastrem, by nie raziła w oczy. Samochód nadal jedzie, ale problem pod maską rośnie z każdym kilometrem.
+    </div>
+    <p>Dokładnie tak samo jest z Twoimi nogami. <strong>Pajączki to bardzo często pierwszy, widoczny gołym okiem sygnał Przewlekłej Niewydolności Żylnej (PNŻ).</strong> Ukrywając je, usypiasz swoją czujność i niebezpiecznie przedłużasz czas rozpoznania tej przewlekłej choroby.</p>
+    <p>Kiedy udajesz, że problemu nie ma, krew w głębszych żyłach nadal nie krąży prawidłowo. Z upływem lat może to prowadzić do uczucia ciężkich nóg, bolesnych obrzęków, a ostatecznie – do dużych, wypukłych żylaków.</p>
+    <div class="highlight">
+      <strong>Zrozum to jasno:</strong> Decyzja o wizycie w klinice to nie jest egoizm czy próżność. To odpowiedzialny, profilaktyczny krok w kierunku Twojego zdrowia. Zajmując się problemem estetycznym, dajesz lekarzowi szansę na zbadanie Twoich żył (USG Doppler) i uchronienie Cię przed poważną chorobą.
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- ANIMOWANY SCHEMAT NACZYNKA W PRZEKROJU PODŁUŻNYM -->
+<!-- ═══════════════════════════════════════════════════ -->
+<section class="diagram-section" id="diagram">
+  <div class="reveal">
+    <span class="chapter-num">Schemat anatomiczny</span>
+    <h2>Naczynko w przekroju podłużnym</h2>
+    <p class="diagram-subtitle">Interaktywny schemat budowy naczynia krwionośnego w skórze. Kliknij na elementy, aby poznać szczegóły. Obserwuj animowany przepływ krwi.</p>
+
+    <div class="cross-section-container">
+      <svg class="vessel-diagram" viewBox="0 0 850 620" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <!-- Gradients for skin layers -->
+          <linearGradient id="epidermisGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#F9E4CC"/>
+            <stop offset="100%" stop-color="#F0D0B0"/>
+          </linearGradient>
+          <linearGradient id="dermisGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#F0D0B0"/>
+            <stop offset="100%" stop-color="#E8C0A0"/>
+          </linearGradient>
+          <linearGradient id="hypodermisGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#F5E0A0"/>
+            <stop offset="100%" stop-color="#E8D080"/>
+          </linearGradient>
+
+          <!-- Vessel gradient -->
+          <linearGradient id="vesselWallGrad" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="#8B4A6E"/>
+            <stop offset="50%" stop-color="#A05A80"/>
+            <stop offset="100%" stop-color="#8B4A6E"/>
+          </linearGradient>
+
+          <!-- Tunica layers -->
+          <linearGradient id="tunicaIntimaGrad" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="#E8A0B0"/>
+            <stop offset="100%" stop-color="#D88898"/>
+          </linearGradient>
+          <linearGradient id="tunicaMediaGrad" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="#C87888"/>
+            <stop offset="100%" stop-color="#B06878"/>
+          </linearGradient>
+          <linearGradient id="tunicaAdventitiaGrad" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="#D8A8B8"/>
+            <stop offset="100%" stop-color="#C898A8"/>
+          </linearGradient>
+
+          <!-- Blood gradient -->
+          <radialGradient id="bloodGrad">
+            <stop offset="0%" stop-color="#FF4455"/>
+            <stop offset="100%" stop-color="#CC2233"/>
+          </radialGradient>
+
+          <!-- Lumen gradient -->
+          <linearGradient id="lumenGrad" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="#881122"/>
+            <stop offset="50%" stop-color="#AA2233"/>
+            <stop offset="100%" stop-color="#881122"/>
+          </linearGradient>
+
+          <!-- Glow filter -->
+          <filter id="glow">
+            <feGaussianBlur stdDeviation="3" result="blur"/>
+            <feMerge>
+              <feMergeNode in="blur"/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
+
+          <!-- Shadow filter -->
+          <filter id="shadow">
+            <feDropShadow dx="0" dy="2" stdDeviation="4" flood-opacity="0.15"/>
+          </filter>
+
+          <!-- Blood flow path (through the vessel lumen) -->
+          <path id="bloodFlowPath" d="M 150,310 L 700,310" />
+
+          <!-- Valve path -->
+          <clipPath id="valveClip">
+            <rect x="0" y="0" width="850" height="620"/>
+          </clipPath>
+        </defs>
+
+        <!-- ═══ SKIN LAYERS BACKGROUND ═══ -->
+        <!-- Epidermis -->
+        <rect x="50" y="30" width="750" height="70" rx="8" fill="url(#epidermisGrad)" opacity="0.6"/>
+        <text x="75" y="72" font-family="'Playfair Display', serif" font-size="14" fill="#8B6040" font-weight="600" class="layer-label" data-layer="epidermis" style="cursor:pointer">EPIDERMIS (Naskórek)</text>
+
+        <!-- Dermis -->
+        <rect x="50" y="100" width="750" height="350" rx="0" fill="url(#dermisGrad)" opacity="0.4"/>
+        <text x="75" y="135" font-family="'Playfair Display', serif" font-size="14" fill="#8B6040" font-weight="600" class="layer-label" data-layer="dermis" style="cursor:pointer">DERMIS (Skóra właściwa)</text>
+
+        <!-- Hypodermis -->
+        <rect x="50" y="450" width="750" height="140" rx="0 0 8 8" fill="url(#hypodermisGrad)" opacity="0.4"/>
+        <text x="75" y="485" font-family="'Playfair Display', serif" font-size="14" fill="#8B7040" font-weight="600" class="layer-label" data-layer="hypodermis" style="cursor:pointer">HYPODERMIS (Tkanka podskórna)</text>
+
+        <!-- Fat cells in hypodermis -->
+        <g opacity="0.3">
+          <circle cx="120" cy="510" r="18" fill="#F5E8A0" stroke="#D8C870" stroke-width="1"/>
+          <circle cx="160" cy="520" r="15" fill="#F5E8A0" stroke="#D8C870" stroke-width="1"/>
+          <circle cx="200" cy="505" r="20" fill="#F5E8A0" stroke="#D8C870" stroke-width="1"/>
+          <circle cx="250" cy="520" r="16" fill="#F5E8A0" stroke="#D8C870" stroke-width="1"/>
+          <circle cx="300" cy="510" r="18" fill="#F5E8A0" stroke="#D8C870" stroke-width="1"/>
+          <circle cx="350" cy="525" r="14" fill="#F5E8A0" stroke="#D8C870" stroke-width="1"/>
+          <circle cx="400" cy="508" r="19" fill="#F5E8A0" stroke="#D8C870" stroke-width="1"/>
+          <circle cx="450" cy="522" r="15" fill="#F5E8A0" stroke="#D8C870" stroke-width="1"/>
+          <circle cx="500" cy="510" r="17" fill="#F5E8A0" stroke="#D8C870" stroke-width="1"/>
+          <circle cx="550" cy="520" r="16" fill="#F5E8A0" stroke="#D8C870" stroke-width="1"/>
+          <circle cx="600" cy="505" r="20" fill="#F5E8A0" stroke="#D8C870" stroke-width="1"/>
+          <circle cx="650" cy="518" r="15" fill="#F5E8A0" stroke="#D8C870" stroke-width="1"/>
+          <circle cx="700" cy="510" r="18" fill="#F5E8A0" stroke="#D8C870" stroke-width="1"/>
+          <circle cx="740" cy="525" r="13" fill="#F5E8A0" stroke="#D8C870" stroke-width="1"/>
+        </g>
+
+        <!-- Layer dividers -->
+        <line x1="50" y1="100" x2="800" y2="100" stroke="#C8A888" stroke-width="1.5" stroke-dasharray="8,4" opacity="0.5"/>
+        <line x1="50" y1="450" x2="800" y2="450" stroke="#C8A888" stroke-width="1.5" stroke-dasharray="8,4" opacity="0.5"/>
+
+        <!-- ═══ VESSEL LONGITUDINAL CROSS-SECTION ═══ -->
+        <g id="vesselGroup" filter="url(#shadow)">
+
+          <!-- Tunica Adventitia (outer layer) -->
+          <rect x="150" y="210" width="550" height="200" rx="30" 
+                fill="url(#tunicaAdventitiaGrad)" opacity="0.7"
+                class="vessel-layer" data-layer="adventitia" style="cursor:pointer">
+            <animate attributeName="opacity" values="0.7;0.8;0.7" dur="3s" repeatCount="indefinite"/>
+          </rect>
+
+          <!-- Tunica Media (middle layer) -->
+          <rect x="165" y="225" width="520" height="170" rx="25" 
+                fill="url(#tunicaMediaGrad)" opacity="0.8"
+                class="vessel-layer" data-layer="media" style="cursor:pointer">
+            <animate attributeName="opacity" values="0.8;0.9;0.8" dur="3s" repeatCount="indefinite" begin="0.5s"/>
+          </rect>
+
+          <!-- Smooth muscle fibers (wavy lines in tunica media) -->
+          <g opacity="0.3" stroke="#904858" stroke-width="1" fill="none">
+            <path d="M 180,240 Q 200,235 220,240 Q 240,245 260,240 Q 280,235 300,240 Q 320,245 340,240 Q 360,235 380,240 Q 400,245 420,240 Q 440,235 460,240 Q 480,245 500,240 Q 520,235 540,240 Q 560,245 580,240 Q 600,235 620,240 Q 640,245 660,240">
+              <animate attributeName="d" 
+                values="M 180,240 Q 200,235 220,240 Q 240,245 260,240 Q 280,235 300,240 Q 320,245 340,240 Q 360,235 380,240 Q 400,245 420,240 Q 440,235 460,240 Q 480,245 500,240 Q 520,235 540,240 Q 560,245 580,240 Q 600,235 620,240 Q 640,245 660,240;
+                       M 180,242 Q 200,237 220,242 Q 240,247 260,242 Q 280,237 300,242 Q 320,247 340,242 Q 360,237 380,242 Q 400,247 420,242 Q 440,237 460,242 Q 480,247 500,242 Q 520,237 540,242 Q 560,247 580,242 Q 600,237 620,242 Q 640,247 660,242;
+                       M 180,240 Q 200,235 220,240 Q 240,245 260,240 Q 280,235 300,240 Q 320,245 340,240 Q 360,235 380,240 Q 400,245 420,240 Q 440,235 460,240 Q 480,245 500,240 Q 520,235 540,240 Q 560,245 580,240 Q 600,235 620,240 Q 640,245 660,240"
+                dur="4s" repeatCount="indefinite"/>
+            </path>
+            <path d="M 180,380 Q 200,375 220,380 Q 240,385 260,380 Q 280,375 300,380 Q 320,385 340,380 Q 360,375 380,380 Q 400,385 420,380 Q 440,375 460,380 Q 480,385 500,380 Q 520,375 540,380 Q 560,385 580,380 Q 600,375 620,380 Q 640,385 660,380">
+              <animate attributeName="d" 
+                values="M 180,380 Q 200,375 220,380 Q 240,385 260,380 Q 280,375 300,380 Q 320,385 340,380 Q 360,375 380,380 Q 400,385 420,380 Q 440,375 460,380 Q 480,385 500,380 Q 520,375 540,380 Q 560,385 580,380 Q 600,375 620,380 Q 640,385 660,380;
+                       M 180,378 Q 200,373 220,378 Q 240,383 260,378 Q 280,373 300,378 Q 320,383 340,378 Q 360,373 380,378 Q 400,383 420,378 Q 440,373 460,378 Q 480,383 500,378 Q 520,373 540,378 Q 560,383 580,378 Q 600,373 620,378 Q 640,383 660,378;
+                       M 180,380 Q 200,375 220,380 Q 240,385 260,380 Q 280,375 300,380 Q 320,385 340,380 Q 360,375 380,380 Q 400,385 420,380 Q 440,375 460,380 Q 480,385 500,380 Q 520,375 540,380 Q 560,385 580,380 Q 600,375 620,380 Q 640,385 660,380"
+                dur="4s" repeatCount="indefinite" begin="0.3s"/>
+            </path>
+          </g>
+
+          <!-- Tunica Intima (inner layer) -->
+          <rect x="180" y="245" width="490" height="130" rx="20" 
+                fill="url(#tunicaIntimaGrad)" opacity="0.6"
+                class="vessel-layer" data-layer="intima" style="cursor:pointer"/>
+
+          <!-- Endothelium (innermost lining) -->
+          <rect x="190" y="258" width="470" height="104" rx="16" 
+                fill="none" stroke="#D88898" stroke-width="2" stroke-dasharray="3,3" opacity="0.8">
+            <animate attributeName="stroke-dashoffset" values="0;6" dur="2s" repeatCount="indefinite"/>
+          </rect>
+
+          <!-- Lumen (blood-filled center) -->
+          <rect x="195" y="263" width="460" height="94" rx="14" fill="url(#lumenGrad)" opacity="0.85">
+            <animate attributeName="opacity" values="0.85;0.95;0.85" dur="2s" repeatCount="indefinite"/>
+          </rect>
+
+          <!-- ═══ BLOOD FLOW ANIMATION ═══ -->
+          <!-- Red blood cells flowing through the lumen -->
+          <g id="bloodCells">
+            <!-- RBC 1 -->
+            <ellipse cx="0" cy="0" rx="8" ry="5" fill="url(#bloodGrad)" opacity="0">
+              <animateMotion dur="4s" repeatCount="indefinite" begin="0s">
+                <mpath href="#bloodFlowPath"/>
+              </animateMotion>
+              <animate attributeName="opacity" values="0;1;1;0" dur="4s" repeatCount="indefinite" begin="0s"/>
+              <animate attributeName="rx" values="8;7;8" dur="1s" repeatCount="indefinite"/>
+            </ellipse>
+            <!-- RBC 2 -->
+            <ellipse cx="0" cy="0" rx="7" ry="4.5" fill="url(#bloodGrad)" opacity="0">
+              <animateMotion dur="4.5s" repeatCount="indefinite" begin="0.6s">
+                <mpath href="#bloodFlowPath"/>
+              </animateMotion>
+              <animate attributeName="opacity" values="0;1;1;0" dur="4.5s" repeatCount="indefinite" begin="0.6s"/>
+            </ellipse>
+            <!-- RBC 3 -->
+            <ellipse cx="0" cy="0" rx="9" ry="5.5" fill="url(#bloodGrad)" opacity="0">
+              <animateMotion dur="3.8s" repeatCount="indefinite" begin="1.2s">
+                <mpath href="#bloodFlowPath"/>
+              </animateMotion>
+              <animate attributeName="opacity" values="0;1;1;0" dur="3.8s" repeatCount="indefinite" begin="1.2s"/>
+            </ellipse>
+            <!-- RBC 4 -->
+            <ellipse cx="0" cy="0" rx="6" ry="4" fill="url(#bloodGrad)" opacity="0">
+              <animateMotion dur="5s" repeatCount="indefinite" begin="1.8s">
+                <mpath href="#bloodFlowPath"/>
+              </animateMotion>
+              <animate attributeName="opacity" values="0;1;1;0" dur="5s" repeatCount="indefinite" begin="1.8s"/>
+            </ellipse>
+            <!-- RBC 5 -->
+            <ellipse cx="0" cy="0" rx="7.5" ry="5" fill="url(#bloodGrad)" opacity="0">
+              <animateMotion dur="4.2s" repeatCount="indefinite" begin="2.4s">
+                <mpath href="#bloodFlowPath"/>
+              </animateMotion>
+              <animate attributeName="opacity" values="0;1;1;0" dur="4.2s" repeatCount="indefinite" begin="2.4s"/>
+            </ellipse>
+            <!-- RBC 6 -->
+            <ellipse cx="0" cy="0" rx="8.5" ry="5" fill="url(#bloodGrad)" opacity="0">
+              <animateMotion dur="3.5s" repeatCount="indefinite" begin="3s">
+                <mpath href="#bloodFlowPath"/>
+              </animateMotion>
+              <animate attributeName="opacity" values="0;1;1;0" dur="3.5s" repeatCount="indefinite" begin="3s"/>
+            </ellipse>
+          </g>
+
+          <!-- Additional blood flow particles at different Y positions -->
+          <g id="bloodCellsUpper">
+            <ellipse cx="0" cy="-15" rx="6" ry="4" fill="#DD3344" opacity="0">
+              <animateMotion dur="4.3s" repeatCount="indefinite" begin="0.3s">
+                <mpath href="#bloodFlowPath"/>
+              </animateMotion>
+              <animate attributeName="opacity" values="0;0.8;0.8;0" dur="4.3s" repeatCount="indefinite" begin="0.3s"/>
+            </ellipse>
+            <ellipse cx="0" cy="-12" rx="7" ry="4.5" fill="#DD3344" opacity="0">
+              <animateMotion dur="3.9s" repeatCount="indefinite" begin="1.5s">
+                <mpath href="#bloodFlowPath"/>
+              </animateMotion>
+              <animate attributeName="opacity" values="0;0.8;0.8;0" dur="3.9s" repeatCount="indefinite" begin="1.5s"/>
+            </ellipse>
+            <ellipse cx="0" cy="-18" rx="5.5" ry="3.5" fill="#EE4455" opacity="0">
+              <animateMotion dur="4.7s" repeatCount="indefinite" begin="2.7s">
+                <mpath href="#bloodFlowPath"/>
+              </animateMotion>
+              <animate attributeName="opacity" values="0;0.7;0.7;0" dur="4.7s" repeatCount="indefinite" begin="2.7s"/>
+            </ellipse>
+          </g>
+
+          <g id="bloodCellsLower">
+            <ellipse cx="0" cy="15" rx="7" ry="4" fill="#CC2233" opacity="0">
+              <animateMotion dur="4.1s" repeatCount="indefinite" begin="0.9s">
+                <mpath href="#bloodFlowPath"/>
+              </animateMotion>
+              <animate attributeName="opacity" values="0;0.8;0.8;0" dur="4.1s" repeatCount="indefinite" begin="0.9s"/>
+            </ellipse>
+            <ellipse cx="0" cy="12" rx="8" ry="5" fill="#CC2233" opacity="0">
+              <animateMotion dur="3.6s" repeatCount="indefinite" begin="2.1s">
+                <mpath href="#bloodFlowPath"/>
+              </animateMotion>
+              <animate attributeName="opacity" values="0;0.8;0.8;0" dur="3.6s" repeatCount="indefinite" begin="2.1s"/>
+            </ellipse>
+            <ellipse cx="0" cy="18" rx="6.5" ry="4" fill="#BB2233" opacity="0">
+              <animateMotion dur="5.2s" repeatCount="indefinite" begin="3.3s">
+                <mpath href="#bloodFlowPath"/>
+              </animateMotion>
+              <animate attributeName="opacity" values="0;0.7;0.7;0" dur="5.2s" repeatCount="indefinite" begin="3.3s"/>
+            </ellipse>
+          </g>
+
+          <!-- ═══ VENOUS VALVE ═══ -->
+          <g id="venousValve" class="vessel-layer" data-layer="valve" style="cursor:pointer">
+            <!-- Valve leaflets -->
+            <path d="M 420,263 Q 425,290 420,310" stroke="#B06070" stroke-width="2.5" fill="none" opacity="0.9">
+              <animate attributeName="d" 
+                values="M 420,263 Q 425,290 420,310;M 420,263 Q 430,285 420,310;M 420,263 Q 425,290 420,310" 
+                dur="2s" repeatCount="indefinite"/>
+            </path>
+            <path d="M 420,357 Q 425,335 420,310" stroke="#B06070" stroke-width="2.5" fill="none" opacity="0.9">
+              <animate attributeName="d" 
+                values="M 420,357 Q 425,335 420,310;M 420,357 Q 430,340 420,310;M 420,357 Q 425,335 420,310" 
+                dur="2s" repeatCount="indefinite"/>
+            </path>
+            <path d="M 430,263 Q 425,290 430,310" stroke="#B06070" stroke-width="2.5" fill="none" opacity="0.9">
+              <animate attributeName="d" 
+                values="M 430,263 Q 425,290 430,310;M 430,263 Q 420,285 430,310;M 430,263 Q 425,290 430,310" 
+                dur="2s" repeatCount="indefinite"/>
+            </path>
+            <path d="M 430,357 Q 425,335 430,310" stroke="#B06070" stroke-width="2.5" fill="none" opacity="0.9">
+              <animate attributeName="d" 
+                values="M 430,357 Q 425,335 430,310;M 430,357 Q 420,340 430,310;M 430,357 Q 425,335 430,310" 
+                dur="2s" repeatCount="indefinite"/>
+            </path>
+          </g>
+
+          <!-- Flow direction arrows -->
+          <g opacity="0.6" fill="none" stroke="#fff" stroke-width="1.5">
+            <path d="M 250,310 L 270,310 L 265,305 M 270,310 L 265,315">
+              <animate attributeName="opacity" values="0.3;0.8;0.3" dur="2s" repeatCount="indefinite"/>
+            </path>
+            <path d="M 340,310 L 360,310 L 355,305 M 360,310 L 355,315">
+              <animate attributeName="opacity" values="0.3;0.8;0.3" dur="2s" repeatCount="indefinite" begin="0.4s"/>
+            </path>
+            <path d="M 480,310 L 500,310 L 495,305 M 500,310 L 495,315">
+              <animate attributeName="opacity" values="0.3;0.8;0.3" dur="2s" repeatCount="indefinite" begin="0.8s"/>
+            </path>
+            <path d="M 570,310 L 590,310 L 585,305 M 590,310 L 585,315">
+              <animate attributeName="opacity" values="0.3;0.8;0.3" dur="2s" repeatCount="indefinite" begin="1.2s"/>
+            </path>
+          </g>
+        </g>
+
+        <!-- ═══ LABELS WITH LINES ═══ -->
+        <!-- Tunica Adventitia label -->
+        <g class="label-group" data-layer="adventitia" style="cursor:pointer">
+          <line x1="710" y1="220" x2="760" y2="180" stroke="#C898A8" stroke-width="1.5"/>
+          <circle cx="760" cy="180" r="3" fill="#C898A8"/>
+          <rect x="765" y="166" width="80" height="30" rx="6" fill="rgba(255,255,255,0.9)" stroke="#C898A8" stroke-width="1"/>
+          <text x="805" y="186" font-family="'Inter', sans-serif" font-size="10" fill="#8B5A6A" text-anchor="middle" font-weight="600">Przydanka</text>
+        </g>
+
+        <!-- Tunica Media label -->
+        <g class="label-group" data-layer="media" style="cursor:pointer">
+          <line x1="695" y1="250" x2="760" y2="230" stroke="#B06878" stroke-width="1.5"/>
+          <circle cx="760" cy="230" r="3" fill="#B06878"/>
+          <rect x="765" y="216" width="80" height="30" rx="6" fill="rgba(255,255,255,0.9)" stroke="#B06878" stroke-width="1"/>
+          <text x="805" y="236" font-family="'Inter', sans-serif" font-size="10" fill="#8B4858" text-anchor="middle" font-weight="600">Błona środk.</text>
+        </g>
+
+        <!-- Tunica Intima label -->
+        <g class="label-group" data-layer="intima" style="cursor:pointer">
+          <line x1="670" y1="270" x2="760" y2="280" stroke="#D88898" stroke-width="1.5"/>
+          <circle cx="760" cy="280" r="3" fill="#D88898"/>
+          <rect x="765" y="266" width="80" height="30" rx="6" fill="rgba(255,255,255,0.9)" stroke="#D88898" stroke-width="1"/>
+          <text x="805" y="286" font-family="'Inter', sans-serif" font-size="10" fill="#A86878" text-anchor="middle" font-weight="600">Błona wewn.</text>
+        </g>
+
+        <!-- Lumen label -->
+        <g class="label-group" data-layer="lumen" style="cursor:pointer">
+          <line x1="660" y1="310" x2="760" y2="330" stroke="#AA2233" stroke-width="1.5"/>
+          <circle cx="760" cy="330" r="3" fill="#AA2233"/>
+          <rect x="765" y="316" width="80" height="30" rx="6" fill="rgba(255,255,255,0.9)" stroke="#AA2233" stroke-width="1"/>
+          <text x="805" y="336" font-family="'Inter', sans-serif" font-size="10" fill="#882233" text-anchor="middle" font-weight="600">Światło</text>
+        </g>
+
+        <!-- Valve label -->
+        <g class="label-group" data-layer="valve" style="cursor:pointer">
+          <line x1="425" y1="260" x2="425" y2="190" stroke="#B06070" stroke-width="1.5"/>
+          <circle cx="425" cy="190" r="3" fill="#B06070"/>
+          <rect x="380" y="170" width="90" height="26" rx="6" fill="rgba(255,255,255,0.9)" stroke="#B06070" stroke-width="1"/>
+          <text x="425" y="188" font-family="'Inter', sans-serif" font-size="10" fill="#8B4050" text-anchor="middle" font-weight="600">Zastawka żylna</text>
+        </g>
+
+        <!-- Endothelium label -->
+        <g class="label-group" data-layer="endothelium" style="cursor:pointer">
+          <line x1="195" y1="260" x2="120" y2="200" stroke="#D88898" stroke-width="1.5" stroke-dasharray="4,2"/>
+          <circle cx="120" cy="200" r="3" fill="#D88898"/>
+          <rect x="55" y="186" width="80" height="30" rx="6" fill="rgba(255,255,255,0.9)" stroke="#D88898" stroke-width="1"/>
+          <text x="95" y="206" font-family="'Inter', sans-serif" font-size="10" fill="#A86878" text-anchor="middle" font-weight="600">Śródbłonek</text>
+        </g>
+
+        <!-- Blood flow label -->
+        <g>
+          <rect x="280" y="275" width="110" height="22" rx="11" fill="rgba(204,51,68,0.15)"/>
+          <text x="335" y="290" font-family="'Inter', sans-serif" font-size="9" fill="#CC3344" text-anchor="middle" font-weight="600" letter-spacing="0.5">
+            PRZEPŁYW KRWI →
+            <animate attributeName="opacity" values="0.5;1;0.5" dur="2s" repeatCount="indefinite"/>
+          </text>
+        </g>
+
+        <!-- ═══ SPIDER VEINS (small vessels branching from main) ═══ -->
+        <g id="spiderVeins" opacity="0.7">
+          <!-- Branching capillaries going up to epidermis -->
+          <path d="M 300,245 Q 290,180 270,120 Q 260,80 250,60" stroke="#7B3A6E" stroke-width="1.5" fill="none" opacity="0">
+            <animate attributeName="opacity" values="0;0.6;0.6;0" dur="6s" repeatCount="indefinite" begin="1s"/>
+          </path>
+          <path d="M 300,245 Q 310,170 330,110 Q 340,75 345,55" stroke="#7B3A6E" stroke-width="1.2" fill="none" opacity="0">
+            <animate attributeName="opacity" values="0;0.5;0.5;0" dur="6s" repeatCount="indefinite" begin="1.5s"/>
+          </path>
+          <path d="M 350,245 Q 370,180 400,120 Q 410,85 415,60" stroke="#8B4A7E" stroke-width="1" fill="none" opacity="0">
+            <animate attributeName="opacity" values="0;0.5;0.5;0" dur="6s" repeatCount="indefinite" begin="2s"/>
+          </path>
+          <path d="M 500,245 Q 510,180 530,120 Q 540,80 545,55" stroke="#7B3A6E" stroke-width="1.3" fill="none" opacity="0">
+            <animate attributeName="opacity" values="0;0.6;0.6;0" dur="6s" repeatCount="indefinite" begin="2.5s"/>
+          </path>
+          <path d="M 550,245 Q 560,170 580,110 Q 590,75 595,55" stroke="#8B4A7E" stroke-width="1" fill="none" opacity="0">
+            <animate attributeName="opacity" values="0;0.4;0.4;0" dur="6s" repeatCount="indefinite" begin="3s"/>
+          </path>
+
+          <!-- Spider vein label -->
+          <g>
+            <line x1="545" y1="55" x2="620" y2="50" stroke="#7B3A6E" stroke-width="1" opacity="0.6"/>
+            <rect x="625" y="36" width="130" height="30" rx="6" fill="rgba(255,255,255,0.9)" stroke="#7B3A6E" stroke-width="1"/>
+            <text x="690" y="50" font-family="'Inter', sans-serif" font-size="9" fill="#7B3A6E" text-anchor="middle" font-weight="600">Pajączki żylne</text>
+            <text x="690" y="61" font-family="'Inter', sans-serif" font-size="8" fill="#7B3A6E" text-anchor="middle">(teleangiektazje)</text>
+          </g>
+        </g>
+
+        <!-- ═══ DEEPER VESSELS ═══ -->
+        <g id="deeperVessels">
+          <!-- Feeder vein going down -->
+          <path d="M 350,410 Q 350,440 340,470 Q 330,500 310,520" stroke="#4A6DB8" stroke-width="3" fill="none" opacity="0.6">
+            <animate attributeName="stroke-width" values="3;3.5;3" dur="3s" repeatCount="indefinite"/>
+          </path>
+          <path d="M 500,410 Q 510,440 520,470 Q 530,500 540,520" stroke="#4A6DB8" stroke-width="3" fill="none" opacity="0.6">
+            <animate attributeName="stroke-width" values="3;3.5;3" dur="3s" repeatCount="indefinite" begin="0.5s"/>
+          </path>
+
+          <!-- Deep vein -->
+          <path d="M 100,540 Q 250,530 425,535 Q 600,530 750,540" stroke="#2B4A8C" stroke-width="5" fill="none" opacity="0.5">
+            <animate attributeName="stroke-width" values="5;6;5" dur="3s" repeatCount="indefinite"/>
+          </path>
+
+          <!-- Labels -->
+          <g>
+            <line x1="310" y1="520" x2="240" y2="555" stroke="#4A6DB8" stroke-width="1"/>
+            <rect x="155" y="548" width="100" height="24" rx="6" fill="rgba(255,255,255,0.9)" stroke="#4A6DB8" stroke-width="1"/>
+            <text x="205" y="564" font-family="'Inter', sans-serif" font-size="9" fill="#4A6DB8" text-anchor="middle" font-weight="600">Żyła zasilająca</text>
+          </g>
+          <g>
+            <line x1="425" y1="535" x2="425" y2="575" stroke="#2B4A8C" stroke-width="1"/>
+            <rect x="380" y="578" width="90" height="24" rx="6" fill="rgba(255,255,255,0.9)" stroke="#2B4A8C" stroke-width="1"/>
+            <text x="425" y="594" font-family="'Inter', sans-serif" font-size="9" fill="#2B4A8C" text-anchor="middle" font-weight="600">Żyła głęboka</text>
+          </g>
+        </g>
+
+        <!-- ═══ TITLE INSIDE DIAGRAM ═══ -->
+        <text x="425" y="16" font-family="'Playfair Display', serif" font-size="16" fill="#5B3A8C" text-anchor="middle" font-weight="700">
+          Przekrój podłużny naczynka żylnego
+        </text>
+
+      </svg>
+    </div>
+
+    <!-- Tooltip -->
+    <div class="diagram-tooltip" id="diagramTooltip">
+      <h4 id="tooltipTitle"></h4>
+      <p id="tooltipText" style="font-size:0.83rem; margin:0;"></p>
+    </div>
+
+    <!-- Legend -->
+    <div class="diagram-legend">
+      <div class="legend-item">
+        <div class="legend-dot" style="background: #D8A8B8;"></div>
+        <span>Przydanka (Tunica Adventitia)</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot" style="background: #B06878;"></div>
+        <span>Błona środkowa (Tunica Media)</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot" style="background: #D88898;"></div>
+        <span>Błona wewnętrzna (Tunica Intima)</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot" style="background: #AA2233;"></div>
+        <span>Światło naczynia (Lumen)</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot" style="background: #7B3A6E;"></div>
+        <span>Pajączki (Teleangiektazje)</span>
+      </div>
+    </div>
+
+    <p class="interaction-hint">Kliknij na elementy schematu, aby poznać ich funkcję</p>
+  </div>
+</section>
+
+<!-- ORYGINALNY OBRAZ -->
+<section class="original-image-section">
+  <div class="reveal">
+    <h2 style="font-family:'Playfair Display',serif; color:var(--primary-dark); font-size:1.4rem; margin-bottom:1rem;">Schemat pajączków żylnych w skórze</h2>
+    <img src="IMG_0366.JPG" alt="Schemat pajączków żylnych – przekrój skóry z warstwami: Epidermis, Dermis, Hypodermis" loading="lazy"/>
+    <p class="caption">Ilustracja anatomiczna: pajączek żylny (wenulektazja), żyła zasilająca i żyła głęboka w warstwach skóry</p>
+  </div>
+</section>
+
+<!-- ROZDZIAŁ 3 -->
+<section class="section-alt" id="ch3">
+  <div class="section-inner reveal">
+    <span class="chapter-num">Rozdział 3</span>
+    <h2>Bądźmy szczere – usuwanie naczynek wcale nie jest proste</h2>
+    <p>W internecie krąży mnóstwo szkodliwych mitów. Półki w drogeriach uginają się od kremów obiecujących „zniknięcie naczynek w 7 dni", a niektóre gabinety oferują szybkie zabiegi „w przerwie na lunch".</p>
+    <p>Jako specjaliści szanujemy nasze pacjentki, dlatego musimy postawić sprawę jasno: <strong>skuteczne i trwałe zamykanie naczynek nie jest proste.</strong></p>
+    <div class="highlight">
+      Żaden, nawet najdroższy kosmetyk nie jest w stanie przeniknąć pod skórę i fizycznie zamknąć uszkodzonego naczynia. Z kolei proste zabiegi (np. zwykły laser u kosmetyczki) często przynoszą rozczarowanie.
+    </div>
+    <p>Twój układ krwionośny to skomplikowana sieć pod wysokim ciśnieniem. Widoczny pajączek to tylko „liść", który zazwyczaj jest pompowany przez ukrytą głębiej <strong>żyłę zasilającą</strong> („gałąź"). Jeśli zamkniemy tylko powierzchnię, a zignorujemy źródło – problem szybko powróci.</p>
+    <p>Z naczyniami nie ma drogi na skróty. Wymagają one precyzji, czasu na gojenie i potężnej technologii. Właśnie dlatego w naszej klinice odeszliśmy od kompromisów.</p>
+  </div>
+</section>
+
+<!-- ROZDZIAŁ 4 -->
+<section class="section" id="ch4">
+  <div class="reveal">
+    <span class="chapter-num">Rozdział 4</span>
+    <h2>Złoty Standard – Metoda CLaCS, która uderza u źródła</h2>
+    <p>Skoro problem jest złożony, leczenie musi być bezkompromisowe. Z dumą stosujemy metodę, która zrewolucjonizowała światową flebologię estetyczną: <strong>CLaCS (Cryo-Laser and Cryo-Sclerotherapy)</strong>.</p>
+    <p>To absolutnie bezkonkurencyjne podejście, które uderza w naczynko z podwójną siłą podczas jednej sesji:</p>
+
+    <div class="steps-grid">
+      <div class="step-card">
+        <div class="step-number">1</div>
+        <h3>Laser Barwnikowy</h3>
+        <p>W pierwszej kolejności naświetlamy naczynko specjalistycznym laserem barwnikowym. Jego energia błyskawicznie obkurcza i zwęża ścianę naczynia od wewnątrz, nie naruszając skóry.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-number">2</div>
+        <h3>Skleroterapia</h3>
+        <p>Zaledwie ułamek sekundy później, w to samo – zwężone już laserem – naczynie, wprowadzamy za pomocą cieniutkiej igły bezpieczny preparat zamykający.</p>
+      </div>
+    </div>
+
+    <div class="highlight">
+      Ponieważ laser wykonał już „połowę pracy", możemy użyć ułamka standardowej dawki leku. To potężna synergia, która daje spektakularne i niezwykle trwałe efekty tam, gdzie inne metody zawodzą.
+    </div>
+  </div>
+</section>
+
+<!-- ROZDZIAŁ 5 -->
+<section class="section-alt" id="ch5">
+  <div class="section-inner reveal">
+    <span class="chapter-num">Rozdział 5</span>
+    <h2>Czas na Twój relaks. Błoga Fototerapia</h2>
+    <p>Najczęstsza obawa przed zabiegiem? „Czy to będzie bolało i jak moje nogi będą wyglądać tuż po?".</p>
+    <p>Wiemy, że obawiasz się długiego gojenia. Dlatego całkowicie zmieniliśmy doświadczenie pozabiegowe, wprowadzając do procedury element <strong>luksusowego relaksu</strong>.</p>
+    <p>Bezpośrednio po zamknięciu naczynek zaprosimy Cię na uzupełniającą sesję fototerapii. To niezwykle przyjemny, bezbolesny zabieg! Kładziesz się wygodnie, zamykasz oczy, a Twoje nogi są naświetlane specjalistycznym, ciepłym światłem medycznym.</p>
+    <div class="highlight">
+      Światło to działa jak magiczny kompres: błyskawicznie wycisza stan zapalny, łagodzi tkanki i radykalnie przyspiesza proces wchłaniania się drobnych zasinień. Zamiast wychodzić z gabinetu z uczuciem dyskomfortu, wyjdziesz z głęboko odprężonymi nogami.
+    </div>
+  </div>
+</section>
+
+<!-- ROZDZIAŁ 6 -->
+<section class="section" id="ch6">
+  <div class="reveal">
+    <span class="chapter-num">Rozdział 6</span>
+    <h2>Nasza opieka w Twoim domu – Twój naturalny rytuał</h2>
+    <p>Zamykanie i wchłanianie się naczynek to proces, który trwa jeszcze kilka tygodni po wizycie w klinice. Nie zostawimy Cię z tym samej.</p>
+    <p>Z naszego gabinetu nie wyjdziesz z pustymi rękami i nie wyślemy Cię do apteki po przypadkowe maści. Każda pacjentka po zabiegu otrzymuje od nas w prezencie <strong>specjalnie skomponowany, autorski krem</strong>.</p>
+    <p>Został on stworzony w laboratorium na nasze zamówienie, wyłącznie z myślą o wyjątkowych potrzebach skóry w okresie zamykania naczynek. Oparty w 100% na naturalnych składnikach i potężnych ekstraktach botanicznych, działa łagodząco, uszczelniająco i głęboko nawilża.</p>
+    <div class="highlight">
+      Wmasowywanie go w zaciszu własnego domu zamieni się w Twój ekskluzywny, codzienny rytuał pielęgnacyjny, a Ty ze spokojem będziesz obserwować, jak Twoje nogi z każdym dniem odzyskują czysty koloryt.
+    </div>
+  </div>
+</section>
+
+<!-- ZAKOŃCZENIE -->
+<section class="section-alt" id="ending">
+  <div class="section-inner reveal">
+    <span class="chapter-num">Zakończenie</span>
+    <h2>Zrób ten pierwszy krok. Wreszcie dla siebie.</h2>
+    <p>Pajączki na nogach odbierają coś więcej niż tylko estetyczny wygląd. Odbierają Ci pewność siebie, beztroskę i luz, na który tak ciężko pracujesz każdego dnia.</p>
+    <p>Wyobraź sobie poranek za kilka tygodni. Pakujesz walizkę na wyjazd. Nie zastanawiasz się „co założyć, żeby ukryć problem". Wyciągasz z szafy ulubioną letnią sukienkę, zakładasz ją i uśmiechasz się do lustra. Na plaży nie szukasz nerwowo pareo. Czujesz w głowie absolutną, wspaniałą lekkość i spokój ducha, bo wiesz, że Twoje żyły zostały zbadane i są bezpieczne.</p>
+    <div class="highlight">
+      Po latach dbania o dom, pracę i bliskich, przyszedł czas, byś zainwestowała wyłącznie w swój komfort i zdrowie.
+    </div>
+    <p style="font-size:1.15rem; font-weight:600; color:var(--primary); text-align:center; margin-top:2rem;">Jesteś gotowa na swoje pierwsze lato bez długich spodni?</p>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <h3>Skontaktuj się z nami już dziś</h3>
+  <p>Umów się na diagnostykę USG Doppler oraz kwalifikację do zabiegu CLaCS.</p>
+  <p>Resztą – od profesjonalnego leczenia po relaksującą fototerapię i kojący krem – zajmiemy się my.</p>
+  <a href="#top" class="cta-btn">Wróć na górę</a>
+</footer>
+
+<script>
+// ─── SCROLL REVEAL ───
+const revealElements = document.querySelectorAll('.reveal');
+const revealObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+    }
+  });
+}, { threshold: 0.15, rootMargin: '0px 0px -50px 0px' });
+revealElements.forEach(el => revealObserver.observe(el));
+
+// ─── PROGRESS BAR ───
+window.addEventListener('scroll', () => {
+  const scrollTop = window.scrollY;
+  const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+  const progress = (scrollTop / docHeight) * 100;
+  document.getElementById('progressBar').style.width = progress + '%';
+});
+
+// ─── NAV HIDE/SHOW ON SCROLL ───
+let lastScroll = 0;
+window.addEventListener('scroll', () => {
+  const currentScroll = window.scrollY;
+  const nav = document.getElementById('navBar');
+  if (currentScroll > lastScroll && currentScroll > 100) {
+    nav.classList.add('hidden');
+  } else {
+    nav.classList.remove('hidden');
+  }
+  lastScroll = currentScroll;
+});
+
+// ─── DIAGRAM TOOLTIPS ───
+const tooltipData = {
+  adventitia: {
+    title: 'Przydanka (Tunica Adventitia)',
+    text: 'Zewnętrzna warstwa ściany naczynia. Zbudowana z tkanki łącznej, zapewnia ochronę mechaniczną i zakotwiczenie naczynia w otaczających tkankach. Zawiera drobne naczynia odżywcze (vasa vasorum) i włókna nerwowe.'
+  },
+  media: {
+    title: 'Błona środkowa (Tunica Media)',
+    text: 'Warstwa mięśni gładkich i włókien elastycznych. Odpowiada za kurczliwość naczynia i regulację przepływu krwi. W żyłach jest cieńsza niż w tętnicach, co czyni je bardziej podatnymi na rozszerzanie.'
+  },
+  intima: {
+    title: 'Błona wewnętrzna (Tunica Intima)',
+    text: 'Najwewnętrzna warstwa ściany naczynia, wyścielona śródbłonkiem. Zapewnia gładką powierzchnię kontaktu z krwią, zapobiegając tworzeniu się skrzepów i regulując wymianę substancji.'
+  },
+  lumen: {
+    title: 'Światło naczynia (Lumen)',
+    text: 'Wewnętrzna przestrzeń naczynia, przez którą przepływa krew. W żyłach światło jest stosunkowo szerokie w porównaniu do grubości ściany, co ułatwia powrót krwi do serca.'
+  },
+  valve: {
+    title: 'Zastawka żylna',
+    text: 'Zastawki to delikatne, półksiężycowate fałdy śródbłonka, które zapobiegają cofaniu się krwi. Ich uszkodzenie prowadzi do niewydolności żylnej, zastoju krwi i powstawania pajączków oraz żylaków.'
+  },
+  endothelium: {
+    title: 'Śródbłonek (Endothelium)',
+    text: 'Pojedyncza warstwa komórek wyścielająca wnętrze naczynia. Pełni kluczową rolę w regulacji napięcia naczyniowego, krzepnięcia krwi i przepuszczalności ściany naczynia.'
+  },
+  epidermis: {
+    title: 'Naskórek (Epidermis)',
+    text: 'Zewnętrzna warstwa skóry, stanowiąca barierę ochronną. Pajączki żylne (teleangiektazje) są widoczne przez naskórek jako fioletowo-czerwone siateczki.'
+  },
+  dermis: {
+    title: 'Skóra właściwa (Dermis)',
+    text: 'Warstwa skóry zawierająca naczynia krwionośne, włókna kolagenowe i elastynowe. To tutaj znajdują się pajączki żylne – rozszerzone drobne żyłki (wenule).'
+  },
+  hypodermis: {
+    title: 'Tkanka podskórna (Hypodermis)',
+    text: 'Najgłębsza warstwa skóry, bogata w tkankę tłuszczową. Przebiegają przez nią żyły zasilające i żyły głębokie, które transportują krew z powrotem do serca.'
+  }
+};
+
+const tooltip = document.getElementById('diagramTooltip');
+const tooltipTitle = document.getElementById('tooltipTitle');
+const tooltipText = document.getElementById('tooltipText');
+
+// Add click handlers to all interactive elements
+document.querySelectorAll('[data-layer]').forEach(el => {
+  el.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const layer = el.getAttribute('data-layer');
+    const data = tooltipData[layer];
+    if (data) {
+      tooltipTitle.textContent = data.title;
+      tooltipText.textContent = data.text;
+
+      const rect = el.getBoundingClientRect();
+      const container = document.querySelector('.diagram-section').getBoundingClientRect();
+
+      tooltip.style.left = Math.min(rect.right - container.left + 10, container.width - 300) + 'px';
+      tooltip.style.top = (rect.top - container.top) + 'px';
+      tooltip.classList.add('active');
+    }
+  });
+});
+
+// Close tooltip on click outside
+document.addEventListener('click', () => {
+  tooltip.classList.remove('active');
+});
+
+// ─── SMOOTH SCROLL FOR NAV LINKS ───
+document.querySelectorAll('.nav-links a, .cta-btn').forEach(link => {
+  link.addEventListener('click', (e) => {
+    const href = link.getAttribute('href');
+    if (href && href.startsWith('#')) {
+      e.preventDefault();
+      const target = document.querySelector(href);
+      if (target) {
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+  });
+});
+</script>
+
+</body>
+</html>
