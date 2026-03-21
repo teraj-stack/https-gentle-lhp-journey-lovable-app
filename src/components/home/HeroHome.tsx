@@ -1,16 +1,26 @@
-import { motion } from "framer-motion";
+import { motion, useScroll, useTransform } from "framer-motion";
+import { useRef } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import heroImage from "@/assets/hero-clinic.jpg";
 import logoImage from "@/assets/logo-bujok.png";
 
-const HeroHome = () => (
-  <section className="relative min-h-[90vh] flex items-center overflow-hidden">
-    <div
-      className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-      style={{ backgroundImage: `url(${heroImage})` }}
-    />
-    <div className="absolute inset-0 bg-background/60" />
+const HeroHome = () => {
+  const sectionRef = useRef<HTMLElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: sectionRef,
+    offset: ["start start", "end start"],
+  });
+  const bgY = useTransform(scrollYProgress, [0, 1], ["0%", "30%"]);
+  const overlayOpacity = useTransform(scrollYProgress, [0, 1], [0.6, 0.8]);
+
+  return (
+    <section ref={sectionRef} className="relative min-h-[90vh] flex items-center overflow-hidden">
+      <motion.div
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat will-change-transform"
+        style={{ backgroundImage: `url(${heroImage})`, y: bgY }}
+      />
+      <motion.div className="absolute inset-0 bg-background" style={{ opacity: overlayOpacity }} />
 
     <div className="relative max-w-7xl mx-auto px-4 md:px-8 py-32 md:py-40 w-full flex flex-col md:flex-row items-center gap-12 md:gap-20">
       <motion.div
@@ -64,7 +74,8 @@ const HeroHome = () => (
         />
       </motion.div>
     </div>
-  </section>
-);
+    </section>
+  );
+};
 
 export default HeroHome;
