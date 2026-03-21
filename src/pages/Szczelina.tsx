@@ -19,7 +19,7 @@ const stagger = (i: number) => ({
 const Szczelina = () => (
   <div className="min-h-screen pt-20">
     {/* Hero */}
-    <section className="relative py-20 md:py-28 gradient-hero overflow-hidden">
+    <ParallaxSection className="relative py-20 md:py-28 gradient-hero">
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -top-1/4 -right-1/4 w-[60vw] h-[60vw] rounded-full bg-primary-foreground/5 blur-3xl" />
       </div>
