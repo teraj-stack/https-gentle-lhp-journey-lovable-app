@@ -67,12 +67,36 @@ const Testimonials = () => (
         className="max-w-3xl mx-auto text-center mb-14"
       >
         <p className="text-sm font-sans uppercase tracking-[0.15em] text-primary mb-4">
-          312 opinii na ZnanyLekarz.pl
+          Opinie pacjentów
         </p>
         <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-6">
           Co mówią nasi pacjenci
         </h2>
-        <div className="premium-divider" />
+        <div className="premium-divider mb-8" />
+
+        {/* ZnanyLekarz rating widget */}
+        <a
+          href="https://www.znanylekarz.pl/jan-bujok-2/chirurg-flebolog-proktolog/siedlce"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-3 bg-card border border-border rounded-full px-6 py-3 hover:border-primary/40 transition-colors group"
+        >
+          <div className="flex gap-0.5">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Star key={i} className="w-4 h-4 fill-primary text-primary" />
+            ))}
+          </div>
+          <span className="text-2xl font-bold text-foreground">5.0</span>
+          <span className="text-sm text-muted-foreground">/5</span>
+          <div className="w-px h-5 bg-border" />
+          <span className="text-sm text-muted-foreground">
+            <strong className="text-foreground">312</strong> opinii
+          </span>
+          <div className="w-px h-5 bg-border" />
+          <span className="text-xs text-muted-foreground group-hover:text-primary transition-colors">
+            ZnanyLekarz.pl →
+          </span>
+        </a>
       </motion.div>
 
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
