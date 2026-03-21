@@ -89,7 +89,7 @@ const benefits = [
 const DlaPacjenta = () => (
   <div className="min-h-screen bg-background pt-20">
     {/* Hero */}
-    <section className="gradient-bg py-16 md:py-24 px-4">
+    <ParallaxSection className="gradient-bg py-16 md:py-24 px-4">
       <motion.div
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
