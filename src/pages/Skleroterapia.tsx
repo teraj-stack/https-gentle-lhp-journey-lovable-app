@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import ParallaxSection from "@/components/ui/parallax-section";
 import { Link } from "react-router-dom";
+import Breadcrumbs from "@/components/layout/Breadcrumbs";
 import { Button } from "@/components/ui/button";
 import SkleroterapiaFAQ from "@/components/skleroterapia/SkleroterapiaFAQ";
 
@@ -68,6 +69,7 @@ const Skleroterapia = () => (
     </ParallaxSection>
 
     <div className="max-w-5xl mx-auto px-4 py-16 space-y-24">
+      <Breadcrumbs items={[{ label: "Flebologia" }, { label: "Skleroterapia żylaków" }]} className="mb-4" />
       {/* Wskazania */}
       <motion.section {...fadeUp}>
         <h2 className="section-title mb-3 text-center">Kiedy skleroterapia sprawdza się najlepiej?</h2>

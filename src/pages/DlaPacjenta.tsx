@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import ParallaxSection from "@/components/ui/parallax-section";
+import Breadcrumbs from "@/components/layout/Breadcrumbs";
 import { BookOpen, Download, FileText, Shield, Clock, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
@@ -111,6 +112,7 @@ const DlaPacjenta = () => (
     </ParallaxSection>
 
     <div className="max-w-5xl mx-auto px-4 py-16 space-y-20">
+      <Breadcrumbs items={[{ label: "Dla Pacjenta" }]} className="mb-4" />
       {/* Benefits */}
       <motion.section {...fadeUp}>
         <div className="grid md:grid-cols-3 gap-6">

@@ -1,3 +1,4 @@
+import Breadcrumbs from "@/components/layout/Breadcrumbs";
 import HeroSection from "@/components/lhp/HeroSection";
 import ComparisonChart from "@/components/lhp/ComparisonChart";
 import SurvivalKit from "@/components/lhp/SurvivalKit";
@@ -22,6 +23,7 @@ const LHP = () => {
       <HeroSection />
 
       <div className="max-w-4xl mx-auto px-4 py-16 space-y-20">
+        <Breadcrumbs items={[{ label: "Proktologia" }, { label: "Hemoroidy – LHP" }]} className="mb-8" />
         <motion.section {...sectionAnim}>
           <h2 className="section-title mb-3">
             1. Demitologizacja: Koniec z mitem "rzezi"

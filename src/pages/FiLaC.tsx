@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
+import Breadcrumbs from "@/components/layout/Breadcrumbs";
 import { Button } from "@/components/ui/button";
 import FiLaCHero from "@/components/filac/FiLaCHero";
 import FiLaCProcedure from "@/components/filac/FiLaCProcedure";
@@ -21,6 +22,7 @@ const FiLaC = () => (
     <FiLaCHero />
 
     <div className="max-w-5xl mx-auto px-4 py-16 space-y-24">
+      <Breadcrumbs items={[{ label: "Proktologia" }, { label: "Przetoki – FiLaC" }]} className="mb-4" />
       <FiLaCProcedure fadeUp={fadeUp} />
       <FiLaCAdvantages fadeUp={fadeUp} />
       <FiLaCComparison fadeUp={fadeUp} />
