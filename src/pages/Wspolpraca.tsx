@@ -127,6 +127,10 @@ const Wspolpraca = () => (
             </motion.div>
           ))}
         </div>
+
+        <motion.div {...fadeUp} className="mt-14">
+          <EBMComparisonChart />
+        </motion.div>
       </div>
     </section>
 
