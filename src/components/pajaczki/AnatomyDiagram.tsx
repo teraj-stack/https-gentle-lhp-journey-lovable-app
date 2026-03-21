@@ -37,7 +37,7 @@ const hotspots: Hotspot[] = [
     y: "60%",
     title: "Żyła zasilająca (reticular vein)",
     description:
-      "Ukryte źródło problemu — żyła o średnicy 1–3 mm, która „karmi" pajączki ciśnieniem krwi. Metoda CLaCS celuje właśnie w nią: laser obkurcza ścianę, a mikrodawka sklerozantu zamyka światło naczynia.",
+      'Ukryte źródło problemu \u2014 żyła o średnicy 1\u20133 mm, która \u201Ekarmi\u201D pajączki ciśnieniem krwi. Metoda CLaCS celuje właśnie w nią: laser obkurcza ścianę, a mikrodawka sklerozantu zamyka światło naczynia.',
   },
   {
     id: "gleboka",
