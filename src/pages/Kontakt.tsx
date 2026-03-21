@@ -26,7 +26,7 @@ const contactSchema = z.object({
 const locations = [
   {
     name: "Warszawa Wilanów",
-    address: "ul. Klimczaka 1, 02-797 Warszawa",
+    address: "Adama Branickiego 10/U6, 02-972 Warszawa",
     phone: "+48 22 123 45 67",
     email: "warszawa@cml.pl",
     hours: "Pon–Pt: 8:00–18:00",
