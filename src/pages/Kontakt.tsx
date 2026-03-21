@@ -40,7 +40,7 @@ const locations = [
     email: "siedlce@cml.pl",
     hours: "Pon–Pt: 8:00–20:00",
     mapSrc:
-      "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2440.0!2d22.2677!3d52.1676!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zNTLCsDEwJzAzLjQiTiAyMsKwMTYnMDMuNyJF!5e0!3m2!1spl!2spl!4v1700000000000",
+      "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2440.0!2d22.283!3d52.1676!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x4718ed53bb8a9e23%3A0x1!2sBrzeska%20125%2C%2008-110%20Siedlce!5e0!3m2!1spl!2spl!4v1700000000000",
   },
 ];
 
