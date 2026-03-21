@@ -92,36 +92,7 @@ const Pajaczki = () => (
       </motion.section>
 
       {/* Anatomia pajączka */}
-      <motion.section {...fadeUp} className="max-w-4xl mx-auto">
-        <h2 className="section-title mb-3 text-center">Co dzieje się pod skórą?</h2>
-        <p className="section-subtitle mb-10 text-center max-w-3xl mx-auto">
-          Pajączki to nie losowe plamki — to rozszerzone wenule (teleangiektazje) w warstwie skóry właściwej, zasilane przez głębiej położone żyły.
-        </p>
-        <div className="glass-card rounded-2xl p-6 md:p-10">
-          <div className="relative rounded-xl overflow-hidden bg-background/50">
-            <img
-              src={pajaczkiAnatomia}
-              alt="Schemat anatomiczny powstawania pajączków żylnych — przekrój skóry pokazujący epidermis, dermis i hypodermis z żyłą zasilającą i pajączkiem żylnym (wenulektazją)"
-              className="w-full h-auto rounded-xl"
-              loading="lazy"
-            />
-          </div>
-          <div className="grid sm:grid-cols-3 gap-4 mt-6">
-            <div className="text-center p-3">
-              <h4 className="text-xs font-semibold uppercase tracking-wider text-primary mb-1">Naskórek (Epidermis)</h4>
-              <p className="text-xs text-muted-foreground leading-relaxed">Warstwa ochronna — pajączki są widoczne przez nią jako fioletowo-czerwona siateczka.</p>
-            </div>
-            <div className="text-center p-3">
-              <h4 className="text-xs font-semibold uppercase tracking-wider text-primary mb-1">Żyła zasilająca</h4>
-              <p className="text-xs text-muted-foreground leading-relaxed">Ukryte źródło problemu — bez jej zamknięcia pajączki wracają. Dlatego CLaCS celuje również w nią.</p>
-            </div>
-            <div className="text-center p-3">
-              <h4 className="text-xs font-semibold uppercase tracking-wider text-primary mb-1">Żyła głęboka</h4>
-              <p className="text-xs text-muted-foreground leading-relaxed">Główna autostrada krwi — to tu badanie USG Doppler wykrywa niewydolność zastawek.</p>
-            </div>
-          </div>
-        </div>
-      </motion.section>
+      <AnatomyDiagram fadeUp={fadeUp} />
 
       {/* Pułapka kamuflażu */}
       <motion.section {...fadeUp} className="max-w-3xl mx-auto">
