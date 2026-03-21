@@ -7,6 +7,9 @@ interface Hotspot {
   label: string;
   x: string;
   y: string;
+  /** Target point on the anatomy where the arrow points to (% coords) */
+  tx: string;
+  ty: string;
   title: string;
   description: string;
 }
