@@ -80,11 +80,64 @@ const AnatomyDiagram = ({ fadeUp }: Props) => {
             loading="lazy"
           />
 
+          {/* SVG connector lines */}
+          <svg
+            className="absolute inset-0 w-full h-full pointer-events-none z-[5]"
+            viewBox="0 0 100 100"
+            preserveAspectRatio="none"
+          >
+            <defs>
+              <marker
+                id="arrowhead"
+                markerWidth="6"
+                markerHeight="4"
+                refX="5"
+                refY="2"
+                orient="auto"
+              >
+                <path d="M0,0 L6,2 L0,4 Z" fill="hsl(43, 72%, 55%)" />
+              </marker>
+              <marker
+                id="arrowhead-dim"
+                markerWidth="6"
+                markerHeight="4"
+                refX="5"
+                refY="2"
+                orient="auto"
+              >
+                <path d="M0,0 L6,2 L0,4 Z" fill="hsl(43, 72%, 55%)" fillOpacity="0.25" />
+              </marker>
+            </defs>
+            {hotspots.map((spot) => {
+              const x1 = parseFloat(spot.x);
+              const y1 = parseFloat(spot.y);
+              const x2 = parseFloat(spot.tx);
+              const y2 = parseFloat(spot.ty);
+              const isActive = activeHotspot === spot.id;
+              const isDimmed = activeHotspot !== null && !isActive;
+              return (
+                <line
+                  key={spot.id}
+                  x1={x1}
+                  y1={y1}
+                  x2={x2}
+                  y2={y2}
+                  stroke="hsl(43, 72%, 55%)"
+                  strokeWidth="0.25"
+                  strokeDasharray={isActive ? "none" : "1 0.8"}
+                  strokeOpacity={isDimmed ? 0.15 : isActive ? 0.9 : 0.35}
+                  markerEnd={isDimmed ? "url(#arrowhead-dim)" : "url(#arrowhead)"}
+                  style={{ transition: "stroke-opacity 0.3s, stroke-dasharray 0.3s" }}
+                />
+              );
+            })}
+          </svg>
+
           {/* Hotspot dots */}
           {hotspots.map((spot) => (
             <div
               key={spot.id}
-              className="absolute group"
+              className="absolute group z-10"
               style={{ left: spot.x, top: spot.y, transform: "translate(-50%, -50%)" }}
               onMouseEnter={() => setActiveHotspot(spot.id)}
               onMouseLeave={() => setActiveHotspot(null)}
