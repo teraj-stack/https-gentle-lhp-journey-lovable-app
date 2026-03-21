@@ -143,12 +143,41 @@ const Header = () => {
               </AnimatePresence>
             </div>
 
-            <Link
-              to="/dla-pacjenta"
-              className="px-4 py-2 text-sm font-medium text-foreground/80 hover:text-primary transition-colors rounded-lg hover:bg-accent/50"
+            {/* Dla Pacjenta Mega */}
+            <div
+              className="relative"
+              onMouseEnter={() => setMegaOpen("pacjent")}
+              onMouseLeave={() => setMegaOpen(null)}
             >
-              Dla Pacjenta
-            </Link>
+              <button className="flex items-center gap-1 px-4 py-2 text-sm font-medium text-foreground/80 hover:text-primary transition-colors rounded-lg hover:bg-accent/50">
+                Dla Pacjenta
+                <ChevronDown className={`w-3.5 h-3.5 transition-transform ${megaOpen === "pacjent" ? "rotate-180" : ""}`} />
+              </button>
+              <AnimatePresence>
+                {megaOpen === "pacjent" && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 8 }}
+                    transition={{ duration: 0.2 }}
+                    className="absolute top-full left-0 mt-1 w-72 bg-card rounded-xl shadow-lg border border-border p-2"
+                  >
+                    {dlaPacjentaItems.map((item) => (
+                      <Link
+                        key={item.href}
+                        to={item.href}
+                        className="block px-4 py-3 rounded-lg hover:bg-accent/50 transition-colors group"
+                      >
+                        <div className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">
+                          {item.label}
+                        </div>
+                        <div className="text-xs text-muted-foreground mt-0.5">{item.desc}</div>
+                      </Link>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
 
             <Link
               to="/wspolpraca"
