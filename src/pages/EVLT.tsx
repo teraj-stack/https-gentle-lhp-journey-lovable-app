@@ -153,10 +153,10 @@ const EVLT = () => (
         <h2 className="section-title mb-3 text-center">Dwa proste kroki do zdrowych nóg</h2>
         <div className="grid md:grid-cols-2 gap-8 mt-10">
           <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            whileInView={{ opacity: 1, x: 0 }}
+            initial={{ opacity: 0, x: -20, filter: "blur(4px)" }}
+            whileInView={{ opacity: 1, x: 0, filter: "blur(0px)" }}
             viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
+            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
             className="glass-card rounded-2xl p-8"
           >
             <div className="flex items-center gap-4 mb-4">
