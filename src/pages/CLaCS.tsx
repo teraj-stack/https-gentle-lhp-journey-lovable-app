@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import ParallaxSection from "@/components/ui/parallax-section";
 import { Link } from "react-router-dom";
+import Breadcrumbs from "@/components/layout/Breadcrumbs";
 import { Button } from "@/components/ui/button";
 import { BookOpen, Download, ArrowRight } from "lucide-react";
 import CLaCSFAQ from "@/components/clacs/CLaCSFAQ";

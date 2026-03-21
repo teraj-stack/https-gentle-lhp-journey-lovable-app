@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
+import Breadcrumbs from "@/components/layout/Breadcrumbs";
 import { Button } from "@/components/ui/button";
 import FiLaCHero from "@/components/filac/FiLaCHero";
 import FiLaCProcedure from "@/components/filac/FiLaCProcedure";

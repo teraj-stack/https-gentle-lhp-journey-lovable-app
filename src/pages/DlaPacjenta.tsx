@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import ParallaxSection from "@/components/ui/parallax-section";
+import Breadcrumbs from "@/components/layout/Breadcrumbs";
 import { BookOpen, Download, FileText, Shield, Clock, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";

@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import Breadcrumbs from "@/components/layout/Breadcrumbs";
 import { ArrowRight, CheckCircle2, AlertTriangle, Pill, Shield } from "lucide-react";
 import ParallaxSection from "@/components/ui/parallax-section";
 

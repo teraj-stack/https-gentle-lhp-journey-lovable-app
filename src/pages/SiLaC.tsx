@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
+import Breadcrumbs from "@/components/layout/Breadcrumbs";
 import { Button } from "@/components/ui/button";
 import SiLaCHero from "@/components/silac/SiLaCHero";
 import SiLaCProcedure from "@/components/silac/SiLaCProcedure";
