@@ -185,6 +185,9 @@ const CLaCS = () => (
         </div>
       </motion.section>
 
+      {/* FAQ */}
+      <CLaCSFAQ fadeUp={fadeUp} />
+
       {/* E-book baner */}
       <motion.section {...fadeUp} className="glass-card rounded-2xl p-8 md:p-10 max-w-3xl mx-auto">
         <div className="flex flex-col sm:flex-row gap-6 items-center">
