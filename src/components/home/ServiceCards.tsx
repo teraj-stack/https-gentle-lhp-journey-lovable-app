@@ -4,15 +4,15 @@ import { Button } from "@/components/ui/button";
 import { Stethoscope, Activity, CheckCircle2, ArrowRight } from "lucide-react";
 
 const fadeUp = {
-  initial: { opacity: 0, y: 30 },
-  whileInView: { opacity: 1, y: 0 },
-  viewport: { once: true },
-  transition: { duration: 0.7 },
+  initial: { opacity: 0, y: 24, filter: "blur(4px)" },
+  whileInView: { opacity: 1, y: 0, filter: "blur(0px)" },
+  viewport: { once: true, amount: 0.2 },
+  transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1] },
 };
 
 const stagger = (i: number) => ({
   ...fadeUp,
-  transition: { duration: 0.6, delay: i * 0.12 },
+  transition: { duration: 0.6, delay: i * 0.12, ease: [0.16, 1, 0.3, 1] },
 });
 
 const services = [
