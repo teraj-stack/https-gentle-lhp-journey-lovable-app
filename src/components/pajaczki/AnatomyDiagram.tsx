@@ -18,8 +18,8 @@ const hotspots: Hotspot[] = [
   {
     id: "epidermis",
     label: "Naskórek",
-    x: "78%",
-    y: "12%",
+    x: "78%", y: "12%",
+    tx: "50%", ty: "14%",
     title: "Naskórek (Epidermis)",
     description:
       "Najcieńsza, zewnętrzna warstwa skóry. Pajączki są widoczne przez nią jako fioletowo-czerwona siateczka. Sama w sobie nie jest źródłem problemu — jedynie ujawnia to, co dzieje się głębiej.",
@@ -27,8 +27,8 @@ const hotspots: Hotspot[] = [
   {
     id: "pajaczek",
     label: "Pajączek żylny",
-    x: "80%",
-    y: "34%",
+    x: "80%", y: "34%",
+    tx: "52%", ty: "26%",
     title: "Pajączek żylny (wenulektazja)",
     description:
       "Rozszerzone, drobne naczynka w warstwie skóry właściwej (dermis). Mają średnicę poniżej 1 mm i tworzą charakterystyczną siateczkę. Są zasilane przez głębiej położoną żyłę — bez jej zamknięcia problem wraca.",
@@ -36,17 +36,17 @@ const hotspots: Hotspot[] = [
   {
     id: "zasilajaca",
     label: "Żyła zasilająca",
-    x: "80%",
-    y: "60%",
+    x: "80%", y: "60%",
+    tx: "48%", ty: "55%",
     title: "Żyła zasilająca (reticular vein)",
     description:
-      'Ukryte źródło problemu \u2014 żyła o średnicy 1\u20133 mm, która \u201Ekarmi\u201D pajączki ciśnieniem krwi. Metoda CLaCS celuje właśnie w nią: laser obkurcza ścianę, a mikrodawka sklerozantu zamyka światło naczynia.',
+      'Ukryte \u017ar\u00f3d\u0142o problemu \u2014 \u017cy\u0142a o \u015brednicy 1\u20133 mm, kt\u00f3ra \u201Ekarmi\u201D paj\u0105czki ci\u015bnieniem krwi. Metoda CLaCS celuje w\u0142a\u015bnie w ni\u0105: laser obkurcza \u015bcian\u0119, a mikrodawka sklerozantu zamyka \u015bwiat\u0142o naczynia.',
   },
   {
     id: "gleboka",
     label: "Żyła głęboka",
-    x: "72%",
-    y: "85%",
+    x: "72%", y: "85%",
+    tx: "48%", ty: "90%",
     title: "Żyła głęboka (deep vein)",
     description:
       "Główna autostrada odpływu krwi z kończyny. Badanie USG Doppler pozwala wykryć niewydolność zastawek na tym poziomie — co jest kluczowe dla oceny, czy pajączki są jedynie defektem kosmetycznym, czy sygnałem Przewlekłej Niewydolności Żylnej (PNŻ).",
