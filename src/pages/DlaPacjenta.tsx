@@ -12,73 +12,49 @@ const fadeUp = {
   transition: { duration: 0.6 },
 };
 
-const ebooks = [
+const mainEbook = {
+  title: "Powrót do Komfortu — Kompleksowy Przewodnik",
+  pages: "13 stron",
+  desc: "Pełny przewodnik po nowoczesnym leczeniu hemoroidów. Dowiesz się: dlaczego maści przestają działać, jak działa laser vs. skalpel, jak wygląda zabieg krok po kroku i czego się spodziewać po zabiegu.",
+  chapters: [
+    "Dlaczego to w ogóle boli? — mechanizm hemoroidów",
+    "Domowe sposoby vs. medycyna — pułapka błędnego koła",
+    "Skalpel czy laser? — porównanie metod",
+    "Jak wygląda zabieg laserowy krok po kroku?",
+    "Czy kwalifikujesz się do zabiegu? — wyścig z czasem",
+  ],
+  href: "/ebooks/Powrot-do-Komfortu-Przewodnik.pdf",
+  color: "from-primary/90 to-primary",
+};
+
+const onlineGuides = [
   {
-    title: "Powrót do Komfortu — Kompleksowy Przewodnik",
-    pages: "13 stron",
-    desc: "Pełny przewodnik po nowoczesnym leczeniu hemoroidów. Dowiesz się: dlaczego maści przestają działać, jak działa laser vs. skalpel, jak wygląda zabieg krok po kroku i czego się spodziewać po zabiegu.",
-    chapters: [
-      "Dlaczego to w ogóle boli? — mechanizm hemoroidów",
-      "Domowe sposoby vs. medycyna — pułapka błędnego koła",
-      "Skalpel czy laser? — porównanie metod",
-      "Jak wygląda zabieg laserowy krok po kroku?",
-      "Czy kwalifikujesz się do zabiegu? — wyścig z czasem",
-    ],
-    href: "/ebooks/Powrot-do-Komfortu-Przewodnik.pdf",
-    color: "from-primary/90 to-primary",
-  },
-  {
-    title: "Hemoroidy od A do Z — Infografika",
-    pages: "11 stron",
-    desc: "Wizualna podróż od objawów do decyzji. Infografika porównawcza skalpel vs. laser, oś czasu zabiegu, syndrom cichego obserwatora i kluczowe liczby, które pomogą Ci podjąć decyzję.",
-    chapters: [
-      "Hemoroidy: naturalne poduszki, które wymknęły się spod kontroli",
-      "Syndrom Cichego Obserwatora — poszukiwanie w internecie",
-      "Błędne koło apteki — skuteczność maści w czasie",
-      "Skalpel vs. Laser — porównanie bólu i rekonwalescencji",
-      "Czas działa na Twoją niekorzyść — skala I°–IV°",
-    ],
-    href: "/ebooks/Hemoroidy-od-A-do-Z-Infografika.pdf",
-    color: "from-accent-foreground/80 to-accent-foreground",
+    title: "Hemoroidy od A do Z",
+    subtitle: "Infografika wizualna",
+    desc: "Wizualna podróż od objawów do decyzji. Porównanie skalpel vs. laser, oś czasu zabiegu i kluczowe liczby.",
+    href: "/leczenie/lhp",
+    icon: "📊",
   },
   {
     title: "FiLaC — Laserowe Zamykanie Przetok",
-    pages: "Infografika",
-    desc: "Kompaktowa infografika przedstawiająca zabieg FiLaC (Fistula Laser Closure) — laserowe zamykanie przetok odbytu laserem diodowym 1470 nm. Przebieg zabiegu w 4 krokach, parametry kliniczne i porównanie z metodami tradycyjnymi.",
-    chapters: [
-      "Przebieg zabiegu — od identyfikacji do zamknięcia",
-      "Parametry kliniczne — 93% skuteczności, 100% ochrony zwieraczy",
-      "FiLaC vs metody tradycyjne — ból, rekonwalescencja, ryzyko",
-      "Zabieg ambulatoryjny — powrót do aktywności < 24h",
-    ],
-    href: "/ebooks/FiLaC-Infografika.pdf",
-    color: "from-[hsl(var(--primary))]/70 to-accent-foreground/90",
+    subtitle: "Przewodnik po zabiegu",
+    desc: "Zabieg FiLaC w 4 krokach, parametry kliniczne (93% skuteczności) i porównanie z metodami tradycyjnymi.",
+    href: "/leczenie/filac",
+    icon: "🔬",
   },
   {
     title: "EVLT — Laserowe Leczenie Żylaków",
-    pages: "Infografika",
-    desc: "Infografika przedstawiająca zabieg EVLT (Endovenous Laser Treatment) — laserowe zamykanie żylaków kończyn dolnych laserem diodowym 1470 nm. Przebieg zabiegu w 4 krokach, parametry kliniczne (98% skuteczności) i porównanie z chirurgią tradycyjną.",
-    chapters: [
-      "Przebieg zabiegu — od diagnostyki USG po efekt końcowy",
-      "Parametry kliniczne — 98% skuteczności, 0 mm blizny",
-      "EVLT vs metody tradycyjne — ból, rekonwalescencja, narkoza",
-      "Zabieg ambulatoryjny — bez skalpela i hospitalizacji",
-    ],
-    href: "/ebooks/EVLT-Infografika.pdf",
-    color: "from-primary/60 to-primary/90",
+    subtitle: "Przewodnik po zabiegu",
+    desc: "Zabieg EVLT krok po kroku, 98% skuteczności, 0 mm blizny — bez skalpela i hospitalizacji.",
+    href: "/leczenie/evlt",
+    icon: "🦵",
   },
   {
     title: "Pajączki i naczynka — Przewodnik dla Pacjentki",
-    pages: "E-book",
-    desc: "Kompletny przewodnik o pajączkach naczyniowych — skąd się biorą, dlaczego ukrywanie jest niebezpieczne i jak metoda CLaCS zamyka naczynka trwale i komfortowo. Fototerapia, autorski krem i droga do lata bez długich spodni.",
-    chapters: [
-      "Skąd się wzięły pajączki? — genetyka, hormony, styl życia",
-      "Pułapka kamuflażu — ukryte ryzyko Przewlekłej Niewydolności Żylnej",
-      "Złoty Standard CLaCS — laser + skleroterapia w jednej sesji",
-      "Fototerapia i autorski krem — luksusowa rekonwalescencja",
-    ],
-    href: "/ebooks/CLaCS-Pajaczki-Przewodnik.pdf",
-    color: "from-accent-foreground/70 to-primary/80",
+    subtitle: "Interaktywny e-book",
+    desc: "Kompletny przewodnik o pajączkach naczyniowych — skąd się biorą, jak metoda CLaCS zamyka naczynka trwale i komfortowo.",
+    href: "/dla-pacjenta/ebook-pajaczki",
+    icon: "🩺",
   },
 ];
 
