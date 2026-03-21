@@ -17,6 +17,7 @@ import FiLaC from "@/pages/FiLaC";
 import SiLaC from "@/pages/SiLaC";
 import Skleroterapia from "@/pages/Skleroterapia";
 import CLaCS from "@/pages/CLaCS";
+import Pajaczki from "@/pages/Pajaczki";
 import Kontakt from "@/pages/Kontakt";
 import NotFound from "@/pages/NotFound";
 
@@ -45,6 +46,7 @@ const App = () => (
             
             <Route path="/leczenie/skleroterapia" element={<Skleroterapia />} />
             <Route path="/leczenie/clacs" element={<CLaCS />} />
+            <Route path="/dla-pacjenta/pajaczki" element={<Pajaczki />} />
             <Route path="/kontakt" element={<Kontakt />} />
           </Route>
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

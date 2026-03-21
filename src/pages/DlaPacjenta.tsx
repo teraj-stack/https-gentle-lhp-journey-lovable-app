@@ -65,6 +65,19 @@ const ebooks = [
     href: "/ebooks/EVLT-Infografika.pdf",
     color: "from-primary/60 to-primary/90",
   },
+  {
+    title: "Pajączki i naczynka — Przewodnik dla Pacjentki",
+    pages: "E-book",
+    desc: "Kompletny przewodnik o pajączkach naczyniowych — skąd się biorą, dlaczego ukrywanie jest niebezpieczne i jak metoda CLaCS zamyka naczynka trwale i komfortowo. Fototerapia, autorski krem i droga do lata bez długich spodni.",
+    chapters: [
+      "Skąd się wzięły pajączki? — genetyka, hormony, styl życia",
+      "Pułapka kamuflażu — ukryte ryzyko Przewlekłej Niewydolności Żylnej",
+      "Złoty Standard CLaCS — laser + skleroterapia w jednej sesji",
+      "Fototerapia i autorski krem — luksusowa rekonwalescencja",
+    ],
+    href: "/ebooks/CLaCS-Pajaczki-Przewodnik.pdf",
+    color: "from-accent-foreground/70 to-primary/80",
+  },
 ];
 
 const benefits = [
