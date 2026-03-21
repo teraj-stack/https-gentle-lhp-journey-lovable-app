@@ -77,8 +77,8 @@ const EBMComparisonChart = () => (
             }
             wrapperStyle={{ fontSize: 12, paddingTop: 12 }}
           />
-          <Bar dataKey="silosowa" radius={[4, 4, 0, 0]} barSize={50} fill="hsl(var(--muted-foreground))" />
-          <Bar dataKey="cml" radius={[4, 4, 0, 0]} barSize={50} fill="hsl(var(--primary))" />
+          <Bar dataKey="silosowa" radius={[4, 4, 0, 0]} barSize={50} fill="hsl(var(--muted-foreground))" animationDuration={1200} animationBegin={200} animationEasing="ease-out" />
+          <Bar dataKey="cml" radius={[4, 4, 0, 0]} barSize={50} fill="hsl(var(--primary))" animationDuration={1200} animationBegin={600} animationEasing="ease-out" />
         </BarChart>
       </ResponsiveContainer>
     </div>
