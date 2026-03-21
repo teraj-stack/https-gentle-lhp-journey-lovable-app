@@ -1024,49 +1024,8 @@
 
     <p class="caption" style="text-align:center; margin-top:1rem;">Ilustracja anatomiczna: pajączek żylny (wenulektazja), żyła zasilająca i żyła głęboka w warstwach skóry</p>
 
-    <script>
-      const skinData = {
-        epidermis: {
-          title: 'Naskórek (Epidermis)',
-          text: 'Najcieńsza, zewnętrzna warstwa skóry. Pajączki są widoczne przez nią jako fioletowo-czerwona siateczka. Sama w sobie nie jest źródłem problemu — jedynie ujawnia to, co dzieje się głębiej.'
-        },
-        dermis: {
-          title: 'Skóra właściwa (Dermis)',
-          text: 'Tu właśnie znajdują się rozszerzone wenule — „pajączki żylne". Mają średnicę poniżej 1 mm i tworzą charakterystyczną siateczkę widoczną na powierzchni skóry.'
-        },
-        hypodermis: {
-          title: 'Tkanka podskórna (Hypodermis)',
-          text: 'Głęboka warstwa zawierająca żyły zasilające i żyły głębokie. To tutaj kryje się prawdziwe źródło problemu — żyła zasilająca, która „karmi" pajączki ciśnieniem krwi.'
-        },
-        pajaczek: {
-          title: 'Pajączek żylny (wenulektazja)',
-          text: 'Rozszerzone, drobne naczynka w warstwie dermis. Są zasilane przez głębiej położoną żyłę — bez jej zamknięcia problem wraca. Metoda CLaCS celuje zarówno w pajączka, jak i jego źródło.'
-        },
-        zasilajaca: {
-          title: 'Żyła zasilająca (reticular vein)',
-          text: 'Ukryte źródło problemu — żyła o średnicy 1–3 mm, która „karmi" pajączki ciśnieniem krwi. Laser obkurcza ścianę, a mikrodawka sklerozantu zamyka światło naczynia.'
-        },
-        gleboka: {
-          title: 'Żyła głęboka (deep vein)',
-          text: 'Główna autostrada odpływu krwi z kończyny. Badanie USG Doppler pozwala wykryć niewydolność zastawek — co jest kluczowe dla oceny, czy pajączki są defektem kosmetycznym, czy sygnałem PNŻ.'
-        }
-      };
 
-      function showSkinInfo(key) {
-        const panel = document.getElementById('skinInfoPanel');
-        const title = document.getElementById('skinInfoTitle');
-        const text = document.getElementById('skinInfoText');
-        const data = skinData[key];
-        if (data) {
-          title.textContent = data.title;
-          text.textContent = data.text;
-          panel.style.display = 'block';
-          panel.style.animation = 'none';
-          panel.offsetHeight;
-          panel.style.animation = 'fadeIn 0.3s ease';
-        }
-      }
-    </script>
+
   </div>
 </section>
 
