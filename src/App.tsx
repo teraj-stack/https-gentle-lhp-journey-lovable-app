@@ -17,6 +17,7 @@ import FiLaC from "@/pages/FiLaC";
 import SiLaC from "@/pages/SiLaC";
 import Skleroterapia from "@/pages/Skleroterapia";
 import CLaCS from "@/pages/CLaCS";
+import Pajaczki from "@/pages/Pajaczki";
 import Kontakt from "@/pages/Kontakt";
 import NotFound from "@/pages/NotFound";
 
