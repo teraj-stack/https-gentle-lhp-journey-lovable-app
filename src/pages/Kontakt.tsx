@@ -25,7 +25,7 @@ const contactSchema = z.object({
 
 const locations = [
   {
-    name: "Warszawa Ursynów",
+    name: "Warszawa Wilanów",
     address: "Adama Branickiego 10/U6, 02-972 Warszawa",
     phone: "+48 22 123 45 67",
     email: "warszawa@cml.pl",
