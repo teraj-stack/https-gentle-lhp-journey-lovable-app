@@ -195,6 +195,22 @@ const DlaPacjenta = () => (
         ))}
       </section>
 
+      {/* Przewodnik o pajączkach — baner */}
+      <motion.section {...fadeUp} className="glass-card rounded-2xl p-8 md:p-10 max-w-3xl mx-auto">
+        <div className="flex flex-col sm:flex-row gap-6 items-center text-center sm:text-left">
+          <div className="text-5xl shrink-0">🦵</div>
+          <div className="flex-1">
+            <h3 className="text-xl font-bold text-foreground mb-2">Pajączki i naczynka — Przewodnik dla Pacjentki</h3>
+            <p className="text-sm text-muted-foreground leading-relaxed mb-4">
+              Skąd się biorą pajączki? Dlaczego ukrywanie jest niebezpieczne? Jak metoda CLaCS zamyka naczynka trwale i komfortowo? Przeczytaj nasz kompletny przewodnik.
+            </p>
+            <Button variant="hero" size="lg" asChild>
+              <Link to="/dla-pacjenta/pajaczki">Przeczytaj przewodnik</Link>
+            </Button>
+          </div>
+        </div>
+      </motion.section>
+
       {/* CTA */}
       <motion.section {...fadeUp} className="glass-card rounded-2xl p-8 md:p-12 text-center max-w-2xl mx-auto">
         <div className="text-4xl mb-4">🩺</div>
