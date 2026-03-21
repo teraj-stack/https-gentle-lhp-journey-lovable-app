@@ -26,7 +26,7 @@ const pillars = [
   },
   {
     icon: Award,
-    title: "Kooperacja interdyscyplinarna",
+    title: "Projekt Joint Venture",
     desc: "Zintegrowany ekosystem partnerski umożliwia bezpieczne kierowanie pacjentów między specjalistami — na osi uroginekologia, fizjoterapia, proktologia — pod wspólnym, wysokim standardem.",
   },
 ];
