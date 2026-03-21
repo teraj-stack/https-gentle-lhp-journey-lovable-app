@@ -1,0 +1,66 @@
+import { motion } from "framer-motion";
+import drBujokImg from "@/assets/dr-bujok.jpg";
+
+const fadeUp = {
+  initial: { opacity: 0, y: 30 },
+  whileInView: { opacity: 1, y: 0 },
+  viewport: { once: true },
+  transition: { duration: 0.7 },
+};
+
+const AboutDoctor = () => (
+  <section className="py-20 md:py-28">
+    <div className="max-w-7xl mx-auto px-4 md:px-8">
+      <div className="grid lg:grid-cols-2 gap-16 items-start">
+        <motion.div {...fadeUp} className="flex justify-center lg:sticky lg:top-28">
+          <div className="relative">
+            <img
+              src={drBujokImg}
+              alt="Dr Jan Bujok – chirurg, proktolog, flebolog"
+              className="w-72 md:w-80 aspect-[3/4] rounded-2xl object-cover shadow-2xl"
+            />
+            <div className="absolute -bottom-4 -right-4 w-72 md:w-80 aspect-[3/4] rounded-2xl bg-primary/20 -z-10" />
+          </div>
+        </motion.div>
+
+        <motion.div {...fadeUp}>
+          <p className="text-sm font-sans uppercase tracking-[0.15em] text-primary mb-4">Założyciel CML</p>
+          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-2 leading-tight">
+            Dr Jan Bujok
+          </h2>
+          <p className="text-lg text-muted-foreground mb-6 font-serif italic">
+            Chirurg ogólny · Proktolog · Flebolog
+          </p>
+          <div className="premium-divider !mx-0 mb-8" />
+
+          <div className="space-y-5 text-muted-foreground leading-relaxed">
+            <p>
+              Pionier w swojej dziedzinie – jako <strong className="text-foreground">pierwszy lekarz w Polsce</strong> zaczął wykonywać zabiegi z zakresu proktologii estetycznej, przełamując tabu i&nbsp;wprowadzając nowe standardy dbałości o intymny komfort pacjentów.
+            </p>
+            <p>
+              Twórca Mazowieckiego Centrum Proktologii Laserowej (MCPL) — inicjatywy rozwijanej w&nbsp;partnerstwie m.in. z&nbsp;Kliniką Ginekologii w&nbsp;Wilanowie oraz placówką Beauty&nbsp;&amp;&nbsp;Mind w&nbsp;Siedlcach. Łączy najnowocześniejsze technologie — laseroterapię, radiofrekwencję, CLaCS — z&nbsp;precyzyjną diagnostyką, osiągając spektakularne efekty lecznicze przy zachowaniu doskonałych rezultatów estetycznych.
+            </p>
+            <p>
+              Specjalizuje się w małoinwazyjnym leczeniu hemoroidów, szczelin, przetok oraz zaawansowanych problemów żylnych.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-3 gap-4 my-8">
+            {[
+              { num: "15+", label: "lat doświadczenia" },
+              { num: "3000+", label: "zabiegów laserowych" },
+              { num: "100+", label: "przeszkolonych lekarzy" },
+            ].map((stat) => (
+              <div key={stat.label} className="text-center p-4 rounded-xl bg-accent/50">
+                <p className="text-2xl font-bold text-primary font-serif">{stat.num}</p>
+                <p className="text-xs text-muted-foreground mt-1">{stat.label}</p>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+      </div>
+    </div>
+  </section>
+);
+
+export default AboutDoctor;
