@@ -23,7 +23,7 @@ const Plastyka = () => (
         <div className="absolute -top-1/4 -right-1/4 w-[60vw] h-[60vw] rounded-full bg-primary-foreground/5 blur-3xl" />
       </div>
       <div className="relative max-w-7xl mx-auto px-4 md:px-8">
-        <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.9 }} className="max-w-3xl">
+        <motion.div initial={{ opacity: 0, y: 40, filter: "blur(6px)" }} animate={{ opacity: 1, y: 0, filter: "blur(0px)" }} transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }} className="max-w-3xl">
           <p className="text-primary-foreground/60 text-sm font-sans uppercase tracking-[0.2em] mb-6">Proktologia Estetyczna</p>
           <h1 className="text-4xl md:text-6xl font-bold text-primary-foreground leading-[1.1] mb-6">
             Plastyka okolicy odbytu
