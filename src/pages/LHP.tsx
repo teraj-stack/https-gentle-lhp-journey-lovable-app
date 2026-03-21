@@ -1,3 +1,4 @@
+import Breadcrumbs from "@/components/layout/Breadcrumbs";
 import HeroSection from "@/components/lhp/HeroSection";
 import ComparisonChart from "@/components/lhp/ComparisonChart";
 import SurvivalKit from "@/components/lhp/SurvivalKit";
