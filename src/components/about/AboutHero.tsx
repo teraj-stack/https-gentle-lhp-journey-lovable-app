@@ -25,7 +25,7 @@ const AboutHero = () => (
         </p>
       </motion.div>
     </div>
-  </section>
+  </ParallaxSection>
 );
 
 export default AboutHero;

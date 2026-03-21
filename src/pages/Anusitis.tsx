@@ -32,7 +32,7 @@ const Anusitis = () => (
           </Button>
         </motion.div>
       </div>
-    </section>
+    </ParallaxSection>
 
     {/* Metrics */}
     <section className="py-10 border-b border-border bg-card">

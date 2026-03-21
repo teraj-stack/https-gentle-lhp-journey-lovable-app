@@ -51,7 +51,7 @@ const Pajaczki = () => (
           Prawda o pajączkach, ukrytym ryzyku i najskuteczniejszej metodzie leczenia. Przewodnik dla kobiet, które mają dość ukrywania nóg.
         </p>
       </motion.div>
-    </section>
+    </ParallaxSection>
 
     <div className="max-w-5xl mx-auto px-4 py-16 space-y-24">
 

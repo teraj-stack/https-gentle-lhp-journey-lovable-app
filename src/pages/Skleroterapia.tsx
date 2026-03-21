@@ -65,7 +65,7 @@ const Skleroterapia = () => (
           Skuteczna metoda zamykania żylakowato zmienionych naczyń — precyzyjne podanie sklerosantu pod kontrolą USG eliminuje chore żyły bez nacięć.
         </p>
       </motion.div>
-    </section>
+    </ParallaxSection>
 
     <div className="max-w-5xl mx-auto px-4 py-16 space-y-24">
       {/* Wskazania */}

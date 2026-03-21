@@ -37,7 +37,7 @@ const SiLaCHero = () => (
         </div>
       </div>
     </motion.div>
-  </section>
+  </ParallaxSection>
 );
 
 export default SiLaCHero;

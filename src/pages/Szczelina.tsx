@@ -37,7 +37,7 @@ const Szczelina = () => (
           </Button>
         </motion.div>
       </div>
-    </section>
+    </ParallaxSection>
 
     {/* Hero Metrics */}
     <section className="py-10 border-b border-border bg-card">

@@ -112,7 +112,7 @@ const Wspolpraca = () => (
           </Button>
         </motion.div>
       </div>
-    </section>
+    </ParallaxSection>
 
     {/* Filozofia */}
     <section className="py-20 md:py-28">

@@ -42,7 +42,7 @@ const EVLT = () => (
           Bez skalpela, bez narkozy i bez długiej rekonwalescencji. Poznaj medycynę, która pozwala załatwić problem „raz a dobrze".
         </p>
       </motion.div>
-    </section>
+    </ParallaxSection>
 
     <div className="max-w-5xl mx-auto px-4 py-16 space-y-24">
       {/* Przyczyny + Sygnały */}

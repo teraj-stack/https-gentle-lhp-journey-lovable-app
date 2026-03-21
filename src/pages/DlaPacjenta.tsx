@@ -107,7 +107,7 @@ const DlaPacjenta = () => (
           Zanim wejdziesz do gabinetu, przeczytaj nasze autorskie materiały. Zrozumiesz problem, poznasz metody leczenia i będziesz wiedział dokładnie, czego się spodziewać.
         </p>
       </motion.div>
-    </section>
+    </ParallaxSection>
 
     <div className="max-w-5xl mx-auto px-4 py-16 space-y-20">
       {/* Benefits */}

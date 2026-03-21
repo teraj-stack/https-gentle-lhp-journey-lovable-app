@@ -67,7 +67,7 @@ const CLaCS = () => (
           Crio Laser and Crio Sclerotherapy — zaawansowana metoda łącząca trzy techniki w jednym zabiegu dla najlepszych efektów estetycznych.
         </p>
       </motion.div>
-    </section>
+    </ParallaxSection>
 
     <div className="max-w-5xl mx-auto px-4 py-16 space-y-24">
       {/* Jak działa CLaCS */}
