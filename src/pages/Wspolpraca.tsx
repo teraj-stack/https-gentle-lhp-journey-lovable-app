@@ -90,7 +90,7 @@ const faq = [
 const Wspolpraca = () => (
   <div className="min-h-screen">
     {/* Hero */}
-    <section className="relative gradient-hero pt-32 pb-20 md:pt-40 md:pb-28">
+    <ParallaxSection className="relative gradient-hero pt-32 pb-20 md:pt-40 md:pb-28">
       <div className="absolute inset-0 bg-gradient-to-b from-background/80 to-background/40" />
       <div className="relative max-w-4xl mx-auto px-4 md:px-8 text-center">
         <motion.div {...fadeUp}>
