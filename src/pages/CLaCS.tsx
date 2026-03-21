@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { BookOpen, Download, ArrowRight } from "lucide-react";
+import CLaCSFAQ from "@/components/clacs/CLaCSFAQ";
 
 const fadeUp = {
   initial: { opacity: 0, y: 30 },
@@ -183,6 +184,9 @@ const CLaCS = () => (
           ))}
         </div>
       </motion.section>
+
+      {/* FAQ */}
+      <CLaCSFAQ fadeUp={fadeUp} />
 
       {/* E-book baner */}
       <motion.section {...fadeUp} className="glass-card rounded-2xl p-8 md:p-10 max-w-3xl mx-auto">
