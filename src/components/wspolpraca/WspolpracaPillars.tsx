@@ -79,6 +79,11 @@ const WspolpracaPillars = () => (
             {...stagger(i)}
             className="glass-card rounded-2xl p-6 md:p-8 flex flex-col md:flex-row gap-6 items-start group hover:border-primary/30 transition-colors duration-500"
           >
+            {/* Number */}
+            <span className="absolute -top-3 -left-3 w-8 h-8 rounded-full bg-primary text-primary-foreground text-sm font-bold flex items-center justify-center font-sans shadow-md z-10">
+              {i + 1}
+            </span>
+
             {/* Icon area */}
             <div className="relative shrink-0">
               <div
