@@ -6,10 +6,10 @@ import RiskFactorsChart from "@/components/evlt/RiskFactorsChart";
 import EVLTFAQ from "@/components/evlt/EVLTFAQ";
 
 const fadeUp = {
-  initial: { opacity: 0, y: 30 },
-  whileInView: { opacity: 1, y: 0 },
-  viewport: { once: true },
-  transition: { duration: 0.6 },
+  initial: { opacity: 0, y: 24, filter: "blur(4px)" },
+  whileInView: { opacity: 1, y: 0, filter: "blur(0px)" },
+  viewport: { once: true, amount: 0.2 },
+  transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1] as const },
 };
 
 const warnings = [
@@ -25,9 +25,9 @@ const EVLT = () => (
     {/* Hero */}
     <section className="gradient-bg py-16 md:py-24 px-4">
       <motion.div
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.7 }}
+        initial={{ opacity: 0, y: 30, filter: "blur(6px)" }}
+        animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
         className="max-w-3xl mx-auto text-center"
       >
         <p className="text-sm font-sans uppercase tracking-[0.15em] text-primary-foreground/60 mb-4">
@@ -69,10 +69,10 @@ const EVLT = () => (
             {warnings.map((w, i) => (
               <motion.div
                 key={w.title}
-                initial={{ opacity: 0, x: 20 }}
-                whileInView={{ opacity: 1, x: 0 }}
+                initial={{ opacity: 0, x: 20, filter: "blur(4px)" }}
+                whileInView={{ opacity: 1, x: 0, filter: "blur(0px)" }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.4, delay: i * 0.1 }}
+                transition={{ duration: 0.5, delay: i * 0.1, ease: [0.16, 1, 0.3, 1] }}
                 className="glass-card rounded-xl p-5 flex items-start gap-4"
               >
                 <span className="text-2xl">{w.emoji}</span>
@@ -153,10 +153,10 @@ const EVLT = () => (
         <h2 className="section-title mb-3 text-center">Dwa proste kroki do zdrowych nóg</h2>
         <div className="grid md:grid-cols-2 gap-8 mt-10">
           <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            whileInView={{ opacity: 1, x: 0 }}
+            initial={{ opacity: 0, x: -20, filter: "blur(4px)" }}
+            whileInView={{ opacity: 1, x: 0, filter: "blur(0px)" }}
             viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
+            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
             className="glass-card rounded-2xl p-8"
           >
             <div className="flex items-center gap-4 mb-4">
@@ -171,10 +171,10 @@ const EVLT = () => (
           </motion.div>
 
           <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            whileInView={{ opacity: 1, x: 0 }}
+            initial={{ opacity: 0, x: 20, filter: "blur(4px)" }}
+            whileInView={{ opacity: 1, x: 0, filter: "blur(0px)" }}
             viewport={{ once: true }}
-            transition={{ duration: 0.5, delay: 0.15 }}
+            transition={{ duration: 0.6, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
             className="glass-card rounded-2xl p-8"
           >
             <div className="flex items-center gap-4 mb-4">
