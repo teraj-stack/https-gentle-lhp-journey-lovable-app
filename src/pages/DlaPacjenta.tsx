@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import ParallaxSection from "@/components/ui/parallax-section";
 import Breadcrumbs from "@/components/layout/Breadcrumbs";
-import { BookOpen, Download, FileText, Shield, Clock, Heart } from "lucide-react";
+import { BookOpen, Download, FileText, Shield, Clock, Heart, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 
@@ -12,73 +12,49 @@ const fadeUp = {
   transition: { duration: 0.6 },
 };
 
-const ebooks = [
+const mainEbook = {
+  title: "Powrót do Komfortu — Kompleksowy Przewodnik",
+  pages: "13 stron",
+  desc: "Pełny przewodnik po nowoczesnym leczeniu hemoroidów. Dowiesz się: dlaczego maści przestają działać, jak działa laser vs. skalpel, jak wygląda zabieg krok po kroku i czego się spodziewać po zabiegu.",
+  chapters: [
+    "Dlaczego to w ogóle boli? — mechanizm hemoroidów",
+    "Domowe sposoby vs. medycyna — pułapka błędnego koła",
+    "Skalpel czy laser? — porównanie metod",
+    "Jak wygląda zabieg laserowy krok po kroku?",
+    "Czy kwalifikujesz się do zabiegu? — wyścig z czasem",
+  ],
+  href: "/ebooks/Powrot-do-Komfortu-Przewodnik.pdf",
+  color: "from-primary/90 to-primary",
+};
+
+const onlineGuides = [
   {
-    title: "Powrót do Komfortu — Kompleksowy Przewodnik",
-    pages: "13 stron",
-    desc: "Pełny przewodnik po nowoczesnym leczeniu hemoroidów. Dowiesz się: dlaczego maści przestają działać, jak działa laser vs. skalpel, jak wygląda zabieg krok po kroku i czego się spodziewać po zabiegu.",
-    chapters: [
-      "Dlaczego to w ogóle boli? — mechanizm hemoroidów",
-      "Domowe sposoby vs. medycyna — pułapka błędnego koła",
-      "Skalpel czy laser? — porównanie metod",
-      "Jak wygląda zabieg laserowy krok po kroku?",
-      "Czy kwalifikujesz się do zabiegu? — wyścig z czasem",
-    ],
-    href: "/ebooks/Powrot-do-Komfortu-Przewodnik.pdf",
-    color: "from-primary/90 to-primary",
-  },
-  {
-    title: "Hemoroidy od A do Z — Infografika",
-    pages: "11 stron",
-    desc: "Wizualna podróż od objawów do decyzji. Infografika porównawcza skalpel vs. laser, oś czasu zabiegu, syndrom cichego obserwatora i kluczowe liczby, które pomogą Ci podjąć decyzję.",
-    chapters: [
-      "Hemoroidy: naturalne poduszki, które wymknęły się spod kontroli",
-      "Syndrom Cichego Obserwatora — poszukiwanie w internecie",
-      "Błędne koło apteki — skuteczność maści w czasie",
-      "Skalpel vs. Laser — porównanie bólu i rekonwalescencji",
-      "Czas działa na Twoją niekorzyść — skala I°–IV°",
-    ],
-    href: "/ebooks/Hemoroidy-od-A-do-Z-Infografika.pdf",
-    color: "from-accent-foreground/80 to-accent-foreground",
+    title: "Hemoroidy od A do Z",
+    subtitle: "Infografika wizualna",
+    desc: "Wizualna podróż od objawów do decyzji. Porównanie skalpel vs. laser, oś czasu zabiegu i kluczowe liczby.",
+    href: "/leczenie/lhp",
+    icon: "📊",
   },
   {
     title: "FiLaC — Laserowe Zamykanie Przetok",
-    pages: "Infografika",
-    desc: "Kompaktowa infografika przedstawiająca zabieg FiLaC (Fistula Laser Closure) — laserowe zamykanie przetok odbytu laserem diodowym 1470 nm. Przebieg zabiegu w 4 krokach, parametry kliniczne i porównanie z metodami tradycyjnymi.",
-    chapters: [
-      "Przebieg zabiegu — od identyfikacji do zamknięcia",
-      "Parametry kliniczne — 93% skuteczności, 100% ochrony zwieraczy",
-      "FiLaC vs metody tradycyjne — ból, rekonwalescencja, ryzyko",
-      "Zabieg ambulatoryjny — powrót do aktywności < 24h",
-    ],
-    href: "/ebooks/FiLaC-Infografika.pdf",
-    color: "from-[hsl(var(--primary))]/70 to-accent-foreground/90",
+    subtitle: "Przewodnik po zabiegu",
+    desc: "Zabieg FiLaC w 4 krokach, parametry kliniczne (93% skuteczności) i porównanie z metodami tradycyjnymi.",
+    href: "/leczenie/filac",
+    icon: "🔬",
   },
   {
     title: "EVLT — Laserowe Leczenie Żylaków",
-    pages: "Infografika",
-    desc: "Infografika przedstawiająca zabieg EVLT (Endovenous Laser Treatment) — laserowe zamykanie żylaków kończyn dolnych laserem diodowym 1470 nm. Przebieg zabiegu w 4 krokach, parametry kliniczne (98% skuteczności) i porównanie z chirurgią tradycyjną.",
-    chapters: [
-      "Przebieg zabiegu — od diagnostyki USG po efekt końcowy",
-      "Parametry kliniczne — 98% skuteczności, 0 mm blizny",
-      "EVLT vs metody tradycyjne — ból, rekonwalescencja, narkoza",
-      "Zabieg ambulatoryjny — bez skalpela i hospitalizacji",
-    ],
-    href: "/ebooks/EVLT-Infografika.pdf",
-    color: "from-primary/60 to-primary/90",
+    subtitle: "Przewodnik po zabiegu",
+    desc: "Zabieg EVLT krok po kroku, 98% skuteczności, 0 mm blizny — bez skalpela i hospitalizacji.",
+    href: "/leczenie/evlt",
+    icon: "🦵",
   },
   {
     title: "Pajączki i naczynka — Przewodnik dla Pacjentki",
-    pages: "E-book",
-    desc: "Kompletny przewodnik o pajączkach naczyniowych — skąd się biorą, dlaczego ukrywanie jest niebezpieczne i jak metoda CLaCS zamyka naczynka trwale i komfortowo. Fototerapia, autorski krem i droga do lata bez długich spodni.",
-    chapters: [
-      "Skąd się wzięły pajączki? — genetyka, hormony, styl życia",
-      "Pułapka kamuflażu — ukryte ryzyko Przewlekłej Niewydolności Żylnej",
-      "Złoty Standard CLaCS — laser + skleroterapia w jednej sesji",
-      "Fototerapia i autorski krem — luksusowa rekonwalescencja",
-    ],
-    href: "/ebooks/CLaCS-Pajaczki-Przewodnik.pdf",
-    color: "from-accent-foreground/70 to-primary/80",
+    subtitle: "Interaktywny e-book",
+    desc: "Kompletny przewodnik o pajączkach naczyniowych — skąd się biorą, jak metoda CLaCS zamyka naczynka trwale i komfortowo.",
+    href: "/dla-pacjenta/ebook-pajaczki",
+    icon: "🩺",
   },
 ];
 
@@ -135,84 +111,107 @@ const DlaPacjenta = () => (
         </div>
       </motion.section>
 
-      {/* E-books */}
+      {/* Main E-book (PDF download) */}
       <section className="space-y-10">
         <motion.div {...fadeUp} className="text-center">
-          <p className="text-sm font-sans uppercase tracking-[0.15em] text-primary mb-3">Materiały do pobrania</p>
+          <p className="text-sm font-sans uppercase tracking-[0.15em] text-primary mb-3">E-book do pobrania</p>
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-            Darmowe e-booki Dr. Bujoka
+            Darmowy e-book Dr. Bujoka
+          </h2>
+          <div className="premium-divider mb-6" />
+        </motion.div>
+
+        <motion.div
+          {...fadeUp}
+          className="glass-card rounded-2xl p-8 md:p-10"
+        >
+          <div className="flex flex-col md:flex-row gap-8 items-start">
+            <div className="w-32 md:w-40 shrink-0 mx-auto md:mx-0">
+              <div className={`aspect-[3/4] rounded-xl bg-gradient-to-br ${mainEbook.color} shadow-xl flex flex-col items-center justify-center p-4 text-primary-foreground`}>
+                <BookOpen className="w-8 h-8 mb-3 opacity-80" />
+                <p className="text-[10px] uppercase tracking-[0.15em] opacity-60 mb-1 font-sans">CML</p>
+                <h3 className="text-[11px] font-bold text-center leading-snug font-serif">
+                  {mainEbook.title.split("—")[0].trim()}
+                </h3>
+                <div className="w-8 h-px bg-primary-foreground/30 my-2" />
+                <p className="text-[9px] text-center opacity-70 font-sans">{mainEbook.pages}</p>
+              </div>
+            </div>
+            <div className="flex-1">
+              <h3 className="text-xl font-bold text-foreground mb-2">{mainEbook.title}</h3>
+              <p className="text-muted-foreground leading-relaxed mb-4 text-sm">{mainEbook.desc}</p>
+              <div className="mb-5">
+                <p className="text-xs font-semibold text-foreground uppercase tracking-wider mb-2">
+                  <FileText className="w-3.5 h-3.5 inline mr-1.5 text-primary" />
+                  Spis treści:
+                </p>
+                <ul className="space-y-1.5">
+                  {mainEbook.chapters.map((ch) => (
+                    <li key={ch} className="text-sm text-muted-foreground flex gap-2">
+                      <span className="text-primary mt-1">•</span>
+                      {ch}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <Button variant="hero" size="lg" asChild>
+                <a href={mainEbook.href} download>
+                  <Download className="w-4 h-4 mr-2" />
+                  Pobierz bezpłatnie (PDF)
+                </a>
+              </Button>
+            </div>
+          </div>
+        </motion.div>
+      </section>
+
+      {/* Kompendium Wiedzy Pacjenta */}
+      <section className="space-y-8">
+        <motion.div {...fadeUp} className="text-center">
+          <p className="text-sm font-sans uppercase tracking-[0.15em] text-primary mb-3">Czytaj online</p>
+          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+            Kompendium Wiedzy Pacjenta
           </h2>
           <div className="premium-divider mb-6" />
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Każdy pacjent CML otrzymuje dostęp do autorskich przewodników. Pobierz, przeczytaj i wróć z pytaniami — jesteśmy tu, by na nie odpowiedzieć.
+            Przewodniki dostępne bezpośrednio na stronie — bez pobierania, w każdej chwili i na każdym urządzeniu.
           </p>
         </motion.div>
 
-        {ebooks.map((ebook, i) => (
-          <motion.div
-            key={ebook.title}
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: i * 0.15 }}
-            className="glass-card rounded-2xl p-8 md:p-10"
-          >
-            <div className="flex flex-col md:flex-row gap-8 items-start">
-              <div className="w-32 md:w-40 shrink-0 mx-auto md:mx-0">
-                <div className={`aspect-[3/4] rounded-xl bg-gradient-to-br ${ebook.color} shadow-xl flex flex-col items-center justify-center p-4 text-primary-foreground`}>
-                  <BookOpen className="w-8 h-8 mb-3 opacity-80" />
-                  <p className="text-[10px] uppercase tracking-[0.15em] opacity-60 mb-1 font-sans">CML</p>
-                  <h3 className="text-[11px] font-bold text-center leading-snug font-serif">
-                    {ebook.title.split("—")[0].trim()}
+        <div className="grid sm:grid-cols-2 gap-5">
+          {onlineGuides.map((guide, i) => (
+            <motion.div
+              key={guide.title}
+              initial={{ opacity: 0, y: 24 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: i * 0.1 }}
+            >
+              <Link
+                to={guide.href}
+                className="glass-card rounded-xl p-6 flex gap-5 items-start group hover:border-primary/30 transition-colors duration-300 block h-full"
+              >
+                <span className="text-3xl shrink-0">{guide.icon}</span>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-base font-bold text-foreground mb-0.5 group-hover:text-primary transition-colors font-sans">
+                    {guide.title}
                   </h3>
-                  <div className="w-8 h-px bg-primary-foreground/30 my-2" />
-                  <p className="text-[9px] text-center opacity-70 font-sans">{ebook.pages}</p>
-                </div>
-              </div>
-              <div className="flex-1">
-                <h3 className="text-xl font-bold text-foreground mb-2">{ebook.title}</h3>
-                <p className="text-muted-foreground leading-relaxed mb-4 text-sm">{ebook.desc}</p>
-                <div className="mb-5">
-                  <p className="text-xs font-semibold text-foreground uppercase tracking-wider mb-2">
-                    <FileText className="w-3.5 h-3.5 inline mr-1.5 text-primary" />
-                    Spis treści:
+                  <p className="text-[11px] uppercase tracking-widest text-primary/60 mb-2 font-sans">
+                    {guide.subtitle}
                   </p>
-                  <ul className="space-y-1.5">
-                    {ebook.chapters.map((ch) => (
-                      <li key={ch} className="text-sm text-muted-foreground flex gap-2">
-                        <span className="text-primary mt-1">•</span>
-                        {ch}
-                      </li>
-                    ))}
-                  </ul>
+                  <p className="text-sm text-muted-foreground leading-relaxed mb-3">{guide.desc}</p>
+                  <span className="text-xs font-semibold text-primary flex items-center gap-1">
+                    Czytaj na stronie
+                    <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />
+                  </span>
                 </div>
-                <Button variant="hero" size="lg" asChild>
-                  <a href={ebook.href} download>
-                    <Download className="w-4 h-4 mr-2" />
-                    Pobierz bezpłatnie (PDF)
-                  </a>
-                </Button>
-              </div>
-            </div>
-          </motion.div>
-        ))}
+              </Link>
+            </motion.div>
+          ))}
+        </div>
       </section>
 
-      {/* Przewodnik o pajączkach — baner */}
-      <motion.section {...fadeUp} className="glass-card rounded-2xl p-8 md:p-10 max-w-3xl mx-auto">
-        <div className="flex flex-col sm:flex-row gap-6 items-center text-center sm:text-left">
-          <div className="text-5xl shrink-0">🦵</div>
-          <div className="flex-1">
-            <h3 className="text-xl font-bold text-foreground mb-2">Pajączki i naczynka — Przewodnik dla Pacjentki</h3>
-            <p className="text-sm text-muted-foreground leading-relaxed mb-4">
-              Skąd się biorą pajączki? Dlaczego ukrywanie jest niebezpieczne? Jak metoda CLaCS zamyka naczynka trwale i komfortowo? Przeczytaj nasz kompletny przewodnik.
-            </p>
-            <Button variant="hero" size="lg" asChild>
-              <Link to="/dla-pacjenta/pajaczki">Przeczytaj przewodnik</Link>
-            </Button>
-          </div>
-        </div>
-      </motion.section>
+
 
       {/* CTA */}
       <motion.section {...fadeUp} className="glass-card rounded-2xl p-8 md:p-12 text-center max-w-2xl mx-auto">
