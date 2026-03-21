@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, CheckCircle2, AlertTriangle, Pill, Shield } from "lucide-react";
+import ParallaxSection from "@/components/ui/parallax-section";
 
 const fadeUp = {
   initial: { opacity: 0, y: 30 },
