@@ -5,10 +5,10 @@ import { Download, ArrowRight } from "lucide-react";
 import AnatomyDiagram from "@/components/pajaczki/AnatomyDiagram";
 
 const fadeUp = {
-  initial: { opacity: 0, y: 30 },
-  whileInView: { opacity: 1, y: 0 },
-  viewport: { once: true },
-  transition: { duration: 0.6 },
+  initial: { opacity: 0, y: 24, filter: "blur(4px)" },
+  whileInView: { opacity: 1, y: 0, filter: "blur(0px)" },
+  viewport: { once: true, amount: 0.2 },
+  transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] as const },
 };
 
 const myths = [
@@ -35,9 +35,9 @@ const Pajaczki = () => (
     {/* Hero */}
     <section className="gradient-bg py-16 md:py-24 px-4">
       <motion.div
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.7 }}
+        initial={{ opacity: 0, y: 30, filter: "blur(6px)" }}
+        animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
         className="max-w-3xl mx-auto text-center"
       >
         <p className="text-sm font-sans uppercase tracking-[0.15em] text-primary-foreground/60 mb-4">
