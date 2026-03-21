@@ -20,6 +20,11 @@ const flebologiaItems = [
   { label: "Pajączki – CLaCS", href: "/leczenie/clacs", desc: "Crio Laser and Crio Sclerotherapy" },
 ];
 
+const dlaPacjentaItems = [
+  { label: "Przygotowanie do wizyty", href: "/dla-pacjenta", desc: "Informacje przed wizytą" },
+  { label: "Odzyskaj beztroskę", href: "/dla-pacjenta/ebook-pajaczki", desc: "E-book o pajączków żylnych" },
+];
+
 const Header = () => {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
