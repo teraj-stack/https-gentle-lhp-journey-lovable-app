@@ -111,67 +111,104 @@ const DlaPacjenta = () => (
         </div>
       </motion.section>
 
-      {/* E-books */}
+      {/* Main E-book (PDF download) */}
       <section className="space-y-10">
         <motion.div {...fadeUp} className="text-center">
-          <p className="text-sm font-sans uppercase tracking-[0.15em] text-primary mb-3">Materiały do pobrania</p>
+          <p className="text-sm font-sans uppercase tracking-[0.15em] text-primary mb-3">E-book do pobrania</p>
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-            Darmowe e-booki Dr. Bujoka
+            Darmowy e-book Dr. Bujoka
+          </h2>
+          <div className="premium-divider mb-6" />
+        </motion.div>
+
+        <motion.div
+          {...fadeUp}
+          className="glass-card rounded-2xl p-8 md:p-10"
+        >
+          <div className="flex flex-col md:flex-row gap-8 items-start">
+            <div className="w-32 md:w-40 shrink-0 mx-auto md:mx-0">
+              <div className={`aspect-[3/4] rounded-xl bg-gradient-to-br ${mainEbook.color} shadow-xl flex flex-col items-center justify-center p-4 text-primary-foreground`}>
+                <BookOpen className="w-8 h-8 mb-3 opacity-80" />
+                <p className="text-[10px] uppercase tracking-[0.15em] opacity-60 mb-1 font-sans">CML</p>
+                <h3 className="text-[11px] font-bold text-center leading-snug font-serif">
+                  {mainEbook.title.split("—")[0].trim()}
+                </h3>
+                <div className="w-8 h-px bg-primary-foreground/30 my-2" />
+                <p className="text-[9px] text-center opacity-70 font-sans">{mainEbook.pages}</p>
+              </div>
+            </div>
+            <div className="flex-1">
+              <h3 className="text-xl font-bold text-foreground mb-2">{mainEbook.title}</h3>
+              <p className="text-muted-foreground leading-relaxed mb-4 text-sm">{mainEbook.desc}</p>
+              <div className="mb-5">
+                <p className="text-xs font-semibold text-foreground uppercase tracking-wider mb-2">
+                  <FileText className="w-3.5 h-3.5 inline mr-1.5 text-primary" />
+                  Spis treści:
+                </p>
+                <ul className="space-y-1.5">
+                  {mainEbook.chapters.map((ch) => (
+                    <li key={ch} className="text-sm text-muted-foreground flex gap-2">
+                      <span className="text-primary mt-1">•</span>
+                      {ch}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <Button variant="hero" size="lg" asChild>
+                <a href={mainEbook.href} download>
+                  <Download className="w-4 h-4 mr-2" />
+                  Pobierz bezpłatnie (PDF)
+                </a>
+              </Button>
+            </div>
+          </div>
+        </motion.div>
+      </section>
+
+      {/* Kompendium Wiedzy Pacjenta */}
+      <section className="space-y-8">
+        <motion.div {...fadeUp} className="text-center">
+          <p className="text-sm font-sans uppercase tracking-[0.15em] text-primary mb-3">Czytaj online</p>
+          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+            Kompendium Wiedzy Pacjenta
           </h2>
           <div className="premium-divider mb-6" />
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Każdy pacjent CML otrzymuje dostęp do autorskich przewodników. Pobierz, przeczytaj i wróć z pytaniami — jesteśmy tu, by na nie odpowiedzieć.
+            Przewodniki dostępne bezpośrednio na stronie — bez pobierania, w każdej chwili i na każdym urządzeniu.
           </p>
         </motion.div>
 
-        {ebooks.map((ebook, i) => (
-          <motion.div
-            key={ebook.title}
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: i * 0.15 }}
-            className="glass-card rounded-2xl p-8 md:p-10"
-          >
-            <div className="flex flex-col md:flex-row gap-8 items-start">
-              <div className="w-32 md:w-40 shrink-0 mx-auto md:mx-0">
-                <div className={`aspect-[3/4] rounded-xl bg-gradient-to-br ${ebook.color} shadow-xl flex flex-col items-center justify-center p-4 text-primary-foreground`}>
-                  <BookOpen className="w-8 h-8 mb-3 opacity-80" />
-                  <p className="text-[10px] uppercase tracking-[0.15em] opacity-60 mb-1 font-sans">CML</p>
-                  <h3 className="text-[11px] font-bold text-center leading-snug font-serif">
-                    {ebook.title.split("—")[0].trim()}
+        <div className="grid sm:grid-cols-2 gap-5">
+          {onlineGuides.map((guide, i) => (
+            <motion.div
+              key={guide.title}
+              initial={{ opacity: 0, y: 24 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: i * 0.1 }}
+            >
+              <Link
+                to={guide.href}
+                className="glass-card rounded-xl p-6 flex gap-5 items-start group hover:border-primary/30 transition-colors duration-300 block h-full"
+              >
+                <span className="text-3xl shrink-0">{guide.icon}</span>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-base font-bold text-foreground mb-0.5 group-hover:text-primary transition-colors font-sans">
+                    {guide.title}
                   </h3>
-                  <div className="w-8 h-px bg-primary-foreground/30 my-2" />
-                  <p className="text-[9px] text-center opacity-70 font-sans">{ebook.pages}</p>
-                </div>
-              </div>
-              <div className="flex-1">
-                <h3 className="text-xl font-bold text-foreground mb-2">{ebook.title}</h3>
-                <p className="text-muted-foreground leading-relaxed mb-4 text-sm">{ebook.desc}</p>
-                <div className="mb-5">
-                  <p className="text-xs font-semibold text-foreground uppercase tracking-wider mb-2">
-                    <FileText className="w-3.5 h-3.5 inline mr-1.5 text-primary" />
-                    Spis treści:
+                  <p className="text-[11px] uppercase tracking-widest text-primary/60 mb-2 font-sans">
+                    {guide.subtitle}
                   </p>
-                  <ul className="space-y-1.5">
-                    {ebook.chapters.map((ch) => (
-                      <li key={ch} className="text-sm text-muted-foreground flex gap-2">
-                        <span className="text-primary mt-1">•</span>
-                        {ch}
-                      </li>
-                    ))}
-                  </ul>
+                  <p className="text-sm text-muted-foreground leading-relaxed mb-3">{guide.desc}</p>
+                  <span className="text-xs font-semibold text-primary flex items-center gap-1">
+                    Czytaj na stronie
+                    <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />
+                  </span>
                 </div>
-                <Button variant="hero" size="lg" asChild>
-                  <a href={ebook.href} download>
-                    <Download className="w-4 h-4 mr-2" />
-                    Pobierz bezpłatnie (PDF)
-                  </a>
-                </Button>
-              </div>
-            </div>
-          </motion.div>
-        ))}
+              </Link>
+            </motion.div>
+          ))}
+        </div>
       </section>
 
       {/* Przewodnik o pajączkach — baner */}
