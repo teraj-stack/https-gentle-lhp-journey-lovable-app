@@ -1,18 +1,13 @@
 import { motion } from "framer-motion";
-import ParallaxSection from "@/components/ui/parallax-section";
-import { Link } from "react-router-dom";
 import Breadcrumbs from "@/components/layout/Breadcrumbs";
-import { Button } from "@/components/ui/button";
+import WspolpracaHero from "@/components/wspolpraca/WspolpracaHero";
+import WspolpracaPillars from "@/components/wspolpraca/WspolpracaPillars";
+import WspolpracaCTA from "@/components/wspolpraca/WspolpracaCTA";
 import {
-  Network,
-  GraduationCap,
   Clock,
   Shield,
-  ArrowRight,
-  BookOpen,
-  Users,
+  Network,
   TrendingUp,
-  CheckCircle2,
 } from "lucide-react";
 import {
   Accordion,
@@ -72,7 +67,7 @@ const benefits = [
 const faq = [
   {
     q: "W jaki sposób technologia LHP wspiera chirurgię jednego dnia?",
-    a: "Zabieg LHP to wewnątrztkankowa procedura fotokoagulacji — nie wymaga mechanicznego wycinania tkanek ani otwartych ran. W wielu przypadkach pacjenci wracają do aktywności w 48–72 godziny. Optymalizuje to rotację na salach zabiegowych i minimalizuje obciążenie infrastruktury łóżkowej.",
+    a: "Zabieg LHP to wewnątrztkankowa procedura fotokoagulacji \u2014 nie wymaga mechanicznego wycinania tkanek ani otwartych ran. W wielu przypadkach pacjenci wracają do aktywności w 48\u201372 godziny. Optymalizuje to rotację na salach zabiegowych i minimalizuje obciążenie infrastruktury łóżkowej.",
   },
   {
     q: "Na czym polega rola narzędzi edukacyjnych w kwalifikacji medycznej?",
@@ -84,36 +79,13 @@ const faq = [
   },
   {
     q: "Czy dołączenie do sieci wiąże się z utratą autonomii?",
-    a: "Absolutnie nie. Model kooperacyjny CML gwarantuje zachowanie pełnej autonomii operacyjnej placówki. Partnerzy zyskują dostęp do sprawdzonego modelu, systemu preedukacji i możliwości cross-referrals — bez biurokracji i ingerencji w zarządzanie.",
+    a: "Absolutnie nie. Model kooperacyjny CML gwarantuje zachowanie pełnej autonomii operacyjnej placówki. Partnerzy zyskują dostęp do sprawdzonego modelu, systemu preedukacji i możliwości cross-referrals \u2014 bez biurokracji i ingerencji w zarządzanie.",
   },
 ];
 
 const Wspolpraca = () => (
   <div className="min-h-screen">
-    {/* Hero */}
-    <ParallaxSection className="relative gradient-hero pt-32 pb-20 md:pt-40 md:pb-28">
-      <div className="absolute inset-0 bg-gradient-to-b from-background/80 to-background/40" />
-      <div className="relative max-w-4xl mx-auto px-4 md:px-8 text-center">
-        <motion.div {...fadeUp}>
-          <p className="text-sm font-sans uppercase tracking-[0.2em] text-primary mb-6">
-            Współpraca B2B
-          </p>
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground leading-tight mb-6">
-            Interdyscyplinarny standard dla nowoczesnych placówek
-          </h1>
-          <p className="text-lg md:text-xl text-muted-foreground leading-relaxed max-w-2xl mx-auto mb-10">
-            Jak kooperacyjny model CML optymalizuje procesy, podnosi jakość leczenia
-            i buduje przewagę konkurencyjną Twojej kliniki.
-          </p>
-          <Button variant="hero" size="lg" className="px-10 py-6 text-base" asChild>
-            <a href="#kontakt-b2b">
-              Umów wirtualną kawę
-              <ArrowRight className="w-4 h-4 ml-2" />
-            </a>
-          </Button>
-        </motion.div>
-      </div>
-    </ParallaxSection>
+    <WspolpracaHero />
 
     {/* Filozofia */}
     <section className="py-20 md:py-28">
@@ -156,6 +128,9 @@ const Wspolpraca = () => (
         </div>
       </div>
     </section>
+
+    {/* 5 Filarów */}
+    <WspolpracaPillars />
 
     {/* Korzyści */}
     <section className="py-20 md:py-28 bg-card">
@@ -218,42 +193,7 @@ const Wspolpraca = () => (
       </div>
     </section>
 
-    {/* CTA */}
-    <section id="kontakt-b2b" className="py-20 md:py-28 bg-card">
-      <div className="max-w-3xl mx-auto px-4 md:px-8 text-center">
-        <motion.div {...fadeUp}>
-          <div className="w-16 h-16 rounded-2xl bg-accent flex items-center justify-center mx-auto mb-6">
-            <Users className="w-8 h-8 text-primary" />
-          </div>
-          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-6">
-            Porozmawiajmy o współpracy
-          </h2>
-          <p className="text-muted-foreground leading-relaxed mb-4">
-            Niezobowiązująca, 15-minutowa rozmowa z dr. Janem Bujokiem.
-            Omówimy, jak model kooperacyjny CML może wzmocnić Twoją placówkę.
-          </p>
-
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mt-10">
-            <Button variant="hero" size="lg" className="px-10 py-6 text-base" asChild>
-              <Link to="/kontakt">
-                Umów wirtualną kawę
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </Link>
-            </Button>
-            <span className="text-xs text-muted-foreground">lub napisz: kontakt@cml.pl</span>
-          </div>
-
-          <div className="flex flex-wrap justify-center gap-6 mt-12 text-xs text-muted-foreground">
-            {["Pełna autonomia operacyjna", "Zero biurokracji", "Darmowe szkolenia", "Evidence-Based Medicine"].map((t) => (
-              <span key={t} className="flex items-center gap-1.5">
-                <CheckCircle2 className="w-3.5 h-3.5 text-primary" />
-                {t}
-              </span>
-            ))}
-          </div>
-        </motion.div>
-      </div>
-    </section>
+    <WspolpracaCTA />
   </div>
 );
 
