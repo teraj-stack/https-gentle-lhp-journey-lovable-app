@@ -30,7 +30,7 @@ const pillars = [
     icon: BookOpenCheck,
     title: "Filtr Edukacyjny",
     subtitle: "Koniec z roszczeniowym klientem",
-    desc: "Zdejmujemy ciężar z Twojej recepcji. Zanim pacjentka usiądzie w fotelu, przechodzi przez nasz obowiązkowy proces edukacji (e-book). Znika lęk przed nieznanym. Próg Twojej kliniki przekracza wyciszony „Świadomy Partner", a nie przestraszony klient.",
+    desc: "Zdejmujemy ciężar z Twojej recepcji. Zanim pacjentka usiądzie w fotelu, przechodzi przez nasz obowiązkowy proces edukacji (e-book). Znika lęk przed nieznanym. Próg Twojej kliniki przekracza wyciszony \u201EŚwiadomy Partner\u201D, a nie przestraszony klient.",
     accent: "hsl(var(--sage))",
   },
   {
