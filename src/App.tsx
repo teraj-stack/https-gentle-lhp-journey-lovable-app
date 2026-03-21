@@ -19,6 +19,7 @@ import Skleroterapia from "@/pages/Skleroterapia";
 import CLaCS from "@/pages/CLaCS";
 import Pajaczki from "@/pages/Pajaczki";
 import Kontakt from "@/pages/Kontakt";
+import EbookPajaczki from "@/pages/EbookPajaczki";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
