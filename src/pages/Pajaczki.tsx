@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Download, ArrowRight } from "lucide-react";
-import pajaczkiAnatomia from "@/assets/pajaczki-anatomia.jpg";
+import AnatomyDiagram from "@/components/pajaczki/AnatomyDiagram";
 
 const fadeUp = {
   initial: { opacity: 0, y: 30 },
