@@ -220,14 +220,9 @@ const DlaPacjenta = () => (
         <p className="text-muted-foreground leading-relaxed mb-6">
           Przeczytałeś przewodniki i masz pytania? Umów się na niezobowiązującą konsultację kwalifikacyjną. Lekarz oceni stopień zaawansowania i zaproponuje najlepszą metodę leczenia.
         </p>
-        <div className="flex flex-col sm:flex-row gap-3 justify-center">
-          <Button variant="hero" size="lg" asChild>
-            <Link to="/kontakt">Umów konsultację</Link>
-          </Button>
-          <Button variant="outline" size="lg" asChild>
-            <Link to="/leczenie/lhp">Dowiedz się o zabiegu LHP</Link>
-          </Button>
-        </div>
+        <Button variant="hero" size="lg" asChild>
+          <Link to="/kontakt">Umów się na konsultację</Link>
+        </Button>
       </motion.section>
     </div>
   </div>
