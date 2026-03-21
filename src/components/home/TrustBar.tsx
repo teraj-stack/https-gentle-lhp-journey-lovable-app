@@ -2,10 +2,10 @@ import { motion } from "framer-motion";
 import { Shield, Award, Star, Users } from "lucide-react";
 
 const stagger = (i: number) => ({
-  initial: { opacity: 0, y: 20, filter: "blur(4px)" },
-  whileInView: { opacity: 1, y: 0, filter: "blur(0px)" },
+  initial: { opacity: 0, y: 32, scale: 0.9, filter: "blur(6px)" },
+  whileInView: { opacity: 1, y: 0, scale: 1, filter: "blur(0px)" },
   viewport: { once: true, amount: 0.3 },
-  transition: { duration: 0.6, delay: i * 0.1, ease: [0.16, 1, 0.3, 1] as const },
+  transition: { duration: 0.7, delay: i * 0.12, ease: [0.16, 1, 0.3, 1] as const },
 });
 
 const trustItems = [
