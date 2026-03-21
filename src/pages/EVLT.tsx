@@ -191,30 +191,7 @@ const EVLT = () => (
       </motion.section>
 
       {/* FAQ */}
-      <motion.section {...fadeUp}>
-        <h2 className="section-title mb-3 text-center">Najczęściej zadawane pytania</h2>
-        <p className="section-subtitle mb-10 text-center">
-          Wszystko, co chcesz wiedzieć przed pierwszą wizytą
-        </p>
-        <div className="max-w-3xl mx-auto">
-          <Accordion type="single" collapsible className="space-y-3">
-            {faqs.map((faq, i) => (
-              <AccordionItem
-                key={i}
-                value={`faq-${i}`}
-                className="glass-card rounded-xl border-none px-6"
-              >
-                <AccordionTrigger className="text-sm font-semibold text-foreground hover:text-primary hover:no-underline py-5">
-                  {faq.q}
-                </AccordionTrigger>
-                <AccordionContent className="text-sm text-muted-foreground leading-relaxed pb-5">
-                  {faq.a}
-                </AccordionContent>
-              </AccordionItem>
-            ))}
-          </Accordion>
-        </div>
-      </motion.section>
+      <EVLTFAQ fadeUp={fadeUp} />
 
       {/* CTA */}
       <motion.section {...fadeUp} className="glass-card rounded-2xl p-8 md:p-12 text-center max-w-2xl mx-auto">
