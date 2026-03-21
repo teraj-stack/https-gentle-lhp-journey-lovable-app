@@ -74,7 +74,8 @@ const HeroHome = () => {
         />
       </motion.div>
     </div>
-  </section>
-);
+    </section>
+  );
+};
 
 export default HeroHome;
