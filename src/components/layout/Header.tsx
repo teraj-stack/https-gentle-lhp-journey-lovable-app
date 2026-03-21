@@ -181,34 +181,48 @@ const Header = () => {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
             className="lg:hidden bg-card border-t border-border overflow-hidden"
           >
             <div className="px-4 py-4 space-y-1">
-              <Link to="/o-nas" className="block px-4 py-3 rounded-lg text-sm font-medium text-foreground hover:bg-accent/50">O nas</Link>
-              
-              <div className="px-4 py-2 text-xs font-semibold text-primary uppercase tracking-wider">Proktologia</div>
-              {proktologiaItems.map((item) => (
-                <Link key={item.href} to={item.href} className="block px-6 py-2.5 rounded-lg text-sm text-foreground/80 hover:bg-accent/50">
-                  {item.label}
-                </Link>
+              {[
+                <Link key="o-nas" to="/o-nas" className="block px-4 py-3 rounded-lg text-sm font-medium text-foreground hover:bg-accent/50">O nas</Link>,
+                <div key="prokto-label" className="px-4 py-2 text-xs font-semibold text-primary uppercase tracking-wider">Proktologia</div>,
+                ...proktologiaItems.map((item) => (
+                  <Link key={item.href} to={item.href} className="block px-6 py-2.5 rounded-lg text-sm text-foreground/80 hover:bg-accent/50">
+                    {item.label}
+                  </Link>
+                )),
+                <div key="flebo-label" className="px-4 py-2 text-xs font-semibold text-primary uppercase tracking-wider mt-2">Flebologia</div>,
+                ...flebologiaItems.map((item) => (
+                  <Link key={item.href} to={item.href} className="block px-6 py-2.5 rounded-lg text-sm text-foreground/80 hover:bg-accent/50">
+                    {item.label}
+                  </Link>
+                )),
+                <Link key="pacjent" to="/dla-pacjenta" className="block px-4 py-3 rounded-lg text-sm font-medium text-foreground hover:bg-accent/50">Dla Pacjenta</Link>,
+                <Link key="wspolpraca" to="/wspolpraca" className="block px-4 py-3 rounded-lg text-sm font-medium text-foreground hover:bg-accent/50">Współpraca</Link>,
+                <Link key="kontakt" to="/kontakt" className="block px-4 py-3 rounded-lg text-sm font-medium text-foreground hover:bg-accent/50">Kontakt</Link>,
+              ].map((child, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, x: -16 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.3, delay: 0.05 * i, ease: [0.16, 1, 0.3, 1] }}
+                >
+                  {child}
+                </motion.div>
               ))}
 
-              <div className="px-4 py-2 text-xs font-semibold text-primary uppercase tracking-wider mt-2">Flebologia</div>
-              {flebologiaItems.map((item) => (
-                <Link key={item.href} to={item.href} className="block px-6 py-2.5 rounded-lg text-sm text-foreground/80 hover:bg-accent/50">
-                  {item.label}
-                </Link>
-              ))}
-
-              <Link to="/dla-pacjenta" className="block px-4 py-3 rounded-lg text-sm font-medium text-foreground hover:bg-accent/50">Dla Pacjenta</Link>
-              <Link to="/wspolpraca" className="block px-4 py-3 rounded-lg text-sm font-medium text-foreground hover:bg-accent/50">Współpraca</Link>
-              <Link to="/kontakt" className="block px-4 py-3 rounded-lg text-sm font-medium text-foreground hover:bg-accent/50">Kontakt</Link>
-
-              <div className="pt-3">
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: 0.5 }}
+                className="pt-3"
+              >
                 <Button variant="hero" className="w-full" asChild>
                   <Link to="/kontakt">Umów Konsultację</Link>
                 </Button>
-              </div>
+              </motion.div>
             </div>
           </motion.div>
         )}
