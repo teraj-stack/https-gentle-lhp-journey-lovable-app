@@ -19,6 +19,7 @@ import Skleroterapia from "@/pages/Skleroterapia";
 import CLaCS from "@/pages/CLaCS";
 import Pajaczki from "@/pages/Pajaczki";
 import Kontakt from "@/pages/Kontakt";
+import EbookPajaczki from "@/pages/EbookPajaczki";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -47,6 +48,7 @@ const App = () => (
             <Route path="/leczenie/skleroterapia" element={<Skleroterapia />} />
             <Route path="/leczenie/clacs" element={<CLaCS />} />
             <Route path="/dla-pacjenta/pajaczki" element={<Pajaczki />} />
+            <Route path="/dla-pacjenta/ebook-pajaczki" element={<EbookPajaczki />} />
             <Route path="/kontakt" element={<Kontakt />} />
           </Route>
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
