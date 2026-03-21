@@ -184,6 +184,41 @@ const CLaCS = () => (
         </div>
       </motion.section>
 
+      {/* E-book baner */}
+      <motion.section {...fadeUp} className="glass-card rounded-2xl p-8 md:p-10 max-w-3xl mx-auto">
+        <div className="flex flex-col sm:flex-row gap-6 items-center">
+          <div className="w-24 sm:w-32 shrink-0">
+            <div className="aspect-[3/4] rounded-xl bg-gradient-to-br from-accent-foreground/70 to-primary/80 shadow-xl flex flex-col items-center justify-center p-3 text-primary-foreground">
+              <BookOpen className="w-6 h-6 mb-2 opacity-80" />
+              <p className="text-[10px] uppercase tracking-[0.15em] opacity-60 mb-1 font-sans">CML</p>
+              <h3 className="text-[10px] font-bold text-center leading-snug font-serif">Odzyskaj beztroskę</h3>
+              <div className="w-6 h-px bg-primary-foreground/30 my-2" />
+              <p className="text-[9px] text-center opacity-70 font-sans">E-book PDF</p>
+            </div>
+          </div>
+          <div className="flex-1 text-center sm:text-left">
+            <h3 className="text-lg font-bold text-foreground mb-2">Pajączki i naczynka — Przewodnik dla Pacjentki</h3>
+            <p className="text-sm text-muted-foreground leading-relaxed mb-4">
+              Skąd się biorą pajączki? Dlaczego ukrywanie jest niebezpieczne? Jak metoda CLaCS zamyka naczynka trwale i komfortowo? Przeczytaj nasz kompletny przewodnik lub pobierz PDF.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Button variant="hero" size="lg" asChild>
+                <a href="/ebooks/CLaCS-Pajaczki-Przewodnik.pdf" download>
+                  <Download className="w-4 h-4 mr-2" />
+                  Pobierz PDF
+                </a>
+              </Button>
+              <Button variant="outline" size="lg" asChild>
+                <Link to="/dla-pacjenta/pajaczki">
+                  Czytaj online
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Link>
+              </Button>
+            </div>
+          </div>
+        </div>
+      </motion.section>
+
       {/* CTA */}
       <motion.section {...fadeUp} className="glass-card rounded-2xl p-8 md:p-12 text-center max-w-2xl mx-auto">
         <div className="text-4xl mb-4">✨</div>
