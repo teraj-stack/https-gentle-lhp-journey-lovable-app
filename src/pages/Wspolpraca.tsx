@@ -118,6 +118,7 @@ const Wspolpraca = () => (
     {/* Filozofia */}
     <section className="py-20 md:py-28">
       <div className="max-w-5xl mx-auto px-4 md:px-8">
+        <Breadcrumbs items={[{ label: "Współpraca" }]} className="mb-10" />
         <motion.div {...fadeUp} className="max-w-3xl mx-auto text-center mb-14">
           <p className="text-sm font-sans uppercase tracking-[0.15em] text-primary mb-4">Filozofia</p>
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-6">

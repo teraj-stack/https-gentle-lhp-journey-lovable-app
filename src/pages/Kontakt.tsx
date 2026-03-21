@@ -99,6 +99,7 @@ const Kontakt = () => {
       </section>
 
       <div className="max-w-6xl mx-auto px-4 py-16 space-y-24">
+        <Breadcrumbs items={[{ label: "Kontakt" }]} className="mb-4" />
         {/* Lokalizacje */}
         <motion.section {...fadeUp}>
           <h2 className="section-title mb-10 text-center">Nasze lokalizacje</h2>
