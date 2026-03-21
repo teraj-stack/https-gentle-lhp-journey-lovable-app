@@ -232,7 +232,7 @@ const EVLT = () => (
                 className="glass-card rounded-xl border-none px-6"
               >
                 <AccordionTrigger className="text-sm font-semibold text-foreground hover:text-primary hover:no-underline py-5">
-                  <span className="text-primary mr-2">❓</span> {faq.q}
+                  {faq.q}
                 </AccordionTrigger>
                 <AccordionContent className="text-sm text-muted-foreground leading-relaxed pb-5">
                   {faq.a}
