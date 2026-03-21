@@ -14,9 +14,9 @@ const HeroHome = () => (
 
     <div className="relative max-w-7xl mx-auto px-4 md:px-8 py-32 md:py-40 w-full flex flex-col md:flex-row items-center gap-12 md:gap-20">
       <motion.div
-        initial={{ opacity: 0, y: 40 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.9 }}
+        initial={{ opacity: 0, y: 40, filter: "blur(6px)" }}
+        animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+        transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
         className="max-w-3xl flex-1"
         style={{ textShadow: "0 2px 20px rgba(0,0,0,0.3)" }}
       >
