@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import SkleroterapiaFAQ from "@/components/skleroterapia/SkleroterapiaFAQ";
 
 const fadeUp = {
   initial: { opacity: 0, y: 30 },
@@ -193,6 +194,9 @@ const Skleroterapia = () => (
           ))}
         </div>
       </motion.section>
+
+      {/* FAQ */}
+      <SkleroterapiaFAQ fadeUp={fadeUp} />
 
       {/* CTA */}
       <motion.section {...fadeUp} className="glass-card rounded-2xl p-8 md:p-12 text-center max-w-2xl mx-auto">
