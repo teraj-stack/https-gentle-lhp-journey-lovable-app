@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import ParallaxSection from "@/components/ui/parallax-section";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import EVLTComparisonChart from "@/components/evlt/ComparisonChart";
@@ -23,7 +24,7 @@ const warnings = [
 const EVLT = () => (
   <div className="min-h-screen bg-background pt-20">
     {/* Hero */}
-    <section className="gradient-bg py-16 md:py-24 px-4">
+    <ParallaxSection className="gradient-bg py-16 md:py-24 px-4">
       <motion.div
         initial={{ opacity: 0, y: 30, filter: "blur(6px)" }}
         animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
@@ -41,7 +42,7 @@ const EVLT = () => (
           Bez skalpela, bez narkozy i bez długiej rekonwalescencji. Poznaj medycynę, która pozwala załatwić problem „raz a dobrze".
         </p>
       </motion.div>
-    </section>
+    </ParallaxSection>
 
     <div className="max-w-5xl mx-auto px-4 py-16 space-y-24">
       {/* Przyczyny + Sygnały */}

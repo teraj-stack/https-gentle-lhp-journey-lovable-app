@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import ParallaxSection from "@/components/ui/parallax-section";
 import { BookOpen, Download, FileText, Shield, Clock, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
@@ -89,7 +90,7 @@ const benefits = [
 const DlaPacjenta = () => (
   <div className="min-h-screen bg-background pt-20">
     {/* Hero */}
-    <section className="gradient-bg py-16 md:py-24 px-4">
+    <ParallaxSection className="gradient-bg py-16 md:py-24 px-4">
       <motion.div
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
@@ -107,7 +108,7 @@ const DlaPacjenta = () => (
           Zanim wejdziesz do gabinetu, przeczytaj nasze autorskie materiały. Zrozumiesz problem, poznasz metody leczenia i będziesz wiedział dokładnie, czego się spodziewać.
         </p>
       </motion.div>
-    </section>
+    </ParallaxSection>
 
     <div className="max-w-5xl mx-auto px-4 py-16 space-y-20">
       {/* Benefits */}

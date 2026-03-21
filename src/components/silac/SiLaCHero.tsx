@@ -1,7 +1,8 @@
 import { motion } from "framer-motion";
+import ParallaxSection from "@/components/ui/parallax-section";
 
 const SiLaCHero = () => (
-  <section className="gradient-bg py-16 md:py-24 px-4">
+  <ParallaxSection className="gradient-bg py-16 md:py-24 px-4">
     <motion.div
       initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}
@@ -36,7 +37,7 @@ const SiLaCHero = () => (
         </div>
       </div>
     </motion.div>
-  </section>
+  </ParallaxSection>
 );
 
 export default SiLaCHero;

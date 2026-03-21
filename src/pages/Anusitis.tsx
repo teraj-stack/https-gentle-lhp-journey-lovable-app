@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, CheckCircle2, AlertTriangle, Pill, Shield } from "lucide-react";
+import ParallaxSection from "@/components/ui/parallax-section";
 
 const fadeUp = {
   initial: { opacity: 0, y: 30 },
@@ -13,7 +14,7 @@ const fadeUp = {
 const Anusitis = () => (
   <div className="min-h-screen pt-20">
     {/* Hero */}
-    <section className="relative py-20 md:py-28 gradient-hero overflow-hidden">
+    <ParallaxSection className="relative py-20 md:py-28 gradient-hero">
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -top-1/4 -right-1/4 w-[60vw] h-[60vw] rounded-full bg-primary-foreground/5 blur-3xl" />
       </div>
@@ -31,7 +32,7 @@ const Anusitis = () => (
           </Button>
         </motion.div>
       </div>
-    </section>
+    </ParallaxSection>
 
     {/* Metrics */}
     <section className="py-10 border-b border-border bg-card">
