@@ -69,10 +69,10 @@ const EVLT = () => (
             {warnings.map((w, i) => (
               <motion.div
                 key={w.title}
-                initial={{ opacity: 0, x: 20 }}
-                whileInView={{ opacity: 1, x: 0 }}
+                initial={{ opacity: 0, x: 20, filter: "blur(4px)" }}
+                whileInView={{ opacity: 1, x: 0, filter: "blur(0px)" }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.4, delay: i * 0.1 }}
+                transition={{ duration: 0.5, delay: i * 0.1, ease: [0.16, 1, 0.3, 1] }}
                 className="glass-card rounded-xl p-5 flex items-start gap-4"
               >
                 <span className="text-2xl">{w.emoji}</span>
