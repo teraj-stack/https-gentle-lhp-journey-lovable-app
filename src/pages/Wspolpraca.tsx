@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import Breadcrumbs from "@/components/layout/Breadcrumbs";
 import WspolpracaHero from "@/components/wspolpraca/WspolpracaHero";
 import WspolpracaPillars from "@/components/wspolpraca/WspolpracaPillars";
+import EBMComparisonChart from "@/components/wspolpraca/EBMComparisonChart";
 import WspolpracaCTA from "@/components/wspolpraca/WspolpracaCTA";
 import {
   Clock,
