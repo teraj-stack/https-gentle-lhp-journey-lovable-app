@@ -24,7 +24,7 @@ const warnings = [
 const EVLT = () => (
   <div className="min-h-screen bg-background pt-20">
     {/* Hero */}
-    <section className="gradient-bg py-16 md:py-24 px-4">
+    <ParallaxSection className="gradient-bg py-16 md:py-24 px-4">
       <motion.div
         initial={{ opacity: 0, y: 30, filter: "blur(6px)" }}
         animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
