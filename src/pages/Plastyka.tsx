@@ -4,6 +4,20 @@ import { Button } from "@/components/ui/button";
 import Breadcrumbs from "@/components/layout/Breadcrumbs";
 import { ArrowRight, CheckCircle2, Clock, Shield, Sparkles, Heart } from "lucide-react";
 import ParallaxSection from "@/components/ui/parallax-section";
+import ProcedureSummaryTable from "@/components/shared/ProcedureSummaryTable";
+
+const plastykaSummary = [
+  { label: "Nazwa zabiegu", value: "Plastyka okolicy odbytu (usuwanie fałdów brzeżnych)" },
+  { label: "Wskazania", value: "Fałdy brzeżne, defekty estetyczne" },
+  { label: "Czas zabiegu", value: "10–20 minut" },
+  { label: "Znieczulenie", value: "Miejscowe" },
+  { label: "Hospitalizacja", value: "Brak — zabieg ambulatoryjny" },
+  { label: "Narzędzie", value: "Laser — precyzyjna korekta" },
+  { label: "Szwy", value: "Przy niewielkich zmianach — brak" },
+  { label: "Powrót do pracy", value: "2–3 dni" },
+  { label: "Kontrola", value: "Po 10–14 dniach" },
+  { label: "Dyskrecja", value: "Pełna poufność i komfort" },
+];
 
 const fadeUp = {
   initial: { opacity: 0, y: 24, filter: "blur(4px)" },
