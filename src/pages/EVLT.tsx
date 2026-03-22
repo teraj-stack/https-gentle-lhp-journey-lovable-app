@@ -15,7 +15,7 @@ const evltSummary = [
   { label: "Technika", value: "Pod kontrolą USG do niewydolnej żyły wprowadza się cienki światłowód. Energia lasera zamyka naczynie od wewnątrz." },
   { label: "Rekonwalescencja", value: "Powrót do domu po zabiegu. Pończocha uciskowa przez ok. 2 tygodnie, codzienne spacery." },
   { label: "Efekty", value: "Zamknięcie niewydolnych pni żylnych, ustąpienie bólu i obrzęków, poprawa estetyki nóg" },
-  { label: "Możliwe powikłania", value: "Przejściowy ból, zasinienia, uczucie „ciągnięcia" wzdłuż żyły. Rzadko: zapalenie żył, przebarwienia." },
+  { label: "Możliwe powikłania", value: "Przejściowy ból, zasinienia, uczucie ciągnięcia wzdłuż żyły. Rzadko: zapalenie żył, przebarwienia." },
 ];
 
 const fadeUp = {
