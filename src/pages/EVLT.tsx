@@ -9,16 +9,13 @@ import EVLTFAQ from "@/components/evlt/EVLTFAQ";
 import ProcedureSummaryTable from "@/components/shared/ProcedureSummaryTable";
 
 const evltSummary = [
-  { label: "Nazwa metody", value: "EVLT – Endovenous Laser Treatment" },
-  { label: "Wskazania", value: "Żylaki kończyn dolnych (niewydolność żył)" },
-  { label: "Czas zabiegu", value: "30–60 minut" },
+  { label: "Przygotowanie", value: "Konsultacja flebologiczna oraz USG Doppler w celu mapowania niewydolnych żył" },
+  { label: "Czas trwania", value: "Od 40 minut do 2,5 godziny" },
   { label: "Znieczulenie", value: "Miejscowe (tumescencyjne)" },
-  { label: "Hospitalizacja", value: "Brak — system walk-in, walk-out" },
-  { label: "Ból pooperacyjny", value: "Minimalny — uczucie napięcia" },
-  { label: "Powrót do pracy", value: "1–2 dni" },
-  { label: "Pełna aktywność", value: "2–3 tygodnie" },
-  { label: "Kontrola USG", value: "Precyzyjna mapa żył Doppler" },
-  { label: "Skuteczność", value: "Ponad 95% zamknięcia naczynia" },
+  { label: "Technika", value: "Pod kontrolą USG do niewydolnej żyły wprowadza się cienki światłowód. Energia lasera zamyka naczynie od wewnątrz." },
+  { label: "Rekonwalescencja", value: "Powrót do domu po zabiegu. Pończocha uciskowa przez ok. 2 tygodnie, codzienne spacery." },
+  { label: "Efekty", value: "Zamknięcie niewydolnych pni żylnych, ustąpienie bólu i obrzęków, poprawa estetyki nóg" },
+  { label: "Możliwe powikłania", value: "Przejściowy ból, zasinienia, uczucie ciągnięcia wzdłuż żyły. Rzadko: zapalenie żył, przebarwienia." },
 ];
 
 const fadeUp = {

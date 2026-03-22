@@ -7,16 +7,13 @@ import ParallaxSection from "@/components/ui/parallax-section";
 import ProcedureSummaryTable from "@/components/shared/ProcedureSummaryTable";
 
 const plastykaSummary = [
-  { label: "Nazwa zabiegu", value: "Plastyka okolicy odbytu (usuwanie fałdów brzeżnych)" },
-  { label: "Wskazania", value: "Fałdy brzeżne, defekty estetyczne" },
-  { label: "Czas zabiegu", value: "10–20 minut" },
-  { label: "Znieczulenie", value: "Miejscowe" },
-  { label: "Hospitalizacja", value: "Brak — zabieg ambulatoryjny" },
-  { label: "Narzędzie", value: "Laser — precyzyjna korekta" },
-  { label: "Szwy", value: "Przy niewielkich zmianach — brak" },
-  { label: "Powrót do pracy", value: "2–3 dni" },
-  { label: "Kontrola", value: "Po 10–14 dniach" },
-  { label: "Dyskrecja", value: "Pełna poufność i komfort" },
+  { label: "Przygotowanie", value: "Konsultacja proktologiczna, ocena zmian skórnych" },
+  { label: "Czas trwania", value: "20–40 minut" },
+  { label: "Znieczulenie", value: "Miejscowe (nasiękowe)" },
+  { label: "Technika", value: "Laserowa korekta: precyzyjne usunięcie nadmiaru skóry laserem CO₂ lub diodowym. Laser jednocześnie tnie i koaguluje naczynia." },
+  { label: "Rekonwalescencja", value: "Powrót do domu tego samego dnia. Dyskomfort przy siedzeniu przez ok. 7–10 dni. Wymagana szczególna higiena." },
+  { label: "Efekty", value: "Usunięcie defektu kosmetycznego, wygładzenie okolicy odbytu, ułatwienie higieny intymnej" },
+  { label: "Możliwe powikłania", value: "Ból w pierwszych dniach, niewielkie krwawienie, infekcja rany (przy braku higieny), obrzęk" },
 ];
 
 const fadeUp = {
