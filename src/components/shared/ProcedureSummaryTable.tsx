@@ -23,8 +23,8 @@ const ProcedureSummaryTable = ({ title = "Karta zabiegu", rows, fadeUp }: Props)
       </p>
       <div className="glass-card rounded-2xl overflow-hidden max-w-3xl mx-auto">
         <div className="grid grid-cols-[1fr_1.5fr] text-xs font-semibold uppercase tracking-wider border-b border-border">
-          <div className="p-4 text-muted-foreground">Parametr</div>
-          <div className="p-4 text-primary">Szczegóły</div>
+          <div className="p-4 text-muted-foreground">Cecha zabiegu</div>
+          <div className="p-4 text-primary">Opis</div>
         </div>
         {rows.map((row, i) => (
           <motion.div
