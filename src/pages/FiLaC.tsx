@@ -9,6 +9,20 @@ import FiLaCComparison from "@/components/filac/FiLaCComparison";
 import FiLaCIndications from "@/components/filac/FiLaCIndications";
 import FiLaCRecovery from "@/components/filac/FiLaCRecovery";
 import FiLaCFAQ from "@/components/filac/FiLaCFAQ";
+import ProcedureSummaryTable from "@/components/shared/ProcedureSummaryTable";
+
+const filacSummary = [
+  { label: "Nazwa metody", value: "FiLaC – Fistula Laser Closure" },
+  { label: "Wskazania", value: "Przetoki odbytu (proste i złożone)" },
+  { label: "Czas zabiegu", value: "30–60 minut" },
+  { label: "Znieczulenie", value: "Miejscowe lub krótka sedacja" },
+  { label: "Hospitalizacja", value: "Brak — zabieg ambulatoryjny" },
+  { label: "Ból pooperacyjny", value: "2–3 / 10 (minimalny)" },
+  { label: "Powrót do pracy", value: "3–5 dni" },
+  { label: "Pełna aktywność", value: "2–3 tygodnie" },
+  { label: "Ochrona zwieraczy", value: "100% — brak nacięć mięśniowych" },
+  { label: "Blizny", value: "Minimalne — nakłucie 2–3 mm" },
+];
 
 const fadeUp = {
   initial: { opacity: 0, y: 24, filter: "blur(4px)" },
