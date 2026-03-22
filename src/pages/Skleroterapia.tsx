@@ -4,6 +4,20 @@ import { Link } from "react-router-dom";
 import Breadcrumbs from "@/components/layout/Breadcrumbs";
 import { Button } from "@/components/ui/button";
 import SkleroterapiaFAQ from "@/components/skleroterapia/SkleroterapiaFAQ";
+import ProcedureSummaryTable from "@/components/shared/ProcedureSummaryTable";
+
+const skleroterapiaSummary = [
+  { label: "Nazwa metody", value: "Skleroterapia piankowa pod kontrolą USG" },
+  { label: "Wskazania", value: "Żylaki kręte, perforatory, bocznice żylne" },
+  { label: "Czas zabiegu", value: "Ok. 20 minut" },
+  { label: "Znieczulenie", value: "Bez znieczulenia (niemal bezbolesne)" },
+  { label: "Hospitalizacja", value: "Brak — zabieg ambulatoryjny" },
+  { label: "Ból pooperacyjny", value: "Minimalny" },
+  { label: "Powrót do pracy", value: "Natychmiast" },
+  { label: "Wymagania po zabiegu", value: "Pończocha uciskowa, codzienny spacer" },
+  { label: "Przeciwwskazania", value: "Ciąża, zakrzepica, alergia na sklerosant" },
+  { label: "Uzupełnienie", value: "Idealne w połączeniu z EVLT" },
+];
 
 const fadeUp = {
   initial: { opacity: 0, y: 24, filter: "blur(4px)" },
