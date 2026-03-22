@@ -9,6 +9,20 @@ import SiLaCComparison from "@/components/silac/SiLaCComparison";
 import SiLaCIndications from "@/components/silac/SiLaCIndications";
 import SiLaCRecovery from "@/components/silac/SiLaCRecovery";
 import SiLaCFAQ from "@/components/silac/SiLaCFAQ";
+import ProcedureSummaryTable from "@/components/shared/ProcedureSummaryTable";
+
+const silacSummary = [
+  { label: "Nazwa metody", value: "SiLaC – Sinus Laser Closure" },
+  { label: "Wskazania", value: "Torbiel pilonidalna (sinus pilonidalis)" },
+  { label: "Czas zabiegu", value: "Ok. 30 minut" },
+  { label: "Znieczulenie", value: "Miejscowe" },
+  { label: "Hospitalizacja", value: "Brak — zabieg ambulatoryjny" },
+  { label: "Ból pooperacyjny", value: "2–3 / 10 (minimalny)" },
+  { label: "Powrót do pracy", value: "2–3 dni" },
+  { label: "Pełna aktywność", value: "4–6 tygodni" },
+  { label: "Rozmiar rany", value: "Nakłucie 2–3 mm" },
+  { label: "Skuteczność", value: "Ok. 90%" },
+];
 
 const fadeUp = {
   initial: { opacity: 0, y: 24, filter: "blur(4px)" },
@@ -29,6 +43,7 @@ const SiLaC = () => (
       <SiLaCIndications fadeUp={fadeUp} />
       <SiLaCRecovery fadeUp={fadeUp} />
       <SiLaCFAQ fadeUp={fadeUp} />
+      <ProcedureSummaryTable rows={silacSummary} fadeUp={fadeUp} />
 
       {/* CTA */}
       <motion.section {...fadeUp} className="glass-card rounded-2xl p-8 md:p-12 text-center max-w-2xl mx-auto">

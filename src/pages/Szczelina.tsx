@@ -4,6 +4,20 @@ import { Button } from "@/components/ui/button";
 import Breadcrumbs from "@/components/layout/Breadcrumbs";
 import { ArrowRight, CheckCircle2, Clock, Shield, Zap, Syringe, Sparkles } from "lucide-react";
 import ParallaxSection from "@/components/ui/parallax-section";
+import ProcedureSummaryTable from "@/components/shared/ProcedureSummaryTable";
+
+const szczelinaSummary = [
+  { label: "Schorzenie", value: "Szczelina odbytu (ostra / przewlekła)" },
+  { label: "Leczenie I linii", value: "Farmakoterapia + dieta (60%+ skuteczność)" },
+  { label: "Leczenie II linii", value: "Botoks, PRP, mezoterapia" },
+  { label: "Leczenie III linii", value: "Laserowa sfinkterotomia (CO₂)" },
+  { label: "Znieczulenie", value: "Miejscowe" },
+  { label: "Hospitalizacja", value: "Brak — zabieg ambulatoryjny" },
+  { label: "Ból pooperacyjny", value: "Minimalny (laser)" },
+  { label: "Powrót do pracy", value: "1–3 dni (po zabiegu laserowym)" },
+  { label: "Ochrona zwieraczy", value: "Priorytet — metody oszczędzające" },
+  { label: "Kluczowy czynnik", value: "Czas — im wcześniej, tym łagodniejsze leczenie" },
+];
 
 const fadeUp = {
   initial: { opacity: 0, y: 24, filter: "blur(4px)" },
@@ -207,6 +221,8 @@ const Szczelina = () => (
           </div>
         </div>
       </motion.section>
+
+      <ProcedureSummaryTable rows={szczelinaSummary} fadeUp={fadeUp} />
 
       {/* CTA */}
       <motion.section {...fadeUp} className="text-center py-8">

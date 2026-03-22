@@ -8,7 +8,21 @@ import ProcedureSteps from "@/components/lhp/ProcedureSteps";
 import QualificationScale from "@/components/lhp/QualificationScale";
 import EbookBanner from "@/components/lhp/EbookBanner";
 import CTASection from "@/components/lhp/CTASection";
+import ProcedureSummaryTable from "@/components/shared/ProcedureSummaryTable";
 import { motion } from "framer-motion";
+
+const lhpSummary = [
+  { label: "Nazwa metody", value: "LHP – Laser Hemorrhoidoplasty" },
+  { label: "Wskazania", value: "Hemoroidy stopnia II–III" },
+  { label: "Czas zabiegu", value: "20–40 minut" },
+  { label: "Znieczulenie", value: "Miejscowe" },
+  { label: "Hospitalizacja", value: "Brak — zabieg ambulatoryjny" },
+  { label: "Ból pooperacyjny", value: "2–3 / 10 (minimalny)" },
+  { label: "Powrót do pracy", value: "1–3 dni" },
+  { label: "Pełna aktywność", value: "2–3 tygodnie" },
+  { label: "Ochrona zwieraczy", value: "100% — brak nacięć chirurgicznych" },
+  { label: "Skuteczność", value: "Ponad 90% przypadków" },
+];
 
 const sectionAnim = {
   initial: { opacity: 0, y: 24, filter: "blur(4px)" },
@@ -84,6 +98,8 @@ const LHP = () => {
           </p>
           <QualificationScale />
         </motion.section>
+
+        <ProcedureSummaryTable rows={lhpSummary} fadeUp={sectionAnim} />
 
         <EbookBanner />
 
