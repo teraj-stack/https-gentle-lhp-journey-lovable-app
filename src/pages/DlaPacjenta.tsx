@@ -29,6 +29,13 @@ const mainEbook = {
 
 const onlineGuides = [
   {
+    title: "Hemoroidy i wizyta u proktologa",
+    subtitle: "Lekarz odpowiada",
+    desc: "Najczęstsze pytania o hemoroidy, badanie proktologiczne, metody leczenia i profilaktykę — odpowiada lekarz.",
+    href: "/dla-pacjenta/proktolog-faq",
+    icon: "🩺",
+  },
+  {
     title: "Hemoroidy od A do Z",
     subtitle: "Infografika wizualna",
     desc: "Wizualna podróż od objawów do decyzji. Porównanie skalpel vs. laser, oś czasu zabiegu i kluczowe liczby.",

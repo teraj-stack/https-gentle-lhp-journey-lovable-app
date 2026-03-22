@@ -22,7 +22,8 @@ const flebologiaItems = [
 
 const dlaPacjentaItems = [
   { label: "Przygotowanie do wizyty", href: "/dla-pacjenta", desc: "Informacje przed wizytą" },
-  { label: "Odzyskaj beztroskę", href: "/dla-pacjenta/ebook-pajaczki", desc: "E-book o pajączków żylnych" },
+  { label: "Lekarz odpowiada", href: "/dla-pacjenta/proktolog-faq", desc: "FAQ o hemoroidach i wizycie" },
+  { label: "Odzyskaj beztroskę", href: "/dla-pacjenta/ebook-pajaczki", desc: "E-book o pajączkach żylnych" },
 ];
 
 const Header = () => {
