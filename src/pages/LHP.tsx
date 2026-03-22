@@ -99,6 +99,8 @@ const LHP = () => {
           <QualificationScale />
         </motion.section>
 
+        <ProcedureSummaryTable rows={lhpSummary} fadeUp={sectionAnim} />
+
         <EbookBanner />
 
         <CTASection />

@@ -204,6 +204,7 @@ const CLaCS = () => (
 
       {/* FAQ */}
       <CLaCSFAQ fadeUp={fadeUp} />
+      <ProcedureSummaryTable rows={clacsSummary} fadeUp={fadeUp} />
 
       {/* E-book baner */}
       <motion.section {...fadeUp} className="glass-card rounded-2xl p-8 md:p-10 max-w-3xl mx-auto">

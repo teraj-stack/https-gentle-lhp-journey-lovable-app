@@ -174,6 +174,8 @@ const Anusitis = () => (
         </div>
       </motion.section>
 
+      <ProcedureSummaryTable rows={anusitisSummary} fadeUp={fadeUp} />
+
       {/* CTA */}
       <motion.section {...fadeUp} className="text-center py-8">
         <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4 font-serif">

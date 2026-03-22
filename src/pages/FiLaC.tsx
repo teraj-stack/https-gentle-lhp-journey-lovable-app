@@ -43,6 +43,7 @@ const FiLaC = () => (
       <FiLaCIndications fadeUp={fadeUp} />
       <FiLaCRecovery fadeUp={fadeUp} />
       <FiLaCFAQ fadeUp={fadeUp} />
+      <ProcedureSummaryTable rows={filacSummary} fadeUp={fadeUp} />
 
       {/* CTA */}
       <motion.section {...fadeUp} className="glass-card rounded-2xl p-8 md:p-12 text-center max-w-2xl mx-auto">
