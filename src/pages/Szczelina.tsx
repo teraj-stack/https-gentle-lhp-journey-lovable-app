@@ -7,16 +7,13 @@ import ParallaxSection from "@/components/ui/parallax-section";
 import ProcedureSummaryTable from "@/components/shared/ProcedureSummaryTable";
 
 const szczelinaSummary = [
-  { label: "Schorzenie", value: "Szczelina odbytu (ostra / przewlekła)" },
-  { label: "Leczenie I linii", value: "Farmakoterapia + dieta (60%+ skuteczność)" },
-  { label: "Leczenie II linii", value: "Botoks, PRP, mezoterapia" },
-  { label: "Leczenie III linii", value: "Laserowa sfinkterotomia (CO₂)" },
-  { label: "Znieczulenie", value: "Miejscowe" },
-  { label: "Hospitalizacja", value: "Brak — zabieg ambulatoryjny" },
-  { label: "Ból pooperacyjny", value: "Minimalny (laser)" },
-  { label: "Powrót do pracy", value: "1–3 dni (po zabiegu laserowym)" },
-  { label: "Ochrona zwieraczy", value: "Priorytet — metody oszczędzające" },
-  { label: "Kluczowy czynnik", value: "Czas — im wcześniej, tym łagodniejsze leczenie" },
+  { label: "Przygotowanie", value: "Badanie proktologiczne, ocena napięcia zwieraczy. Wykluczenie innych chorób jelit." },
+  { label: "Czas trwania", value: "15–30 minut" },
+  { label: "Znieczulenie", value: "Miejscowe (krem lub iniekcja)" },
+  { label: "Technika", value: "Botoks: rozluźnienie zwieracza umożliwiające gojenie. Laser: oczyszczenie brzegów rany lub precyzyjna sfinkterotomia — bez skalpela." },
+  { label: "Rekonwalescencja", value: "Powrót do domu natychmiast. Kluczowe: miękki stolec (dieta, nawadnianie) przez kilka tygodni." },
+  { label: "Efekty", value: "Ustąpienie silnego bólu podczas defekacji, wygojenie rany, powrót elastyczności anodermy" },
+  { label: "Możliwe powikłania", value: "Przejściowe nietrzymanie gazów (rzadkie), krwiak w miejscu iniekcji, nawrót przy braku zmiany diety" },
 ];
 
 const fadeUp = {

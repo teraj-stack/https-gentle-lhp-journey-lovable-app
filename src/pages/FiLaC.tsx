@@ -12,16 +12,13 @@ import FiLaCFAQ from "@/components/filac/FiLaCFAQ";
 import ProcedureSummaryTable from "@/components/shared/ProcedureSummaryTable";
 
 const filacSummary = [
-  { label: "Nazwa metody", value: "FiLaC – Fistula Laser Closure" },
-  { label: "Wskazania", value: "Przetoki odbytu (proste i złożone)" },
-  { label: "Czas zabiegu", value: "30–60 minut" },
-  { label: "Znieczulenie", value: "Miejscowe lub krótka sedacja" },
-  { label: "Hospitalizacja", value: "Brak — zabieg ambulatoryjny" },
-  { label: "Ból pooperacyjny", value: "2–3 / 10 (minimalny)" },
-  { label: "Powrót do pracy", value: "3–5 dni" },
-  { label: "Pełna aktywność", value: "2–3 tygodnie" },
-  { label: "Ochrona zwieraczy", value: "100% — brak nacięć mięśniowych" },
-  { label: "Blizny", value: "Minimalne — nakłucie 2–3 mm" },
+  { label: "Przygotowanie", value: "Diagnostyka obrazowa (USG transrektalne lub MRI miednicy) — dokładne zmapowanie kanału przetoki" },
+  { label: "Czas trwania", value: "30–60 minut" },
+  { label: "Znieczulenie", value: "Miejscowe, podpajęczynówkowe lub krótkie dożylne (zależnie od złożoności)" },
+  { label: "Technika", value: "Elastyczny światłowód laserowy wprowadzany do kanału przetoki zamyka go od wewnątrz — bez rozcinania zwieraczy." },
+  { label: "Rekonwalescencja", value: "Szybki powrót do aktywności (kilka dni). Ból pooperacyjny minimalny vs klasyczne operacje." },
+  { label: "Efekty", value: "Trwałe zamknięcie kanału przetoki przy zachowaniu pełnego trzymania stolca i gazów" },
+  { label: "Możliwe powikłania", value: "Ropień w miejscu po przetoce, nawrót przetoki, przejściowy wyciek wydzieliny" },
 ];
 
 const fadeUp = {

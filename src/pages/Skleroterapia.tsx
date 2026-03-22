@@ -7,16 +7,13 @@ import SkleroterapiaFAQ from "@/components/skleroterapia/SkleroterapiaFAQ";
 import ProcedureSummaryTable from "@/components/shared/ProcedureSummaryTable";
 
 const skleroterapiaSummary = [
-  { label: "Nazwa metody", value: "Skleroterapia piankowa pod kontrolą USG" },
-  { label: "Wskazania", value: "Żylaki kręte, perforatory, bocznice żylne" },
-  { label: "Czas zabiegu", value: "Ok. 20 minut" },
-  { label: "Znieczulenie", value: "Bez znieczulenia (niemal bezbolesne)" },
-  { label: "Hospitalizacja", value: "Brak — zabieg ambulatoryjny" },
-  { label: "Ból pooperacyjny", value: "Minimalny" },
-  { label: "Powrót do pracy", value: "Natychmiast" },
-  { label: "Wymagania po zabiegu", value: "Pończocha uciskowa, codzienny spacer" },
-  { label: "Przeciwwskazania", value: "Ciąża, zakrzepica, alergia na sklerosant" },
-  { label: "Uzupełnienie", value: "Idealne w połączeniu z EVLT" },
+  { label: "Przygotowanie", value: "USG Doppler żył" },
+  { label: "Czas trwania", value: "20–40 minut" },
+  { label: "Znieczulenie", value: "Nie jest wymagane (zabieg praktycznie bezbolesny)" },
+  { label: "Technika", value: "Pod kontrolą USG lekarz wstrzykuje do żyły lek w formie gęstej pianki, powodując sklejenie i wchłonięcie naczynia." },
+  { label: "Rekonwalescencja", value: "Natychmiastowy powrót do aktywności. Pończocha uciskowa przez 5–7 dni." },
+  { label: "Efekty", value: "Zanik widocznych żylaków i żył siateczkowatych" },
+  { label: "Możliwe powikłania", value: "Przebarwienia (brązowe paski), zgrubienia, siniaki w miejscu wkłucia" },
 ];
 
 const fadeUp = {

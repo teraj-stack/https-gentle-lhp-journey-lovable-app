@@ -12,16 +12,13 @@ import ProcedureSummaryTable from "@/components/shared/ProcedureSummaryTable";
 import { motion } from "framer-motion";
 
 const lhpSummary = [
-  { label: "Nazwa metody", value: "LHP – Laser Hemorrhoidoplasty" },
-  { label: "Wskazania", value: "Hemoroidy stopnia II–III" },
-  { label: "Czas zabiegu", value: "20–40 minut" },
-  { label: "Znieczulenie", value: "Miejscowe" },
-  { label: "Hospitalizacja", value: "Brak — zabieg ambulatoryjny" },
-  { label: "Ból pooperacyjny", value: "2–3 / 10 (minimalny)" },
-  { label: "Powrót do pracy", value: "1–3 dni" },
-  { label: "Pełna aktywność", value: "2–3 tygodnie" },
-  { label: "Ochrona zwieraczy", value: "100% — brak nacięć chirurgicznych" },
-  { label: "Skuteczność", value: "Ponad 90% przypadków" },
+  { label: "Przygotowanie", value: "Badanie proktologiczne (anoskopia), ocena stopnia zaawansowania choroby" },
+  { label: "Czas trwania", value: "Od 20 minut do 1 godziny" },
+  { label: "Znieczulenie", value: "Miejscowe lub ogólne (krótkie dożylne), zależnie od preferencji pacjenta" },
+  { label: "Technika", value: "Bez wycinania — laser obkurcza guzek od wewnątrz. Energia powoduje koagulację naczyń zasilających hemoroid." },
+  { label: "Rekonwalescencja", value: "Powrót do domu tego samego dnia. Dieta bogata w błonnik, nawadnianie, unikanie wysiłku przez kilka dni." },
+  { label: "Efekty", value: "Znaczne zmniejszenie lub całkowite usunięcie hemoroidów, ustąpienie krwawienia i bólu. Brak blizn." },
+  { label: "Możliwe powikłania", value: "Przejściowy obrzęk, niewielkie krwawienie, dyskomfort. Minimalne ryzyko nietrzymania stolca." },
 ];
 
 const sectionAnim = {
