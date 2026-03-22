@@ -12,16 +12,13 @@ import SiLaCFAQ from "@/components/silac/SiLaCFAQ";
 import ProcedureSummaryTable from "@/components/shared/ProcedureSummaryTable";
 
 const silacSummary = [
-  { label: "Nazwa metody", value: "SiLaC – Sinus Laser Closure" },
-  { label: "Wskazania", value: "Torbiel pilonidalna (sinus pilonidalis)" },
-  { label: "Czas zabiegu", value: "Ok. 30 minut" },
+  { label: "Przygotowanie", value: "Badanie proktologiczne, ocena rozległości torbieli pilonidalnej. W niektórych przypadkach USG lub MRI." },
+  { label: "Czas trwania", value: "Ok. 30 minut" },
   { label: "Znieczulenie", value: "Miejscowe" },
-  { label: "Hospitalizacja", value: "Brak — zabieg ambulatoryjny" },
-  { label: "Ból pooperacyjny", value: "2–3 / 10 (minimalny)" },
-  { label: "Powrót do pracy", value: "2–3 dni" },
-  { label: "Pełna aktywność", value: "4–6 tygodni" },
-  { label: "Rozmiar rany", value: "Nakłucie 2–3 mm" },
-  { label: "Skuteczność", value: "Ok. 90%" },
+  { label: "Technika", value: "Przez nakłucie 2–3 mm wprowadza się sondę laserową, która od wewnątrz zamyka kanał torbieli energią lasera (SiLaC – Sinus Laser Closure). Bez wycinania tkanek." },
+  { label: "Rekonwalescencja", value: "Powrót do pracy po 2–3 dniach. Pełna aktywność fizyczna po 4–6 tygodniach." },
+  { label: "Efekty", value: "Skuteczność ok. 90%. Minimalna rana (nakłucie), brak rozległej blizny, zachowanie zdrowych tkanek." },
+  { label: "Możliwe powikłania", value: "Niewielki ból pooperacyjny (2–3/10), przejściowy obrzęk, ryzyko nawrotu ok. 10%." },
 ];
 
 const fadeUp = {

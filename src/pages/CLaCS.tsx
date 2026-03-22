@@ -8,16 +8,13 @@ import CLaCSFAQ from "@/components/clacs/CLaCSFAQ";
 import ProcedureSummaryTable from "@/components/shared/ProcedureSummaryTable";
 
 const clacsSummary = [
-  { label: "Nazwa metody", value: "CLaCS – Crio Laser and Crio Sclerotherapy" },
-  { label: "Wskazania", value: "Pajączki, teleangiektazje, drobne żylaki do 3 mm" },
-  { label: "Czas zabiegu", value: "15–30 minut" },
-  { label: "Znieczulenie", value: "Kriochłodzenie (bez igły)" },
-  { label: "Hospitalizacja", value: "Brak — zabieg ambulatoryjny" },
-  { label: "Ból", value: "Minimalny dzięki kriochłodzeniu" },
-  { label: "Powrót do aktywności", value: "Natychmiast" },
-  { label: "Liczba sesji", value: "1–3 w zależności od rozległości" },
-  { label: "Po zabiegu", value: "Filtr SPF 50+, pończocha uciskowa" },
-  { label: "Technologia", value: "Laser przezskórny + skleroterapia + crio" },
+  { label: "Przygotowanie", value: "Konsultacja flebologiczna, ocena zmian naczyniowych. Unikać opalania 2 tygodnie przed zabiegiem, bez kremów na nogi w dniu zabiegu." },
+  { label: "Czas trwania", value: "15–30 minut" },
+  { label: "Znieczulenie", value: "Kriochłodzenie (bez igły) — zabieg niemal bezbolesny" },
+  { label: "Technika", value: "Potrójne działanie: kriochłodzenie obkurcza naczynie, laser przezskórny zamyka je od zewnątrz, mikroskleroterapia dopełnia zamknięcie." },
+  { label: "Rekonwalescencja", value: "Natychmiastowy powrót do aktywności. Pończocha uciskowa wg zaleceń, filtr SPF 50+ przez 4–6 tygodni." },
+  { label: "Efekty", value: "Trwałe zamknięcie pajączków, teleangiektazji i drobnych żyłek do 3 mm. Zwykle 1–3 sesje w zależności od rozległości." },
+  { label: "Możliwe powikłania", value: "Przejściowe zaczerwienienie, drobne siniaki, przebarwienia (ustępują samoistnie)." },
 ];
 
 const fadeUp = {
