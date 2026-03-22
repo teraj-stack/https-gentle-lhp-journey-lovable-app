@@ -7,16 +7,13 @@ import ParallaxSection from "@/components/ui/parallax-section";
 import ProcedureSummaryTable from "@/components/shared/ProcedureSummaryTable";
 
 const anusitisSummary = [
-  { label: "Schorzenie", value: "Anusitis – zapalenie kanału odbytu" },
-  { label: "Charakter", value: "Przewlekły (zaostrzenia i remisje)" },
-  { label: "Objawy", value: "Świąd, pieczenie, sączenie, ślady krwi" },
-  { label: "Leczenie", value: "Farmakologiczne (maści, czopki, leki doustne)" },
-  { label: "Zabieg chirurgiczny", value: "Nie jest wymagany" },
-  { label: "Czas terapii", value: "Indywidualny — zależny od przyczyny" },
-  { label: "Kluczowy element", value: "Diagnostyka przyczyny zapalenia" },
-  { label: "Ryzyko nieleczenia", value: "Hemoroidy, szczelina, ropnie" },
-  { label: "Wizyta kontrolna", value: "Według zaleceń lekarza" },
-  { label: "Profilaktyka", value: "Higiena, unikanie alergenów, dieta" },
+  { label: "Przygotowanie", value: "Badanie proktologiczne (anoskopia), wywiad w kierunku alergii, infekcji i chorób współistniejących." },
+  { label: "Czas trwania", value: "Leczenie farmakologiczne — czas terapii indywidualny, zależny od przyczyny zapalenia." },
+  { label: "Znieczulenie", value: "Nie dotyczy — leczenie zachowawcze (maści, czopki, leki doustne)." },
+  { label: "Technika", value: "Farmakoterapia celowana w przyczynę zapalenia. Bez interwencji chirurgicznej." },
+  { label: "Rekonwalescencja", value: "Brak okresu rekonwalescencji — leczenie ambulatoryjne, wizyty kontrolne wg zaleceń." },
+  { label: "Efekty", value: "Ustąpienie świądu, pieczenia i sączenia. Zapobieganie powikłaniom (hemoroidy, szczelina, ropnie)." },
+  { label: "Możliwe powikłania", value: "Charakter przewlekły — ryzyko nawrotów. Nieleczone zapalenie prowadzi do degradacji tkanek i poważniejszych patologii." },
 ];
 
 const fadeUp = {
