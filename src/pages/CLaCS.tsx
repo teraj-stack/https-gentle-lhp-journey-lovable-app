@@ -5,6 +5,20 @@ import Breadcrumbs from "@/components/layout/Breadcrumbs";
 import { Button } from "@/components/ui/button";
 import { BookOpen, Download, ArrowRight } from "lucide-react";
 import CLaCSFAQ from "@/components/clacs/CLaCSFAQ";
+import ProcedureSummaryTable from "@/components/shared/ProcedureSummaryTable";
+
+const clacsSummary = [
+  { label: "Nazwa metody", value: "CLaCS – Crio Laser and Crio Sclerotherapy" },
+  { label: "Wskazania", value: "Pajączki, teleangiektazje, drobne żylaki do 3 mm" },
+  { label: "Czas zabiegu", value: "15–30 minut" },
+  { label: "Znieczulenie", value: "Kriochłodzenie (bez igły)" },
+  { label: "Hospitalizacja", value: "Brak — zabieg ambulatoryjny" },
+  { label: "Ból", value: "Minimalny dzięki kriochłodzeniu" },
+  { label: "Powrót do aktywności", value: "Natychmiast" },
+  { label: "Liczba sesji", value: "1–3 w zależności od rozległości" },
+  { label: "Po zabiegu", value: "Filtr SPF 50+, pończocha uciskowa" },
+  { label: "Technologia", value: "Laser przezskórny + skleroterapia + crio" },
+];
 
 const fadeUp = {
   initial: { opacity: 0, y: 24, filter: "blur(4px)" },
