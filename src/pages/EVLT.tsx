@@ -6,6 +6,20 @@ import { Button } from "@/components/ui/button";
 import EVLTComparisonChart from "@/components/evlt/ComparisonChart";
 import RiskFactorsChart from "@/components/evlt/RiskFactorsChart";
 import EVLTFAQ from "@/components/evlt/EVLTFAQ";
+import ProcedureSummaryTable from "@/components/shared/ProcedureSummaryTable";
+
+const evltSummary = [
+  { label: "Nazwa metody", value: "EVLT – Endovenous Laser Treatment" },
+  { label: "Wskazania", value: "Żylaki kończyn dolnych (niewydolność żył)" },
+  { label: "Czas zabiegu", value: "30–60 minut" },
+  { label: "Znieczulenie", value: "Miejscowe (tumescencyjne)" },
+  { label: "Hospitalizacja", value: "Brak — system walk-in, walk-out" },
+  { label: "Ból pooperacyjny", value: "Minimalny — uczucie napięcia" },
+  { label: "Powrót do pracy", value: "1–2 dni" },
+  { label: "Pełna aktywność", value: "2–3 tygodnie" },
+  { label: "Kontrola USG", value: "Precyzyjna mapa żył Doppler" },
+  { label: "Skuteczność", value: "Ponad 95% zamknięcia naczynia" },
+];
 
 const fadeUp = {
   initial: { opacity: 0, y: 24, filter: "blur(4px)" },
