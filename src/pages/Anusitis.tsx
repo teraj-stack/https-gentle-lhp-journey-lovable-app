@@ -4,6 +4,20 @@ import { Button } from "@/components/ui/button";
 import Breadcrumbs from "@/components/layout/Breadcrumbs";
 import { ArrowRight, CheckCircle2, AlertTriangle, Pill, Shield } from "lucide-react";
 import ParallaxSection from "@/components/ui/parallax-section";
+import ProcedureSummaryTable from "@/components/shared/ProcedureSummaryTable";
+
+const anusitisSummary = [
+  { label: "Schorzenie", value: "Anusitis – zapalenie kanału odbytu" },
+  { label: "Charakter", value: "Przewlekły (zaostrzenia i remisje)" },
+  { label: "Objawy", value: "Świąd, pieczenie, sączenie, ślady krwi" },
+  { label: "Leczenie", value: "Farmakologiczne (maści, czopki, leki doustne)" },
+  { label: "Zabieg chirurgiczny", value: "Nie jest wymagany" },
+  { label: "Czas terapii", value: "Indywidualny — zależny od przyczyny" },
+  { label: "Kluczowy element", value: "Diagnostyka przyczyny zapalenia" },
+  { label: "Ryzyko nieleczenia", value: "Hemoroidy, szczelina, ropnie" },
+  { label: "Wizyta kontrolna", value: "Według zaleceń lekarza" },
+  { label: "Profilaktyka", value: "Higiena, unikanie alergenów, dieta" },
+];
 
 const fadeUp = {
   initial: { opacity: 0, y: 30 },
