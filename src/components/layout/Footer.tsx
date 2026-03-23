@@ -54,24 +54,52 @@ const Footer = () =>
 
         <div>
           <h4 className="font-semibold text-foreground mb-4 font-sans text-sm uppercase tracking-wider">Kontakt</h4>
-          <ul className="space-y-3 text-sm text-muted-foreground">
-            <li className="flex items-start gap-2.5">
-              <MapPin className="w-4 h-4 mt-0.5 shrink-0 text-primary/50" />
-              <span>Warszawa Wilanów · Siedlce</span>
-            </li>
-            <li className="flex items-center gap-2.5">
-              <Phone className="w-4 h-4 shrink-0 text-primary/50" />
-              <span>+48 XXX XXX XXX</span>
-            </li>
-            <li className="flex items-center gap-2.5">
-              <Mail className="w-4 h-4 shrink-0 text-primary/50" />
-              <span>kontakt@cml.pl</span>
-            </li>
-            <li className="flex items-center gap-2.5">
-              <Clock className="w-4 h-4 shrink-0 text-primary/50" />
-              <span>Pon–Pt: 8:00–22:00</span>
-            </li>
-          </ul>
+          
+          <div className="space-y-5">
+            <div>
+              <p className="text-xs font-semibold text-foreground/80 mb-1.5">Warszawa Wilanów</p>
+              <ul className="space-y-1.5 text-sm text-muted-foreground">
+                <li className="flex items-start gap-2">
+                  <MapPin className="w-3.5 h-3.5 mt-0.5 shrink-0 text-primary/50" />
+                  <span>ul. Branickiego 10/U6<br />02-972 Warszawa</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <Clock className="w-3.5 h-3.5 shrink-0 text-primary/50" />
+                  <span>Pon–Pt: 8:00–18:00</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <Phone className="w-3.5 h-3.5 shrink-0 text-primary/50" />
+                  <span>+48 XXX XXX XXX</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <Mail className="w-3.5 h-3.5 shrink-0 text-primary/50" />
+                  <span>warszawa@cml.pl</span>
+                </li>
+              </ul>
+            </div>
+
+            <div>
+              <p className="text-xs font-semibold text-foreground/80 mb-1.5">Siedlce</p>
+              <ul className="space-y-1.5 text-sm text-muted-foreground">
+                <li className="flex items-start gap-2">
+                  <MapPin className="w-3.5 h-3.5 mt-0.5 shrink-0 text-primary/50" />
+                  <span>ul. Brzeska 125<br />08-110 Siedlce</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <Clock className="w-3.5 h-3.5 shrink-0 text-primary/50" />
+                  <span>Pon–Pt: 8:00–20:00</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <Phone className="w-3.5 h-3.5 shrink-0 text-primary/50" />
+                  <span>+48 XXX XXX XXX</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <Mail className="w-3.5 h-3.5 shrink-0 text-primary/50" />
+                  <span>siedlce@cml.pl</span>
+                </li>
+              </ul>
+            </div>
+          </div>
         </div>
       </div>
 
