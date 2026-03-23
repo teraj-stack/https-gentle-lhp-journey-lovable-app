@@ -206,14 +206,18 @@ const Header = () => {
 
             <Link
               to="/wspolpraca"
-              className="px-4 py-2 text-sm font-medium text-foreground/80 hover:text-primary transition-colors rounded-lg hover:bg-accent/50"
+              className={`px-4 py-2 text-sm font-medium transition-colors rounded-lg hover:bg-accent/50 ${
+                isActive("/wspolpraca") ? "text-primary bg-accent/50" : "text-foreground/80 hover:text-primary"
+              }`}
             >
               Współpraca
             </Link>
 
             <Link
               to="/kontakt"
-              className="px-4 py-2 text-sm font-medium text-foreground/80 hover:text-primary transition-colors rounded-lg hover:bg-accent/50"
+              className={`px-4 py-2 text-sm font-medium transition-colors rounded-lg hover:bg-accent/50 ${
+                isActive("/kontakt") ? "text-primary bg-accent/50" : "text-foreground/80 hover:text-primary"
+              }`}
             >
               Kontakt
             </Link>
