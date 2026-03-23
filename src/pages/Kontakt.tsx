@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { MapPin, Phone, Clock, Mail } from "lucide-react";
 import { z } from "zod";
+import SeoHead from "@/components/shared/SeoHead";
 
 const fadeUp = {
   initial: { opacity: 0, y: 30 },
