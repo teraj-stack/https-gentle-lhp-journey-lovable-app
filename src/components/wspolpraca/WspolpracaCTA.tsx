@@ -42,7 +42,7 @@ const WspolpracaCTA = () => (
             <a href="https://www.znanylekarz.pl/jan-bujok-2/chirurg-flebolog-proktolog/warszawa" target="_blank" rel="noopener noreferrer">
               Umów wirtualną kawę
               <ArrowRight className="w-4 h-4 ml-2" />
-            </Link>
+            </a>
           </Button>
           <span className="text-xs text-muted-foreground">lub napisz: kontakt@cml.pl</span>
         </div>

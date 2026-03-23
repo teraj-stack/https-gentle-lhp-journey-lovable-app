@@ -203,7 +203,7 @@ const Anusitis = () => (
           <a href="https://www.znanylekarz.pl/jan-bujok-2/chirurg-flebolog-proktolog/warszawa" target="_blank" rel="noopener noreferrer">
             Umów Konsultację
             <ArrowRight className="w-4 h-4 ml-2" />
-          </Link>
+          </a>
         </Button>
       </motion.section>
     </div>
