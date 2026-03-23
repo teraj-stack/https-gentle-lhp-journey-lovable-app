@@ -71,7 +71,9 @@ const Header = () => {
           <nav className="hidden lg:flex items-center gap-1">
             <Link
               to="/o-nas"
-              className="px-4 py-2 text-sm font-medium text-foreground/80 hover:text-primary transition-colors rounded-lg hover:bg-accent/50"
+              className={`px-4 py-2 text-sm font-medium transition-colors rounded-lg hover:bg-accent/50 ${
+                isActive("/o-nas") ? "text-primary bg-accent/50" : "text-foreground/80 hover:text-primary"
+              }`}
             >
               O nas
             </Link>
