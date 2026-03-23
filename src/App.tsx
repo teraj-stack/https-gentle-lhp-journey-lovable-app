@@ -19,6 +19,7 @@ const FiLaC = lazy(() => import("@/pages/FiLaC"));
 const SiLaC = lazy(() => import("@/pages/SiLaC"));
 const Hemoroidy = lazy(() => import("@/pages/Hemoroidy"));
 const Skleroterapia = lazy(() => import("@/pages/Skleroterapia"));
+const Mikroflebektomia = lazy(() => import("@/pages/Mikroflebektomia"));
 const CLaCS = lazy(() => import("@/pages/CLaCS"));
 const Pajaczki = lazy(() => import("@/pages/Pajaczki"));
 const Kontakt = lazy(() => import("@/pages/Kontakt"));
