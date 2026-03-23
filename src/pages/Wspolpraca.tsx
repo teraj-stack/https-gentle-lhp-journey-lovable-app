@@ -4,6 +4,7 @@ import WspolpracaHero from "@/components/wspolpraca/WspolpracaHero";
 import WspolpracaPillars from "@/components/wspolpraca/WspolpracaPillars";
 import EBMComparisonChart from "@/components/wspolpraca/EBMComparisonChart";
 import WspolpracaCTA from "@/components/wspolpraca/WspolpracaCTA";
+import SeoHead from "@/components/shared/SeoHead";
 import {
   Clock,
   Shield,
