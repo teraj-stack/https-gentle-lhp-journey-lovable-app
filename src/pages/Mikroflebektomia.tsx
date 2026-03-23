@@ -180,6 +180,9 @@ const Mikroflebektomia = () => (
         </div>
       </motion.section>
 
+      {/* FAQ */}
+      <MikroflebektomiaFAQ fadeUp={fadeUp} />
+
       {/* Karta zabiegu */}
       <ProcedureSummaryTable rows={summary} fadeUp={fadeUp} />
 
