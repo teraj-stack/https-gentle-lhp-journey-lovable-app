@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Save, Eye, Pencil } from "lucide-react";
+import { ArrowLeft, Save, Eye, Pencil, X, ImageIcon } from "lucide-react";
 import { toast } from "sonner";
 import SeoHead from "@/components/shared/SeoHead";
 import MarkdownRenderer from "@/components/shared/MarkdownRenderer";
@@ -24,6 +24,8 @@ const AdminPostEditor = () => {
   const [content, setContent] = useState("");
   const [published, setPublished] = useState(false);
   const [coverImageUrl, setCoverImageUrl] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -31,31 +33,6 @@ const AdminPostEditor = () => {
     });
   }, [navigate]);
 
-  const { isLoading } = useQuery({
-    queryKey: ["admin-post", id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("blog_posts")
-        .select("*")
-        .eq("id", id!)
-        .single();
-      if (error) throw error;
-      return data;
-    },
-    enabled: !isNew && !!id,
-    meta: {
-      onSuccess: (data: any) => {
-        setTitle(data.title);
-        setSlug(data.slug);
-        setExcerpt(data.excerpt || "");
-        setContent(data.content);
-        setPublished(data.published);
-        setCoverImageUrl(data.cover_image_url || "");
-      },
-    },
-  });
-
-  // Populate form when data loads
   const { data: existingPost } = useQuery({
     queryKey: ["admin-post", id],
     queryFn: async () => {
@@ -83,6 +60,47 @@ const AdminPostEditor = () => {
       .replace(/[ąćęłńóśźż]/g, (c) => "acelnoszzaceelnooszz"["ąćęłńóśźżĄĆĘŁŃÓŚŹŻ".indexOf(c)] || c)
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-|-$/g, "");
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("Dozwolone są tylko pliki graficzne");
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Maksymalny rozmiar pliku to 5 MB");
+      return;
+    }
+
+    setUploading(true);
+
+    const fileExt = file.name.split(".").pop();
+    const fileName = `${crypto.randomUUID()}.${fileExt}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("blog-covers")
+      .upload(fileName, file, { cacheControl: "3600", upsert: false });
+
+    if (uploadError) {
+      console.error(uploadError);
+      toast.error("Nie udało się przesłać pliku");
+      setUploading(false);
+      return;
+    }
+
+    const { data: urlData } = supabase.storage.from("blog-covers").getPublicUrl(fileName);
+    setCoverImageUrl(urlData.publicUrl);
+    toast.success("Obrazek przesłany");
+    setUploading(false);
+  };
+
+  const removeCoverImage = () => {
+    setCoverImageUrl("");
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
 
   const saveMutation = useMutation({
     mutationFn: async () => {
@@ -146,9 +164,49 @@ const AdminPostEditor = () => {
             <Textarea id="excerpt" value={excerpt} onChange={(e) => setExcerpt(e.target.value)} placeholder="Krótki opis artykułu..." rows={2} />
           </div>
 
+          {/* Cover image upload */}
           <div className="space-y-2">
-            <Label htmlFor="cover">URL obrazka okładki (opcjonalnie)</Label>
-            <Input id="cover" value={coverImageUrl} onChange={(e) => setCoverImageUrl(e.target.value)} placeholder="https://..." />
+            <Label>Obrazek okładki</Label>
+            {coverImageUrl ? (
+              <div className="relative rounded-lg border border-border overflow-hidden">
+                <img
+                  src={coverImageUrl}
+                  alt="Okładka artykułu"
+                  className="w-full h-48 object-cover"
+                />
+                <Button
+                  variant="destructive"
+                  size="icon"
+                  className="absolute top-2 right-2 h-8 w-8"
+                  onClick={removeCoverImage}
+                  type="button"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            ) : (
+              <div
+                className="flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border py-8 cursor-pointer hover:border-primary/50 transition-colors"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                {uploading ? (
+                  <div className="h-8 w-8 rounded-full border-4 border-primary border-t-transparent animate-spin" />
+                ) : (
+                  <>
+                    <ImageIcon className="w-10 h-10 text-muted-foreground" />
+                    <p className="text-sm text-muted-foreground">Kliknij, aby przesłać obrazek okładki</p>
+                    <p className="text-xs text-muted-foreground">JPG, PNG, WebP — maks. 5 MB</p>
+                  </>
+                )}
+              </div>
+            )}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleFileUpload}
+            />
           </div>
 
           <div className="space-y-2">
