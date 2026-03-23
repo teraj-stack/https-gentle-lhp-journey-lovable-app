@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { MapPin, Phone, Clock, Mail } from "lucide-react";
 import { z } from "zod";
+import SeoHead from "@/components/shared/SeoHead";
 
 const fadeUp = {
   initial: { opacity: 0, y: 30 },
@@ -77,6 +78,11 @@ const Kontakt = () => {
 
   return (
     <div className="min-h-screen bg-background pt-20">
+      <SeoHead
+        title="Kontakt – umów wizytę"
+        description="Skontaktuj się z CML. Przyjmujemy w Warszawie Wilanów i Siedlcach. Umów wizytę proktologiczną lub flebologiczną."
+        path="/kontakt"
+      />
       {/* Hero */}
       <section className="gradient-bg py-16 md:py-24 px-4">
         <motion.div

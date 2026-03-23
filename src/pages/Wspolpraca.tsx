@@ -4,6 +4,7 @@ import WspolpracaHero from "@/components/wspolpraca/WspolpracaHero";
 import WspolpracaPillars from "@/components/wspolpraca/WspolpracaPillars";
 import EBMComparisonChart from "@/components/wspolpraca/EBMComparisonChart";
 import WspolpracaCTA from "@/components/wspolpraca/WspolpracaCTA";
+import SeoHead from "@/components/shared/SeoHead";
 import {
   Clock,
   Shield,
@@ -86,6 +87,11 @@ const faq = [
 
 const Wspolpraca = () => (
   <div className="min-h-screen">
+    <SeoHead
+      title="Współpraca B2B dla placówek medycznych"
+      description="Model kooperacyjny CML dla klinik i gabinetów. Procedury tkankowo-oszczędzające, preedukacja pacjenta, cross-referrals."
+      path="/wspolpraca"
+    />
     <WspolpracaHero />
 
     {/* EBM */}
