@@ -25,7 +25,13 @@ const AdminDashboard = () => {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
-  const { data: posts, isLoading } = useQuery({
+  const {
+    data: posts = [],
+    isLoading,
+    isError,
+    error,
+    refetch,
+  } = useQuery({
     queryKey: ["admin-blog-posts"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -33,7 +39,7 @@ const AdminDashboard = () => {
         .select("*")
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return data;
+      return data ?? [];
     },
     enabled: !!session,
   });
@@ -47,7 +53,10 @@ const AdminDashboard = () => {
       queryClient.invalidateQueries({ queryKey: ["admin-blog-posts"] });
       toast.success("Artykuł usunięty");
     },
-    onError: () => toast.error("Błąd podczas usuwania"),
+    onError: (mutationError) => {
+      console.error(mutationError);
+      toast.error("Błąd podczas usuwania");
+    },
   });
 
   const togglePublish = useMutation({
@@ -64,6 +73,10 @@ const AdminDashboard = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-blog-posts"] });
       toast.success("Status zmieniony");
+    },
+    onError: (mutationError) => {
+      console.error(mutationError);
+      toast.error("Nie udało się zmienić statusu wpisu");
     },
   });
 
@@ -90,7 +103,7 @@ const AdminDashboard = () => {
 
         <main className="max-w-5xl mx-auto px-4 md:px-8 py-8">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-semibold text-foreground">Artykuły ({posts?.length ?? 0})</h2>
+            <h2 className="text-lg font-semibold text-foreground">Artykuły ({posts.length})</h2>
             <Button onClick={() => navigate("/admin/post/new")} size="sm">
               <Plus className="w-4 h-4 mr-1" /> Nowy artykuł
             </Button>
@@ -101,6 +114,16 @@ const AdminDashboard = () => {
               {[1, 2, 3].map((i) => (
                 <div key={i} className="h-14 bg-muted rounded animate-pulse" />
               ))}
+            </div>
+          ) : isError ? (
+            <div className="rounded-lg border border-border bg-card px-6 py-8 text-center space-y-3">
+              <p className="text-foreground font-medium">Nie udało się wczytać artykułów.</p>
+              <p className="text-sm text-muted-foreground">
+                {error instanceof Error ? error.message : "Wystąpił nieznany błąd podczas pobierania danych."}
+              </p>
+              <Button variant="outline" size="sm" onClick={() => refetch()}>
+                Spróbuj ponownie
+              </Button>
             </div>
           ) : (
             <div className="border border-border rounded-lg overflow-hidden">
@@ -114,7 +137,7 @@ const AdminDashboard = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {posts?.map((post) => (
+                  {posts.map((post) => (
                     <TableRow key={post.id}>
                       <TableCell className="font-medium max-w-[200px] truncate">{post.title}</TableCell>
                       <TableCell className="hidden md:table-cell text-muted-foreground text-sm">
@@ -144,7 +167,7 @@ const AdminDashboard = () => {
                       </TableCell>
                     </TableRow>
                   ))}
-                  {posts?.length === 0 && (
+                  {posts.length === 0 && (
                     <TableRow>
                       <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
                         Brak artykułów. Dodaj pierwszy wpis!
