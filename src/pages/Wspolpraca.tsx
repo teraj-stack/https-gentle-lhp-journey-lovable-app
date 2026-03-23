@@ -87,6 +87,11 @@ const faq = [
 
 const Wspolpraca = () => (
   <div className="min-h-screen">
+    <SeoHead
+      title="Współpraca B2B dla placówek medycznych"
+      description="Model kooperacyjny CML dla klinik i gabinetów. Procedury tkankowo-oszczędzające, preedukacja pacjenta, cross-referrals."
+      path="/wspolpraca"
+    />
     <WspolpracaHero />
 
     {/* EBM */}

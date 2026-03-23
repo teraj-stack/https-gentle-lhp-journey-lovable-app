@@ -78,6 +78,11 @@ const Kontakt = () => {
 
   return (
     <div className="min-h-screen bg-background pt-20">
+      <SeoHead
+        title="Kontakt – umów wizytę"
+        description="Skontaktuj się z CML. Przyjmujemy w Warszawie Wilanów i Siedlcach. Umów wizytę proktologiczną lub flebologiczną."
+        path="/kontakt"
+      />
       {/* Hero */}
       <section className="gradient-bg py-16 md:py-24 px-4">
         <motion.div

@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import ParallaxSection from "@/components/ui/parallax-section";
 import { Link } from "react-router-dom";
 import Breadcrumbs from "@/components/layout/Breadcrumbs";
+import SeoHead from "@/components/shared/SeoHead";
 import { Button } from "@/components/ui/button";
 import { Download, ArrowRight } from "lucide-react";
 import AnatomyDiagram from "@/components/pajaczki/AnatomyDiagram";
