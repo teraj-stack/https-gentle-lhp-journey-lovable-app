@@ -1,27 +1,29 @@
+import { lazy, Suspense } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import Layout from "@/components/layout/Layout";
-import Home from "@/pages/Home";
-import LHP from "@/pages/LHP";
-import About from "@/pages/About";
-import Szczelina from "@/pages/Szczelina";
-import Plastyka from "@/pages/Plastyka";
-import Anusitis from "@/pages/Anusitis";
-import Wspolpraca from "@/pages/Wspolpraca";
-import DlaPacjenta from "@/pages/DlaPacjenta";
-import EVLT from "@/pages/EVLT";
-import FiLaC from "@/pages/FiLaC";
-import SiLaC from "@/pages/SiLaC";
-import Skleroterapia from "@/pages/Skleroterapia";
-import CLaCS from "@/pages/CLaCS";
-import Pajaczki from "@/pages/Pajaczki";
-import Kontakt from "@/pages/Kontakt";
-import EbookPajaczki from "@/pages/EbookPajaczki";
-import ProktologFAQ from "@/pages/ProktologFAQ";
-import NotFound from "@/pages/NotFound";
+
+const Home = lazy(() => import("@/pages/Home"));
+const LHP = lazy(() => import("@/pages/LHP"));
+const About = lazy(() => import("@/pages/About"));
+const Szczelina = lazy(() => import("@/pages/Szczelina"));
+const Plastyka = lazy(() => import("@/pages/Plastyka"));
+const Anusitis = lazy(() => import("@/pages/Anusitis"));
+const Wspolpraca = lazy(() => import("@/pages/Wspolpraca"));
+const DlaPacjenta = lazy(() => import("@/pages/DlaPacjenta"));
+const EVLT = lazy(() => import("@/pages/EVLT"));
+const FiLaC = lazy(() => import("@/pages/FiLaC"));
+const SiLaC = lazy(() => import("@/pages/SiLaC"));
+const Skleroterapia = lazy(() => import("@/pages/Skleroterapia"));
+const CLaCS = lazy(() => import("@/pages/CLaCS"));
+const Pajaczki = lazy(() => import("@/pages/Pajaczki"));
+const Kontakt = lazy(() => import("@/pages/Kontakt"));
+const EbookPajaczki = lazy(() => import("@/pages/EbookPajaczki"));
+const ProktologFAQ = lazy(() => import("@/pages/ProktologFAQ"));
+const NotFound = lazy(() => import("@/pages/NotFound"));
 
 const queryClient = new QueryClient();
 
