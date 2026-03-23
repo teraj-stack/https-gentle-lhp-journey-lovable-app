@@ -234,7 +234,7 @@ const DlaPacjenta = () => (
           Przeczytałeś przewodniki i masz pytania? Umów się na niezobowiązującą konsultację kwalifikacyjną. Lekarz oceni stopień zaawansowania i zaproponuje najlepszą metodę leczenia.
         </p>
         <Button variant="hero" size="lg" asChild>
-          <Link to="/kontakt">Umów się na konsultację</Link>
+          <a href="https://www.znanylekarz.pl/jan-bujok-2/chirurg-flebolog-proktolog/warszawa" target="_blank" rel="noopener noreferrer">Umów się na konsultację</a>
         </Button>
       </motion.section>
     </div>

@@ -58,7 +58,7 @@ const Anusitis = () => (
             Skuteczne leczenie farmakologiczne świądu, pieczenia i dyskomfortu — zanim problem przerodzi się w poważniejsze powikłania.
           </p>
           <Button variant="hero" size="lg" className="px-8 py-6 text-base" asChild>
-            <Link to="/kontakt">Umów Konsultację</Link>
+            <a href="https://www.znanylekarz.pl/jan-bujok-2/chirurg-flebolog-proktolog/warszawa" target="_blank" rel="noopener noreferrer">Umów Konsultację</a>
           </Button>
         </motion.div>
       </div>
@@ -200,7 +200,7 @@ const Anusitis = () => (
           Wylecz zapalenie, zanim zmieni się w poważniejsze powikłania. Umów konsultację proktologiczną.
         </p>
         <Button variant="hero" size="lg" className="px-10 py-6 text-base" asChild>
-          <Link to="/kontakt">
+          <a href="https://www.znanylekarz.pl/jan-bujok-2/chirurg-flebolog-proktolog/warszawa" target="_blank" rel="noopener noreferrer">
             Umów Konsultację
             <ArrowRight className="w-4 h-4 ml-2" />
           </Link>

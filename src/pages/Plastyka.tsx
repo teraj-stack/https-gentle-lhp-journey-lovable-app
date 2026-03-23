@@ -63,7 +63,7 @@ const Plastyka = () => (
             Estetyka i komfort — nowoczesna, laserowa korekta przywracająca naturalny wygląd i pewność siebie.
           </p>
           <Button variant="hero" size="lg" className="px-8 py-6 text-base" asChild>
-            <Link to="/kontakt">Umów Konsultację Estetyczną</Link>
+            <a href="https://www.znanylekarz.pl/jan-bujok-2/chirurg-flebolog-proktolog/warszawa" target="_blank" rel="noopener noreferrer">Umów Konsultację Estetyczną</a>
           </Button>
         </motion.div>
       </div>
@@ -207,7 +207,7 @@ const Plastyka = () => (
           Powrót do codziennych aktywności jest szybki, a wizyta kontrolna odbywa się po 10–14 dniach.
         </p>
         <Button variant="hero" size="lg" className="px-10 py-6 text-base" asChild>
-          <Link to="/kontakt">
+          <a href="https://www.znanylekarz.pl/jan-bujok-2/chirurg-flebolog-proktolog/warszawa" target="_blank" rel="noopener noreferrer">
             Umów Konsultację Estetyczną
             <ArrowRight className="w-4 h-4 ml-2" />
           </Link>

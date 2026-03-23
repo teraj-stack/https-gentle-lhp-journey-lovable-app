@@ -235,7 +235,7 @@ const EVLT = () => (
           Zasługujesz na to, by budzić się rano bez bólu. Zadbamy o Ciebie na każdym etapie.
         </p>
         <Button variant="hero" size="lg" asChild>
-          <Link to="/kontakt">Umów konsultację</Link>
+          <a href="https://www.znanylekarz.pl/jan-bujok-2/chirurg-flebolog-proktolog/warszawa" target="_blank" rel="noopener noreferrer">Umów konsultację</a>
         </Button>
       </motion.section>
     </div>

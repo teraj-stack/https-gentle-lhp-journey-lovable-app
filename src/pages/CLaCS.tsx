@@ -265,7 +265,7 @@ const CLaCS = () => (
           CLaCS to najnowocześniejsza metoda usuwania pajączków naczyniowych i drobnych żyłek. Umów się na konsultację.
         </p>
         <Button variant="hero" size="lg" asChild>
-          <Link to="/kontakt">Umów konsultację</Link>
+          <a href="https://www.znanylekarz.pl/jan-bujok-2/chirurg-flebolog-proktolog/warszawa" target="_blank" rel="noopener noreferrer">Umów konsultację</a>
         </Button>
       </motion.section>
     </div>
