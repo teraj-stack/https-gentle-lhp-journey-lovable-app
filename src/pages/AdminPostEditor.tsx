@@ -200,15 +200,20 @@ const AdminPostEditor = () => {
               </div>
             ) : (
               <div
-                className="flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border py-8 cursor-pointer hover:border-primary/50 transition-colors"
+                className={`flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed py-8 cursor-pointer transition-colors ${
+                  dragOver ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"
+                }`}
                 onClick={() => fileInputRef.current?.click()}
+                onDrop={handleDrop}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
               >
                 {uploading ? (
                   <div className="h-8 w-8 rounded-full border-4 border-primary border-t-transparent animate-spin" />
                 ) : (
                   <>
                     <ImageIcon className="w-10 h-10 text-muted-foreground" />
-                    <p className="text-sm text-muted-foreground">Kliknij, aby przesłać obrazek okładki</p>
+                    <p className="text-sm text-muted-foreground">Przeciągnij i upuść lub kliknij, aby przesłać</p>
                     <p className="text-xs text-muted-foreground">JPG, PNG, WebP — maks. 5 MB</p>
                   </>
                 )}
