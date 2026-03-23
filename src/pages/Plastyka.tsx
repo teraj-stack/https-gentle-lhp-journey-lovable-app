@@ -6,6 +6,7 @@ import { ArrowRight, CheckCircle2, Clock, Shield, Sparkles, Heart } from "lucide
 import ParallaxSection from "@/components/ui/parallax-section";
 import ProcedureSummaryTable from "@/components/shared/ProcedureSummaryTable";
 import MedicalProcedureSchema from "@/components/shared/MedicalProcedureSchema";
+import SeoHead from "@/components/shared/SeoHead";
 
 const plastykaSummary = [
   { label: "Przygotowanie", value: "Konsultacja proktologiczna, ocena zmian skórnych" },
@@ -31,6 +32,11 @@ const stagger = (i: number) => ({
 
 const Plastyka = () => (
     <div className="min-h-screen pt-20">
+      <SeoHead
+        title="Plastyka odbytu – estetyka i komfort"
+        description="Laserowa plastyka odbytu w CML – usunięcie naddatków skórnych i poprawka estetyki. Precyzja lasera CO₂, szybkie gojenie."
+        path="/leczenie/plastyka"
+      />
       <MedicalProcedureSchema
         name="Plastyka odbytu – estetyka i komfort"
         description="Laserowa korekta zmian skórnych okolicy odbytu: nadmierne fałdy, nierówności i defekty pooperacyjne."

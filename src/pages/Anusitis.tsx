@@ -6,6 +6,7 @@ import { ArrowRight, CheckCircle2, AlertTriangle, Pill, Shield } from "lucide-re
 import ParallaxSection from "@/components/ui/parallax-section";
 import ProcedureSummaryTable from "@/components/shared/ProcedureSummaryTable";
 import MedicalProcedureSchema from "@/components/shared/MedicalProcedureSchema";
+import SeoHead from "@/components/shared/SeoHead";
 
 const anusitisSummary = [
   { label: "Przygotowanie", value: "Badanie proktologiczne (anoskopia), wywiad w kierunku alergii, infekcji i chorób współistniejących." },
@@ -26,6 +27,11 @@ const fadeUp = {
 
 const Anusitis = () => (
     <div className="min-h-screen pt-20">
+      <SeoHead
+        title="Zapalenie odbytu (anusitis) – diagnostyka i leczenie"
+        description="Leczenie zapalenia odbytu w CML – diagnostyka przyczyn, farmakoterapia celowana. Ambulatoryjnie, bez chirurgii."
+        path="/leczenie/anusitis"
+      />
       <MedicalProcedureSchema
         name="Zapalenie odbytu (anusitis) – diagnostyka i leczenie"
         description="Leczenie farmakologiczne zapalenia kanału odbytu. Celowana terapia przyczyny zapalenia, bez interwencji chirurgicznej."

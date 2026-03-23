@@ -8,6 +8,7 @@ import RiskFactorsChart from "@/components/evlt/RiskFactorsChart";
 import EVLTFAQ from "@/components/evlt/EVLTFAQ";
 import ProcedureSummaryTable from "@/components/shared/ProcedureSummaryTable";
 import MedicalProcedureSchema from "@/components/shared/MedicalProcedureSchema";
+import SeoHead from "@/components/shared/SeoHead";
 
 const evltSummary = [
   { label: "Przygotowanie", value: "Konsultacja flebologiczna oraz USG Doppler w celu mapowania niewydolnych żył" },
@@ -36,6 +37,11 @@ const warnings = [
 
 const EVLT = () => (
     <div className="min-h-screen bg-background pt-20">
+      <SeoHead
+        title="EVLT – Laserowe leczenie żylaków nóg"
+        description="Endowenozna ablacja laserowa żylaków (EVLT) w CML. Zabieg ambulatoryjny, szybki powrót do aktywności. Warszawa, Siedlce."
+        path="/leczenie/evlt"
+      />
       <MedicalProcedureSchema
         name="EVLT – Endowenozna ablacja laserowa żylaków"
         description="Zamknięcie niewydolnych żył od wewnątrz za pomocą energii lasera, pod kontrolą USG. Alternatywa dla strippingu."

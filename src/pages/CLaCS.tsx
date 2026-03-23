@@ -7,6 +7,7 @@ import { BookOpen, Download, ArrowRight } from "lucide-react";
 import CLaCSFAQ from "@/components/clacs/CLaCSFAQ";
 import ProcedureSummaryTable from "@/components/shared/ProcedureSummaryTable";
 import MedicalProcedureSchema from "@/components/shared/MedicalProcedureSchema";
+import SeoHead from "@/components/shared/SeoHead";
 
 const clacsSummary = [
   { label: "Przygotowanie", value: "Konsultacja flebologiczna, ocena zmian naczyniowych. Unikać opalania 2 tygodnie przed zabiegiem, bez kremów na nogi w dniu zabiegu." },
@@ -61,6 +62,11 @@ const afterCare = [
 
 const CLaCS = () => (
   <div className="min-h-screen bg-background pt-20">
+    <SeoHead
+      title="CLaCS – Usuwanie pajączków naczyniowych"
+      description="CLaCS (Crio Laser and Crio Sclerotherapy) – innowacyjne usuwanie pajączków żylnych w CML. Bez igieł, niemal bezbolesne."
+      path="/leczenie/clacs"
+    />
     <MedicalProcedureSchema
       name="CLaCS – Crio Laser and Crio Sclerotherapy"
       description="Potrójne działanie: kriochłodzenie, laser przezskórny i mikroskleroterapia do usuwania pajączków i teleangiektazji."
