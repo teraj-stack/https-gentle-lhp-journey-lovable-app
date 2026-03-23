@@ -31,6 +31,10 @@ const Header = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [megaOpen, setMegaOpen] = useState<string | null>(null);
   const location = useLocation();
+  const pathname = location.pathname;
+
+  const isActive = (href: string) => pathname === href;
+  const isSectionActive = (items: { href: string }[]) => items.some((item) => pathname === item.href);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
