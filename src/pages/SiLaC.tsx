@@ -21,6 +21,7 @@ const silacSummary = [
   { label: "Rekonwalescencja", value: "Powrót do pracy po 2–3 dniach. Pełna aktywność fizyczna po 4–6 tygodniach." },
   { label: "Efekty", value: "Skuteczność ok. 90%. Minimalna rana (nakłucie), brak rozległej blizny, zachowanie zdrowych tkanek." },
   { label: "Możliwe powikłania", value: "Niewielki ból pooperacyjny (2–3/10), przejściowy obrzęk, ryzyko nawrotu ok. 10%." },
+  { label: "Cena", value: "8 000 zł — cena obejmuje zabieg i wszystkie wizyty kontrolne do czasu wygojenia" },
 ];
 
 const fadeUp = {

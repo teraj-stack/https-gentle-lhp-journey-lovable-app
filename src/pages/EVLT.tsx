@@ -18,6 +18,7 @@ const evltSummary = [
   { label: "Rekonwalescencja", value: "Powrót do domu po zabiegu. Pończocha uciskowa przez ok. 2 tygodnie, codzienne spacery." },
   { label: "Efekty", value: "Zamknięcie niewydolnych pni żylnych, ustąpienie bólu i obrzęków, poprawa estetyki nóg" },
   { label: "Możliwe powikłania", value: "Przejściowy ból, zasinienia, uczucie ciągnięcia wzdłuż żyły. Rzadko: zapalenie żył, przebarwienia." },
+  { label: "Cena", value: "4 500 zł — cena obejmuje zabieg i wszystkie wizyty kontrolne do czasu wygojenia" },
 ];
 
 const fadeUp = {
