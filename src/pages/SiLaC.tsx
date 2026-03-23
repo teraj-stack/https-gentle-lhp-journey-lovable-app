@@ -11,6 +11,7 @@ import SiLaCRecovery from "@/components/silac/SiLaCRecovery";
 import SiLaCFAQ from "@/components/silac/SiLaCFAQ";
 import ProcedureSummaryTable from "@/components/shared/ProcedureSummaryTable";
 import MedicalProcedureSchema from "@/components/shared/MedicalProcedureSchema";
+import SeoHead from "@/components/shared/SeoHead";
 
 const silacSummary = [
   { label: "Przygotowanie", value: "Badanie proktologiczne, ocena rozległości torbieli pilonidalnej. W niektórych przypadkach USG lub MRI." },
