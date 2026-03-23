@@ -25,6 +25,7 @@ const AdminPostEditor = () => {
   const [published, setPublished] = useState(false);
   const [coverImageUrl, setCoverImageUrl] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -61,40 +62,53 @@ const AdminPostEditor = () => {
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-|-$/g, "");
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
+  const processFile = async (file: File) => {
     if (!file.type.startsWith("image/")) {
       toast.error("Dozwolone są tylko pliki graficzne");
       return;
     }
-
     if (file.size > 5 * 1024 * 1024) {
       toast.error("Maksymalny rozmiar pliku to 5 MB");
       return;
     }
-
     setUploading(true);
-
     const fileExt = file.name.split(".").pop();
     const fileName = `${crypto.randomUUID()}.${fileExt}`;
-
     const { error: uploadError } = await supabase.storage
       .from("blog-covers")
       .upload(fileName, file, { cacheControl: "3600", upsert: false });
-
     if (uploadError) {
       console.error(uploadError);
       toast.error("Nie udało się przesłać pliku");
       setUploading(false);
       return;
     }
-
     const { data: urlData } = supabase.storage.from("blog-covers").getPublicUrl(fileName);
     setCoverImageUrl(urlData.publicUrl);
     toast.success("Obrazek przesłany");
     setUploading(false);
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) processFile(file);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) processFile(file);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
   };
 
   const removeCoverImage = () => {
@@ -186,15 +200,20 @@ const AdminPostEditor = () => {
               </div>
             ) : (
               <div
-                className="flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border py-8 cursor-pointer hover:border-primary/50 transition-colors"
+                className={`flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed py-8 cursor-pointer transition-colors ${
+                  dragOver ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"
+                }`}
                 onClick={() => fileInputRef.current?.click()}
+                onDrop={handleDrop}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
               >
                 {uploading ? (
                   <div className="h-8 w-8 rounded-full border-4 border-primary border-t-transparent animate-spin" />
                 ) : (
                   <>
                     <ImageIcon className="w-10 h-10 text-muted-foreground" />
-                    <p className="text-sm text-muted-foreground">Kliknij, aby przesłać obrazek okładki</p>
+                    <p className="text-sm text-muted-foreground">Przeciągnij i upuść lub kliknij, aby przesłać</p>
                     <p className="text-xs text-muted-foreground">JPG, PNG, WebP — maks. 5 MB</p>
                   </>
                 )}
