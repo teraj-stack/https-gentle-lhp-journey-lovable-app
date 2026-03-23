@@ -25,7 +25,18 @@ const fadeUp = {
 };
 
 const Anusitis = () => (
-  <div className="min-h-screen pt-20">
+    <div className="min-h-screen pt-20">
+      <MedicalProcedureSchema
+        name="Zapalenie odbytu (anusitis) – diagnostyka i leczenie"
+        description="Leczenie farmakologiczne zapalenia kanału odbytu. Celowana terapia przyczyny zapalenia, bez interwencji chirurgicznej."
+        bodyLocation="Kanał odbytu"
+        procedureType="Noninvasive"
+        preparation="Badanie proktologiczne (anoskopia), wywiad w kierunku alergii, infekcji i chorób współistniejących."
+        followup="Brak okresu rekonwalescencji — leczenie ambulatoryjne, wizyty kontrolne wg zaleceń."
+        howPerformed="Farmakoterapia celowana w przyczynę zapalenia. Bez interwencji chirurgicznej."
+        risks="Charakter przewlekły — ryzyko nawrotów. Nieleczone zapalenie prowadzi do degradacji tkanek."
+        url="/leczenie/anusitis"
+      />
     {/* Hero */}
     <ParallaxSection className="relative py-20 md:py-28 gradient-hero">
       <div className="absolute inset-0 overflow-hidden">

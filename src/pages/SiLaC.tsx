@@ -30,7 +30,18 @@ const fadeUp = {
 };
 
 const SiLaC = () => (
-  <div className="min-h-screen bg-background pt-20">
+    <div className="min-h-screen bg-background pt-20">
+      <MedicalProcedureSchema
+        name="SiLaC – Sinus Laser Closure"
+        description="Laserowe leczenie torbieli pilonidalnej przez nakłucie 2–3 mm. Skuteczność ok. 90%, minimalna blizna."
+        bodyLocation="Okolica kości krzyżowej"
+        procedureType="Percutaneous"
+        preparation="Badanie proktologiczne, ocena rozległości torbieli pilonidalnej. W niektórych przypadkach USG lub MRI."
+        followup="Powrót do pracy po 2–3 dniach. Pełna aktywność fizyczna po 4–6 tygodniach."
+        howPerformed="Przez nakłucie 2–3 mm wprowadza się sondę laserową, która od wewnątrz zamyka kanał torbieli energią lasera."
+        risks="Niewielki ból pooperacyjny, przejściowy obrzęk, ryzyko nawrotu ok. 10%."
+        url="/leczenie/silac"
+      />
     <SiLaCHero />
 
     <div className="max-w-5xl mx-auto px-4 py-16 space-y-24">

@@ -30,7 +30,18 @@ const stagger = (i: number) => ({
 });
 
 const Szczelina = () => (
-  <div className="min-h-screen pt-20">
+    <div className="min-h-screen pt-20">
+      <MedicalProcedureSchema
+        name="Leczenie szczeliny odbytu – od diety do lasera"
+        description="Kompleksowe leczenie szczeliny odbytu: od leczenia zachowawczego, przez botoks, po precyzyjną laserową sfinkterotomię."
+        bodyLocation="Kanał odbytu"
+        procedureType="Percutaneous"
+        preparation="Badanie proktologiczne, ocena napięcia zwieraczy. Wykluczenie innych chorób jelit."
+        followup="Powrót do domu natychmiast. Kluczowe: miękki stolec (dieta, nawadnianie) przez kilka tygodni."
+        howPerformed="Botoks: rozluźnienie zwieracza. Laser: oczyszczenie brzegów rany lub precyzyjna sfinkterotomia — bez skalpela."
+        risks="Przejściowe nietrzymanie gazów (rzadkie), krwiak w miejscu iniekcji, nawrót przy braku zmiany diety"
+        url="/leczenie/szczelina"
+      />
     {/* Hero */}
     <ParallaxSection className="relative py-20 md:py-28 gradient-hero">
       <div className="absolute inset-0 overflow-hidden">

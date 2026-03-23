@@ -30,7 +30,18 @@ const fadeUp = {
 };
 
 const FiLaC = () => (
-  <div className="min-h-screen bg-background pt-20">
+    <div className="min-h-screen bg-background pt-20">
+      <MedicalProcedureSchema
+        name="FiLaC – Fistula Laser Closure"
+        description="Laserowe zamykanie przetok odbytu od wewnątrz, bez rozcinania zwieraczy. Zachowuje pełne trzymanie stolca."
+        bodyLocation="Kanał odbytu – przetoka"
+        procedureType="Percutaneous"
+        preparation="Diagnostyka obrazowa (USG transrektalne lub MRI miednicy) — dokładne zmapowanie kanału przetoki"
+        followup="Szybki powrót do aktywności (kilka dni). Ból pooperacyjny minimalny vs klasyczne operacje."
+        howPerformed="Elastyczny światłowód laserowy wprowadzany do kanału przetoki zamyka go od wewnątrz — bez rozcinania zwieraczy."
+        risks="Ropień w miejscu po przetoce, nawrót przetoki, przejściowy wyciek wydzieliny"
+        url="/leczenie/filac"
+      />
     <FiLaCHero />
 
     <div className="max-w-5xl mx-auto px-4 py-16 space-y-24">
