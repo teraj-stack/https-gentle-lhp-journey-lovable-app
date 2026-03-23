@@ -1,9 +1,16 @@
 import { motion, useScroll, useTransform } from "framer-motion";
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import heroImage from "@/assets/hero-clinic.jpg";
 import logoImage from "@/assets/logo-bujok.png";
+
+// Preload hero image as soon as module loads
+const preloadLink = document.createElement("link");
+preloadLink.rel = "preload";
+preloadLink.as = "image";
+preloadLink.href = heroImage;
+document.head.appendChild(preloadLink);
 
 const HeroHome = () => {
   const sectionRef = useRef<HTMLElement>(null);
