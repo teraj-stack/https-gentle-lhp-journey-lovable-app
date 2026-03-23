@@ -278,6 +278,7 @@ const Header = () => {
                   </Link>
                 )),
                 <Link key="wspolpraca" to="/wspolpraca" className={`block px-4 py-3 rounded-lg text-sm font-medium hover:bg-accent/50 ${isActive("/wspolpraca") ? "text-primary bg-accent/50" : "text-foreground"}`}>Współpraca</Link>,
+                <Link key="blog" to="/blog" className={`block px-4 py-3 rounded-lg text-sm font-medium hover:bg-accent/50 ${isActive("/blog") || pathname.startsWith("/blog/") ? "text-primary bg-accent/50" : "text-foreground"}`}>Blog</Link>,
                 <Link key="kontakt" to="/kontakt" className={`block px-4 py-3 rounded-lg text-sm font-medium hover:bg-accent/50 ${isActive("/kontakt") ? "text-primary bg-accent/50" : "text-foreground"}`}>Kontakt</Link>,
               ].map((child, i) => (
                 <motion.div
