@@ -62,40 +62,53 @@ const AdminPostEditor = () => {
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-|-$/g, "");
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
+  const processFile = async (file: File) => {
     if (!file.type.startsWith("image/")) {
       toast.error("Dozwolone są tylko pliki graficzne");
       return;
     }
-
     if (file.size > 5 * 1024 * 1024) {
       toast.error("Maksymalny rozmiar pliku to 5 MB");
       return;
     }
-
     setUploading(true);
-
     const fileExt = file.name.split(".").pop();
     const fileName = `${crypto.randomUUID()}.${fileExt}`;
-
     const { error: uploadError } = await supabase.storage
       .from("blog-covers")
       .upload(fileName, file, { cacheControl: "3600", upsert: false });
-
     if (uploadError) {
       console.error(uploadError);
       toast.error("Nie udało się przesłać pliku");
       setUploading(false);
       return;
     }
-
     const { data: urlData } = supabase.storage.from("blog-covers").getPublicUrl(fileName);
     setCoverImageUrl(urlData.publicUrl);
     toast.success("Obrazek przesłany");
     setUploading(false);
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) processFile(file);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) processFile(file);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
   };
 
   const removeCoverImage = () => {
