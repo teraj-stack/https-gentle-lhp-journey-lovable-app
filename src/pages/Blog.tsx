@@ -21,9 +21,9 @@ const Blog = () => {
   return (
     <>
       <SeoHead
-        title="Blog – CML Centrum Medycyny Laserowej"
+        title="Blog"
         description="Artykuły o proktologii, flebologii i nowoczesnych metodach leczenia laserowego. Wiedza prosto od specjalistów CML."
-        canonicalUrl="https://cml.pl/blog"
+        path="/blog"
       />
 
       <section className="pt-32 pb-16 md:pt-40 md:pb-24">

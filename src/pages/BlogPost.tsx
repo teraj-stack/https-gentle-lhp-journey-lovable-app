@@ -104,9 +104,9 @@ const BlogPost = () => {
   return (
     <>
       <SeoHead
-        title={`${post.title} – Blog CML`}
+        title={post.title}
         description={post.excerpt || post.title}
-        canonicalUrl={`https://cml.pl/blog/${post.slug}`}
+        path={`/blog/${post.slug}`}
       />
 
       <article className="pt-32 pb-24">
