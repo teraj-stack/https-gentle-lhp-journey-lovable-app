@@ -2,8 +2,8 @@ import { motion, useScroll, useTransform } from "framer-motion";
 import { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import heroImage from "@/assets/hero-clinic.jpg";
-import logoImage from "@/assets/logo-bujok.png";
+import heroImage from "@/assets/hero-clinic.webp";
+import logoImage from "@/assets/logo-bujok.webp";
 
 // Preload hero image as soon as module loads
 const preloadLink = document.createElement("link");

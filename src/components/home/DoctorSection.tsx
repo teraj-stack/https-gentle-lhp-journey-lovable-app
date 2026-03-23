@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
-import drBujokImg from "@/assets/dr-bujok.jpg";
+import drBujokImg from "@/assets/dr-bujok.webp";
 
 const fadeUp = {
   initial: { opacity: 0, y: 24, filter: "blur(4px)" },

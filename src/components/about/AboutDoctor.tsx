@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import drBujokImg from "@/assets/dr-bujok.jpg";
+import drBujokImg from "@/assets/dr-bujok.webp";
 
 const fadeUp = {
   initial: { opacity: 0, y: 30 },
