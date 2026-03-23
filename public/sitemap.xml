@@ -3,6 +3,7 @@
   <url><loc>https://cml.pl/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>
   <url><loc>https://cml.pl/o-nas</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
   <url><loc>https://cml.pl/kontakt</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://cml.pl/cennik</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
   <url><loc>https://cml.pl/wspolpraca</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
   <url><loc>https://cml.pl/dla-pacjenta</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
   <url><loc>https://cml.pl/dla-pacjenta/proktolog-faq</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
