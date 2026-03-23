@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import ProcedureSummaryTable from "@/components/shared/ProcedureSummaryTable";
 import MedicalProcedureSchema from "@/components/shared/MedicalProcedureSchema";
 import SeoHead from "@/components/shared/SeoHead";
+import MikroflebektomiaFAQ from "@/components/mikroflebektomia/MikroflebektomiaFAQ";
 
 const summary = [
   { label: "Przygotowanie", value: "Konsultacja flebologiczna oraz USG Doppler w celu mapowania żył" },
@@ -178,6 +179,9 @@ const Mikroflebektomia = () => (
           </Button>
         </div>
       </motion.section>
+
+      {/* FAQ */}
+      <MikroflebektomiaFAQ fadeUp={fadeUp} />
 
       {/* Karta zabiegu */}
       <ProcedureSummaryTable rows={summary} fadeUp={fadeUp} />
