@@ -156,7 +156,7 @@ const Hemoroidy = () => (
       <Breadcrumbs items={[{ label: "Dla pacjenta", href: "/dla-pacjenta" }, { label: "Hemoroidy od A do Z" }]} className="mb-4" />
 
       {/* CHAPTER 1 */}
-      <motion.section {...fadeUp}>
+      <section>
         <h2 className="section-title mb-3 text-center">{"\ud83e\ude7a"} Dlaczego to boli? {"\u2014"} Mechanizm choroby</h2>
         <p className="section-subtitle mb-10 text-center">Rozdzia{"\u0142"} 1</p>
         <div className="grid sm:grid-cols-3 gap-6">
@@ -175,10 +175,10 @@ const Hemoroidy = () => (
             </motion.div>
           ))}
         </div>
-      </motion.section>
+      </section>
 
       {/* VICIOUS CIRCLE */}
-      <motion.section {...fadeUp}>
+      <section>
         <h2 className="section-title mb-3 text-center">{"\ud83d\udd04"} Pu{"\u0142"}apka b{"\u0142\u0119"}dnego ko{"\u0142"}a</h2>
         <p className="section-subtitle mb-10 text-center">Domowe sposoby vs. Medycyna {"\u2014"} Rozdzia{"\u0142"} 2</p>
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
@@ -210,10 +210,10 @@ const Hemoroidy = () => (
             {"\ud83d\ude97"} <strong className="text-foreground">Analogia:</strong> To tak, jakby{"\u015B"} w samochodzie ze {"\u015B"}wiec{"\u0105"}c{"\u0105"} kontrolk{"\u0105"} {"\u201E"}Awaria silnika{"\u201D"} zaklei{"\u0142"} j{"\u0105"} ta{"\u015B"}m{"\u0105"} izolacyjn{"\u0105"}. Nie widzisz problemu {"\u2014"} ale silnik nadal jest zepsuty. Ma{"\u015B\u0107"} nie sprawi, {"\u017C"}e rozci{"\u0105"}gni{"\u0119"}ta tkanka {"\u201E"}wch{"\u0142"}onie si{"\u0119\u201D"} i wr{"\u00f3"}ci do pierwotnego kszta{"\u0142"}tu.
           </p>
         </motion.div>
-      </motion.section>
+      </section>
 
       {/* LIFESTYLE */}
-      <motion.section {...fadeUp}>
+      <section>
         <h2 className="section-title mb-3 text-center">{"\ud83c\udfc3"} Zachowania Pacjenta {"\u2014"} Styl {"\u017B"}ycia</h2>
         <p className="section-subtitle mb-10 text-center">Preferencje i zainteresowania wymuszone b{"\u00f3"}lem</p>
         <div className="grid md:grid-cols-2 gap-6">
@@ -263,10 +263,10 @@ const Hemoroidy = () => (
             </div>
           </div>
         </div>
-      </motion.section>
+      </section>
 
       {/* ERGONOMICS */}
-      <motion.section {...fadeUp}>
+      <section>
         <h2 className="section-title mb-3 text-center">{"\ud83e\ude91"} Styl {"\u017B"}ycia {"\u2014"} Ergonomia</h2>
         <p className="section-subtitle mb-10 text-center">
           Osoby wykonuj{"\u0105"}ce prac{"\u0119"} siedz{"\u0105"}c{"\u0105"} masowo interesuj{"\u0105"} si{"\u0119"} ergonomi{"\u0105"}
@@ -287,10 +287,10 @@ const Hemoroidy = () => (
             </motion.div>
           ))}
         </div>
-      </motion.section>
+      </section>
 
       {/* SOCIAL MEDIA TABOO */}
-      <motion.section {...fadeUp}>
+      <section>
         <h2 className="section-title mb-3 text-center">{"\ud83d\udcf1"} Zachowania w Mediach Spo{"\u0142"}eczno{"\u015B"}ciowych</h2>
         <p className="section-subtitle mb-10 text-center">Efekt Tabu i {"\u201E"}Dark Social{"\u201D"}</p>
         <div className="space-y-5 max-w-3xl mx-auto">
@@ -320,10 +320,10 @@ const Hemoroidy = () => (
             </motion.div>
           ))}
         </div>
-      </motion.section>
+      </section>
 
       {/* SEARCH QUERIES */}
-      <motion.section {...fadeUp}>
+      <section>
         <h2 className="section-title mb-3 text-center">{"\ud83d\udd0d"} D{"\u00f3\u0142"} Lejka Decyzyjnego</h2>
         <p className="section-subtitle mb-10 text-center max-w-3xl mx-auto">
           Osoba o krok od sto{"\u0142"}u operacyjnego {"\u2014"} jej zapytania s{"\u0105"} medyczne, precyzyjne i nacechowane strachem
@@ -350,10 +350,10 @@ const Hemoroidy = () => (
             </motion.div>
           ))}
         </div>
-      </motion.section>
+      </section>
 
       {/* CHAPTER 3 — COMPARISON */}
-      <motion.section {...fadeUp}>
+      <section>
         <h2 className="section-title mb-3 text-center">{"\u26a1"} Skalpel czy Laser?</h2>
         <p className="section-subtitle mb-10 text-center">Rozdzia{"\u0142"} 3 {"\u2014"} Por{"\u00f3"}wnanie metod leczenia</p>
         <div className="glass-card rounded-2xl overflow-hidden max-w-4xl mx-auto">
@@ -389,10 +389,10 @@ const Hemoroidy = () => (
             <p className="text-xs text-primary/80 mt-2">Zwyk{"\u0142"}e leki przeciwb{"\u00f3"}lowe OTC</p>
           </div>
         </div>
-      </motion.section>
+      </section>
 
       {/* CHAPTER 4 — LASER STEPS */}
-      <motion.section {...fadeUp}>
+      <section>
         <h2 className="section-title mb-3 text-center">{"\ud83c\udfe5"} Jak wygl{"\u0105"}da zabieg laserowy LHP?</h2>
         <p className="section-subtitle mb-10 text-center">Rozdzia{"\u0142"} 4 {"\u2014"} Krok po kroku</p>
         <div className="grid sm:grid-cols-3 gap-6">
@@ -423,10 +423,10 @@ const Hemoroidy = () => (
             <span className="block text-xs mt-2 not-italic text-muted-foreground/70">{"\u2014"} typowa reakcja pacjenta po zako{"\u0144"}czonym leczeniu</span>
           </p>
         </motion.div>
-      </motion.section>
+      </section>
 
       {/* CHAPTER 5 — DEGREE SCALE */}
-      <motion.section {...fadeUp}>
+      <section>
         <h2 className="section-title mb-3 text-center">{"\ud83d\udcca"} Czy kwalifikujesz si{"\u0119"} do zabiegu?</h2>
         <p className="section-subtitle mb-10 text-center">Rozdzia{"\u0142"} 5 {"\u2014"} Skala zaawansowania</p>
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -457,10 +457,10 @@ const Hemoroidy = () => (
             Nie pozw{"\u00f3"}l, aby strach lub wstyd odebra{"\u0142"}y Ci szans{"\u0119"} na komfortowe leczenie.
           </p>
         </motion.div>
-      </motion.section>
+      </section>
 
       {/* CTA */}
-      <motion.section {...fadeUp} className="glass-card rounded-2xl p-8 md:p-12 text-center max-w-2xl mx-auto">
+      <section className="glass-card rounded-2xl p-8 md:p-12 text-center max-w-2xl mx-auto">
         <div className="text-4xl mb-4">{"\ud83c\udfaf"}</div>
         <h2 className="text-2xl font-bold text-foreground mb-3">
           Tw{"\u00f3"}j nast{"\u0119"}pny krok {"\u2014"} Konsultacja kwalifikacyjna
@@ -473,7 +473,7 @@ const Hemoroidy = () => (
             Sprawd{"\u017A"} dost{"\u0119"}pne terminy
           </a>
         </Button>
-      </motion.section>
+      </section>
     </div>
   </div>
 );
