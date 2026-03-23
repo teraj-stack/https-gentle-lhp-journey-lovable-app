@@ -17,4 +17,5 @@
   <url><loc>https://cml.pl/leczenie/evlt</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
   <url><loc>https://cml.pl/leczenie/skleroterapia</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
   <url><loc>https://cml.pl/leczenie/clacs</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://cml.pl/leczenie/mikroflebektomia</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
 </urlset>
