@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { BookOpen, Download, ArrowRight } from "lucide-react";
 import CLaCSFAQ from "@/components/clacs/CLaCSFAQ";
 import ProcedureSummaryTable from "@/components/shared/ProcedureSummaryTable";
+import MedicalProcedureSchema from "@/components/shared/MedicalProcedureSchema";
 
 const clacsSummary = [
   { label: "Przygotowanie", value: "Konsultacja flebologiczna, ocena zmian naczyniowych. Unikać opalania 2 tygodnie przed zabiegiem, bez kremów na nogi w dniu zabiegu." },
