@@ -225,6 +225,15 @@ const Header = () => {
             </Link>
 
             <Link
+              to="/cennik"
+              className={`px-4 py-2 text-sm font-medium transition-colors rounded-lg hover:bg-accent/50 ${
+                isActive("/cennik") ? "text-primary bg-accent/50" : "text-foreground/80 hover:text-primary"
+              }`}
+            >
+              Cennik
+            </Link>
+
+            <Link
               to="/kontakt"
               className={`px-4 py-2 text-sm font-medium transition-colors rounded-lg hover:bg-accent/50 ${
                 isActive("/kontakt") ? "text-primary bg-accent/50" : "text-foreground/80 hover:text-primary"
@@ -280,6 +289,7 @@ const Header = () => {
                   </Link>
                 )),
                 <Link key="wspolpraca" to="/wspolpraca" className={`block px-4 py-3 rounded-lg text-sm font-medium hover:bg-accent/50 ${isActive("/wspolpraca") ? "text-primary bg-accent/50" : "text-foreground"}`}>Współpraca</Link>,
+                <Link key="cennik" to="/cennik" className={`block px-4 py-3 rounded-lg text-sm font-medium hover:bg-accent/50 ${isActive("/cennik") ? "text-primary bg-accent/50" : "text-foreground"}`}>Cennik</Link>,
                 <Link key="blog" to="/blog" className={`block px-4 py-3 rounded-lg text-sm font-medium hover:bg-accent/50 ${isActive("/blog") || pathname.startsWith("/blog/") ? "text-primary bg-accent/50" : "text-foreground"}`}>Blog</Link>,
                 <Link key="kontakt" to="/kontakt" className={`block px-4 py-3 rounded-lg text-sm font-medium hover:bg-accent/50 ${isActive("/kontakt") ? "text-primary bg-accent/50" : "text-foreground"}`}>Kontakt</Link>,
               ].map((child, i) => (
