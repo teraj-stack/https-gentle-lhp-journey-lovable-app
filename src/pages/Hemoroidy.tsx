@@ -1,159 +1,165 @@
-import { motion } from \u201Dframer-motion\u201D;
-import { Link } from \u201Dreact-router-dom\u201D;
-import ParallaxSection from \u201D@/components/ui/parallax-section\u201D;
-import Breadcrumbs from \u201D@/components/layout/Breadcrumbs\u201D;
-import { Button } from \u201D@/components/ui/button\u201D;
-import SeoHead from \u201D@/components/shared/SeoHead\u201D;
+import { motion } from "framer-motion";
+import ParallaxSection from "@/components/ui/parallax-section";
+import Breadcrumbs from "@/components/layout/Breadcrumbs";
+import { Button } from "@/components/ui/button";
+import SeoHead from "@/components/shared/SeoHead";
 
 const fadeUp = {
-  initial: { opacity: 0, y: 24, filter: \u201Dblur(4px)\u201D },
-  whileInView: { opacity: 1, y: 0, filter: \u201Dblur(0px)\u201D },
+  initial: { opacity: 0, y: 24, filter: "blur(4px)" },
+  whileInView: { opacity: 1, y: 0, filter: "blur(0px)" },
   viewport: { once: true, amount: 0.2 },
   transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] as const },
 };
 
 const heroStats = [
-  { num: \u201DIV\u201D, label: \u201DStopnie zaawansowania\u201D },
-  { num: \u201D20–40'\u201D, label: \u201DCzas zabiegu laserowego\u201D },
-  { num: \u201D2–5 dni\u201D, label: \u201DPowrót do pracy (laser)\u201D },
-  { num: \u201D3–4 tyg.\u201D, label: \u201DRekonwalescencja klasyczna\u201D },
+  { num: "IV", label: "Stopnie zaawansowania" },
+  { num: "20\u201340\u2019", label: "Czas zabiegu laserowego" },
+  { num: "2\u20135 dni", label: "Powr\u00f3t do pracy (laser)" },
+  { num: "3\u20134 tyg.", label: "Rekonwalescencja klasyczna" },
 ];
 
 const mechanismCards = [
-  { icon: \u201D🫀\u201D, title: 'Naturalne \u201Epoduszeczki\u201D', desc: \u201DHemoroidy to naczyniowe poduszeczki w kanale odbytu — każdy je ma. Uszczelniają odbyt i kontrolują gazy. Problem pojawia się, gdy ulegają powiększeniu i przekrwieniu.\u201D },
-  { icon: \u201D🎈\u201D, title: 'Efekt \u201Ebalonika\u201D', desc: \u201DKrew wpływa do środka, ale ma utrudniony odpływ. Balonik pęcznieje, rozciąga się — z czasem zaczyna krwawić lub wypadać na zewnątrz.\u201D },
-  { icon: \u201D⚙️\u201D, title: \u201DPrzyczyny — nie geny, lecz styl życia\u201D, desc: \u201DPraca siedząca, ciągły ucisk miednicy, dieta uboga w błonnik, silne parcie, ciąża, intensywny wysiłek z bezdechem — to mechanika, nie higiena.\u201D },
+  { icon: "\ud83e\udec0", title: "Naturalne \u201Epoduszeczki\u201D", desc: "Hemoroidy to naczyniowe poduszeczki w kanale odbytu \u2014 ka\u017Cdy je ma. Uszczelniaj\u0105 odbyt i kontroluj\u0105 gazy. Problem pojawia si\u0119, gdy ulegaj\u0105 powi\u0119kszeniu i przekrwieniu." },
+  { icon: "\ud83c\udf88", title: "Efekt \u201Ebalonika\u201D", desc: "Krew wp\u0142ywa do \u015Brodka, ale ma utrudniony odp\u0142yw. Balonik p\u0119cznieje, rozci\u0105ga si\u0119 \u2014 z czasem zaczyna krwawi\u0107 lub wypada\u0107 na zewn\u0105trz." },
+  { icon: "\u2699\ufe0f", title: "Przyczyny \u2014 nie geny, lecz styl \u017Cycia", desc: "Praca siedz\u0105ca, ci\u0105g\u0142y ucisk miednicy, dieta uboga w b\u0142onnik, silne parcie, ci\u0105\u017Ca, intensywny wysi\u0142ek z bezdechem \u2014 to mechanika, nie higiena." },
 ];
 
 const dietPoints = [
-  \u201DStudiują diety bogatoresztkowe i wpływ błonnika na miękkość stolca.\u201D,
-  \u201DZgłębiają rolę mikrobioty jelitowej i odpowiedniego nawodnienia.\u201D,
-  \u201DSięgają po suplementację: babka płesznik, magnez, probiotyki.\u201D,
+  "Studiuj\u0105 diety bogatoresztkowe i wp\u0142yw b\u0142onnika na mi\u0119kko\u015B\u0107 stolca.",
+  "Zg\u0142\u0119biaj\u0105 rol\u0119 mikrobioty jelitowej i odpowiedniego nawodnienia.",
+  "Si\u0119gaj\u0105 po suplementacj\u0119: babka p\u0142esznik, magnez, probiotyki.",
 ];
 
-const sportsQuit = [\u201DKolarstwo\u201D, \u201DJazda konna\u201D, \u201DTrójbój siłowy\u201D, \u201DPodnoszenie ciężarów\u201D];
-const sportsStart = [\u201DPływanie\u201D, \u201DSpacery\u201D, \u201DJoga\u201D, \u201DStretching\u201D];
+const sportsQuit = ["Kolarstwo", "Jazda konna", "Tr\u00f3jb\u00f3j si\u0142owy", "Podnoszenie ci\u0119\u017Car\u00f3w"];
+const sportsStart = ["P\u0142ywanie", "Spacery", "Joga", "Stretching"];
 
 const ergonomyItems = [
-  { icon: \u201D🍩\u201D, title: \u201DPoduszka ortopedyczna\u201D, desc: 'Poduszki z otworem (tzw. \u201Eoponki\u201D) redukujące ucisk na odbyt podczas siedzenia.' },
-  { icon: \u201D🖥️\u201D, title: \u201DBiurko stojące\u201D, desc: \u201DBiurka do pracy stojącej eliminujące wielogodzinny ucisk miednicy.\u201D },
-  { icon: \u201D🚿\u201D, title: \u201DNakładka bidetowa\u201D, desc: \u201DNakładki bidetowe na WC zapewniające delikatną higienę bez podrażnień.\u201D },
-  { icon: \u201D🦶\u201D, title: \u201DPodnóżek toaletowy\u201D, desc: \u201DPodnóżki wymuszające fizjologiczną pozycję kucania podczas wypróżniania.\u201D },
+  { icon: "\ud83c\udf69", title: "Poduszka ortopedyczna", desc: "Poduszki z otworem (tzw. \u201Eoponki\u201D) redukuj\u0105ce ucisk na odbyt podczas siedzenia." },
+  { icon: "\ud83d\udda5\ufe0f", title: "Biurko stoj\u0105ce", desc: "Biurka do pracy stoj\u0105cej eliminuj\u0105ce wielogodzinny ucisk miednicy." },
+  { icon: "\ud83d\udebf", title: "Nak\u0142adka bidetowa", desc: "Nak\u0142adki bidetowe na WC zapewniaj\u0105ce delikatn\u0105 higien\u0119 bez podra\u017Cnie\u0144." },
+  { icon: "\ud83e\uddb6", title: "Podn\u00f3\u017Cek toaletowy", desc: "Podn\u00f3\u017Cki wymuszaj\u0105ce fizjologiczn\u0105 pozycj\u0119 kucania podczas wypr\u00f3\u017Cniania." },
 ];
 
 const tabuCards = [
-  { icon: \u201D👁️\u201D, title: 'Syndrom \u201ECichego Obserwatora\u201D', desc: \u201DHemoroidy to paraliżujące tabu. Pacjenci nie lajkują, nie komentują i nie udostępniają postów klinik ze swoich prywatnych profili. Ich aktywność toczy się wyłącznie w Dark Social — prywatne wiadomości, kopiowanie linków bez śladu.\u201D },
-  { icon: \u201D🎭\u201D, title: \u201DMigracja do anonimowych stref\u201D, desc: \u201DSzukają wsparcia na zamkniętych grupach Facebook — często zakładając fałszywe konta — oraz na anonimowych forach. Pytają o brutalnie szczere doświadczenia z bólem po operacji.\u201D },
-  { icon: \u201D⭐\u201D, title: 'Weryfikacja \u201Emiękkich\u201D kompetencji lekarza', desc: \u201DNa etapie przed operacją tytuł naukowy ma mniejsze znaczenie niż słowa-klucze od innych pacjentów w opiniach.\u201D },
+  { icon: "\ud83d\udc41\ufe0f", title: "Syndrom \u201ECichego Obserwatora\u201D", desc: "Hemoroidy to parali\u017Cuj\u0105ce tabu. Pacjenci nie lajkuj\u0105, nie komentuj\u0105 i nie udost\u0119pniaj\u0105 post\u00f3w klinik ze swoich prywatnych profili. Ich aktywno\u015B\u0107 toczy si\u0119 wy\u0142\u0105cznie w Dark Social." },
+  { icon: "\ud83c\udfad", title: "Migracja do anonimowych stref", desc: "Szukaj\u0105 wsparcia na zamkni\u0119tych grupach Facebook \u2014 cz\u0119sto zak\u0142adaj\u0105c fa\u0142szywe konta \u2014 oraz na anonimowych forach. Pytaj\u0105 o brutalnie szczere do\u015Bwiadczenia z b\u00f3lem po operacji." },
+  { icon: "\u2b50", title: "Weryfikacja \u201Emi\u0119kkich\u201D kompetencji lekarza", desc: "Na etapie przed operacj\u0105 tytu\u0142 naukowy ma mniejsze znaczenie ni\u017C s\u0142owa-klucze od innych pacjent\u00f3w w opiniach." },
 ];
 
-const softSkillTags = ['\u201Dlekarz empatyczny\u201D', '\u201Ddelikatne badanie\u201D', '\u201Dnie ocenia\u201D', '\u201Dkomfortowa atmosfera\u201D', '\u201Dprzełamuje wstyd\u201D'];
+const softSkillTags = ["\u201Elekarz empatyczny\u201D", "\u201Edelikatne badanie\u201D", "\u201Enie ocenia\u201D", "\u201Ekomfortowa atmosfera\u201D", "\u201Eprze\u0142amuje wstyd\u201D"];
 
 const searchCategories = [
   {
-    cat: \u201D🩸 Zaawansowane objawy\u201D,
+    cat: "\ud83e\ude78 Zaawansowane objawy",
     queries: [
-      \u201D\u201Ewypadające guzki krwawnicze 3 i 4 stopnia\u201D\u201D,
-      \u201D\u201Ezakrzepica splotu hemoroidalnego operacja\u201D\u201D,
-      \u201D\u201Eogromny ból po wypróżnieniu utrzymujący się godzinami\u201D\u201D,
-      \u201D\u201Ekrwawienie z odbytu i skrzepy\u201D\u201D,
+      "\u201Ewypadaj\u0105ce guzki krwawnicze 3 i 4 stopnia\u201D",
+      "\u201Ezakrzepica splotu hemoroidalnego operacja\u201D",
+      "\u201Eogromny b\u00f3l po wypr\u00f3\u017Cnieniu utrzymuj\u0105cy si\u0119 godzinami\u201D",
+      "\u201Ekrwawienie z odbytu i skrzepy\u201D",
     ],
   },
   {
-    cat: \u201D⚖️ Porównanie metod\u201D,
+    cat: "\u2696\ufe0f Por\u00f3wnanie metod",
     queries: [
-      \u201D\u201Elaserowe usuwanie hemoroidów LHP opinie\u201D\u201D,
-      \u201D\u201Emetoda Barrona a operacja klasyczna Milligana-Morgana ból\u201D\u201D,
-      \u201D\u201Enajmniej inwazyjna metoda usuwania hemoroidów\u201D\u201D,
-      \u201D\u201Eczy operacja hemoroidów jest pod narkozą\u201D\u201D,
+      "\u201Elasterowe usuwanie hemoroid\u00f3w LHP opinie\u201D",
+      "\u201Emetoda Barrona a operacja klasyczna Milligana-Morgana b\u00f3l\u201D",
+      "\u201Enajmniej inwazyjna metoda usuwania hemoroid\u00f3w\u201D",
+      "\u201Eczy operacja hemoroid\u00f3w jest pod narkoz\u0105\u201D",
     ],
   },
   {
-    cat: \u201D😰 Logistyka i rekonwalescencja\u201D,
+    cat: "\ud83d\ude30 Logistyka i rekonwalescencja",
     queries: [
-      \u201D\u201Epierwszy stolec po operacji proktologicznej jak przeżyć\u201D\u201D,
-      \u201D\u201Eile dni L4 po operacji hemoroidów\u201D\u201D,
-      \u201D\u201Eból po laserowym usunięciu hemoroidów\u201D\u201D,
-      \u201D\u201Ekiedy wrócić do pracy po zabiegu proktologicznym\u201D\u201D,
+      "\u201Epierwszy stolec po operacji proktologicznej jak prze\u017Cy\u0107\u201D",
+      "\u201Eile dni L4 po operacji hemoroid\u00f3w\u201D",
+      "\u201Eb\u00f3l po laserowym usuni\u0119ciu hemoroid\u00f3w\u201D",
+      "\u201Ekiedy wr\u00f3ci\u0107 do pracy po zabiegu proktologicznym\u201D",
     ],
   },
 ];
 
 const comparisonRows = [
-  { label: \u201DCo robi lekarz?\u201D, classic: \u201DWycina tkankę skalpelem lub nożyczkami elektrycznymi\u201D, laser: \u201DZamyka naczynia precyzyjną wiązką lasera od środka\u201D },
-  { label: \u201DRany po zabiegu\u201D, classic: \u201DOtwarte rany, często wymagające szwów\u201D, laser: \u201DMikroskopijne nakłucie — brak ran otwartych\u201D },
-  { label: \u201DPoziom bólu\u201D, classic: \u201DWysoki (8–9/10). Silne leki przez wiele dni\u201D, laser: \u201DMinimalny (2–3/10). Zwykłe leki przeciwbólowe\u201D },
-  { label: \u201DPobyt w szpitalu\u201D, classic: \u201DZazwyczaj kilka dni\u201D, laser: \u201DProcedura jednego dnia — wychodzisz po kilku godzinach\u201D },
-  { label: \u201DPowrót do pracy\u201D, classic: \u201D3–4 tygodnie (L4)\u201D, laser: \u201D24–48 godzin — możliwy powrót po weekendzie\u201D },
-  { label: \u201DRyzyko powikłań\u201D, classic: \u201DRyzyko uszkodzenia zwieraczy\u201D, laser: \u201DRyzyko minimalne — laser działa punktowo\u201D },
-  { label: \u201DZnieczulenie\u201D, classic: \u201DZnieczulenie ogólne lub regionalne\u201D, laser: \u201DZnieczulenie miejscowe\u201D },
+  { label: "Co robi lekarz?", classic: "Wycina tkank\u0119 skalpelem lub no\u017Cyczkami elektrycznymi", laser: "Zamyka naczynia precyzyjn\u0105 wi\u0105zk\u0105 lasera od \u015Brodka" },
+  { label: "Rany po zabiegu", classic: "Otwarte rany, cz\u0119sto wymagaj\u0105ce szw\u00f3w", laser: "Mikroskopijne nak\u0142ucie \u2014 brak ran otwartych" },
+  { label: "Poziom b\u00f3lu", classic: "Wysoki (8\u20139/10). Silne leki przez wiele dni", laser: "Minimalny (2\u20133/10). Zwyk\u0142e leki przeciwb\u00f3lowe" },
+  { label: "Pobyt w szpitalu", classic: "Zazwyczaj kilka dni", laser: "Procedura jednego dnia \u2014 wychodzisz po kilku godzinach" },
+  { label: "Powr\u00f3t do pracy", classic: "3\u20134 tygodnie (L4)", laser: "24\u201348 godzin \u2014 mo\u017Cliwy powr\u00f3t po weekendzie" },
+  { label: "Ryzyko powik\u0142a\u0144", classic: "Ryzyko uszkodzenia zwieraczy", laser: "Ryzyko minimalne \u2014 laser dzia\u0142a punktowo" },
+  { label: "Znieczulenie", classic: "Znieczulenie og\u00f3lne lub regionalne", laser: "Znieczulenie miejscowe" },
 ];
 
 const laserSteps = [
-  { num: \u201D01\u201D, icon: \u201D🚪\u201D, title: \u201DPrzyjęcie i komfort\u201D, desc: \u201DPrzychodzisz do kliniki w dniu zabiegu — bez hospitalizacji dzień wcześniej. Zabieg ambulatoryjny. Znieczulenie miejscowe — nie boli.\u201D },
-  { num: \u201D02\u201D, icon: \u201D💡\u201D, title: \u201DDziałanie lasera\u201D, desc: \u201DCienkie włókno laserowe wprowadzane do wnętrza guzka. Precyzyjna wiązka zamyka naczynia krwionośne. Śluzówka i zwieracze pozostają nienaruszone. Czas: 20–40 minut.\u201D },
-  { num: \u201D03\u201D, icon: \u201D🏠\u201D, title: \u201DWyjście do domu\u201D, desc: \u201DWstajesz, ubierasz się i wracasz do domu o własnych siłach. Brak szwów, brak otwartych ran. Guzek zaczyna zanikać w ciągu kilku tygodni.\u201D },
+  { num: "01", icon: "\ud83d\udeaa", title: "Przyj\u0119cie i komfort", desc: "Przychodzisz do kliniki w dniu zabiegu \u2014 bez hospitalizacji dzie\u0144 wcze\u015Bniej. Zabieg ambulatoryjny. Znieczulenie miejscowe \u2014 nie boli." },
+  { num: "02", icon: "\ud83d\udca1", title: "Dzia\u0142anie lasera", desc: "Cienkie w\u0142\u00f3kno laserowe wprowadzane do wn\u0119trza guzka. Precyzyjna wi\u0105zka zamyka naczynia krwiono\u015Bne. \u015Al\u0117z\u00f3wka i zwieracze pozostaj\u0105 nienaruszone. Czas: 20\u201340 minut." },
+  { num: "03", icon: "\ud83c\udfe0", title: "Wyj\u015Bcie do domu", desc: "Wstajesz, ubierasz si\u0119 i wracasz do domu o w\u0142asnych si\u0142ach. Brak szw\u00f3w, brak otwartych ran. Guzek zaczyna zanika\u0107 w ci\u0105gu kilku tygodni." },
 ];
 
 const degrees = [
-  { deg: \u201DI°\u201D, title: \u201DStopień I\u201D, desc: \u201DLaser działa idealnie. Niemal natychmiastowa ulga. Najlepszy moment na interwencję.\u201D, color: \u201Dbg-green-100 text-green-800\u201D },
-  { deg: \u201DII°\u201D, title: \u201DStopień II\u201D, desc: \u201DLaser bardzo skuteczny. Guzki wypadają podczas parcia, ale cofają się samoistnie.\u201D, color: \u201Dbg-blue-100 text-blue-800\u201D },
-  { deg: \u201DIII°\u201D, title: \u201DStopień III ⚠️\u201D, desc: \u201DMoment krytyczny. Guzki wypadają, ale dają się odprowadzić. Laser wciąż metodą z wyboru.\u201D, color: \u201Dbg-yellow-100 text-yellow-800\u201D },
-  { deg: \u201DIV°\u201D, title: \u201DStopień IV ❌\u201D, desc: \u201DGuzki trwale na zewnątrz. Laser może być niewystarczający. Często konieczny skalpel.\u201D, color: \u201Dbg-red-100 text-red-800\u201D },
+  { deg: "I\u00b0", title: "Stopie\u0144 I", desc: "Laser dzia\u0142a idealnie. Niemal natychmiastowa ulga. Najlepszy moment na interwencj\u0119.", variant: "green" as const },
+  { deg: "II\u00b0", title: "Stopie\u0144 II", desc: "Laser bardzo skuteczny. Guzki wypadaj\u0105 podczas parcia, ale cofaj\u0105 si\u0119 samoistnie.", variant: "blue" as const },
+  { deg: "III\u00b0", title: "Stopie\u0144 III \u26a0\ufe0f", desc: "Moment krytyczny. Guzki wypadaj\u0105, ale daj\u0105 si\u0119 odprowadzi\u0107. Laser wci\u0105\u017C metod\u0105 z wyboru.", variant: "yellow" as const },
+  { deg: "IV\u00b0", title: "Stopie\u0144 IV \u274c", desc: "Guzki trwale na zewn\u0105trz. Laser mo\u017Ce by\u0107 niewystarczaj\u0105cy. Cz\u0119sto konieczny skalpel.", variant: "red" as const },
 ];
 
+const degreeColors = {
+  green: "bg-green-100 dark:bg-green-950/40 text-green-800 dark:text-green-300",
+  blue: "bg-blue-100 dark:bg-blue-950/40 text-blue-800 dark:text-blue-300",
+  yellow: "bg-yellow-100 dark:bg-yellow-950/40 text-yellow-800 dark:text-yellow-300",
+  red: "bg-red-100 dark:bg-red-950/40 text-red-800 dark:text-red-300",
+};
+
 const vicCircleSteps = [
-  { icon: \u201D💊\u201D, title: \u201DKrok 1\u201D, desc: \u201DKupujesz maść lub czopek. Substancje przeciwbólowe i ściągające dają chwilową ulgę.\u201D },
-  { icon: \u201D😌\u201D, title: \u201DKrok 2\u201D, desc: \u201DPieczenie ustępuje, obrzęk maleje. Myślisz: \u201EUff, wyleczone.\u201D\u201D },
-  { icon: \u201D💻\u201D, title: \u201DKrok 3\u201D, desc: \u201DWracasz do pracy, siadasz 8 godzin przed komputerem — mechanizm startuje od nowa.\u201D },
-  { icon: \u201D📈\u201D, title: \u201DKrok 4\u201D, desc: \u201DKupujesz coraz droższe preparaty. Okresy ulgi coraz krótsze. Frustracja i strach rosną.\u201D },
+  { icon: "\ud83d\udc8a", title: "Krok 1", desc: "Kupujesz ma\u015B\u0107 lub czopek. Substancje przeciwb\u00f3lowe i \u015Bci\u0105gaj\u0105ce daj\u0105 chwilkow\u0105 ulg\u0119." },
+  { icon: "\ud83d\ude0c", title: "Krok 2", desc: "Pieczenie ust\u0119puje, obrz\u0119k maleje. My\u015Blisz: \u201EUff, wyleczone.\u201D" },
+  { icon: "\ud83d\udcbb", title: "Krok 3", desc: "Wracasz do pracy, siadasz 8 godzin przed komputerem \u2014 mechanizm startuje od nowa." },
+  { icon: "\ud83d\udcc8", title: "Krok 4", desc: "Kupujesz coraz dro\u017Csze preparaty. Okresy ulgi coraz kr\u00f3tsze. Frustracja i strach rosn\u0105." },
 ];
 
 const Hemoroidy = () => (
-  <div className=\u201Dmin-h-screen bg-background pt-20\u201D>
+  <div className="min-h-screen bg-background pt-20">
     <SeoHead
-      title=\u201DHemoroidy od A do Z — Kompleksowy Przewodnik Pacjenta\u201D
-      description=\u201DMechanizm choroby hemoroidalnej, stopnie zaawansowania, porównanie metod leczenia (laser LHP vs klasyka) i styl życia. Dr Jan Bujok — chirurg, proktolog.\u201D
-      path=\u201D/dla-pacjenta/hemoroidy\u201D
+      title="Hemoroidy od A do Z \u2014 Kompleksowy Przewodnik Pacjenta"
+      description="Mechanizm choroby hemoroidalnej, stopnie zaawansowania, por\u00f3wnanie metod leczenia (laser LHP vs klasyka) i styl \u017Cycia. Dr Jan Bujok."
+      path="/dla-pacjenta/hemoroidy"
     />
 
     {/* HERO */}
-    <ParallaxSection className=\u201Dgradient-bg py-16 md:py-24 px-4\u201D>
+    <ParallaxSection className="gradient-bg py-16 md:py-24 px-4">
       <motion.div
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-        className=\u201Dmax-w-4xl mx-auto text-center\u201D
+        className="max-w-4xl mx-auto text-center"
       >
-        <p className=\u201Dtext-sm font-sans uppercase tracking-[0.15em] text-primary-foreground/80 mb-4\u201D>
+        <p className="text-sm font-sans uppercase tracking-[0.15em] text-primary-foreground/80 mb-4">
           Kompleksowy Przewodnik Pacjenta
         </p>
-        <h1 className=\u201Dtext-3xl md:text-5xl font-bold text-primary-foreground mb-4 leading-tight\u201D>
-          Powrót do Komfortu — Hemoroidy od A do Z
+        <h1 className="text-3xl md:text-5xl font-bold text-primary-foreground mb-4 leading-tight">
+          Powr{"\u00f3"}t do Komfortu {"\u2014"} Hemoroidy od A do Z
         </h1>
-        <div className=\u201Dw-16 h-0.5 mx-auto bg-primary-foreground/30 mb-6\u201D />
-        <p className=\u201Dtext-primary-foreground/90 text-base md:text-lg leading-relaxed max-w-2xl mx-auto\u201D>
-          Mechanizm choroby, psychologia pacjenta, styl życia wymuszony bólem oraz nowoczesne metody leczenia — w jednym przewodniku.
+        <div className="w-16 h-0.5 mx-auto bg-primary-foreground/30 mb-6" />
+        <p className="text-primary-foreground/90 text-base md:text-lg leading-relaxed max-w-2xl mx-auto">
+          Mechanizm choroby, psychologia pacjenta, styl {"\u017C"}ycia wymuszony b{"\u00f3"}lem oraz nowoczesne metody leczenia {"\u2014"} w jednym przewodniku.
         </p>
-        <div className=\u201Dflex justify-center flex-wrap gap-4 md:gap-6 mt-8 px-4\u201D>
+        <div className="flex justify-center flex-wrap gap-4 md:gap-6 mt-8 px-4">
           {heroStats.map((s) => (
-            <div key={s.label} className=\u201Dtext-center min-w-[100px]\u201D>
-              <p className=\u201Dtext-2xl md:text-3xl font-bold text-primary-foreground\u201D>{s.num}</p>
-              <p className=\u201Dtext-[10px] md:text-xs text-primary-foreground/80 mt-1\u201D>{s.label}</p>
+            <div key={s.label} className="text-center min-w-[100px]">
+              <p className="text-2xl md:text-3xl font-bold text-primary-foreground">{s.num}</p>
+              <p className="text-[10px] md:text-xs text-primary-foreground/80 mt-1">{s.label}</p>
             </div>
           ))}
         </div>
       </motion.div>
     </ParallaxSection>
 
-    <div className=\u201Dmax-w-5xl mx-auto px-4 py-16 space-y-24\u201D>
-      <Breadcrumbs items={[{ label: \u201DDla pacjenta\u201D, href: \u201D/dla-pacjenta\u201D }, { label: \u201DHemoroidy od A do Z\u201D }]} className=\u201Dmb-4\u201D />
+    <div className="max-w-5xl mx-auto px-4 py-16 space-y-24">
+      <Breadcrumbs items={[{ label: "Dla pacjenta", href: "/dla-pacjenta" }, { label: "Hemoroidy od A do Z" }]} className="mb-4" />
 
-      {/* CHAPTER 1 — MECHANISM */}
+      {/* CHAPTER 1 */}
       <motion.section {...fadeUp}>
-        <h2 className=\u201Dsection-title mb-3 text-center\u201D>🩺 Dlaczego to boli? — Mechanizm choroby</h2>
-        <p className=\u201Dsection-subtitle mb-10 text-center\u201D>Rozdział 1</p>
-        <div className=\u201Dgrid sm:grid-cols-3 gap-6\u201D>
+        <h2 className="section-title mb-3 text-center">{"\ud83e\ude7a"} Dlaczego to boli? {"\u2014"} Mechanizm choroby</h2>
+        <p className="section-subtitle mb-10 text-center">Rozdzia{"\u0142"} 1</p>
+        <div className="grid sm:grid-cols-3 gap-6">
           {mechanismCards.map((c, i) => (
             <motion.div
               key={c.title}
@@ -161,11 +167,11 @@ const Hemoroidy = () => (
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: i * 0.1 }}
-              className=\u201Dglass-card rounded-xl p-6 text-center\u201D
+              className="glass-card rounded-xl p-6 text-center"
             >
-              <div className=\u201Dtext-3xl mb-3\u201D>{c.icon}</div>
-              <h3 className=\u201Dfont-bold text-foreground mb-2\u201D>{c.title}</h3>
-              <p className=\u201Dtext-sm text-muted-foreground leading-relaxed\u201D>{c.desc}</p>
+              <div className="text-3xl mb-3">{c.icon}</div>
+              <h3 className="font-bold text-foreground mb-2">{c.title}</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">{c.desc}</p>
             </motion.div>
           ))}
         </div>
@@ -173,9 +179,9 @@ const Hemoroidy = () => (
 
       {/* VICIOUS CIRCLE */}
       <motion.section {...fadeUp}>
-        <h2 className=\u201Dsection-title mb-3 text-center\u201D>🔄 Pułapka błędnego koła</h2>
-        <p className=\u201Dsection-subtitle mb-10 text-center\u201D>Domowe sposoby vs. Medycyna — Rozdział 2</p>
-        <div className=\u201Dgrid sm:grid-cols-2 lg:grid-cols-4 gap-5\u201D>
+        <h2 className="section-title mb-3 text-center">{"\ud83d\udd04"} Pu{"\u0142"}apka b{"\u0142\u0119"}dnego ko{"\u0142"}a</h2>
+        <p className="section-subtitle mb-10 text-center">Domowe sposoby vs. Medycyna {"\u2014"} Rozdzia{"\u0142"} 2</p>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {vicCircleSteps.map((s, i) => (
             <motion.div
               key={s.title}
@@ -183,13 +189,13 @@ const Hemoroidy = () => (
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.4, delay: i * 0.1 }}
-              className=\u201Dglass-card rounded-xl p-5 text-center relative\u201D
+              className="glass-card rounded-xl p-5 text-center relative"
             >
-              <div className=\u201Dtext-3xl mb-3\u201D>{s.icon}</div>
-              <h4 className=\u201Dfont-bold text-foreground mb-1 text-sm\u201D>{s.title}</h4>
-              <p className=\u201Dtext-xs text-muted-foreground leading-relaxed\u201D>{s.desc}</p>
+              <div className="text-3xl mb-3">{s.icon}</div>
+              <h4 className="font-bold text-foreground mb-1 text-sm">{s.title}</h4>
+              <p className="text-xs text-muted-foreground leading-relaxed">{s.desc}</p>
               {i < vicCircleSteps.length - 1 && (
-                <span className=\u201Dhidden lg:block absolute -right-3 top-1/2 -translate-y-1/2 text-muted-foreground/40 text-xl\u201D>→</span>
+                <span className="hidden lg:block absolute -right-3 top-1/2 -translate-y-1/2 text-muted-foreground/40 text-xl">{"\u2192"}</span>
               )}
             </motion.div>
           ))}
@@ -198,80 +204,74 @@ const Hemoroidy = () => (
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
-          className=\u201Dglass-card rounded-xl p-6 mt-8 border-l-4 border-primary max-w-3xl mx-auto\u201D
+          className="glass-card rounded-xl p-6 mt-8 border-l-4 border-primary max-w-3xl mx-auto"
         >
-          <p className=\u201Dtext-sm text-muted-foreground leading-relaxed italic\u201D>
-            🚗 <strong className=\u201Dtext-foreground\u201D>Analogia:</strong> To tak, jakbyś w samochodzie ze świecącą kontrolką \u201EAwaria silnika\u201D zakleił ją taśmą izolacyjną. Nie widzisz problemu — ale silnik nadal jest zepsuty. Maść nie sprawi, że rozciągnięta tkanka \u201Ewchłonie się\u201D i wróci do pierwotnego kształtu.
+          <p className="text-sm text-muted-foreground leading-relaxed italic">
+            {"\ud83d\ude97"} <strong className="text-foreground">Analogia:</strong> To tak, jakby{"\u015B"} w samochodzie ze {"\u015B"}wiec{"\u0105"}c{"\u0105"} kontrolk{"\u0105"} {"\u201E"}Awaria silnika{"\u201D"} zaklei{"\u0142"} j{"\u0105"} ta{"\u015B"}m{"\u0105"} izolacyjn{"\u0105"}. Nie widzisz problemu {"\u2014"} ale silnik nadal jest zepsuty. Ma{"\u015B\u0107"} nie sprawi, {"\u017C"}e rozci{"\u0105"}gni{"\u0119"}ta tkanka {"\u201E"}wch{"\u0142"}onie si{"\u0119\u201D"} i wr{"\u00f3"}ci do pierwotnego kszta{"\u0142"}tu.
           </p>
         </motion.div>
       </motion.section>
 
-      {/* LIFESTYLE — DIET & SPORTS */}
+      {/* LIFESTYLE */}
       <motion.section {...fadeUp}>
-        <h2 className=\u201Dsection-title mb-3 text-center\u201D>🏃 Zachowania Pacjenta — Styl Życia</h2>
-        <p className=\u201Dsection-subtitle mb-10 text-center\u201D>Preferencje i zainteresowania wymuszone bólem</p>
-        <div className=\u201Dgrid md:grid-cols-2 gap-6\u201D>
-          {/* Diet */}
-          <div className=\u201Dglass-card rounded-xl p-6\u201D>
-            <div className=\u201Dflex items-center gap-3 mb-4\u201D>
-              <div className=\u201Dw-12 h-12 rounded-lg bg-primary/15 flex items-center justify-center text-2xl\u201D>🥗</div>
+        <h2 className="section-title mb-3 text-center">{"\ud83c\udfc3"} Zachowania Pacjenta {"\u2014"} Styl {"\u017B"}ycia</h2>
+        <p className="section-subtitle mb-10 text-center">Preferencje i zainteresowania wymuszone b{"\u00f3"}lem</p>
+        <div className="grid md:grid-cols-2 gap-6">
+          <div className="glass-card rounded-xl p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 rounded-lg bg-primary/15 flex items-center justify-center text-2xl">{"\ud83e\udd57"}</div>
               <div>
-                <h3 className=\u201Dfont-bold text-foreground\u201D>A. Nagłe zainteresowanie dietetyką</h3>
-                <p className=\u201Dtext-xs text-muted-foreground\u201D>Domowy ekspert od układu pokarmowego</p>
+                <h3 className="font-bold text-foreground">A. Nag{"\u0142"}e zainteresowanie dietetyk{"\u0105"}</h3>
+                <p className="text-xs text-muted-foreground">Domowy ekspert od uk{"\u0142"}adu pokarmowego</p>
               </div>
             </div>
-            <ul className=\u201Dspace-y-2\u201D>
+            <ul className="space-y-2">
               {dietPoints.map((p, i) => (
-                <li key={i} className=\u201Dflex items-start gap-3 text-sm text-muted-foreground\u201D>
-                  <div className=\u201Dw-1.5 h-1.5 rounded-full bg-primary shrink-0 mt-1.5\u201D />
+                <li key={i} className="flex items-start gap-3 text-sm text-muted-foreground">
+                  <div className="w-1.5 h-1.5 rounded-full bg-primary shrink-0 mt-1.5" />
                   {p}
                 </li>
               ))}
             </ul>
-            <div className=\u201Dflex flex-wrap gap-2 mt-4\u201D>
-              {[\u201DBłonnik\u201D, \u201DMikrobiota\u201D, \u201DNawodnienie\u201D, \u201DBabka płesznik\u201D].map((t) => (
-                <span key={t} className=\u201Dpx-3 py-1 rounded-full bg-secondary text-xs font-semibold text-foreground\u201D>{t}</span>
+            <div className="flex flex-wrap gap-2 mt-4">
+              {["B\u0142onnik", "Mikrobiota", "Nawodnienie", "Babka p\u0142esznik"].map((t) => (
+                <span key={t} className="px-3 py-1 rounded-full bg-secondary text-xs font-semibold text-foreground">{t}</span>
               ))}
             </div>
           </div>
-
-          {/* Sports */}
-          <div className=\u201Dglass-card rounded-xl p-6\u201D>
-            <div className=\u201Dflex items-center gap-3 mb-4\u201D>
-              <div className=\u201Dw-12 h-12 rounded-lg bg-primary/15 flex items-center justify-center text-2xl\u201D>🏊</div>
+          <div className="glass-card rounded-xl p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 rounded-lg bg-primary/15 flex items-center justify-center text-2xl">{"\ud83c\udfca"}</div>
               <div>
-                <h3 className=\u201Dfont-bold text-foreground\u201D>B. Modyfikacja aktywności sportowej</h3>
-                <p className=\u201Dtext-xs text-muted-foreground\u201D>Rezygnacja z pasji — przejście na \u201Ebezpieczne\u201D</p>
+                <h3 className="font-bold text-foreground">B. Modyfikacja aktywno{"\u015B"}ci sportowej</h3>
+                <p className="text-xs text-muted-foreground">Rezygnacja z pasji {"\u2014"} przej{"\u015B"}cie na {"\u201E"}bezpieczne{"\u201D"}</p>
               </div>
             </div>
-            <div className=\u201Dgrid grid-cols-2 gap-4\u201D>
+            <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className=\u201Dtext-xs font-semibold text-destructive uppercase tracking-wider mb-2\u201D>❌ Rezygnują z:</p>
+                <p className="text-xs font-semibold text-destructive uppercase tracking-wider mb-2">{"\u274c"} Rezygnuj{"\u0105"} z:</p>
                 {sportsQuit.map((s) => (
-                  <p key={s} className=\u201Dtext-sm text-muted-foreground mb-1\u201D>{s}</p>
+                  <p key={s} className="text-sm text-muted-foreground mb-1">{s}</p>
                 ))}
               </div>
               <div>
-                <p className=\u201Dtext-xs font-semibold text-green-600 uppercase tracking-wider mb-2\u201D>✅ Przechodzą na:</p>
+                <p className="text-xs font-semibold text-primary uppercase tracking-wider mb-2">{"\u2705"} Przechodz{"\u0105"} na:</p>
                 {sportsStart.map((s) => (
-                  <p key={s} className=\u201Dtext-sm text-muted-foreground mb-1\u201D>{s}</p>
+                  <p key={s} className="text-sm text-muted-foreground mb-1">{s}</p>
                 ))}
               </div>
             </div>
-            <p className=\u201Dtext-xs text-muted-foreground mt-4 leading-relaxed\u201D>
-              Z żalem rezygnują z pasji zwiększających ciśnienie w jamie brzusznej lub uciskających dno miednicy.
-            </p>
           </div>
         </div>
       </motion.section>
 
       {/* ERGONOMICS */}
       <motion.section {...fadeUp}>
-        <h2 className=\u201Dsection-title mb-3 text-center\u201D>🪑 Styl Życia — Ergonomia</h2>
-        <p className=\u201Dsection-subtitle mb-10 text-center\u201D>
-          \u201EGadżeciarstwo\u201D ergonomiczne — osoby wykonujące pracę siedzącą masowo interesują się ergonomią
+        <h2 className="section-title mb-3 text-center">{"\ud83e\ude91"} Styl {"\u017B"}ycia {"\u2014"} Ergonomia</h2>
+        <p className="section-subtitle mb-10 text-center">
+          Osoby wykonuj{"\u0105"}ce prac{"\u0119"} siedz{"\u0105"}c{"\u0105"} masowo interesuj{"\u0105"} si{"\u0119"} ergonomi{"\u0105"}
         </p>
-        <div className=\u201Dgrid sm:grid-cols-2 lg:grid-cols-4 gap-5\u201D>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {ergonomyItems.map((item, i) => (
             <motion.div
               key={item.title}
@@ -279,11 +279,11 @@ const Hemoroidy = () => (
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.4, delay: i * 0.08 }}
-              className=\u201Dglass-card rounded-xl p-5 text-center\u201D
+              className="glass-card rounded-xl p-5 text-center"
             >
-              <div className=\u201Dtext-3xl mb-3\u201D>{item.icon}</div>
-              <h4 className=\u201Dfont-bold text-foreground text-sm mb-1\u201D>{item.title}</h4>
-              <p className=\u201Dtext-xs text-muted-foreground leading-relaxed\u201D>{item.desc}</p>
+              <div className="text-3xl mb-3">{item.icon}</div>
+              <h4 className="font-bold text-foreground text-sm mb-1">{item.title}</h4>
+              <p className="text-xs text-muted-foreground leading-relaxed">{item.desc}</p>
             </motion.div>
           ))}
         </div>
@@ -291,9 +291,9 @@ const Hemoroidy = () => (
 
       {/* SOCIAL MEDIA TABOO */}
       <motion.section {...fadeUp}>
-        <h2 className=\u201Dsection-title mb-3 text-center\u201D>📱 Zachowania w Mediach Społecznościowych</h2>
-        <p className=\u201Dsection-subtitle mb-10 text-center\u201D>Efekt Tabu i \u201EDark Social\u201D</p>
-        <div className=\u201Dspace-y-5 max-w-3xl mx-auto\u201D>
+        <h2 className="section-title mb-3 text-center">{"\ud83d\udcf1"} Zachowania w Mediach Spo{"\u0142"}eczno{"\u015B"}ciowych</h2>
+        <p className="section-subtitle mb-10 text-center">Efekt Tabu i {"\u201E"}Dark Social{"\u201D"}</p>
+        <div className="space-y-5 max-w-3xl mx-auto">
           {tabuCards.map((c, i) => (
             <motion.div
               key={c.title}
@@ -301,18 +301,18 @@ const Hemoroidy = () => (
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: i * 0.1 }}
-              className=\u201Dglass-card rounded-xl p-6 flex gap-5 items-start\u201D
+              className="glass-card rounded-xl p-6 flex gap-5 items-start"
             >
-              <div className=\u201Dshrink-0 w-12 h-12 rounded-lg bg-secondary flex items-center justify-center text-2xl\u201D>
+              <div className="shrink-0 w-12 h-12 rounded-lg bg-secondary flex items-center justify-center text-2xl">
                 {c.icon}
               </div>
               <div>
-                <h3 className=\u201Dfont-bold text-foreground mb-1\u201D>{c.title}</h3>
-                <p className=\u201Dtext-sm text-muted-foreground leading-relaxed\u201D>{c.desc}</p>
-                {c.title.includes(\u201Dkompetencji\u201D) && (
-                  <div className=\u201Dflex flex-wrap gap-2 mt-3\u201D>
+                <h3 className="font-bold text-foreground mb-1">{c.title}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">{c.desc}</p>
+                {c.title.includes("kompetencji") && (
+                  <div className="flex flex-wrap gap-2 mt-3">
                     {softSkillTags.map((t) => (
-                      <span key={t} className=\u201Dpx-3 py-1 rounded-full bg-primary/10 text-xs font-semibold text-primary\u201D>{t}</span>
+                      <span key={t} className="px-3 py-1 rounded-full bg-primary/10 text-xs font-semibold text-primary">{t}</span>
                     ))}
                   </div>
                 )}
@@ -322,13 +322,13 @@ const Hemoroidy = () => (
         </div>
       </motion.section>
 
-      {/* SEARCH QUERIES — BOTTOM OF FUNNEL */}
+      {/* SEARCH QUERIES */}
       <motion.section {...fadeUp}>
-        <h2 className=\u201Dsection-title mb-3 text-center\u201D>🔍 Dół Lejka Decyzyjnego</h2>
-        <p className=\u201Dsection-subtitle mb-10 text-center max-w-3xl mx-auto\u201D>
-          Osoba o krok od stołu operacyjnego — jej zapytania są medyczne, precyzyjne i nacechowane strachem
+        <h2 className="section-title mb-3 text-center">{"\ud83d\udd0d"} D{"\u00f3\u0142"} Lejka Decyzyjnego</h2>
+        <p className="section-subtitle mb-10 text-center max-w-3xl mx-auto">
+          Osoba o krok od sto{"\u0142"}u operacyjnego {"\u2014"} jej zapytania s{"\u0105"} medyczne, precyzyjne i nacechowane strachem
         </p>
-        <div className=\u201Dgrid md:grid-cols-3 gap-6\u201D>
+        <div className="grid md:grid-cols-3 gap-6">
           {searchCategories.map((cat, ci) => (
             <motion.div
               key={cat.cat}
@@ -336,13 +336,13 @@ const Hemoroidy = () => (
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: ci * 0.1 }}
-              className=\u201Dglass-card rounded-xl p-6\u201D
+              className="glass-card rounded-xl p-6"
             >
-              <h3 className=\u201Dfont-bold text-foreground mb-4 text-sm\u201D>{cat.cat}</h3>
-              <ul className=\u201Dspace-y-3\u201D>
+              <h3 className="font-bold text-foreground mb-4 text-sm">{cat.cat}</h3>
+              <ul className="space-y-3">
                 {cat.queries.map((q, i) => (
-                  <li key={i} className=\u201Dflex items-start gap-2 text-xs text-muted-foreground leading-relaxed\u201D>
-                    <span className=\u201Dtext-primary shrink-0\u201D>🔎</span>
+                  <li key={i} className="flex items-start gap-2 text-xs text-muted-foreground leading-relaxed">
+                    <span className="text-primary shrink-0">{"\ud83d\udd0e"}</span>
                     {q}
                   </li>
                 ))}
@@ -354,13 +354,13 @@ const Hemoroidy = () => (
 
       {/* CHAPTER 3 — COMPARISON */}
       <motion.section {...fadeUp}>
-        <h2 className=\u201Dsection-title mb-3 text-center\u201D>⚡ Skalpel czy Laser?</h2>
-        <p className=\u201Dsection-subtitle mb-10 text-center\u201D>Rozdział 3 — Porównanie metod leczenia</p>
-        <div className=\u201Dglass-card rounded-2xl overflow-hidden max-w-4xl mx-auto\u201D>
-          <div className=\u201Dgrid grid-cols-3 text-xs font-semibold uppercase tracking-wider border-b border-border\u201D>
-            <div className=\u201Dp-4 text-muted-foreground\u201D>Cecha</div>
-            <div className=\u201Dp-4 text-muted-foreground text-center\u201D>🔪 Klasyczna</div>
-            <div className=\u201Dp-4 text-primary text-center\u201D>⚡ Laser LHP</div>
+        <h2 className="section-title mb-3 text-center">{"\u26a1"} Skalpel czy Laser?</h2>
+        <p className="section-subtitle mb-10 text-center">Rozdzia{"\u0142"} 3 {"\u2014"} Por{"\u00f3"}wnanie metod leczenia</p>
+        <div className="glass-card rounded-2xl overflow-hidden max-w-4xl mx-auto">
+          <div className="grid grid-cols-3 text-xs font-semibold uppercase tracking-wider border-b border-border">
+            <div className="p-4 text-muted-foreground">Cecha</div>
+            <div className="p-4 text-muted-foreground text-center">{"\ud83d\udd2a"} Klasyczna</div>
+            <div className="p-4 text-primary text-center">{"\u26a1"} Laser LHP</div>
           </div>
           {comparisonRows.map((row, i) => (
             <motion.div
@@ -369,35 +369,33 @@ const Hemoroidy = () => (
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.4, delay: i * 0.05 }}
-              className={`grid grid-cols-3 text-sm ${i < comparisonRows.length - 1 ? \u201Dborder-b border-border/50\u201D : \u201D\u201D}`}
+              className={`grid grid-cols-3 text-sm ${i < comparisonRows.length - 1 ? "border-b border-border/50" : ""}`}
             >
-              <div className=\u201Dp-4 text-foreground font-medium\u201D>{row.label}</div>
-              <div className=\u201Dp-4 text-muted-foreground text-center\u201D>{row.classic}</div>
-              <div className=\u201Dp-4 text-primary text-center font-semibold\u201D>{row.laser}</div>
+              <div className="p-4 text-foreground font-medium">{row.label}</div>
+              <div className="p-4 text-muted-foreground text-center">{row.classic}</div>
+              <div className="p-4 text-primary text-center font-semibold">{row.laser}</div>
             </motion.div>
           ))}
         </div>
-
-        {/* Pain comparison */}
-        <div className=\u201Dgrid sm:grid-cols-2 gap-5 mt-8 max-w-2xl mx-auto\u201D>
-          <div className=\u201Drounded-xl bg-red-50 dark:bg-red-950/30 p-6 text-center\u201D>
-            <p className=\u201Dtext-xs font-bold uppercase tracking-wider text-red-700 dark:text-red-400 mb-2\u201D>Ból po operacji klasycznej</p>
-            <p className=\u201Dtext-5xl font-black text-red-700 dark:text-red-400\u201D>8–9/10</p>
-            <p className=\u201Dtext-xs text-red-600 dark:text-red-500 mt-2\u201D>Silne leki opioidowe przez wiele dni</p>
+        <div className="grid sm:grid-cols-2 gap-5 mt-8 max-w-2xl mx-auto">
+          <div className="rounded-xl bg-destructive/10 p-6 text-center">
+            <p className="text-xs font-bold uppercase tracking-wider text-destructive mb-2">B{"\u00f3"}l po operacji klasycznej</p>
+            <p className="text-5xl font-black text-destructive">8{"\u2013"}9/10</p>
+            <p className="text-xs text-destructive/80 mt-2">Silne leki opioidowe przez wiele dni</p>
           </div>
-          <div className=\u201Drounded-xl bg-green-50 dark:bg-green-950/30 p-6 text-center\u201D>
-            <p className=\u201Dtext-xs font-bold uppercase tracking-wider text-green-700 dark:text-green-400 mb-2\u201D>Dyskomfort po zabiegu laserowym</p>
-            <p className=\u201Dtext-5xl font-black text-green-700 dark:text-green-400\u201D>2–3/10</p>
-            <p className=\u201Dtext-xs text-green-600 dark:text-green-500 mt-2\u201D>Zwykłe leki przeciwbólowe OTC</p>
+          <div className="rounded-xl bg-primary/10 p-6 text-center">
+            <p className="text-xs font-bold uppercase tracking-wider text-primary mb-2">Dyskomfort po zabiegu laserowym</p>
+            <p className="text-5xl font-black text-primary">2{"\u2013"}3/10</p>
+            <p className="text-xs text-primary/80 mt-2">Zwyk{"\u0142"}e leki przeciwb{"\u00f3"}lowe OTC</p>
           </div>
         </div>
       </motion.section>
 
       {/* CHAPTER 4 — LASER STEPS */}
       <motion.section {...fadeUp}>
-        <h2 className=\u201Dsection-title mb-3 text-center\u201D>🏥 Jak wygląda zabieg laserowy LHP?</h2>
-        <p className=\u201Dsection-subtitle mb-10 text-center\u201D>Rozdział 4 — Krok po kroku</p>
-        <div className=\u201Dgrid sm:grid-cols-3 gap-6\u201D>
+        <h2 className="section-title mb-3 text-center">{"\ud83c\udfe5"} Jak wygl{"\u0105"}da zabieg laserowy LHP?</h2>
+        <p className="section-subtitle mb-10 text-center">Rozdzia{"\u0142"} 4 {"\u2014"} Krok po kroku</p>
+        <div className="grid sm:grid-cols-3 gap-6">
           {laserSteps.map((s, i) => (
             <motion.div
               key={s.num}
@@ -405,12 +403,12 @@ const Hemoroidy = () => (
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: i * 0.12 }}
-              className=\u201Dglass-card rounded-xl p-6 relative overflow-hidden\u201D
+              className="glass-card rounded-xl p-6 relative overflow-hidden"
             >
-              <span className=\u201Dabsolute top-3 right-4 text-5xl font-black text-muted-foreground/10\u201D>{s.num}</span>
-              <div className=\u201Dtext-3xl mb-3\u201D>{s.icon}</div>
-              <h4 className=\u201Dfont-bold text-foreground mb-2\u201D>{s.title}</h4>
-              <p className=\u201Dtext-sm text-muted-foreground leading-relaxed\u201D>{s.desc}</p>
+              <span className="absolute top-3 right-4 text-5xl font-black text-muted-foreground/10">{s.num}</span>
+              <div className="text-3xl mb-3">{s.icon}</div>
+              <h4 className="font-bold text-foreground mb-2">{s.title}</h4>
+              <p className="text-sm text-muted-foreground leading-relaxed">{s.desc}</p>
             </motion.div>
           ))}
         </div>
@@ -418,20 +416,20 @@ const Hemoroidy = () => (
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
-          className=\u201Dglass-card rounded-xl p-6 mt-8 border-l-4 border-primary max-w-3xl mx-auto\u201D
+          className="glass-card rounded-xl p-6 mt-8 border-l-4 border-primary max-w-3xl mx-auto"
         >
-          <p className=\u201Dtext-sm text-muted-foreground leading-relaxed italic\u201D>
-            \u201EŻałuję tylko jednej rzeczy — że zwlekałem tak długo i męczyłem się niepotrzebnie przez te wszystkie lata.\u201D
-            <span className=\u201Dblock text-xs mt-2 not-italic text-muted-foreground/70\u201D>— typowa reakcja pacjenta po zakończonym leczeniu</span>
+          <p className="text-sm text-muted-foreground leading-relaxed italic">
+            {"\u201E\u017Ba\u0142uj\u0119"} tylko jednej rzeczy {"\u2014"} {"\u017Ce"} zwleka{"\u0142"}em tak d{"\u0142"}ugo i m{"\u0119"}czy{"\u0142"}em si{"\u0119"} niepotrzebnie przez te wszystkie lata.{"\u201D"}
+            <span className="block text-xs mt-2 not-italic text-muted-foreground/70">{"\u2014"} typowa reakcja pacjenta po zako{"\u0144"}czonym leczeniu</span>
           </p>
         </motion.div>
       </motion.section>
 
       {/* CHAPTER 5 — DEGREE SCALE */}
       <motion.section {...fadeUp}>
-        <h2 className=\u201Dsection-title mb-3 text-center\u201D>📊 Czy kwalifikujesz się do zabiegu?</h2>
-        <p className=\u201Dsection-subtitle mb-10 text-center\u201D>Rozdział 5 — Skala zaawansowania</p>
-        <div className=\u201Dgrid sm:grid-cols-2 lg:grid-cols-4 gap-4\u201D>
+        <h2 className="section-title mb-3 text-center">{"\ud83d\udcca"} Czy kwalifikujesz si{"\u0119"} do zabiegu?</h2>
+        <p className="section-subtitle mb-10 text-center">Rozdzia{"\u0142"} 5 {"\u2014"} Skala zaawansowania</p>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {degrees.map((d, i) => (
             <motion.div
               key={d.deg}
@@ -439,11 +437,11 @@ const Hemoroidy = () => (
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
               transition={{ duration: 0.4, delay: i * 0.1 }}
-              className={`rounded-xl p-5 text-center ${d.color}`}
+              className={`rounded-xl p-5 text-center ${degreeColors[d.variant]}`}
             >
-              <p className=\u201Dtext-3xl font-black mb-2\u201D>{d.deg}</p>
-              <h4 className=\u201Dfont-bold text-sm mb-2\u201D>{d.title}</h4>
-              <p className=\u201Dtext-xs leading-relaxed\u201D>{d.desc}</p>
+              <p className="text-3xl font-black mb-2">{d.deg}</p>
+              <h4 className="font-bold text-sm mb-2">{d.title}</h4>
+              <p className="text-xs leading-relaxed">{d.desc}</p>
             </motion.div>
           ))}
         </div>
@@ -451,28 +449,28 @@ const Hemoroidy = () => (
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
-          className=\u201Dglass-card rounded-xl p-6 mt-8 border-l-4 border-destructive max-w-3xl mx-auto\u201D
+          className="glass-card rounded-xl p-6 mt-8 border-l-4 border-destructive max-w-3xl mx-auto"
         >
-          <p className=\u201Dtext-sm text-foreground leading-relaxed\u201D>
-            <strong>⏰ Czas działa na Twoją niekorzyść.</strong>{\u201D \u201D}
-            Każdy miesiąc zwlekania i leczenia \u201Ena własną rękę\u201D przybliża Cię do momentu, w którym lekarz powie: \u201EPrzykro mi, na laser jest już za późno, musimy ciąć.\u201D
-            Nie pozwól, aby strach lub wstyd odebrały Ci szansę na komfortowe leczenie.
+          <p className="text-sm text-foreground leading-relaxed">
+            <strong>{"\u23f0"} Czas dzia{"\u0142"}a na Twoj{"\u0105"} niekorzy{"\u015B\u0107"}.</strong>{" "}
+            Ka{"\u017C"}dy miesi{"\u0105"}c zwlekania i leczenia {"\u201E"}na w{"\u0142"}asn{"\u0105"} r{"\u0119"}k{"\u0119\u201D"} przybli{"\u017C"}a Ci{"\u0119"} do momentu, w kt{"\u00f3"}rym lekarz powie: {"\u201E"}Przykro mi, na laser jest ju{"\u017C"} za p{"\u00f3\u017A"}no, musimy ci{"\u0105\u0107"}. {"\u201D"}
+            Nie pozw{"\u00f3"}l, aby strach lub wstyd odebra{"\u0142"}y Ci szans{"\u0119"} na komfortowe leczenie.
           </p>
         </motion.div>
       </motion.section>
 
       {/* CTA */}
-      <motion.section {...fadeUp} className=\u201Dglass-card rounded-2xl p-8 md:p-12 text-center max-w-2xl mx-auto\u201D>
-        <div className=\u201Dtext-4xl mb-4\u201D>🎯</div>
-        <h2 className=\u201Dtext-2xl font-bold text-foreground mb-3\u201D>
-          Twój następny krok — Konsultacja kwalifikacyjna
+      <motion.section {...fadeUp} className="glass-card rounded-2xl p-8 md:p-12 text-center max-w-2xl mx-auto">
+        <div className="text-4xl mb-4">{"\ud83c\udfaf"}</div>
+        <h2 className="text-2xl font-bold text-foreground mb-3">
+          Tw{"\u00f3"}j nast{"\u0119"}pny krok {"\u2014"} Konsultacja kwalifikacyjna
         </h2>
-        <p className=\u201Dtext-muted-foreground leading-relaxed mb-6\u201D>
-          Niezobowiązująca wizyta, podczas której lekarz oceni stopień zaawansowania, potwierdzi kwalifikację do LHP, przedstawi plan leczenia i odpowie na wszystkie pytania — bez pośpiechu i wstydu.
+        <p className="text-muted-foreground leading-relaxed mb-6">
+          Niezobowi{"\u0105"}zuj{"\u0105"}ca wizyta, podczas kt{"\u00f3"}rej lekarz oceni stopie{"\u0144"} zaawansowania, potwierdzi kwalifikacj{"\u0119"} do LHP, przedstawi plan leczenia i odpowie na wszystkie pytania {"\u2014"} bez po{"\u015B"}piechu i wstydu.
         </p>
-        <Button variant=\u201Dhero\u201D size=\u201Dlg\u201D asChild>
-          <a href=\u201Dhttps://www.znanylekarz.pl/jan-bujok-2/chirurg-flebolog-proktolog/warszawa\u201D target=\u201D_blank\u201D rel=\u201Dnoopener noreferrer\u201D>
-            Sprawdź dostępne terminy
+        <Button variant="hero" size="lg" asChild>
+          <a href="https://www.znanylekarz.pl/jan-bujok-2/chirurg-flebolog-proktolog/warszawa" target="_blank" rel="noopener noreferrer">
+            Sprawd{"\u017A"} dost{"\u0119"}pne terminy
           </a>
         </Button>
       </motion.section>
