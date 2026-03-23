@@ -240,7 +240,7 @@ const Skleroterapia = () => (
           Skleroterapia to bezpieczny sposób na zamknięcie żylakowato zmienionych naczyń. Umów się na konsultację.
         </p>
         <Button variant="hero" size="lg" asChild>
-          <Link to="/kontakt">Umów konsultację</Link>
+          <a href="https://www.znanylekarz.pl/jan-bujok-2/chirurg-flebolog-proktolog/warszawa" target="_blank" rel="noopener noreferrer">Umów konsultację</a>
         </Button>
       </motion.section>
     </div>

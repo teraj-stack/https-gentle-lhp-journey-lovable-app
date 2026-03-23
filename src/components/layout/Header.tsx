@@ -234,7 +234,7 @@ const Header = () => {
 
           <div className="flex items-center gap-3">
             <Button variant="hero" size="default" className="hidden sm:inline-flex" asChild>
-              <Link to="/kontakt">Umów Konsultację</Link>
+              <a href="https://www.znanylekarz.pl/jan-bujok-2/chirurg-flebolog-proktolog/warszawa" target="_blank" rel="noopener noreferrer">Umów Konsultację</a>
             </Button>
             <button
               className="lg:hidden p-2 rounded-lg hover:bg-accent/50 transition-colors text-foreground"
@@ -298,7 +298,7 @@ const Header = () => {
                 className="pt-3"
               >
                 <Button variant="hero" className="w-full" asChild>
-                  <Link to="/kontakt">Umów Konsultację</Link>
+                  <a href="https://www.znanylekarz.pl/jan-bujok-2/chirurg-flebolog-proktolog/warszawa" target="_blank" rel="noopener noreferrer">Umów Konsultację</a>
                 </Button>
               </motion.div>
             </div>

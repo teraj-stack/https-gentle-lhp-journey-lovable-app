@@ -22,10 +22,10 @@ const AboutCTA = () => (
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Button variant="hero" size="lg" className="px-10 py-6 text-base" asChild>
-            <Link to="/kontakt">
+            <a href="https://www.znanylekarz.pl/jan-bujok-2/chirurg-flebolog-proktolog/warszawa" target="_blank" rel="noopener noreferrer">
               Umów Konsultację
               <ArrowRight className="w-4 h-4 ml-2" />
-            </Link>
+            </a>
           </Button>
           <Button variant="outline" size="lg" className="px-10 py-6 text-base" asChild>
             <Link to="/wspolpraca">

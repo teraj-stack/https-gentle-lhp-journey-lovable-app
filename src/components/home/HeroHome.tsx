@@ -55,7 +55,7 @@ const HeroHome = () => {
         </p>
         <div className="flex flex-col sm:flex-row gap-4">
           <Button variant="hero" size="lg" className="px-8 py-6 text-base" asChild>
-            <Link to="/kontakt">Umów Konsultację</Link>
+            <a href="https://www.znanylekarz.pl/jan-bujok-2/chirurg-flebolog-proktolog/warszawa" target="_blank" rel="noopener noreferrer">Umów Konsultację</a>
           </Button>
           <Button
             variant="outline"

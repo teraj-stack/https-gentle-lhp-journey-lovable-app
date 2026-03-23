@@ -39,10 +39,10 @@ const WspolpracaCTA = () => (
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mt-10">
           <Button variant="hero" size="lg" className="px-10 py-6 text-base" asChild>
-            <Link to="/kontakt">
+            <a href="https://www.znanylekarz.pl/jan-bujok-2/chirurg-flebolog-proktolog/warszawa" target="_blank" rel="noopener noreferrer">
               Umów wirtualną kawę
               <ArrowRight className="w-4 h-4 ml-2" />
-            </Link>
+            </a>
           </Button>
           <span className="text-xs text-muted-foreground">lub napisz: kontakt@cml.pl</span>
         </div>

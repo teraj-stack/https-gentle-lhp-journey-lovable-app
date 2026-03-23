@@ -63,7 +63,7 @@ const Szczelina = () => (
             Skuteczne leczenie od diety do lasera — od farmakoterapii po nowoczesne metody małoinwazyjne, dobrane indywidualnie do Twoich potrzeb.
           </p>
           <Button variant="hero" size="lg" className="px-8 py-6 text-base" asChild>
-            <Link to="/kontakt">Umów Konsultację</Link>
+            <a href="https://www.znanylekarz.pl/jan-bujok-2/chirurg-flebolog-proktolog/warszawa" target="_blank" rel="noopener noreferrer">Umów Konsultację</a>
           </Button>
         </motion.div>
       </div>
@@ -248,10 +248,10 @@ const Szczelina = () => (
           Nie czekaj, aż dolegliwości staną się przewlekłe. Umów konsultację i poznaj najlepszą opcję leczenia.
         </p>
         <Button variant="hero" size="lg" className="px-10 py-6 text-base" asChild>
-          <Link to="/kontakt">
+          <a href="https://www.znanylekarz.pl/jan-bujok-2/chirurg-flebolog-proktolog/warszawa" target="_blank" rel="noopener noreferrer">
             Umów Konsultację
             <ArrowRight className="w-4 h-4 ml-2" />
-          </Link>
+          </a>
         </Button>
       </motion.section>
     </div>
