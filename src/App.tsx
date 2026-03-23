@@ -27,6 +27,9 @@ const PolitykaPrywatnosci = lazy(() => import("@/pages/PolitykaPrywatnosci"));
 const Regulamin = lazy(() => import("@/pages/Regulamin"));
 const Blog = lazy(() => import("@/pages/Blog"));
 const BlogPost = lazy(() => import("@/pages/BlogPost"));
+const AdminLogin = lazy(() => import("@/pages/AdminLogin"));
+const AdminDashboard = lazy(() => import("@/pages/AdminDashboard"));
+const AdminPostEditor = lazy(() => import("@/pages/AdminPostEditor"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 
 const queryClient = new QueryClient();
@@ -63,6 +66,9 @@ const App = () => (
               <Route path="/polityka-prywatnosci" element={<PolitykaPrywatnosci />} />
               <Route path="/regulamin" element={<Regulamin />} />
             </Route>
+            <Route path="/admin/login" element={<AdminLogin />} />
+            <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/admin/post/:id" element={<AdminPostEditor />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
