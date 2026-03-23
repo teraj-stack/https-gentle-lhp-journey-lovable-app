@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -11,19 +12,46 @@ import SeoHead from "@/components/shared/SeoHead";
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [session, setSession] = useState<any>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_, s) => {
-      setSession(s);
-      if (!s) navigate("/admin/login");
+    let isMounted = true;
+
+    const applySession = (nextSession: Session | null) => {
+      if (!isMounted) return;
+
+      setSession(nextSession);
+      setAuthLoading(false);
+
+      if (!nextSession) {
+        navigate("/admin/login", { replace: true });
+        return;
+      }
+
+      queryClient.invalidateQueries({ queryKey: ["admin-blog-posts"] });
+    };
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, nextSession) => {
+      if (event === "SIGNED_OUT") {
+        applySession(null);
+        return;
+      }
+
+      applySession(nextSession);
     });
-    supabase.auth.getSession().then(({ data: { session: s } }) => {
-      if (!s) navigate("/admin/login");
-      else setSession(s);
+
+    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+      applySession(currentSession);
     });
-    return () => subscription.unsubscribe();
-  }, [navigate]);
+
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
+  }, [navigate, queryClient]);
 
   const {
     data: posts = [],
@@ -32,16 +60,18 @@ const AdminDashboard = () => {
     error,
     refetch,
   } = useQuery({
-    queryKey: ["admin-blog-posts"],
+    queryKey: ["admin-blog-posts", session?.user.id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("blog_posts")
         .select("*")
         .order("created_at", { ascending: false });
+
       if (error) throw error;
       return data ?? [];
     },
-    enabled: !!session,
+    enabled: !authLoading && !!session,
+    refetchOnMount: "always",
   });
 
   const deleteMutation = useMutation({
@@ -82,8 +112,16 @@ const AdminDashboard = () => {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    navigate("/admin/login");
+    navigate("/admin/login", { replace: true });
   };
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="h-8 w-8 rounded-full border-4 border-primary border-t-transparent animate-spin" aria-label="Ładowanie panelu administracyjnego" />
+      </div>
+    );
+  }
 
   if (!session) return null;
 
@@ -91,7 +129,7 @@ const AdminDashboard = () => {
     <>
       <SeoHead title="Panel administracyjny — Blog" description="Zarządzanie wpisami blogowymi" path="/admin" />
       <div className="min-h-screen bg-background">
-        <header className="border-b border-border px-4 md:px-8 py-4 flex items-center justify-between">
+        <header className="border-b border-border px-4 py-4 md:px-8 flex items-center justify-between">
           <h1 className="text-xl font-bold font-serif text-foreground">Panel bloga</h1>
           <div className="flex items-center gap-3">
             <span className="text-sm text-muted-foreground hidden sm:inline">{session.user.email}</span>
@@ -101,7 +139,7 @@ const AdminDashboard = () => {
           </div>
         </header>
 
-        <main className="max-w-5xl mx-auto px-4 md:px-8 py-8">
+        <main className="max-w-5xl mx-auto px-4 py-8 md:px-8">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-lg font-semibold text-foreground">Artykuły ({posts.length})</h2>
             <Button onClick={() => navigate("/admin/post/new")} size="sm">
@@ -150,17 +188,26 @@ const AdminDashboard = () => {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-1">
-                          <Button variant="ghost" size="icon" onClick={() => togglePublish.mutate({ id: post.id, published: post.published })} title={post.published ? "Cofnij publikację" : "Opublikuj"}>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => togglePublish.mutate({ id: post.id, published: post.published })}
+                            title={post.published ? "Cofnij publikację" : "Opublikuj"}
+                          >
                             {post.published ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                           </Button>
                           <Button variant="ghost" size="icon" onClick={() => navigate(`/admin/post/${post.id}`)}>
                             <Pencil className="w-4 h-4" />
                           </Button>
-                          <Button variant="ghost" size="icon" onClick={() => {
-                            if (confirm("Czy na pewno chcesz usunąć ten artykuł?")) {
-                              deleteMutation.mutate(post.id);
-                            }
-                          }}>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                              if (confirm("Czy na pewno chcesz usunąć ten artykuł?")) {
+                                deleteMutation.mutate(post.id);
+                              }
+                            }}
+                          >
                             <Trash2 className="w-4 h-4 text-destructive" />
                           </Button>
                         </div>
