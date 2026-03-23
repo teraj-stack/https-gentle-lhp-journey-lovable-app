@@ -10,6 +10,7 @@ import EbookBanner from "@/components/lhp/EbookBanner";
 import CTASection from "@/components/lhp/CTASection";
 import ProcedureSummaryTable from "@/components/shared/ProcedureSummaryTable";
 import { motion } from "framer-motion";
+import MedicalProcedureSchema from "@/components/shared/MedicalProcedureSchema";
 
 const lhpSummary = [
   { label: "Przygotowanie", value: "Badanie proktologiczne (anoskopia), ocena stopnia zaawansowania choroby" },
@@ -31,6 +32,17 @@ const sectionAnim = {
 const LHP = () => {
   return (
     <div className="min-h-screen bg-background pt-20">
+      <MedicalProcedureSchema
+        name="LHP – Laserowa plastyka hemoroidów"
+        description="Minimalnie inwazyjna metoda leczenia hemoroidów laserem diodowym. Energia lasera obkurcza guzek od wewnątrz, bez wycinania tkanek."
+        bodyLocation="Kanał odbytu"
+        procedureType="Percutaneous"
+        preparation="Badanie proktologiczne (anoskopia), ocena stopnia zaawansowania choroby"
+        followup="Powrót do domu tego samego dnia. Dieta bogata w błonnik, nawadnianie, unikanie wysiłku przez kilka dni."
+        howPerformed="Bez wycinania — laser obkurcza guzek od wewnątrz. Energia powoduje koagulację naczyń zasilających hemoroid."
+        risks="Przejściowy obrzęk, niewielkie krwawienie, dyskomfort. Minimalne ryzyko nietrzymania stolca."
+        url="/leczenie/lhp"
+      />
       <HeroSection />
 
       <div className="max-w-4xl mx-auto px-4 py-16 space-y-20">

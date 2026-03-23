@@ -5,6 +5,7 @@ import Breadcrumbs from "@/components/layout/Breadcrumbs";
 import { ArrowRight, CheckCircle2, Clock, Shield, Sparkles, Heart } from "lucide-react";
 import ParallaxSection from "@/components/ui/parallax-section";
 import ProcedureSummaryTable from "@/components/shared/ProcedureSummaryTable";
+import MedicalProcedureSchema from "@/components/shared/MedicalProcedureSchema";
 
 const plastykaSummary = [
   { label: "Przygotowanie", value: "Konsultacja proktologiczna, ocena zmian skórnych" },
@@ -29,7 +30,18 @@ const stagger = (i: number) => ({
 });
 
 const Plastyka = () => (
-  <div className="min-h-screen pt-20">
+    <div className="min-h-screen pt-20">
+      <MedicalProcedureSchema
+        name="Plastyka odbytu – estetyka i komfort"
+        description="Laserowa korekta zmian skórnych okolicy odbytu: nadmierne fałdy, nierówności i defekty pooperacyjne."
+        bodyLocation="Okolica odbytu"
+        procedureType="Surgical"
+        preparation="Konsultacja proktologiczna, ocena zmian skórnych"
+        followup="Powrót do domu tego samego dnia. Dyskomfort przy siedzeniu przez ok. 7–10 dni. Wymagana szczególna higiena."
+        howPerformed="Laserowa korekta: precyzyjne usunięcie nadmiaru skóry laserem CO₂ lub diodowym. Laser jednocześnie tnie i koaguluje naczynia."
+        risks="Ból w pierwszych dniach, niewielkie krwawienie, infekcja rany (przy braku higieny), obrzęk"
+        url="/leczenie/plastyka"
+      />
     {/* Hero */}
     <ParallaxSection className="relative py-20 md:py-28 gradient-hero">
       <div className="absolute inset-0 overflow-hidden">

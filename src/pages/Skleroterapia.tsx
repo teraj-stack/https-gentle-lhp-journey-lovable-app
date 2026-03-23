@@ -5,6 +5,7 @@ import Breadcrumbs from "@/components/layout/Breadcrumbs";
 import { Button } from "@/components/ui/button";
 import SkleroterapiaFAQ from "@/components/skleroterapia/SkleroterapiaFAQ";
 import ProcedureSummaryTable from "@/components/shared/ProcedureSummaryTable";
+import MedicalProcedureSchema from "@/components/shared/MedicalProcedureSchema";
 
 const skleroterapiaSummary = [
   { label: "Przygotowanie", value: "USG Doppler żył" },
@@ -57,7 +58,18 @@ const contraindications = [
 ];
 
 const Skleroterapia = () => (
-  <div className="min-h-screen bg-background pt-20">
+    <div className="min-h-screen bg-background pt-20">
+      <MedicalProcedureSchema
+        name="Skleroterapia piankowa żylaków"
+        description="Zamykanie żylakowatych naczyń za pomocą iniekcji pianki sklerotyzującej pod kontrolą USG."
+        bodyLocation="Żyły kończyn dolnych"
+        procedureType="Noninvasive"
+        preparation="USG Doppler żył"
+        followup="Natychmiastowy powrót do aktywności. Pończocha uciskowa przez 5–7 dni."
+        howPerformed="Pod kontrolą USG lekarz wstrzykuje do żyły lek w formie gęstej pianki, powodując sklejenie i wchłonięcie naczynia."
+        risks="Przebarwienia (brązowe paski), zgrubienia, siniaki w miejscu wkłucia"
+        url="/leczenie/skleroterapia"
+      />
     {/* Hero */}
     <ParallaxSection className="gradient-bg py-16 md:py-24 px-4">
       <motion.div
