@@ -86,7 +86,7 @@ const BlogPost = () => {
 
           <div className="premium-divider !mx-0 mb-8" />
 
-          <div className="prose-custom">{renderContent(post.content)}</div>
+          <MarkdownRenderer content={post.content} className="prose-custom" />
         </div>
       </article>
     </>
