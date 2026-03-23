@@ -99,6 +99,11 @@ const qaItems = [
 
 const ProktologFAQ = () => (
   <div className="min-h-screen bg-background pt-20">
+    <SeoHead
+      title="Jak przygotować się do wizyty u proktologa"
+      description="Najczęstsze pytania o wizytę proktologiczną. Dowiedz się jak wygląda badanie, czym są hemoroidy i jakie są metody leczenia."
+      path="/dla-pacjenta/proktolog-faq"
+    />
     <ParallaxSection className="gradient-bg py-16 md:py-24 px-4">
       <motion.div
         initial={{ opacity: 0, y: 30 }}

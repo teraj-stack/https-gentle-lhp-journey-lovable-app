@@ -74,6 +74,11 @@ const benefits = [
 
 const DlaPacjenta = () => (
   <div className="min-h-screen bg-background pt-20">
+    <SeoHead
+      title="Dla Pacjenta – materiały edukacyjne"
+      description="E-booki, poradniki i odpowiedzi na najczęstsze pytania pacjentów. Przygotuj się do wizyty proktologicznej i flebologicznej."
+      path="/dla-pacjenta"
+    />
     {/* Hero */}
     <ParallaxSection className="gradient-bg py-16 md:py-24 px-4">
       <motion.div
