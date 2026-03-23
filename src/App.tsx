@@ -56,6 +56,8 @@ const App = () => (
               <Route path="/dla-pacjenta/ebook-pajaczki" element={<EbookPajaczki />} />
               <Route path="/dla-pacjenta/proktolog-faq" element={<ProktologFAQ />} />
               <Route path="/kontakt" element={<Kontakt />} />
+              <Route path="/polityka-prywatnosci" element={<PolitykaPrywatnosci />} />
+              <Route path="/regulamin" element={<Regulamin />} />
             </Route>
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
