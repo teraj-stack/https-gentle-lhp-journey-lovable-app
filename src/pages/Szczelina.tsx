@@ -32,6 +32,11 @@ const stagger = (i: number) => ({
 
 const Szczelina = () => (
     <div className="min-h-screen pt-20">
+      <SeoHead
+        title="Szczelina odbytu – od diety do lasera"
+        description="Leczenie szczeliny odbytu w CML – botoks, laser, farmakoterapia. Skuteczne metody bez długiej rekonwalescencji."
+        path="/leczenie/szczelina"
+      />
       <MedicalProcedureSchema
         name="Leczenie szczeliny odbytu – od diety do lasera"
         description="Kompleksowe leczenie szczeliny odbytu: od leczenia zachowawczego, przez botoks, po precyzyjną laserową sfinkterotomię."

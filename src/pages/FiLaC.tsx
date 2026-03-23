@@ -32,6 +32,11 @@ const fadeUp = {
 
 const FiLaC = () => (
     <div className="min-h-screen bg-background pt-20">
+      <SeoHead
+        title="FiLaC – Laserowe leczenie przetok odbytu"
+        description="FiLaC (Fistula Laser Closure) – zamykanie przetok laserem w CML. Minimalnie inwazyjne, ochrona zwieraczy. Warszawa, Siedlce."
+        path="/leczenie/filac"
+      />
       <MedicalProcedureSchema
         name="FiLaC – Fistula Laser Closure"
         description="Laserowe zamykanie przetok odbytu od wewnątrz, bez rozcinania zwieraczy. Zachowuje pełne trzymanie stolca."

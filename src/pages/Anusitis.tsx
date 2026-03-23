@@ -27,6 +27,11 @@ const fadeUp = {
 
 const Anusitis = () => (
     <div className="min-h-screen pt-20">
+      <SeoHead
+        title="Zapalenie odbytu (anusitis) – diagnostyka i leczenie"
+        description="Leczenie zapalenia odbytu w CML – diagnostyka przyczyn, farmakoterapia celowana. Ambulatoryjnie, bez chirurgii."
+        path="/leczenie/anusitis"
+      />
       <MedicalProcedureSchema
         name="Zapalenie odbytu (anusitis) – diagnostyka i leczenie"
         description="Leczenie farmakologiczne zapalenia kanału odbytu. Celowana terapia przyczyny zapalenia, bez interwencji chirurgicznej."

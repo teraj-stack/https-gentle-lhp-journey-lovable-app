@@ -60,6 +60,11 @@ const contraindications = [
 
 const Skleroterapia = () => (
     <div className="min-h-screen bg-background pt-20">
+      <SeoHead
+        title="Skleroterapia piankowa żylaków"
+        description="Skleroterapia piankowa w CML – zamykanie żylaków bez operacji. Zabieg bezbolesny, natychmiastowy powrót do aktywności."
+        path="/leczenie/skleroterapia"
+      />
       <MedicalProcedureSchema
         name="Skleroterapia piankowa żylaków"
         description="Zamykanie żylakowatych naczyń za pomocą iniekcji pianki sklerotyzującej pod kontrolą USG."
