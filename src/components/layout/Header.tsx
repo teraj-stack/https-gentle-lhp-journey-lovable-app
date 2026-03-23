@@ -103,9 +103,13 @@ const Header = () => {
                       <Link
                         key={item.href}
                         to={item.href}
-                        className="block px-4 py-3 rounded-lg hover:bg-accent/50 transition-colors group"
+                        className={`block px-4 py-3 rounded-lg hover:bg-accent/50 transition-colors group ${
+                          isActive(item.href) ? "bg-accent/50" : ""
+                        }`}
                       >
-                        <div className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">
+                        <div className={`text-sm font-medium transition-colors ${
+                          isActive(item.href) ? "text-primary" : "text-foreground group-hover:text-primary"
+                        }`}>
                           {item.label}
                         </div>
                         <div className="text-xs text-muted-foreground mt-0.5">{item.desc}</div>
