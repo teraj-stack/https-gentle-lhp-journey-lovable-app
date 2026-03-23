@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import pajaczkiAnatomia from "@/assets/pajaczki-anatomia.jpg";
+import pajaczkiAnatomia from "@/assets/pajaczki-anatomia.webp";
 
 interface Hotspot {
   id: string;
