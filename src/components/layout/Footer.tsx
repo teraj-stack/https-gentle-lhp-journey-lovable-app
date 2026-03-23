@@ -4,7 +4,7 @@ import { MapPin, Phone, Mail, Clock } from "lucide-react";
 const Footer = () => (
   <footer className="bg-background border-t border-border">
     <div className="max-w-7xl mx-auto px-4 md:px-8 py-16">
-      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-10">
+      <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-10">
         <div className="lg:col-span-1">
           <span className="text-2xl font-bold font-serif text-primary">CML</span>
           <p className="text-sm mt-3 leading-relaxed text-muted-foreground">
@@ -14,7 +14,7 @@ const Footer = () => (
         </div>
 
         <div>
-          <h4 className="font-semibold text-foreground mb-4 font-sans text-sm uppercase tracking-wider">Leczenie</h4>
+          <h4 className="font-semibold text-foreground mb-4 font-sans text-sm uppercase tracking-wider">Proktologia</h4>
           <ul className="space-y-2.5 text-sm text-muted-foreground">
             <li><Link to="/leczenie/lhp" className="hover:text-primary transition-colors">Hemoroidy – LHP</Link></li>
             <li><Link to="/leczenie/filac" className="hover:text-primary transition-colors">Przetoki – FiLaC</Link></li>
@@ -22,6 +22,12 @@ const Footer = () => (
             <li><Link to="/leczenie/szczelina" className="hover:text-primary transition-colors">Szczelina odbytu</Link></li>
             <li><Link to="/leczenie/plastyka" className="hover:text-primary transition-colors">Plastyka odbytu</Link></li>
             <li><Link to="/leczenie/anusitis" className="hover:text-primary transition-colors">Zapalenie odbytu</Link></li>
+          </ul>
+        </div>
+
+        <div>
+          <h4 className="font-semibold text-foreground mb-4 font-sans text-sm uppercase tracking-wider">Flebologia</h4>
+          <ul className="space-y-2.5 text-sm text-muted-foreground">
             <li><Link to="/leczenie/evlt" className="hover:text-primary transition-colors">Żylaki – EVLT</Link></li>
             <li><Link to="/leczenie/skleroterapia" className="hover:text-primary transition-colors">Skleroterapia</Link></li>
             <li><Link to="/leczenie/clacs" className="hover:text-primary transition-colors">Pajączki – CLaCS</Link></li>
