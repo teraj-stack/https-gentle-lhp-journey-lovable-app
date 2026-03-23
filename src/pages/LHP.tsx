@@ -11,6 +11,7 @@ import CTASection from "@/components/lhp/CTASection";
 import ProcedureSummaryTable from "@/components/shared/ProcedureSummaryTable";
 import { motion } from "framer-motion";
 import MedicalProcedureSchema from "@/components/shared/MedicalProcedureSchema";
+import SeoHead from "@/components/shared/SeoHead";
 
 const lhpSummary = [
   { label: "Przygotowanie", value: "Badanie proktologiczne (anoskopia), ocena stopnia zaawansowania choroby" },
