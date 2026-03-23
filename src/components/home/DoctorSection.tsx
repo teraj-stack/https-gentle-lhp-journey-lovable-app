@@ -21,6 +21,7 @@ const DoctorSection = () => (
               src={drBujokImg}
               alt="Dr Jan Bujok – chirurg, proktolog, flebolog"
               className="w-72 md:w-80 aspect-[3/4] rounded-2xl object-cover shadow-2xl"
+              loading="lazy"
             />
             <div className="absolute -bottom-4 -right-4 w-72 md:w-80 aspect-[3/4] rounded-2xl bg-primary/20 -z-10" />
           </div>
