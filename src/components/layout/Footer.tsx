@@ -1,8 +1,8 @@
 import { Link } from "react-router-dom";
 import { MapPin, Phone, Mail, Clock } from "lucide-react";
 
-const Footer = () => (
-  <footer className="bg-background border-t border-border">
+const Footer = () =>
+<footer className="bg-background border-t border-border">
     <div className="max-w-7xl mx-auto px-4 md:px-8 py-16">
       <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-10">
         <div className="lg:col-span-1">
@@ -61,7 +61,7 @@ const Footer = () => (
             </li>
             <li className="flex items-center gap-2.5">
               <Clock className="w-4 h-4 shrink-0 text-primary/50" />
-              <span>Pon–Pt: 8:00–18:00</span>
+              <span>Pon–Pt: 8:00–22:00</span>
             </li>
           </ul>
         </div>
@@ -75,7 +75,7 @@ const Footer = () => (
         </div>
       </div>
     </div>
-  </footer>
-);
+  </footer>;
+
 
 export default Footer;
