@@ -25,6 +25,8 @@ const EbookPajaczki = lazy(() => import("@/pages/EbookPajaczki"));
 const ProktologFAQ = lazy(() => import("@/pages/ProktologFAQ"));
 const PolitykaPrywatnosci = lazy(() => import("@/pages/PolitykaPrywatnosci"));
 const Regulamin = lazy(() => import("@/pages/Regulamin"));
+const Blog = lazy(() => import("@/pages/Blog"));
+const BlogPost = lazy(() => import("@/pages/BlogPost"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 
 const queryClient = new QueryClient();
