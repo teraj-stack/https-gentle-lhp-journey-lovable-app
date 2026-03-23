@@ -27,6 +27,9 @@ const PolitykaPrywatnosci = lazy(() => import("@/pages/PolitykaPrywatnosci"));
 const Regulamin = lazy(() => import("@/pages/Regulamin"));
 const Blog = lazy(() => import("@/pages/Blog"));
 const BlogPost = lazy(() => import("@/pages/BlogPost"));
+const AdminLogin = lazy(() => import("@/pages/AdminLogin"));
+const AdminDashboard = lazy(() => import("@/pages/AdminDashboard"));
+const AdminPostEditor = lazy(() => import("@/pages/AdminPostEditor"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 
 const queryClient = new QueryClient();
