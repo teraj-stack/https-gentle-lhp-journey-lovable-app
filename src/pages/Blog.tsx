@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Calendar, ArrowRight } from "lucide-react";
-import { SeoHead } from "@/components/shared/SeoHead";
+import SeoHead from "@/components/shared/SeoHead";
 
 const Blog = () => {
   const { data: posts, isLoading } = useQuery({
