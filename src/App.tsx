@@ -23,6 +23,8 @@ const Pajaczki = lazy(() => import("@/pages/Pajaczki"));
 const Kontakt = lazy(() => import("@/pages/Kontakt"));
 const EbookPajaczki = lazy(() => import("@/pages/EbookPajaczki"));
 const ProktologFAQ = lazy(() => import("@/pages/ProktologFAQ"));
+const PolitykaPrywatnosci = lazy(() => import("@/pages/PolitykaPrywatnosci"));
+const Regulamin = lazy(() => import("@/pages/Regulamin"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 
 const queryClient = new QueryClient();
@@ -54,6 +56,8 @@ const App = () => (
               <Route path="/dla-pacjenta/ebook-pajaczki" element={<EbookPajaczki />} />
               <Route path="/dla-pacjenta/proktolog-faq" element={<ProktologFAQ />} />
               <Route path="/kontakt" element={<Kontakt />} />
+              <Route path="/polityka-prywatnosci" element={<PolitykaPrywatnosci />} />
+              <Route path="/regulamin" element={<Regulamin />} />
             </Route>
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
