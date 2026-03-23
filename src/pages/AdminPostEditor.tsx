@@ -7,9 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { ArrowLeft, Save } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ArrowLeft, Save, Eye, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import SeoHead from "@/components/shared/SeoHead";
+import MarkdownRenderer from "@/components/shared/MarkdownRenderer";
 
 const AdminPostEditor = () => {
   const { id } = useParams<{ id: string }>();
@@ -150,8 +152,25 @@ const AdminPostEditor = () => {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="content">Treść (Markdown)</Label>
-            <Textarea id="content" value={content} onChange={(e) => setContent(e.target.value)} placeholder="## Nagłówek&#10;&#10;Treść artykułu..." rows={20} className="font-mono text-sm" />
+            <Label>Treść (Markdown)</Label>
+            <Tabs defaultValue="edit" className="w-full">
+              <TabsList className="mb-2">
+                <TabsTrigger value="edit"><Pencil className="w-3.5 h-3.5 mr-1.5" />Edycja</TabsTrigger>
+                <TabsTrigger value="preview"><Eye className="w-3.5 h-3.5 mr-1.5" />Podgląd</TabsTrigger>
+              </TabsList>
+              <TabsContent value="edit">
+                <Textarea id="content" value={content} onChange={(e) => setContent(e.target.value)} placeholder="## Nagłówek&#10;&#10;Treść artykułu..." rows={20} className="font-mono text-sm" />
+              </TabsContent>
+              <TabsContent value="preview">
+                <div className="min-h-[420px] rounded-md border border-input bg-background px-4 py-3 overflow-y-auto">
+                  {content ? (
+                    <MarkdownRenderer content={content} />
+                  ) : (
+                    <p className="text-muted-foreground italic">Wpisz treść, aby zobaczyć podgląd...</p>
+                  )}
+                </div>
+              </TabsContent>
+            </Tabs>
           </div>
 
           <div className="flex items-center gap-3">
