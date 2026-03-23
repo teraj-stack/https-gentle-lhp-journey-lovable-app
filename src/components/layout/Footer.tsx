@@ -38,6 +38,7 @@ const Footer = () =>
           <ul className="space-y-2.5 text-sm text-muted-foreground">
             <li><Link to="/leczenie/evlt" className="hover:text-primary transition-colors">Żylaki – EVLT</Link></li>
             <li><Link to="/leczenie/skleroterapia" className="hover:text-primary transition-colors">Skleroterapia</Link></li>
+            <li><Link to="/leczenie/mikroflebektomia" className="hover:text-primary transition-colors">Mikroflebektomia</Link></li>
             <li><Link to="/leczenie/clacs" className="hover:text-primary transition-colors">Pajączki – CLaCS</Link></li>
           </ul>
         </div>
