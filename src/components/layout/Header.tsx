@@ -126,7 +126,9 @@ const Header = () => {
               onMouseEnter={() => setMegaOpen("flebo")}
               onMouseLeave={() => setMegaOpen(null)}
             >
-              <button className="flex items-center gap-1 px-4 py-2 text-sm font-medium text-foreground/80 hover:text-primary transition-colors rounded-lg hover:bg-accent/50">
+              <button className={`flex items-center gap-1 px-4 py-2 text-sm font-medium transition-colors rounded-lg hover:bg-accent/50 ${
+                isSectionActive(flebologiaItems) ? "text-primary bg-accent/50" : "text-foreground/80 hover:text-primary"
+              }`}>
                 Flebologia
                 <ChevronDown className={`w-3.5 h-3.5 transition-transform ${megaOpen === "flebo" ? "rotate-180" : ""}`} />
               </button>
