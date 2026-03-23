@@ -18,6 +18,7 @@ const flebologiaItems = [
   { label: "Żylaki – EVLT", href: "/leczenie/evlt", desc: "Ablacja wewnątrzżylna laserem" },
   { label: "Skleroterapia żylaków", href: "/leczenie/skleroterapia", desc: "Zamykanie żylakowatych naczyń" },
   { label: "Pajączki – CLaCS", href: "/leczenie/clacs", desc: "Crio Laser and Crio Sclerotherapy" },
+  { label: "Mikroflebektomia", href: "/leczenie/mikroflebektomia", desc: "Usuwanie żylaków bez skalpela" },
 ];
 
 const dlaPacjentaItems = [
