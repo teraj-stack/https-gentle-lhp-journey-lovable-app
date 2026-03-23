@@ -14,8 +14,10 @@ const CTASection = () => (
     <p className="text-muted-foreground leading-relaxed mb-6">
       Napisz do nas dyskretną wiadomość. Nie oceniamy, delikatnie badamy i w pełni rozumiemy Twój problem. Jesteśmy tu, by pomóc, a nie oceniać.
     </p>
-    <Button variant="hero" size="lg" className="mb-4 px-10 py-6">
-      Wyślij dyskretną wiadomość
+    <Button variant="hero" size="lg" className="mb-4 px-10 py-6" asChild>
+      <a href="https://www.znanylekarz.pl/jan-bujok-2/chirurg-flebolog-proktolog/warszawa" target="_blank" rel="noopener noreferrer">
+        Wyślij dyskretną wiadomość
+      </a>
     </Button>
     <p className="text-muted-foreground text-sm">📱 Zapisz ten ekran w galerii telefonu</p>
   </motion.section>
