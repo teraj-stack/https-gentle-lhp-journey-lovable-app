@@ -31,6 +31,10 @@ const Header = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [megaOpen, setMegaOpen] = useState<string | null>(null);
   const location = useLocation();
+  const pathname = location.pathname;
+
+  const isActive = (href: string) => pathname === href;
+  const isSectionActive = (items: { href: string }[]) => items.some((item) => pathname === item.href);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -67,7 +71,9 @@ const Header = () => {
           <nav className="hidden lg:flex items-center gap-1">
             <Link
               to="/o-nas"
-              className="px-4 py-2 text-sm font-medium text-foreground/80 hover:text-primary transition-colors rounded-lg hover:bg-accent/50"
+              className={`px-4 py-2 text-sm font-medium transition-colors rounded-lg hover:bg-accent/50 ${
+                isActive("/o-nas") ? "text-primary bg-accent/50" : "text-foreground/80 hover:text-primary"
+              }`}
             >
               O nas
             </Link>
@@ -78,7 +84,9 @@ const Header = () => {
               onMouseEnter={() => setMegaOpen("prokto")}
               onMouseLeave={() => setMegaOpen(null)}
             >
-              <button className="flex items-center gap-1 px-4 py-2 text-sm font-medium text-foreground/80 hover:text-primary transition-colors rounded-lg hover:bg-accent/50">
+              <button className={`flex items-center gap-1 px-4 py-2 text-sm font-medium transition-colors rounded-lg hover:bg-accent/50 ${
+                isSectionActive(proktologiaItems) ? "text-primary bg-accent/50" : "text-foreground/80 hover:text-primary"
+              }`}>
                 Proktologia
                 <ChevronDown className={`w-3.5 h-3.5 transition-transform ${megaOpen === "prokto" ? "rotate-180" : ""}`} />
               </button>
@@ -95,9 +103,13 @@ const Header = () => {
                       <Link
                         key={item.href}
                         to={item.href}
-                        className="block px-4 py-3 rounded-lg hover:bg-accent/50 transition-colors group"
+                        className={`block px-4 py-3 rounded-lg hover:bg-accent/50 transition-colors group ${
+                          isActive(item.href) ? "bg-accent/50" : ""
+                        }`}
                       >
-                        <div className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">
+                        <div className={`text-sm font-medium transition-colors ${
+                          isActive(item.href) ? "text-primary" : "text-foreground group-hover:text-primary"
+                        }`}>
                           {item.label}
                         </div>
                         <div className="text-xs text-muted-foreground mt-0.5">{item.desc}</div>
@@ -114,7 +126,9 @@ const Header = () => {
               onMouseEnter={() => setMegaOpen("flebo")}
               onMouseLeave={() => setMegaOpen(null)}
             >
-              <button className="flex items-center gap-1 px-4 py-2 text-sm font-medium text-foreground/80 hover:text-primary transition-colors rounded-lg hover:bg-accent/50">
+              <button className={`flex items-center gap-1 px-4 py-2 text-sm font-medium transition-colors rounded-lg hover:bg-accent/50 ${
+                isSectionActive(flebologiaItems) ? "text-primary bg-accent/50" : "text-foreground/80 hover:text-primary"
+              }`}>
                 Flebologia
                 <ChevronDown className={`w-3.5 h-3.5 transition-transform ${megaOpen === "flebo" ? "rotate-180" : ""}`} />
               </button>
@@ -131,9 +145,13 @@ const Header = () => {
                       <Link
                         key={item.href}
                         to={item.href}
-                        className="block px-4 py-3 rounded-lg hover:bg-accent/50 transition-colors group"
+                        className={`block px-4 py-3 rounded-lg hover:bg-accent/50 transition-colors group ${
+                          isActive(item.href) ? "bg-accent/50" : ""
+                        }`}
                       >
-                        <div className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">
+                        <div className={`text-sm font-medium transition-colors ${
+                          isActive(item.href) ? "text-primary" : "text-foreground group-hover:text-primary"
+                        }`}>
                           {item.label}
                         </div>
                         <div className="text-xs text-muted-foreground mt-0.5">{item.desc}</div>
@@ -150,7 +168,9 @@ const Header = () => {
               onMouseEnter={() => setMegaOpen("pacjent")}
               onMouseLeave={() => setMegaOpen(null)}
             >
-              <button className="flex items-center gap-1 px-4 py-2 text-sm font-medium text-foreground/80 hover:text-primary transition-colors rounded-lg hover:bg-accent/50">
+              <button className={`flex items-center gap-1 px-4 py-2 text-sm font-medium transition-colors rounded-lg hover:bg-accent/50 ${
+                isSectionActive(dlaPacjentaItems) ? "text-primary bg-accent/50" : "text-foreground/80 hover:text-primary"
+              }`}>
                 Dla Pacjenta
                 <ChevronDown className={`w-3.5 h-3.5 transition-transform ${megaOpen === "pacjent" ? "rotate-180" : ""}`} />
               </button>
@@ -167,9 +187,13 @@ const Header = () => {
                       <Link
                         key={item.href}
                         to={item.href}
-                        className="block px-4 py-3 rounded-lg hover:bg-accent/50 transition-colors group"
+                        className={`block px-4 py-3 rounded-lg hover:bg-accent/50 transition-colors group ${
+                          isActive(item.href) ? "bg-accent/50" : ""
+                        }`}
                       >
-                        <div className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">
+                        <div className={`text-sm font-medium transition-colors ${
+                          isActive(item.href) ? "text-primary" : "text-foreground group-hover:text-primary"
+                        }`}>
                           {item.label}
                         </div>
                         <div className="text-xs text-muted-foreground mt-0.5">{item.desc}</div>
@@ -182,14 +206,18 @@ const Header = () => {
 
             <Link
               to="/wspolpraca"
-              className="px-4 py-2 text-sm font-medium text-foreground/80 hover:text-primary transition-colors rounded-lg hover:bg-accent/50"
+              className={`px-4 py-2 text-sm font-medium transition-colors rounded-lg hover:bg-accent/50 ${
+                isActive("/wspolpraca") ? "text-primary bg-accent/50" : "text-foreground/80 hover:text-primary"
+              }`}
             >
               Współpraca
             </Link>
 
             <Link
               to="/kontakt"
-              className="px-4 py-2 text-sm font-medium text-foreground/80 hover:text-primary transition-colors rounded-lg hover:bg-accent/50"
+              className={`px-4 py-2 text-sm font-medium transition-colors rounded-lg hover:bg-accent/50 ${
+                isActive("/kontakt") ? "text-primary bg-accent/50" : "text-foreground/80 hover:text-primary"
+              }`}
             >
               Kontakt
             </Link>
@@ -221,27 +249,27 @@ const Header = () => {
           >
             <div className="px-4 py-4 space-y-1">
               {[
-                <Link key="o-nas" to="/o-nas" className="block px-4 py-3 rounded-lg text-sm font-medium text-foreground hover:bg-accent/50">O nas</Link>,
+                <Link key="o-nas" to="/o-nas" className={`block px-4 py-3 rounded-lg text-sm font-medium hover:bg-accent/50 ${isActive("/o-nas") ? "text-primary bg-accent/50" : "text-foreground"}`}>O nas</Link>,
                 <div key="prokto-label" className="px-4 py-2 text-xs font-semibold text-primary uppercase tracking-wider">Proktologia</div>,
                 ...proktologiaItems.map((item) => (
-                  <Link key={item.href} to={item.href} className="block px-6 py-2.5 rounded-lg text-sm text-foreground/80 hover:bg-accent/50">
+                  <Link key={item.href} to={item.href} className={`block px-6 py-2.5 rounded-lg text-sm hover:bg-accent/50 ${isActive(item.href) ? "text-primary bg-accent/50 font-medium" : "text-foreground/80"}`}>
                     {item.label}
                   </Link>
                 )),
                 <div key="flebo-label" className="px-4 py-2 text-xs font-semibold text-primary uppercase tracking-wider mt-2">Flebologia</div>,
                 ...flebologiaItems.map((item) => (
-                  <Link key={item.href} to={item.href} className="block px-6 py-2.5 rounded-lg text-sm text-foreground/80 hover:bg-accent/50">
+                  <Link key={item.href} to={item.href} className={`block px-6 py-2.5 rounded-lg text-sm hover:bg-accent/50 ${isActive(item.href) ? "text-primary bg-accent/50 font-medium" : "text-foreground/80"}`}>
                     {item.label}
                   </Link>
                 )),
                 <div key="pacjent-label" className="px-4 py-2 text-xs font-semibold text-primary uppercase tracking-wider mt-2">Dla Pacjenta</div>,
                 ...dlaPacjentaItems.map((item) => (
-                  <Link key={item.href} to={item.href} className="block px-6 py-2.5 rounded-lg text-sm text-foreground/80 hover:bg-accent/50">
+                  <Link key={item.href} to={item.href} className={`block px-6 py-2.5 rounded-lg text-sm hover:bg-accent/50 ${isActive(item.href) ? "text-primary bg-accent/50 font-medium" : "text-foreground/80"}`}>
                     {item.label}
                   </Link>
                 )),
-                <Link key="wspolpraca" to="/wspolpraca" className="block px-4 py-3 rounded-lg text-sm font-medium text-foreground hover:bg-accent/50">Współpraca</Link>,
-                <Link key="kontakt" to="/kontakt" className="block px-4 py-3 rounded-lg text-sm font-medium text-foreground hover:bg-accent/50">Kontakt</Link>,
+                <Link key="wspolpraca" to="/wspolpraca" className={`block px-4 py-3 rounded-lg text-sm font-medium hover:bg-accent/50 ${isActive("/wspolpraca") ? "text-primary bg-accent/50" : "text-foreground"}`}>Współpraca</Link>,
+                <Link key="kontakt" to="/kontakt" className={`block px-4 py-3 rounded-lg text-sm font-medium hover:bg-accent/50 ${isActive("/kontakt") ? "text-primary bg-accent/50" : "text-foreground"}`}>Kontakt</Link>,
               ].map((child, i) => (
                 <motion.div
                   key={i}
