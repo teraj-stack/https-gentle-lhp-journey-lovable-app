@@ -31,7 +31,7 @@ const advantages = [
 ];
 
 const steps = [
-  { emoji: "🔍", title: "Mapowanie żył (USG Doppler)", desc: "Nigdy nie działamy w ciemno. Tworzymy dokładną „mapę drogową" Twoich nóg, lokalizując ukryte źródło problemu i nieszczelne zastawki milimetr po milimetrze." },
+  { emoji: "🔍", title: "Mapowanie żył (USG Doppler)", desc: "Nigdy nie działamy w ciemno. Tworzymy dokładną mapę drogową Twoich nóg, lokalizując ukryte źródło problemu i nieszczelne zastawki milimetr po milimetrze." },
   { emoji: "💉", title: "Znieczulenie miejscowe", desc: "Okolica żylaka jest całkowicie znieczulana. Jesteś z nami w kontakcie, czujesz się komfortowo i unikasz obciążającej narkozy." },
   { emoji: "🩶", title: "Mikronakłucia i usunięcie", desc: "Przez otworki wielkości 1–2 mm (ślad jak po pobraniu krwi), lekarz usuwa wypukły, chory żylak przy użyciu delikatnych mikrohaczyków." },
   { emoji: "🧴", title: "Medyczna pianka (skleroterapia)", desc: "Dopełnienie efektu. Do mniejszych odgałęzień podajemy gęstą piankę, która szczelnie wypełnia i trwale skleja zepsute naczynia od środka." },
