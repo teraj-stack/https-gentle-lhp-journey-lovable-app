@@ -96,7 +96,7 @@ const Footer = () =>
                 </li>
                 <li className="flex items-center gap-2">
                   <Mail className="w-3.5 h-3.5 shrink-0 text-primary/50" />
-                  <span>Ilona.</span>
+                  <span>Ilona.Moscicka@bmclinic.pl</span>
                 </li>
               </ul>
             </div>
