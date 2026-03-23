@@ -66,6 +66,9 @@ const App = () => (
               <Route path="/polityka-prywatnosci" element={<PolitykaPrywatnosci />} />
               <Route path="/regulamin" element={<Regulamin />} />
             </Route>
+            <Route path="/admin/login" element={<AdminLogin />} />
+            <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/admin/post/:id" element={<AdminPostEditor />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
