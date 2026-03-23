@@ -40,13 +40,13 @@ const consultations = [
 ];
 
 const procedures = [
+  { name: "Żylaki – EVLT", price: "4 500 zł", href: "/leczenie/evlt" },
+  { name: "Mikroflebektomia piankowa", price: "3 500 zł", href: "/leczenie/mikroflebektomia" },
+  { name: "Skleroterapia", price: "od 1 000 zł", href: "/leczenie/skleroterapia" },
+  { name: "Pajączki – CLaCS", price: "1 500 zł", href: "/leczenie/clacs" },
   { name: "Leczenie hemoroidów – LHP", price: "6 000 zł", href: "/leczenie/lhp" },
   { name: "Leczenie przetok – FiLaC", price: "od 6 000 zł", href: "/leczenie/filac" },
   { name: "Torbiel pilonidalna – SiLaC", price: "8 000 zł", href: "/leczenie/silac" },
-  { name: "Żylaki – EVLT", price: "4 500 zł", href: "/leczenie/evlt" },
-  { name: "Skleroterapia", price: "od 1 000 zł", href: "/leczenie/skleroterapia" },
-  { name: "Pajączki – CLaCS", price: "1 500 zł", href: "/leczenie/clacs" },
-  { name: "Mikroflebektomia piankowa", price: "3 500 zł", href: "/leczenie/mikroflebektomia" },
 ];
 
 const Cennik = () => (
