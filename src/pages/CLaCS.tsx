@@ -61,6 +61,17 @@ const afterCare = [
 
 const CLaCS = () => (
   <div className="min-h-screen bg-background pt-20">
+    <MedicalProcedureSchema
+      name="CLaCS – Crio Laser and Crio Sclerotherapy"
+      description="Potrójne działanie: kriochłodzenie, laser przezskórny i mikroskleroterapia do usuwania pajączków i teleangiektazji."
+      bodyLocation="Kończyny dolne — naczynia powierzchowne"
+      procedureType="Noninvasive"
+      preparation="Konsultacja flebologiczna, ocena zmian naczyniowych. Unikać opalania 2 tygodnie przed zabiegiem."
+      followup="Natychmiastowy powrót do aktywności. Pończocha uciskowa wg zaleceń, filtr SPF 50+ przez 4–6 tygodni."
+      howPerformed="Kriochłodzenie obkurcza naczynie, laser przezskórny zamyka je od zewnątrz, mikroskleroterapia dopełnia zamknięcie."
+      risks="Przejściowe zaczerwienienie, drobne siniaki, przebarwienia (ustępują samoistnie)."
+      url="/leczenie/clacs"
+    />
     {/* Hero */}
     <ParallaxSection className="gradient-bg py-16 md:py-24 px-4">
       <motion.div

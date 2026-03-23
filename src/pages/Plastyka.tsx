@@ -5,6 +5,7 @@ import Breadcrumbs from "@/components/layout/Breadcrumbs";
 import { ArrowRight, CheckCircle2, Clock, Shield, Sparkles, Heart } from "lucide-react";
 import ParallaxSection from "@/components/ui/parallax-section";
 import ProcedureSummaryTable from "@/components/shared/ProcedureSummaryTable";
+import MedicalProcedureSchema from "@/components/shared/MedicalProcedureSchema";
 
 const plastykaSummary = [
   { label: "Przygotowanie", value: "Konsultacja proktologiczna, ocena zmian skórnych" },

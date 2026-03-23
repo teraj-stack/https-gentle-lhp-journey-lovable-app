@@ -35,7 +35,18 @@ const warnings = [
 
 
 const EVLT = () => (
-  <div className="min-h-screen bg-background pt-20">
+    <div className="min-h-screen bg-background pt-20">
+      <MedicalProcedureSchema
+        name="EVLT – Endowenozna ablacja laserowa żylaków"
+        description="Zamknięcie niewydolnych żył od wewnątrz za pomocą energii lasera, pod kontrolą USG. Alternatywa dla strippingu."
+        bodyLocation="Żyły kończyn dolnych"
+        procedureType="Percutaneous"
+        preparation="Konsultacja flebologiczna oraz USG Doppler w celu mapowania niewydolnych żył"
+        followup="Powrót do domu po zabiegu. Pończocha uciskowa przez ok. 2 tygodnie, codzienne spacery."
+        howPerformed="Pod kontrolą USG do niewydolnej żyły wprowadza się cienki światłowód. Energia lasera zamyka naczynie od wewnątrz."
+        risks="Przejściowy ból, zasinienia, uczucie ciągnięcia wzdłuż żyły. Rzadko: zapalenie żył, przebarwienia."
+        url="/leczenie/evlt"
+      />
     {/* Hero */}
     <ParallaxSection className="gradient-bg py-16 md:py-24 px-4">
       <motion.div

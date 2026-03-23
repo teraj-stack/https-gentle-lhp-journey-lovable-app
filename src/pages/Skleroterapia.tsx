@@ -5,6 +5,7 @@ import Breadcrumbs from "@/components/layout/Breadcrumbs";
 import { Button } from "@/components/ui/button";
 import SkleroterapiaFAQ from "@/components/skleroterapia/SkleroterapiaFAQ";
 import ProcedureSummaryTable from "@/components/shared/ProcedureSummaryTable";
+import MedicalProcedureSchema from "@/components/shared/MedicalProcedureSchema";
 
 const skleroterapiaSummary = [
   { label: "Przygotowanie", value: "USG Doppler żył" },
