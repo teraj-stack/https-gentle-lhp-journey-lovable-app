@@ -57,30 +57,42 @@ const Blog = () => {
                   key={post.id}
                   className="group border-b border-border pb-10 last:border-0"
                 >
-                  <Link to={`/blog/${post.slug}`} className="block">
-                    <h2 className="text-xl md:text-2xl font-semibold font-serif text-foreground group-hover:text-primary transition-colors mb-2">
-                      {post.title}
-                    </h2>
-                    {post.published_at && (
-                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-3">
-                        <Calendar className="w-3.5 h-3.5" />
-                        <time dateTime={post.published_at}>
-                          {new Date(post.published_at).toLocaleDateString("pl-PL", {
-                            year: "numeric",
-                            month: "long",
-                            day: "numeric",
-                          })}
-                        </time>
+                  <Link to={`/blog/${post.slug}`} className="block md:flex md:gap-6">
+                    {post.cover_image_url && (
+                      <div className="mb-4 md:mb-0 md:flex-shrink-0 md:w-48 lg:w-56">
+                        <img
+                          src={post.cover_image_url}
+                          alt={post.title}
+                          className="w-full h-40 md:h-32 lg:h-36 object-cover rounded-lg"
+                          loading="lazy"
+                        />
                       </div>
                     )}
-                    {post.excerpt && (
-                      <p className="text-muted-foreground leading-relaxed mb-3">
-                        {post.excerpt}
-                      </p>
-                    )}
-                    <span className="inline-flex items-center gap-1 text-sm font-medium text-primary group-hover:gap-2 transition-all">
-                      Czytaj więcej <ArrowRight className="w-4 h-4" />
-                    </span>
+                    <div className="flex-1 min-w-0">
+                      <h2 className="text-xl md:text-2xl font-semibold font-serif text-foreground group-hover:text-primary transition-colors mb-2">
+                        {post.title}
+                      </h2>
+                      {post.published_at && (
+                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-3">
+                          <Calendar className="w-3.5 h-3.5" />
+                          <time dateTime={post.published_at}>
+                            {new Date(post.published_at).toLocaleDateString("pl-PL", {
+                              year: "numeric",
+                              month: "long",
+                              day: "numeric",
+                            })}
+                          </time>
+                        </div>
+                      )}
+                      {post.excerpt && (
+                        <p className="text-muted-foreground leading-relaxed mb-3">
+                          {post.excerpt}
+                        </p>
+                      )}
+                      <span className="inline-flex items-center gap-1 text-sm font-medium text-primary group-hover:gap-2 transition-all">
+                        Czytaj więcej <ArrowRight className="w-4 h-4" />
+                      </span>
+                    </div>
                   </Link>
                 </article>
               ))}
