@@ -10,6 +10,14 @@ const Footer = () =>
           <p className="text-sm mt-3 leading-relaxed text-muted-foreground">
             Centrum Medycyny Laserowej. Skuteczność, empatia, zaufanie.
           </p>
+          <div className="flex gap-3 mt-4">
+            <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="text-muted-foreground hover:text-primary transition-colors">
+              <Facebook className="w-5 h-5" />
+            </a>
+            <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="text-muted-foreground hover:text-primary transition-colors">
+              <Instagram className="w-5 h-5" />
+            </a>
+          </div>
           <div className="premium-divider !mx-0 mt-4" />
         </div>
 
