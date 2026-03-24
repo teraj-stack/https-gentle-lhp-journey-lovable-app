@@ -4,7 +4,9 @@ const chartComponents: Record<string, React.LazyExoticComponent<React.ComponentT
   effectiveness: lazy(() => import("@/components/blog/EffectivenessChart")),
 };
 const formatInline = (text: string) =>
-  text.replace(/\*\*(.+?)\*\*/g, "<strong class='text-foreground font-semibold'>$1</strong>");
+  text
+    .replace(/\*\*(.+?)\*\*/g, "<strong class='text-foreground font-semibold'>$1</strong>")
+    .replace(/\*(.+?)\*/g, "<em>$1</em>");
 
 const renderTable = (headerLine: string, rows: string[], key: number): React.ReactNode => {
   const parseRow = (line: string) =>
@@ -75,13 +77,23 @@ const renderMarkdown = (content: string): React.ReactNode[] => {
       continue;
     }
 
-    if (line.startsWith("## ")) {
+    if (line.startsWith("### ")) {
+      flushList();
+      elements.push(
+        <h3 key={i} className="text-lg font-semibold font-serif text-foreground mt-6 mb-2">
+          {line.slice(4)}
+        </h3>
+      );
+    } else if (line.startsWith("## ")) {
       flushList();
       elements.push(
         <h2 key={i} className="text-xl font-semibold font-serif text-foreground mt-8 mb-3">
           {line.slice(3)}
         </h2>
       );
+    } else if (line.trim() === "---") {
+      flushList();
+      elements.push(<hr key={i} className="border-border my-8" />);
     } else if (line.startsWith("- ")) {
       listItems.push(line.slice(2));
     } else if (line.match(/^\d+\.\s/)) {
