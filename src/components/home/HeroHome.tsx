@@ -49,7 +49,7 @@ const HeroHome = () => {
         <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-foreground leading-[1.1] mb-10">
           Jeden standard.
         </h1>
-        <p className="text-lg md:text-xl text-foreground/60 leading-relaxed max-w-2xl mb-12" style={{ textShadow: "none" }}>
+        <p className="text-lg md:text-xl text-foreground/60 leading-relaxed max-w-2xl mb-12 font-serif italic" style={{ textShadow: "none" }}>
           Proktologia laserowa i flebologia — pod jedną marką,
           w jednym standardzie premium.
         </p>
