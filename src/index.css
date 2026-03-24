@@ -74,9 +74,9 @@
     font-family: 'Inter', sans-serif;
   }
   h1, h2, h3 {
-    font-family: 'Outfit', sans-serif;
-    font-weight: 200;
-    letter-spacing: 0.05em;
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 400;
+    letter-spacing: 0.02em;
   }
 }
 
