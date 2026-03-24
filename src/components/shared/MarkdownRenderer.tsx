@@ -4,7 +4,9 @@ const chartComponents: Record<string, React.LazyExoticComponent<React.ComponentT
   effectiveness: lazy(() => import("@/components/blog/EffectivenessChart")),
 };
 const formatInline = (text: string) =>
-  text.replace(/\*\*(.+?)\*\*/g, "<strong class='text-foreground font-semibold'>$1</strong>");
+  text
+    .replace(/\*\*(.+?)\*\*/g, "<strong class='text-foreground font-semibold'>$1</strong>")
+    .replace(/\*(.+?)\*/g, "<em>$1</em>");
 
 const renderTable = (headerLine: string, rows: string[], key: number): React.ReactNode => {
   const parseRow = (line: string) =>
