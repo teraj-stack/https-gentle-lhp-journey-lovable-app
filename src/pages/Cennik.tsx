@@ -70,10 +70,11 @@ const Cennik = () => (
         <motion.p
           {...fadeUp}
           transition={{ duration: 0.6, delay: 0.1 }}
-          className="text-lg text-muted-foreground max-w-2xl mx-auto"
+          className="text-lg text-muted-foreground max-w-3xl mx-auto whitespace-pre-line"
         >
-          Przejrzyste ceny bez ukrytych kosztów. Każda cena zabiegu obejmuje
-          procedurę oraz wszystkie wizyty kontrolne do pełnego wygojenia.
+          Przejrzyste ceny bez ukrytych kosztów. Każda cena zabiegu obejmuje procedurę oraz wszystkie wizyty kontrolne do pełnego wygojenia.
+
+          Przed konsultacją gorąco zachęcam do zapoznania się z treciami i opisami na stronie, to umożliwi Nam. Przygotowałem je dla Ciebie. Dzięki temu na samej konsultacji będziemy mogli się skupić na Twoich oczekiwaniach, obawach i zaplanowaniu dogodnego terminu. Edukacja najskuteczniej niwelują strach i dolegliwości bólowe, a negatywne emocje związane z badaniem zmniejszają się o ponad połowę. Zostań partnerem w rozwiązywaniu problemów zdrowotnych. Jestem po to, żeby pomóc, nie oceniać. 3 filary nowoczesnego podejjcia to "Zaufanie, Skutecznoć i i bezpieczeństwo.
         </motion.p>
       </div>
     </section>
