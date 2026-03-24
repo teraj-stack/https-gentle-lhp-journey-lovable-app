@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { motion } from "framer-motion";
 import Breadcrumbs from "@/components/layout/Breadcrumbs";
 import SeoHead from "@/components/shared/SeoHead";
@@ -79,7 +80,57 @@ const warnSymptoms = [
   "Silne pieczenie nieustępujące po lekach i chłodzeniu",
 ];
 
-const PielegnacjaNog = () => (
+const PielegnacjaNog = () => {
+  useEffect(() => {
+    const schema = {
+      "@context": "https://schema.org",
+      "@type": "MedicalWebPage",
+      name: "Pielęgnacja nóg po zabiegu laserowym Nd:YAG",
+      description: "Instrukcja prawidłowej pielęgnacji nóg po zabiegu laserem Nd:YAG. Oś czasu aplikacji kremu z witaminą K i arniką, zasady ochrony UV oraz objawy wymagające kontaktu z lekarzem.",
+      url: "https://cml.pl/dla-pacjenta/pielegnacja-nog",
+      lastReviewed: "2025-01-01",
+      medicalAudience: {
+        "@type": "PatientAudience",
+        audienceType: "Patient",
+      },
+      mainContentOfPage: {
+        "@type": "WebPageElement",
+        cssSelector: ".glass-card",
+      },
+      specialty: {
+        "@type": "MedicalSpecialty",
+        name: "Dermatology",
+      },
+      about: {
+        "@type": "MedicalProcedure",
+        name: "Laser Nd:YAG do naczyniaków",
+        procedureType: "https://schema.org/NoninvasiveProcedure",
+        followup: "Aplikacja kremu z witaminą K i arniką, ochrona SPF 50, unikanie gorąca i UV przez min. 2–4 tygodnie.",
+      },
+      author: {
+        "@type": "Physician",
+        name: "lek. med. Kamil Bujok",
+        medicalSpecialty: "Phlebology",
+      },
+      publisher: {
+        "@type": "MedicalClinic",
+        name: "CML – Centrum Medycyny Laserowej",
+        url: "https://cml.pl",
+      },
+    };
+
+    const script = document.createElement("script");
+    script.type = "application/ld+json";
+    script.setAttribute("data-medical-webpage", "true");
+    script.textContent = JSON.stringify(schema);
+    document.head.appendChild(script);
+
+    return () => {
+      document.head.removeChild(script);
+    };
+  }, []);
+
+  return (
   <div className="min-h-screen bg-background pt-20">
     <SeoHead
       title="Pielęgnacja nóg po zabiegu laserowym – instrukcja"
@@ -274,6 +325,7 @@ const PielegnacjaNog = () => (
       </motion.section>
     </div>
   </div>
-);
+  );
+};
 
 export default PielegnacjaNog;
