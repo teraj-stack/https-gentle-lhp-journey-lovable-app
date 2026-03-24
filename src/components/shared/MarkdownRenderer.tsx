@@ -2,6 +2,7 @@ import React, { lazy, Suspense } from "react";
 
 const chartComponents: Record<string, React.LazyExoticComponent<React.ComponentType>> = {
   effectiveness: lazy(() => import("@/components/blog/EffectivenessChart")),
+  hemoroid: lazy(() => import("@/components/blog/HemoroidComparisonChart")),
 };
 const formatInline = (text: string) =>
   text

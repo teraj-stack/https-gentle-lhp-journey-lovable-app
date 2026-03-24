@@ -1,0 +1,67 @@
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
+
+const data = [
+  { name: "Ból po zabiegu\n(skala 1–10)", laser: 2.5, klasyczna: 8.5 },
+  { name: "Powrót do pracy\n(dni)", laser: 1.5, klasyczna: 21 },
+  { name: "Ryzyko\npowikłań (%)", laser: 3, klasyczna: 18 },
+  { name: "Czas zabiegu\n(min)", laser: 20, klasyczna: 60 },
+];
+
+const COLORS = {
+  laser: "hsl(185, 55%, 42%)",
+  klasyczna: "hsl(0, 45%, 55%)",
+};
+
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="rounded-xl border border-border bg-card p-3 shadow-lg text-sm">
+      <p className="font-semibold text-foreground mb-1.5 whitespace-pre-line">{label}</p>
+      {payload.map((entry: any) => (
+        <p key={entry.name} className="text-muted-foreground">
+          <span className="inline-block w-2.5 h-2.5 rounded-sm mr-2" style={{ backgroundColor: entry.color }} />
+          {entry.name}: <span className="font-medium text-foreground">{entry.value}</span>
+        </p>
+      ))}
+    </div>
+  );
+};
+
+const HemoroidComparisonChart = () => (
+  <div className="my-8 rounded-2xl border border-border bg-card/50 p-4 md:p-6">
+    <h3 className="text-lg font-bold text-foreground mb-1 text-center">
+      Laser (LHP) vs Chirurgia klasyczna
+    </h3>
+    <p className="text-xs text-muted-foreground text-center mb-6">
+      Porównanie kluczowych parametrów dla pacjenta
+    </p>
+    <div className="w-full h-[300px] md:h-[360px]">
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 20 }} barGap={6}>
+          <CartesianGrid strokeDasharray="3 3" stroke="hsl(210, 12%, 25%)" />
+          <XAxis
+            dataKey="name"
+            tick={{ fontSize: 11, fill: "hsl(210, 8%, 60%)" }}
+            tickLine={false}
+            axisLine={{ stroke: "hsl(210, 12%, 30%)" }}
+            interval={0}
+          />
+          <YAxis
+            tick={{ fontSize: 11, fill: "hsl(210, 8%, 60%)" }}
+            axisLine={{ stroke: "hsl(210, 12%, 30%)" }}
+            tickLine={false}
+          />
+          <Tooltip content={<CustomTooltip />} cursor={{ fill: "hsl(210, 10%, 15%)", opacity: 0.3 }} />
+          <Legend wrapperStyle={{ fontSize: 12, paddingTop: 12 }} iconType="square" />
+          <Bar dataKey="laser" name="Laser (LHP)" fill={COLORS.laser} radius={[4, 4, 0, 0]} />
+          <Bar dataKey="klasyczna" name="Chirurgia klasyczna" fill={COLORS.klasyczna} radius={[4, 4, 0, 0]} />
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+    <p className="text-[10px] text-muted-foreground/60 text-center mt-3 italic">
+      * Dane orientacyjne na podstawie literatury medycznej i doświadczeń klinicznych CML
+    </p>
+  </div>
+);
+
+export default HemoroidComparisonChart;
