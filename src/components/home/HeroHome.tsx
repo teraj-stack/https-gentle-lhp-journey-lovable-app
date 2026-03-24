@@ -49,10 +49,16 @@ const HeroHome = () => {
         <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-foreground leading-[1.1] mb-10">
           Jeden standard.
         </h1>
-        <p className="text-lg md:text-xl text-foreground/60 leading-relaxed max-w-2xl mb-12 font-serif italic" style={{ textShadow: "none" }}>
+        <motion.p
+          initial={{ opacity: 0, y: 20, filter: "blur(4px)" }}
+          animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+          transition={{ duration: 0.9, delay: 0.6, ease: [0.16, 1, 0.3, 1] }}
+          className="text-lg md:text-xl text-foreground/60 leading-relaxed max-w-2xl mb-12 font-serif italic"
+          style={{ textShadow: "none" }}
+        >
           Proktologia laserowa i flebologia — pod jedną marką,
           w jednym standardzie premium.
-        </p>
+        </motion.p>
         <div className="flex flex-col sm:flex-row gap-4">
           <Button variant="hero" size="lg" className="px-8 py-6 text-base" asChild>
             <a href="https://www.znanylekarz.pl/jan-bujok-2/chirurg-flebolog-proktolog/warszawa" target="_blank" rel="noopener noreferrer">Umów Konsultację</a>
