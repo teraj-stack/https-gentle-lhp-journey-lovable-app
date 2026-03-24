@@ -70,7 +70,7 @@ const EVLT = () => (
         </h1>
         <div className="w-16 h-0.5 mx-auto bg-primary-foreground/30 mb-6" />
         <p className="text-primary-foreground/80 text-base md:text-lg leading-relaxed max-w-2xl mx-auto">
-          Bez skalpela, bez narkozy i bez długiej rekonwalescencji. Poznaj medycynę, która pozwala załatwić problem „raz a dobrze".
+          Bez skalpela, bez narkozy i bez długiej rekonwalescencji. Jednak zależy mi na tym, aby pacjent był świadomy, że przewlekła choroba żylna jest chorobą przewlekłą i postępującą. To zmienia perspektywę, ponieważ pozwala zrozumieć dlaczego tak ważne jest okresowe badanie USG Doppler żył.
         </p>
       </motion.div>
     </ParallaxSection>
