@@ -23,7 +23,7 @@ const stagger = (i: number) => ({
 const timelineSteps = [
   {
     time: "Kilka godzin po zabiegu",
-    text: "Pierwsza warstwa kremu łagodzącego — gdy skóra „oddała ciepło".",
+    text: 'Pierwsza warstwa kremu łagodzącego \u2014 gdy skóra "oddała ciepło".',
     tip: "Lekkie pieczenie? Schłodź czystym, chłodnym okładem przed nałożeniem.",
   },
   {
