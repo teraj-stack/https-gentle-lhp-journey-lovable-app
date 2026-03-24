@@ -87,6 +87,17 @@ const renderMarkdown = (content: string): React.ReactNode[] => {
     } else if (line.match(/^\d+\.\s/)) {
       flushList();
       listItems.push(line.replace(/^\d+\.\s/, ""));
+    } else if (line.trim().match(/^\[chart:(\w+)\]$/)) {
+      flushList();
+      const chartId = line.trim().match(/^\[chart:(\w+)\]$/)![1];
+      const ChartComponent = chartComponents[chartId];
+      if (ChartComponent) {
+        elements.push(
+          <Suspense key={`chart-${i}`} fallback={<div className="h-[360px] rounded-2xl bg-muted/20 animate-pulse" />}>
+            <ChartComponent />
+          </Suspense>
+        );
+      }
     } else if (line.trim() === "") {
       flushList();
     } else {
