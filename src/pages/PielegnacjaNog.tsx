@@ -325,6 +325,7 @@ const PielegnacjaNog = () => {
       </motion.section>
     </div>
   </div>
-);
+  );
+};
 
 export default PielegnacjaNog;
