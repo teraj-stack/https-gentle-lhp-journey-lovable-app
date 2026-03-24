@@ -42,7 +42,7 @@ const AboutDoctor = () => (
               Twórca Centrum medycyny laserowej (CML) — inicjatywy rozwijanej w&nbsp;partnerstwie m.in. z&nbsp;Kliniką Ginekologii w&nbsp;Wilanowie oraz placówką Beauty&nbsp;&amp;&nbsp;Mind w&nbsp;Siedlcach. Łączy najnowocześniejsze technologie — laseroterapię, radiofrekwencję, CLaCS — z&nbsp;precyzyjną diagnostyką, osiągając spektakularne efekty lecznicze przy zachowaniu doskonałych rezultatów estetycznych.
             </p>
             <p>
-              Specjalizuje się w małoinwazyjnym leczeniu hemoroidów, szczelin, przetok oraz zaawansowanych problemów żylnych.
+              Specjalizuje się w małoinwazyjnym leczeniu żylaków (również zaawansowanych problemów żylnych), pajączków, naczynek, teleangiectazji, hemoroidów, szczelin i przetok.
             </p>
           </div>
 
