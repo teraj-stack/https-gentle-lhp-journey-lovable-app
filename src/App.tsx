@@ -25,6 +25,7 @@ const Pajaczki = lazy(() => import("@/pages/Pajaczki"));
 const Kontakt = lazy(() => import("@/pages/Kontakt"));
 const EbookPajaczki = lazy(() => import("@/pages/EbookPajaczki"));
 const ProktologFAQ = lazy(() => import("@/pages/ProktologFAQ"));
+const PielegnacjaNog = lazy(() => import("@/pages/PielegnacjaNog"));
 const PolitykaPrywatnosci = lazy(() => import("@/pages/PolitykaPrywatnosci"));
 const Regulamin = lazy(() => import("@/pages/Regulamin"));
 const Cennik = lazy(() => import("@/pages/Cennik"));
