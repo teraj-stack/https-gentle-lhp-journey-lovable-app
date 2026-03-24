@@ -1,5 +1,8 @@
-import React from "react";
+import React, { lazy, Suspense } from "react";
 
+const chartComponents: Record<string, React.LazyExoticComponent<React.ComponentType>> = {
+  effectiveness: lazy(() => import("@/components/blog/EffectivenessChart")),
+};
 const formatInline = (text: string) =>
   text.replace(/\*\*(.+?)\*\*/g, "<strong class='text-foreground font-semibold'>$1</strong>");
 
@@ -84,6 +87,17 @@ const renderMarkdown = (content: string): React.ReactNode[] => {
     } else if (line.match(/^\d+\.\s/)) {
       flushList();
       listItems.push(line.replace(/^\d+\.\s/, ""));
+    } else if (line.trim().match(/^\[chart:(\w+)\]$/)) {
+      flushList();
+      const chartId = line.trim().match(/^\[chart:(\w+)\]$/)![1];
+      const ChartComponent = chartComponents[chartId];
+      if (ChartComponent) {
+        elements.push(
+          <Suspense key={`chart-${i}`} fallback={<div className="h-[360px] rounded-2xl bg-muted/20 animate-pulse" />}>
+            <ChartComponent />
+          </Suspense>
+        );
+      }
     } else if (line.trim() === "") {
       flushList();
     } else {
