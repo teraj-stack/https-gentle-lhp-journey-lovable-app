@@ -1,5 +1,8 @@
-import React from "react";
+import React, { lazy, Suspense } from "react";
 
+const chartComponents: Record<string, React.LazyExoticComponent<React.ComponentType>> = {
+  effectiveness: lazy(() => import("@/components/blog/EffectivenessChart")),
+};
 const formatInline = (text: string) =>
   text.replace(/\*\*(.+?)\*\*/g, "<strong class='text-foreground font-semibold'>$1</strong>");
 
