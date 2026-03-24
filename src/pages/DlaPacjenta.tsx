@@ -64,6 +64,13 @@ const onlineGuides = [
     href: "/dla-pacjenta/ebook-pajaczki",
     icon: "🩺",
   },
+  {
+    title: "Pielęgnacja nóg po zabiegu laserowym",
+    subtitle: "Infografika instruktażowa",
+    desc: "Oś czasu aplikacji kremu, 4 złote zasady bezpieczeństwa i objawy wymagające kontaktu z gabinetem — po zabiegu laserem Nd:YAG.",
+    href: "/dla-pacjenta/pielegnacja-nog",
+    icon: "🦵",
+  },
 ];
 
 const benefits = [

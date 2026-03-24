@@ -66,6 +66,7 @@ const App = () => (
               <Route path="/dla-pacjenta/hemoroidy" element={<Hemoroidy />} />
               <Route path="/dla-pacjenta/ebook-pajaczki" element={<EbookPajaczki />} />
               <Route path="/dla-pacjenta/proktolog-faq" element={<ProktologFAQ />} />
+              <Route path="/dla-pacjenta/pielegnacja-nog" element={<PielegnacjaNog />} />
               <Route path="/kontakt" element={<Kontakt />} />
               <Route path="/blog" element={<Blog />} />
               <Route path="/blog/:slug" element={<BlogPost />} />
