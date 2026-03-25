@@ -83,6 +83,7 @@ const App = () => (
           </Routes>
         </Suspense>
       </BrowserRouter>
+      <JsonLdValidator />
     </TooltipProvider>
   </QueryClientProvider>
 );
