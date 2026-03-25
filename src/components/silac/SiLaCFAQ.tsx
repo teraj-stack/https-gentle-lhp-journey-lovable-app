@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import FaqSchema from "@/components/shared/FaqSchema";
 import {
   Accordion,
   AccordionContent,
@@ -39,6 +40,7 @@ interface Props {
 
 const SiLaCFAQ = ({ fadeUp }: Props) => (
   <motion.section {...fadeUp}>
+    <FaqSchema faqs={faqs} name="FAQ – SiLaC laserowe zamknięcie torbieli" url="https://gentle-lhp-journey.lovable.app/leczenie/silac" />
     <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3 text-center">
       Najczęściej zadawane pytania
     </h2>

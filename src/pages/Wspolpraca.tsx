@@ -5,6 +5,7 @@ import WspolpracaPillars from "@/components/wspolpraca/WspolpracaPillars";
 import EBMComparisonChart from "@/components/wspolpraca/EBMComparisonChart";
 import WspolpracaCTA from "@/components/wspolpraca/WspolpracaCTA";
 import SeoHead from "@/components/shared/SeoHead";
+import FaqSchema from "@/components/shared/FaqSchema";
 import {
   Clock,
   Shield,
@@ -92,6 +93,7 @@ const Wspolpraca = () => (
       description="Model kooperacyjny CML dla klinik i gabinetów. Procedury tkankowo-oszczędzające, preedukacja pacjenta, cross-referrals."
       path="/wspolpraca"
     />
+    <FaqSchema faqs={faq} name="FAQ – Współpraca B2B dla placówek medycznych" url="https://gentle-lhp-journey.lovable.app/wspolpraca" />
     <WspolpracaHero />
 
     {/* EBM */}

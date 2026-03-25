@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import FaqSchema from "@/components/shared/FaqSchema";
 import {
   Accordion,
   AccordionContent,
@@ -39,6 +40,7 @@ interface SkleroterapiaFAQProps {
 
 const SkleroterapiaFAQ = ({ fadeUp }: SkleroterapiaFAQProps) => (
   <motion.section {...fadeUp}>
+    <FaqSchema faqs={faqs} name="FAQ – Skleroterapia żylaków" url="https://gentle-lhp-journey.lovable.app/leczenie/skleroterapia" />
     <h2 className="section-title mb-3 text-center">
       Najczęściej zadawane pytania
     </h2>

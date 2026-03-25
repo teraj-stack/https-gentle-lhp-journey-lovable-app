@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import FaqSchema from "@/components/shared/FaqSchema";
 import {
   Accordion,
   AccordionContent,
@@ -43,6 +44,7 @@ interface MikroflebektomiaFAQProps {
 
 const MikroflebektomiaFAQ = ({ fadeUp }: MikroflebektomiaFAQProps) => (
   <motion.section {...fadeUp}>
+    <FaqSchema faqs={faqs} name="FAQ – Mikroflebektomia piankowa" url="https://gentle-lhp-journey.lovable.app/leczenie/mikroflebektomia" />
     <h2 className="section-title mb-3 text-center">
       Najczęściej zadawane pytania
     </h2>
