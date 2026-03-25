@@ -97,12 +97,54 @@ const qaItems = [
   },
 ];
 
+const faqSchema = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  name: "Hemoroidy i wizyta u proktologa — najczęstsze pytania",
+  url: "https://gentle-lhp-journey.lovable.app/dla-pacjenta/proktolog-faq",
+  mainEntity: qaItems.map((item) => ({
+    "@type": "Question",
+    name: item.q,
+    acceptedAnswer: {
+      "@type": "Answer",
+      text: typeof item.a === "string" ? item.a : item.q, // fallback; real text below
+    },
+  })),
+};
+
+// Build plain-text answers for JSON-LD from the JSX
+const faqAnswerTexts: Record<number, string> = {
+  0: "Do lekarza należy zgłosić się zawsze, gdy pojawią się niepokojące sygnały. Choroby proktologiczne mają charakter przewlekły i postępujący. Im wcześniej zgłosisz się do specjalisty, tym leczenie będzie mniej obciążające, tańsze i skuteczniejsze.",
+  1: "Niezależnie od tego, czy jest to świąd, pieczenie, ból, czy wyczuwalny guzek – każda z tych dolegliwości wymaga konsultacji. Szczególnym sygnałem alarmowym jest krwawienie podczas defekacji.",
+  2: "Badanie składa się z oceny wzrokowej, badania palpacyjnego (per rectum) oraz anoskopii. W naszej klinice dbamy o maksymalny komfort — badanie jest zazwyczaj bezbolesne.",
+  3: "Hemoroidy to naturalne struktury anatomiczne działające jak poduszeczki uszczelniające kanał odbytu. Problem zaczyna się, gdy dochodzi do zastoju krwi i guzki się powiększają.",
+  4: "Nie ma jednej uniwersalnej metody. Złotym standardem jest leczenie hybrydowe, czyli łączenie kilku technik u jednego pacjenta, np. laseroterapia + gumkowanie.",
+  5: "Proktolog w ciągu jednego dnia przyjmuje kilkudziesięciu pacjentów z identycznym problemem. Strach i wstyd są naturalne, ale zazwyczaj mijają po pierwszych minutach rozmowy.",
+  6: "Choroba hemoroidalna ma podłoże genetyczne. Zabieg usuwa przerośniętą tkankę, ale nawrót jest możliwy — zazwyczaj po kilku lub kilkunastu latach. Odpowiednia profilaktyka może ten okres wydłużyć.",
+  7: "Dbaj o dietę i wagę, unikaj długiego przesiadywania na toalecie, korzystaj z podnóżka pod stopy — to ułatwia defekację i zmniejsza parcie na naczynia.",
+  8: "Ciąża sprzyja powstawaniu hemoroidów. Po porodzie ciało zwykle wraca do normy. W ciąży unikamy zabiegów inwazyjnych, skupiamy się na łagodzeniu objawów.",
+};
+
+// Patch plain-text answers into the schema
+faqSchema.mainEntity = qaItems.map((item, i) => ({
+  "@type": "Question" as const,
+  name: item.q,
+  acceptedAnswer: {
+    "@type": "Answer" as const,
+    text: faqAnswerTexts[i] || item.q,
+  },
+}));
+
 const ProktologFAQ = () => (
   <div className="min-h-screen bg-background pt-20">
     <SeoHead
       title="Jak przygotować się do wizyty u proktologa"
       description="Najczęstsze pytania o wizytę proktologiczną. Dowiedz się jak wygląda badanie, czym są hemoroidy i jakie są metody leczenia."
       path="/dla-pacjenta/proktolog-faq"
+    />
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
     />
     <ParallaxSection className="gradient-bg py-16 md:py-24 px-4">
       <motion.div
