@@ -5,6 +5,7 @@ import AboutPhilosophy from "@/components/about/AboutPhilosophy";
 import AboutModel from "@/components/about/AboutModel";
 import AboutAdvantages from "@/components/about/AboutAdvantages";
 import AboutCTA from "@/components/about/AboutCTA";
+import ScalesCards from "@/components/about/ScalesCards";
 import SeoHead from "@/components/shared/SeoHead";
 
 const About = () => (
@@ -19,6 +20,7 @@ const About = () => (
       <Breadcrumbs items={[{ label: "O nas" }]} />
     </div>
     <AboutDoctor />
+    <ScalesCards />
     <AboutPhilosophy />
     <AboutModel />
     <AboutAdvantages />
