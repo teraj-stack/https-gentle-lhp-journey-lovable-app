@@ -40,6 +40,12 @@ const LHP = () => {
         description="Laserowa plastyka hemoroidów (LHP) w CML. Bez skalpela, krótka rekonwalescencja. Umów konsultację w Warszawie lub Siedlcach."
         path="/leczenie/lhp"
       />
+      <MedicalWebPageSchema
+        name="LHP – Laserowe leczenie hemoroidów"
+        description="Laserowa plastyka hemoroidów (LHP) w CML. Bez skalpela, krótka rekonwalescencja."
+        path="/leczenie/lhp"
+        specialty="Proctology"
+      />
       <MedicalProcedureSchema
         name="LHP – Laserowa plastyka hemoroidów"
         description="Minimalnie inwazyjna metoda leczenia hemoroidów laserem diodowym. Energia lasera obkurcza guzek od wewnątrz, bez wycinania tkanek."

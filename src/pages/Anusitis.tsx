@@ -33,6 +33,12 @@ const Anusitis = () => (
         description="Leczenie zapalenia odbytu w CML – diagnostyka przyczyn, farmakoterapia celowana. Ambulatoryjnie, bez chirurgii."
         path="/leczenie/anusitis"
       />
+      <MedicalWebPageSchema
+        name="Zapalenie odbytu (anusitis) – diagnostyka i leczenie"
+        description="Leczenie zapalenia odbytu – diagnostyka przyczyn, farmakoterapia celowana. Ambulatoryjnie, bez chirurgii."
+        path="/leczenie/anusitis"
+        specialty="Proctology"
+      />
       <MedicalProcedureSchema
         name="Zapalenie odbytu (anusitis) – diagnostyka i leczenie"
         description="Leczenie farmakologiczne zapalenia kanału odbytu. Celowana terapia przyczyny zapalenia, bez interwencji chirurgicznej."

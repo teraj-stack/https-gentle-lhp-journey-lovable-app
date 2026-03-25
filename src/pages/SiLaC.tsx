@@ -39,6 +39,12 @@ const SiLaC = () => (
         description="SiLaC (Sinus Laser Closure) – laserowe zamykanie torbieli pilonidalnej w CML. Mały otwór, szybkie gojenie. Warszawa, Siedlce."
         path="/leczenie/silac"
       />
+      <MedicalWebPageSchema
+        name="SiLaC – Laserowe leczenie torbieli pilonidalnej"
+        description="SiLaC (Sinus Laser Closure) – laserowe zamykanie torbieli pilonidalnej. Mały otwór, szybkie gojenie."
+        path="/leczenie/silac"
+        specialty="Proctology"
+      />
       <MedicalProcedureSchema
         name="SiLaC – Sinus Laser Closure"
         description="Laserowe leczenie torbieli pilonidalnej przez nakłucie 2–3 mm. Skuteczność ok. 90%, minimalna blizna."

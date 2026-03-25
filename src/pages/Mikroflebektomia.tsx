@@ -54,6 +54,12 @@ const Mikroflebektomia = () => (
       description="Mikroflebektomia piankowa w BM Clinic. Usuwanie dużych, wypukłych żylaków przez mikronakłucia 1–2 mm, bez narkozy, bez szwów. Warszawa."
       path="/leczenie/mikroflebektomia"
     />
+    <MedicalWebPageSchema
+      name="Mikroflebektomia piankowa – usuwanie żylaków bez skalpela"
+      description="Mikroflebektomia piankowa – usuwanie dużych żylaków przez mikronakłucia 1–2 mm, bez narkozy, bez szwów."
+      path="/leczenie/mikroflebektomia"
+      specialty="Phlebology"
+    />
     <MedicalProcedureSchema
       name="Mikroflebektomia piankowa"
       description="Usuwanie wypukłych żylaków przez mikronakłucia 1–2 mm z uzupełniającą skleroterapią piankową. Bez narkozy, bez szwów, bez hospitalizacji."

@@ -39,6 +39,12 @@ const FiLaC = () => (
         description="FiLaC (Fistula Laser Closure) – zamykanie przetok laserem w CML. Minimalnie inwazyjne, ochrona zwieraczy. Warszawa, Siedlce."
         path="/leczenie/filac"
       />
+      <MedicalWebPageSchema
+        name="FiLaC – Laserowe leczenie przetok odbytu"
+        description="FiLaC (Fistula Laser Closure) – zamykanie przetok laserem. Minimalnie inwazyjne, ochrona zwieraczy."
+        path="/leczenie/filac"
+        specialty="Proctology"
+      />
       <MedicalProcedureSchema
         name="FiLaC – Fistula Laser Closure"
         description="Laserowe zamykanie przetok odbytu od wewnątrz, bez rozcinania zwieraczy. Zachowuje pełne trzymanie stolca."

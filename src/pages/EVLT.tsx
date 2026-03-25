@@ -44,6 +44,12 @@ const EVLT = () => (
         description="Endowenozna ablacja laserowa żylaków (EVLT) w CML. Zabieg ambulatoryjny, szybki powrót do aktywności. Warszawa, Siedlce."
         path="/leczenie/evlt"
       />
+      <MedicalWebPageSchema
+        name="EVLT – Laserowe leczenie żylaków nóg"
+        description="Endowenozna ablacja laserowa żylaków (EVLT) w CML. Zabieg ambulatoryjny, szybki powrót do aktywności."
+        path="/leczenie/evlt"
+        specialty="Phlebology"
+      />
       <MedicalProcedureSchema
         name="EVLT – Endowenozna ablacja laserowa żylaków"
         description="Zamknięcie niewydolnych żył od wewnątrz za pomocą energii lasera, pod kontrolą USG. Alternatywa dla strippingu."

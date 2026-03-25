@@ -38,6 +38,12 @@ const Szczelina = () => (
         description="Leczenie szczeliny odbytu w CML – botoks, laser, farmakoterapia. Skuteczne metody bez długiej rekonwalescencji."
         path="/leczenie/szczelina"
       />
+      <MedicalWebPageSchema
+        name="Szczelina odbytu – od diety do lasera"
+        description="Leczenie szczeliny odbytu – botoks, laser, farmakoterapia. Skuteczne metody bez długiej rekonwalescencji."
+        path="/leczenie/szczelina"
+        specialty="Proctology"
+      />
       <MedicalProcedureSchema
         name="Leczenie szczeliny odbytu – od diety do lasera"
         description="Kompleksowe leczenie szczeliny odbytu: od leczenia zachowawczego, przez botoks, po precyzyjną laserową sfinkterotomię."

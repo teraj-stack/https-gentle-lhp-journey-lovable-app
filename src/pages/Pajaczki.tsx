@@ -41,6 +41,12 @@ const Pajaczki = () => (
       description="Wszystko o pajączkach naczyniowych: przyczyny, diagnostyka i nowoczesne metody leczenia laserowego. Skleroterapia i CLaCS w CML."
       path="/dla-pacjenta/pajaczki"
     />
+    <MedicalWebPageSchema
+      name="Pajączki naczyniowe – przyczyny i leczenie"
+      description="Wszystko o pajączkach naczyniowych: przyczyny, diagnostyka i nowoczesne metody leczenia laserowego."
+      path="/dla-pacjenta/pajaczki"
+      specialty="Phlebology"
+    />
     {/* Hero */}
     <ParallaxSection className="gradient-bg py-16 md:py-24 px-4">
       <motion.div

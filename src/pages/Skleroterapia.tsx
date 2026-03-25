@@ -67,6 +67,12 @@ const Skleroterapia = () => (
         description="Skleroterapia piankowa w CML – zamykanie żylaków bez operacji. Zabieg bezbolesny, natychmiastowy powrót do aktywności."
         path="/leczenie/skleroterapia"
       />
+      <MedicalWebPageSchema
+        name="Skleroterapia piankowa żylaków"
+        description="Skleroterapia piankowa – zamykanie żylaków bez operacji. Zabieg bezbolesny, natychmiastowy powrót do aktywności."
+        path="/leczenie/skleroterapia"
+        specialty="Phlebology"
+      />
       <MedicalProcedureSchema
         name="Skleroterapia piankowa żylaków"
         description="Zamykanie żylakowatych naczyń za pomocą iniekcji pianki sklerotyzującej pod kontrolą USG."

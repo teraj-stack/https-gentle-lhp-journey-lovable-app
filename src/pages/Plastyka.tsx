@@ -38,6 +38,12 @@ const Plastyka = () => (
         description="Laserowa plastyka odbytu w CML – usunięcie naddatków skórnych i poprawka estetyki. Precyzja lasera CO₂, szybkie gojenie."
         path="/leczenie/plastyka"
       />
+      <MedicalWebPageSchema
+        name="Plastyka odbytu – estetyka i komfort"
+        description="Laserowa plastyka odbytu – usunięcie naddatków skórnych i poprawka estetyki. Precyzja lasera CO₂, szybkie gojenie."
+        path="/leczenie/plastyka"
+        specialty="Proctology"
+      />
       <MedicalProcedureSchema
         name="Plastyka odbytu – estetyka i komfort"
         description="Laserowa korekta zmian skórnych okolicy odbytu: nadmierne fałdy, nierówności i defekty pooperacyjne."

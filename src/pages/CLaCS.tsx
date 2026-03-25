@@ -69,6 +69,12 @@ const CLaCS = () => (
       description="CLaCS (Crio Laser and Crio Sclerotherapy) – innowacyjne usuwanie pajączków żylnych w CML. Bez igieł, niemal bezbolesne."
       path="/leczenie/clacs"
     />
+    <MedicalWebPageSchema
+      name="CLaCS – Usuwanie pajączków naczyniowych"
+      description="CLaCS (Crio Laser and Crio Sclerotherapy) – innowacyjne usuwanie pajączków żylnych. Bez igieł, niemal bezbolesne."
+      path="/leczenie/clacs"
+      specialty="Phlebology"
+    />
     <MedicalProcedureSchema
       name="CLaCS – Crio Laser and Crio Sclerotherapy"
       description="Potrójne działanie: kriochłodzenie, laser przezskórny i mikroskleroterapia do usuwania pajączków i teleangiektazji."
