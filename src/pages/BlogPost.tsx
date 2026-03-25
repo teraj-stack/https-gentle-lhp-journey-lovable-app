@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Calendar, ArrowLeft } from "lucide-react";
 import SeoHead from "@/components/shared/SeoHead";
-
+import Breadcrumbs from "@/components/layout/Breadcrumbs";
 import MarkdownRenderer from "@/components/shared/MarkdownRenderer";
 
 const BlogPost = () => {
