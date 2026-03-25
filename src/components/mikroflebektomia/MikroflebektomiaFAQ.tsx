@@ -44,7 +44,7 @@ interface MikroflebektomiaFAQProps {
 
 const MikroflebektomiaFAQ = ({ fadeUp }: MikroflebektomiaFAQProps) => (
   <motion.section {...fadeUp}>
-    <FaqSchema faqs={faqs} name="FAQ – Mikroflebektomia piankowa" url="https://gentle-lhp-journey.lovable.app/leczenie/mikroflebektomia" />
+    <FaqSchema faqs={faqs} name="FAQ – Mikroflebektomia piankowa" url="https://cml.pl/leczenie/mikroflebektomia" />
     <h2 className="section-title mb-3 text-center">
       Najczęściej zadawane pytania
     </h2>
