@@ -70,7 +70,7 @@ const ScalesCards = () => {
             Filozofia działania
           </p>
           <h2 className="text-3xl md:text-4xl font-bold text-foreground font-serif">
-            S.C.A.L.E.S.
+            S.C.A.L.E.
           </h2>
           <p className="text-muted-foreground mt-3 max-w-2xl mx-auto">
             Sześć filarów, na których opiera się każda decyzja kliniczna i&nbsp;biznesowa w&nbsp;naszym ekosystemie.
