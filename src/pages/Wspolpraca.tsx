@@ -93,7 +93,31 @@ const Wspolpraca = () => (
       description="Model kooperacyjny CML dla klinik i gabinetów. Procedury tkankowo-oszczędzające, preedukacja pacjenta, cross-referrals."
       path="/wspolpraca"
     />
-    <FaqSchema faqs={faq} name="FAQ – Współpraca B2B dla placówek medycznych" url="https://gentle-lhp-journey.lovable.app/wspolpraca" />
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "MedicalWebPage",
+        "name": "Współpraca B2B – CML Centrum Medycyny Laserowej",
+        "description": "Model kooperacyjny CML dla klinik i gabinetów. Procedury tkankowo-oszczędzające, preedukacja pacjenta, cross-referrals.",
+        "url": "https://cml.pl/wspolpraca",
+        "inLanguage": "pl-PL",
+        "medicalAudience": { "@type": "MedicalAudience", "audienceType": "Clinician" },
+        "lastReviewed": "2026-03-25",
+        "author": {
+          "@type": "Person",
+          "name": "lek. med. Jan Bujok",
+          "jobTitle": "Chirurg ogólny, proktolog, flebolog",
+          "description": "Twórca projektu S.C.A.L.E. (Safety, Clinical Trust, Aesthetic, Lasers, Empathy)."
+        },
+        "mainEntity": {
+          "@type": "MedicalBusiness",
+          "name": "CML – Centrum Medycyny Laserowej",
+          "telephone": "+48 572 001 200"
+        }
+      }) }}
+    />
+    <FaqSchema faqs={faq} name="FAQ – Współpraca B2B dla placówek medycznych" url="https://cml.pl/wspolpraca" />
     <WspolpracaHero />
 
     {/* EBM */}

@@ -83,6 +83,33 @@ const Kontakt = () => {
         description="Skontaktuj się z CML. Przyjmujemy w Warszawie Wilanów i Siedlcach. Umów wizytę proktologiczną lub flebologiczną."
         path="/kontakt"
       />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "MedicalWebPage",
+          "name": "Kontakt – CML Centrum Medycyny Laserowej",
+          "description": "Skontaktuj się z CML. Przyjmujemy w Warszawie Wilanów i Siedlcach. Umów wizytę proktologiczną lub flebologiczną.",
+          "url": "https://cml.pl/kontakt",
+          "inLanguage": "pl-PL",
+          "lastReviewed": "2026-03-25",
+          "author": {
+            "@type": "Person",
+            "name": "lek. med. Jan Bujok",
+            "jobTitle": "Chirurg ogólny, proktolog, flebolog",
+            "description": "Twórca projektu S.C.A.L.E. (Safety, Clinical Trust, Aesthetic, Lasers, Empathy)."
+          },
+          "mainEntity": {
+            "@type": "MedicalBusiness",
+            "name": "CML – Centrum Medycyny Laserowej",
+            "telephone": "+48 572 001 200",
+            "address": [
+              { "@type": "PostalAddress", "streetAddress": "ul. Adama Branickiego 10/U6", "addressLocality": "Warszawa", "postalCode": "02-972", "addressCountry": "PL" },
+              { "@type": "PostalAddress", "streetAddress": "ul. Świętojańska 7", "addressLocality": "Siedlce", "postalCode": "08-110", "addressCountry": "PL" }
+            ]
+          }
+        }) }}
+      />
       {/* Hero */}
       <section className="gradient-bg py-16 md:py-24 px-4">
         <motion.div
