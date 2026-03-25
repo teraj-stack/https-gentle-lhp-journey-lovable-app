@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Calendar, ArrowLeft } from "lucide-react";
 import SeoHead from "@/components/shared/SeoHead";
-
+import Breadcrumbs from "@/components/layout/Breadcrumbs";
 import MarkdownRenderer from "@/components/shared/MarkdownRenderer";
 
 const BlogPost = () => {
@@ -59,6 +59,14 @@ const BlogPost = () => {
 
       <article className="pt-32 pb-24">
         <div className="max-w-3xl mx-auto px-4 md:px-8">
+          <Breadcrumbs
+            items={[
+              { label: "Blog", href: "/blog" },
+              { label: post.title },
+            ]}
+            className="mb-6"
+          />
+
           <Link
             to="/blog"
             className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors mb-8"

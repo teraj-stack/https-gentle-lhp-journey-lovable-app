@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Calendar, ArrowRight } from "lucide-react";
 import SeoHead from "@/components/shared/SeoHead";
+import Breadcrumbs from "@/components/layout/Breadcrumbs";
 
 const Blog = () => {
   const { data: posts, isLoading } = useQuery({
@@ -28,6 +29,7 @@ const Blog = () => {
 
       <section className="pt-32 pb-16 md:pt-40 md:pb-24">
         <div className="max-w-4xl mx-auto px-4 md:px-8">
+          <Breadcrumbs items={[{ label: "Blog" }]} className="mb-6" />
           <h1 className="text-4xl md:text-5xl font-bold font-serif text-foreground mb-4">
             Blog
           </h1>
