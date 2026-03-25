@@ -93,6 +93,7 @@ const Wspolpraca = () => (
       description="Model kooperacyjny CML dla klinik i gabinetów. Procedury tkankowo-oszczędzające, preedukacja pacjenta, cross-referrals."
       path="/wspolpraca"
     />
+    <FaqSchema faqs={faq} name="FAQ – Współpraca B2B dla placówek medycznych" url="https://gentle-lhp-journey.lovable.app/wspolpraca" />
     <WspolpracaHero />
 
     {/* EBM */}
