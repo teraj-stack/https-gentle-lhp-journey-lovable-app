@@ -12,6 +12,7 @@ import SiLaCFAQ from "@/components/silac/SiLaCFAQ";
 import ProcedureSummaryTable from "@/components/shared/ProcedureSummaryTable";
 import MedicalProcedureSchema from "@/components/shared/MedicalProcedureSchema";
 import SeoHead from "@/components/shared/SeoHead";
+import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 
 const silacSummary = [
   { label: "Przygotowanie", value: "Badanie proktologiczne, ocena rozległości torbieli pilonidalnej. W niektórych przypadkach USG lub MRI." },
@@ -37,6 +38,12 @@ const SiLaC = () => (
         title="SiLaC – Laserowe leczenie torbieli pilonidalnej"
         description="SiLaC (Sinus Laser Closure) – laserowe zamykanie torbieli pilonidalnej w CML. Mały otwór, szybkie gojenie. Warszawa, Siedlce."
         path="/leczenie/silac"
+      />
+      <MedicalWebPageSchema
+        name="SiLaC – Laserowe leczenie torbieli pilonidalnej"
+        description="SiLaC (Sinus Laser Closure) – laserowe zamykanie torbieli pilonidalnej. Mały otwór, szybkie gojenie."
+        path="/leczenie/silac"
+        specialty="Proctology"
       />
       <MedicalProcedureSchema
         name="SiLaC – Sinus Laser Closure"

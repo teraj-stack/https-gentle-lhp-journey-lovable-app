@@ -12,6 +12,7 @@ import FiLaCFAQ from "@/components/filac/FiLaCFAQ";
 import ProcedureSummaryTable from "@/components/shared/ProcedureSummaryTable";
 import MedicalProcedureSchema from "@/components/shared/MedicalProcedureSchema";
 import SeoHead from "@/components/shared/SeoHead";
+import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 
 const filacSummary = [
   { label: "Przygotowanie", value: "Diagnostyka obrazowa (USG transrektalne lub MRI miednicy) — dokładne zmapowanie kanału przetoki" },
@@ -37,6 +38,12 @@ const FiLaC = () => (
         title="FiLaC – Laserowe leczenie przetok odbytu"
         description="FiLaC (Fistula Laser Closure) – zamykanie przetok laserem w CML. Minimalnie inwazyjne, ochrona zwieraczy. Warszawa, Siedlce."
         path="/leczenie/filac"
+      />
+      <MedicalWebPageSchema
+        name="FiLaC – Laserowe leczenie przetok odbytu"
+        description="FiLaC (Fistula Laser Closure) – zamykanie przetok laserem. Minimalnie inwazyjne, ochrona zwieraczy."
+        path="/leczenie/filac"
+        specialty="Proctology"
       />
       <MedicalProcedureSchema
         name="FiLaC – Fistula Laser Closure"

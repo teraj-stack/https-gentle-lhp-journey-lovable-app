@@ -7,6 +7,7 @@ import ParallaxSection from "@/components/ui/parallax-section";
 import ProcedureSummaryTable from "@/components/shared/ProcedureSummaryTable";
 import MedicalProcedureSchema from "@/components/shared/MedicalProcedureSchema";
 import SeoHead from "@/components/shared/SeoHead";
+import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 
 const plastykaSummary = [
   { label: "Przygotowanie", value: "Konsultacja proktologiczna, ocena zmian skórnych" },
@@ -36,6 +37,12 @@ const Plastyka = () => (
         title="Plastyka odbytu – estetyka i komfort"
         description="Laserowa plastyka odbytu w CML – usunięcie naddatków skórnych i poprawka estetyki. Precyzja lasera CO₂, szybkie gojenie."
         path="/leczenie/plastyka"
+      />
+      <MedicalWebPageSchema
+        name="Plastyka odbytu – estetyka i komfort"
+        description="Laserowa plastyka odbytu – usunięcie naddatków skórnych i poprawka estetyki. Precyzja lasera CO₂, szybkie gojenie."
+        path="/leczenie/plastyka"
+        specialty="Proctology"
       />
       <MedicalProcedureSchema
         name="Plastyka odbytu – estetyka i komfort"

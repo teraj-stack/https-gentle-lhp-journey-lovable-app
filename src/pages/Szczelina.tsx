@@ -7,6 +7,7 @@ import ParallaxSection from "@/components/ui/parallax-section";
 import ProcedureSummaryTable from "@/components/shared/ProcedureSummaryTable";
 import MedicalProcedureSchema from "@/components/shared/MedicalProcedureSchema";
 import SeoHead from "@/components/shared/SeoHead";
+import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 
 const szczelinaSummary = [
   { label: "Przygotowanie", value: "Badanie proktologiczne, ocena napięcia zwieraczy. Wykluczenie innych chorób jelit." },
@@ -36,6 +37,12 @@ const Szczelina = () => (
         title="Szczelina odbytu – od diety do lasera"
         description="Leczenie szczeliny odbytu w CML – botoks, laser, farmakoterapia. Skuteczne metody bez długiej rekonwalescencji."
         path="/leczenie/szczelina"
+      />
+      <MedicalWebPageSchema
+        name="Szczelina odbytu – od diety do lasera"
+        description="Leczenie szczeliny odbytu – botoks, laser, farmakoterapia. Skuteczne metody bez długiej rekonwalescencji."
+        path="/leczenie/szczelina"
+        specialty="Proctology"
       />
       <MedicalProcedureSchema
         name="Leczenie szczeliny odbytu – od diety do lasera"

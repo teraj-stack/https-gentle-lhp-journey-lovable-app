@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import ProcedureSummaryTable from "@/components/shared/ProcedureSummaryTable";
 import MedicalProcedureSchema from "@/components/shared/MedicalProcedureSchema";
 import SeoHead from "@/components/shared/SeoHead";
+import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 import MikroflebektomiaFAQ from "@/components/mikroflebektomia/MikroflebektomiaFAQ";
 
 const summary = [
@@ -52,6 +53,12 @@ const Mikroflebektomia = () => (
       title="Mikroflebektomia piankowa – usuwanie żylaków bez skalpela"
       description="Mikroflebektomia piankowa w BM Clinic. Usuwanie dużych, wypukłych żylaków przez mikronakłucia 1–2 mm, bez narkozy, bez szwów. Warszawa."
       path="/leczenie/mikroflebektomia"
+    />
+    <MedicalWebPageSchema
+      name="Mikroflebektomia piankowa – usuwanie żylaków bez skalpela"
+      description="Mikroflebektomia piankowa – usuwanie dużych żylaków przez mikronakłucia 1–2 mm, bez narkozy, bez szwów."
+      path="/leczenie/mikroflebektomia"
+      specialty="Phlebology"
     />
     <MedicalProcedureSchema
       name="Mikroflebektomia piankowa"

@@ -12,6 +12,7 @@ import ProcedureSummaryTable from "@/components/shared/ProcedureSummaryTable";
 import { motion } from "framer-motion";
 import MedicalProcedureSchema from "@/components/shared/MedicalProcedureSchema";
 import SeoHead from "@/components/shared/SeoHead";
+import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 
 const lhpSummary = [
   { label: "Przygotowanie", value: "Badanie proktologiczne (anoskopia), ocena stopnia zaawansowania choroby" },
@@ -38,6 +39,12 @@ const LHP = () => {
         title="LHP – Laserowe leczenie hemoroidów"
         description="Laserowa plastyka hemoroidów (LHP) w CML. Bez skalpela, krótka rekonwalescencja. Umów konsultację w Warszawie lub Siedlcach."
         path="/leczenie/lhp"
+      />
+      <MedicalWebPageSchema
+        name="LHP – Laserowe leczenie hemoroidów"
+        description="Laserowa plastyka hemoroidów (LHP) w CML. Bez skalpela, krótka rekonwalescencja."
+        path="/leczenie/lhp"
+        specialty="Proctology"
       />
       <MedicalProcedureSchema
         name="LHP – Laserowa plastyka hemoroidów"
