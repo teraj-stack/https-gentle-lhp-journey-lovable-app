@@ -526,6 +526,7 @@ const Hemoroidy = () => {
       </section>
     </div>
   </div>
-);
+  );
+};
 
 export default Hemoroidy;
