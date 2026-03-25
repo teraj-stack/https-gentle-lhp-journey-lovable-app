@@ -181,7 +181,7 @@ const EdukacjaPrzedWizyta = () => {
     <FaqSchema
       faqs={faqs}
       name="FAQ – Edukacja pacjenta przed wizytą"
-      url="https://gentle-lhp-journey.lovable.app/dla-pacjenta/edukacja"
+      url="https://cml.pl/dla-pacjenta/edukacja"
     />
 
     {/* Hero */}
