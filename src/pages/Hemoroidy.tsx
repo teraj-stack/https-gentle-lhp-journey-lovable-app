@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { motion } from "framer-motion";
 import ParallaxSection from "@/components/ui/parallax-section";
 import Breadcrumbs from "@/components/layout/Breadcrumbs";
@@ -115,7 +116,56 @@ const vicCircleSteps = [
   { icon: "\ud83d\udcc8", title: "Krok 4", desc: "Kupujesz coraz dro\u017Csze preparaty. Okresy ulgi coraz kr\u00f3tsze. Frustracja i strach rosn\u0105." },
 ];
 
-const Hemoroidy = () => (
+const Hemoroidy = () => {
+  useEffect(() => {
+    const schema = {
+      "@context": "https://schema.org",
+      "@type": "MedicalWebPage",
+      name: "Hemoroidy od A do Z — Kompleksowy Przewodnik Pacjenta",
+      description:
+        "Kompendium wiedzy o hemoroidach: mechanizm choroby, stopnie zaawansowania, porównanie metody laserowej LHP z chirurgią klasyczną, dieta, ergonomia i psychologia pacjenta.",
+      url: "https://bujokmedical.pl/dla-pacjenta/hemoroidy",
+      lastReviewed: "2025-06-01",
+      medicalAudience: {
+        "@type": "PatientAudience",
+        audienceType: "Patient",
+      },
+      specialty: {
+        "@type": "MedicalSpecialty",
+        name: "Proctology",
+      },
+      about: {
+        "@type": "MedicalCondition",
+        name: "Hemorrhoids",
+        associatedAnatomy: {
+          "@type": "AnatomicalStructure",
+          name: "Anal canal",
+        },
+      },
+      author: {
+        "@type": "Physician",
+        name: "lek. med. Kamil Bujok",
+        medicalSpecialty: "Proctology",
+      },
+      publisher: {
+        "@type": "MedicalClinic",
+        name: "Bujok Medical – Centrum Medycyny Laserowej",
+        url: "https://bujokmedical.pl",
+      },
+    };
+
+    const script = document.createElement("script");
+    script.type = "application/ld+json";
+    script.setAttribute("data-medical-webpage", "true");
+    script.textContent = JSON.stringify(schema);
+    document.head.appendChild(script);
+
+    return () => {
+      document.head.removeChild(script);
+    };
+  }, []);
+
+  return (
   <div className="min-h-screen bg-background pt-20">
     <SeoHead
       title="Hemoroidy od A do Z \u2014 Kompleksowy Przewodnik Pacjenta"
@@ -476,6 +526,7 @@ const Hemoroidy = () => (
       </section>
     </div>
   </div>
-);
+  );
+};
 
 export default Hemoroidy;
