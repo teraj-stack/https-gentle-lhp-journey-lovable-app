@@ -44,7 +44,7 @@ const WspolpracaCTA = () => (
               <ArrowRight className="w-4 h-4 ml-2" />
             </a>
           </Button>
-          <span className="text-xs text-muted-foreground">lub napisz: kontakt@cml.pl</span>
+          <span className="text-xs text-muted-foreground">lub napisz: Milaaskrzynska@gmail.com</span>
         </div>
 
         <div className="flex flex-wrap justify-center gap-6 mt-12 text-xs text-muted-foreground">
