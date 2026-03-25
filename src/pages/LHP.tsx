@@ -8,6 +8,7 @@ import ProcedureSteps from "@/components/lhp/ProcedureSteps";
 import QualificationScale from "@/components/lhp/QualificationScale";
 import EbookBanner from "@/components/lhp/EbookBanner";
 import CTASection from "@/components/lhp/CTASection";
+import LHPFAQ from "@/components/lhp/LHPFAQ";
 import ProcedureSummaryTable from "@/components/shared/ProcedureSummaryTable";
 import { motion } from "framer-motion";
 import MedicalProcedureSchema from "@/components/shared/MedicalProcedureSchema";
