@@ -30,6 +30,18 @@ const medicalWebPageSchema = {
       "name": "CML – Centrum Medycyny Laserowej"
     }
   },
+  "publisher": {
+    "@type": "MedicalBusiness",
+    "name": "CML – Centrum Medycyny Laserowej",
+    "telephone": "+48 572 001 200",
+    "address": {
+      "@type": "PostalAddress",
+      "streetAddress": "ul. Adama Branickiego 10/U6",
+      "addressLocality": "Warszawa",
+      "postalCode": "02-972",
+      "addressCountry": "PL"
+    }
+  },
   "specialty": [
     { "@type": "MedicalSpecialty", "name": "Proctology" },
     { "@type": "MedicalSpecialty", "name": "Phlebology" }
