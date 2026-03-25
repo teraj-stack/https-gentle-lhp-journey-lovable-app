@@ -8,6 +8,7 @@ import ProcedureSummaryTable from "@/components/shared/ProcedureSummaryTable";
 import MedicalProcedureSchema from "@/components/shared/MedicalProcedureSchema";
 import SeoHead from "@/components/shared/SeoHead";
 import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
+import SzczelinaFAQ from "@/components/szczelina/SzczelinaFAQ";
 
 const szczelinaSummary = [
   { label: "Przygotowanie", value: "Badanie proktologiczne, ocena napięcia zwieraczy. Wykluczenie innych chorób jelit." },
@@ -243,6 +244,8 @@ const Szczelina = () => (
           </div>
         </div>
       </motion.section>
+
+      <SzczelinaFAQ fadeUp={fadeUp} />
 
       <ProcedureSummaryTable rows={szczelinaSummary} fadeUp={fadeUp} />
 
