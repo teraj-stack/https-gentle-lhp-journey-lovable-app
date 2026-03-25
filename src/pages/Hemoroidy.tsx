@@ -1,9 +1,9 @@
-import { useEffect } from "react";
 import { motion } from "framer-motion";
 import ParallaxSection from "@/components/ui/parallax-section";
 import Breadcrumbs from "@/components/layout/Breadcrumbs";
 import { Button } from "@/components/ui/button";
 import SeoHead from "@/components/shared/SeoHead";
+import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 
 const fadeUp = {
   initial: { opacity: 0, y: 24 },
@@ -117,60 +117,18 @@ const vicCircleSteps = [
 ];
 
 const Hemoroidy = () => {
-  useEffect(() => {
-    const schema = {
-      "@context": "https://schema.org",
-      "@type": "MedicalWebPage",
-      name: "Hemoroidy od A do Z — Kompleksowy Przewodnik Pacjenta",
-      description:
-        "Kompendium wiedzy o hemoroidach: mechanizm choroby, stopnie zaawansowania, porównanie metody laserowej LHP z chirurgią klasyczną, dieta, ergonomia i psychologia pacjenta.",
-      url: "https://bujokmedical.pl/dla-pacjenta/hemoroidy",
-      lastReviewed: "2025-06-01",
-      medicalAudience: {
-        "@type": "PatientAudience",
-        audienceType: "Patient",
-      },
-      specialty: {
-        "@type": "MedicalSpecialty",
-        name: "Proctology",
-      },
-      about: {
-        "@type": "MedicalCondition",
-        name: "Hemorrhoids",
-        associatedAnatomy: {
-          "@type": "AnatomicalStructure",
-          name: "Anal canal",
-        },
-      },
-      author: {
-        "@type": "Physician",
-        name: "lek. med. Kamil Bujok",
-        medicalSpecialty: "Proctology",
-      },
-      publisher: {
-        "@type": "MedicalClinic",
-        name: "Bujok Medical – Centrum Medycyny Laserowej",
-        url: "https://bujokmedical.pl",
-      },
-    };
-
-    const script = document.createElement("script");
-    script.type = "application/ld+json";
-    script.setAttribute("data-medical-webpage", "true");
-    script.textContent = JSON.stringify(schema);
-    document.head.appendChild(script);
-
-    return () => {
-      document.head.removeChild(script);
-    };
-  }, []);
-
   return (
   <div className="min-h-screen bg-background pt-20">
     <SeoHead
-      title="Hemoroidy od A do Z \u2014 Kompleksowy Przewodnik Pacjenta"
-      description="Mechanizm choroby hemoroidalnej, stopnie zaawansowania, por\u00f3wnanie metod leczenia (laser LHP vs klasyka) i styl \u017Cycia. Dr Jan Bujok."
+      title="Hemoroidy od A do Z — Kompleksowy Przewodnik Pacjenta"
+      description="Mechanizm choroby hemoroidalnej, stopnie zaawansowania, porównanie metod leczenia (laser LHP vs klasyka) i styl życia. Dr Jan Bujok."
       path="/dla-pacjenta/hemoroidy"
+    />
+    <MedicalWebPageSchema
+      name="Hemoroidy od A do Z — Kompleksowy Przewodnik Pacjenta"
+      description="Kompendium wiedzy o hemoroidach: mechanizm choroby, stopnie zaawansowania, porównanie metody laserowej LHP z chirurgią klasyczną, dieta, ergonomia i psychologia pacjenta."
+      path="/dla-pacjenta/hemoroidy"
+      specialty="Proctology"
     />
 
     {/* HERO */}

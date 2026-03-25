@@ -22,7 +22,7 @@ const Breadcrumbs = ({ items, className = "" }: Props) => {
       "@type": "ListItem",
       position: i + 1,
       name: item.label,
-      ...(item.href ? { item: `https://bujokmedical.pl${item.href}` } : {}),
+      ...(item.href ? { item: `https://cml.pl${item.href}` } : {}),
     })),
   };
 
