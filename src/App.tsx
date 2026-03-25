@@ -5,6 +5,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import Layout from "@/components/layout/Layout";
+import JsonLdValidator from "@/components/dev/JsonLdValidator";
 
 const Home = lazy(() => import("@/pages/Home"));
 const LHP = lazy(() => import("@/pages/LHP"));
@@ -82,6 +83,7 @@ const App = () => (
           </Routes>
         </Suspense>
       </BrowserRouter>
+      <JsonLdValidator />
     </TooltipProvider>
   </QueryClientProvider>
 );
