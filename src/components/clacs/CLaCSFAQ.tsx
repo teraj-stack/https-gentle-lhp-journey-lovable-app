@@ -40,6 +40,7 @@ interface CLaCSFAQProps {
 
 const CLaCSFAQ = ({ fadeUp }: CLaCSFAQProps) => (
   <motion.section {...fadeUp}>
+    <FaqSchema faqs={faqs} name="FAQ – Zabieg CLaCS na pajączki" url="https://gentle-lhp-journey.lovable.app/leczenie/clacs" />
     <h2 className="section-title mb-3 text-center">
       Najczęściej zadawane pytania
     </h2>
