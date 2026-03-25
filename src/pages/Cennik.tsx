@@ -57,28 +57,10 @@ const Cennik = () => (
       description="Cennik konsultacji i zabiegów proktologicznych oraz flebologicznych. Konsultacja proktologiczna 400 zł, flebologiczna 400 zł, z USG Doppler 500 zł."
       path="/cennik"
     />
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify({
-        "@context": "https://schema.org",
-        "@type": "MedicalWebPage",
-        "name": "Cennik – CML Centrum Medycyny Laserowej",
-        "description": "Cennik konsultacji i zabiegów proktologicznych oraz flebologicznych w CML.",
-        "url": "https://cml.pl/cennik",
-        "inLanguage": "pl-PL",
-        "lastReviewed": "2026-03-25",
-        "author": {
-          "@type": "Person",
-          "name": "lek. med. Jan Bujok",
-          "jobTitle": "Chirurg ogólny, proktolog, flebolog",
-          "description": "Twórca projektu S.C.A.L.E. (Safety, Clinical Trust, Aesthetic, Lasers, Empathy)."
-        },
-        "mainEntity": {
-          "@type": "MedicalBusiness",
-          "name": "CML – Centrum Medycyny Laserowej",
-          "telephone": "+48 572 001 200"
-        }
-      }) }}
+    <MedicalWebPageSchema
+      name="Cennik – CML Centrum Medycyny Laserowej"
+      description="Cennik konsultacji i zabiegów proktologicznych oraz flebologicznych w CML."
+      path="/cennik"
     />
     <Breadcrumbs items={[{ label: "Cennik" }]} />
 
