@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { motion } from "framer-motion";
 import ParallaxSection from "@/components/ui/parallax-section";
 import Breadcrumbs from "@/components/layout/Breadcrumbs";
@@ -125,7 +126,52 @@ const timelineSteps = [
   },
 ];
 
-const EdukacjaPrzedWizyta = () => (
+const EdukacjaPrzedWizyta = () => {
+  useEffect(() => {
+    const schema = {
+      "@context": "https://schema.org",
+      "@type": "MedicalWebPage",
+      name: "Dlaczego edukacja przed wizytą jest kluczowa – Świadomy pacjent w gabinecie",
+      description:
+        "Dowiedz się, jak przygotowanie merytoryczne przed wizytą u proktologa lub flebologa optymalizuje czas konsultacji i podnosi jakość leczenia.",
+      url: "https://cml.pl/dla-pacjenta/edukacja",
+      lastReviewed: "2025-06-01",
+      medicalAudience: {
+        "@type": "PatientAudience",
+        audienceType: "Patient",
+      },
+      specialty: [
+        { "@type": "MedicalSpecialty", name: "Proctology" },
+        { "@type": "MedicalSpecialty", name: "Phlebology" },
+      ],
+      about: {
+        "@type": "MedicalCondition",
+        name: "Patient Education Before Medical Visit",
+      },
+      author: {
+        "@type": "Physician",
+        name: "lek. med. Kamil Bujok",
+        medicalSpecialty: "Proctology",
+      },
+      publisher: {
+        "@type": "MedicalClinic",
+        name: "CML – Centrum Medycyny Laserowej",
+        url: "https://cml.pl",
+      },
+    };
+
+    const script = document.createElement("script");
+    script.type = "application/ld+json";
+    script.setAttribute("data-medical-webpage", "true");
+    script.textContent = JSON.stringify(schema);
+    document.head.appendChild(script);
+
+    return () => {
+      document.head.removeChild(script);
+    };
+  }, []);
+
+  return (
   <div className="min-h-screen bg-background pt-20">
     <SeoHead
       title="Dlaczego edukacja przed wizytą jest kluczowa"
@@ -394,6 +440,7 @@ const EdukacjaPrzedWizyta = () => (
       </motion.section>
     </div>
   </div>
-);
+  );
+};
 
 export default EdukacjaPrzedWizyta;
