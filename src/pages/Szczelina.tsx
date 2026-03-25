@@ -245,6 +245,8 @@ const Szczelina = () => (
         </div>
       </motion.section>
 
+      <SzczelinaFAQ fadeUp={fadeUp} />
+
       <ProcedureSummaryTable rows={szczelinaSummary} fadeUp={fadeUp} />
 
       {/* CTA */}
