@@ -28,6 +28,7 @@ const RECOMMENDED_FIELDS: Record<string, string[]> = {
   MedicalProcedure: ["bodyLocation", "preparation", "followup", "howPerformed"],
   MedicalBusiness: ["openingHours", "telephone", "geo"],
   Article: ["image", "description", "publisher"],
+  FAQPage: ["name", "url"],
 };
 
 function validateSchema(schema: Record<string, unknown>): ValidationResult {
