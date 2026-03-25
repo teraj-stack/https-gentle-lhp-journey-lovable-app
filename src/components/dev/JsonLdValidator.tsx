@@ -53,9 +53,16 @@ function validateSchema(schema: Record<string, unknown>): ValidationResult {
     }
   }
 
+  // Alternate field names that satisfy the same recommendation
+  const FIELD_ALIASES: Record<string, string[]> = {
+    openingHours: ["openingHours", "openingHoursSpecification"],
+  };
+
   const recommended = RECOMMENDED_FIELDS[type] || [];
   for (const field of recommended) {
-    if (!schema[field]) {
+    const alternatives = FIELD_ALIASES[field] || [field];
+    const found = alternatives.some((alt) => !!schema[alt]);
+    if (!found) {
       warnings.push(`Zalecane pole brakuje: ${field}`);
     }
   }
