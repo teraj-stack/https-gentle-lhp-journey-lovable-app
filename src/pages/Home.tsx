@@ -71,12 +71,18 @@ const localBusinessSchema = {
     {
       "@type": "MedicalClinic",
       "name": "CML Siedlce – Beauty & Mind",
+      "telephone": "+48 500 600 509",
       "address": {
         "@type": "PostalAddress",
         "streetAddress": "ul. Brzeska 125",
         "addressLocality": "Siedlce",
         "postalCode": "08-110",
         "addressCountry": "PL"
+      },
+      "geo": {
+        "@type": "GeoCoordinates",
+        "latitude": 52.1681,
+        "longitude": 22.2901
       },
       "openingHoursSpecification": {
         "@type": "OpeningHoursSpecification",
