@@ -440,6 +440,7 @@ const EdukacjaPrzedWizyta = () => {
       </motion.section>
     </div>
   </div>
-);
+  );
+};
 
 export default EdukacjaPrzedWizyta;
