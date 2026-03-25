@@ -9,6 +9,7 @@ import EVLTFAQ from "@/components/evlt/EVLTFAQ";
 import ProcedureSummaryTable from "@/components/shared/ProcedureSummaryTable";
 import MedicalProcedureSchema from "@/components/shared/MedicalProcedureSchema";
 import SeoHead from "@/components/shared/SeoHead";
+import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 
 const evltSummary = [
   { label: "Przygotowanie", value: "Konsultacja flebologiczna oraz USG Doppler w celu mapowania niewydolnych żył" },

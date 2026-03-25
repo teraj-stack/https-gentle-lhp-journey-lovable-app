@@ -12,6 +12,7 @@ import FiLaCFAQ from "@/components/filac/FiLaCFAQ";
 import ProcedureSummaryTable from "@/components/shared/ProcedureSummaryTable";
 import MedicalProcedureSchema from "@/components/shared/MedicalProcedureSchema";
 import SeoHead from "@/components/shared/SeoHead";
+import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 
 const filacSummary = [
   { label: "Przygotowanie", value: "Diagnostyka obrazowa (USG transrektalne lub MRI miednicy) — dokładne zmapowanie kanału przetoki" },

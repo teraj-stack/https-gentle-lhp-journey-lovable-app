@@ -7,6 +7,7 @@ import SkleroterapiaFAQ from "@/components/skleroterapia/SkleroterapiaFAQ";
 import ProcedureSummaryTable from "@/components/shared/ProcedureSummaryTable";
 import MedicalProcedureSchema from "@/components/shared/MedicalProcedureSchema";
 import SeoHead from "@/components/shared/SeoHead";
+import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 
 const skleroterapiaSummary = [
   { label: "Przygotowanie", value: "USG Doppler żył" },
