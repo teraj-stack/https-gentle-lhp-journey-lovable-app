@@ -27,6 +27,7 @@ const Kontakt = lazy(() => import("@/pages/Kontakt"));
 const EbookPajaczki = lazy(() => import("@/pages/EbookPajaczki"));
 const ProktologFAQ = lazy(() => import("@/pages/ProktologFAQ"));
 const PielegnacjaNog = lazy(() => import("@/pages/PielegnacjaNog"));
+const EdukacjaPrzedWizyta = lazy(() => import("@/pages/EdukacjaPrzedWizyta"));
 const PolitykaPrywatnosci = lazy(() => import("@/pages/PolitykaPrywatnosci"));
 const Regulamin = lazy(() => import("@/pages/Regulamin"));
 const Cennik = lazy(() => import("@/pages/Cennik"));
@@ -68,6 +69,7 @@ const App = () => (
               <Route path="/dla-pacjenta/ebook-pajaczki" element={<EbookPajaczki />} />
               <Route path="/dla-pacjenta/proktolog-faq" element={<ProktologFAQ />} />
               <Route path="/dla-pacjenta/pielegnacja-nog" element={<PielegnacjaNog />} />
+              <Route path="/dla-pacjenta/edukacja" element={<EdukacjaPrzedWizyta />} />
               <Route path="/kontakt" element={<Kontakt />} />
               <Route path="/blog" element={<Blog />} />
               <Route path="/blog/:slug" element={<BlogPost />} />

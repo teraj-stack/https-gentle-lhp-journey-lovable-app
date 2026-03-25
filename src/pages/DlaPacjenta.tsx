@@ -71,6 +71,13 @@ const onlineGuides = [
     href: "/dla-pacjenta/pielegnacja-nog",
     icon: "🦵",
   },
+  {
+    title: "Dlaczego edukacja przed wizytą jest kluczowa?",
+    subtitle: "Infografika edukacyjna",
+    desc: "Jak przygotowanie merytoryczne optymalizuje czas konsultacji, redukuje stres i pomaga podjąć świadomą decyzję o leczeniu.",
+    href: "/dla-pacjenta/edukacja",
+    icon: "🎓",
+  },
 ];
 
 const benefits = [
