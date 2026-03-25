@@ -6,7 +6,7 @@ const Footer = () =>
     <div className="max-w-7xl mx-auto px-4 md:px-8 py-16">
       <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-10">
         <div className="lg:col-span-1">
-          <span className="text-2xl font-bold font-serif text-primary">CML</span>
+          <span className="text-2xl font-bold font-serif text-primary">S.C.A.L.E.</span>
           <p className="text-sm mt-3 leading-relaxed text-muted-foreground">
             Centrum Medycyny Laserowej. Skuteczność, empatia, zaufanie.
           </p>
