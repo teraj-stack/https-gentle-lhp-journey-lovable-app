@@ -37,7 +37,7 @@ const AboutPhilosophy = () => (
       <motion.div {...fadeUp} className="text-center mb-14">
         <p className="text-sm font-sans uppercase tracking-[0.15em] text-primary mb-4">Nasza Filozofia</p>
         <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-          Trzy filary modelu CML
+          Trzy filary modelu S.C.A.L.E.
         </h2>
         <div className="premium-divider" />
       </motion.div>
