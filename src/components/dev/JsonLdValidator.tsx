@@ -66,6 +66,43 @@ function validateSchema(schema: Record<string, unknown>): ValidationResult {
     }
   }
 
+  // FAQPage deep validation
+  if (type === "FAQPage") {
+    const mainEntity = schema["mainEntity"];
+    if (mainEntity) {
+      if (!Array.isArray(mainEntity)) {
+        errors.push("mainEntity powinno być tablicą obiektów Question");
+      } else {
+        if (mainEntity.length === 0) {
+          warnings.push("mainEntity jest pustą tablicą — brak pytań");
+        }
+        mainEntity.forEach((item: Record<string, unknown>, idx: number) => {
+          const qType = item["@type"];
+          if (qType !== "Question") {
+            errors.push(`mainEntity[${idx}]: @type = "${qType}" — oczekiwano "Question"`);
+          }
+          if (!item["name"]) {
+            errors.push(`mainEntity[${idx}]: brak pola "name" (treść pytania)`);
+          }
+          const answer = item["acceptedAnswer"] as Record<string, unknown> | undefined;
+          if (!answer) {
+            errors.push(`mainEntity[${idx}]: brak pola "acceptedAnswer"`);
+          } else {
+            if (answer["@type"] !== "Answer") {
+              errors.push(`mainEntity[${idx}].acceptedAnswer: @type = "${answer["@type"]}" — oczekiwano "Answer"`);
+            }
+            if (!answer["text"]) {
+              errors.push(`mainEntity[${idx}].acceptedAnswer: brak pola "text"`);
+            }
+          }
+        });
+        if (mainEntity.length > 0) {
+          warnings.push(`FAQPage zawiera ${mainEntity.length} pytań — Google wspiera maks. ~10 w rich results`);
+        }
+      }
+    }
+  }
+
   return { type, raw: schema, errors, warnings, valid: errors.length === 0 };
 }
 
