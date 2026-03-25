@@ -20,6 +20,7 @@ const About = () => (
       <Breadcrumbs items={[{ label: "O nas" }]} />
     </div>
     <AboutDoctor />
+    <ScalesCards />
     <AboutPhilosophy />
     <AboutModel />
     <AboutAdvantages />
