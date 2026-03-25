@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { MapPin, Phone, Clock, Mail } from "lucide-react";
 import { z } from "zod";
 import SeoHead from "@/components/shared/SeoHead";
+import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 
 const fadeUp = {
   initial: { opacity: 0, y: 30 },
