@@ -49,7 +49,7 @@ const scales = [
     subtitle: "Skalowanie",
     icon: TrendingUp,
     description:
-      "Projekt S.C.A.L.E.S. to nie tylko klinika — to ekosystem szkoleniowy. Dzielimy się wiedzą z lekarzami w całej Polsce, rozwijając sieć placówek partnerskich i podnosząc standardy opieki ambulatoryjnej w skali kraju.",
+      "Projekt S.C.A.L.E. to nie tylko klinika — to ekosystem szkoleniowy. Dzielimy się wiedzą z lekarzami w całej Polsce, rozwijając sieć placówek partnerskich i podnosząc standardy opieki ambulatoryjnej w skali kraju.",
   },
 ];
 
