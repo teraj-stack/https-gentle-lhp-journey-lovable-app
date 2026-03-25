@@ -150,7 +150,7 @@ const EdukacjaPrzedWizyta = () => {
       },
       author: {
         "@type": "Physician",
-        name: "lek. med. Kamil Bujok",
+        name: "lek. med. Jan Bujok",
         medicalSpecialty: "Proctology",
       },
       publisher: {

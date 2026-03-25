@@ -109,7 +109,7 @@ const PielegnacjaNog = () => {
       },
       author: {
         "@type": "Physician",
-        name: "lek. med. Kamil Bujok",
+        name: "lek. med. Jan Bujok",
         medicalSpecialty: "Phlebology",
       },
       publisher: {
