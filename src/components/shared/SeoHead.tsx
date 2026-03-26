@@ -5,15 +5,17 @@ interface SeoHeadProps {
   description: string;
   path: string;
   type?: string;
+  image?: string;
 }
 
 const BASE_URL = "https://cml.pl";
 const OG_IMAGE = `${BASE_URL}/og-image.png`;
 
-const SeoHead = ({ title, description, path, type = "article" }: SeoHeadProps) => {
+const SeoHead = ({ title, description, path, type = "article", image }: SeoHeadProps) => {
   useEffect(() => {
     const fullTitle = `${title} | CML – Centrum Medycyny Laserowej`;
     const url = `${BASE_URL}${path}`;
+    const ogImage = image || OG_IMAGE;
 
     document.title = fullTitle;
 
@@ -23,13 +25,13 @@ const SeoHead = ({ title, description, path, type = "article" }: SeoHeadProps) =
       "og:description": description,
       "og:type": type,
       "og:url": url,
-      "og:image": OG_IMAGE,
+      "og:image": ogImage,
       "og:site_name": "CML – Centrum Medycyny Laserowej",
       "og:locale": "pl_PL",
       "twitter:card": "summary_large_image",
       "twitter:title": title,
       "twitter:description": description,
-      "twitter:image": OG_IMAGE,
+      "twitter:image": ogImage,
     };
 
     const createdElements: HTMLElement[] = [];
@@ -77,7 +79,7 @@ const SeoHead = ({ title, description, path, type = "article" }: SeoHeadProps) =
         descMeta.setAttribute("content", "Innowacyjne leczenie laserowe hemoroidów, żylaków i przetok w klinikach premium. Skuteczność, empatia, zaufanie. Umów konsultację.");
       }
     };
-  }, [title, description, path, type]);
+  }, [title, description, path, type, image]);
 
   return null;
 };
