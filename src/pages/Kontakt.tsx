@@ -58,7 +58,7 @@ const Kontakt = () => {
     setErrors((prev) => ({ ...prev, [e.target.name]: "" }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const result = contactSchema.safeParse(form);
     if (!result.success) {
