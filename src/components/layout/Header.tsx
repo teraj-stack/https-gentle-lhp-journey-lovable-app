@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Menu, X, ChevronDown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import logoCml from "@/assets/logo-cml.png";
 
 
 const proktologiaItems = [
@@ -60,7 +61,8 @@ const Header = () => {
       <div className="max-w-7xl mx-auto px-4 md:px-8">
         <div className="flex items-center justify-between h-16 md:h-20">
           <Link to="/" className="flex items-center gap-3">
-            <span className="text-xs text-muted-foreground leading-tight">
+            <img src={logoCml} alt="CML – Centrum Medycyny Laserowej" className="h-10 md:h-12 w-auto" />
+            <span className="text-xs text-muted-foreground leading-tight hidden sm:block">
               Centrum<br />Medycyny Laserowej
             </span>
           </Link>
