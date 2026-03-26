@@ -1,0 +1,1 @@
+UPDATE blog_posts SET cover_image_url = 'https://jowtjcyevactqmhqrytz.supabase.co/storage/v1/object/public/blog-covers/hemoroidy-laser.jpg' WHERE id = 'a85c5f95-dae8-43a1-b339-ac9ceca9a5bb';
