@@ -70,12 +70,22 @@ const Kontakt = () => {
       return;
     }
     setSending(true);
-    // Simulate send
-    setTimeout(() => {
-      setSending(false);
-      setForm({ name: "", email: "", phone: "", message: "" });
-      toast({ title: "Wiadomość wysłana", description: "Odezwiemy się w ciągu 24 godzin." });
-    }, 1000);
+    const id = crypto.randomUUID();
+    try {
+      await supabase.functions.invoke('send-transactional-email', {
+        body: {
+          templateName: 'contact-confirmation',
+          recipientEmail: result.data.email,
+          idempotencyKey: `contact-confirm-${id}`,
+          templateData: { name: result.data.name },
+        },
+      });
+    } catch (err) {
+      console.error('Email send failed:', err);
+    }
+    setSending(false);
+    setForm({ name: "", email: "", phone: "", message: "" });
+    toast({ title: "Wiadomość wysłana", description: "Odezwiemy się w ciągu 24 godzin." });
   };
 
   return (
