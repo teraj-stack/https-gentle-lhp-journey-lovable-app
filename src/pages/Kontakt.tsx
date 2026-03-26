@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
 import Breadcrumbs from "@/components/layout/Breadcrumbs";
 import { Button } from "@/components/ui/button";
@@ -57,7 +58,7 @@ const Kontakt = () => {
     setErrors((prev) => ({ ...prev, [e.target.name]: "" }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const result = contactSchema.safeParse(form);
     if (!result.success) {
@@ -69,12 +70,22 @@ const Kontakt = () => {
       return;
     }
     setSending(true);
-    // Simulate send
-    setTimeout(() => {
-      setSending(false);
-      setForm({ name: "", email: "", phone: "", message: "" });
-      toast({ title: "Wiadomość wysłana", description: "Odezwiemy się w ciągu 24 godzin." });
-    }, 1000);
+    const id = crypto.randomUUID();
+    try {
+      await supabase.functions.invoke('send-transactional-email', {
+        body: {
+          templateName: 'contact-confirmation',
+          recipientEmail: result.data.email,
+          idempotencyKey: `contact-confirm-${id}`,
+          templateData: { name: result.data.name },
+        },
+      });
+    } catch (err) {
+      console.error('Email send failed:', err);
+    }
+    setSending(false);
+    setForm({ name: "", email: "", phone: "", message: "" });
+    toast({ title: "Wiadomość wysłana", description: "Odezwiemy się w ciągu 24 godzin." });
   };
 
   return (
