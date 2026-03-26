@@ -16,8 +16,6 @@ const SeoHead = ({ title, description, path, type = "article", image }: SeoHeadP
     const fullTitle = `${title} | CML – Centrum Medycyny Laserowej`;
     const url = `${BASE_URL}${path}`;
     const ogImage = image || OG_IMAGE;
-    const fullTitle = `${title} | CML – Centrum Medycyny Laserowej`;
-    const url = `${BASE_URL}${path}`;
 
     document.title = fullTitle;
 
