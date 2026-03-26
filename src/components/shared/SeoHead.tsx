@@ -79,7 +79,7 @@ const SeoHead = ({ title, description, path, type = "article", image }: SeoHeadP
         descMeta.setAttribute("content", "Innowacyjne leczenie laserowe hemoroidów, żylaków i przetok w klinikach premium. Skuteczność, empatia, zaufanie. Umów konsultację.");
       }
     };
-  }, [title, description, path, type]);
+  }, [title, description, path, type, image]);
 
   return null;
 };
