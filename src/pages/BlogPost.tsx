@@ -55,6 +55,7 @@ const BlogPost = () => {
         title={post.title}
         description={post.excerpt || post.title}
         path={`/blog/${post.slug}`}
+        image={post.cover_image_url || undefined}
       />
 
       <article className="pt-32 pb-24">

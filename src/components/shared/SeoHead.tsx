@@ -31,7 +31,7 @@ const SeoHead = ({ title, description, path, type = "article", image }: SeoHeadP
       "twitter:card": "summary_large_image",
       "twitter:title": title,
       "twitter:description": description,
-      "twitter:image": OG_IMAGE,
+      "twitter:image": ogImage,
     };
 
     const createdElements: HTMLElement[] = [];
