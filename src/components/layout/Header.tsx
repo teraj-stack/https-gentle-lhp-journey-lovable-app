@@ -3,7 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Menu, X, ChevronDown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import logoImage from "@/assets/logo-bujok.webp";
+
 
 const proktologiaItems = [
   { label: "Hemoroidy – LHP", href: "/leczenie/lhp", desc: "Laserowa plastyka hemoroidów" },
@@ -60,12 +60,7 @@ const Header = () => {
       <div className="max-w-7xl mx-auto px-4 md:px-8">
         <div className="flex items-center justify-between h-16 md:h-20">
           <Link to="/" className="flex items-center gap-3">
-            <img
-              src={logoImage}
-              alt="Bujok Medical logo"
-              className="h-10 md:h-12 w-auto rounded-md"
-            />
-            <span className="hidden sm:block text-xs text-muted-foreground leading-tight">
+            <span className="text-xs text-muted-foreground leading-tight">
               Centrum<br />Medycyny Laserowej
             </span>
           </Link>
