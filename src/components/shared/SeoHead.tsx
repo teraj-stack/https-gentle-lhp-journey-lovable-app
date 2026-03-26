@@ -5,6 +5,7 @@ interface SeoHeadProps {
   description: string;
   path: string;
   type?: string;
+  image?: string;
 }
 
 const BASE_URL = "https://cml.pl";
