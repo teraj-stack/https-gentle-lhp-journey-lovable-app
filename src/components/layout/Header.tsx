@@ -60,12 +60,7 @@ const Header = () => {
       <div className="max-w-7xl mx-auto px-4 md:px-8">
         <div className="flex items-center justify-between h-16 md:h-20">
           <Link to="/" className="flex items-center gap-3">
-            <img
-              src={logoImage}
-              alt="Bujok Medical logo"
-              className="h-10 md:h-12 w-auto rounded-md"
-            />
-            <span className="hidden sm:block text-xs text-muted-foreground leading-tight">
+            <span className="text-xs text-muted-foreground leading-tight">
               Centrum<br />Medycyny Laserowej
             </span>
           </Link>
