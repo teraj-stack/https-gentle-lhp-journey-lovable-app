@@ -11,8 +11,11 @@ interface SeoHeadProps {
 const BASE_URL = "https://cml.pl";
 const OG_IMAGE = `${BASE_URL}/og-image.png`;
 
-const SeoHead = ({ title, description, path, type = "article" }: SeoHeadProps) => {
+const SeoHead = ({ title, description, path, type = "article", image }: SeoHeadProps) => {
   useEffect(() => {
+    const fullTitle = `${title} | CML – Centrum Medycyny Laserowej`;
+    const url = `${BASE_URL}${path}`;
+    const ogImage = image || OG_IMAGE;
     const fullTitle = `${title} | CML – Centrum Medycyny Laserowej`;
     const url = `${BASE_URL}${path}`;
 
