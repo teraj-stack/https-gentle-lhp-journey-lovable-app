@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
-import { Download } from "lucide-react";
+import { Download, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 import logoCmlEbook from "@/assets/logo-cml-ebook.png";
 
 const EbookBanner = () => (
@@ -42,10 +43,10 @@ const EbookBanner = () => (
             </a>
           </Button>
           <Button variant="outline" size="lg" asChild>
-            <a href="/ebooks/Hemoroidy-od-A-do-Z-Infografika.pdf" download>
-              <Download className="w-4 h-4 mr-2" />
+            <Link to="/dla-pacjenta/hemoroidy-infografika">
+              <ChevronRight className="w-4 h-4 mr-2" />
               Infografika A–Z
-            </a>
+            </Link>
           </Button>
         </div>
       </div>

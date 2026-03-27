@@ -37,6 +37,7 @@ const AdminLogin = lazy(() => import("@/pages/AdminLogin"));
 const AdminDashboard = lazy(() => import("@/pages/AdminDashboard"));
 const AdminPostEditor = lazy(() => import("@/pages/AdminPostEditor"));
 const Unsubscribe = lazy(() => import("@/pages/Unsubscribe"));
+const HemoroidyInfografika = lazy(() => import("@/pages/HemoroidyInfografika"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 
 const queryClient = new QueryClient();
@@ -71,6 +72,7 @@ const App = () => (
               <Route path="/dla-pacjenta/proktolog-faq" element={<ProktologFAQ />} />
               <Route path="/dla-pacjenta/pielegnacja-nog" element={<PielegnacjaNog />} />
               <Route path="/dla-pacjenta/edukacja" element={<EdukacjaPrzedWizyta />} />
+              <Route path="/dla-pacjenta/hemoroidy-infografika" element={<HemoroidyInfografika />} />
               <Route path="/kontakt" element={<Kontakt />} />
               <Route path="/blog" element={<Blog />} />
               <Route path="/blog/:slug" element={<BlogPost />} />
