@@ -339,7 +339,7 @@ const HemoroidyInfografika = () => (
             <div className="rounded-2xl bg-gradient-to-br from-primary/90 to-primary p-8 md:p-10 text-primary-foreground">
               <h2 className="text-3xl font-serif font-bold mb-6">Pułapka Błędnego Koła</h2>
               <div className="bg-primary-foreground/10 rounded-xl p-6 mt-4">
-                <AlertTriangle className="w-8 h-8 text-yellow-400 mb-3" />
+                <AlertTriangle className="w-8 h-8 text-primary mb-3" />
                 <blockquote className="text-sm italic leading-relaxed">
                   „To tak, jakbyś w samochodzie ze świecącą kontrolką 'Awaria silnika' zakleił ją taśmą izolacyjną. Nie widzisz problemu — ale silnik nadal jest zepsuty."
                 </blockquote>
