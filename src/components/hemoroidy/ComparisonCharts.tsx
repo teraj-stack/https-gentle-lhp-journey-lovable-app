@@ -88,6 +88,17 @@ const ComparisonCharts = () => (
       unit="min"
       delay={0.4}
     />
+    <BarRow
+      label="Całkowity koszt leczenia (zł)*"
+      laserValue={4500}
+      classicValue={8000}
+      max={10000}
+      unit="zł"
+      delay={0.6}
+    />
+    <p className="text-[10px] text-muted-foreground/60 italic mt-2">
+      * Szacunkowy koszt obejmuje zabieg, wizyty kontrolne i okres rekonwalescencji (utracone zarobki). Wartości orientacyjne.
+    </p>
   </div>
 );
 
