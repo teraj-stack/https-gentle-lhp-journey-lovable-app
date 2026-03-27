@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
-import { Download } from "lucide-react";
+import { Download, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 import logoCmlEbook from "@/assets/logo-cml-ebook.png";
 
 const EbookBanner = () => (
