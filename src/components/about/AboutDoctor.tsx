@@ -25,7 +25,7 @@ const AboutDoctor = () => (
         </motion.div>
 
         <motion.div {...fadeUp}>
-          <p className="text-sm font-sans uppercase tracking-[0.15em] text-primary mb-4">Twórca projektu S.C.A.L.E.</p>
+          <p className="text-sm font-sans uppercase tracking-[0.15em] text-primary mb-4">Twórca projektu Centrum Medycyny Laserowej</p>
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-2 leading-tight">
             Dr Jan Bujok
           </h2>
