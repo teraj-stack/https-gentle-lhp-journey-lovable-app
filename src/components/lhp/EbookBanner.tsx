@@ -2,9 +2,13 @@ import { motion } from "framer-motion";
 import { Download, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import { useIsMobile } from "@/hooks/use-mobile";
 import ebookCoverLhp from "@/assets/ebook-cover-powrot.png";
 
-const EbookBanner = () => (
+const EbookBanner = () => {
+  const isMobile = useIsMobile();
+
+  return (
   <motion.section
     initial={{ opacity: 0, y: 20 }}
     whileInView={{ opacity: 1, y: 0 }}
@@ -13,15 +17,29 @@ const EbookBanner = () => (
     className="glass-card rounded-2xl p-8 md:p-10"
   >
     <div className="flex flex-col md:flex-row items-center gap-8">
-      <div className="w-36 md:w-44 shrink-0">
-        <img
-          src={ebookCoverLhp}
-          alt="Okładka e-booka — Powrót do Komfortu"
-          className="w-full rounded-xl shadow-xl ring-1 ring-primary/20"
-          loading="lazy"
-          width={640}
-          height={896}
-        />
+      <div className="w-36 md:w-44 shrink-0" style={{ perspective: "800px" }}>
+        {isMobile ? (
+          <img
+            src={ebookCoverLhp}
+            alt="Okładka e-booka — Powrót do Komfortu"
+            className="w-full rounded-xl shadow-xl ring-1 ring-primary/20"
+            loading="lazy"
+            width={640}
+            height={896}
+          />
+        ) : (
+          <motion.img
+            src={ebookCoverLhp}
+            alt="Okładka e-booka — Powrót do Komfortu"
+            className="w-full rounded-xl shadow-xl ring-1 ring-primary/20 cursor-pointer"
+            style={{ transformOrigin: "left center" }}
+            whileHover={{ rotateY: -15, scale: 1.05, boxShadow: "12px 12px 30px rgba(0,0,0,0.25)" }}
+            transition={{ type: "spring", stiffness: 200, damping: 20 }}
+            loading="lazy"
+            width={640}
+            height={896}
+          />
+        )}
       </div>
       <div className="flex-1 text-center md:text-left">
         <h3 className="text-xl font-bold text-foreground mb-2">
@@ -48,6 +66,7 @@ const EbookBanner = () => (
       </div>
     </div>
   </motion.section>
-);
+  );
+};
 
 export default EbookBanner;
