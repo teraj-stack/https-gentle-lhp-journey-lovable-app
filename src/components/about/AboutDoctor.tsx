@@ -39,7 +39,7 @@ const AboutDoctor = () => (
               Pionier w swojej dziedzinie – jako <strong className="text-foreground">pierwszy lekarz w Polsce</strong> zaczął wykonywać zabiegi z zakresu proktologii estetycznej, przełamując tabu i&nbsp;wprowadzając nowe standardy dbałości o intymny komfort pacjentów.
             </p>
             <p>
-              Twórca projektu <strong className="text-foreground">S.C.A.L.E.</strong> — <span className="text-xs tracking-wide">(Safety, Clinical Trust, Aesthetic, Lasers, Empathy)</span> — inicjatywy rozwijanej w&nbsp;partnerstwie m.in. z&nbsp;Kliniką Ginekologii w&nbsp;Wilanowie oraz placówką Beauty&nbsp;&amp;&nbsp;Mind w&nbsp;Siedlcach. Łączy najnowocześniejsze technologie — laseroterapię, radiofrekwencję, CLaCS — z&nbsp;precyzyjną diagnostyką, osiągając spektakularne efekty lecznicze przy zachowaniu doskonałych rezultatów estetycznych.
+              Twórca projektu <strong className="text-foreground">Centrum Medycyny Laserowej</strong> — <span className="text-xs tracking-wide">(Safety, Clinical Trust, Aesthetic, Lasers, Empathy)</span> — inicjatywy rozwijanej w&nbsp;partnerstwie m.in. z&nbsp;Kliniką Ginekologii w&nbsp;Wilanowie oraz placówką Beauty&nbsp;&amp;&nbsp;Mind w&nbsp;Siedlcach. Łączy najnowocześniejsze technologie — laseroterapię, radiofrekwencję, CLaCS — z&nbsp;precyzyjną diagnostyką, osiągając spektakularne efekty lecznicze przy zachowaniu doskonałych rezultatów estetycznych.
             </p>
             <p>
               Specjalizuje się w małoinwazyjnym leczeniu żylaków (również zaawansowanych problemów żylnych), pajączków, naczynek, teleangiectazji, hemoroidów, szczelin i przetok.
