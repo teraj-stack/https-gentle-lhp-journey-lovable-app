@@ -500,10 +500,10 @@ const HemoroidyInfografika = () => (
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
-              { degree: "I°", color: "border-green-500", bg: "", title: "Laser Idealny", desc: "Niemal natychmiastowa ulga. Najlepszy moment na interwencję. Zabieg najmniej inwazyjny.", icon: <CheckCircle2 className="w-5 h-5 text-green-500" /> },
-              { degree: "II°", color: "border-blue-500", bg: "", title: "Bardzo Skuteczny", desc: "Guzki wypadają podczas parcia, ale cofają się samoistnie. Laser wciąż daje doskonałe efekty.", icon: <CheckCircle2 className="w-5 h-5 text-blue-500" /> },
-              { degree: "III°", color: "border-yellow-500", bg: "bg-yellow-500/5", title: "Moment Krytyczny", desc: "Guzki wypadają, ale dają się odprowadzić. Ostatnia szansa na uniknięcie skalpela.", icon: <AlertTriangle className="w-5 h-5 text-yellow-500" /> },
-              { degree: "IV°", color: "border-red-500", bg: "bg-red-500/5", title: "Laser Niewystarczający", desc: "Guzki trwale na zewnątrz. Często jedyną drogą pozostaje tradycyjna operacja z bolesną rekonwalescencją.", icon: <XCircle className="w-5 h-5 text-red-500" /> },
+              { degree: "I°", color: "border-sage", bg: "", title: "Laser Idealny", desc: "Niemal natychmiastowa ulga. Najlepszy moment na interwencję. Zabieg najmniej inwazyjny.", icon: <CheckCircle2 className="w-5 h-5 text-sage" /> },
+              { degree: "II°", color: "border-primary", bg: "", title: "Bardzo Skuteczny", desc: "Guzki wypadają podczas parcia, ale cofają się samoistnie. Laser wciąż daje doskonałe efekty.", icon: <CheckCircle2 className="w-5 h-5 text-primary" /> },
+              { degree: "III°", color: "border-warm-beige", bg: "bg-warm-beige/5", title: "Moment Krytyczny", desc: "Guzki wypadają, ale dają się odprowadzić. Ostatnia szansa na uniknięcie skalpela.", icon: <AlertTriangle className="w-5 h-5 text-warm-beige" /> },
+              { degree: "IV°", color: "border-destructive", bg: "bg-destructive/5", title: "Laser Niewystarczający", desc: "Guzki trwale na zewnątrz. Często jedyną drogą pozostaje tradycyjna operacja z bolesną rekonwalescencją.", icon: <XCircle className="w-5 h-5 text-destructive" /> },
             ].map((stage) => (
               <div key={stage.degree} className={`glass-card rounded-2xl p-5 border-t-4 ${stage.color} ${stage.bg} text-left`}>
                 <div className="flex items-center justify-between mb-3">
