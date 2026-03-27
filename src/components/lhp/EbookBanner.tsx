@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { Download, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import { useIsMobile } from "@/hooks/use-mobile";
 import ebookCoverLhp from "@/assets/ebook-cover-powrot.png";
 
 const EbookBanner = () => (
