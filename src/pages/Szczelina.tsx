@@ -250,6 +250,8 @@ const Szczelina = () => (
 
       <ProcedureSummaryTable rows={szczelinaSummary} fadeUp={fadeUp} />
 
+      <EbookBanner />
+
       {/* CTA */}
       <motion.section {...fadeUp} className="text-center py-8">
         <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4 font-serif">
