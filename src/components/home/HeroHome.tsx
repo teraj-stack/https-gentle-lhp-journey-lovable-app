@@ -1,9 +1,9 @@
 import { motion, useScroll, useTransform } from "framer-motion";
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import heroImage from "@/assets/hero-clinic.webp";
-import logoImage from "@/assets/logo-cml-4.png";
+
 
 // Preload hero image as soon as module loads
 const preloadLink = document.createElement("link");
@@ -74,18 +74,6 @@ const HeroHome = () => {
         </div>
       </motion.div>
 
-      <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 1, delay: 0.3 }}
-        className="hidden lg:flex items-center justify-center flex-shrink-0"
-      >
-        <img
-          src={logoImage}
-          alt="Bujok Medical logo"
-          className="w-52 xl:w-64 rounded-2xl opacity-90 -mt-5"
-        />
-      </motion.div>
     </div>
     </section>
   );
