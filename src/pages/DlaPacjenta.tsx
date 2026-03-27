@@ -165,23 +165,27 @@ const DlaPacjenta = () => {
           className="glass-card rounded-2xl p-8 md:p-10"
         >
           <div className="flex flex-col md:flex-row gap-8 items-start">
-            <div ref={coverRef} className="w-full md:w-2/5 shrink-0 mx-auto md:mx-0 overflow-hidden rounded-xl" style={{ perspective: "800px" }}>
+            <div ref={coverRef} className="w-full md:w-2/5 shrink-0 mx-auto md:mx-0" style={{ perspective: "800px" }}>
               {isMobile ? (
                 <img
                   src={ebookCoverImg}
                   alt="Okładka e-booka CML — Powrót do Komfortu"
-                  className="w-full shadow-xl object-cover"
+                  className="w-full rounded-xl shadow-xl ring-1 ring-primary/20"
                   loading="lazy"
+                  width={640}
+                  height={896}
                 />
               ) : (
                 <motion.img
                   src={ebookCoverImg}
                   alt="Okładka e-booka CML — Powrót do Komfortu"
-                  className="w-full shadow-xl object-cover scale-110 cursor-pointer"
-                  style={{ y: coverY, transformOrigin: "left center" }}
-                  whileHover={{ rotateY: -15, scale: 1.13, boxShadow: "12px 12px 30px rgba(0,0,0,0.25)" }}
+                  className="w-full rounded-xl shadow-xl ring-1 ring-primary/20 cursor-pointer"
+                  style={{ transformOrigin: "left center" }}
+                  whileHover={{ rotateY: -15, scale: 1.05, boxShadow: "12px 12px 30px rgba(0,0,0,0.25)" }}
                   transition={{ type: "spring", stiffness: 200, damping: 20 }}
                   loading="lazy"
+                  width={640}
+                  height={896}
                 />
               )}
             </div>
