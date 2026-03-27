@@ -394,7 +394,7 @@ const HemoroidyInfografika = () => (
                 </div>
                 <div className="bg-primary-foreground/10 rounded-xl p-4">
                   <p className="text-xs uppercase opacity-60">Ból: Metoda laserowa</p>
-                  <p className="text-4xl font-bold text-green-300">2-3<span className="text-lg opacity-60">/10</span></p>
+                  <p className="text-4xl font-bold text-sage">2-3<span className="text-lg opacity-60">/10</span></p>
                   <p className="text-xs opacity-70">Zwykłe leki przeciwbólowe (OTC)</p>
                 </div>
               </div>
