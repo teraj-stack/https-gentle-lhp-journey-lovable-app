@@ -1,5 +1,7 @@
-import { motion } from "framer-motion";
+import { useRef } from "react";
+import { motion, useScroll, useTransform } from "framer-motion";
 import ParallaxSection from "@/components/ui/parallax-section";
+import { useIsMobile } from "@/hooks/use-mobile";
 import Breadcrumbs from "@/components/layout/Breadcrumbs";
 import SeoHead from "@/components/shared/SeoHead";
 import { BookOpen, Download, FileText, Shield, Clock, Heart, ArrowRight } from "lucide-react";
@@ -87,7 +89,16 @@ const benefits = [
   { icon: Heart, title: "Bez medycznego żargonu", desc: "Przewodniki napisane prostym językiem, z empatią i zrozumieniem Twojej sytuacji." },
 ];
 
-const DlaPacjenta = () => (
+const DlaPacjenta = () => {
+  const coverRef = useRef<HTMLDivElement>(null);
+  const isMobile = useIsMobile();
+  const { scrollYProgress } = useScroll({
+    target: coverRef,
+    offset: ["start end", "end start"],
+  });
+  const coverY = useTransform(scrollYProgress, [0, 1], [30, -30]);
+
+  return (
   <div className="min-h-screen bg-background pt-20">
     <SeoHead
       title="Dla Pacjenta – materiały edukacyjne"
@@ -154,13 +165,23 @@ const DlaPacjenta = () => (
           className="glass-card rounded-2xl p-8 md:p-10"
         >
           <div className="flex flex-col md:flex-row gap-8 items-start">
-            <div className="w-full md:w-2/5 shrink-0 mx-auto md:mx-0">
-              <img
-                src={ebookCoverImg}
-                alt="Okładka e-booka CML — Powrót do Komfortu"
-                className="w-full rounded-xl shadow-xl object-cover transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl"
-                loading="lazy"
-              />
+            <div ref={coverRef} className="w-full md:w-2/5 shrink-0 mx-auto md:mx-0 overflow-hidden rounded-xl">
+              {isMobile ? (
+                <img
+                  src={ebookCoverImg}
+                  alt="Okładka e-booka CML — Powrót do Komfortu"
+                  className="w-full shadow-xl object-cover"
+                  loading="lazy"
+                />
+              ) : (
+                <motion.img
+                  src={ebookCoverImg}
+                  alt="Okładka e-booka CML — Powrót do Komfortu"
+                  className="w-full shadow-xl object-cover transition-shadow duration-300 hover:shadow-2xl scale-110"
+                  style={{ y: coverY }}
+                  loading="lazy"
+                />
+              )}
             </div>
             <div className="flex-1">
               <h3 className="text-xl font-bold text-foreground mb-2">{mainEbook.title}</h3>
@@ -251,6 +272,7 @@ const DlaPacjenta = () => (
       </motion.section>
     </div>
   </div>
-);
+  );
+};
 
 export default DlaPacjenta;
