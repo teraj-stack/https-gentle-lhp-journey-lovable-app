@@ -13,6 +13,7 @@ import ProcedureSummaryTable from "@/components/shared/ProcedureSummaryTable";
 import MedicalProcedureSchema from "@/components/shared/MedicalProcedureSchema";
 import SeoHead from "@/components/shared/SeoHead";
 import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
+import EbookBanner from "@/components/shared/EbookBanner";
 
 const filacSummary = [
   { label: "Przygotowanie", value: "Diagnostyka obrazowa (USG transrektalne lub MRI miednicy) — dokładne zmapowanie kanału przetoki" },
@@ -68,7 +69,9 @@ const FiLaC = () => (
       <FiLaCFAQ fadeUp={fadeUp} />
       <ProcedureSummaryTable rows={filacSummary} fadeUp={fadeUp} />
 
-      {/* CTA */}
+        <EbookBanner />
+
+        {/* CTA */}
       <motion.section {...fadeUp} className="glass-card rounded-2xl p-8 md:p-12 text-center max-w-2xl mx-auto">
         <div className="text-4xl mb-4">🎯</div>
         <h2 className="text-2xl font-bold text-foreground mb-3">

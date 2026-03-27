@@ -13,6 +13,7 @@ import ProcedureSummaryTable from "@/components/shared/ProcedureSummaryTable";
 import MedicalProcedureSchema from "@/components/shared/MedicalProcedureSchema";
 import SeoHead from "@/components/shared/SeoHead";
 import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
+import EbookBanner from "@/components/shared/EbookBanner";
 
 const silacSummary = [
   { label: "Przygotowanie", value: "Badanie proktologiczne, ocena rozległości torbieli pilonidalnej. W niektórych przypadkach USG lub MRI." },
@@ -68,7 +69,9 @@ const SiLaC = () => (
       <SiLaCFAQ fadeUp={fadeUp} />
       <ProcedureSummaryTable rows={silacSummary} fadeUp={fadeUp} />
 
-      {/* CTA */}
+        <EbookBanner />
+
+        {/* CTA */}
       <motion.section {...fadeUp} className="glass-card rounded-2xl p-8 md:p-12 text-center max-w-2xl mx-auto">
         <div className="text-4xl mb-4">🎯</div>
         <h2 className="text-2xl font-bold text-foreground mb-3">

@@ -6,7 +6,7 @@ import DiscomfortChart from "@/components/lhp/DiscomfortChart";
 import Timeline from "@/components/lhp/Timeline";
 import ProcedureSteps from "@/components/lhp/ProcedureSteps";
 import QualificationScale from "@/components/lhp/QualificationScale";
-import EbookBanner from "@/components/lhp/EbookBanner";
+import EbookBanner from "@/components/shared/EbookBanner";
 import CTASection from "@/components/lhp/CTASection";
 import LHPFAQ from "@/components/lhp/LHPFAQ";
 import ProcedureSummaryTable from "@/components/shared/ProcedureSummaryTable";
