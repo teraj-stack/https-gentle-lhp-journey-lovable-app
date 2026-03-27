@@ -62,9 +62,6 @@ const Header = () => {
         <div className="flex items-center justify-between h-16 md:h-20">
           <Link to="/" className="flex items-center gap-3">
             <img src={logoCml} alt="CML – Centrum Medycyny Laserowej" className="h-12 sm:h-10 md:h-12 w-auto" />
-            <span className="text-xs text-muted-foreground leading-tight hidden sm:block">
-              Centrum<br />Medycyny Laserowej
-            </span>
           </Link>
 
           <nav className="hidden lg:flex items-center gap-1">
