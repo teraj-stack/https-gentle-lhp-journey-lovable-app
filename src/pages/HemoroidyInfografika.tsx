@@ -423,6 +423,12 @@ const HemoroidyInfografika = () => (
       </motion.section>
 
       {/* WYKRESY PORÓWNAWCZE */}
+      <motion.section {...sectionAnim} className="py-16 bg-card/50">
+        <div className="max-w-6xl mx-auto px-4">
+          <StatsCountUp />
+        </div>
+      </motion.section>
+
       <motion.section {...sectionAnim} className="py-16">
         <div className="max-w-6xl mx-auto px-4">
           <span className="text-xs font-semibold tracking-widest uppercase text-primary">Dane kliniczne</span>
