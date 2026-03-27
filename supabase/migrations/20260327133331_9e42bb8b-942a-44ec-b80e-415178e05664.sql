@@ -1,0 +1,1 @@
+UPDATE blog_posts SET cover_image_url = 'https://jowtjcyevactqmhqrytz.supabase.co/storage/v1/object/public/blog-covers/blog-cover-nogi-v2.jpg' WHERE slug = 'zylaki-nog-operacja';
