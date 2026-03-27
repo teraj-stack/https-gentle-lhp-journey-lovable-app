@@ -43,10 +43,10 @@ const EbookBanner = () => (
             </a>
           </Button>
           <Button variant="outline" size="lg" asChild>
-            <a href="/ebooks/Hemoroidy-od-A-do-Z-Infografika.pdf" download>
-              <Download className="w-4 h-4 mr-2" />
+            <Link to="/dla-pacjenta/hemoroidy-infografika">
+              <ChevronRight className="w-4 h-4 mr-2" />
               Infografika A–Z
-            </a>
+            </Link>
           </Button>
         </div>
       </div>
