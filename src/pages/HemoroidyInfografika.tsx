@@ -18,13 +18,16 @@ const sectionAnim = {
 const HemoroidyInfografika = () => (
   <>
     <SeoHead
-      title="Hemoroidy od A do Z – Infografika | CML"
+      title="Hemoroidy od A do Z – Infografika"
       description="Kompleksowy przewodnik po nowoczesnym leczeniu hemoroidów. Laser vs. metody klasyczne — porównanie, procedura krok po kroku, okno terapeutyczne."
-      canonical="/dla-pacjenta/hemoroidy-infografika"
+      path="/dla-pacjenta/hemoroidy-infografika"
     />
 
     <div className="min-h-screen">
-      <Breadcrumbs />
+      <Breadcrumbs items={[
+        { label: "Dla Pacjenta", href: "/dla-pacjenta" },
+        { label: "Hemoroidy od A do Z" },
+      ]} />
 
       {/* HERO */}
       <motion.section {...sectionAnim} className="py-16 md:py-24">
