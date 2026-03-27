@@ -299,7 +299,7 @@ const HemoroidyInfografika = () => (
               },
               {
                 title: "Porównanie metod",
-                queries: ["„laserowe usuwanie hemoroidów LHP opinie"", "„metoda Barrona a operacja Milligana..."", "„najmniej inwazyjna metoda usuwania..."", "„czy operacja hemoroidów jest pod narkozą""],
+                queries: ["\u201Elaserowe usuwanie hemoroid\u00F3w LHP opinie\u201D", "\u201Emetoda Barrona a operacja Milligana...\u201D", "\u201Enajmniej inwazyjna metoda usuwania...\u201D", "\u201Eczy operacja hemoroid\u00F3w jest pod narkoz\u0105\u201D"],
               },
               {
                 title: "Logistyka i obawy",
