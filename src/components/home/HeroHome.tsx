@@ -3,7 +3,7 @@ import { useRef } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import heroImage from "@/assets/hero-clinic.webp";
-import heroIllustration from "@/assets/hero-illustration.png";
+import ebookCover from "@/assets/ebook-cover-powrot.png";
 
 
 // Preload hero image as soon as module loads
@@ -81,14 +81,19 @@ const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
         animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
         transition={{ duration: 1.2, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
         className="hidden md:flex flex-1 items-center justify-center"
+        style={{ perspective: "800px" }}
       >
-        <img
-          src={heroIllustration}
-          alt="Ilustracja technologii laserowej — schemat naczyń z wiązką lasera"
-          width={896}
-          height={1024}
-          className="w-full max-w-md lg:max-w-lg xl:max-w-xl drop-shadow-[0_8px_30px_rgba(0,0,0,0.4)]"
-        />
+        <Link to="/dla-pacjenta">
+          <motion.img
+            src={ebookCover}
+            alt="Okładka e-booka CML — Powrót do Komfortu"
+            width={640}
+            height={896}
+            className="w-full max-w-[280px] lg:max-w-xs xl:max-w-sm rounded-xl shadow-2xl ring-1 ring-primary/20 cursor-pointer"
+            whileHover={{ rotateY: -15, scale: 1.05 }}
+            transition={{ type: "spring", stiffness: 200, damping: 20 }}
+          />
+        </Link>
       </motion.div>
 
     </div>
