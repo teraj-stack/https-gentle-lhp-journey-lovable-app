@@ -214,7 +214,7 @@ const HemoroidyInfografika = () => (
 
           <div className="grid md:grid-cols-2 gap-6">
             {[
-              { title: "Poduszka ortopedyczna", desc: "„Oponka" z otworem redukująca ucisk na odbyt podczas wielogodzinnego siedzenia." },
+              { title: "Poduszka ortopedyczna", desc: "\u201EOponka\u201D z otworem redukuj\u0105ca ucisk na odbyt podczas wielogodzinnego siedzenia." },
               { title: "Biurko do pracy stojącej", desc: "Eliminuje wielogodzinny ucisk miednicy. Coraz popularniejsze w środowiskach IT i biurowych." },
               { title: "Nakładka bidetowa na WC", desc: "Zapewnia delikatną higienę bez podrażnień mechanicznych. Alternatywa dla papieru toaletowego." },
               { title: "Podnóżek toaletowy", desc: "Wymusza fizjologiczną pozycję kucania podczas wypróżniania — zgodną z anatomią człowieka." },
