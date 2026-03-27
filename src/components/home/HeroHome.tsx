@@ -87,7 +87,7 @@ const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
           alt="Ilustracja technologii laserowej — schemat naczyń z wiązką lasera"
           width={896}
           height={1024}
-          className="w-full max-w-md lg:max-w-lg xl:max-w-xl drop-shadow-[0_0_40px_rgba(212,175,55,0.3)]"
+          className="w-full max-w-md lg:max-w-lg xl:max-w-xl"
         />
       </motion.div>
 
