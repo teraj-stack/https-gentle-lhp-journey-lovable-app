@@ -93,11 +93,6 @@ const benefits = [
 const DlaPacjenta = () => {
   const coverRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
-  const { scrollYProgress } = useScroll({
-    target: coverRef,
-    offset: ["start end", "end start"],
-  });
-  const coverY = useTransform(scrollYProgress, [0, 1], [30, -30]);
 
   return (
   <div className="min-h-screen bg-background pt-20">
