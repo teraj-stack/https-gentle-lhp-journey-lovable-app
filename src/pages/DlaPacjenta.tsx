@@ -158,7 +158,7 @@ const DlaPacjenta = () => (
               <img
                 src={ebookCoverImg}
                 alt="Okładka e-booka CML — Powrót do Komfortu"
-                className="w-full rounded-xl shadow-xl object-cover"
+                className="w-full rounded-xl shadow-xl object-cover transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl"
                 loading="lazy"
               />
             </div>
