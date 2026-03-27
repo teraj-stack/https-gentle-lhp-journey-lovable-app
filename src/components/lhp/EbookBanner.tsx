@@ -66,6 +66,7 @@ const EbookBanner = () => {
       </div>
     </div>
   </motion.section>
-);
+  );
+};
 
 export default EbookBanner;
