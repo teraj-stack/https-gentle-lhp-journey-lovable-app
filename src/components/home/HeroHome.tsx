@@ -3,7 +3,7 @@ import { useRef } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import heroImage from "@/assets/hero-clinic.webp";
-import logoImage from "@/assets/logo-cml-4.png";
+
 
 // Preload hero image as soon as module loads
 const preloadLink = document.createElement("link");
