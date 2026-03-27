@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import Breadcrumbs from "@/components/layout/Breadcrumbs";
 import ComparisonCharts from "@/components/hemoroidy/ComparisonCharts";
 import ReturnToWorkChart from "@/components/hemoroidy/ReturnToWorkChart";
+import SatisfactionChart from "@/components/hemoroidy/SatisfactionChart";
 import SeoHead from "@/components/shared/SeoHead";
 import {
   User, Layers, Clock, Monitor, Dumbbell, Baby, TrendingUp,
