@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import Breadcrumbs from "@/components/layout/Breadcrumbs";
+import ComparisonCharts from "@/components/hemoroidy/ComparisonCharts";
 import SeoHead from "@/components/shared/SeoHead";
 import {
   User, Layers, Clock, Monitor, Dumbbell, Baby, TrendingUp,
@@ -414,6 +415,19 @@ const HemoroidyInfografika = () => (
                 </div>
               ))}
             </div>
+          </div>
+        </div>
+      </motion.section>
+
+      {/* WYKRESY PORÓWNAWCZE */}
+      <motion.section {...sectionAnim} className="py-16">
+        <div className="max-w-6xl mx-auto px-4">
+          <span className="text-xs font-semibold tracking-widest uppercase text-primary">Dane kliniczne</span>
+          <h2 className="text-3xl md:text-4xl font-serif font-bold text-foreground mt-2 mb-10">
+            Liczby mówią same za siebie
+          </h2>
+          <div className="glass-card rounded-2xl p-6 md:p-10">
+            <ComparisonCharts />
           </div>
         </div>
       </motion.section>
