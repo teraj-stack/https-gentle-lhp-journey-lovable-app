@@ -303,7 +303,7 @@ const HemoroidyInfografika = () => (
               },
               {
                 title: "Logistyka i obawy",
-                queries: ["„pierwszy stolec po operacji jak przeżyć"", "„ile dni L4 po operacji hemoroidów"", "„ból po laserowym usunięciu hemoroidów"", "„kiedy wrócić do pracy po zabiegu...""],
+                queries: ["\u201Epierwszy stolec po operacji jak prze\u017Cy\u0107\u201D", "\u201Eile dni L4 po operacji hemoroid\u00F3w\u201D", "\u201Eb\u00F3l po laserowym usuni\u0119ciu hemoroid\u00F3w\u201D", "\u201Ekiedy wr\u00F3ci\u0107 do pracy po zabiegu...\u201D"],
               },
             ].map((col) => (
               <div key={col.title} className="glass-card rounded-2xl p-6">
