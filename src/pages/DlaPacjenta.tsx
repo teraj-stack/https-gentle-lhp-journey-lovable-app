@@ -165,13 +165,23 @@ const DlaPacjenta = () => {
           className="glass-card rounded-2xl p-8 md:p-10"
         >
           <div className="flex flex-col md:flex-row gap-8 items-start">
-            <div className="w-full md:w-2/5 shrink-0 mx-auto md:mx-0">
-              <img
-                src={ebookCoverImg}
-                alt="Okładka e-booka CML — Powrót do Komfortu"
-                className="w-full rounded-xl shadow-xl object-cover transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl"
-                loading="lazy"
-              />
+            <div ref={coverRef} className="w-full md:w-2/5 shrink-0 mx-auto md:mx-0 overflow-hidden rounded-xl">
+              {isMobile ? (
+                <img
+                  src={ebookCoverImg}
+                  alt="Okładka e-booka CML — Powrót do Komfortu"
+                  className="w-full shadow-xl object-cover"
+                  loading="lazy"
+                />
+              ) : (
+                <motion.img
+                  src={ebookCoverImg}
+                  alt="Okładka e-booka CML — Powrót do Komfortu"
+                  className="w-full shadow-xl object-cover transition-shadow duration-300 hover:shadow-2xl scale-110"
+                  style={{ y: coverY }}
+                  loading="lazy"
+                />
+              )}
             </div>
             <div className="flex-1">
               <h3 className="text-xl font-bold text-foreground mb-2">{mainEbook.title}</h3>
