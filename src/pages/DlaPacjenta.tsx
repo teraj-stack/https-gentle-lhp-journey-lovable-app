@@ -5,7 +5,7 @@ import SeoHead from "@/components/shared/SeoHead";
 import { BookOpen, Download, FileText, Shield, Clock, Heart, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import ebookCoverImg from "@/assets/ebook-cover-lhp.png";
+import ebookCoverImg from "@/assets/ebook-cover-powrot.png";
 
 const fadeUp = {
   initial: { opacity: 0, y: 30 },

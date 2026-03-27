@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { Download, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import ebookCoverLhp from "@/assets/ebook-cover-lhp.png";
+import ebookCoverLhp from "@/assets/ebook-cover-powrot.png";
 
 const EbookBanner = () => (
   <motion.section
