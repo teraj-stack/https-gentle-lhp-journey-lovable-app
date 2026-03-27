@@ -4,7 +4,7 @@ const barAnim = (delay: number, width: string) => ({
   initial: { width: "0%" },
   whileInView: { width },
   viewport: { once: true },
-  transition: { duration: 1.2, delay, ease: [0.16, 1, 0.3, 1] },
+  transition: { duration: 1.2, delay, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] },
 });
 
 const numberAnim = (delay: number) => ({
