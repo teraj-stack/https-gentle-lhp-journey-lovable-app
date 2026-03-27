@@ -144,7 +144,7 @@ const DlaPacjenta = () => (
         <motion.div {...fadeUp} className="text-center">
           <p className="text-sm font-sans uppercase tracking-[0.15em] text-primary mb-3">E-book do pobrania</p>
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-            Darmowy e-book Dr. Bujoka
+            Darmowy e-book Dr Bujoka
           </h2>
           <div className="premium-divider mb-6" />
         </motion.div>
