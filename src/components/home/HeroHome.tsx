@@ -3,6 +3,7 @@ import { useRef } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import heroImage from "@/assets/hero-clinic.webp";
+import heroIllustration from "@/assets/hero-illustration.png";
 
 
 // Preload hero image as soon as module loads
@@ -73,6 +74,21 @@ const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
             <Link to="/o-nas">Poznaj twórcę projektu</Link>
           </Button>
         </div>
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9, filter: "blur(10px)" }}
+        animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+        transition={{ duration: 1.2, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
+        className="hidden md:flex flex-1 items-center justify-center"
+      >
+        <img
+          src={heroIllustration}
+          alt="Ilustracja technologii laserowej — schemat naczyń z wiązką lasera"
+          width={896}
+          height={1024}
+          className="w-full max-w-md lg:max-w-lg xl:max-w-xl drop-shadow-[0_0_40px_rgba(212,175,55,0.3)]"
+        />
       </motion.div>
 
     </div>
