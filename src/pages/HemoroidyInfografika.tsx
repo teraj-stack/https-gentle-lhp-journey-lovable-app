@@ -295,7 +295,7 @@ const HemoroidyInfografika = () => (
             {[
               {
                 title: "Zaawansowane objawy",
-                queries: ["„wypadające guzki krwawnicze 3 i 4 stopnia"", "„zakrzepica splotu hemoroidalnego operacja"", "„ogromny ból po wypróżnieniu..."", "„krwawienie z odbytu i skrzepy""],
+                queries: ["\u201Ewypadaj\u0105ce guzki krwawnicze 3 i 4 stopnia\u201D", "\u201Ezakrzepica splotu hemoroidalnego operacja\u201D", "\u201Eogromny b\u00F3l po wypr\u00F3\u017Cnieniu...\u201D", "\u201Ekrwawienie z odbytu i skrzepy\u201D"],
               },
               {
                 title: "Porównanie metod",
