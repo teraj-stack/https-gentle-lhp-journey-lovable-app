@@ -1,5 +1,7 @@
-import { motion } from "framer-motion";
+import { useRef } from "react";
+import { motion, useScroll, useTransform } from "framer-motion";
 import ParallaxSection from "@/components/ui/parallax-section";
+import { useIsMobile } from "@/hooks/use-mobile";
 import Breadcrumbs from "@/components/layout/Breadcrumbs";
 import SeoHead from "@/components/shared/SeoHead";
 import { BookOpen, Download, FileText, Shield, Clock, Heart, ArrowRight } from "lucide-react";
