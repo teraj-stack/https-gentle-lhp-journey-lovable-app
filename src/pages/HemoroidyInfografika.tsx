@@ -434,6 +434,9 @@ const HemoroidyInfografika = () => (
           <div className="glass-card rounded-2xl p-6 md:p-10 mt-8">
             <ReturnToWorkChart />
           </div>
+          <div className="glass-card rounded-2xl p-6 md:p-10 mt-8">
+            <SatisfactionChart />
+          </div>
         </div>
       </motion.section>
 
