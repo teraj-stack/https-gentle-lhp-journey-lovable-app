@@ -16,7 +16,7 @@ const EbookBanner = () => (
       <div className="w-36 md:w-44 shrink-0">
         <div className="aspect-[3/4] rounded-xl bg-gradient-to-br from-primary/90 to-primary shadow-xl ring-1 ring-primary-foreground/20 flex flex-col items-center justify-between p-5 text-primary-foreground">
           <div className="flex items-center justify-center pt-1 pb-2">
-            <img src={logoCmlEbook} alt="CML – Centrum Medycyny Laserowej" className="w-4/5 h-auto object-contain drop-shadow-[0_2px_8px_rgba(0,0,0,0.3)]" />
+            <img src={logoCmlEbook} alt="CML – Centrum Medycyny Laserowej" className="w-full h-2/3 object-contain drop-shadow-[0_2px_8px_rgba(0,0,0,0.3)]" />
           </div>
           <div className="flex flex-col items-center">
             <h3 className="text-xs font-bold text-center leading-snug font-serif">
