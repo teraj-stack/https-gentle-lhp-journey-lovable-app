@@ -73,6 +73,9 @@ const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
           >
             <Link to="/o-nas">Poznaj twórcę projektu</Link>
           </Button>
+        </div>
+      </motion.div>
+
       <motion.div
         initial={{ opacity: 0, scale: 0.9, filter: "blur(10px)" }}
         animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
