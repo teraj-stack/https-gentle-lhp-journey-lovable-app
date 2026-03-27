@@ -154,7 +154,7 @@ const DlaPacjenta = () => (
           className="glass-card rounded-2xl p-8 md:p-10"
         >
           <div className="flex flex-col md:flex-row gap-8 items-start">
-            <div className="w-full md:w-2/3 shrink-0 mx-auto md:mx-0">
+            <div className="w-full md:w-1/3 shrink-0 mx-auto md:mx-0">
               <img
                 src={ebookCoverImg}
                 alt="Okładka e-booka CML — Powrót do Komfortu"
