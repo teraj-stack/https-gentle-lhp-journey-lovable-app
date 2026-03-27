@@ -272,6 +272,7 @@ const DlaPacjenta = () => {
       </motion.section>
     </div>
   </div>
-);
+  );
+};
 
 export default DlaPacjenta;
