@@ -60,16 +60,20 @@ const Blog = () => {
                   className="group border-b border-border pb-10 last:border-0"
                 >
                   <Link to={`/blog/${post.slug}`} className="block md:flex md:gap-6">
-                    {post.cover_image_url && (
-                      <div className="mb-4 md:mb-0 md:flex-shrink-0 md:w-48 lg:w-56">
+                    <div className="mb-4 md:mb-0 md:flex-shrink-0 md:w-48 lg:w-56">
+                      {post.cover_image_url ? (
                         <img
                           src={post.cover_image_url}
                           alt={post.title}
                           className="w-full h-40 md:h-32 lg:h-36 object-cover rounded-lg"
                           loading="lazy"
                         />
-                      </div>
-                    )}
+                      ) : (
+                        <div className="w-full h-40 md:h-32 lg:h-36 rounded-lg bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
+                          <span className="text-3xl opacity-60">📝</span>
+                        </div>
+                      )}
+                    </div>
                     <div className="flex-1 min-w-0">
                       <h2 className="text-xl md:text-2xl font-semibold font-serif text-foreground group-hover:text-primary transition-colors mb-2">
                         {post.title}
