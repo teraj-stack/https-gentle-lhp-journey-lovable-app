@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import Breadcrumbs from "@/components/layout/Breadcrumbs";
 import ComparisonCharts from "@/components/hemoroidy/ComparisonCharts";
 import ReturnToWorkChart from "@/components/hemoroidy/ReturnToWorkChart";
+import SatisfactionChart from "@/components/hemoroidy/SatisfactionChart";
 import SeoHead from "@/components/shared/SeoHead";
 import {
   User, Layers, Clock, Monitor, Dumbbell, Baby, TrendingUp,
@@ -432,6 +433,9 @@ const HemoroidyInfografika = () => (
           </div>
           <div className="glass-card rounded-2xl p-6 md:p-10 mt-8">
             <ReturnToWorkChart />
+          </div>
+          <div className="glass-card rounded-2xl p-6 md:p-10 mt-8">
+            <SatisfactionChart />
           </div>
         </div>
       </motion.section>
