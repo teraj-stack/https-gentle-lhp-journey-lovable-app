@@ -5,6 +5,7 @@ import SeoHead from "@/components/shared/SeoHead";
 import { BookOpen, Download, FileText, Shield, Clock, Heart, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import ebookCoverImg from "@/assets/ebook-cover-cml.png";
 
 const fadeUp = {
   initial: { opacity: 0, y: 30 },
@@ -153,16 +154,13 @@ const DlaPacjenta = () => (
           className="glass-card rounded-2xl p-8 md:p-10"
         >
           <div className="flex flex-col md:flex-row gap-8 items-start">
-            <div className="w-32 md:w-40 shrink-0 mx-auto md:mx-0">
-              <div className={`aspect-[3/4] rounded-xl bg-gradient-to-br ${mainEbook.color} shadow-xl flex flex-col items-center justify-center p-4 text-primary-foreground`}>
-                <BookOpen className="w-8 h-8 mb-3 opacity-80" />
-                <p className="text-[10px] uppercase tracking-[0.15em] opacity-60 mb-1 font-sans">CML</p>
-                <h3 className="text-[11px] font-bold text-center leading-snug font-serif">
-                  {mainEbook.title.split("—")[0].trim()}
-                </h3>
-                <div className="w-8 h-px bg-primary-foreground/30 my-2" />
-                <p className="text-[9px] text-center opacity-70 font-sans">{mainEbook.pages}</p>
-              </div>
+            <div className="w-full md:w-2/3 shrink-0 mx-auto md:mx-0">
+              <img
+                src={ebookCoverImg}
+                alt="Okładka e-booka CML — Powrót do Komfortu"
+                className="w-full rounded-xl shadow-xl object-cover"
+                loading="lazy"
+              />
             </div>
             <div className="flex-1">
               <h3 className="text-xl font-bold text-foreground mb-2">{mainEbook.title}</h3>
