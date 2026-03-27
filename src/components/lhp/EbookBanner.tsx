@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { Download, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import logoCmlEbook from "@/assets/logo-cml-ebook.png";
+import ebookCoverLhp from "@/assets/ebook-cover-lhp.png";
 
 const EbookBanner = () => (
   <motion.section
@@ -14,18 +14,14 @@ const EbookBanner = () => (
   >
     <div className="flex flex-col md:flex-row items-center gap-8">
       <div className="w-36 md:w-44 shrink-0">
-        <div className="aspect-[3/4] rounded-xl bg-gradient-to-br from-primary/90 to-primary shadow-xl ring-1 ring-primary-foreground/20 flex flex-col items-center justify-between p-5 text-primary-foreground">
-          <div className="flex items-center justify-center pt-1 pb-2">
-            <img src={logoCmlEbook} alt="CML – Centrum Medycyny Laserowej" className="w-full h-2/3 object-contain drop-shadow-[0_2px_8px_rgba(0,0,0,0.3)]" />
-          </div>
-          <div className="flex flex-col items-center">
-            <h3 className="text-xs font-bold text-center leading-snug font-serif">
-              Powrót do Komfortu
-            </h3>
-            <div className="w-8 h-px bg-primary-foreground/30 my-2" />
-            <p className="text-[10px] text-center opacity-70 font-sans">Przewodnik PDF</p>
-          </div>
-        </div>
+        <img
+          src={ebookCoverLhp}
+          alt="Okładka e-booka — Powrót do Komfortu"
+          className="w-full rounded-xl shadow-xl ring-1 ring-primary/20"
+          loading="lazy"
+          width={640}
+          height={896}
+        />
       </div>
       <div className="flex-1 text-center md:text-left">
         <h3 className="text-xl font-bold text-foreground mb-2">
