@@ -347,7 +347,7 @@ const HemoroidyInfografika = () => (
               <div className="grid grid-cols-2 gap-4">
                 {[
                   { num: "01", title: "Kupujesz maść", desc: "Substancje przeciwbólowe dają chwilową ulgę. Pieczenie ustępuje." },
-                  { num: "02", title: "Myślisz: „Wyleczone"", desc: "Złudne poczucie bezpieczeństwa. Powrót do starych nawyków." },
+                  { num: "02", title: "My\u015Blisz: \u201EWyleczone\u201D", desc: "Z\u0142udne poczucie bezpiecze\u0144stwa. Powr\u00F3t do starych nawyk\u00F3w." },
                   { num: "03", title: "Wracasz do pracy", desc: "8 godzin siedzenia. Mechanizm ucisku startuje od nowa." },
                   { num: "04", title: "Frustracja rośnie", desc: "Kupujesz coraz droższe preparaty, ale okresy ulgi są coraz krótsze." },
                 ].map((step) => (
