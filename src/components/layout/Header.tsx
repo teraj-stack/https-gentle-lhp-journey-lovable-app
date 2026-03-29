@@ -6,6 +6,14 @@ import { motion, AnimatePresence } from "framer-motion";
 import logoCml from "@/assets/logo-cml.png";
 
 
+const twojProblemItems = [
+  { label: "Hemoroidy", href: "/dla-pacjenta/hemoroidy", desc: "Objawy, stopnie i metody leczenia" },
+  { label: "Żylaki nóg", href: "/leczenie/evlt", desc: "Ból, obrzęki, widoczne żyły" },
+  { label: "Pajączki naczyniowe", href: "/leczenie/clacs", desc: "Czerwone i fioletowe naczynka" },
+  { label: "Szczelina odbytu", href: "/leczenie/szczelina", desc: "Ból i krwawienie przy wypróżnieniu" },
+  { label: "Przetoka odbytu", href: "/leczenie/filac", desc: "Sączenie, ropień, nawracający ból" },
+];
+
 const proktologiaItems = [
   { label: "Hemoroidy – LHP", href: "/leczenie/lhp", desc: "Laserowa plastyka hemoroidów" },
   { label: "Przetoki – FiLaC", href: "/leczenie/filac", desc: "Laserowe zamykanie przetok" },
