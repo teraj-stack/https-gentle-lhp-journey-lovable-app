@@ -161,7 +161,7 @@ const DlaPacjenta = () => {
           className="glass-card rounded-2xl p-8 md:p-10"
         >
           <div className="flex flex-col md:flex-row gap-8 items-start">
-            <div ref={coverRef} className="w-full md:w-2/5 shrink-0 mx-auto md:mx-0" style={{ perspective: "800px" }}>
+            <div ref={coverRef} className="w-36 md:w-44 shrink-0 mx-auto md:mx-0" style={{ perspective: "800px" }}>
               {isMobile ? (
                 <img
                   src={ebookCoverImg}
