@@ -12,6 +12,7 @@ const twojProblemItems = [
   { label: "Pajączki naczyniowe", href: "/leczenie/clacs", desc: "Czerwone i fioletowe naczynka" },
   { label: "Szczelina odbytu", href: "/leczenie/szczelina", desc: "Ból i krwawienie przy wypróżnieniu" },
   { label: "Przetoka odbytu", href: "/leczenie/filac", desc: "Sączenie, ropień, nawracający ból" },
+  { label: "Torbiel pilonidalna", href: "/leczenie/silac", desc: "Guzek, ból i sączenie w okolicy kości ogonowej" },
 ];
 
 const proktologiaItems = [
