@@ -6,6 +6,7 @@ import ProcedureSummaryTable from "@/components/shared/ProcedureSummaryTable";
 import MedicalProcedureSchema from "@/components/shared/MedicalProcedureSchema";
 import SeoHead from "@/components/shared/SeoHead";
 import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
+import EbookBanner from "@/components/shared/EbookBanner";
 import MikroflebektomiaFAQ from "@/components/mikroflebektomia/MikroflebektomiaFAQ";
 
 const summary = [
@@ -192,6 +193,8 @@ const Mikroflebektomia = () => (
 
       {/* Karta zabiegu */}
       <ProcedureSummaryTable rows={summary} fadeUp={fadeUp} />
+
+      <EbookBanner />
 
       {/* CTA */}
       <motion.section {...fadeUp} className="glass-card rounded-2xl p-8 md:p-12 text-center max-w-2xl mx-auto">
