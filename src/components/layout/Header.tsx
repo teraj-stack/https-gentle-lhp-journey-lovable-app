@@ -6,6 +6,14 @@ import { motion, AnimatePresence } from "framer-motion";
 import logoCml from "@/assets/logo-cml.png";
 
 
+const twojProblemItems = [
+  { label: "Hemoroidy", href: "/dla-pacjenta/hemoroidy", desc: "Objawy, stopnie i metody leczenia" },
+  { label: "Żylaki nóg", href: "/leczenie/evlt", desc: "Ból, obrzęki, widoczne żyły" },
+  { label: "Pajączki naczyniowe", href: "/leczenie/clacs", desc: "Czerwone i fioletowe naczynka" },
+  { label: "Szczelina odbytu", href: "/leczenie/szczelina", desc: "Ból i krwawienie przy wypróżnieniu" },
+  { label: "Przetoka odbytu", href: "/leczenie/filac", desc: "Sączenie, ropień, nawracający ból" },
+];
+
 const proktologiaItems = [
   { label: "Hemoroidy – LHP", href: "/leczenie/lhp", desc: "Laserowa plastyka hemoroidów" },
   { label: "Przetoki – FiLaC", href: "/leczenie/filac", desc: "Laserowe zamykanie przetok" },
@@ -73,6 +81,48 @@ const Header = () => {
             >
               O nas
             </Link>
+
+            {/* Twój Problem Mega */}
+            <div
+              className="relative"
+              onMouseEnter={() => setMegaOpen("problem")}
+              onMouseLeave={() => setMegaOpen(null)}
+            >
+              <button className={`flex items-center gap-1 px-4 py-2 text-sm font-medium transition-colors rounded-lg hover:bg-accent/50 ${
+                isSectionActive(twojProblemItems) ? "text-primary bg-accent/50" : "text-foreground/80 hover:text-primary"
+              }`}>
+                Twój Problem
+                <ChevronDown className={`w-3.5 h-3.5 transition-transform ${megaOpen === "problem" ? "rotate-180" : ""}`} />
+              </button>
+              <AnimatePresence>
+                {megaOpen === "problem" && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 8 }}
+                    transition={{ duration: 0.2 }}
+                    className="absolute top-full left-0 mt-1 w-72 bg-card rounded-xl shadow-lg border border-border p-2"
+                  >
+                    {twojProblemItems.map((item) => (
+                      <Link
+                        key={item.href}
+                        to={item.href}
+                        className={`block px-4 py-3 rounded-lg hover:bg-accent/50 transition-colors group ${
+                          isActive(item.href) ? "bg-accent/50" : ""
+                        }`}
+                      >
+                        <div className={`text-sm font-medium transition-colors ${
+                          isActive(item.href) ? "text-primary" : "text-foreground group-hover:text-primary"
+                        }`}>
+                          {item.label}
+                        </div>
+                        <div className="text-xs text-muted-foreground mt-0.5">{item.desc}</div>
+                      </Link>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
 
             {/* Proktologia Mega */}
             <div
@@ -264,7 +314,13 @@ const Header = () => {
             <div className="px-4 py-4 space-y-1">
               {[
                 <Link key="o-nas" to="/o-nas" className={`block px-4 py-3 rounded-lg text-sm font-medium hover:bg-accent/50 ${isActive("/o-nas") ? "text-primary bg-accent/50" : "text-foreground"}`}>O nas</Link>,
-                <div key="prokto-label" className="px-4 py-2 text-xs font-semibold text-primary uppercase tracking-wider">Proktologia</div>,
+                <div key="problem-label" className="px-4 py-2 text-xs font-semibold text-primary uppercase tracking-wider mt-2">Twój Problem</div>,
+                ...twojProblemItems.map((item) => (
+                  <Link key={`problem-${item.href}`} to={item.href} className={`block px-6 py-2.5 rounded-lg text-sm hover:bg-accent/50 ${isActive(item.href) ? "text-primary bg-accent/50 font-medium" : "text-foreground/80"}`}>
+                    {item.label}
+                  </Link>
+                )),
+                <div key="prokto-label" className="px-4 py-2 text-xs font-semibold text-primary uppercase tracking-wider mt-2">Proktologia</div>,
                 ...proktologiaItems.map((item) => (
                   <Link key={item.href} to={item.href} className={`block px-6 py-2.5 rounded-lg text-sm hover:bg-accent/50 ${isActive(item.href) ? "text-primary bg-accent/50 font-medium" : "text-foreground/80"}`}>
                     {item.label}
