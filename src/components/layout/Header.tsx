@@ -314,7 +314,13 @@ const Header = () => {
             <div className="px-4 py-4 space-y-1">
               {[
                 <Link key="o-nas" to="/o-nas" className={`block px-4 py-3 rounded-lg text-sm font-medium hover:bg-accent/50 ${isActive("/o-nas") ? "text-primary bg-accent/50" : "text-foreground"}`}>O nas</Link>,
-                <div key="prokto-label" className="px-4 py-2 text-xs font-semibold text-primary uppercase tracking-wider">Proktologia</div>,
+                <div key="problem-label" className="px-4 py-2 text-xs font-semibold text-primary uppercase tracking-wider mt-2">Twój Problem</div>,
+                ...twojProblemItems.map((item) => (
+                  <Link key={`problem-${item.href}`} to={item.href} className={`block px-6 py-2.5 rounded-lg text-sm hover:bg-accent/50 ${isActive(item.href) ? "text-primary bg-accent/50 font-medium" : "text-foreground/80"}`}>
+                    {item.label}
+                  </Link>
+                )),
+                <div key="prokto-label" className="px-4 py-2 text-xs font-semibold text-primary uppercase tracking-wider mt-2">Proktologia</div>,
                 ...proktologiaItems.map((item) => (
                   <Link key={item.href} to={item.href} className={`block px-6 py-2.5 rounded-lg text-sm hover:bg-accent/50 ${isActive(item.href) ? "text-primary bg-accent/50 font-medium" : "text-foreground/80"}`}>
                     {item.label}
