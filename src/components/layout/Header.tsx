@@ -36,6 +36,7 @@ const dlaPacjentaItems = [
   { label: "Hemoroidy od A do Z", href: "/dla-pacjenta/hemoroidy", desc: "Kompleksowy przewodnik pacjenta" },
   { label: "Lekarz odpowiada", href: "/dla-pacjenta/proktolog-faq", desc: "FAQ o hemoroidach i wizycie" },
   { label: "Odzyskaj beztroskę", href: "/dla-pacjenta/ebook-pajaczki", desc: "E-book o paj\u0105czkach \u017Cylnych" },
+  { label: "Przygotowanie do zabiegu EVLT", href: "/dla-pacjenta/przygotowanie-evlt", desc: "Checklista przed zabiegiem laserowym" },
 ];
 
 const Header = () => {
