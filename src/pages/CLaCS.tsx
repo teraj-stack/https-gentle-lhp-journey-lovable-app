@@ -57,7 +57,7 @@ const preparation = [
 ];
 
 const afterCare = [
-  { emoji: "🧦", title: "ZAKAZ noszenia pończochy uciskowej", desc: "Noś wyznaczony ucisk zgodnie z zaleceniem lekarza." },
+  { emoji: "🧦", title: "ZAKAZ noszenia pończochy uciskowej", desc: "noszenie pończochy po zabiegu CLaCS istotnie podnosi ryzyko zakażenia skóry" },
   { emoji: "🚶‍♀️", title: "Spaceruj", desc: "Lekki ruch po zabiegu wspomaga gojenie." },
   { emoji: "☀️", title: "Chroń skórę", desc: "Stosuj filtr SPF 50+ na leczone miejsca przez 4–6 tygodni." },
   { emoji: "🔥", title: "Unikaj gorąca", desc: "Bez sauny, gorących kąpieli i intensywnego wysiłku przez 2 tygodnie." },
