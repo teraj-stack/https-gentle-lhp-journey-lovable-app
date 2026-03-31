@@ -7,6 +7,7 @@ import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Sun, Zap, ShieldCheck, Heart, Sparkles, Activity } from "lucide-react";
 import FototerapiaFAQ from "@/components/fototerapia/FototerapiaFAQ";
+import ProcedureSummaryTable from "@/components/shared/ProcedureSummaryTable";
 import fototerapiaColorsImg from "@/assets/fototerapia-colors.webp";
 import fototerapiaPbmImg from "@/assets/fototerapia-pbm-mechanism.webp";
 
