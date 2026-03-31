@@ -191,8 +191,8 @@ const Header = () => {
             {/* Flebologia Mega */}
             <div
               className="relative"
-              onMouseEnter={() => setMegaOpen("flebo")}
-              onMouseLeave={() => setMegaOpen(null)}
+              onMouseEnter={() => handleMegaEnter("flebo")}
+              onMouseLeave={handleMegaLeave}
             >
               <button className={`flex items-center gap-1 px-4 py-2 text-sm font-medium transition-colors rounded-lg hover:bg-accent/50 ${
                 isSectionActive(flebologiaItems) ? "text-primary bg-accent/50" : "text-foreground/80 hover:text-primary"
