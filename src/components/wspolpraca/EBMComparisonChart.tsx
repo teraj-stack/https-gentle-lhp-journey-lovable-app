@@ -66,7 +66,7 @@ const EBMComparisonChart = () => (
             }}
             formatter={(value: number, name: string) => [
               `${value}`,
-              name === "silosowa" ? "Opieka Silosowa" : "Standard S.C.A.L.E.",
+              name === "silosowa" ? "Opieka Silosowa" : "Standard CML",
             ]}
           />
           <Legend
