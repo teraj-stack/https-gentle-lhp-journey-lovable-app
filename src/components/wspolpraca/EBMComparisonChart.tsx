@@ -73,7 +73,7 @@ const EBMComparisonChart = () => (
             formatter={(value) =>
               value === "silosowa"
                 ? "Opieka Silosowa (Bez preedukacji)"
-                : "Standard S.C.A.L.E. (Z preedukacją)"
+                : "Standard CML (Z preedukacją)"
             }
             wrapperStyle={{ fontSize: 12, paddingTop: 12 }}
           />
