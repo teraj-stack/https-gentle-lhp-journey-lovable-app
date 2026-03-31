@@ -102,6 +102,28 @@ const Footer = () =>
                 </li>
               </ul>
             </div>
+
+            <div>
+              <p className="text-xs font-semibold text-foreground/80 mb-1.5">Rzeszów – IP Cliniq</p>
+              <ul className="space-y-1.5 text-sm text-muted-foreground">
+                <li className="flex items-start gap-2">
+                  <MapPin className="w-3.5 h-3.5 mt-0.5 shrink-0 text-primary/50" />
+                  <span>al. Rejtana 53, IV piętro<br />35-326 Rzeszów</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <Clock className="w-3.5 h-3.5 shrink-0 text-primary/50" />
+                  <span>Pon–Pt: 8:00–20:00, Sb: 8:00–16:00</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <Phone className="w-3.5 h-3.5 shrink-0 text-primary/50" />
+                  <span>+48 507 025 840</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <Mail className="w-3.5 h-3.5 shrink-0 text-primary/50" />
+                  <span>recepcja@ipcliniq.pl</span>
+                </li>
+              </ul>
+            </div>
           </div>
         </div>
       </div>
