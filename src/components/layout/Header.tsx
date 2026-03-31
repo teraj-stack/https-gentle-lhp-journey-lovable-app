@@ -327,7 +327,31 @@ const Header = () => {
               onClick={() => setMobileOpen(!mobileOpen)}
               aria-label="Menu"
             >
-              {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              <AnimatePresence mode="wait" initial={false}>
+                {mobileOpen ? (
+                  <motion.span
+                    key="close"
+                    initial={{ opacity: 0, rotate: -90, scale: 0.8 }}
+                    animate={{ opacity: 1, rotate: 0, scale: 1 }}
+                    exit={{ opacity: 0, rotate: 90, scale: 0.8 }}
+                    transition={{ duration: 0.2 }}
+                    className="block"
+                  >
+                    <X className="w-5 h-5" />
+                  </motion.span>
+                ) : (
+                  <motion.span
+                    key="menu"
+                    initial={{ opacity: 0, rotate: 90, scale: 0.8 }}
+                    animate={{ opacity: 1, rotate: 0, scale: 1 }}
+                    exit={{ opacity: 0, rotate: -90, scale: 0.8 }}
+                    transition={{ duration: 0.2 }}
+                    className="block"
+                  >
+                    <Menu className="w-5 h-5" />
+                  </motion.span>
+                )}
+              </AnimatePresence>
             </button>
           </div>
         </div>
@@ -335,13 +359,22 @@ const Header = () => {
 
       <AnimatePresence>
         {mobileOpen && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-            className="lg:hidden bg-card border-t border-border overflow-hidden"
-          >
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="lg:hidden fixed inset-0 top-16 bg-background/60 backdrop-blur-sm z-[-1]"
+              onClick={() => setMobileOpen(false)}
+            />
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+              className="lg:hidden bg-card border-t border-border overflow-hidden max-h-[calc(100vh-4rem)] overflow-y-auto"
+            >
             <div className="px-4 py-4 space-y-1">
               {[
                 <Link key="o-nas" to="/o-nas" className={`block px-4 py-3 rounded-lg text-sm font-medium hover:bg-accent/50 ${isActive("/o-nas") ? "text-primary bg-accent/50" : "text-foreground"}`}>O nas</Link>,
@@ -395,7 +428,8 @@ const Header = () => {
                 </Button>
               </motion.div>
             </div>
-          </motion.div>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
     </header>
