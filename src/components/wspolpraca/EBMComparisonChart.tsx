@@ -66,14 +66,14 @@ const EBMComparisonChart = () => (
             }}
             formatter={(value: number, name: string) => [
               `${value}`,
-              name === "silosowa" ? "Opieka Silosowa" : "Standard S.C.A.L.E.",
+              name === "silosowa" ? "Opieka Silosowa" : "Standard CML",
             ]}
           />
           <Legend
             formatter={(value) =>
               value === "silosowa"
                 ? "Opieka Silosowa (Bez preedukacji)"
-                : "Standard S.C.A.L.E. (Z preedukacją)"
+                : "Standard CML (Z preedukacją)"
             }
             wrapperStyle={{ fontSize: 12, paddingTop: 12 }}
           />
