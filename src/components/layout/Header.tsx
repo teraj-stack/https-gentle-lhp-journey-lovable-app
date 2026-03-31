@@ -240,7 +240,7 @@ const Header = () => {
             {/* Dla Pacjenta Mega */}
             <div
               className="relative"
-              style={{ pointerEvents: megaLocked ? 'none' : 'auto' }}
+              
               onMouseEnter={() => handleMegaEnter("pacjent")}
               onMouseLeave={handleMegaLeave}
             >
