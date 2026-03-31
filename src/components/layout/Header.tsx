@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Menu, X, ChevronDown } from "lucide-react";
@@ -44,23 +44,24 @@ const Header = () => {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [megaOpen, setMegaOpen] = useState<string | null>(null);
-  const megaLockedUntil = useRef(0);
+  const [megaLocked, setMegaLocked] = useState(false);
   const location = useLocation();
   const pathname = location.pathname;
 
   const handleMegaEnter = useCallback((key: string) => {
-    if (Date.now() >= megaLockedUntil.current) {
+    if (!megaLocked) {
       setMegaOpen(key);
     }
-  }, []);
+  }, [megaLocked]);
 
   const handleMegaLeave = useCallback(() => {
     setMegaOpen(null);
   }, []);
 
   const handleMegaLinkClick = useCallback(() => {
-    megaLockedUntil.current = Date.now() + 800;
     setMegaOpen(null);
+    setMegaLocked(true);
+    setTimeout(() => setMegaLocked(false), 1200);
   }, []);
 
   const isActive = (href: string) => pathname === href;
@@ -75,6 +76,9 @@ const Header = () => {
   useEffect(() => {
     setMobileOpen(false);
     setMegaOpen(null);
+    setMegaLocked(true);
+    const t = setTimeout(() => setMegaLocked(false), 1200);
+    return () => clearTimeout(t);
   }, [location]);
 
   return (
@@ -104,7 +108,7 @@ const Header = () => {
             {/* Twój Problem Mega */}
             <div
               className="relative"
-              
+              style={{ pointerEvents: megaLocked ? 'none' : 'auto' }}
               onMouseEnter={() => handleMegaEnter("problem")}
               onMouseLeave={handleMegaLeave}
             >
@@ -148,7 +152,7 @@ const Header = () => {
             {/* Proktologia Mega */}
             <div
               className="relative"
-              
+              style={{ pointerEvents: megaLocked ? 'none' : 'auto' }}
               onMouseEnter={() => handleMegaEnter("prokto")}
               onMouseLeave={handleMegaLeave}
             >
@@ -192,7 +196,7 @@ const Header = () => {
             {/* Flebologia Mega */}
             <div
               className="relative"
-              
+              style={{ pointerEvents: megaLocked ? 'none' : 'auto' }}
               onMouseEnter={() => handleMegaEnter("flebo")}
               onMouseLeave={handleMegaLeave}
             >
@@ -236,7 +240,7 @@ const Header = () => {
             {/* Dla Pacjenta Mega */}
             <div
               className="relative"
-              
+              style={{ pointerEvents: megaLocked ? 'none' : 'auto' }}
               onMouseEnter={() => handleMegaEnter("pacjent")}
               onMouseLeave={handleMegaLeave}
             >
