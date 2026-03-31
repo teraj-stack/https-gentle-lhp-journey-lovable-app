@@ -364,6 +364,13 @@ const Fototerapia = () => (
       </div>
     </section>
 
+    {/* FAQ */}
+    <section className="py-16 md:py-20 px-4">
+      <div className="max-w-5xl mx-auto">
+        <FototerapiaFAQ fadeUp={fadeUp} />
+      </div>
+    </section>
+
     {/* CTA */}
     <section className="py-16 md:py-20 px-4 bg-muted/30">
       <div className="max-w-2xl mx-auto text-center">
