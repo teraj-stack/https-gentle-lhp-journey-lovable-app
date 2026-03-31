@@ -44,8 +44,25 @@ const Header = () => {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [megaOpen, setMegaOpen] = useState<string | null>(null);
+  const megaClickedRef = useRef(false);
   const location = useLocation();
   const pathname = location.pathname;
+
+  const handleMegaEnter = useCallback((key: string) => {
+    if (!megaClickedRef.current) {
+      setMegaOpen(key);
+    }
+  }, []);
+
+  const handleMegaLeave = useCallback(() => {
+    megaClickedRef.current = false;
+    setMegaOpen(null);
+  }, []);
+
+  const handleMegaLinkClick = useCallback(() => {
+    megaClickedRef.current = true;
+    setMegaOpen(null);
+  }, []);
 
   const isActive = (href: string) => pathname === href;
   const isSectionActive = (items: { href: string }[]) => items.some((item) => pathname === item.href);
