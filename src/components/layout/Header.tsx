@@ -150,6 +150,7 @@ const Header = () => {
 
             {/* Proktologia Mega */}
             <div
+              key={`prokto-${navKey}`}
               className="relative"
               
               onMouseEnter={() => handleMegaEnter("prokto")}
