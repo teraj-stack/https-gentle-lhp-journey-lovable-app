@@ -7,6 +7,7 @@ import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Sun, Zap, ShieldCheck, Heart, Sparkles, Activity } from "lucide-react";
 import FototerapiaFAQ from "@/components/fototerapia/FototerapiaFAQ";
+import ProcedureSummaryTable from "@/components/shared/ProcedureSummaryTable";
 import fototerapiaColorsImg from "@/assets/fototerapia-colors.webp";
 import fototerapiaPbmImg from "@/assets/fototerapia-pbm-mechanism.webp";
 
@@ -382,6 +383,25 @@ const Fototerapia = () => (
             gojenia po zabiegach flebologicznych.
           </p>
         </motion.div>
+      </div>
+    </section>
+
+    {/* Karta zabiegu */}
+    <section className="py-16 md:py-20 px-4 bg-muted/30">
+      <div className="max-w-5xl mx-auto">
+        <ProcedureSummaryTable
+          fadeUp={fadeUp}
+          rows={[
+            { label: "Przygotowanie", value: "Nie wymaga specjalnego przygotowania — wystarczy oczyszczona skóra w obszarze naświetlania." },
+            { label: "Czas trwania", value: "15–30 minut na sesję, w zależności od leczonego obszaru i protokołu." },
+            { label: "Znieczulenie", value: "Nie jest wymagane — zabieg jest całkowicie bezbolesny." },
+            { label: "Technika", value: "Naświetlanie panelem LED o dobranym widmie (400–1100 nm), dostosowanym do wskazania klinicznego." },
+            { label: "Rekonwalescencja", value: "Brak — po zabiegu można natychmiast wrócić do codziennych aktywności." },
+            { label: "Efekty", value: "Przyspieszenie gojenia, redukcja stanów zapalnych, spłycenie naczynek i poprawa mikrokrążenia." },
+            { label: "Możliwe powikłania", value: "Ekstremalnie rzadkie — delikatne mrowienie lub przejściowe zaczerwienienie w miejscu naświetlania." },
+            { label: "Cena", value: "Wliczona w cenę zabiegu CLaCS lub EVLT. Jako samodzielna sesja — od 200 zł." },
+          ]}
+        />
       </div>
     </section>
 
