@@ -32,7 +32,7 @@ const flebologiaItems = [
 ];
 
 const dlaPacjentaItems = [
-  { label: "Przygotowanie do wizyty", href: "/dla-pacjenta", desc: "Informacje przed wizyt\u0105" },
+  { label: "Przygotowanie do wizyty proktologicznej", href: "/dla-pacjenta", desc: "Informacje przed wizytą" },
   { label: "Hemoroidy od A do Z", href: "/dla-pacjenta/hemoroidy", desc: "Kompleksowy przewodnik pacjenta" },
   { label: "Lekarz odpowiada", href: "/dla-pacjenta/proktolog-faq", desc: "FAQ o hemoroidach i wizycie" },
   { label: "Odzyskaj beztroskę", href: "/dla-pacjenta/ebook-pajaczki", desc: "E-book o paj\u0105czkach \u017Cylnych" },
