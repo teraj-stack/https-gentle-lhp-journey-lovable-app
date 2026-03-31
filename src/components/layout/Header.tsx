@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Menu, X, ChevronDown } from "lucide-react";
@@ -44,15 +44,15 @@ const Header = () => {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [megaOpen, setMegaOpen] = useState<string | null>(null);
-  const [megaLocked, setMegaLocked] = useState(false);
+  const [navKey, setNavKey] = useState(0);
+  const megaLockedUntil = useRef(0);
   const location = useLocation();
   const pathname = location.pathname;
 
   const handleMegaEnter = useCallback((key: string) => {
-    if (!megaLocked) {
-      setMegaOpen(key);
-    }
-  }, [megaLocked]);
+    if (Date.now() < megaLockedUntil.current) return;
+    setMegaOpen(key);
+  }, []);
 
   const handleMegaLeave = useCallback(() => {
     setMegaOpen(null);
@@ -60,8 +60,8 @@ const Header = () => {
 
   const handleMegaLinkClick = useCallback(() => {
     setMegaOpen(null);
-    setMegaLocked(true);
-    setTimeout(() => setMegaLocked(false), 1200);
+    megaLockedUntil.current = Date.now() + 2000;
+    setNavKey(k => k + 1);
   }, []);
 
   const isActive = (href: string) => pathname === href;
@@ -76,9 +76,7 @@ const Header = () => {
   useEffect(() => {
     setMobileOpen(false);
     setMegaOpen(null);
-    setMegaLocked(true);
-    const t = setTimeout(() => setMegaLocked(false), 1200);
-    return () => clearTimeout(t);
+    megaLockedUntil.current = Date.now() + 1500;
   }, [location]);
 
   return (
@@ -107,8 +105,9 @@ const Header = () => {
 
             {/* Twój Problem Mega */}
             <div
+              key={`problem-${navKey}`}
               className="relative"
-              style={{ pointerEvents: megaLocked ? 'none' : 'auto' }}
+              
               onMouseEnter={() => handleMegaEnter("problem")}
               onMouseLeave={handleMegaLeave}
             >
@@ -151,8 +150,9 @@ const Header = () => {
 
             {/* Proktologia Mega */}
             <div
+              key={`prokto-${navKey}`}
               className="relative"
-              style={{ pointerEvents: megaLocked ? 'none' : 'auto' }}
+              
               onMouseEnter={() => handleMegaEnter("prokto")}
               onMouseLeave={handleMegaLeave}
             >
@@ -195,8 +195,9 @@ const Header = () => {
 
             {/* Flebologia Mega */}
             <div
+              key={`flebo-${navKey}`}
               className="relative"
-              style={{ pointerEvents: megaLocked ? 'none' : 'auto' }}
+              
               onMouseEnter={() => handleMegaEnter("flebo")}
               onMouseLeave={handleMegaLeave}
             >
@@ -239,8 +240,9 @@ const Header = () => {
 
             {/* Dla Pacjenta Mega */}
             <div
+              key={`pacjent-${navKey}`}
               className="relative"
-              style={{ pointerEvents: megaLocked ? 'none' : 'auto' }}
+              
               onMouseEnter={() => handleMegaEnter("pacjent")}
               onMouseLeave={handleMegaLeave}
             >
