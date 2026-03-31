@@ -50,7 +50,7 @@ const checklistSections = [
       {
         icon: Scissors,
         title: "Przygotowanie skóry",
-        text: "Bardzo proszę o delikatne ogolenie lub wydepilowanie nóg (lub nogi), które będą poddawane zabiegowi. Zrób to ostrożnie i bez pośpiechu, aby uniknąć ewentualnych zacięć i podrażnień.",
+        text: "Bardzo proszę nie golić nóg, które będą poddawane zabiegowi. Podrażnienie skóry i przerwanie bariery skórno-naskórkowej powoduje wzrost ryzyka infekcji poddawanej zabiegowi okolicy",
       },
       {
         icon: SprayCan,
