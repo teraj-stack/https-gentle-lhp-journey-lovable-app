@@ -44,23 +44,23 @@ const Header = () => {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [megaOpen, setMegaOpen] = useState<string | null>(null);
-  const megaClickedRef = useRef(false);
+  const suppressUntilRef = useRef(0);
   const location = useLocation();
   const pathname = location.pathname;
 
   const handleMegaEnter = useCallback((key: string) => {
-    if (!megaClickedRef.current) {
+    if (Date.now() > suppressUntilRef.current) {
       setMegaOpen(key);
     }
   }, []);
 
   const handleMegaLeave = useCallback(() => {
-    megaClickedRef.current = false;
+    suppressUntilRef.current = 0;
     setMegaOpen(null);
   }, []);
 
   const handleMegaLinkClick = useCallback(() => {
-    megaClickedRef.current = true;
+    suppressUntilRef.current = Date.now() + 500;
     setMegaOpen(null);
   }, []);
 
