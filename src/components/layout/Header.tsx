@@ -74,9 +74,7 @@ const Header = () => {
   useEffect(() => {
     setMobileOpen(false);
     setMegaOpen(null);
-    setMegaLocked(true);
-    const t = setTimeout(() => setMegaLocked(false), 1200);
-    return () => clearTimeout(t);
+    megaLockedUntil.current = Date.now() + 1500;
   }, [location]);
 
   return (
