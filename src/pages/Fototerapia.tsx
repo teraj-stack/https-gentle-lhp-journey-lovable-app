@@ -6,6 +6,7 @@ import SeoHead from "@/components/shared/SeoHead";
 import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Sun, Zap, ShieldCheck, Heart, Sparkles, Activity } from "lucide-react";
+import FototerapiaFAQ from "@/components/fototerapia/FototerapiaFAQ";
 
 const fadeUp = {
   initial: { opacity: 0, y: 24, filter: "blur(4px)" },
@@ -360,6 +361,13 @@ const Fototerapia = () => (
             gojenia po zabiegach flebologicznych.
           </p>
         </motion.div>
+      </div>
+    </section>
+
+    {/* FAQ */}
+    <section className="py-16 md:py-20 px-4">
+      <div className="max-w-5xl mx-auto">
+        <FototerapiaFAQ fadeUp={fadeUp} />
       </div>
     </section>
 
