@@ -108,7 +108,7 @@ const howItWorks = [
   {
     num: "02",
     title: "Uwolnienie energii komórkowej",
-    desc: "Fotony odłączają hamujące cząsteczki tlenku azotu (NO) od enzymów oddechowych — wznawia się produkcja ATP, komórkowego „paliwa".",
+    desc: "Fotony odłączają hamujące cząsteczki tlenku azotu (NO) od enzymów oddechowych — wznawia się produkcja ATP, komórkowego \u201Epaliwa\u201D.",
   },
   {
     num: "03",

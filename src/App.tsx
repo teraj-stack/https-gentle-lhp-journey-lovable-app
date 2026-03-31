@@ -68,6 +68,7 @@ const App = () => (
               <Route path="/leczenie/skleroterapia" element={<Skleroterapia />} />
               <Route path="/leczenie/mikroflebektomia" element={<Mikroflebektomia />} />
               <Route path="/leczenie/clacs" element={<CLaCS />} />
+              <Route path="/leczenie/fototerapia" element={<Fototerapia />} />
               <Route path="/dla-pacjenta/pajaczki" element={<Pajaczki />} />
               <Route path="/dla-pacjenta/hemoroidy" element={<Hemoroidy />} />
               <Route path="/dla-pacjenta/ebook-pajaczki" element={<EbookPajaczki />} />
