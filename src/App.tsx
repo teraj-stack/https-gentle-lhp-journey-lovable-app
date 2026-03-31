@@ -22,6 +22,7 @@ const Hemoroidy = lazy(() => import("@/pages/Hemoroidy"));
 const Skleroterapia = lazy(() => import("@/pages/Skleroterapia"));
 const Mikroflebektomia = lazy(() => import("@/pages/Mikroflebektomia"));
 const CLaCS = lazy(() => import("@/pages/CLaCS"));
+const Fototerapia = lazy(() => import("@/pages/Fototerapia"));
 const Pajaczki = lazy(() => import("@/pages/Pajaczki"));
 const Kontakt = lazy(() => import("@/pages/Kontakt"));
 const EbookPajaczki = lazy(() => import("@/pages/EbookPajaczki"));
@@ -67,6 +68,7 @@ const App = () => (
               <Route path="/leczenie/skleroterapia" element={<Skleroterapia />} />
               <Route path="/leczenie/mikroflebektomia" element={<Mikroflebektomia />} />
               <Route path="/leczenie/clacs" element={<CLaCS />} />
+              <Route path="/leczenie/fototerapia" element={<Fototerapia />} />
               <Route path="/dla-pacjenta/pajaczki" element={<Pajaczki />} />
               <Route path="/dla-pacjenta/hemoroidy" element={<Hemoroidy />} />
               <Route path="/dla-pacjenta/ebook-pajaczki" element={<EbookPajaczki />} />
