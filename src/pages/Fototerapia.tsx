@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, Sun, Zap, ShieldCheck, Heart, Sparkles, Activity } from "lucide-react";
 import FototerapiaFAQ from "@/components/fototerapia/FototerapiaFAQ";
 import fototerapiaColorsImg from "@/assets/fototerapia-colors.jpg";
+import fototerapiaPbmImg from "@/assets/fototerapia-pbm-mechanism.jpg";
 
 const fadeUp = {
   initial: { opacity: 0, y: 24, filter: "blur(4px)" },
