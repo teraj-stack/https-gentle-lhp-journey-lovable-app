@@ -58,18 +58,25 @@ const FototerapiaFAQ = ({ fadeUp }: FototerapiaFAQProps) => (
     <div className="max-w-3xl mx-auto">
       <Accordion type="single" collapsible className="space-y-3">
         {faqs.map((faq, i) => (
-          <AccordionItem
+          <motion.div
             key={i}
-            value={`faq-${i}`}
-            className="glass-card rounded-xl border-none px-6"
+            initial={{ opacity: 0, y: 16, filter: "blur(3px)" }}
+            whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+            viewport={{ once: true, amount: 0.3 }}
+            transition={{ duration: 0.45, delay: i * 0.07, ease: [0.16, 1, 0.3, 1] }}
           >
-            <AccordionTrigger className="text-sm font-semibold text-foreground hover:text-primary hover:no-underline py-5">
-              {faq.q}
-            </AccordionTrigger>
-            <AccordionContent className="text-sm text-muted-foreground leading-relaxed pb-5">
-              {faq.a}
-            </AccordionContent>
-          </AccordionItem>
+            <AccordionItem
+              value={`faq-${i}`}
+              className="glass-card rounded-xl border-none px-6"
+            >
+              <AccordionTrigger className="text-sm font-semibold text-foreground hover:text-primary hover:no-underline py-5">
+                {faq.q}
+              </AccordionTrigger>
+              <AccordionContent className="text-sm text-muted-foreground leading-relaxed pb-5">
+                {faq.a}
+              </AccordionContent>
+            </AccordionItem>
+          </motion.div>
         ))}
       </Accordion>
     </div>
