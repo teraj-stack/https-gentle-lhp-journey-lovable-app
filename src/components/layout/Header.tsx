@@ -110,6 +110,7 @@ const Header = () => {
                       <Link
                         key={item.href}
                         to={item.href}
+                        onClick={() => setMegaOpen(null)}
                         className={`block px-4 py-3 rounded-lg hover:bg-accent/50 transition-colors group ${
                           isActive(item.href) ? "bg-accent/50" : ""
                         }`}
@@ -152,6 +153,7 @@ const Header = () => {
                       <Link
                         key={item.href}
                         to={item.href}
+                        onClick={() => setMegaOpen(null)}
                         className={`block px-4 py-3 rounded-lg hover:bg-accent/50 transition-colors group ${
                           isActive(item.href) ? "bg-accent/50" : ""
                         }`}
@@ -194,6 +196,7 @@ const Header = () => {
                       <Link
                         key={item.href}
                         to={item.href}
+                        onClick={() => setMegaOpen(null)}
                         className={`block px-4 py-3 rounded-lg hover:bg-accent/50 transition-colors group ${
                           isActive(item.href) ? "bg-accent/50" : ""
                         }`}
@@ -236,6 +239,7 @@ const Header = () => {
                       <Link
                         key={item.href}
                         to={item.href}
+                        onClick={() => setMegaOpen(null)}
                         className={`block px-4 py-3 rounded-lg hover:bg-accent/50 transition-colors group ${
                           isActive(item.href) ? "bg-accent/50" : ""
                         }`}
