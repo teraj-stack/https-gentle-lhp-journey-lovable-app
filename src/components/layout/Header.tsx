@@ -105,6 +105,7 @@ const Header = () => {
 
             {/* Twój Problem Mega */}
             <div
+              key={`problem-${navKey}`}
               className="relative"
               
               onMouseEnter={() => handleMegaEnter("problem")}
