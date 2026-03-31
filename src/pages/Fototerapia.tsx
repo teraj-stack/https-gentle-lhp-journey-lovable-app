@@ -7,6 +7,7 @@ import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Sun, Zap, ShieldCheck, Heart, Sparkles, Activity } from "lucide-react";
 import FototerapiaFAQ from "@/components/fototerapia/FototerapiaFAQ";
+import fototerapiaColorsImg from "@/assets/fototerapia-colors.jpg";
 
 const fadeUp = {
   initial: { opacity: 0, y: 24, filter: "blur(4px)" },
@@ -226,6 +227,14 @@ const Fototerapia = () => (
           Każda długość fali oddziałuje na inne struktury komórkowe, umożliwiając precyzyjne
           dopasowanie terapii do problemu pacjenta.
         </motion.p>
+        <motion.div {...fadeUp} className="mb-10">
+          <img
+            src={fototerapiaColorsImg}
+            alt="7 kolorów światła LED stosowanych w fototerapii – fioletowy, niebieski, cyjanowy, żółty, pomarańczowy, biały i czerwony z opisami długości fal"
+            className="w-full rounded-2xl border border-border"
+            loading="lazy"
+          />
+        </motion.div>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {lightColors.map((light, i) => (
             <motion.div
