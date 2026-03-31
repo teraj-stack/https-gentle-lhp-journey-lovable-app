@@ -45,6 +45,15 @@ const locations = [
     mapSrc:
       "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2440.0!2d22.283!3d52.1676!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x4718ed53bb8a9e23%3A0x1!2sBrzeska%20125%2C%2008-110%20Siedlce!5e0!3m2!1spl!2spl!4v1700000000000",
   },
+  {
+    name: "IP Cliniq – Rzeszów",
+    address: "al. Rejtana 53, IV piętro, 35-326 Rzeszów",
+    phone: "+48 507 025 840",
+    email: "recepcja@ipcliniq.pl",
+    hours: "Pon–Pt: 8:00–20:00, Sb: 8:00–16:00",
+    mapSrc:
+      "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2560.0!2d21.9984!3d50.0307!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x473cfae3cc14d449%3A0x1!2sal.%20Rejtana%2053%2C%2035-326%20Rzesz%C3%B3w!5e0!3m2!1spl!2spl!4v1700000000000",
+  },
 ];
 
 const Kontakt = () => {
