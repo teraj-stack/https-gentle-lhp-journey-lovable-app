@@ -240,6 +240,7 @@ const Header = () => {
 
             {/* Dla Pacjenta Mega */}
             <div
+              key={`pacjent-${navKey}`}
               className="relative"
               
               onMouseEnter={() => handleMegaEnter("pacjent")}
