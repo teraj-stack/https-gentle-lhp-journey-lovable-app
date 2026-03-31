@@ -66,7 +66,7 @@ const checklistSections = [
       {
         icon: Utensils,
         title: "Zjedz posiłek! NIE bądź na czczo",
-        text: "To kluczowa informacja, która często zaskakuje pacjentów. Ponieważ zabieg wykonujemy w znieczuleniu miejscowym, absolutnie nie powinieneś być na czczo! Zjedz w domu lekki, pożywny posiłek (np. owsiankę, jogurt, kanapkę) i normalnie pij wodę. Pusty żołądek potęguje stres i sprzyja zasłabnięciom – zależy nam, byś miał energię i czuł się stabilnie.",
+        text: "To kluczowa informacja, która często zaskakuje pacjentów. Ponieważ zabieg wykonujemy w znieczuleniu miejscowym, absolutnie nie powinieneś być na czczo! Zjedz w domu lekki, pożywny posiłek (np. owsiankę, jogurt, kanapkę) i normalnie pij wodę. Pusty żołądek potęguje stres i sprzyja zasłabnięciom – zależy nam, byś miał energię i czuł się stabilnie i komfortoeo.",
       },
       {
         icon: Shirt,
