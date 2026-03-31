@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Menu, X, ChevronDown } from "lucide-react";
@@ -44,8 +44,24 @@ const Header = () => {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [megaOpen, setMegaOpen] = useState<string | null>(null);
+  const megaLockedUntil = useRef(0);
   const location = useLocation();
   const pathname = location.pathname;
+
+  const handleMegaEnter = useCallback((key: string) => {
+    if (Date.now() >= megaLockedUntil.current) {
+      setMegaOpen(key);
+    }
+  }, []);
+
+  const handleMegaLeave = useCallback(() => {
+    setMegaOpen(null);
+  }, []);
+
+  const handleMegaLinkClick = useCallback(() => {
+    megaLockedUntil.current = Date.now() + 800;
+    setMegaOpen(null);
+  }, []);
 
   const isActive = (href: string) => pathname === href;
   const isSectionActive = (items: { href: string }[]) => items.some((item) => pathname === item.href);
@@ -88,8 +104,9 @@ const Header = () => {
             {/* Twój Problem Mega */}
             <div
               className="relative"
-              onMouseEnter={() => setMegaOpen("problem")}
-              onMouseLeave={() => setMegaOpen(null)}
+              style={{ pointerEvents: megaLocked ? 'none' : 'auto' }}
+              onMouseEnter={() => handleMegaEnter("problem")}
+              onMouseLeave={handleMegaLeave}
             >
               <button className={`flex items-center gap-1 px-4 py-2 text-sm font-medium transition-colors rounded-lg hover:bg-accent/50 ${
                 isSectionActive(twojProblemItems) ? "text-primary bg-accent/50" : "text-foreground/80 hover:text-primary"
@@ -110,7 +127,7 @@ const Header = () => {
                       <Link
                         key={item.href}
                         to={item.href}
-                        onClick={() => setMegaOpen(null)}
+                        onClick={handleMegaLinkClick}
                         className={`block px-4 py-3 rounded-lg hover:bg-accent/50 transition-colors group ${
                           isActive(item.href) ? "bg-accent/50" : ""
                         }`}
@@ -131,8 +148,9 @@ const Header = () => {
             {/* Proktologia Mega */}
             <div
               className="relative"
-              onMouseEnter={() => setMegaOpen("prokto")}
-              onMouseLeave={() => setMegaOpen(null)}
+              style={{ pointerEvents: megaLocked ? 'none' : 'auto' }}
+              onMouseEnter={() => handleMegaEnter("prokto")}
+              onMouseLeave={handleMegaLeave}
             >
               <button className={`flex items-center gap-1 px-4 py-2 text-sm font-medium transition-colors rounded-lg hover:bg-accent/50 ${
                 isSectionActive(proktologiaItems) ? "text-primary bg-accent/50" : "text-foreground/80 hover:text-primary"
@@ -153,7 +171,7 @@ const Header = () => {
                       <Link
                         key={item.href}
                         to={item.href}
-                        onClick={() => setMegaOpen(null)}
+                        onClick={handleMegaLinkClick}
                         className={`block px-4 py-3 rounded-lg hover:bg-accent/50 transition-colors group ${
                           isActive(item.href) ? "bg-accent/50" : ""
                         }`}
@@ -174,8 +192,9 @@ const Header = () => {
             {/* Flebologia Mega */}
             <div
               className="relative"
-              onMouseEnter={() => setMegaOpen("flebo")}
-              onMouseLeave={() => setMegaOpen(null)}
+              style={{ pointerEvents: megaLocked ? 'none' : 'auto' }}
+              onMouseEnter={() => handleMegaEnter("flebo")}
+              onMouseLeave={handleMegaLeave}
             >
               <button className={`flex items-center gap-1 px-4 py-2 text-sm font-medium transition-colors rounded-lg hover:bg-accent/50 ${
                 isSectionActive(flebologiaItems) ? "text-primary bg-accent/50" : "text-foreground/80 hover:text-primary"
@@ -196,7 +215,7 @@ const Header = () => {
                       <Link
                         key={item.href}
                         to={item.href}
-                        onClick={() => setMegaOpen(null)}
+                        onClick={handleMegaLinkClick}
                         className={`block px-4 py-3 rounded-lg hover:bg-accent/50 transition-colors group ${
                           isActive(item.href) ? "bg-accent/50" : ""
                         }`}
@@ -217,8 +236,9 @@ const Header = () => {
             {/* Dla Pacjenta Mega */}
             <div
               className="relative"
-              onMouseEnter={() => setMegaOpen("pacjent")}
-              onMouseLeave={() => setMegaOpen(null)}
+              style={{ pointerEvents: megaLocked ? 'none' : 'auto' }}
+              onMouseEnter={() => handleMegaEnter("pacjent")}
+              onMouseLeave={handleMegaLeave}
             >
               <button className={`flex items-center gap-1 px-4 py-2 text-sm font-medium transition-colors rounded-lg hover:bg-accent/50 ${
                 isSectionActive(dlaPacjentaItems) ? "text-primary bg-accent/50" : "text-foreground/80 hover:text-primary"
@@ -239,7 +259,7 @@ const Header = () => {
                       <Link
                         key={item.href}
                         to={item.href}
-                        onClick={() => setMegaOpen(null)}
+                        onClick={handleMegaLinkClick}
                         className={`block px-4 py-3 rounded-lg hover:bg-accent/50 transition-colors group ${
                           isActive(item.href) ? "bg-accent/50" : ""
                         }`}
