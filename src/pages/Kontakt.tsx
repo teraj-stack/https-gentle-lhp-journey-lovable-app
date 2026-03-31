@@ -125,7 +125,7 @@ const Kontakt = () => {
           </h1>
           <div className="w-16 h-0.5 mx-auto bg-primary-foreground/30 mb-6" />
           <p className="text-primary-foreground/80 text-base md:text-lg leading-relaxed max-w-2xl mx-auto">
-            Przyjmujemy w dwóch lokalizacjach. Wybierz wygodne miejsce i skontaktuj się z nami.
+            Przyjmujemy w trzech lokalizacjach. Wybierz wygodne miejsce i skontaktuj się z nami.
           </p>
         </motion.div>
       </section>
