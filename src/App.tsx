@@ -73,6 +73,7 @@ const App = () => (
               <Route path="/dla-pacjenta/proktolog-faq" element={<ProktologFAQ />} />
               <Route path="/dla-pacjenta/pielegnacja-nog" element={<PielegnacjaNog />} />
               <Route path="/dla-pacjenta/edukacja" element={<EdukacjaPrzedWizyta />} />
+              <Route path="/dla-pacjenta/przygotowanie-evlt" element={<PrzygotowanieEVLT />} />
               <Route path="/dla-pacjenta/hemoroidy-infografika" element={<HemoroidyInfografika />} />
               <Route path="/kontakt" element={<Kontakt />} />
               <Route path="/blog" element={<Blog />} />
