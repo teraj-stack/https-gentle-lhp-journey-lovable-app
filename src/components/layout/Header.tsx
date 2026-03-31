@@ -428,7 +428,8 @@ const Header = () => {
                 </Button>
               </motion.div>
             </div>
-          </motion.div>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
     </header>
