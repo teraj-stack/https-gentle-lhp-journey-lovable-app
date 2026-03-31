@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, Sun, Zap, ShieldCheck, Heart, Sparkles, Activity } from "lucide-react";
 import FototerapiaFAQ from "@/components/fototerapia/FototerapiaFAQ";
 import fototerapiaColorsImg from "@/assets/fototerapia-colors.jpg";
+import fototerapiaPbmImg from "@/assets/fototerapia-pbm-mechanism.jpg";
 
 const fadeUp = {
   initial: { opacity: 0, y: 24, filter: "blur(4px)" },
@@ -214,6 +215,17 @@ const Fototerapia = () => (
             </motion.div>
           ))}
         </div>
+        <motion.figure {...fadeUp} className="mt-10">
+          <img
+            src={fototerapiaPbmImg}
+            alt="Wpływ światła na regenerację komórkową — schemat fotobiomodulacji (PBM) pokazujący wzrost proliferacji, ATP i migracji komórek"
+            className="w-full max-w-2xl mx-auto rounded-2xl border border-border"
+            loading="lazy"
+          />
+          <figcaption className="text-center text-sm text-muted-foreground mt-3">
+            Wpływ światła na regenerację — fotobiomodulacja stymuluje proliferację, produkcję ATP i migrację komórek
+          </figcaption>
+        </motion.figure>
       </div>
     </section>
 
