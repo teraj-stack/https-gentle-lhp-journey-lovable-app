@@ -39,7 +39,7 @@ const models = [
     type: "old" as const,
   },
   {
-    label: "Model kooperacyjny S.C.A.L.E.",
+    label: "Model kooperacyjny CML",
     desc: "Zintegrowany ekosystem partnerski wspierający wdrażanie procedur tkankowo-oszczędzających. Placówki zyskują dostęp do systemu preedukacji pacjenta oraz możliwości krzyżowego kierowania chorych, zachowując pełną autonomię operacyjną.",
     type: "new" as const,
   },
