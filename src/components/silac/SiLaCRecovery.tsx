@@ -39,6 +39,7 @@ const SiLaCRecovery = ({ fadeUp }: Props) => (
         </motion.div>
       ))}
     </div>
+    <RecoveryBoostBanner />
   </motion.section>
 );
 

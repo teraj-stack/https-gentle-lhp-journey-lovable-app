@@ -27,6 +27,7 @@ const Timeline = () => (
         </div>
       </motion.div>
     ))}
+    <RecoveryBoostBanner />
   </div>
 );
 

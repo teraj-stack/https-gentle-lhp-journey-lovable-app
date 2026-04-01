@@ -39,6 +39,7 @@ const FiLaCRecovery = ({ fadeUp }: Props) => (
         </motion.div>
       ))}
     </div>
+    <RecoveryBoostBanner />
   </motion.section>
 );
 
