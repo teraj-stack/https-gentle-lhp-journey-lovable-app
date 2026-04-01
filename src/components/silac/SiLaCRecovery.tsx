@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import RecoveryBoostBanner from "@/components/shared/RecoveryBoostBanner";
 
 const timeline = [
   { icon: "🛏️", period: "Dzień 0–1", title: "Odpoczynek", desc: "Zabieg ambulatoryjny — wracasz do domu tego samego dnia. Łagodny dyskomfort w okolicy kości ogonowej kontrolowany lekami przeciwbólowymi." },
