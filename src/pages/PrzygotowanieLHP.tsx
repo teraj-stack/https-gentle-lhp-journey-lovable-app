@@ -262,6 +262,7 @@ const PrzygotowanieLHP = () => {
               </motion.div>
             ))}
           </div>
+          <RecoveryBoostBanner />
         </div>
       </section>
 
