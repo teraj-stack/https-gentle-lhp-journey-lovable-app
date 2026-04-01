@@ -38,6 +38,7 @@ const dlaPacjentaItems = [
   { label: "Lekarz odpowiada", href: "/dla-pacjenta/proktolog-faq", desc: "FAQ o hemoroidach i wizycie" },
   { label: "Odzyskaj beztroskę", href: "/dla-pacjenta/ebook-pajaczki", desc: "E-book o paj\u0105czkach \u017Cylnych" },
   { label: "Przygotowanie do zabiegu EVLT", href: "/dla-pacjenta/przygotowanie-evlt", desc: "Checklista przed zabiegiem laserowym" },
+  { label: "Przygotowanie do zabiegu LHP", href: "/dla-pacjenta/przygotowanie-lhp", desc: "Checklista przed zabiegiem hemoroidów" },
 ];
 
 const Header = () => {
