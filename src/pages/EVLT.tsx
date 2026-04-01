@@ -138,7 +138,7 @@ const EVLT = () => (
           <div className="relative w-full rounded-xl overflow-hidden shadow-lg" style={{ paddingBottom: '56.25%' }}>
             <iframe
               className="absolute inset-0 w-full h-full"
-              src="https://www.youtube.com/embed/Ugkx7Zf-uAOCFSL1NYwqZjQ5KqzVM5Fyqg6B?si=HxgG9L-7NLrkisY2&clip=Ugkx7Zf-uAOCFSL1NYwqZjQ5KqzVM5Fyqg6B&clipt=EAAYyJkC"
+              src="https://www.youtube.com/embed/9Wf8bLXVwFI?clip=Ugkx7Zf-uAOCFSL1NYwqZjQ5KqzVM5Fyqg6B&clipt=EAAYyJkC"
               title="Mechanizm powstawania żylaków"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
