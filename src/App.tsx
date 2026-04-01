@@ -30,6 +30,7 @@ const ProktologFAQ = lazy(() => import("@/pages/ProktologFAQ"));
 const PielegnacjaNog = lazy(() => import("@/pages/PielegnacjaNog"));
 const EdukacjaPrzedWizyta = lazy(() => import("@/pages/EdukacjaPrzedWizyta"));
 const PrzygotowanieEVLT = lazy(() => import("@/pages/PrzygotowanieEVLT"));
+const PrzygotowanieLHP = lazy(() => import("@/pages/PrzygotowanieLHP"));
 const PolitykaPrywatnosci = lazy(() => import("@/pages/PolitykaPrywatnosci"));
 const Regulamin = lazy(() => import("@/pages/Regulamin"));
 const Cennik = lazy(() => import("@/pages/Cennik"));
