@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import RecoveryBoostBanner from "@/components/shared/RecoveryBoostBanner";
 
 const timeline = [
   { icon: "🛏️", period: "Dzień 0–2", title: "Odpoczynek", desc: "Zabieg ambulatoryjny — wracasz do domu tego samego dnia. Łagodny dyskomfort kontrolowany zwykłymi lekami przeciwbólowymi." },
@@ -38,6 +39,7 @@ const FiLaCRecovery = ({ fadeUp }: Props) => (
         </motion.div>
       ))}
     </div>
+    <RecoveryBoostBanner />
   </motion.section>
 );
 

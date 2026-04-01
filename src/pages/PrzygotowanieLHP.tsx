@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import Breadcrumbs from "@/components/layout/Breadcrumbs";
 import SeoHead from "@/components/shared/SeoHead";
 import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
+import RecoveryBoostBanner from "@/components/shared/RecoveryBoostBanner";
 import { Button } from "@/components/ui/button";
 import {
   Droplets,
@@ -262,6 +263,7 @@ const PrzygotowanieLHP = () => {
               </motion.div>
             ))}
           </div>
+          <RecoveryBoostBanner />
         </div>
       </section>
 
