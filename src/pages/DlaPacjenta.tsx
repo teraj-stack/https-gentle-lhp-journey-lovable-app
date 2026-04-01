@@ -82,6 +82,13 @@ const onlineGuides = [
     href: "/dla-pacjenta/edukacja",
     icon: "🎓",
   },
+  {
+    title: "Przygotowanie do zabiegu LHP",
+    subtitle: "Checklista pacjenta",
+    desc: "Praktyczna lista wskazówek: dieta, leki, higiena i co zabrać do kliniki przed laserowym zabiegiem hemoroidów.",
+    href: "/dla-pacjenta/przygotowanie-lhp",
+    icon: "📋",
+  },
 ];
 
 const benefits = [
