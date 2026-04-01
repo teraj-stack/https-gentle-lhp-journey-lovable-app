@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import RecoveryBoostBanner from "@/components/shared/RecoveryBoostBanner";
 
 const steps = [
   { icon: "🛏️", title: "Dzień 0-3: Dom", desc: "Zabieg kilkadziesiąt minut. Tego samego dnia wracasz do łóżka. Dni 1-3 to kontrolowany dyskomfort, nie koszmar." },
