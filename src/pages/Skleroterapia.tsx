@@ -258,3 +258,5 @@ const Skleroterapia = () => {
   </div>
   );
 };
+
+export default Skleroterapia;
