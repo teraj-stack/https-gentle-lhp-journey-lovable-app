@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import Breadcrumbs from "@/components/layout/Breadcrumbs";
 import SeoHead from "@/components/shared/SeoHead";
 import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
-import EbookBanner from "@/components/shared/EbookBanner";
+
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import AnatomyDiagram from "@/components/pajaczki/AnatomyDiagram";
