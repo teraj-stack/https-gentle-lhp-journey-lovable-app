@@ -37,6 +37,27 @@ const AdminPostEditor = () => {
     });
   }, [navigate]);
 
+  const { data: existingPost } = useQuery({
+    queryKey: ["admin-post", id],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("blog_posts").select("*").eq("id", id!).single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !isNew && !!id && isAdmin === true,
+  });
+
+  useEffect(() => {
+    if (existingPost) {
+      setTitle(existingPost.title);
+      setSlug(existingPost.slug);
+      setExcerpt(existingPost.excerpt || "");
+      setContent(existingPost.content);
+      setPublished(existingPost.published);
+      setCoverImageUrl(existingPost.cover_image_url || "");
+    }
+  }, [existingPost]);
+
   if (adminLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -59,27 +80,6 @@ const AdminPostEditor = () => {
       </div>
     );
   }
-
-  const { data: existingPost } = useQuery({
-    queryKey: ["admin-post", id],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("blog_posts").select("*").eq("id", id!).single();
-      if (error) throw error;
-      return data;
-    },
-    enabled: !isNew && !!id,
-  });
-
-  useEffect(() => {
-    if (existingPost) {
-      setTitle(existingPost.title);
-      setSlug(existingPost.slug);
-      setExcerpt(existingPost.excerpt || "");
-      setContent(existingPost.content);
-      setPublished(existingPost.published);
-      setCoverImageUrl(existingPost.cover_image_url || "");
-    }
-  }, [existingPost]);
 
   const generateSlug = (text: string) =>
     text
