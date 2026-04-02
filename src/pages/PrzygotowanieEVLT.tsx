@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import Breadcrumbs from "@/components/layout/Breadcrumbs";
 import SeoHead from "@/components/shared/SeoHead";
+import RecoveryBoostBanner from "@/components/shared/RecoveryBoostBanner";
 import { Button } from "@/components/ui/button";
 import {
   Droplets,
