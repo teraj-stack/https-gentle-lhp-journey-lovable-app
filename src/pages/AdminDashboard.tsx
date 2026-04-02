@@ -15,6 +15,7 @@ const AdminDashboard = () => {
   const queryClient = useQueryClient();
   const [session, setSession] = useState<Session | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const { isAdmin, loading: adminLoading } = useIsAdmin();
 
   useEffect(() => {
     let isMounted = true;
