@@ -9,6 +9,7 @@ import MedicalProcedureSchema from "@/components/shared/MedicalProcedureSchema";
 import SeoHead from "@/components/shared/SeoHead";
 import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 import EbookBanner from "@/components/shared/EbookBanner";
+import RecoveryBoostBanner from "@/components/shared/RecoveryBoostBanner";
 
 const skleroterapiaSummary = [
   { label: "Przygotowanie", value: "USG Doppler żył" },
@@ -242,6 +243,8 @@ const Skleroterapia = () => {
       <ProcedureSummaryTable rows={skleroterapiaSummary} fadeUp={fadeUp} />
 
       <EbookBanner />
+
+      <RecoveryBoostBanner />
 
       {/* CTA */}
       <motion.section {...fadeUp} className="glass-card rounded-2xl p-8 md:p-12 text-center max-w-2xl mx-auto">

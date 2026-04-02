@@ -9,6 +9,7 @@ import MedicalProcedureSchema from "@/components/shared/MedicalProcedureSchema";
 import SeoHead from "@/components/shared/SeoHead";
 import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 import EbookBanner from "@/components/shared/EbookBanner";
+import RecoveryBoostBanner from "@/components/shared/RecoveryBoostBanner";
 
 const anusitisSummary = [
   { label: "Przygotowanie", value: "Badanie proktologiczne (anoskopia), wywiad w kierunku alergii, infekcji i chorób współistniejących." },
@@ -200,6 +201,8 @@ const Anusitis = () => (
       <ProcedureSummaryTable rows={anusitisSummary} fadeUp={fadeUp} />
 
       <EbookBanner />
+
+      <RecoveryBoostBanner />
 
       {/* CTA */}
       <motion.section {...fadeUp} className="text-center py-8">
