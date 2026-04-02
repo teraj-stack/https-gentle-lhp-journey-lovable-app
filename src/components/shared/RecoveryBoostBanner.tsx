@@ -11,8 +11,8 @@ const RecoveryBoostBanner = () => (
     className="mt-8 glass-card rounded-2xl p-5 md:p-6 border border-green-600 bg-secondary"
   >
     <div className="flex gap-4 items-start">
-      <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-        <Sparkles className="w-5 h-5 text-primary" />
+      <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-green-600/10 flex items-center justify-center">
+        <Sparkles className="w-5 h-5 text-green-600" />
       </div>
       <div>
         <h4 className="font-semibold text-foreground text-base mb-1">
@@ -25,7 +25,7 @@ const RecoveryBoostBanner = () => (
         </p>
         <Link
           to="/leczenie/fototerapia"
-          className="inline-flex items-center gap-1 text-primary text-sm font-medium mt-2 hover:underline"
+          className="inline-flex items-center gap-1 text-green-600 text-sm font-medium mt-2 hover:underline"
         >
           Dowiedz się więcej o fototerapii →
         </Link>
