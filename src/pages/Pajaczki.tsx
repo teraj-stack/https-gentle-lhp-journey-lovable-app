@@ -6,7 +6,7 @@ import SeoHead from "@/components/shared/SeoHead";
 import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 import EbookBanner from "@/components/shared/EbookBanner";
 import { Button } from "@/components/ui/button";
-import { Download, ArrowRight } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import AnatomyDiagram from "@/components/pajaczki/AnatomyDiagram";
 
 const fadeUp = {
