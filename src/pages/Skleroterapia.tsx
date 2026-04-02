@@ -256,6 +256,5 @@ const Skleroterapia = () => {
       </motion.section>
     </div>
   </div>
-);
-
-export default Skleroterapia;
+  );
+};
