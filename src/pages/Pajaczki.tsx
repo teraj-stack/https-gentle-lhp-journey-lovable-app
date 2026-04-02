@@ -200,31 +200,6 @@ const Pajaczki = () => (
         </div>
       </motion.section>
 
-      {/* E-book download */}
-      <motion.section {...fadeUp} className="glass-card rounded-2xl p-8 md:p-10 max-w-3xl mx-auto">
-        <div className="flex flex-col sm:flex-row gap-6 items-center">
-          <div className="w-24 sm:w-32 shrink-0">
-            <div className="aspect-[3/4] rounded-xl bg-gradient-to-br from-primary/70 to-accent-foreground/90 shadow-xl flex flex-col items-center justify-center p-3 text-primary-foreground">
-              <p className="text-[10px] uppercase tracking-[0.15em] opacity-60 mb-1 font-sans">CML</p>
-              <h3 className="text-[10px] font-bold text-center leading-snug font-serif">Odzyskaj beztroskę</h3>
-              <div className="w-6 h-px bg-primary-foreground/30 my-2" />
-              <p className="text-[9px] text-center opacity-70 font-sans">E-book PDF</p>
-            </div>
-          </div>
-          <div className="flex-1 text-center sm:text-left">
-            <h3 className="text-lg font-bold text-foreground mb-2">Pobierz pełny przewodnik</h3>
-            <p className="text-sm text-muted-foreground leading-relaxed mb-4">
-              5-stronicowy e-book z kompletną wiedzą o pajączkach, metodzie CLaCS i fototerapii — do przeczytania w domu.
-            </p>
-            <Button variant="hero" size="lg" asChild>
-              <a href="/ebooks/CLaCS-Pajaczki-Przewodnik.pdf" download>
-                <Download className="w-4 h-4 mr-2" />
-                Pobierz bezpłatnie (PDF)
-              </a>
-            </Button>
-          </div>
-        </div>
-      </motion.section>
 
       <EbookBanner />
 
