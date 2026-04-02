@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Star, Quote, ChevronLeft, ChevronRight } from "lucide-react";
 import useEmblaCarousel from "embla-carousel-react";
+import Autoplay from "embla-carousel-autoplay";
 
 const testimonials = [
   {
