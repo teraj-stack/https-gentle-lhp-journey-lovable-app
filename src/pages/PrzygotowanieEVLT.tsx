@@ -215,6 +215,8 @@ const PrzygotowanieEVLT = () => {
         </div>
       </section>
 
+      <RecoveryBoostBanner />
+
       {/* Reassurance + CTA */}
       <section className="py-12 md:py-20">
         <div className="container mx-auto px-4 max-w-3xl">

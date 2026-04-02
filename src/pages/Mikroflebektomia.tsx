@@ -197,6 +197,8 @@ const Mikroflebektomia = () => (
 
       <EbookBanner />
 
+      <RecoveryBoostBanner />
+
       {/* CTA */}
       <motion.section {...fadeUp} className="glass-card rounded-2xl p-8 md:p-12 text-center max-w-2xl mx-auto">
         <div className="text-4xl mb-4">🧬</div>
