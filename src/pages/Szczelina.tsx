@@ -10,6 +10,7 @@ import SeoHead from "@/components/shared/SeoHead";
 import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 import SzczelinaFAQ from "@/components/szczelina/SzczelinaFAQ";
 import EbookBanner from "@/components/shared/EbookBanner";
+import RecoveryBoostBanner from "@/components/shared/RecoveryBoostBanner";
 
 const szczelinaSummary = [
   { label: "Przygotowanie", value: "Badanie proktologiczne, ocena napięcia zwieraczy. Wykluczenie innych chorób jelit." },
@@ -251,6 +252,8 @@ const Szczelina = () => (
       <ProcedureSummaryTable rows={szczelinaSummary} fadeUp={fadeUp} />
 
       <EbookBanner />
+
+      <RecoveryBoostBanner />
 
       {/* CTA */}
       <motion.section {...fadeUp} className="text-center py-8">

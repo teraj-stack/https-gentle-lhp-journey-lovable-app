@@ -4,6 +4,7 @@ import Breadcrumbs from "@/components/layout/Breadcrumbs";
 import { Button } from "@/components/ui/button";
 import SeoHead from "@/components/shared/SeoHead";
 import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
+import RecoveryBoostBanner from "@/components/shared/RecoveryBoostBanner";
 
 const fadeUp = {
   initial: { opacity: 0, y: 24 },
@@ -466,6 +467,8 @@ const Hemoroidy = () => {
           </p>
         </motion.div>
       </section>
+
+      <RecoveryBoostBanner />
 
       {/* CTA */}
       <section className="glass-card rounded-2xl p-8 md:p-12 text-center max-w-2xl mx-auto">
