@@ -8,7 +8,7 @@ const RecoveryBoostBanner = () => (
     whileInView={{ opacity: 1, y: 0 }}
     viewport={{ once: true }}
     transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-    className="mt-8 glass-card rounded-2xl p-5 md:p-6 border border-primary/15 bg-primary/5"
+    className="mt-8 glass-card rounded-2xl p-5 md:p-6 border border-green-600 bg-secondary"
   >
     <div className="flex gap-4 items-start">
       <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
