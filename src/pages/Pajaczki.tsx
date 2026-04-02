@@ -201,8 +201,9 @@ const Pajaczki = () => (
         </div>
       </motion.section>
 
+      {/* Opinie pacjentek */}
+      <PajaczkiTestimonials />
 
-      
 
       {/* CTA */}
       <motion.section {...fadeUp} className="glass-card rounded-2xl p-8 md:p-12 text-center max-w-2xl mx-auto">
