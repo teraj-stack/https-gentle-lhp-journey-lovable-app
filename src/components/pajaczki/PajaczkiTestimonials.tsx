@@ -20,8 +20,25 @@ const testimonials = [
     rating: 5,
     date: "Styczeń 2026",
   },
+  {
+    name: "Anna",
+    text: "Miałam pajączki od pierwszej ciąży. Myślałam, że to już na zawsze. Po dwóch sesjach CLaCS nogi wyglądają jak przed laty — żałuję tylko, że nie przyszłam wcześniej.",
+    rating: 5,
+    date: "Grudzień 2025",
+  },
+  {
+    name: "Ewa",
+    text: "Najbardziej doceniam szczerość doktora — powiedział wprost, czego się spodziewać i ile sesji będzie potrzebnych. Żadnych nierealistycznych obietnic, a efekty mówią same za siebie.",
+    rating: 5,
+    date: "Listopad 2025",
+  },
+  {
+    name: "Monika",
+    text: "Koleżanka poleciła mi tę klinikę po własnym zabiegu. Atmosfera jest spokojna, a cały zespół naprawdę dba o komfort. Moje nogi w końcu wyglądają tak, jak chciałam.",
+    rating: 5,
+    date: "Październik 2025",
+  },
 ];
-
 const fadeUp = {
   initial: { opacity: 0, y: 24, filter: "blur(4px)" },
   whileInView: { opacity: 1, y: 0, filter: "blur(0px)" },
