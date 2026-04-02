@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import AnatomyDiagram from "@/components/pajaczki/AnatomyDiagram";
 import PajaczkiTestimonials from "@/components/pajaczki/PajaczkiTestimonials";
+import RecoveryBoostBanner from "@/components/shared/RecoveryBoostBanner";
 
 const fadeUp = {
   initial: { opacity: 0, y: 24, filter: "blur(4px)" },
