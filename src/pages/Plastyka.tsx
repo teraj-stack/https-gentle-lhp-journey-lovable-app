@@ -164,7 +164,7 @@ const Plastyka = () => (
             {[
               { title: "Czas trwania", desc: "Zabieg zajmuje zazwyczaj 10–20 minut." },
               { title: "Znieczulenie", desc: "Stosujemy znieczulenie miejscowe zapewniające pełen komfort i bezbolesność." },
-              { title: "Przebieg", desc: "Lekarz usuwa nadmiar tkanki przy użyciu lasera. Przy niewielkich zmianach nie ma potrzeby zakładania szwów." },
+              { title: "Przebieg", desc: "Lekarz usuwa nadmiar tkanki przy użyciu lasera. Podczas prawidłowo wykonanej plastyki okolicy odbytu nigdy nie zakłada się szwów. Szwy w okolicy odbytu prowokują jedynie większe bliznowacenie i ból." },
               { title: "Efekt", desc: "Celem jest przywrócenie naturalnego wyglądu i funkcjonalności okolicy odbytu." },
             ].map((item) => (
               <div key={item.title}>
