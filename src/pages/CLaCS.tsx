@@ -10,6 +10,7 @@ import MedicalProcedureSchema from "@/components/shared/MedicalProcedureSchema";
 import SeoHead from "@/components/shared/SeoHead";
 import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 import EbookBanner from "@/components/shared/EbookBanner";
+import RecoveryBoostBanner from "@/components/shared/RecoveryBoostBanner";
 
 const clacsSummary = [
   { label: "Przygotowanie", value: "Konsultacja flebologiczna, ocena zmian naczyniowych. Unikać opalania 2 tygodnie przed zabiegiem, bez kremów na nogi w dniu zabiegu." },
