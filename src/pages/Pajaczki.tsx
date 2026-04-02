@@ -8,6 +8,7 @@ import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import AnatomyDiagram from "@/components/pajaczki/AnatomyDiagram";
+import PajaczkiTestimonials from "@/components/pajaczki/PajaczkiTestimonials";
 
 const fadeUp = {
   initial: { opacity: 0, y: 24, filter: "blur(4px)" },
@@ -200,8 +201,9 @@ const Pajaczki = () => (
         </div>
       </motion.section>
 
+      {/* Opinie pacjentek */}
+      <PajaczkiTestimonials />
 
-      
 
       {/* CTA */}
       <motion.section {...fadeUp} className="glass-card rounded-2xl p-8 md:p-12 text-center max-w-2xl mx-auto">
