@@ -3,9 +3,10 @@ import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Pencil, Trash2, LogOut, Eye, EyeOff } from "lucide-react";
+import { Plus, Pencil, Trash2, LogOut, Eye, EyeOff, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
 import SeoHead from "@/components/shared/SeoHead";
 
@@ -14,6 +15,7 @@ const AdminDashboard = () => {
   const queryClient = useQueryClient();
   const [session, setSession] = useState<Session | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const { isAdmin, loading: adminLoading } = useIsAdmin();
 
   useEffect(() => {
     let isMounted = true;
@@ -115,7 +117,7 @@ const AdminDashboard = () => {
     navigate("/admin/login", { replace: true });
   };
 
-  if (authLoading) {
+  if (authLoading || adminLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="h-8 w-8 rounded-full border-4 border-primary border-t-transparent animate-spin" aria-label="Ładowanie panelu administracyjnego" />
@@ -124,6 +126,21 @@ const AdminDashboard = () => {
   }
 
   if (!session) return null;
+
+  if (!isAdmin) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center px-4">
+        <div className="text-center space-y-4">
+          <ShieldAlert className="w-12 h-12 text-destructive mx-auto" />
+          <h1 className="text-xl font-bold text-foreground">Brak uprawnień</h1>
+          <p className="text-muted-foreground text-sm">Twoje konto nie ma roli administratora.</p>
+          <Button variant="outline" size="sm" onClick={handleLogout}>
+            <LogOut className="w-4 h-4 mr-1" /> Wyloguj
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>

@@ -2,13 +2,14 @@ import { useEffect, useState, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Save, Eye, Pencil, X, ImageIcon } from "lucide-react";
+import { ArrowLeft, Save, Eye, Pencil, X, ImageIcon, ShieldAlert, LogOut } from "lucide-react";
 import { toast } from "sonner";
 import SeoHead from "@/components/shared/SeoHead";
 import MarkdownRenderer from "@/components/shared/MarkdownRenderer";
@@ -28,6 +29,8 @@ const AdminPostEditor = () => {
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const { isAdmin, loading: adminLoading } = useIsAdmin();
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) navigate("/admin/login");
@@ -41,7 +44,7 @@ const AdminPostEditor = () => {
       if (error) throw error;
       return data;
     },
-    enabled: !isNew && !!id,
+    enabled: !isNew && !!id && isAdmin === true,
   });
 
   useEffect(() => {
@@ -54,6 +57,29 @@ const AdminPostEditor = () => {
       setCoverImageUrl(existingPost.cover_image_url || "");
     }
   }, [existingPost]);
+
+  if (adminLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="h-8 w-8 rounded-full border-4 border-primary border-t-transparent animate-spin" />
+      </div>
+    );
+  }
+
+  if (isAdmin === false) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center px-4">
+        <div className="text-center space-y-4">
+          <ShieldAlert className="w-12 h-12 text-destructive mx-auto" />
+          <h1 className="text-xl font-bold text-foreground">Brak uprawnień</h1>
+          <p className="text-muted-foreground text-sm">Twoje konto nie ma roli administratora.</p>
+          <Button variant="outline" size="sm" onClick={() => navigate("/admin/login")}>
+            Powrót do logowania
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   const generateSlug = (text: string) =>
     text
