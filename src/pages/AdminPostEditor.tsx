@@ -29,11 +29,36 @@ const AdminPostEditor = () => {
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const { isAdmin, loading: adminLoading } = useIsAdmin();
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) navigate("/admin/login");
     });
   }, [navigate]);
+
+  if (adminLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="h-8 w-8 rounded-full border-4 border-primary border-t-transparent animate-spin" />
+      </div>
+    );
+  }
+
+  if (isAdmin === false) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center px-4">
+        <div className="text-center space-y-4">
+          <ShieldAlert className="w-12 h-12 text-destructive mx-auto" />
+          <h1 className="text-xl font-bold text-foreground">Brak uprawnień</h1>
+          <p className="text-muted-foreground text-sm">Twoje konto nie ma roli administratora.</p>
+          <Button variant="outline" size="sm" onClick={() => navigate("/admin/login")}>
+            Powrót do logowania
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   const { data: existingPost } = useQuery({
     queryKey: ["admin-post", id],
