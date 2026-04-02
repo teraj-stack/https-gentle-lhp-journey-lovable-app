@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Star, Quote, ChevronLeft, ChevronRight } from "lucide-react";
 import useEmblaCarousel from "embla-carousel-react";
+import Autoplay from "embla-carousel-autoplay";
 
 const testimonials = [
   {
@@ -81,14 +82,22 @@ const TestimonialCard = ({ t }: { t: (typeof testimonials)[number] }) => (
 );
 
 const PajaczkiTestimonials = () => {
-  const [emblaRef, emblaApi] = useEmblaCarousel({
-    align: "start",
-    slidesToScroll: 1,
-    containScroll: "trimSnaps",
-    breakpoints: {
-      "(min-width: 768px)": { slidesToScroll: 2 },
+  const autoplayPlugin = React.useRef(
+    Autoplay({ delay: 5000, stopOnInteraction: false, stopOnMouseEnter: true })
+  );
+
+  const [emblaRef, emblaApi] = useEmblaCarousel(
+    {
+      align: "start",
+      slidesToScroll: 1,
+      containScroll: "trimSnaps",
+      loop: true,
+      breakpoints: {
+        "(min-width: 768px)": { slidesToScroll: 2 },
+      },
     },
-  });
+    [autoplayPlugin.current]
+  );
 
   const [canPrev, setCanPrev] = useState(false);
   const [canNext, setCanNext] = useState(false);
