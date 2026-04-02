@@ -25,7 +25,7 @@ const RecoveryBoostBanner = () => (
         </p>
         <Link
           to="/leczenie/fototerapia"
-          className="inline-flex items-center gap-1 text-primary text-sm font-medium mt-2 hover:underline"
+          className="inline-flex items-center gap-1 text-green-600 text-sm font-medium mt-2 hover:underline"
         >
           Dowiedz się więcej o fototerapii →
         </Link>
