@@ -61,7 +61,8 @@ const contraindications = [
   "🦽 Ograniczenie poruszania się",
 ];
 
-const Skleroterapia = () => (
+const Skleroterapia = () => {
+  return (
     <div className="min-h-screen bg-background pt-20">
       <SeoHead
         title="Skleroterapia piankowa żylaków"
