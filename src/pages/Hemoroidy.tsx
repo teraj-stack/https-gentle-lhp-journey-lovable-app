@@ -4,6 +4,7 @@ import Breadcrumbs from "@/components/layout/Breadcrumbs";
 import { Button } from "@/components/ui/button";
 import SeoHead from "@/components/shared/SeoHead";
 import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
+import RecoveryBoostBanner from "@/components/shared/RecoveryBoostBanner";
 
 const fadeUp = {
   initial: { opacity: 0, y: 24 },
