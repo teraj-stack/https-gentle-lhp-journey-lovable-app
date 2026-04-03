@@ -49,7 +49,7 @@ const ProcedureSteps = () => (
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.5, delay: 0.45 }}
-      className="flex justify-center pt-2"
+      className="flex justify-center pt-2 opacity-80"
     >
       <video
         src="/videos/lhp-powrot.mov"
