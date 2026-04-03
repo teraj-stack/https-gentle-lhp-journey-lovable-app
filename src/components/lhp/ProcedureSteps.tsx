@@ -57,7 +57,7 @@ const ProcedureSteps = () => (
         muted
         loop
         playsInline
-        className="rounded-xl shadow-lg w-full max-w-md"
+        className="rounded-xl shadow-lg w-full max-w-sm"
       />
     </motion.div>
   </div>
