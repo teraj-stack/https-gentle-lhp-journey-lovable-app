@@ -43,6 +43,23 @@ const ProcedureSteps = () => (
         </div>
       </motion.div>
     ))}
+
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.5, delay: 0.45 }}
+      className="flex justify-center pt-2"
+    >
+      <video
+        src="/videos/lhp-powrot.mov"
+        autoPlay
+        muted
+        loop
+        playsInline
+        className="rounded-xl shadow-lg w-full max-w-md"
+      />
+    </motion.div>
   </div>
 );
 
