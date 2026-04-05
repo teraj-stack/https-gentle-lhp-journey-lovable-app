@@ -41,6 +41,7 @@ const AdminDashboard = lazy(() => import("@/pages/AdminDashboard"));
 const AdminPostEditor = lazy(() => import("@/pages/AdminPostEditor"));
 const Unsubscribe = lazy(() => import("@/pages/Unsubscribe"));
 const HemoroidyInfografika = lazy(() => import("@/pages/HemoroidyInfografika"));
+const FaldyOdbytu = lazy(() => import("@/pages/FaldyOdbytu"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 
 const queryClient = new QueryClient();
@@ -79,6 +80,7 @@ const App = () => (
               <Route path="/dla-pacjenta/przygotowanie-evlt" element={<PrzygotowanieEVLT />} />
               <Route path="/dla-pacjenta/przygotowanie-lhp" element={<PrzygotowanieLHP />} />
               <Route path="/dla-pacjenta/hemoroidy-infografika" element={<HemoroidyInfografika />} />
+              <Route path="/dla-pacjenta/faldy-odbytu" element={<FaldyOdbytu />} />
               <Route path="/kontakt" element={<Kontakt />} />
               <Route path="/blog" element={<Blog />} />
               <Route path="/blog/:slug" element={<BlogPost />} />
