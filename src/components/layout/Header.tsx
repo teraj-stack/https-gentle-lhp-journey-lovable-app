@@ -13,6 +13,7 @@ const twojProblemItems = [
   { label: "Szczelina odbytu", href: "/leczenie/szczelina", desc: "Ból i krwawienie przy wypróżnieniu" },
   { label: "Przetoka odbytu", href: "/leczenie/filac", desc: "Sączenie, ropień, nawracający ból" },
   { label: "Torbiel pilonidalna", href: "/leczenie/silac", desc: "Guzek, ból i sączenie w okolicy kości ogonowej" },
+  { label: "Fałdy okolicy odbytu", href: "/dla-pacjenta/faldy-odbytu", desc: "Wariant anatomiczny czy powód kompleksów?" },
 ];
 
 const proktologiaItems = [

@@ -41,6 +41,7 @@ const AdminDashboard = lazy(() => import("@/pages/AdminDashboard"));
 const AdminPostEditor = lazy(() => import("@/pages/AdminPostEditor"));
 const Unsubscribe = lazy(() => import("@/pages/Unsubscribe"));
 const HemoroidyInfografika = lazy(() => import("@/pages/HemoroidyInfografika"));
+const FaldyOdbytu = lazy(() => import("@/pages/FaldyOdbytu"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 
 const queryClient = new QueryClient();
