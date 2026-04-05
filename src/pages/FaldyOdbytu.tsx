@@ -105,7 +105,7 @@ const FaldyOdbytu = () => (
           <div className="grid md:grid-cols-2 gap-6">
             {[
               { title: "Ciąża i poród", desc: "Gwałtowne rozciągnięcie tkanek miednicy mniejszej i okolicy odbytu. Po ustąpieniu obrzęku skóra nie wraca do pierwotnego kształtu." },
-              { title: "Przebyta zakrzepica brzeżna", desc: "Po wchłonięciu się skrzepu zewnętrznego hemoroidu pozostaje „pusty worek" skóry — fałd brzeżny." },
+              { title: "Przebyta zakrzepica brzeżna", desc: 'Po wchłonięciu się skrzepu zewnętrznego hemoroidu pozostaje \u201Epusty worek\u201D skóry \u2014 fałd brzeżny.' },
               { title: "Przewlekłe zaparcia i parcie", desc: "Wieloletnie nadmierne napinanie podczas wypróżnień stopniowo rozciąga skórę okolicy odbytu." },
               { title: "Choroba Leśniowskiego-Crohna", desc: "W przebiegu tej choroby zapalnej jelit mogą pojawiać się charakterystyczne, obrzęknięte fałdy, tzw. elephant ears." },
               { title: "Wariant anatomiczny", desc: "U części osób fałdy obecne są od urodzenia lub pojawiają się w okresie dojrzewania — bez żadnej uchwytnej przyczyny." },
