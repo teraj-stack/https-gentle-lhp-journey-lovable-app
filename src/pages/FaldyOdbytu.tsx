@@ -6,6 +6,7 @@ import ParallaxSection from "@/components/ui/parallax-section";
 import SeoHead from "@/components/shared/SeoHead";
 import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 import EbookBanner from "@/components/shared/EbookBanner";
+import FaldyFAQ from "@/components/faldy/FaldyFAQ";
 
 const fadeUp = {
   initial: { opacity: 0, y: 24, filter: "blur(4px)" },
