@@ -23,6 +23,7 @@ const proktologiaItems = [
   { label: "Szczelina odbytu", href: "/leczenie/szczelina", desc: "Od diety do lasera" },
   { label: "Plastyka odbytu", href: "/leczenie/plastyka", desc: "Estetyka i komfort" },
   { label: "Zapalenie odbytu", href: "/leczenie/anusitis", desc: "Leczenie farmakologiczne" },
+  { label: "Fałdy odbytu", href: "/dla-pacjenta/faldy-odbytu", desc: "Diagnostyka i leczenie fałdów" },
 ];
 
 const flebologiaItems = [
