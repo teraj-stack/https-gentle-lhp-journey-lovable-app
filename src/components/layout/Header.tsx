@@ -38,7 +38,7 @@ const dlaPacjentaItems = [
   { label: "Przygotowanie do wizyty proktologicznej", href: "/dla-pacjenta", desc: "Informacje przed wizytą" },
   { label: "Hemoroidy od A do Z", href: "/dla-pacjenta/hemoroidy", desc: "Kompleksowy przewodnik pacjenta" },
   { label: "Lekarz odpowiada", href: "/dla-pacjenta/proktolog-faq", desc: "FAQ o hemoroidach i wizycie" },
-  { label: "Odzyskaj beztroskę", href: "/dla-pacjenta/ebook-pajaczki", desc: "E-book o paj\u0105czkach \u017Cylnych" },
+  { label: "E-book o pajączkach naczyniowych i teleangiektazjach", href: "/dla-pacjenta/ebook-pajaczki", desc: "E-book o pajączkach żylnych" },
   { label: "Przygotowanie do zabiegu EVLT", href: "/dla-pacjenta/przygotowanie-evlt", desc: "Checklista przed zabiegiem laserowym" },
   { label: "Przygotowanie do zabiegu LHP", href: "/dla-pacjenta/przygotowanie-lhp", desc: "Checklista przed zabiegiem hemoroidów" },
 ];
