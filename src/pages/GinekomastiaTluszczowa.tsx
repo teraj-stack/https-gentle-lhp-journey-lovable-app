@@ -98,7 +98,7 @@ const GinekomastiaTluszczowa = () => (
           <div className="prose prose-lg max-w-none text-muted-foreground">
             <p><strong>Pseudoginekomastia</strong> (lipoginekomastia) to powiększenie piersi u mężczyzn spowodowane wyłącznie nadmiarem tkanki tłuszczowej — bez rozrostu gruczołu piersiowego.</p>
             <p>To najczęstsza forma „męskich piersi". Może towarzyszyć ogólnej nadwadze, ale nierzadko dotyczy mężczyzn o prawidłowym BMI, u których tłuszcz lokalizuje się preferencyjnie w okolicy klatki piersiowej.</p>
-            <p>Tkanka tłuszczowa jest miękka w dotyku, równomiernie rozłożona (bez twardego guzka pod brodawką). USG piersi potwierdza brak komponentu gruczołowego.</p>
+            <p>Tkanka tłuszczowa jest miękka w dotyku, równomiernie rozłożona (bez twardego guzka pod brodawką). USG piersi (wykonuje chirurg podczas konsultacji) potwierdza brak komponentu gruczołowego.</p>
           </div>
         </motion.div>
       </div>

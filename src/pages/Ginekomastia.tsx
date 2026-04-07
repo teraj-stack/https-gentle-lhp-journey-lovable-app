@@ -10,7 +10,7 @@ import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 import FaqSchema from "@/components/shared/FaqSchema";
 
 const summary = [
-  { label: "Przygotowanie", value: "Konsultacja chirurgiczna, badanie USG piersi, ewentualne badania hormonalne" },
+  { label: "Przygotowanie", value: "Konsultacja chirurgiczna, badanie USG piersi (wykonuje chirurg podczas konsultacji), ewentualne badania hormonalne" },
   { label: "Czas trwania", value: "60–120 minut" },
   { label: "Znieczulenie", value: "Ogólne lub miejscowe z sedacją" },
   { label: "Technika", value: "Liposukcja laserowa i/lub wycięcie gruczołu piersiowego. Przy dużej ginekomastii – usunięcie nadmiaru skóry." },
@@ -38,7 +38,7 @@ const faqItems = [
   },
   {
     question: "Czy ginekomastia jest niebezpieczna?",
-    answer: "Ginekomastia sama w sobie nie jest groźna, ale wymaga diagnostyki w celu wykluczenia chorób endokrynologicznych, nowotworów jądra lub wątroby. Przed zabiegiem zalecamy USG piersi i konsultację.",
+    answer: "Ginekomastia sama w sobie nie jest groźna, ale wymaga diagnostyki w celu wykluczenia chorób endokrynologicznych, nowotworów jądra lub wątroby. Przed zabiegiem zalecamy USG piersi (wykonuje chirurg podczas konsultacji) i konsultację.",
   },
   {
     question: "Jak przebiega zabieg?",
@@ -96,7 +96,7 @@ const Ginekomastia = () => (
       description="Liposukcja laserowa i/lub wycięcie gruczołu piersiowego w celu przywrócenia męskiego kształtu klatki piersiowej."
       bodyLocation="Klatka piersiowa"
       procedureType="Surgical"
-      preparation="Konsultacja chirurgiczna, badanie USG piersi, ewentualne badania hormonalne"
+      preparation="Konsultacja chirurgiczna, badanie USG piersi (wykonuje chirurg podczas konsultacji), ewentualne badania hormonalne"
       followup="Kamizelka uciskowa przez 4–6 tygodni. Kontrola po 7 i 30 dniach."
       howPerformed="Liposukcja laserowa tkanki tłuszczowej i/lub chirurgiczne wycięcie rozrośniętego gruczołu piersiowego przez nacięcie wokół otoczki brodawki."
       risks="Obrzęk, krwiak, asymetria, zaburzenia czucia w obrębie brodawki, blizny"
@@ -174,7 +174,7 @@ const Ginekomastia = () => (
           <div className="flex items-start gap-3">
             <AlertTriangle className="w-5 h-5 text-primary mt-0.5 shrink-0" />
             <p className="text-sm text-muted-foreground">
-              <strong className="text-foreground">Ważne:</strong> Przed zabiegiem konieczna jest diagnostyka (USG piersi, ewentualne badania hormonalne) w celu ustalenia przyczyny i wykluczenia patologii wymagających innego leczenia.
+              <strong className="text-foreground">Ważne:</strong> Przed zabiegiem konieczna jest diagnostyka (USG piersi (wykonuje chirurg podczas konsultacji), ewentualne badania hormonalne) w celu ustalenia przyczyny i wykluczenia patologii wymagających innego leczenia.
             </p>
           </div>
         </motion.div>
@@ -189,7 +189,7 @@ const Ginekomastia = () => (
         </motion.h2>
         <div className="space-y-6">
           {[
-            { step: "1", title: "Konsultacja i diagnostyka", desc: "Badanie fizykalne, USG piersi, omówienie oczekiwań. Planowanie zakresu zabiegu: liposukcja, wycięcie gruczołu lub kombinacja obu metod." },
+            { step: "1", title: "Konsultacja i diagnostyka", desc: "Badanie fizykalne, USG piersi (wykonuje chirurg podczas konsultacji), omówienie oczekiwań. Planowanie zakresu zabiegu: liposukcja, wycięcie gruczołu lub kombinacja obu metod." },
             { step: "2", title: "Liposukcja laserowa", desc: "Przez mikroncięcia (3–4 mm) wprowadzamy kaniulę laserową, która rozpuszcza i odsysa nadmiar tkanki tłuszczowej. Laser dodatkowo obkurcza skórę, poprawiając jej sprężystość." },
             { step: "3", title: "Wycięcie gruczołu", desc: "Jeśli obecna jest tkanka gruczołowa — usuwamy ją przez dyskretne nacięcie wokół otoczki brodawki sutkowej. To klucz do trwałego efektu." },
             { step: "4", title: "Modelowanie i zamknięcie", desc: "Precyzyjne modelowanie konturu klatki piersiowej. Szwy wewnętrzne, opatrunek uciskowy, założenie kamizelki kompresyjnej." },
