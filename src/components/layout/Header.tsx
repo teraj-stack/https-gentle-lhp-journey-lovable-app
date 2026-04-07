@@ -302,14 +302,49 @@ const Header = () => {
               Współpraca
             </Link>
 
-            <Link
-              to="/leczenie/ginekomastia"
-              className={`px-4 py-2 text-sm font-medium transition-colors rounded-lg hover:bg-accent/50 ${
-                isActive("/leczenie/ginekomastia") ? "text-primary bg-accent/50" : "text-foreground/80 hover:text-primary"
-              }`}
+            {/* Ginekomastia Mega */}
+            <div
+              key={`gineko-${navKey}`}
+              className="relative"
+              onMouseEnter={() => handleMegaEnter("gineko")}
+              onMouseLeave={handleMegaLeave}
             >
-              Ginekomastia
-            </Link>
+              <button className={`flex items-center gap-1 px-4 py-2 text-sm font-medium transition-colors rounded-lg hover:bg-accent/50 ${
+                isSectionActive(ginekomastiaItems) ? "text-primary bg-accent/50" : "text-foreground/80 hover:text-primary"
+              }`}>
+                Ginekomastia
+                <ChevronDown className={`w-3.5 h-3.5 transition-transform ${megaOpen === "gineko" ? "rotate-180" : ""}`} />
+              </button>
+              <AnimatePresence>
+                {megaOpen === "gineko" && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 8 }}
+                    transition={{ duration: 0.2 }}
+                    className="absolute top-full right-0 mt-1 w-72 bg-card rounded-xl shadow-lg border border-border p-2"
+                  >
+                    {ginekomastiaItems.map((item) => (
+                      <Link
+                        key={item.href}
+                        to={item.href}
+                        onClick={handleMegaLinkClick}
+                        className={`block px-4 py-3 rounded-lg hover:bg-accent/50 transition-colors group ${
+                          isActive(item.href) ? "bg-accent/50" : ""
+                        }`}
+                      >
+                        <div className={`text-sm font-medium transition-colors ${
+                          isActive(item.href) ? "text-primary" : "text-foreground group-hover:text-primary"
+                        }`}>
+                          {item.label}
+                        </div>
+                        <div className="text-xs text-muted-foreground mt-0.5">{item.desc}</div>
+                      </Link>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
 
             <Link
               to="/blog"
