@@ -8,6 +8,7 @@ import MedicalProcedureSchema from "@/components/shared/MedicalProcedureSchema";
 import SeoHead from "@/components/shared/SeoHead";
 import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 import FaqSchema from "@/components/shared/FaqSchema";
+import RecoveryBoostBanner from "@/components/shared/RecoveryBoostBanner";
 
 const summary = [
   { label: "Przygotowanie", value: "Konsultacja chirurgiczna, USG piersi (wykonuje chirurg podczas konsultacji), ocena BMI, ewentualne badania hormonalne" },
@@ -130,6 +131,7 @@ const GinekomastiaTluszczowa = () => (
       <div className="max-w-4xl mx-auto px-4 md:px-8">
         <motion.h2 {...fadeUp} className="text-3xl md:text-4xl font-bold text-foreground mb-10 text-center">Zabieg w skrócie</motion.h2>
         <motion.div {...fadeUp}><ProcedureSummaryTable rows={summary} /></motion.div>
+        <RecoveryBoostBanner />
       </div>
     </section>
 
