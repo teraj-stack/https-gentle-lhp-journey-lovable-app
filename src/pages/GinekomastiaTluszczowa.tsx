@@ -13,7 +13,7 @@ const summary = [
   { label: "Przygotowanie", value: "Konsultacja chirurgiczna, USG piersi (wykonuje chirurg podczas konsultacji), ocena BMI, ewentualne badania hormonalne" },
   { label: "Czas trwania", value: "45–90 minut" },
   { label: "Znieczulenie", value: "Miejscowe z sedacją (tumescencyjne)" },
-  { label: "Technika", value: "Liposukcja laserowa (LAL) — laser rozpuszcza tkankę tłuszczową, która jest następnie odsysana. Laser dodatkowo obkurcza skórę." },
+  { label: "Technika", value: "Liposukcja ultradźwiękowa Vaser Lipo HD — fale ultradźwiękowe selektywnie rozbijają tkankę tłuszczową, która jest następnie odsysana. Energia ultradźwięków dodatkowo obkurcza skórę." },
   { label: "Rekonwalescencja", value: "Powrót do pracy po 2–5 dniach. Kamizelka uciskowa 3–4 tygodnie. Pełna aktywność po 4 tygodniach." },
   { label: "Efekty", value: "Redukcja objętości piersi, poprawa konturu klatki piersiowej. Efekt widoczny po ustąpieniu obrzęku (4–8 tygodni)." },
   { label: "Możliwe powikłania", value: "Obrzęk, siniaki, nierówności konturu, asymetria, minimalne blizny po wkłuciach (3–4 mm)" },
@@ -42,24 +42,24 @@ const faqItems = [
 const GinekomastiaTluszczowa = () => (
   <div className="min-h-screen pt-20">
     <SeoHead
-      title="Ginekomastia tłuszczowa – liposukcja laserowa piersi u mężczyzn"
-      description="Leczenie pseudoginekomastii (lipoginekomastii) liposukcją laserową w CML Warszawa. Minimalne blizny, szybka rekonwalescencja, naturalny efekt."
+      title="Ginekomastia tłuszczowa – liposukcja ultradźwiękowa Vaser Lipo HD"
+      description="Leczenie pseudoginekomastii (lipoginekomastii) liposukcją ultradźwiękową Vaser Lipo HD w CML Warszawa. Minimalne blizny, szybka rekonwalescencja, naturalny efekt."
       path="/leczenie/ginekomastia-tluszczowa"
     />
     <MedicalWebPageSchema
-      name="Ginekomastia tłuszczowa – liposukcja laserowa"
-      description="Liposukcja laserowa piersi u mężczyzn z pseudoginekomastią (lipoginekomastią). Minimalne blizny, naturalny efekt."
+      name="Ginekomastia tłuszczowa – liposukcja ultradźwiękowa Vaser Lipo HD"
+      description="Liposukcja ultradźwiękowa Vaser Lipo HD piersi u mężczyzn z pseudoginekomastią (lipoginekomastią). Minimalne blizny, naturalny efekt."
       path="/leczenie/ginekomastia-tluszczowa"
       specialty="Surgery"
     />
     <MedicalProcedureSchema
-      name="Liposukcja laserowa – ginekomastia tłuszczowa"
-      description="Liposukcja laserowa nadmiaru tkanki tłuszczowej w obrębie klatki piersiowej u mężczyzn."
+      name="Liposukcja ultradźwiękowa Vaser Lipo HD – ginekomastia tłuszczowa"
+      description="Liposukcja ultradźwiękowa Vaser Lipo HD nadmiaru tkanki tłuszczowej w obrębie klatki piersiowej u mężczyzn."
       bodyLocation="Klatka piersiowa"
       procedureType="Surgical"
       preparation="Konsultacja chirurgiczna, USG piersi (wykonuje chirurg podczas konsultacji), ocena BMI, ewentualne badania hormonalne"
       followup="Kamizelka uciskowa 3–4 tygodnie. Kontrola po 7 i 30 dniach."
-      howPerformed="Liposukcja laserowa (LAL) — laser rozpuszcza tkankę tłuszczową, odsysanie, obkurczanie skóry."
+      howPerformed="Liposukcja ultradźwiękowa Vaser Lipo HD — fale ultradźwiękowe selektywnie rozbijają tkankę tłuszczową, odsysanie, obkurczanie skóry."
       risks="Obrzęk, siniaki, nierówności konturu, asymetria"
       url="/leczenie/ginekomastia-tluszczowa"
     />
@@ -76,7 +76,7 @@ const GinekomastiaTluszczowa = () => (
             Ginekomastia tłuszczowa
           </h1>
           <p className="text-lg md:text-xl text-foreground/70 leading-relaxed max-w-2xl mb-10">
-            Pseudoginekomastia — nadmiar tkanki tłuszczowej w obrębie piersi. Liposukcja laserowa precyzyjnie modeluje klatkę piersiową, pozostawiając minimalne ślady.
+            Pseudoginekomastia — nadmiar tkanki tłuszczowej w obrębie piersi. Liposukcja ultradźwiękowa Vaser Lipo HD precyzyjnie modeluje klatkę piersiową, pozostawiając minimalne ślady.
           </p>
           <Button variant="hero" size="lg" className="px-8 py-6 text-base" asChild>
             <a href="https://www.znanylekarz.pl/jan-bujok-2/chirurg-flebolog-proktolog/warszawa" target="_blank" rel="noopener noreferrer">Umów Konsultację</a>
@@ -110,8 +110,8 @@ const GinekomastiaTluszczowa = () => (
         <div className="space-y-6">
           {[
             { step: "1", title: "Znieczulenie tumescencyjne", desc: "Wstrzykujemy roztwór znieczulający, który dodatkowo zwęża naczynia krwionośne — minimalizuje krwawienie i siniaki." },
-            { step: "2", title: "Liposukcja laserowa", desc: "Przez 2–3 mikronakłucia (3–4 mm) wprowadzamy kaniulę z włóknem laserowym. Laser rozpuszcza komórki tłuszczowe, które następnie delikatnie odsysamy." },
-            { step: "3", title: "Obkurczanie skóry", desc: "Energia lasera stymuluje produkcję kolagenu w skórze — skóra obkurcza się i dopasowuje do nowego konturu. To kluczowa przewaga nad klasyczną liposukcją." },
+            { step: "2", title: "Liposukcja ultradźwiękowa Vaser Lipo HD", desc: "Przez 2–3 mikronakłucia (3–4 mm) wprowadzamy sondę ultradźwiękową. Fale ultradźwiękowe selektywnie rozbijają komórki tłuszczowe, oszczędzając naczynia i nerwy. Rozbitą tkankę delikatnie odsysamy." },
+            { step: "3", title: "Obkurczanie skóry", desc: "Energia ultradźwięków stymuluje produkcję kolagenu w skórze — skóra obkurcza się i dopasowuje do nowego konturu. To kluczowa przewaga nad klasyczną liposukcją." },
             { step: "4", title: "Kompresja", desc: "Założenie kamizelki uciskowej, która wspiera gojenie i modeluje kształt klatki piersiowej przez 3–4 tygodnie." },
           ].map((item, i) => (
             <motion.div key={i} {...stagger(i)} className="flex gap-5 p-6 rounded-2xl bg-card border border-border">
@@ -154,7 +154,7 @@ const GinekomastiaTluszczowa = () => (
       <div className="max-w-3xl mx-auto px-4 md:px-8 text-center">
         <motion.div {...fadeUp}>
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-6">Precyzyjne modelowanie bez widocznych blizn</h2>
-          <p className="text-lg text-foreground/70 mb-10 leading-relaxed">Liposukcja laserowa to złoty standard leczenia ginekomastii tłuszczowej. Umów się na konsultację.</p>
+          <p className="text-lg text-foreground/70 mb-10 leading-relaxed">Liposukcja ultradźwiękowa Vaser Lipo HD to złoty standard leczenia ginekomastii tłuszczowej. Umów się na konsultację.</p>
           <Button variant="hero" size="lg" className="px-10 py-6 text-base" asChild>
             <a href="https://www.znanylekarz.pl/jan-bujok-2/chirurg-flebolog-proktolog/warszawa" target="_blank" rel="noopener noreferrer">Umów Konsultację</a>
           </Button>
