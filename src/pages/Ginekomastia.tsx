@@ -13,7 +13,7 @@ const summary = [
   { label: "Przygotowanie", value: "Konsultacja chirurgiczna, badanie USG piersi (wykonuje chirurg podczas konsultacji), ewentualne badania hormonalne" },
   { label: "Czas trwania", value: "60–120 minut" },
   { label: "Znieczulenie", value: "Ogólne lub miejscowe z sedacją" },
-  { label: "Technika", value: "Liposukcja laserowa i/lub wycięcie gruczołu piersiowego. Przy dużej ginekomastii – usunięcie nadmiaru skóry." },
+  { label: "Technika", value: "Liposukcja ultradźwiękowa Vaser Lipo HD i/lub wycięcie gruczołu piersiowego. Przy dużej ginekomastii – usunięcie nadmiaru skóry." },
   { label: "Rekonwalescencja", value: "Powrót do pracy po 3–7 dniach. Kamizelka uciskowa przez 4–6 tygodni. Pełna aktywność fizyczna po 6 tygodniach." },
   { label: "Efekty", value: "Płaska, męska klatka piersiowa. Trwałe rezultaty. Poprawa sylwetki i pewności siebie." },
   { label: "Możliwe powikłania", value: "Obrzęk, krwiak, asymetria, zaburzenia czucia w obrębie brodawki, blizny" },
@@ -82,7 +82,7 @@ const Ginekomastia = () => (
   <div className="min-h-screen pt-20">
     <SeoHead
       title="Ginekomastia – leczenie chirurgiczne powiększonych piersi u mężczyzn"
-      description="Skuteczne leczenie ginekomastii w CML Warszawa. Liposukcja laserowa i wycięcie gruczołu piersiowego. Trwałe efekty, minimalne blizny, szybka rekonwalescencja."
+      description="Skuteczne leczenie ginekomastii w CML Warszawa. Liposukcja ultradźwiękowa Vaser Lipo HD i wycięcie gruczołu piersiowego. Trwałe efekty, minimalne blizny, szybka rekonwalescencja."
       path="/leczenie/ginekomastia"
     />
     <MedicalWebPageSchema
@@ -93,12 +93,12 @@ const Ginekomastia = () => (
     />
     <MedicalProcedureSchema
       name="Leczenie chirurgiczne ginekomastii"
-      description="Liposukcja laserowa i/lub wycięcie gruczołu piersiowego w celu przywrócenia męskiego kształtu klatki piersiowej."
+      description="Liposukcja ultradźwiękowa Vaser Lipo HD i/lub wycięcie gruczołu piersiowego w celu przywrócenia męskiego kształtu klatki piersiowej."
       bodyLocation="Klatka piersiowa"
       procedureType="Surgical"
       preparation="Konsultacja chirurgiczna, badanie USG piersi (wykonuje chirurg podczas konsultacji), ewentualne badania hormonalne"
       followup="Kamizelka uciskowa przez 4–6 tygodni. Kontrola po 7 i 30 dniach."
-      howPerformed="Liposukcja laserowa tkanki tłuszczowej i/lub chirurgiczne wycięcie rozrośniętego gruczołu piersiowego przez nacięcie wokół otoczki brodawki."
+      howPerformed="Liposukcja ultradźwiękowa Vaser Lipo HD tkanki tłuszczowej i/lub chirurgiczne wycięcie rozrośniętego gruczołu piersiowego przez nacięcie wokół otoczki brodawki."
       risks="Obrzęk, krwiak, asymetria, zaburzenia czucia w obrębie brodawki, blizny"
       url="/leczenie/ginekomastia"
     />
@@ -190,7 +190,7 @@ const Ginekomastia = () => (
         <div className="space-y-6">
           {[
             { step: "1", title: "Konsultacja i diagnostyka", desc: "Badanie fizykalne, USG piersi (wykonuje chirurg podczas konsultacji), omówienie oczekiwań. Planowanie zakresu zabiegu: liposukcja, wycięcie gruczołu lub kombinacja obu metod." },
-            { step: "2", title: "Liposukcja laserowa", desc: "Przez mikroncięcia (3–4 mm) wprowadzamy kaniulę laserową, która rozpuszcza i odsysa nadmiar tkanki tłuszczowej. Laser dodatkowo obkurcza skórę, poprawiając jej sprężystość." },
+            { step: "2", title: "Liposukcja ultradźwiękowa Vaser Lipo HD", desc: "Przez mikronakłucia (3–4 mm) wprowadzamy sondę ultradźwiękową, która selektywnie rozbija i odsysa nadmiar tkanki tłuszczowej. Energia ultradźwięków dodatkowo obkurcza skórę, poprawiając jej sprężystość." },
             { step: "3", title: "Wycięcie gruczołu", desc: "Jeśli obecna jest tkanka gruczołowa — usuwamy ją przez dyskretne nacięcie wokół otoczki brodawki sutkowej. To klucz do trwałego efektu." },
             { step: "4", title: "Modelowanie i zamknięcie", desc: "Precyzyjne modelowanie konturu klatki piersiowej. Szwy wewnętrzne, opatrunek uciskowy, założenie kamizelki kompresyjnej." },
           ].map((item, i) => (
