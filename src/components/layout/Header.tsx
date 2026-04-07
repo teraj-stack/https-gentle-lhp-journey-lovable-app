@@ -34,6 +34,13 @@ const flebologiaItems = [
   { label: "Fototerapia LED (PBM)", href: "/leczenie/fototerapia", desc: "Gojenie i redukcja naczynek" },
 ];
 
+const ginekomastiaItems = [
+  { label: "Ginekomastia – przegląd", href: "/leczenie/ginekomastia", desc: "Kompendium wiedzy o ginekomastii" },
+  { label: "Gruczołowa (prawdziwa)", href: "/leczenie/ginekomastia-gruczolowa", desc: "Rozrost gruczołu piersiowego" },
+  { label: "Tłuszczowa (pseudo)", href: "/leczenie/ginekomastia-tluszczowa", desc: "Nadmiar tkanki tłuszczowej" },
+  { label: "Mieszana", href: "/leczenie/ginekomastia-mieszana", desc: "Gruczoł + tłuszcz — najczęstsza" },
+];
+
 const dlaPacjentaItems = [
   { label: "Przygotowanie do wizyty proktologicznej", href: "/dla-pacjenta", desc: "Informacje przed wizytą" },
   { label: "Hemoroidy od A do Z", href: "/dla-pacjenta/hemoroidy", desc: "Kompleksowy przewodnik pacjenta" },
