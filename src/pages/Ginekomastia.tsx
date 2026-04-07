@@ -102,7 +102,11 @@ const Ginekomastia = () => (
       risks="Obrzęk, krwiak, asymetria, zaburzenia czucia w obrębie brodawki, blizny"
       url="/leczenie/ginekomastia"
     />
-    <FaqSchema items={faqItems} />
+    <FaqSchema
+      faqs={faqItems.map(f => ({ q: f.question, a: f.answer }))}
+      name="Ginekomastia – FAQ"
+      url="https://gentle-lhp-journey.lovable.app/leczenie/ginekomastia"
+    />
 
     {/* Hero */}
     <ParallaxSection className="relative py-20 md:py-28 gradient-hero">
