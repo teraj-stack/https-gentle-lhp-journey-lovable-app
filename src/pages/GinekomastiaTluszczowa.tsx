@@ -10,7 +10,7 @@ import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 import FaqSchema from "@/components/shared/FaqSchema";
 
 const summary = [
-  { label: "Przygotowanie", value: "Konsultacja chirurgiczna, ocena BMI, ewentualne badania hormonalne" },
+  { label: "Przygotowanie", value: "Konsultacja chirurgiczna, USG piersi (wykonuje chirurg podczas konsultacji), ocena BMI, ewentualne badania hormonalne" },
   { label: "Czas trwania", value: "45–90 minut" },
   { label: "Znieczulenie", value: "Miejscowe z sedacją (tumescencyjne)" },
   { label: "Technika", value: "Liposukcja laserowa (LAL) — laser rozpuszcza tkankę tłuszczową, która jest następnie odsysana. Laser dodatkowo obkurcza skórę." },
@@ -57,7 +57,7 @@ const GinekomastiaTluszczowa = () => (
       description="Liposukcja laserowa nadmiaru tkanki tłuszczowej w obrębie klatki piersiowej u mężczyzn."
       bodyLocation="Klatka piersiowa"
       procedureType="Surgical"
-      preparation="Konsultacja chirurgiczna, ocena BMI, ewentualne badania hormonalne"
+      preparation="Konsultacja chirurgiczna, USG piersi (wykonuje chirurg podczas konsultacji), ocena BMI, ewentualne badania hormonalne"
       followup="Kamizelka uciskowa 3–4 tygodnie. Kontrola po 7 i 30 dniach."
       howPerformed="Liposukcja laserowa (LAL) — laser rozpuszcza tkankę tłuszczową, odsysanie, obkurczanie skóry."
       risks="Obrzęk, siniaki, nierówności konturu, asymetria"
