@@ -458,7 +458,12 @@ const Header = () => {
                     {item.label}
                   </Link>
                 )),
-                <Link key="ginekomastia" to="/leczenie/ginekomastia" className={`block px-4 py-3 rounded-lg text-sm font-medium hover:bg-accent/50 ${isActive("/leczenie/ginekomastia") ? "text-primary bg-accent/50" : "text-foreground"}`}>Ginekomastia</Link>,
+                <div key="gineko-label" className="px-4 py-2 text-xs font-semibold text-primary uppercase tracking-wider mt-2">Ginekomastia</div>,
+                ...ginekomastiaItems.map((item) => (
+                  <Link key={item.href} to={item.href} className={`block px-6 py-2.5 rounded-lg text-sm hover:bg-accent/50 ${isActive(item.href) ? "text-primary bg-accent/50 font-medium" : "text-foreground/80"}`}>
+                    {item.label}
+                  </Link>
+                )),
                 <Link key="wspolpraca" to="/wspolpraca" className={`block px-4 py-3 rounded-lg text-sm font-medium hover:bg-accent/50 ${isActive("/wspolpraca") ? "text-primary bg-accent/50" : "text-foreground"}`}>Współpraca</Link>,
                 <Link key="cennik" to="/cennik" className={`block px-4 py-3 rounded-lg text-sm font-medium hover:bg-accent/50 ${isActive("/cennik") ? "text-primary bg-accent/50" : "text-foreground"}`}>Cennik</Link>,
                 <Link key="blog" to="/blog" className={`block px-4 py-3 rounded-lg text-sm font-medium hover:bg-accent/50 ${isActive("/blog") || pathname.startsWith("/blog/") ? "text-primary bg-accent/50" : "text-foreground"}`}>Blog</Link>,
