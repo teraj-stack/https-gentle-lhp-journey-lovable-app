@@ -10,7 +10,7 @@ import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 import FaqSchema from "@/components/shared/FaqSchema";
 
 const summary = [
-  { label: "Przygotowanie", value: "Konsultacja chirurgiczna, USG piersi, badania hormonalne i laboratoryjne" },
+  { label: "Przygotowanie", value: "Konsultacja chirurgiczna, USG piersi (wykonuje chirurg podczas konsultacji), badania hormonalne i laboratoryjne" },
   { label: "Czas trwania", value: "90–150 minut" },
   { label: "Znieczulenie", value: "Ogólne lub miejscowe z sedacją" },
   { label: "Technika", value: "Liposukcja laserowa tkanki tłuszczowej + chirurgiczne wycięcie gruczołu przez nacięcie wokół otoczki brodawki." },
@@ -57,7 +57,7 @@ const GinekomastiaMieszana = () => (
       description="Kombinowany zabieg liposukcji laserowej i chirurgicznego wycięcia gruczołu piersiowego."
       bodyLocation="Klatka piersiowa"
       procedureType="Surgical"
-      preparation="Konsultacja chirurgiczna, USG piersi, badania hormonalne i laboratoryjne"
+      preparation="Konsultacja chirurgiczna, USG piersi (wykonuje chirurg podczas konsultacji), badania hormonalne i laboratoryjne"
       followup="Kamizelka uciskowa 4–6 tygodni. Kontrola po 7 i 30 dniach."
       howPerformed="Etap 1: liposukcja laserowa tkanki tłuszczowej. Etap 2: chirurgiczne wycięcie gruczołu przez nacięcie wokół otoczki brodawki."
       risks="Obrzęk, krwiak, asymetria, zaburzenia czucia brodawki, blizny, nierówności konturu"
@@ -97,7 +97,7 @@ const GinekomastiaMieszana = () => (
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-8">Czym jest ginekomastia mieszana?</h2>
           <div className="prose prose-lg max-w-none text-muted-foreground">
             <p><strong>Ginekomastia mieszana</strong> to najczęstsza postać powiększonych piersi u mężczyzn. Łączy dwa komponenty: rozrośniętą tkankę gruczołową (twardy guzek pod brodawką) oraz nadmiar tkanki tłuszczowej wokół gruczołu i na obwodzie piersi.</p>
-            <p>Diagnostyka USG piersi jednoznacznie rozróżnia oba komponenty, co pozwala precyzyjnie zaplanować zakres zabiegu. W większości przypadków konieczne jest zastosowanie <strong>dwóch technik podczas jednej sesji operacyjnej</strong>.</p>
+            <p>Diagnostyka USG piersi (wykonuje chirurg podczas konsultacji) jednoznacznie rozróżnia oba komponenty, co pozwala precyzyjnie zaplanować zakres zabiegu. W większości przypadków konieczne jest zastosowanie <strong>dwóch technik podczas jednej sesji operacyjnej</strong>.</p>
             <p>To podejście daje najlepsze rezultaty estetyczne — eliminujemy zarówno twardy, „kobiecy" kształt gruczołu, jak i miękki nadmiar tłuszczu, uzyskując płaską, naturalną klatkę piersiową.</p>
           </div>
         </motion.div>
@@ -109,7 +109,7 @@ const GinekomastiaMieszana = () => (
         <motion.h2 {...fadeUp} className="text-3xl md:text-4xl font-bold text-foreground mb-10 text-center">Przebieg zabiegu kombinowanego</motion.h2>
         <div className="space-y-6">
           {[
-            { step: "1", title: "Diagnostyka i plan", desc: "USG piersi identyfikuje proporcję gruczołu do tłuszczu. Planujemy zakres liposukcji i wycięcia. Badania hormonalne wykluczają aktywną przyczynę." },
+            { step: "1", title: "Diagnostyka i plan", desc: "USG piersi (wykonuje chirurg podczas konsultacji) identyfikuje proporcję gruczołu do tłuszczu. Planujemy zakres liposukcji i wycięcia. Badania hormonalne wykluczają aktywną przyczynę." },
             { step: "2", title: "Etap I — Liposukcja laserowa", desc: "Przez mikronakłucia (3–4 mm) odsysamy tkankę tłuszczową z obwodu piersi. Laser jednocześnie obkurcza skórę, zapobiegając jej wiotczeniu." },
             { step: "3", title: "Etap II — Wycięcie gruczołu", desc: "Przez dyskretne nacięcie wokół otoczki brodawki usuwamy twardą tkankę gruczołową. Zachowujemy cienką warstwę pod brodawką dla naturalnego wyglądu." },
             { step: "4", title: "Modelowanie końcowe", desc: "Precyzyjne wymodelowanie konturu klatki, kontrola symetrii, szwy wewnętrzne, opatrunek i kamizelka kompresyjna." },

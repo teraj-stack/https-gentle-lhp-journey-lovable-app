@@ -10,7 +10,7 @@ import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 import FaqSchema from "@/components/shared/FaqSchema";
 
 const summary = [
-  { label: "Przygotowanie", value: "Konsultacja chirurgiczna, USG piersi, badania hormonalne" },
+  { label: "Przygotowanie", value: "Konsultacja chirurgiczna, USG piersi (wykonuje chirurg podczas konsultacji), badania hormonalne" },
   { label: "Czas trwania", value: "60–120 minut" },
   { label: "Znieczulenie", value: "Ogólne lub miejscowe z sedacją" },
   { label: "Technika", value: "Chirurgiczne wycięcie rozrośniętego gruczołu piersiowego przez nacięcie wokół otoczki brodawki sutkowej." },
@@ -34,7 +34,7 @@ const stagger = (i: number) => ({
 const faqItems = [
   { q: "Czym różni się ginekomastia gruczołowa od tłuszczowej?", a: "Ginekomastia gruczołowa (prawdziwa) polega na rozroście tkanki gruczołowej piersi, która jest twarda i wyczuwalna pod brodawką. Tkanka ta nie znika po odchudzaniu – wymaga chirurgicznego wycięcia." },
   { q: "Czy liposukcja wystarczy przy ginekomastii gruczołowej?", a: "Nie. Tkanka gruczołowa jest zbyt twarda i zbita, aby ją odessać kaniulą. Konieczne jest chirurgiczne wycięcie gruczołu przez nacięcie wokół otoczki brodawki." },
-  { q: "Jakie badania są potrzebne przed zabiegiem?", a: "USG piersi (wykluczenie patologii), badania hormonalne (testosteron, estradiol, prolaktyna, hormony tarczycy) oraz podstawowa morfologia i koagulogram." },
+  { q: "Jakie badania są potrzebne przed zabiegiem?", a: "USG piersi (wykonuje chirurg podczas konsultacji) (wykluczenie patologii), badania hormonalne (testosteron, estradiol, prolaktyna, hormony tarczycy) oraz podstawowa morfologia i koagulogram." },
   { q: "Czy blizny będą widoczne?", a: "Nacięcie prowadzimy wzdłuż granicy otoczki brodawki sutkowej – blizna jest dyskretna i z czasem praktycznie niewidoczna." },
   { q: "Czy gruczoł może odrosnąć?", a: "Nie – usunięty chirurgicznie gruczoł piersiowy nie regeneruje się. Efekt jest trwały, o ile wyeliminowano przyczynę (np. leki, zaburzenia hormonalne)." },
 ];
@@ -57,7 +57,7 @@ const GinekomastiaGruczolowa = () => (
       description="Chirurgiczne usunięcie rozrośniętej tkanki gruczołowej piersi u mężczyzn."
       bodyLocation="Klatka piersiowa"
       procedureType="Surgical"
-      preparation="Konsultacja chirurgiczna, USG piersi, badania hormonalne"
+      preparation="Konsultacja chirurgiczna, USG piersi (wykonuje chirurg podczas konsultacji), badania hormonalne"
       followup="Kamizelka uciskowa 4–6 tygodni. Kontrola po 7 i 30 dniach."
       howPerformed="Chirurgiczne wycięcie tkanki gruczołowej przez nacięcie wokół otoczki brodawki sutkowej."
       risks="Obrzęk, krwiak, asymetria, zaburzenia czucia brodawki, blizny"
@@ -109,7 +109,7 @@ const GinekomastiaGruczolowa = () => (
         <motion.h2 {...fadeUp} className="text-3xl md:text-4xl font-bold text-foreground mb-10 text-center">Przebieg zabiegu</motion.h2>
         <div className="space-y-6">
           {[
-            { step: "1", title: "Diagnostyka", desc: "USG piersi potwierdza obecność tkanki gruczołowej. Badania hormonalne wykluczają aktywną przyczynę endokrynologiczną." },
+            { step: "1", title: "Diagnostyka", desc: "USG piersi (wykonuje chirurg podczas konsultacji) potwierdza obecność tkanki gruczołowej. Badania hormonalne wykluczają aktywną przyczynę endokrynologiczną." },
             { step: "2", title: "Nacięcie", desc: "Dyskretne nacięcie wzdłuż dolnej granicy otoczki brodawki sutkowej — w naturalnej granicy koloru skóry." },
             { step: "3", title: "Wycięcie gruczołu", desc: "Precyzyjne usunięcie twardej tkanki gruczołowej. Zachowujemy cienką warstwę pod brodawką dla naturalnego wyglądu." },
             { step: "4", title: "Zamknięcie i kompresja", desc: "Szwy wewnętrzne, drenaż (opcjonalnie), opatrunek uciskowy i kamizelka kompresyjna." },
