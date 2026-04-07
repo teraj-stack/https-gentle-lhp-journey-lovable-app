@@ -34,7 +34,7 @@ const stagger = (i: number) => ({
 const faqItems = [
   { q: "Czym jest pseudoginekomastia (lipoginekomastia)?", a: "To powiększenie piersi u mężczyzn spowodowane wyłącznie nadmiarem tkanki tłuszczowej — bez rozrostu gruczołu piersiowego. Częsta u mężczyzn z nadwagą, ale może dotyczyć też szczupłych osób z genetyczną predyspozycją do odkładania tłuszczu w okolicy klatki piersiowej." },
   { q: "Czy mogę pozbyć się tego dietą i ćwiczeniami?", a: "Częściowo tak — redukcja masy ciała może zmniejszyć objętość piersi. Jednak lokalne depozyty tłuszczu często są oporne na dietę i trening. Liposukcja pozwala precyzyjnie usunąć tłuszcz z konkretnego obszaru." },
-  { q: "Jak działa liposukcja laserowa?", a: "Przez mikronakłucia (3–4 mm) wprowadzamy cienką kaniulę z włóknem laserowym. Laser rozpuszcza komórki tłuszczowe, które następnie odsysamy. Dodatkowy efekt: laser stymuluje skurcz kolagenu w skórze, co zapobiega jej wiotczeniu po zabiegu." },
+  { q: "Jak działa liposukcja ultradźwiękowa Vaser Lipo HD?", a: "Przez mikronakłucia (3–4 mm) wprowadzamy cienką sondę ultradźwiękową. Fale ultradźwiękowe selektywnie rozbijają komórki tłuszczowe, oszczędzając naczynia krwionośne i nerwy. Rozbitą tkankę tłuszczową delikatnie odsysamy. Dodatkowy efekt: energia ultradźwięków stymuluje skurcz kolagenu w skórze, co zapobiega jej wiotczeniu po zabiegu." },
   { q: "Czy tłuszcz może wrócić?", a: "Usunięte komórki tłuszczowe nie regenerują się. Jednak znaczny przyrost masy ciała (>10 kg) może spowodować powiększenie pozostałych komórek. Zalecamy utrzymanie stabilnej wagi." },
   { q: "Jakie blizny pozostaną?", a: "Minimalne — jedynie 2–3 ślady po wkłuciach o średnicy 3–4 mm, które z czasem stają się praktycznie niewidoczne." },
 ];
