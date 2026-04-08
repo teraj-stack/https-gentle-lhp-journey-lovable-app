@@ -3,7 +3,7 @@ import ParallaxSection from "@/components/ui/parallax-section";
 import { Link } from "react-router-dom";
 import Breadcrumbs from "@/components/layout/Breadcrumbs";
 import { Button } from "@/components/ui/button";
-import { BookOpen, Download, ArrowRight } from "lucide-react";
+import { BookOpen, ArrowRight } from "lucide-react";
 import CLaCSFAQ from "@/components/clacs/CLaCSFAQ";
 import ProcedureSummaryTable from "@/components/shared/ProcedureSummaryTable";
 import MedicalProcedureSchema from "@/components/shared/MedicalProcedureSchema";
@@ -246,16 +246,10 @@ const CLaCS = () => (
           <div className="flex-1 text-center sm:text-left">
             <h3 className="text-lg font-bold text-foreground mb-2">Pajączki i naczynka — Przewodnik dla Pacjentki</h3>
             <p className="text-sm text-muted-foreground leading-relaxed mb-4">
-              Skąd się biorą pajączki? Dlaczego ukrywanie jest niebezpieczne? Jak metoda CLaCS zamyka naczynka trwale i komfortowo? Przeczytaj nasz kompletny przewodnik lub pobierz PDF.
+              Skąd się biorą pajączki? Dlaczego ukrywanie jest niebezpieczne? Jak metoda CLaCS zamyka naczynka trwale i komfortowo? Przeczytaj nasz kompletny przewodnik.
             </p>
             <div className="flex flex-col sm:flex-row gap-3">
               <Button variant="hero" size="lg" asChild>
-                <a href="/ebooks/CLaCS-Pajaczki-Przewodnik.pdf" download>
-                  <Download className="w-4 h-4 mr-2" />
-                  Pobierz PDF
-                </a>
-              </Button>
-              <Button variant="outline" size="lg" asChild>
                 <Link to="/dla-pacjenta/pajaczki">
                   Czytaj online
                   <ArrowRight className="w-4 h-4 ml-2" />
