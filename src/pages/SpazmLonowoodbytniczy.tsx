@@ -262,7 +262,7 @@ const SpazmLonowoodbytniczy = () => (
           <ul className="space-y-2">
             {[
               "Prawidłowa diagnoza to podstawa — ból ma konkretną przyczynę",
-              "Nowoczesne metody (biofeedback, botoks) są wysoce skuteczne",
+              "Nowoczesne metody muszą uwzględniać prawidłowe nawyki żywieniowe — zaburzenie ekosystemu mikroflory jelitowej jest najczęściej pomijalnym elementem diagnostyki, a co za tym idzie również leczenia",
               "Im wcześniej rozpoczniesz leczenie, tym szybszy powrót do normalności",
               "Terapia jest bezbolesna i prowadzona ambulatoryjnie",
             ].map((t) => (
