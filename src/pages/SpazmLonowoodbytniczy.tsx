@@ -153,7 +153,6 @@ const SpazmLonowoodbytniczy = () => (
           <p className="text-muted-foreground leading-relaxed mb-4">
             Każdy czynnik drażniący okolicę dna miednicy może być triggerem (czynnikiem spustowym) prowokującym bolesny skurcz mięśni. Najczęściej obserwowane przyczyny i czynniki podtrzymujące to:
           </p>
-          </p>
           <ul className="space-y-2">
             {[
               "Przewlekły stres i napięcie emocjonalne — mięśnie dna miednicy reagują na stres podobnie jak mięśnie szyi",
