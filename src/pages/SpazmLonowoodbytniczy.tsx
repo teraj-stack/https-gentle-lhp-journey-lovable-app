@@ -9,6 +9,7 @@ import SeoHead from "@/components/shared/SeoHead";
 import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 import EbookBanner from "@/components/shared/EbookBanner";
 import RecoveryBoostBanner from "@/components/shared/RecoveryBoostBanner";
+import SpazmFAQ from "@/components/spazm/SpazmFAQ";
 
 const spazmSummary = [
   { label: "Przygotowanie", value: "Badanie proktologiczne, ocena napięcia mięśni dna miednicy, wykluczenie przyczyn organicznych (szczelina, ropień, guz)." },
