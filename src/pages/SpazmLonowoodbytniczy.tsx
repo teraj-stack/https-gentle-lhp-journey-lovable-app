@@ -263,6 +263,7 @@ const SpazmLonowoodbytniczy = () => (
             {[
               "Prawidłowa diagnoza to podstawa — ból ma konkretną przyczynę",
               "Nowoczesne metody muszą uwzględniać prawidłowe nawyki żywieniowe — zaburzenie ekosystemu mikroflory jelitowej jest najczęściej pomijalnym elementem diagnostyki, a co za tym idzie również leczenia",
+              "Nowoczesne metody leczenia, tj. biofeedback czy toksyna botulinowa są wysoce skuteczne, jednak nie zastąpią prawidłowych nawyków żywieniowych",
               "Im wcześniej rozpoczniesz leczenie, tym szybszy powrót do normalności",
               "Terapia jest bezbolesna i prowadzona ambulatoryjnie",
             ].map((t) => (
