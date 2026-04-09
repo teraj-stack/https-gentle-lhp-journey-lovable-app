@@ -46,6 +46,7 @@ const Ginekomastia = lazy(() => import("@/pages/Ginekomastia"));
 const GinekomastiaGruczolowa = lazy(() => import("@/pages/GinekomastiaGruczolowa"));
 const GinekomastiaTluszczowa = lazy(() => import("@/pages/GinekomastiaTluszczowa"));
 const GinekomastiaMieszana = lazy(() => import("@/pages/GinekomastiaMieszana"));
+const SpazmLonowoodbytniczy = lazy(() => import("@/pages/SpazmLonowoodbytniczy"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 
 const queryClient = new QueryClient();
@@ -89,6 +90,7 @@ const App = () => (
               <Route path="/leczenie/ginekomastia-gruczolowa" element={<GinekomastiaGruczolowa />} />
               <Route path="/leczenie/ginekomastia-tluszczowa" element={<GinekomastiaTluszczowa />} />
               <Route path="/leczenie/ginekomastia-mieszana" element={<GinekomastiaMieszana />} />
+              <Route path="/leczenie/spazm-lonowoodbytniczy" element={<SpazmLonowoodbytniczy />} />
               <Route path="/kontakt" element={<Kontakt />} />
               <Route path="/blog" element={<Blog />} />
               <Route path="/blog/:slug" element={<BlogPost />} />
