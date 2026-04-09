@@ -151,7 +151,7 @@ const SpazmLonowoodbytniczy = () => (
         </h2>
         <div className="glass-card p-8 rounded-2xl">
           <p className="text-muted-foreground leading-relaxed mb-4">
-            Spazm mięśnia łonowo-odbytniczego ma charakter wieloczynnikowy. Najczęściej obserwowane przyczyny i czynniki podtrzymujące to:
+            Każdy czynnik drażniący okolicę dna miednicy może być triggerem (czynnikiem spustowym) prowokującym bolesny skurcz mięśni. Najczęściej obserwowane przyczyny i czynniki podtrzymujące to:
           </p>
           <ul className="space-y-2">
             {[
