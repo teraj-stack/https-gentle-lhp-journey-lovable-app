@@ -14,6 +14,7 @@ const twojProblemItems = [
   { label: "Przetoka odbytu", href: "/leczenie/filac", desc: "Sączenie, ropień, nawracający ból" },
   { label: "Torbiel pilonidalna", href: "/leczenie/silac", desc: "Guzek, ból i sączenie w okolicy kości ogonowej" },
   { label: "Fałdy okolicy odbytu", href: "/dla-pacjenta/faldy-odbytu", desc: "Wariant anatomiczny czy powód kompleksów?" },
+  { label: "Przewlekły ból odbytu", href: "/leczenie/spazm-lonowoodbytniczy", desc: "Spazm mięśnia łonowo-odbytniczego" },
 ];
 
 const proktologiaItems = [
@@ -24,6 +25,7 @@ const proktologiaItems = [
   { label: "Plastyka odbytu", href: "/leczenie/plastyka", desc: "Estetyka i komfort" },
   { label: "Zapalenie odbytu", href: "/leczenie/anusitis", desc: "Leczenie farmakologiczne" },
   { label: "Fałdy odbytu", href: "/dla-pacjenta/faldy-odbytu", desc: "Diagnostyka i leczenie fałdów" },
+  { label: "Spazm łonowo-odbytniczy", href: "/leczenie/spazm-lonowoodbytniczy", desc: "Przewlekły ból odbytu" },
 ];
 
 const flebologiaItems = [
