@@ -128,7 +128,7 @@ const SpazmLonowoodbytniczy = () => (
         <ul className="space-y-3">
           {[
             "Przewlekły, tępy ból w okolicy odbytu — nasilający się przy siedzeniu",
-            "Uczucie „ciała obcego" lub ucisku w odbytnicy",
+            'Uczucie „ciała obcego" lub ucisku w odbytnicy',
             "Ból nasilający się po defekacji lub w sytuacjach stresowych",
             "Epizody nagłego, ostrego bólu odbytu (proctalgia fugax)",
             "Trudności z wypróżnianiem — uczucie niepełnego stolca (dyssynergia)",
@@ -210,7 +210,7 @@ const SpazmLonowoodbytniczy = () => (
             },
             {
               title: "2. Iniekcje toksyny botulinowej (botoks)",
-              desc: "Precyzyjna iniekcja botoksu w mięsień łonowo-odbytniczy powoduje jego kontrolowane rozluźnienie na okres 3–6 miesięcy. W tym czasie mięsień „uczy się" prawidłowego napięcia. Zabieg ambulatoryjny, powrót do aktywności tego samego dnia.",
+              desc: 'Precyzyjna iniekcja botoksu w mięsień łonowo-odbytniczy powoduje jego kontrolowane rozluźnienie na okres 3–6 miesięcy. W tym czasie mięsień „uczy się" prawidłowego napięcia. Zabieg ambulatoryjny, powrót do aktywności tego samego dnia.',
             },
             {
               title: "3. Farmakoterapia",
