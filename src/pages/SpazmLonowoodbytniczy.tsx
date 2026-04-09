@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import Breadcrumbs from "@/components/layout/Breadcrumbs";
 import { ArrowRight, CheckCircle2, AlertTriangle, Brain, Activity, HeartPulse } from "lucide-react";
+import miesnieDnaMiednicy from "@/assets/miesnie-dna-miednicy.jpeg";
 import ParallaxSection from "@/components/ui/parallax-section";
 import ProcedureSummaryTable from "@/components/shared/ProcedureSummaryTable";
 import MedicalProcedureSchema from "@/components/shared/MedicalProcedureSchema";
@@ -119,6 +120,25 @@ const SpazmLonowoodbytniczy = () => (
             Co istotne, w badaniu proktologicznym często nie stwierdza się żadnych zmian organicznych — brak szczeliny, hemoroidów czy ropnia. To sprawia, że wielu pacjentów latami pozostaje bez diagnozy, krążąc między specjalistami.
           </p>
         </div>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.7, delay: 0.2 }}
+          className="mt-8"
+        >
+          <figure className="glass-card rounded-2xl p-4 md:p-6">
+            <img
+              src={miesnieDnaMiednicy}
+              alt="Schemat anatomiczny mięśni dna miednicy — m. biodrowo-guziczny, m. łonowo-odbytniczy, m. łonowo-kroczowy, m. zwieracz zewnętrzny odbytu, m. łonowo-odbytowy"
+              className="w-full max-w-lg mx-auto rounded-xl"
+              loading="lazy"
+            />
+            <figcaption className="text-xs text-muted-foreground text-center mt-3">
+              Schemat anatomiczny mięśni dna miednicy z zaznaczonym m.&nbsp;łonowo-odbytniczym (puborectalis)
+            </figcaption>
+          </figure>
+        </motion.div>
       </motion.section>
 
       {/* Objawy */}
