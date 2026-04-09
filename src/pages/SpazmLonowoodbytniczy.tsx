@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import Breadcrumbs from "@/components/layout/Breadcrumbs";
 import { ArrowRight, CheckCircle2, AlertTriangle, Brain, Activity, HeartPulse } from "lucide-react";
+import miesnieDnaMiednicy from "@/assets/miesnie-dna-miednicy.jpeg";
 import ParallaxSection from "@/components/ui/parallax-section";
 import ProcedureSummaryTable from "@/components/shared/ProcedureSummaryTable";
 import MedicalProcedureSchema from "@/components/shared/MedicalProcedureSchema";
