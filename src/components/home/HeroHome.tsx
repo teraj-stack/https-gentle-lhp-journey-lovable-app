@@ -30,6 +30,15 @@ const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
         style={{ backgroundImage: `url(${heroImage})`, y: bgY }}
       />
       <motion.div className="absolute inset-0 bg-background" style={{ opacity: overlayOpacity }} />
+      {/* Branded overlay to cover wall typo */}
+      <div className="absolute top-[38%] right-[8%] md:right-[12%] z-10 text-right pointer-events-none select-none">
+        <p className="text-2xl md:text-4xl lg:text-5xl font-bold tracking-[0.15em] text-primary/30" style={{ textShadow: "0 0 40px hsl(var(--primary) / 0.2)" }}>
+          CML
+        </p>
+        <p className="text-[0.5rem] md:text-xs tracking-[0.3em] uppercase text-primary/20 mt-1">
+          Centrum Medycyny Laserowej
+        </p>
+      </div>
 
     <div className="relative max-w-7xl mx-auto px-4 md:px-8 py-32 md:py-40 w-full flex flex-col md:flex-row items-center gap-12 md:gap-20">
       <motion.div
