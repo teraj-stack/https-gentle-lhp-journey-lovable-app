@@ -21,7 +21,7 @@ const HeroHome = () => {
   });
   const bgY = useTransform(scrollYProgress, [0, 1], ["0%", "30%"]);
 const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
-  const overlayOpacity = useTransform(scrollYProgress, [0, 1], isMobile ? [0.75, 0.9] : [0.6, 0.8]);
+  const overlayOpacity = useTransform(scrollYProgress, [0, 1], isMobile ? [0.82, 0.92] : [0.72, 0.88]);
 
   return (
     <section ref={sectionRef} className="relative min-h-[90vh] flex items-center overflow-hidden">
