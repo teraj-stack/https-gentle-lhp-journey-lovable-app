@@ -31,11 +31,11 @@ const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
       />
       <motion.div className="absolute inset-0 bg-background" style={{ opacity: overlayOpacity }} />
       {/* Branded overlay to cover wall typo */}
-      <div className="absolute top-[38%] right-[8%] md:right-[12%] z-10 text-right pointer-events-none select-none">
-        <p className="text-2xl md:text-4xl lg:text-5xl font-bold tracking-[0.15em] text-primary/30" style={{ textShadow: "0 0 40px hsl(var(--primary) / 0.2)" }}>
+      <div className="absolute top-[28%] right-[2%] md:right-[5%] z-10 text-center pointer-events-none select-none bg-background/70 backdrop-blur-sm px-6 md:px-10 py-3 md:py-5 rounded-sm">
+        <p className="text-3xl md:text-5xl lg:text-6xl font-bold tracking-[0.15em] text-primary" style={{ textShadow: "0 0 30px hsl(var(--primary) / 0.3)" }}>
           CML
         </p>
-        <p className="text-[0.5rem] md:text-xs tracking-[0.3em] uppercase text-primary/20 mt-1">
+        <p className="text-[0.6rem] md:text-sm tracking-[0.3em] uppercase text-primary/70 mt-1">
           Centrum Medycyny Laserowej
         </p>
       </div>
