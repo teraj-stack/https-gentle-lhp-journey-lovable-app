@@ -3,7 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Menu, X, ChevronDown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import logoCml from "@/assets/logo-cml.png";
+import logoCml from "@/assets/logo-cml.webp";
 
 
 const twojProblemItems = [
