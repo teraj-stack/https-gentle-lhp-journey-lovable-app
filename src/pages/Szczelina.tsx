@@ -62,11 +62,11 @@ const Szczelina = () => (
     <ParallaxSection className="relative py-20 md:py-28 gradient-hero">
       <div className="relative max-w-7xl mx-auto px-4 md:px-8">
         <motion.div initial={{ opacity: 0, y: 40, filter: "blur(6px)" }} animate={{ opacity: 1, y: 0, filter: "blur(0px)" }} transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }} className="max-w-3xl">
-          <p className="text-primary-foreground/60 text-sm font-sans uppercase tracking-[0.2em] mb-6">Proktologia Laserowa</p>
+          <p className="text-primary-foreground/90 text-sm font-sans uppercase tracking-[0.2em] mb-6">Proktologia Laserowa</p>
           <h1 className="text-4xl md:text-6xl font-bold text-primary-foreground leading-[1.1] mb-6">
             Szczelina odbytu
           </h1>
-          <p className="text-lg md:text-xl text-primary-foreground/70 leading-relaxed max-w-2xl mb-10">
+          <p className="text-lg md:text-xl text-primary-foreground/90 leading-relaxed max-w-2xl mb-10">
             Skuteczne leczenie od diety do lasera — od farmakoterapii po nowoczesne metody małoinwazyjne, dobrane indywidualnie do Twoich potrzeb.
           </p>
           <Button variant="hero" size="lg" className="px-8 py-6 text-base" asChild>
