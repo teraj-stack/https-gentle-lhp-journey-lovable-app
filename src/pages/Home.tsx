@@ -143,11 +143,13 @@ const Home = () => (
     <HeroHome />
     <TrustBar />
     <Philosophy />
-    <ServiceCards />
-    <DoctorSection />
-    <Testimonials />
-    <B2BSection />
-    <FAQTeaser />
+    <Suspense fallback={null}>
+      <ServiceCards />
+      <DoctorSection />
+      <Testimonials />
+      <B2BSection />
+      <FAQTeaser />
+    </Suspense>
   </div>
 );
 
