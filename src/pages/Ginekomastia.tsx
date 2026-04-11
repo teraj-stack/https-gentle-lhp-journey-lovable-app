@@ -116,11 +116,11 @@ const Ginekomastia = () => (
       </div>
       <div className="relative max-w-7xl mx-auto px-4 md:px-8">
         <motion.div initial={{ opacity: 0, y: 40, filter: "blur(6px)" }} animate={{ opacity: 1, y: 0, filter: "blur(0px)" }} transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }} className="max-w-3xl">
-          <p className="text-foreground/60 text-sm font-sans uppercase tracking-[0.2em] mb-6">Chirurgia Estetyczna</p>
+          <p className="text-primary text-sm font-sans uppercase tracking-[0.2em] mb-6">Chirurgia Estetyczna</p>
           <h1 className="text-4xl md:text-6xl font-bold text-foreground leading-[1.1] mb-6">
             Ginekomastia
           </h1>
-          <p className="text-lg md:text-xl text-foreground/70 leading-relaxed max-w-2xl mb-10">
+          <p className="text-lg md:text-xl text-muted-foreground leading-relaxed max-w-2xl mb-10">
             Powiększone piersi u mężczyzn to problem, który dotyka nawet co trzeciego mężczyznę. Nowoczesne leczenie chirurgiczne przywraca płaską klatkę piersiową i pewność siebie.
           </p>
           <Button variant="hero" size="lg" className="px-8 py-6 text-base" asChild>
@@ -269,7 +269,7 @@ const Ginekomastia = () => (
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-6">
             Odzyskaj pewność siebie
           </h2>
-          <p className="text-lg text-foreground/70 mb-10 leading-relaxed">
+          <p className="text-lg text-muted-foreground mb-10 leading-relaxed">
             Umów się na konsultację, aby omówić plan leczenia ginekomastii. Dyskretnie, profesjonalnie, z trwałym efektem.
           </p>
           <Button variant="hero" size="lg" className="px-10 py-6 text-base" asChild>

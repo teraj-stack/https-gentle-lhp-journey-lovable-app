@@ -61,14 +61,14 @@ const SpazmLonowoodbytniczy = () => (
       </div>
       <div className="relative max-w-7xl mx-auto px-4 md:px-8">
         <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.9 }} className="max-w-3xl">
-          <p className="text-foreground/60 text-sm font-sans uppercase tracking-[0.2em] mb-6">Proktologia</p>
+          <p className="text-primary text-sm font-sans uppercase tracking-[0.2em] mb-6">Proktologia</p>
           <h1 className="text-4xl md:text-6xl font-bold text-foreground leading-[1.1] mb-6">
             Przewlekły ból odbytu
           </h1>
-          <p className="text-lg md:text-xl text-foreground/70 leading-relaxed max-w-2xl mb-4">
+          <p className="text-lg md:text-xl text-muted-foreground leading-relaxed max-w-2xl mb-4">
             Spazm mięśnia łonowo-odbytniczego (m.&nbsp;puborectalis)
           </p>
-          <p className="text-base text-foreground/60 leading-relaxed max-w-2xl mb-10">
+          <p className="text-base text-muted-foreground leading-relaxed max-w-2xl mb-10">
             Ból, który nie ma widocznej przyczyny, ale całkowicie zmienia jakość życia. Pomagamy go zdiagnozować i skutecznie leczyć.
           </p>
           <Button variant="hero" size="lg" className="px-8 py-6 text-base" asChild>
