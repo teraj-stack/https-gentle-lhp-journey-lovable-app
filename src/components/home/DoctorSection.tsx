@@ -15,7 +15,7 @@ const DoctorSection = () => (
   <section className="py-20 md:py-28 bg-card">
     <div className="max-w-7xl mx-auto px-4 md:px-8">
       <div className="grid lg:grid-cols-2 gap-16 items-center">
-        <motion.div {...fadeUp} className="flex justify-center lg:order-2">
+        <motion.div {...stagger(0.15)} className="flex justify-center lg:order-2">
           <div className="relative">
             <img
               src={drBujokImg}
@@ -27,7 +27,7 @@ const DoctorSection = () => (
           </div>
         </motion.div>
 
-        <motion.div {...fadeUp}>
+        <motion.div {...stagger(0)}>
           <p className="text-sm font-sans uppercase tracking-[0.15em] text-primary mb-4">Twórca CML – Centrum Medycyny Laserowej</p>
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-6 leading-tight">
             Dr Jan Bujok
