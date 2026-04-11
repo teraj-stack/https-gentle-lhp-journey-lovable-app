@@ -4,12 +4,12 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import drBujokImg from "@/assets/dr-bujok.webp";
 
-const fadeUp = {
-  initial: { opacity: 0, y: 24, filter: "blur(4px)" },
+const stagger = (delay = 0) => ({
+  initial: { opacity: 0, y: 28, filter: "blur(5px)" },
   whileInView: { opacity: 1, y: 0, filter: "blur(0px)" },
   viewport: { once: true, amount: 0.2 },
-  transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1] as const },
-};
+  transition: { duration: 0.7, delay, ease: [0.16, 1, 0.3, 1] as const },
+});
 
 const DoctorSection = () => (
   <section className="py-20 md:py-28 bg-card">
