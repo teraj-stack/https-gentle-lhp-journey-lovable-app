@@ -1,13 +1,14 @@
+import { lazy, Suspense } from "react";
 import HeroHome from "@/components/home/HeroHome";
-
 import TrustBar from "@/components/home/TrustBar";
 import Philosophy from "@/components/home/Philosophy";
-import ServiceCards from "@/components/home/ServiceCards";
-import DoctorSection from "@/components/home/DoctorSection";
-import Testimonials from "@/components/home/Testimonials";
-import B2BSection from "@/components/home/B2BSection";
-import FAQTeaser from "@/components/home/FAQTeaser";
 import SeoHead from "@/components/shared/SeoHead";
+
+const ServiceCards = lazy(() => import("@/components/home/ServiceCards"));
+const DoctorSection = lazy(() => import("@/components/home/DoctorSection"));
+const Testimonials = lazy(() => import("@/components/home/Testimonials"));
+const B2BSection = lazy(() => import("@/components/home/B2BSection"));
+const FAQTeaser = lazy(() => import("@/components/home/FAQTeaser"));
 
 const localBusinessSchema = {
   "@context": "https://schema.org",
