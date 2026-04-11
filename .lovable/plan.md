@@ -1,15 +1,17 @@
 
 
-## Kompresja hero image
+## Dodanie preconnect/prefetch dla zewnętrznych zasobów
 
-**Obecny stan:** `hero-clinic-fixed.webp` — 1376×768 px, 1.2 MB
+**Obecny stan:** `index.html` ma już `preconnect` dla `fonts.googleapis.com` i `fonts.gstatic.com`, ale brakuje:
+- Faktycznego załadowania arkusza stylów fontów (jest tylko `preload`, brak `<link rel="stylesheet">`)
+- DNS-prefetch dla `www.znanylekarz.pl` (linkowany w wielu CTA na stronie)
+- Preconnect dla Supabase API (używanego przez blog i admin)
 
-**Plan:**
+**Plan — edycja jednego pliku: `index.html`**
 
-1. Skompresować obraz za pomocą `cwebp` z jakością 75 (dobry balans jakość/rozmiar) — oczekiwany wynik ~150–300 KB
-2. Porównać wizualnie oryginał i skompresowaną wersję
-3. Jeśli jakość jest akceptowalna, podmienić plik w `src/assets/`
-4. Nie trzeba zmieniać żadnych importów — nazwa pliku pozostaje ta sama
+1. Dodać `<link rel="stylesheet">` dla Google Fonts (obecnie jest `preload as="style"` ale brak faktycznego arkusza — przeglądarka pobiera plik, ale go nie stosuje bez dodatkowego kroku)
+2. Dodać `<link rel="dns-prefetch" href="https://www.znanylekarz.pl">` — przyspiesza rozwiązanie DNS przy kliknięciu w CTA
+3. Dodać `<link rel="preconnect" href="https://jowtjcyevactqmhqrytz.supabase.co">` — przyspiesza połączenie z backendem dla stron z blogiem
 
-**Oczekiwany efekt:** Redukcja z 1.2 MB do ~200–300 KB (75–85% mniej), co poprawi LCP o ~0.5–1s na wolniejszych łączach.
+Wszystkie zmiany w `<head>` sekcji `index.html`, zero zmian w komponentach React.
 
