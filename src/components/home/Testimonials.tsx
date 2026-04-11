@@ -53,9 +53,10 @@ const testimonials = [
 ];
 
 const fadeUp = {
-  initial: { opacity: 0, y: 24 },
-  whileInView: { opacity: 1, y: 0 },
-  viewport: { once: true },
+  initial: { opacity: 0, y: 24, filter: "blur(4px)" },
+  whileInView: { opacity: 1, y: 0, filter: "blur(0px)" },
+  viewport: { once: true, amount: 0.2 },
+  transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1] as const },
 };
 
 const Testimonials = () => (
@@ -103,10 +104,10 @@ const Testimonials = () => (
         {testimonials.map((t, i) => (
           <motion.div
             key={t.name}
-            initial={{ opacity: 0, y: 24 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: i * 0.1 }}
+            initial={{ opacity: 0, y: 24, filter: "blur(4px)" }}
+            whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+            viewport={{ once: true, amount: 0.2 }}
+            transition={{ duration: 0.6, delay: i * 0.1, ease: [0.16, 1, 0.3, 1] as const }}
             className="glass-card rounded-2xl p-7 md:p-8 relative group flex flex-col"
           >
             <Quote className="absolute top-6 right-6 w-8 h-8 text-primary/15 group-hover:text-primary/25 transition-colors duration-500" />
