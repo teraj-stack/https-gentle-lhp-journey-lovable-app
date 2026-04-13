@@ -146,11 +146,9 @@ const Plastyka = () => (
             "Wystające fałdy skóry, których nie da się odprowadzić",
             "Trudności z utrzymaniem idealnej higieny",
             "Dyskomfort estetyczny i psychiczny",
-          ].map((text) => (
-            <li key={text} className="flex items-start gap-3 text-sm text-foreground">
-              <CheckCircle2 className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+            <StaggeredListItem key={text} index={i} icon={<CheckCircle2 className="w-5 h-5 text-primary shrink-0 mt-0.5" />}>
               {text}
-            </li>
+            </StaggeredListItem>
           ))}
         </ul>
       </motion.section>
