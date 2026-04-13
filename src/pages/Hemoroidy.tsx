@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import SeoHead from "@/components/shared/SeoHead";
 import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 import RecoveryBoostBanner from "@/components/shared/RecoveryBoostBanner";
+import { StaggeredListItem } from "@/components/shared/StaggeredList";
 
 const fadeUp = {
   initial: { opacity: 0, y: 24 },
@@ -236,10 +237,9 @@ const Hemoroidy = () => {
             </div>
             <ul className="space-y-2">
               {dietPoints.map((p, i) => (
-                <li key={i} className="flex items-start gap-3 text-sm text-muted-foreground">
-                  <div className="w-1.5 h-1.5 rounded-full bg-primary shrink-0 mt-1.5" />
+                <StaggeredListItem key={i} index={i} icon={<div className="w-1.5 h-1.5 rounded-full bg-primary shrink-0 mt-1.5" />} className="flex items-start gap-3 text-sm text-muted-foreground">
                   {p}
-                </li>
+                </StaggeredListItem>
               ))}
             </ul>
             <div className="flex flex-wrap gap-2 mt-4">
@@ -350,10 +350,9 @@ const Hemoroidy = () => {
               <h3 className="font-bold text-foreground mb-4 text-sm">{cat.cat}</h3>
               <ul className="space-y-3">
                 {cat.queries.map((q, i) => (
-                  <li key={i} className="flex items-start gap-2 text-xs text-muted-foreground leading-relaxed">
-                    <span className="text-primary shrink-0">{"\ud83d\udd0e"}</span>
+                  <StaggeredListItem key={i} index={i} icon={<span className="text-primary shrink-0">{"\ud83d\udd0e"}</span>} className="flex items-start gap-2 text-xs text-muted-foreground leading-relaxed">
                     {q}
-                  </li>
+                  </StaggeredListItem>
                 ))}
               </ul>
             </motion.div>

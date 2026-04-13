@@ -5,6 +5,7 @@ import SeoHead from "@/components/shared/SeoHead";
 import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 import { Button } from "@/components/ui/button";
 import { Stethoscope, Heart, Zap } from "lucide-react";
+import { StaggeredListItem } from "@/components/shared/StaggeredList";
 
 const fadeUp = {
   initial: { opacity: 0, y: 30 },
@@ -115,11 +116,11 @@ const Cennik = () => (
               </div>
               <p className="text-muted-foreground text-sm mb-4">{item.description}</p>
               <ul className="space-y-1.5 mb-6 flex-1">
-                {item.includes.map((inc) => (
-                  <li key={inc} className="text-sm text-foreground/80 flex items-start gap-2">
-                    <span className="text-primary mt-0.5">✓</span>
+                {item.includes.map((inc, i) => (
+                  <StaggeredListItem key={inc} index={i} icon={<span className="text-primary mt-0.5">✓</span>} className="text-sm text-foreground/80 flex items-start gap-2">
                     {inc}
-                  </li>
+                  </StaggeredListItem>
+                  
                 ))}
               </ul>
               <div className="border-t border-border pt-4 flex items-center justify-between">

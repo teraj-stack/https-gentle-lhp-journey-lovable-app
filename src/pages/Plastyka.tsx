@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import Breadcrumbs from "@/components/layout/Breadcrumbs";
 import { ArrowRight, CheckCircle2, Clock, Shield, Sparkles, Heart } from "lucide-react";
+import { StaggeredListItem } from "@/components/shared/StaggeredList";
 import ParallaxSection from "@/components/ui/parallax-section";
 import ProcedureSummaryTable from "@/components/shared/ProcedureSummaryTable";
 import MedicalProcedureSchema from "@/components/shared/MedicalProcedureSchema";
@@ -145,11 +146,10 @@ const Plastyka = () => (
             "Wystające fałdy skóry, których nie da się odprowadzić",
             "Trudności z utrzymaniem idealnej higieny",
             "Dyskomfort estetyczny i psychiczny",
-          ].map((text) => (
-            <li key={text} className="flex items-start gap-3 text-sm text-foreground">
-              <CheckCircle2 className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+          ].map((text, i) => (
+            <StaggeredListItem key={text} index={i} icon={<CheckCircle2 className="w-5 h-5 text-primary shrink-0 mt-0.5" />}>
               {text}
-            </li>
+            </StaggeredListItem>
           ))}
         </ul>
       </motion.section>

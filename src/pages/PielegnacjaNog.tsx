@@ -7,6 +7,7 @@ import {
   CheckCircle2, AlertTriangle, Hand, CalendarDays, Shirt,
   ArrowRight
 } from "lucide-react";
+import { StaggeredListItem } from "@/components/shared/StaggeredList";
 import { Button } from "@/components/ui/button";
 
 const easeOut = [0.16, 1, 0.3, 1] as const;
@@ -279,10 +280,9 @@ const PielegnacjaNog = () => {
             </div>
             <ul className="space-y-3">
               {normalSymptoms.map((s, i) => (
-                <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
-                  <span className="text-green-500 mt-0.5 shrink-0">✓</span>
+                <StaggeredListItem key={i} index={i} icon={<span className="text-green-500 mt-0.5 shrink-0">✓</span>} className="flex items-start gap-2 text-sm text-muted-foreground">
                   {s}
-                </li>
+                </StaggeredListItem>
               ))}
             </ul>
           </motion.div>
@@ -295,10 +295,9 @@ const PielegnacjaNog = () => {
             </div>
             <ul className="space-y-3">
               {warnSymptoms.map((s, i) => (
-                <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
-                  <span className="text-red-500 mt-0.5 shrink-0">⚠</span>
+                <StaggeredListItem key={i} index={i} icon={<span className="text-red-500 mt-0.5 shrink-0">⚠</span>} className="flex items-start gap-2 text-sm text-muted-foreground">
                   {s}
-                </li>
+                </StaggeredListItem>
               ))}
             </ul>
           </motion.div>

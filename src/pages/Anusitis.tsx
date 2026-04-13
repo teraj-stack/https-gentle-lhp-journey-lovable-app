@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import Breadcrumbs from "@/components/layout/Breadcrumbs";
 import { ArrowRight, CheckCircle2, AlertTriangle, Pill, Shield } from "lucide-react";
+import { StaggeredListItem } from "@/components/shared/StaggeredList";
 import ParallaxSection from "@/components/ui/parallax-section";
 import ProcedureSummaryTable from "@/components/shared/ProcedureSummaryTable";
 import MedicalProcedureSchema from "@/components/shared/MedicalProcedureSchema";
@@ -124,11 +125,10 @@ const Anusitis = () => (
             "Pieczenie, szczypanie lub ból",
             "Uczucie wilgoci — sączenie się wydzieliny zapalnej",
             "Ślady krwi na papierze toaletowym",
-          ].map((text) => (
-            <li key={text} className="flex items-start gap-3 text-sm text-foreground">
-              <CheckCircle2 className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+          ].map((text, i) => (
+            <StaggeredListItem key={text} index={i} icon={<CheckCircle2 className="w-5 h-5 text-primary shrink-0 mt-0.5" />}>
               {text}
-            </li>
+            </StaggeredListItem>
           ))}
         </ul>
       </motion.section>
@@ -149,11 +149,10 @@ const Anusitis = () => (
               "Choroby autoimmunologiczne",
               "Stan po radioterapii",
               "Nadwrażliwość kontaktowa",
-            ].map((t) => (
-              <li key={t} className="flex items-start gap-2 text-sm text-foreground">
-                <CheckCircle2 className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+            ].map((t, i) => (
+              <StaggeredListItem key={t} index={i} icon={<CheckCircle2 className="w-4 h-4 text-primary shrink-0 mt-0.5" />} className="flex items-start gap-2 text-sm text-foreground">
                 {t}
-              </li>
+              </StaggeredListItem>
             ))}
           </ul>
         </div>
@@ -173,11 +172,11 @@ const Anusitis = () => (
               "Powstanie hemoroidów (nadmierne rozciągnięcie osłabionej anodermy)",
               "Szczelina odbytu (zwiotczała skóra łatwiej pęka)",
               "Ropnie i przetoki (w stanach ostrego zapalenia)",
-            ].map((t) => (
-              <li key={t} className="flex items-start gap-2 text-sm text-foreground">
-                <AlertTriangle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
+            ].map((t, i) => (
+              <StaggeredListItem key={t} index={i} icon={<AlertTriangle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />} className="flex items-start gap-2 text-sm text-foreground">
                 {t}
-              </li>
+              </StaggeredListItem>
+              
             ))}
           </ul>
         </div>

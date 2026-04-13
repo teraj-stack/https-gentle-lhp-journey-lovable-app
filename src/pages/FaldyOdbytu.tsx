@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import Breadcrumbs from "@/components/layout/Breadcrumbs";
 import { ArrowRight, CheckCircle2, HelpCircle, AlertTriangle, Heart, Eye, ShieldCheck } from "lucide-react";
+import { StaggeredListItem } from "@/components/shared/StaggeredList";
 import ParallaxSection from "@/components/ui/parallax-section";
 import SeoHead from "@/components/shared/SeoHead";
 import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
@@ -142,11 +143,10 @@ const FaldyOdbytu = () => (
             "Wpływają negatywnie na samoocenę i pewność siebie",
             "Stanowią barierę w relacjach intymnych",
             "Wywołują lęk przed poważniejszą chorobą",
-          ].map((text) => (
-            <li key={text} className="flex items-start gap-3 text-sm text-foreground">
-              <CheckCircle2 className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+          ].map((text, i) => (
+            <StaggeredListItem key={text} index={i} icon={<CheckCircle2 className="w-5 h-5 text-primary shrink-0 mt-0.5" />}>
               {text}
-            </li>
+            </StaggeredListItem>
           ))}
         </ul>
         <p className="text-muted-foreground leading-relaxed mt-6">
@@ -173,11 +173,10 @@ const FaldyOdbytu = () => (
               "Zmiana rośnie, twardnieje lub zmienia kolor — wymaga oceny dermatologicznej",
               "Doświadczasz świądu, pieczenia lub wycieku — mogą wskazywać na anusitis lub egzemę",
               "Po prostu chcesz wiedzieć, z czym masz do czynienia — diagnostyka to nie przesada, to rozsądek",
-            ].map((text) => (
-              <li key={text} className="flex items-start gap-2 text-sm text-muted-foreground leading-relaxed">
-                <span className="text-primary mt-1">•</span>
+            ].map((text, i) => (
+              <StaggeredListItem key={text} index={i} className="flex items-start gap-2 text-sm text-muted-foreground leading-relaxed" icon={<span className="text-primary mt-1">•</span>}>
                 {text}
-              </li>
+              </StaggeredListItem>
             ))}
           </ul>
         </div>
