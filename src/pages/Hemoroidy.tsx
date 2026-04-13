@@ -237,10 +237,9 @@ const Hemoroidy = () => {
             </div>
             <ul className="space-y-2">
               {dietPoints.map((p, i) => (
-                <li key={i} className="flex items-start gap-3 text-sm text-muted-foreground">
-                  <div className="w-1.5 h-1.5 rounded-full bg-primary shrink-0 mt-1.5" />
+                <StaggeredListItem key={i} index={i} icon={<div className="w-1.5 h-1.5 rounded-full bg-primary shrink-0 mt-1.5" />} className="flex items-start gap-3 text-sm text-muted-foreground">
                   {p}
-                </li>
+                </StaggeredListItem>
               ))}
             </ul>
             <div className="flex flex-wrap gap-2 mt-4">

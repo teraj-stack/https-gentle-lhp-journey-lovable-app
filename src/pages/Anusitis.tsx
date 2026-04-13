@@ -125,11 +125,10 @@ const Anusitis = () => (
             "Pieczenie, szczypanie lub ból",
             "Uczucie wilgoci — sączenie się wydzieliny zapalnej",
             "Ślady krwi na papierze toaletowym",
-          ].map((text) => (
-            <li key={text} className="flex items-start gap-3 text-sm text-foreground">
-              <CheckCircle2 className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+          ].map((text, i) => (
+            <StaggeredListItem key={text} index={i} icon={<CheckCircle2 className="w-5 h-5 text-primary shrink-0 mt-0.5" />}>
               {text}
-            </li>
+            </StaggeredListItem>
           ))}
         </ul>
       </motion.section>
@@ -150,10 +149,10 @@ const Anusitis = () => (
               "Choroby autoimmunologiczne",
               "Stan po radioterapii",
               "Nadwrażliwość kontaktowa",
-            ].map((t) => (
-              <li key={t} className="flex items-start gap-2 text-sm text-foreground">
-                <CheckCircle2 className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+            ].map((t, i) => (
+              <StaggeredListItem key={t} index={i} icon={<CheckCircle2 className="w-4 h-4 text-primary shrink-0 mt-0.5" />} className="flex items-start gap-2 text-sm text-foreground">
                 {t}
+              </StaggeredListItem>
               </li>
             ))}
           </ul>
@@ -174,10 +173,10 @@ const Anusitis = () => (
               "Powstanie hemoroidów (nadmierne rozciągnięcie osłabionej anodermy)",
               "Szczelina odbytu (zwiotczała skóra łatwiej pęka)",
               "Ropnie i przetoki (w stanach ostrego zapalenia)",
-            ].map((t) => (
-              <li key={t} className="flex items-start gap-2 text-sm text-foreground">
-                <AlertTriangle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
+            ].map((t, i) => (
+              <StaggeredListItem key={t} index={i} icon={<AlertTriangle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />} className="flex items-start gap-2 text-sm text-foreground">
                 {t}
+              </StaggeredListItem>
               </li>
             ))}
           </ul>

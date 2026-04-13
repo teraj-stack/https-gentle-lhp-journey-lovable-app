@@ -156,11 +156,10 @@ const SpazmLonowoodbytniczy = () => (
             "Trudności z wypróżnianiem — uczucie niepełnego stolca (dyssynergia)",
             "Ból promieniujący do krocza, kości ogonowej lub ud",
             "Nasilenie dolegliwości w nocy lub w pozycji siedzącej",
-          ].map((text) => (
-            <li key={text} className="flex items-start gap-3 text-sm text-foreground">
-              <CheckCircle2 className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+          ].map((text, i) => (
+            <StaggeredListItem key={text} index={i} icon={<CheckCircle2 className="w-5 h-5 text-primary shrink-0 mt-0.5" />}>
               {text}
-            </li>
+            </StaggeredListItem>
           ))}
         </ul>
       </motion.section>

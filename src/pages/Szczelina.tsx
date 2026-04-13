@@ -131,11 +131,10 @@ const Szczelina = () => (
             "Obecność żywoczerwonej krwi na papierze toaletowym lub stolcu",
             "Świąd i pieczenie w okolicy odbytu",
             "Dolegliwości najsilniejsze w pierwszych dniach choroby",
-          ].map((text) => (
-            <li key={text} className="flex items-start gap-3 text-sm text-foreground">
-              <CheckCircle2 className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+          ].map((text, i) => (
+            <StaggeredListItem key={text} index={i} icon={<CheckCircle2 className="w-5 h-5 text-primary shrink-0 mt-0.5" />}>
               {text}
-            </li>
+            </StaggeredListItem>
           ))}
         </ul>
       </motion.section>
@@ -198,11 +197,10 @@ const Szczelina = () => (
                 "Zmiana diety — produkty bogatoresztkowe i nawadnianie organizmu",
                 "Farmakoterapia — maści rozluźniające zwieracz",
                 "Dilatatory — urządzenia rozciągające zwieracz",
-              ].map((t) => (
-                <li key={t} className="flex items-start gap-2 text-sm text-foreground">
-                  <CheckCircle2 className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+              ].map((t, i) => (
+                <StaggeredListItem key={t} index={i} icon={<CheckCircle2 className="w-4 h-4 text-primary shrink-0 mt-0.5" />} className="flex items-start gap-2 text-sm text-foreground">
                   {t}
-                </li>
+                </StaggeredListItem>
               ))}
             </ul>
           </div>
@@ -219,11 +217,10 @@ const Szczelina = () => (
                 "Toksyna botulinowa (Botoks) — rozluźnia zwieracz na 2-3 miesiące, czas idealny na wygojenie rany",
                 "Komórki macierzyste i osocze bogatopłytkowe (PRP) — naturalna regeneracja",
                 "Mezoterapia (aminokwasy i peptydy) — poprawa elastyczności skóry",
-              ].map((t) => (
-                <li key={t} className="flex items-start gap-2 text-sm text-foreground">
-                  <CheckCircle2 className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+              ].map((t, i) => (
+                <StaggeredListItem key={t} index={i} icon={<CheckCircle2 className="w-4 h-4 text-primary shrink-0 mt-0.5" />} className="flex items-start gap-2 text-sm text-foreground">
                   {t}
-                </li>
+                </StaggeredListItem>
               ))}
             </ul>
           </div>
