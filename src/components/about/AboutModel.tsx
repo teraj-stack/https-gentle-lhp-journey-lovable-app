@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { CheckCircle2, Sparkles, BookOpen, Users, Award } from "lucide-react";
+import { StaggeredListItem } from "@/components/shared/StaggeredList";
 
 const fadeUp = {
   initial: { opacity: 0, y: 30 },
@@ -44,11 +45,10 @@ const AboutModel = () => (
             Uświadomiony pacjent odczuwa mniejszy stres, co prowadzi do sprawniejszego wywiadu medycznego, wyższego poziomu współpracy oraz optymalizacji czasu konsultacji.
           </p>
           <ul className="space-y-3 mb-8">
-            {highlights.map((text) => (
-              <li key={text} className="flex items-start gap-3 text-sm text-foreground">
-                <CheckCircle2 className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+            {highlights.map((text, i) => (
+              <StaggeredListItem key={text} index={i} icon={<CheckCircle2 className="w-5 h-5 text-primary shrink-0 mt-0.5" />}>
                 {text}
-              </li>
+              </StaggeredListItem>
             ))}
           </ul>
         </motion.div>

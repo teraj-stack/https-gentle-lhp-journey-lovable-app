@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Stethoscope, Activity, CheckCircle2, ArrowRight } from "lucide-react";
+import { StaggeredListItem } from "@/components/shared/StaggeredList";
 
 const fadeUp = {
   initial: { opacity: 0, y: 24, filter: "blur(4px)" },
@@ -59,11 +60,10 @@ const ServiceCards = () => (
             <h3 className="text-2xl font-bold text-foreground mb-3 font-serif">{s.title}</h3>
             <p className="text-muted-foreground leading-relaxed mb-6">{s.desc}</p>
             <ul className="space-y-2 mb-8">
-              {s.treatments.map((t) => (
-                <li key={t} className="flex items-center gap-2 text-sm text-foreground">
-                  <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />
+              {s.treatments.map((t, i) => (
+                <StaggeredListItem key={t} index={i} icon={<CheckCircle2 className="w-4 h-4 text-primary shrink-0" />} className="flex items-center gap-2 text-sm text-foreground">
                   {t}
-                </li>
+                </StaggeredListItem>
               ))}
             </ul>
             <Button variant="outline" className="group-hover:border-primary group-hover:text-primary transition-colors" asChild>

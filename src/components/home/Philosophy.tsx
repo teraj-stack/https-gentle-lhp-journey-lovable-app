@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { BookOpen, CheckCircle2, ArrowRight } from "lucide-react";
+import { StaggeredListItem } from "@/components/shared/StaggeredList";
 
 const stagger = (delay = 0) => ({
   initial: { opacity: 0, y: 28, filter: "blur(5px)" },
@@ -31,11 +32,10 @@ const Philosophy = () => (
               "Wchodzisz do gabinetu spokojny i przygotowany",
               "Lekarz poświęca pełną uwagę Twoim potrzebom",
               "Budujesz partnerską relację z zespołem medycznym",
-            ].map((text) => (
-              <li key={text} className="flex items-start gap-3 text-sm text-foreground">
-                <CheckCircle2 className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+            ].map((text, i) => (
+              <StaggeredListItem key={text} index={i} icon={<CheckCircle2 className="w-5 h-5 text-primary shrink-0 mt-0.5" />}>
                 {text}
-              </li>
+              </StaggeredListItem>
             ))}
           </ul>
           <Button variant="outline" asChild>
