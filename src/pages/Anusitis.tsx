@@ -176,7 +176,7 @@ const Anusitis = () => (
               <StaggeredListItem key={t} index={i} icon={<AlertTriangle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />} className="flex items-start gap-2 text-sm text-foreground">
                 {t}
               </StaggeredListItem>
-              </li>
+              
             ))}
           </ul>
         </div>
