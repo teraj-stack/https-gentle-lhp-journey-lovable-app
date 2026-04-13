@@ -5,6 +5,7 @@ import ReturnToWorkChart from "@/components/hemoroidy/ReturnToWorkChart";
 import SatisfactionChart from "@/components/hemoroidy/SatisfactionChart";
 import StatsCountUp from "@/components/hemoroidy/StatsCountUp";
 import SeoHead from "@/components/shared/SeoHead";
+import { StaggeredListItem } from "@/components/shared/StaggeredList";
 import {
   User, Layers, Clock, Monitor, Dumbbell, Baby, TrendingUp,
   Apple, PersonStanding, ShieldCheck, ShieldX, Search,

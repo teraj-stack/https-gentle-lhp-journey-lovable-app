@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import Breadcrumbs from "@/components/layout/Breadcrumbs";
 import { ArrowRight, CheckCircle2, HelpCircle, AlertTriangle, Heart, Eye, ShieldCheck } from "lucide-react";
+import { StaggeredListItem } from "@/components/shared/StaggeredList";
 import ParallaxSection from "@/components/ui/parallax-section";
 import SeoHead from "@/components/shared/SeoHead";
 import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";

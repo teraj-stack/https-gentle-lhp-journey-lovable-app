@@ -7,6 +7,7 @@ import {
   CheckCircle2, AlertTriangle, Hand, CalendarDays, Shirt,
   ArrowRight
 } from "lucide-react";
+import { StaggeredListItem } from "@/components/shared/StaggeredList";
 import { Button } from "@/components/ui/button";
 
 const easeOut = [0.16, 1, 0.3, 1] as const;
