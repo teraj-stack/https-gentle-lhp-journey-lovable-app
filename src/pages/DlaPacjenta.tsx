@@ -8,6 +8,7 @@ import SeoHead from "@/components/shared/SeoHead";
 import { BookOpen, Download, FileText, Shield, Clock, Heart, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import { StaggeredListItem } from "@/components/shared/StaggeredList";
 import ebookCoverImg from "@/assets/ebook-cover-powrot.png";
 
 const fadeUp = {

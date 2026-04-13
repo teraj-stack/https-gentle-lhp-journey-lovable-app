@@ -5,6 +5,7 @@ import SeoHead from "@/components/shared/SeoHead";
 import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 import { Button } from "@/components/ui/button";
 import { Stethoscope, Heart, Zap } from "lucide-react";
+import { StaggeredListItem } from "@/components/shared/StaggeredList";
 
 const fadeUp = {
   initial: { opacity: 0, y: 30 },

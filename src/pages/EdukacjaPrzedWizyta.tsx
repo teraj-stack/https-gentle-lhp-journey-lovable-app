@@ -5,6 +5,7 @@ import Breadcrumbs from "@/components/layout/Breadcrumbs";
 import SeoHead from "@/components/shared/SeoHead";
 import FaqSchema from "@/components/shared/FaqSchema";
 import { Button } from "@/components/ui/button";
+import { StaggeredListItem } from "@/components/shared/StaggeredList";
 import {
   Accordion,
   AccordionContent,
