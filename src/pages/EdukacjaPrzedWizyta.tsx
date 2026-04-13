@@ -258,11 +258,10 @@ const EdukacjaPrzedWizyta = () => {
               </div>
             </div>
             <ul className="space-y-3">
-              {comparisonData.traditional.items.map((item) => (
-                <li key={item} className="flex gap-3 text-sm text-muted-foreground">
-                  <span className="text-destructive shrink-0 mt-0.5">✕</span>
+              {comparisonData.traditional.items.map((item, i) => (
+                <StaggeredListItem key={item} index={i} icon={<span className="text-destructive shrink-0 mt-0.5">✕</span>} className="flex gap-3 text-sm text-muted-foreground">
                   <span>{item}</span>
-                </li>
+                </StaggeredListItem>
               ))}
             </ul>
           </div>
@@ -279,11 +278,10 @@ const EdukacjaPrzedWizyta = () => {
               </div>
             </div>
             <ul className="space-y-3">
-              {comparisonData.cml.items.map((item) => (
-                <li key={item} className="flex gap-3 text-sm text-muted-foreground">
-                  <span className="text-primary shrink-0 mt-0.5">✓</span>
+              {comparisonData.cml.items.map((item, i) => (
+                <StaggeredListItem key={item} index={i} icon={<span className="text-primary shrink-0 mt-0.5">✓</span>} className="flex gap-3 text-sm text-muted-foreground">
                   <span>{item}</span>
-                </li>
+                </StaggeredListItem>
               ))}
             </ul>
           </div>

@@ -201,11 +201,11 @@ const DlaPacjenta = () => {
                   Spis treści:
                 </p>
                 <ul className="space-y-1.5">
-                  {mainEbook.chapters.map((ch) => (
-                    <li key={ch} className="text-sm text-muted-foreground flex gap-2">
-                      <span className="text-primary mt-1">•</span>
+                  {mainEbook.chapters.map((ch, i) => (
+                    <StaggeredListItem key={ch} index={i} icon={<span className="text-primary mt-1">•</span>} className="text-sm text-muted-foreground flex gap-2">
                       {ch}
-                    </li>
+                    </StaggeredListItem>
+                  ))}
                   ))}
                 </ul>
               </div>

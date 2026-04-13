@@ -316,11 +316,10 @@ const HemoroidyInfografika = () => (
               <div key={col.title} className="glass-card rounded-2xl p-6">
                 <h3 className="font-bold text-foreground mb-4">{col.title}</h3>
                 <ul className="space-y-3">
-                  {col.queries.map((q) => (
-                    <li key={q} className="flex items-start gap-2 text-sm text-muted-foreground">
-                      <Search className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                  {col.queries.map((q, i) => (
+                    <StaggeredListItem key={q} index={i} icon={<Search className="w-4 h-4 text-primary shrink-0 mt-0.5" />} className="flex items-start gap-2 text-sm text-muted-foreground">
                       {q}
-                    </li>
+                    </StaggeredListItem>
                   ))}
                 </ul>
               </div>
@@ -578,11 +577,10 @@ const HemoroidyInfografika = () => (
                     "Kwalifikacja do metody LHP",
                     "Dokładny plan leczenia i koszt",
                     "Odpowiedzi na wszystkie pytania",
-                  ].map((item) => (
-                    <li key={item} className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <CheckCircle2 className="w-4 h-4 text-primary" />
+                  ].map((item, i) => (
+                    <StaggeredListItem key={item} index={i} icon={<CheckCircle2 className="w-4 h-4 text-primary" />} className="flex items-center gap-2 text-sm text-muted-foreground">
                       {item}
-                    </li>
+                    </StaggeredListItem>
                   ))}
                 </ul>
               </div>

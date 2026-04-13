@@ -182,11 +182,10 @@ const SpazmLonowoodbytniczy = () => (
               "Przebyte infekcje lub stany zapalne w okolicy odbytu",
               "Nadmierne napinanie mięśni podczas defekacji (parcie chroniczne)",
               "Czynniki psychogenne — lęk, depresja, zespół bólu przewlekłego",
-            ].map((t) => (
-              <li key={t} className="flex items-start gap-2 text-sm text-foreground">
-                <CheckCircle2 className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+            ].map((t, i) => (
+              <StaggeredListItem key={t} index={i} icon={<CheckCircle2 className="w-4 h-4 text-primary shrink-0 mt-0.5" />} className="flex items-start gap-2 text-sm text-foreground">
                 {t}
-              </li>
+              </StaggeredListItem>
             ))}
           </ul>
         </div>
@@ -209,11 +208,10 @@ const SpazmLonowoodbytniczy = () => (
             "Manometria anorektalna — obiektywna ocena ciśnień w kanale odbytu",
             "USG endoanalne — ocena anatomii zwieraczy",
             "Defekografia (w wybranych przypadkach) — ocena dynamiki defekacji",
-          ].map((t) => (
-            <li key={t} className="flex items-start gap-2 text-sm text-foreground">
-              <CheckCircle2 className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+          ].map((t, i) => (
+            <StaggeredListItem key={t} index={i} icon={<CheckCircle2 className="w-4 h-4 text-primary shrink-0 mt-0.5" />} className="flex items-start gap-2 text-sm text-foreground">
               {t}
-            </li>
+            </StaggeredListItem>
           ))}
         </ul>
       </motion.section>
@@ -266,11 +264,10 @@ const SpazmLonowoodbytniczy = () => (
               "Nowoczesne metody leczenia, tj. biofeedback czy toksyna botulinowa są wysoce skuteczne, jednak nie zastąpią prawidłowych nawyków żywieniowych",
               "Im wcześniej rozpoczniesz leczenie, tym szybszy powrót do normalności",
               "Terapia jest bezbolesna i prowadzona ambulatoryjnie",
-            ].map((t) => (
-              <li key={t} className="flex items-start gap-2 text-sm text-foreground">
-                <CheckCircle2 className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+            ].map((t, i) => (
+              <StaggeredListItem key={t} index={i} icon={<CheckCircle2 className="w-4 h-4 text-primary shrink-0 mt-0.5" />} className="flex items-start gap-2 text-sm text-foreground">
                 {t}
-              </li>
+              </StaggeredListItem>
             ))}
           </ul>
         </div>
