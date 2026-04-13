@@ -206,7 +206,6 @@ const DlaPacjenta = () => {
                       {ch}
                     </StaggeredListItem>
                   ))}
-                  ))}
                 </ul>
               </div>
               <Button variant="hero" size="lg" asChild>

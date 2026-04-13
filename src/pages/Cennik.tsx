@@ -119,7 +119,7 @@ const Cennik = () => (
                   <StaggeredListItem key={inc} index={i} icon={<span className="text-primary mt-0.5">✓</span>} className="text-sm text-foreground/80 flex items-start gap-2">
                     {inc}
                   </StaggeredListItem>
-                  </li>
+                  
                 ))}
               </ul>
               <div className="border-t border-border pt-4 flex items-center justify-between">
