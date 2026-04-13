@@ -350,10 +350,9 @@ const Hemoroidy = () => {
               <h3 className="font-bold text-foreground mb-4 text-sm">{cat.cat}</h3>
               <ul className="space-y-3">
                 {cat.queries.map((q, i) => (
-                  <li key={i} className="flex items-start gap-2 text-xs text-muted-foreground leading-relaxed">
-                    <span className="text-primary shrink-0">{"\ud83d\udd0e"}</span>
+                  <StaggeredListItem key={i} index={i} icon={<span className="text-primary shrink-0">{"\ud83d\udd0e"}</span>} className="flex items-start gap-2 text-xs text-muted-foreground leading-relaxed">
                     {q}
-                  </li>
+                  </StaggeredListItem>
                 ))}
               </ul>
             </motion.div>

@@ -280,10 +280,9 @@ const PielegnacjaNog = () => {
             </div>
             <ul className="space-y-3">
               {normalSymptoms.map((s, i) => (
-                <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
-                  <span className="text-green-500 mt-0.5 shrink-0">✓</span>
+                <StaggeredListItem key={i} index={i} icon={<span className="text-green-500 mt-0.5 shrink-0">✓</span>} className="flex items-start gap-2 text-sm text-muted-foreground">
                   {s}
-                </li>
+                </StaggeredListItem>
               ))}
             </ul>
           </motion.div>
@@ -296,10 +295,9 @@ const PielegnacjaNog = () => {
             </div>
             <ul className="space-y-3">
               {warnSymptoms.map((s, i) => (
-                <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
-                  <span className="text-red-500 mt-0.5 shrink-0">⚠</span>
+                <StaggeredListItem key={i} index={i} icon={<span className="text-red-500 mt-0.5 shrink-0">⚠</span>} className="flex items-start gap-2 text-sm text-muted-foreground">
                   {s}
-                </li>
+                </StaggeredListItem>
               ))}
             </ul>
           </motion.div>
