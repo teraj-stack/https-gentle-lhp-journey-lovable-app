@@ -335,7 +335,7 @@ const AdminBookings = () => {
                               variant="ghost"
                               size="icon"
                               className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                              onClick={() => handleDelete(booking.id, booking.patient_name)}
+                              onClick={() => setDeleteTarget({ id: booking.id, name: booking.patient_name })}
                               disabled={deleteBooking.isPending}
                             >
                               <Trash2 className="w-4 h-4" />
