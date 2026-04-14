@@ -9,6 +9,7 @@ import SeoHead from "@/components/shared/SeoHead";
 import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 import FaqSchema from "@/components/shared/FaqSchema";
 import RecoveryBoostBanner from "@/components/shared/RecoveryBoostBanner";
+import TestimonialsSection from "@/components/shared/TestimonialsSection";
 
 const summary = [
   { label: "Przygotowanie", value: "Konsultacja chirurgiczna, USG piersi (wykonuje chirurg podczas konsultacji), badania hormonalne i laboratoryjne" },
@@ -132,6 +133,8 @@ const GinekomastiaMieszana = () => (
         <motion.h2 {...fadeUp} className="text-3xl md:text-4xl font-bold text-foreground mb-10 text-center">Zabieg w skrócie</motion.h2>
         <motion.div {...fadeUp}><ProcedureSummaryTable rows={summary} /></motion.div>
         <RecoveryBoostBanner />
+
+        <TestimonialsSection />
       </div>
     </section>
 

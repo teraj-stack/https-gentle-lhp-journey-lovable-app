@@ -8,6 +8,7 @@ import SeoHead from "@/components/shared/SeoHead";
 import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 
 import RecoveryBoostBanner from "@/components/shared/RecoveryBoostBanner";
+import TestimonialsSection from "@/components/shared/TestimonialsSection";
 import FaldyFAQ from "@/components/faldy/FaldyFAQ";
 
 const fadeUp = {
@@ -244,6 +245,8 @@ const FaldyOdbytu = () => (
       </motion.section>
 
       <RecoveryBoostBanner />
+
+      <TestimonialsSection />
 
       
 

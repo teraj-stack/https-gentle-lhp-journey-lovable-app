@@ -11,6 +11,7 @@ import SeoHead from "@/components/shared/SeoHead";
 import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 
 import RecoveryBoostBanner from "@/components/shared/RecoveryBoostBanner";
+import TestimonialsSection from "@/components/shared/TestimonialsSection";
 
 const anusitisSummary = [
   { label: "Przygotowanie", value: "Badanie proktologiczne (anoskopia), wywiad w kierunku alergii, infekcji i chorób współistniejących." },
@@ -202,6 +203,8 @@ const Anusitis = () => (
       
 
       <RecoveryBoostBanner />
+
+      <TestimonialsSection />
 
       {/* CTA */}
       <motion.section {...fadeUp} className="text-center py-8">
