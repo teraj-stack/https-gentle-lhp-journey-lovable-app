@@ -9,7 +9,7 @@ import ProcedureSummaryTable from "@/components/shared/ProcedureSummaryTable";
 import MedicalProcedureSchema from "@/components/shared/MedicalProcedureSchema";
 import SeoHead from "@/components/shared/SeoHead";
 import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
-import EbookBanner from "@/components/shared/EbookBanner";
+
 import RecoveryBoostBanner from "@/components/shared/RecoveryBoostBanner";
 
 const plastykaSummary = [
@@ -207,7 +207,7 @@ const Plastyka = () => (
 
       <ProcedureSummaryTable rows={plastykaSummary} fadeUp={fadeUp} />
 
-      <EbookBanner />
+      
 
       <RecoveryBoostBanner />
 
