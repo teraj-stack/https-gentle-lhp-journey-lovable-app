@@ -9,6 +9,7 @@ import SeoHead from "@/components/shared/SeoHead";
 import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 import FaqSchema from "@/components/shared/FaqSchema";
 import RecoveryBoostBanner from "@/components/shared/RecoveryBoostBanner";
+import TestimonialsSection from "@/components/shared/TestimonialsSection";
 
 const summary = [
   { label: "Przygotowanie", value: "Konsultacja chirurgiczna, badanie USG piersi (wykonuje chirurg podczas konsultacji), ewentualne badania hormonalne" },
@@ -237,6 +238,8 @@ const Ginekomastia = () => (
           <ProcedureSummaryTable rows={summary} />
          </motion.div>
          <RecoveryBoostBanner />
+
+         <TestimonialsSection />
       </div>
     </section>
 

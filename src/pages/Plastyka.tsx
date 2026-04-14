@@ -11,6 +11,7 @@ import SeoHead from "@/components/shared/SeoHead";
 import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 
 import RecoveryBoostBanner from "@/components/shared/RecoveryBoostBanner";
+import TestimonialsSection from "@/components/shared/TestimonialsSection";
 
 const plastykaSummary = [
   { label: "Przygotowanie", value: "Konsultacja proktologiczna, ocena zmian skórnych" },
@@ -210,6 +211,8 @@ const Plastyka = () => (
       
 
       <RecoveryBoostBanner />
+
+      <TestimonialsSection />
 
       {/* CTA */}
       <motion.section {...fadeUp} className="text-center py-8">

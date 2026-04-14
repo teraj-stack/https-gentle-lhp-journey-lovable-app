@@ -11,6 +11,7 @@ import SeoHead from "@/components/shared/SeoHead";
 import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 
 import RecoveryBoostBanner from "@/components/shared/RecoveryBoostBanner";
+import TestimonialsSection from "@/components/shared/TestimonialsSection";
 import SpazmFAQ from "@/components/spazm/SpazmFAQ";
 
 const spazmSummary = [
@@ -278,6 +279,8 @@ const SpazmLonowoodbytniczy = () => (
       
 
       <RecoveryBoostBanner />
+
+      <TestimonialsSection />
 
       <SpazmFAQ fadeUp={fadeUp} />
 

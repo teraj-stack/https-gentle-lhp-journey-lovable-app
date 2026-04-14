@@ -11,6 +11,7 @@ import SeoHead from "@/components/shared/SeoHead";
 import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 
 import RecoveryBoostBanner from "@/components/shared/RecoveryBoostBanner";
+import TestimonialsSection from "@/components/shared/TestimonialsSection";
 
 const clacsSummary = [
   { label: "Przygotowanie", value: "Konsultacja flebologiczna, ocena zmian naczyniowych. Unikać opalania 2 tygodnie przed zabiegiem, bez kremów na nogi w dniu zabiegu." },
@@ -263,6 +264,8 @@ const CLaCS = () => (
       
 
       <RecoveryBoostBanner />
+
+      <TestimonialsSection />
 
       {/* CTA */}
       <motion.section {...fadeUp} className="glass-card rounded-2xl p-8 md:p-12 text-center max-w-2xl mx-auto">

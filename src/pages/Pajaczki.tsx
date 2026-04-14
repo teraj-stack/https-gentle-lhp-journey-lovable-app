@@ -10,6 +10,7 @@ import { ArrowRight } from "lucide-react";
 import AnatomyDiagram from "@/components/pajaczki/AnatomyDiagram";
 import PajaczkiTestimonials from "@/components/pajaczki/PajaczkiTestimonials";
 import RecoveryBoostBanner from "@/components/shared/RecoveryBoostBanner";
+import TestimonialsSection from "@/components/shared/TestimonialsSection";
 
 const fadeUp = {
   initial: { opacity: 0, y: 24, filter: "blur(4px)" },
@@ -207,6 +208,8 @@ const Pajaczki = () => (
 
 
       <RecoveryBoostBanner />
+
+      <TestimonialsSection />
 
       {/* CTA */}
       <motion.section {...fadeUp} className="glass-card rounded-2xl p-8 md:p-12 text-center max-w-2xl mx-auto">
