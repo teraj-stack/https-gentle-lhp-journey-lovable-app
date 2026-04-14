@@ -11,6 +11,7 @@ import { MapPin, Phone, Clock, Mail, ExternalLink } from "lucide-react";
 import { z } from "zod";
 import SeoHead from "@/components/shared/SeoHead";
 import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
+import BookingForm from "@/components/kontakt/BookingForm";
 
 const fadeUp = {
   initial: { opacity: 0, y: 30 },
@@ -209,6 +210,15 @@ const Kontakt = () => {
               </motion.div>
             ))}
           </div>
+        </motion.section>
+
+        {/* Rezerwacja wizyt */}
+        <motion.section {...fadeUp}>
+          <h2 className="section-title mb-3 text-center">Zarezerwuj wizytę online</h2>
+          <p className="section-subtitle mb-10 text-center">
+            Wybierz lokalizację, datę i godzinę — potwierdzenie otrzymasz e-mailem
+          </p>
+          <BookingForm />
         </motion.section>
 
         {/* Formularz */}
