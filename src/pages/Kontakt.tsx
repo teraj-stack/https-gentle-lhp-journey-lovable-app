@@ -212,6 +212,15 @@ const Kontakt = () => {
           </div>
         </motion.section>
 
+        {/* Rezerwacja wizyt */}
+        <motion.section {...fadeUp}>
+          <h2 className="section-title mb-3 text-center">Zarezerwuj wizytę online</h2>
+          <p className="section-subtitle mb-10 text-center">
+            Wybierz lokalizację, datę i godzinę — potwierdzenie otrzymasz e-mailem
+          </p>
+          <BookingForm />
+        </motion.section>
+
         {/* Formularz */}
         <motion.section {...fadeUp}>
           <h2 className="section-title mb-3 text-center">Napisz do nas</h2>
