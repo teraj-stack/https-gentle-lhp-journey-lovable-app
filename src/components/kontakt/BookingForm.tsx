@@ -66,6 +66,7 @@ const BookingForm = () => {
   const [loadingSlots, setLoadingSlots] = useState(false);
 
   useEffect(() => {
+    setTime("");
     if (!location || !date) {
       setBookedSlots([]);
       return;
