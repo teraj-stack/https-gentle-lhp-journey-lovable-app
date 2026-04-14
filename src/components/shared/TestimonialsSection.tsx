@@ -23,6 +23,27 @@ const testimonials = [
     rating: 5,
     date: "Marzec 2026",
   },
+  {
+    name: "Katarzyna W.",
+    procedure: "Zabieg laserowy",
+    text: "Od pierwszej wizyty czułam się w dobrych rękach. Doktor dokładnie wytłumaczył procedurę, a sam zabieg przebiegł bezboleśnie. Efekty przeszły moje oczekiwania — polecam każdemu, kto się waha.",
+    rating: 5,
+    date: "Luty 2026",
+  },
+  {
+    name: "Tomasz",
+    procedure: "Leczenie hemoroidów",
+    text: "Profesjonalne podejście i dyskrecja na najwyższym poziomie. Zabieg LHP trwał krótko, a powrót do normalności był szybszy, niż się spodziewałem. Żałuję tylko, że nie zgłosiłem się wcześniej.",
+    rating: 5,
+    date: "Grudzień 2025",
+  },
+  {
+    name: "Anna M.",
+    procedure: "Konsultacja flebologiczna",
+    text: "Doktor Bujok podszedł do mojego problemu kompleksowo — nie tylko zaproponował leczenie, ale też wyjaśnił przyczyny i profilaktykę. Rzadko spotyka się tak zaangażowanego specjalistę.",
+    rating: 5,
+    date: "Kwiecień 2026",
+  },
 ];
 
 const fadeUp = {
