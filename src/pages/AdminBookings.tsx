@@ -7,6 +7,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { Button } from "@/components/ui/button";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
   Table,
   TableBody,
   TableCell,
@@ -114,11 +125,7 @@ const AdminBookings = () => {
     },
   });
 
-  const handleDelete = (id: string, patientName: string) => {
-    if (window.confirm(`Czy na pewno chcesz usunąć rezerwację pacjenta ${patientName}?`)) {
-      deleteBooking.mutate(id);
-    }
-  };
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -328,7 +335,7 @@ const AdminBookings = () => {
                               variant="ghost"
                               size="icon"
                               className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                              onClick={() => handleDelete(booking.id, booking.patient_name)}
+                              onClick={() => setDeleteTarget({ id: booking.id, name: booking.patient_name })}
                               disabled={deleteBooking.isPending}
                             >
                               <Trash2 className="w-4 h-4" />
@@ -351,6 +358,31 @@ const AdminBookings = () => {
           )}
         </main>
       </div>
+
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Usunąć rezerwację?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Czy na pewno chcesz usunąć rezerwację pacjenta <strong>{deleteTarget?.name}</strong>? Tej operacji nie można cofnąć.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Anuluj</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (deleteTarget) {
+                  deleteBooking.mutate(deleteTarget.id);
+                  setDeleteTarget(null);
+                }
+              }}
+            >
+              Usuń
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 };
