@@ -235,12 +235,13 @@ const BookingForm = () => {
               setTime(v);
               clearError("time");
             }}
+            disabled={!location || !date || loadingSlots}
           >
             <SelectTrigger className="bg-background border-border">
-              <SelectValue placeholder="Wybierz godzinę" />
+              <SelectValue placeholder={loadingSlots ? "Sprawdzam dostępność…" : availableSlots.length === 0 && location && date ? "Brak wolnych terminów" : "Wybierz godzinę"} />
             </SelectTrigger>
             <SelectContent>
-              {timeSlots.map((slot) => (
+              {availableSlots.map((slot) => (
                 <SelectItem key={slot} value={slot}>
                   {slot}
                 </SelectItem>
