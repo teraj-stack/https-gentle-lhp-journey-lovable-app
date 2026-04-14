@@ -53,6 +53,48 @@ export type Database = {
         }
         Relationships: []
       }
+      bookings: {
+        Row: {
+          appointment_date: string
+          appointment_time: string
+          created_at: string
+          id: string
+          location: string
+          message: string | null
+          patient_email: string
+          patient_name: string
+          patient_phone: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          appointment_date: string
+          appointment_time: string
+          created_at?: string
+          id?: string
+          location: string
+          message?: string | null
+          patient_email: string
+          patient_name: string
+          patient_phone: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          appointment_date?: string
+          appointment_time?: string
+          created_at?: string
+          id?: string
+          location?: string
+          message?: string | null
+          patient_email?: string
+          patient_name?: string
+          patient_phone?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       email_send_log: {
         Row: {
           created_at: string
