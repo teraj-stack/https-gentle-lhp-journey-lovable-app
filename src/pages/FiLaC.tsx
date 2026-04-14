@@ -7,6 +7,7 @@ import FiLaCProcedure from "@/components/filac/FiLaCProcedure";
 import FiLaCAdvantages from "@/components/filac/FiLaCAdvantages";
 import FiLaCComparison from "@/components/filac/FiLaCComparison";
 import FiLaCIndications from "@/components/filac/FiLaCIndications";
+import FiLaCFistulaTypes from "@/components/filac/FiLaCFistulaTypes";
 import FiLaCRecovery from "@/components/filac/FiLaCRecovery";
 import FiLaCFAQ from "@/components/filac/FiLaCFAQ";
 import ProcedureSummaryTable from "@/components/shared/ProcedureSummaryTable";
@@ -67,6 +68,7 @@ const FiLaC = () => (
       <FiLaCAdvantages fadeUp={fadeUp} />
       <FiLaCComparison fadeUp={fadeUp} />
       <FiLaCIndications fadeUp={fadeUp} />
+      <FiLaCFistulaTypes fadeUp={fadeUp} />
       <FiLaCRecovery fadeUp={fadeUp} />
       <FiLaCFAQ fadeUp={fadeUp} />
       <ProcedureSummaryTable rows={filacSummary} fadeUp={fadeUp} />
