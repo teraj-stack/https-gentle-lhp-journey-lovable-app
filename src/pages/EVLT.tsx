@@ -1,20 +1,18 @@
 import { motion } from "framer-motion";
 import ParallaxSection from "@/components/ui/parallax-section";
-import { Link } from "react-router-dom";
 import Breadcrumbs from "@/components/layout/Breadcrumbs";
 import { Button } from "@/components/ui/button";
 import EVLTComparisonChart from "@/components/evlt/ComparisonChart";
 import RiskFactorsChart from "@/components/evlt/RiskFactorsChart";
 import EVLTFAQ from "@/components/evlt/EVLTFAQ";
+import EVLTAnatomy from "@/components/evlt/EVLTAnatomy";
+import EVLTValves from "@/components/evlt/EVLTValves";
+import CEAPSection from "@/components/evlt/CEAPSection";
 import ProcedureSummaryTable from "@/components/shared/ProcedureSummaryTable";
 import MedicalProcedureSchema from "@/components/shared/MedicalProcedureSchema";
 import SeoHead from "@/components/shared/SeoHead";
 import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 import RecoveryBoostBanner from "@/components/shared/RecoveryBoostBanner";
-import zylakiAnatomia from "@/assets/zylaki-anatomia.jpg";
-import ukladZyl from "@/assets/uklad-zyl-powierzchownych.png";
-import zylakiSchemat from "@/assets/zylaki-schemat.png";
-import ceapSkala from "@/assets/ceap-skala.webp";
 
 const evltSummary = [
   { label: "Przygotowanie", value: "Konsultacja flebologiczna oraz USG Doppler w celu mapowania niewydolnych żył" },
@@ -41,31 +39,31 @@ const warnings = [
   { emoji: "🕸", title: "Pajączki", desc: "Widoczna fioletowa siateczka lub wypukłe żyły." },
 ];
 
-
 const EVLT = () => (
-    <div className="min-h-screen bg-background pt-20">
-      <SeoHead
-        title="EVLT – Laserowe leczenie żylaków nóg"
-        description="Endowenozna ablacja laserowa żylaków (EVLT) w CML. Zabieg ambulatoryjny, szybki powrót do aktywności. Warszawa, Siedlce."
-        path="/leczenie/evlt"
-      />
-      <MedicalWebPageSchema
-        name="EVLT – Laserowe leczenie żylaków nóg"
-        description="Endowenozna ablacja laserowa żylaków (EVLT) w CML. Zabieg ambulatoryjny, szybki powrót do aktywności."
-        path="/leczenie/evlt"
-        specialty="Phlebology"
-      />
-      <MedicalProcedureSchema
-        name="EVLT – Endowenozna ablacja laserowa żylaków"
-        description="Zamknięcie niewydolnych żył od wewnątrz za pomocą energii lasera, pod kontrolą USG. Alternatywa dla strippingu."
-        bodyLocation="Żyły kończyn dolnych"
-        procedureType="Percutaneous"
-        preparation="Konsultacja flebologiczna oraz USG Doppler w celu mapowania niewydolnych żył"
-        followup="Powrót do domu po zabiegu. Pończocha uciskowa przez ok. 2 tygodnie, codzienne spacery."
-        howPerformed="Pod kontrolą USG do niewydolnej żyły wprowadza się cienki światłowód. Energia lasera zamyka naczynie od wewnątrz."
-        risks="Przejściowy ból, zasinienia, uczucie ciągnięcia wzdłuż żyły. Rzadko: zapalenie żył, przebarwienia."
-        url="/leczenie/evlt"
-      />
+  <div className="min-h-screen bg-background pt-20">
+    <SeoHead
+      title="EVLT – Laserowe leczenie żylaków nóg"
+      description="Endowenozna ablacja laserowa żylaków (EVLT) w CML. Zabieg ambulatoryjny, szybki powrót do aktywności. Warszawa, Siedlce."
+      path="/leczenie/evlt"
+    />
+    <MedicalWebPageSchema
+      name="EVLT – Laserowe leczenie żylaków nóg"
+      description="Endowenozna ablacja laserowa żylaków (EVLT) w CML. Zabieg ambulatoryjny, szybki powrót do aktywności."
+      path="/leczenie/evlt"
+      specialty="Phlebology"
+    />
+    <MedicalProcedureSchema
+      name="EVLT – Endowenozna ablacja laserowa żylaków"
+      description="Zamknięcie niewydolnych żył od wewnątrz za pomocą energii lasera, pod kontrolą USG. Alternatywa dla strippingu."
+      bodyLocation="Żyły kończyn dolnych"
+      procedureType="Percutaneous"
+      preparation="Konsultacja flebologiczna oraz USG Doppler w celu mapowania niewydolnych żył"
+      followup="Powrót do domu po zabiegu. Pończocha uciskowa przez ok. 2 tygodnie, codzienne spacery."
+      howPerformed="Pod kontrolą USG do niewydolnej żyły wprowadza się cienki światłowód. Energia lasera zamyka naczynie od wewnątrz."
+      risks="Przejściowy ból, zasinienia, uczucie ciągnięcia wzdłuż żyły. Rzadko: zapalenie żył, przebarwienia."
+      url="/leczenie/evlt"
+    />
+
     {/* Hero */}
     <ParallaxSection className="gradient-bg py-16 md:py-24 px-4">
       <motion.div
@@ -89,6 +87,7 @@ const EVLT = () => (
 
     <div className="max-w-5xl mx-auto px-4 py-16 space-y-24">
       <Breadcrumbs items={[{ label: "Flebologia" }, { label: "Żylaki – EVLT" }]} className="mb-4" />
+
       {/* Przyczyny + Sygnały */}
       <div className="grid lg:grid-cols-2 gap-12">
         <motion.section {...fadeUp}>
@@ -131,172 +130,9 @@ const EVLT = () => (
         </motion.section>
       </div>
 
-      {/* Anatomia żył */}
-      <motion.section {...fadeUp}>
-        <h2 className="section-title mb-3 text-center">Anatomia żył kończyn dolnych</h2>
-        <p className="section-subtitle mb-10 text-center max-w-2xl mx-auto">
-          Aby zrozumieć chorobę żylną, warto poznać budowę układu żylnego nóg. Poniższe schematy ukazują kluczowe struktury anatomiczne, które odgrywają rolę w powstawaniu żylaków.
-        </p>
-        <div className="grid md:grid-cols-3 gap-8 items-start">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
-            className="glass-card rounded-2xl p-4 text-center"
-          >
-            <a href={zylakiAnatomia} target="_blank" rel="noopener noreferrer" className="block">
-              <img
-                src={zylakiAnatomia}
-                alt="Anatomia żył kończyny dolnej — powięź, mięsień, żylak, żyła głęboka, perforator"
-                className="w-full max-w-[280px] mx-auto rounded-xl mb-4 cursor-zoom-in hover:opacity-90 transition-opacity"
-                loading="lazy"
-              />
-            </a>
-            <h3 className="font-bold text-foreground text-sm mb-1">Przekrój żył kończyny</h3>
-            <p className="text-xs text-muted-foreground">Żyła głęboka, perforatory i żylak powierzchowny w kontekście powięzi i mięśni.</p>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5, delay: 0.12 }}
-            className="glass-card rounded-2xl p-4 text-center"
-          >
-            <a href={ukladZyl} target="_blank" rel="noopener noreferrer" className="block">
-              <img
-                src={ukladZyl}
-                alt="Układ żył powierzchownych kończyny dolnej"
-                className="w-full max-w-[280px] mx-auto rounded-xl mb-4 cursor-zoom-in hover:opacity-90 transition-opacity"
-                loading="lazy"
-              />
-            </a>
-            <h3 className="font-bold text-foreground text-sm mb-1">Układ żył powierzchownych</h3>
-            <p className="text-xs text-muted-foreground">Żyła odpiszczelowa wielka i mała — główne pnie, które najczęściej ulegają niewydolności.</p>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5, delay: 0.24 }}
-            className="glass-card rounded-2xl p-4 text-center"
-          >
-            <a href={zylakiSchemat} target="_blank" rel="noopener noreferrer" className="block">
-              <img
-                src={zylakiSchemat}
-                alt="Infografika żylaków — czynniki ryzyka, objawy, profilaktyka"
-                className="w-full max-w-[280px] mx-auto rounded-xl mb-4 cursor-zoom-in hover:opacity-90 transition-opacity"
-                loading="lazy"
-              />
-            </a>
-            <h3 className="font-bold text-foreground text-sm mb-1">Żylaki — przegląd</h3>
-            <p className="text-xs text-muted-foreground">Czynniki ryzyka, objawy i metody profilaktyki w jednym schemacie.</p>
-          </motion.div>
-        </div>
-      </motion.section>
-
-      {/* Mechanizm zastawek */}
-      <motion.section {...fadeUp}>
-        <h2 className="section-title mb-3 text-center">Mechanizm powstawania: Zastawki</h2>
-        <p className="section-subtitle mb-10 text-center max-w-2xl mx-auto">
-          Wyobraź sobie, że w Twoich żyłach znajdują się małe, jednokierunkowe zawory. Przepuszczają krew do serca, walcząc z grawitacją. Gdy słabną, krew cofa się, tworząc wypukłe zmiany.
-        </p>
-        {/* Film: mechanizm powstawania żylaków */}
-        <div className="max-w-2xl mx-auto mb-10">
-          <div className="relative w-full rounded-xl overflow-hidden shadow-lg" style={{ paddingBottom: '56.25%' }}>
-            <iframe
-              className="absolute inset-0 w-full h-full"
-              src="https://www.youtube.com/embed/9Wf8bLXVwFI?clip=Ugkx7Zf-uAOCFSL1NYwqZjQ5KqzVM5Fyqg6B&clipt=EAAYyJkC&mute=1&autoplay=1&loop=1&playlist=9Wf8bLXVwFI"
-              title="Mechanizm powstawania żylaków"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-              loading="lazy"
-            />
-          </div>
-        </div>
-
-        <div className="flex flex-col md:flex-row items-center justify-center gap-8 md:gap-16">
-          {/* Zdrowa żyła */}
-          <div className="text-center">
-            <div className="relative w-20 h-48 mx-auto border-l-[6px] border-r-[6px] border-primary/60 rounded bg-primary/5 mb-4">
-              <div className="absolute top-1/3 left-0 w-[45%] h-1 bg-primary/60 origin-left rotate-[-20deg]" />
-              <div className="absolute top-1/3 right-0 w-[45%] h-1 bg-primary/60 origin-right rotate-[20deg]" />
-              <div className="absolute top-2/3 left-0 w-[45%] h-1 bg-primary/60 origin-left rotate-[-20deg]" />
-              <div className="absolute top-2/3 right-0 w-[45%] h-1 bg-primary/60 origin-right rotate-[20deg]" />
-              <span className="absolute top-2 left-1/2 -translate-x-1/2 text-primary text-lg font-bold">↑</span>
-              <span className="absolute bottom-2 left-1/2 -translate-x-1/2 text-primary text-lg font-bold">↑</span>
-            </div>
-            <h4 className="font-bold text-foreground text-sm">Zdrowa żyła</h4>
-            <p className="text-xs text-muted-foreground max-w-[180px] mx-auto mt-1">
-              Zastawki szczelnie się zamykają. Krew płynie sprawnie w kierunku serca.
-            </p>
-          </div>
-
-          <span className="text-3xl text-muted-foreground hidden md:block">➞</span>
-          <span className="text-3xl text-muted-foreground md:hidden rotate-90">➞</span>
-
-          {/* Chora żyła */}
-          <div className="text-center">
-            <div className="relative w-24 h-48 mx-auto border-l-[6px] border-r-[6px] border-destructive/60 rounded-xl bg-destructive/5 mb-4">
-              <div className="absolute top-1/3 left-0 w-[35%] h-1 bg-destructive/60 origin-left rotate-[30deg]" />
-              <div className="absolute top-1/3 right-0 w-[35%] h-1 bg-destructive/60 origin-right rotate-[-30deg]" />
-              <div className="absolute top-2/3 left-0 w-[35%] h-1 bg-destructive/60 origin-left rotate-[30deg]" />
-              <div className="absolute top-2/3 right-0 w-[35%] h-1 bg-destructive/60 origin-right rotate-[-30deg]" />
-              <span className="absolute top-2 left-1/3 -translate-x-1/2 text-destructive text-lg font-bold">↓</span>
-              <span className="absolute top-2 right-1/3 translate-x-1/2 text-primary text-lg font-bold">↑</span>
-              <span className="absolute bottom-2 left-1/2 -translate-x-1/2 text-destructive text-lg font-bold">↓</span>
-              <div className="absolute top-1/2 -left-4 w-4 h-10 rounded-l-full bg-destructive/10 border-l-[3px] border-destructive/40" />
-            </div>
-            <h4 className="font-bold text-foreground text-sm">Chora żyła (Żylak)</h4>
-            <p className="text-xs text-muted-foreground max-w-[180px] mx-auto mt-1">
-              Zastawki są niewydolne. Krew opada w dół, rozpychając ściany naczyń.
-            </p>
-          </div>
-        </div>
-      </motion.section>
-
-      {/* Skala CEAP */}
-      <motion.section {...fadeUp}>
-        <h2 className="section-title mb-3 text-center">Stopnie zaawansowania niewydolności żylnej w skali CEAP</h2>
-        <p className="section-subtitle mb-10 text-center max-w-2xl mx-auto">
-          Klasyfikacja CEAP to międzynarodowy standard oceny zaawansowania przewlekłej choroby żylnej. Pozwala lekarzowi precyzyjnie określić stadium choroby i dobrać optymalne leczenie.
-        </p>
-        <div className="glass-card rounded-2xl p-6 md:p-10 max-w-3xl mx-auto">
-          <img
-            src={ceapSkala}
-            alt="Skala CEAP — ocena kliniczna niewydolności żylnej od C1 (pajączki naczyniowe) do C6 (aktywne owrzodzenie)"
-            className="w-full rounded-xl mb-8"
-            loading="lazy"
-          />
-          <div className="grid sm:grid-cols-2 gap-4">
-            {[
-              { stage: "C1", label: "Pajączki naczyniowe", desc: "Drobne, rozszerzone naczynka widoczne tuż pod skórą. Zwykle problem estetyczny, ale mogą sygnalizować początek niewydolności żylnej." },
-              { stage: "C2", label: "Żylaki", desc: "Wypukłe, kręte żyły o średnicy powyżej 3 mm. Często towarzyszą im ból, uczucie ciężkości i obrzęki nóg." },
-              { stage: "C3", label: "Obrzęki żylne", desc: "Przewlekłe opuchnięcie kostek i podudzi spowodowane zastojem krwi. Nasila się pod koniec dnia i po dłuższym staniu." },
-              { stage: "C4", label: "Zmiany troficzne", desc: "Przebarwienia skóry, egzema żylna, stwardnienie tkanki podskórnej. Skóra staje się cienka, sucha i podatna na uszkodzenia." },
-              { stage: "C5", label: "Wygojone owrzodzenie", desc: "Blizna po przebytym owrzodzeniu żylnym. Bez leczenia przyczyny istnieje wysokie ryzyko nawrotu." },
-              { stage: "C6", label: "Aktywne owrzodzenie", desc: "Otwarta, trudno gojąca się rana na podudziu. Najcięższe stadium wymagające pilnej interwencji flebologicznej." },
-            ].map((item, i) => (
-              <motion.div
-                key={item.stage}
-                initial={{ opacity: 0, y: 12 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.4, delay: i * 0.08 }}
-                className="flex items-start gap-3"
-              >
-                <span className="shrink-0 w-10 h-10 rounded-full bg-primary/20 text-primary font-bold flex items-center justify-center text-xs">{item.stage}</span>
-                <div>
-                  <h4 className="font-bold text-foreground text-sm">{item.label}</h4>
-                  <p className="text-xs text-muted-foreground leading-relaxed">{item.desc}</p>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </motion.section>
+      <EVLTAnatomy fadeUp={fadeUp} />
+      <EVLTValves fadeUp={fadeUp} />
+      <CEAPSection fadeUp={fadeUp} />
 
       {/* Porównanie tradycja vs nowoczesność */}
       <motion.section {...fadeUp}>
@@ -351,11 +187,8 @@ const EVLT = () => (
         </div>
       </motion.section>
 
-      {/* FAQ */}
       <EVLTFAQ fadeUp={fadeUp} />
       <ProcedureSummaryTable rows={evltSummary} fadeUp={fadeUp} />
-
-      
 
       <RecoveryBoostBanner />
 
