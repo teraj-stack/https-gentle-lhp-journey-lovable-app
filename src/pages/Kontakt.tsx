@@ -11,6 +11,7 @@ import { MapPin, Phone, Clock, Mail, ExternalLink } from "lucide-react";
 import { z } from "zod";
 import SeoHead from "@/components/shared/SeoHead";
 import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
+import BookingForm from "@/components/kontakt/BookingForm";
 
 const fadeUp = {
   initial: { opacity: 0, y: 30 },
