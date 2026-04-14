@@ -57,7 +57,7 @@ const locations = [
   {
     name: "Fimedica – Warszawa",
     address: "ul. Giełdowa 5, 01-211 Warszawa",
-    phone: "+48 665 666 728",
+    phone: ["+48 665 666 728", "+48 22 622 19 38"],
     email: "fimedica@fimedica.pl",
     hours: "Pon–Pt: 8:00–20:00",
     mapSrc:
