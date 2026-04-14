@@ -7,6 +7,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { Button } from "@/components/ui/button";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
   Table,
   TableBody,
   TableCell,
@@ -114,11 +125,7 @@ const AdminBookings = () => {
     },
   });
 
-  const handleDelete = (id: string, patientName: string) => {
-    if (window.confirm(`Czy na pewno chcesz usunąć rezerwację pacjenta ${patientName}?`)) {
-      deleteBooking.mutate(id);
-    }
-  };
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
