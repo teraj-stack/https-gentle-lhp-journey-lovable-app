@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
 import Breadcrumbs from "@/components/layout/Breadcrumbs";
@@ -13,6 +13,7 @@ import { z } from "zod";
 import SeoHead from "@/components/shared/SeoHead";
 import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 import BookingForm from "@/components/kontakt/BookingForm";
+import TurnstileWidget from "@/components/shared/TurnstileWidget";
 
 const fadeUp = {
   initial: { opacity: 0, y: 30 },
@@ -78,6 +79,10 @@ const Kontakt = () => {
   const [consent, setConsent] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [sending, setSending] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+
+  const handleTurnstileVerify = useCallback((token: string) => setTurnstileToken(token), []);
+  const handleTurnstileExpire = useCallback(() => setTurnstileToken(null), []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
@@ -95,7 +100,28 @@ const Kontakt = () => {
       setErrors(fieldErrors);
       return;
     }
+    if (!turnstileToken) {
+      toast({ title: "Weryfikacja", description: "Proszę potwierdzić, że nie jesteś botem.", variant: "destructive" });
+      return;
+    }
+
     setSending(true);
+
+    try {
+      const { data: verification } = await supabase.functions.invoke("verify-turnstile", {
+        body: { token: turnstileToken },
+      });
+      if (!verification?.success) {
+        toast({ title: "Błąd weryfikacji", description: "Weryfikacja CAPTCHA nie powiodła się.", variant: "destructive" });
+        setSending(false);
+        setTurnstileToken(null);
+        return;
+      }
+    } catch {
+      toast({ title: "Błąd", description: "Nie udało się zweryfikować CAPTCHA.", variant: "destructive" });
+      setSending(false);
+      return;
+    }
     const id = crypto.randomUUID();
     try {
       await supabase.functions.invoke('send-transactional-email', {
@@ -304,7 +330,12 @@ const Kontakt = () => {
                 {errors.consent && <p className="text-xs text-destructive">{errors.consent}</p>}
               </div>
             </div>
-            <Button variant="hero" size="lg" type="submit" className="w-full" disabled={sending}>
+            <TurnstileWidget
+              onVerify={handleTurnstileVerify}
+              onExpire={handleTurnstileExpire}
+              className="flex justify-center"
+            />
+            <Button variant="hero" size="lg" type="submit" className="w-full" disabled={sending || !turnstileToken}>
               {sending ? "Wysyłanie…" : "Wyślij wiadomość"}
             </Button>
           </form>
