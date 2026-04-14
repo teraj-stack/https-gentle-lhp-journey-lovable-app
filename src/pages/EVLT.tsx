@@ -10,8 +10,11 @@ import ProcedureSummaryTable from "@/components/shared/ProcedureSummaryTable";
 import MedicalProcedureSchema from "@/components/shared/MedicalProcedureSchema";
 import SeoHead from "@/components/shared/SeoHead";
 import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
-
 import RecoveryBoostBanner from "@/components/shared/RecoveryBoostBanner";
+import zylakiAnatomia from "@/assets/zylaki-anatomia.jpg";
+import ukladZyl from "@/assets/uklad-zyl-powierzchownych.png";
+import zylakiSchemat from "@/assets/zylaki-schemat.png";
+import ceapSkala from "@/assets/ceap-skala.webp";
 
 const evltSummary = [
   { label: "Przygotowanie", value: "Konsultacja flebologiczna oraz USG Doppler w celu mapowania niewydolnych żył" },
