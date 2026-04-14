@@ -103,6 +103,31 @@ const AdminBookings = () => {
     navigate("/admin/login", { replace: true });
   };
 
+  const handleExportCSV = () => {
+    const headers = ["Pacjent", "E-mail", "Telefon", "Lokalizacja", "Data", "Godzina", "Status", "Wiadomość"];
+    const rows = filteredBookings.map((b) => [
+      b.patient_name,
+      b.patient_email,
+      b.patient_phone,
+      b.location,
+      b.appointment_date,
+      b.appointment_time,
+      statusConfig[b.status]?.label ?? b.status,
+      b.message ?? "",
+    ]);
+    const csvContent = [headers, ...rows]
+      .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(","))
+      .join("\n");
+    const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `rezerwacje_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success("Plik CSV został pobrany");
+  };
+
   const filteredBookings = statusFilter === "all"
     ? bookings
     : bookings.filter((b) => b.status === statusFilter);
