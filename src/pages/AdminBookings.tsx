@@ -21,7 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { LogOut, ShieldAlert, ArrowLeft, XCircle, CheckCircle, Clock, Ban, Download, FileSpreadsheet } from "lucide-react";
+import { LogOut, ShieldAlert, ArrowLeft, XCircle, CheckCircle, Clock, Ban, Download, FileSpreadsheet, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import SeoHead from "@/components/shared/SeoHead";
 import { Badge } from "@/components/ui/badge";
@@ -98,6 +98,27 @@ const AdminBookings = () => {
       toast.error("Nie udało się zmienić statusu");
     },
   });
+
+  const deleteBooking = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("bookings").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-bookings"] });
+      toast.success("Rezerwacja została usunięta");
+    },
+    onError: (err) => {
+      console.error(err);
+      toast.error("Nie udało się usunąć rezerwacji");
+    },
+  });
+
+  const handleDelete = (id: string, patientName: string) => {
+    if (window.confirm(`Czy na pewno chcesz usunąć rezerwację pacjenta ${patientName}?`)) {
+      deleteBooking.mutate(id);
+    }
+  };
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -285,23 +306,34 @@ const AdminBookings = () => {
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
-                          <Select
-                            value={booking.status}
-                            onValueChange={(newStatus) =>
-                              updateStatus.mutate({ id: booking.id, status: newStatus })
-                            }
-                          >
-                            <SelectTrigger className="w-[140px] h-8 text-xs bg-background border-border">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {statusOptions.map((opt) => (
-                                <SelectItem key={opt.value} value={opt.value}>
-                                  {opt.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <div className="flex items-center justify-end gap-2">
+                            <Select
+                              value={booking.status}
+                              onValueChange={(newStatus) =>
+                                updateStatus.mutate({ id: booking.id, status: newStatus })
+                              }
+                            >
+                              <SelectTrigger className="w-[140px] h-8 text-xs bg-background border-border">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {statusOptions.map((opt) => (
+                                  <SelectItem key={opt.value} value={opt.value}>
+                                    {opt.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                              onClick={() => handleDelete(booking.id, booking.patient_name)}
+                              disabled={deleteBooking.isPending}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     );
