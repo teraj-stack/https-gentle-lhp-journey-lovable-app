@@ -121,19 +121,39 @@ const BookingForm = () => {
 
       if (error) throw error;
 
-      await supabase.functions.invoke("send-transactional-email", {
-        body: {
-          templateName: "booking-confirmation",
-          recipientEmail: result.data.email,
-          idempotencyKey: `booking-confirm-${id}`,
-          templateData: {
-            name: result.data.name,
-            location: result.data.location,
-            date: format(result.data.date, "d MMMM yyyy", { locale: pl }),
-            time: result.data.time,
+      const formattedDate = format(result.data.date, "d MMMM yyyy", { locale: pl });
+
+      await Promise.all([
+        supabase.functions.invoke("send-transactional-email", {
+          body: {
+            templateName: "booking-confirmation",
+            recipientEmail: result.data.email,
+            idempotencyKey: `booking-confirm-${id}`,
+            templateData: {
+              name: result.data.name,
+              location: result.data.location,
+              date: formattedDate,
+              time: result.data.time,
+            },
           },
-        },
-      });
+        }),
+        supabase.functions.invoke("send-transactional-email", {
+          body: {
+            templateName: "booking-admin-notification",
+            recipientEmail: "Ginekologia@branickiego10.pl",
+            idempotencyKey: `booking-admin-${id}`,
+            templateData: {
+              name: result.data.name,
+              email: result.data.email,
+              phone: result.data.phone,
+              location: result.data.location,
+              date: formattedDate,
+              time: result.data.time,
+              message: result.data.message || undefined,
+            },
+          },
+        }),
+      ]);
 
       setLocation("");
       setDate(undefined);
