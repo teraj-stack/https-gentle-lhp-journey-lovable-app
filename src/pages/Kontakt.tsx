@@ -35,6 +35,7 @@ const locations = [
     hours: "Pon–Pt: 8:00–18:00",
     mapSrc:
       "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2447.8!2d21.0365!3d52.1645!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x47192d5c8b2e5b3f%3A0x0!2zQWRhbWEgQnJhbmlja2llZ28gMTAsIFdhcnN6YXdh!5e0!3m2!1spl!2spl!4v1700000000000",
+    mapsUrl: "https://maps.google.com/?q=Adama+Branickiego+10,+02-972+Warszawa",
   },
   {
     name: "Beauty & Mind Siedlce",
@@ -44,6 +45,7 @@ const locations = [
     hours: "Pon–Pt: 8:00–20:00",
     mapSrc:
       "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2440.0!2d22.283!3d52.1676!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x4718ed53bb8a9e23%3A0x1!2sBrzeska%20125%2C%2008-110%20Siedlce!5e0!3m2!1spl!2spl!4v1700000000000",
+    mapsUrl: "https://maps.google.com/?q=Brzeska+125,+08-110+Siedlce",
   },
   {
     name: "IP Cliniq – Rzeszów",
@@ -53,6 +55,7 @@ const locations = [
     hours: "Pon–Pt: 8:00–20:00, Sb: 8:00–16:00",
     mapSrc:
       "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2560.0!2d21.9984!3d50.0307!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x473cfae3cc14d449%3A0x1!2sal.%20Rejtana%2053%2C%2035-326%20Rzesz%C3%B3w!5e0!3m2!1spl!2spl!4v1700000000000",
+    mapsUrl: "https://maps.google.com/?q=al.+Rejtana+53,+35-326+Rzeszów",
   },
   {
     name: "Fimedica – Warszawa",
@@ -62,6 +65,7 @@ const locations = [
     hours: "Pon–Pt: 8:00–20:00",
     mapSrc:
       "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2443.0!2d20.9850!3d52.2300!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x471ecb0e2e0c6d3f%3A0x1!2sGie%C5%82dowa%205%2C%20Warszawa!5e0!3m2!1spl!2spl!4v1700000000000",
+    mapsUrl: "https://maps.google.com/?q=Giełdowa+5,+01-211+Warszawa",
   },
 ];
 
