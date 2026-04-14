@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { MapPin, Phone, Clock, Mail, ExternalLink } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { z } from "zod";
 import SeoHead from "@/components/shared/SeoHead";
 import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
@@ -25,6 +26,7 @@ const contactSchema = z.object({
   email: z.string().trim().email("Nieprawidłowy adres e-mail").max(255),
   phone: z.string().trim().min(1, "Telefon jest wymagany").max(20),
   message: z.string().trim().min(1, "Wiadomość jest wymagana").max(2000),
+  consent: z.literal(true, { errorMap: () => ({ message: "Zgoda jest wymagana" }) }),
 });
 
 const locations = [
@@ -73,6 +75,7 @@ const locations = [
 const Kontakt = () => {
   const { toast } = useToast();
   const [form, setForm] = useState({ name: "", email: "", phone: "", message: "" });
+  const [consent, setConsent] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [sending, setSending] = useState(false);
 
@@ -83,7 +86,7 @@ const Kontakt = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const result = contactSchema.safeParse(form);
+    const result = contactSchema.safeParse({ ...form, consent });
     if (!result.success) {
       const fieldErrors: Record<string, string> = {};
       result.error.errors.forEach((err) => {
@@ -108,6 +111,7 @@ const Kontakt = () => {
     }
     setSending(false);
     setForm({ name: "", email: "", phone: "", message: "" });
+    setConsent(false);
     toast({ title: "Wiadomość wysłana", description: "Odezwiemy się w ciągu 24 godzin." });
   };
 
@@ -279,6 +283,26 @@ const Kontakt = () => {
                 className="bg-background border-border resize-none"
               />
               {errors.message && <p className="text-xs text-destructive">{errors.message}</p>}
+            </div>
+            <div className="flex items-start space-x-3">
+              <Checkbox
+                id="consent"
+                checked={consent}
+                onCheckedChange={(checked) => {
+                  setConsent(checked === true);
+                  setErrors((prev) => ({ ...prev, consent: "" }));
+                }}
+                className="mt-0.5"
+              />
+              <div className="space-y-1">
+                <Label htmlFor="consent" className="text-sm text-muted-foreground leading-snug cursor-pointer">
+                  Wyrażam zgodę na przetwarzanie moich danych osobowych w celu odpowiedzi na przesłane zapytanie, zgodnie z{" "}
+                  <a href="/polityka-prywatnosci" className="text-primary hover:text-primary/80 underline" target="_blank">
+                    Polityką Prywatności
+                  </a>.
+                </Label>
+                {errors.consent && <p className="text-xs text-destructive">{errors.consent}</p>}
+              </div>
             </div>
             <Button variant="hero" size="lg" type="submit" className="w-full" disabled={sending}>
               {sending ? "Wysyłanie…" : "Wyślij wiadomość"}
