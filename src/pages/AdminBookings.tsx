@@ -20,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { LogOut, ShieldAlert, ArrowLeft, XCircle, CheckCircle, Clock, Ban } from "lucide-react";
+import { LogOut, ShieldAlert, ArrowLeft, XCircle, CheckCircle, Clock, Ban, Download } from "lucide-react";
 import { toast } from "sonner";
 import SeoHead from "@/components/shared/SeoHead";
 import { Badge } from "@/components/ui/badge";
@@ -103,6 +103,31 @@ const AdminBookings = () => {
     navigate("/admin/login", { replace: true });
   };
 
+  const handleExportCSV = () => {
+    const headers = ["Pacjent", "E-mail", "Telefon", "Lokalizacja", "Data", "Godzina", "Status", "Wiadomość"];
+    const rows = filteredBookings.map((b) => [
+      b.patient_name,
+      b.patient_email,
+      b.patient_phone,
+      b.location,
+      b.appointment_date,
+      b.appointment_time,
+      statusConfig[b.status]?.label ?? b.status,
+      b.message ?? "",
+    ]);
+    const csvContent = [headers, ...rows]
+      .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(","))
+      .join("\n");
+    const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `rezerwacje_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success("Plik CSV został pobrany");
+  };
+
   const filteredBookings = statusFilter === "all"
     ? bookings
     : bookings.filter((b) => b.status === statusFilter);
@@ -156,17 +181,22 @@ const AdminBookings = () => {
             <h2 className="text-lg font-semibold text-foreground">
               Wizyty ({filteredBookings.length})
             </h2>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[180px] bg-background border-border">
-                <SelectValue placeholder="Filtruj status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Wszystkie</SelectItem>
-                {statusOptions.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="flex items-center gap-3">
+              <Button variant="outline" size="sm" onClick={handleExportCSV} disabled={filteredBookings.length === 0}>
+                <Download className="w-4 h-4 mr-1" /> Eksportuj CSV
+              </Button>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-[180px] bg-background border-border">
+                  <SelectValue placeholder="Filtruj status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Wszystkie</SelectItem>
+                  {statusOptions.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           {isLoading ? (
