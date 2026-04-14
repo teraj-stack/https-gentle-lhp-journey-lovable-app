@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import * as XLSX from "xlsx";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { Session } from "@supabase/supabase-js";
@@ -20,7 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { LogOut, ShieldAlert, ArrowLeft, XCircle, CheckCircle, Clock, Ban, Download } from "lucide-react";
+import { LogOut, ShieldAlert, ArrowLeft, XCircle, CheckCircle, Clock, Ban, Download, FileSpreadsheet } from "lucide-react";
 import { toast } from "sonner";
 import SeoHead from "@/components/shared/SeoHead";
 import { Badge } from "@/components/ui/badge";
@@ -128,6 +129,33 @@ const AdminBookings = () => {
     toast.success("Plik CSV został pobrany");
   };
 
+  const handleExportXLSX = () => {
+    const headers = ["Pacjent", "E-mail", "Telefon", "Lokalizacja", "Data", "Godzina", "Status", "Wiadomość"];
+    const rows = filteredBookings.map((b) => [
+      b.patient_name,
+      b.patient_email,
+      b.patient_phone,
+      b.location,
+      b.appointment_date,
+      b.appointment_time,
+      statusConfig[b.status]?.label ?? b.status,
+      b.message ?? "",
+    ]);
+
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+
+    // Column widths
+    ws["!cols"] = [
+      { wch: 22 }, { wch: 28 }, { wch: 16 }, { wch: 18 },
+      { wch: 12 }, { wch: 8 }, { wch: 14 }, { wch: 30 },
+    ];
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Rezerwacje");
+    XLSX.writeFile(wb, `rezerwacje_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    toast.success("Plik Excel został pobrany");
+  };
+
   const filteredBookings = statusFilter === "all"
     ? bookings
     : bookings.filter((b) => b.status === statusFilter);
@@ -183,7 +211,10 @@ const AdminBookings = () => {
             </h2>
             <div className="flex items-center gap-3">
               <Button variant="outline" size="sm" onClick={handleExportCSV} disabled={filteredBookings.length === 0}>
-                <Download className="w-4 h-4 mr-1" /> Eksportuj CSV
+                <Download className="w-4 h-4 mr-1" /> CSV
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleExportXLSX} disabled={filteredBookings.length === 0}>
+                <FileSpreadsheet className="w-4 h-4 mr-1" /> Excel
               </Button>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="w-[180px] bg-background border-border">
