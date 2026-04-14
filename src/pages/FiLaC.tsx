@@ -70,7 +70,7 @@ const FiLaC = () => (
       <FiLaCFAQ fadeUp={fadeUp} />
       <ProcedureSummaryTable rows={filacSummary} fadeUp={fadeUp} />
 
-        
+      <RecoveryBoostBanner />
 
       <TestimonialsSection />
 

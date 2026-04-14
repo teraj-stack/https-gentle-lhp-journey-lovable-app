@@ -70,7 +70,7 @@ const SiLaC = () => (
       <SiLaCFAQ fadeUp={fadeUp} />
       <ProcedureSummaryTable rows={silacSummary} fadeUp={fadeUp} />
 
-        
+      <RecoveryBoostBanner />
 
       <TestimonialsSection />
 

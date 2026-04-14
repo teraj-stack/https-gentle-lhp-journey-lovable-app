@@ -15,6 +15,7 @@ import MedicalProcedureSchema from "@/components/shared/MedicalProcedureSchema";
 import SeoHead from "@/components/shared/SeoHead";
 import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 import TestimonialsSection from "@/components/shared/TestimonialsSection";
+import RecoveryBoostBanner from "@/components/shared/RecoveryBoostBanner";
 
 const lhpSummary = [
   { label: "Przygotowanie", value: "Badanie proktologiczne (anoskopia), ocena stopnia zaawansowania choroby" },
@@ -127,6 +128,8 @@ const LHP = () => {
         <LHPFAQ fadeUp={sectionAnim} />
 
         <ProcedureSummaryTable rows={lhpSummary} fadeUp={sectionAnim} />
+
+        <RecoveryBoostBanner />
 
         <EbookBanner />
 
