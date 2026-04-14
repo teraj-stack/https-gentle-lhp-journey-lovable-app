@@ -16,12 +16,12 @@ const RecoveryBoostBanner = () => (
       </div>
       <div>
         <h4 className="font-semibold text-foreground text-base mb-1">
-          Przyspiesz gojenie — fotobiomodulacja i pole magnetyczne
+          Przyspiesz gojenie — fototerapia zgodna z EBM
         </h4>
         <p className="text-muted-foreground text-sm leading-relaxed">
-          Po każdym zabiegu oferujemy możliwość skrócenia okresu rekonwalescencji dzięki urządzeniom wykorzystującym{" "}
-          <strong className="text-foreground">fotobiomodulację (PBM)</strong> oraz{" "}
-          <strong className="text-foreground">pole magnetyczne</strong>. Terapie te stymulują procesy naprawcze tkanek, redukują obrzęk i zmniejszają dolegliwości bólowe — co przekłada się na szybszy powrót do codziennej aktywności.
+          Zgodnie z aktualnymi wytycznymi medycyny opartej na dowodach (EBM), po każdym zabiegu oferujemy możliwość skrócenia rekonwalescencji dzięki{" "}
+          <strong className="text-foreground">fotobiomodulacji (PBM)</strong> oraz{" "}
+          <strong className="text-foreground">terapii polem magnetycznym</strong>. Badania kliniczne potwierdzają, że terapie te stymulują procesy naprawcze tkanek, redukują obrzęk i zmniejszają dolegliwości bólowe — co przekłada się na szybszy powrót do codziennej aktywności.
         </p>
         <Link
           to="/leczenie/fototerapia"
