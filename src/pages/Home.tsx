@@ -123,6 +123,16 @@ const localBusinessSchema = {
           "closes": "16:00"
         }
       ]
+    },
+    {
+      "@type": "MedicalClinic",
+      "name": "Fimedica – Warszawa",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "ul. Giełdowa 5",
+        "addressLocality": "Warszawa",
+        "addressCountry": "PL"
+      }
     }
   ],
   "sameAs": []
