@@ -20,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { LogOut, ShieldAlert, ArrowLeft, XCircle, CheckCircle, Clock, Ban } from "lucide-react";
+import { LogOut, ShieldAlert, ArrowLeft, XCircle, CheckCircle, Clock, Ban, Download } from "lucide-react";
 import { toast } from "sonner";
 import SeoHead from "@/components/shared/SeoHead";
 import { Badge } from "@/components/ui/badge";
