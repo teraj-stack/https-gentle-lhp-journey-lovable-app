@@ -125,6 +125,16 @@ const Footer = () =>
                 </li>
               </ul>
             </div>
+
+            <div>
+              <p className="text-xs font-semibold text-foreground/80 mb-1.5">Warszawa – Fimedica</p>
+              <ul className="space-y-1.5 text-sm text-muted-foreground">
+                <li className="flex items-start gap-2">
+                  <MapPin className="w-3.5 h-3.5 mt-0.5 shrink-0 text-primary/50" />
+                  <span>ul. Giełdowa 5<br />Warszawa</span>
+                </li>
+              </ul>
+            </div>
           </div>
         </div>
       </div>

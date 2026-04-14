@@ -54,6 +54,15 @@ const locations = [
     mapSrc:
       "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2560.0!2d21.9984!3d50.0307!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x473cfae3cc14d449%3A0x1!2sal.%20Rejtana%2053%2C%2035-326%20Rzesz%C3%B3w!5e0!3m2!1spl!2spl!4v1700000000000",
   },
+  {
+    name: "Fimedica – Warszawa",
+    address: "ul. Giełdowa 5, Warszawa",
+    phone: "",
+    email: "",
+    hours: "",
+    mapSrc:
+      "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2443.0!2d20.9850!3d52.2300!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x471ecb0e2e0c6d3f%3A0x1!2sGie%C5%82dowa%205%2C%20Warszawa!5e0!3m2!1spl!2spl!4v1700000000000",
+  },
 ];
 
 const Kontakt = () => {
