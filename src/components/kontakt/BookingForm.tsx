@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { Checkbox } from "@/components/ui/checkbox";
 import { pl } from "date-fns/locale";
@@ -62,6 +62,31 @@ const BookingForm = () => {
   const [message, setMessage] = useState("");
   const [consent, setConsent] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [bookedSlots, setBookedSlots] = useState<string[]>([]);
+  const [loadingSlots, setLoadingSlots] = useState(false);
+
+  useEffect(() => {
+    setTime("");
+    if (!location || !date) {
+      setBookedSlots([]);
+      return;
+    }
+    const fetchBookedSlots = async () => {
+      setLoadingSlots(true);
+      const dateStr = format(date, "yyyy-MM-dd");
+      const { data } = await supabase
+        .from("bookings")
+        .select("appointment_time")
+        .eq("location", location)
+        .eq("appointment_date", dateStr)
+        .neq("status", "cancelled");
+      setBookedSlots(data?.map((b) => b.appointment_time) ?? []);
+      setLoadingSlots(false);
+    };
+    fetchBookedSlots();
+  }, [location, date]);
+
+  const availableSlots = timeSlots.filter((slot) => !bookedSlots.includes(slot));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -211,12 +236,13 @@ const BookingForm = () => {
               setTime(v);
               clearError("time");
             }}
+            disabled={!location || !date || loadingSlots}
           >
             <SelectTrigger className="bg-background border-border">
-              <SelectValue placeholder="Wybierz godzinę" />
+              <SelectValue placeholder={loadingSlots ? "Sprawdzam dostępność…" : availableSlots.length === 0 && location && date ? "Brak wolnych terminów" : "Wybierz godzinę"} />
             </SelectTrigger>
             <SelectContent>
-              {timeSlots.map((slot) => (
+              {availableSlots.map((slot) => (
                 <SelectItem key={slot} value={slot}>
                   {slot}
                 </SelectItem>
