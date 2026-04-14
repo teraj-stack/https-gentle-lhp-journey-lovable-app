@@ -19,7 +19,7 @@ const EVLTAnatomy = ({ fadeUp }: Props) => (
     <p className="section-subtitle mb-10 text-center max-w-2xl mx-auto">
       Aby zrozumieć chorobę żylną, warto poznać budowę układu żylnego nóg. Poniższe schematy ukazują kluczowe struktury anatomiczne, które odgrywają rolę w powstawaniu żylaków.
     </p>
-    <div className="grid md:grid-cols-3 gap-8 items-start">
+    <div className="grid md:grid-cols-3 gap-8 items-stretch">
       {images.map((img, i) => (
         <motion.div
           key={img.title}
@@ -27,18 +27,20 @@ const EVLTAnatomy = ({ fadeUp }: Props) => (
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5, delay: i * 0.12 }}
-          className="glass-card rounded-2xl p-4 text-center"
+          className="glass-card rounded-2xl p-4 text-center flex flex-col"
         >
-          <a href={img.src} target="_blank" rel="noopener noreferrer" className="block">
+          <a href={img.src} target="_blank" rel="noopener noreferrer" className="block flex-shrink-0">
             <img
               src={img.src}
               alt={img.alt}
-              className="w-full max-w-[280px] mx-auto rounded-xl mb-4 cursor-zoom-in hover:opacity-90 transition-opacity"
+              className="w-full max-w-[280px] h-[280px] object-contain mx-auto rounded-xl mb-4 cursor-zoom-in hover:opacity-90 transition-opacity"
               loading="lazy"
             />
           </a>
+          <div className="mt-auto">
           <h3 className="font-bold text-foreground text-sm mb-1">{img.title}</h3>
           <p className="text-xs text-muted-foreground">{img.desc}</p>
+          </div>
         </motion.div>
       ))}
     </div>
