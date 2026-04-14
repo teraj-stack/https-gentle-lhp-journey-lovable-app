@@ -229,6 +229,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cleanup_old_bookings: { Args: never; Returns: undefined }
       delete_email: {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
