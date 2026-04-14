@@ -1,6 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { format } from "date-fns";
 import { Checkbox } from "@/components/ui/checkbox";
+import { supabase } from "@/integrations/supabase/client";
+import TurnstileWidget from "@/components/shared/TurnstileWidget";
 import { pl } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -64,6 +66,10 @@ const BookingForm = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [bookedSlots, setBookedSlots] = useState<string[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+
+  const handleTurnstileVerify = useCallback((token: string) => setTurnstileToken(token), []);
+  const handleTurnstileExpire = useCallback(() => setTurnstileToken(null), []);
 
   useEffect(() => {
     setTime("");
@@ -103,7 +109,29 @@ const BookingForm = () => {
       return;
     }
 
+    if (!turnstileToken) {
+      toast({ title: "Weryfikacja", description: "Proszę potwierdzić, że nie jesteś botem.", variant: "destructive" });
+      return;
+    }
+
     setSending(true);
+
+    // Verify turnstile token server-side
+    try {
+      const { data: verification } = await supabase.functions.invoke("verify-turnstile", {
+        body: { token: turnstileToken },
+      });
+      if (!verification?.success) {
+        toast({ title: "Błąd weryfikacji", description: "Weryfikacja CAPTCHA nie powiodła się. Spróbuj ponownie.", variant: "destructive" });
+        setSending(false);
+        setTurnstileToken(null);
+        return;
+      }
+    } catch {
+      toast({ title: "Błąd", description: "Nie udało się zweryfikować CAPTCHA.", variant: "destructive" });
+      setSending(false);
+      return;
+    }
     const id = crypto.randomUUID();
     const appointmentDate = format(result.data.date, "yyyy-MM-dd");
 
@@ -356,7 +384,13 @@ const BookingForm = () => {
         </div>
       </div>
 
-      <Button variant="hero" size="lg" type="submit" className="w-full" disabled={sending}>
+      <TurnstileWidget
+        onVerify={handleTurnstileVerify}
+        onExpire={handleTurnstileExpire}
+        className="flex justify-center"
+      />
+
+      <Button variant="hero" size="lg" type="submit" className="w-full" disabled={sending || !turnstileToken}>
         {sending ? "Rezerwuję…" : "Zarezerwuj wizytę"}
       </Button>
     </form>
