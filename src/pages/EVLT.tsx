@@ -10,8 +10,11 @@ import ProcedureSummaryTable from "@/components/shared/ProcedureSummaryTable";
 import MedicalProcedureSchema from "@/components/shared/MedicalProcedureSchema";
 import SeoHead from "@/components/shared/SeoHead";
 import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
-
 import RecoveryBoostBanner from "@/components/shared/RecoveryBoostBanner";
+import zylakiAnatomia from "@/assets/zylaki-anatomia.jpg";
+import ukladZyl from "@/assets/uklad-zyl-powierzchownych.png";
+import zylakiSchemat from "@/assets/zylaki-schemat.png";
+import ceapSkala from "@/assets/ceap-skala.webp";
 
 const evltSummary = [
   { label: "Przygotowanie", value: "Konsultacja flebologiczna oraz USG Doppler w celu mapowania niewydolnych żył" },
@@ -128,6 +131,66 @@ const EVLT = () => (
         </motion.section>
       </div>
 
+      {/* Anatomia żył */}
+      <motion.section {...fadeUp}>
+        <h2 className="section-title mb-3 text-center">Anatomia żył kończyn dolnych</h2>
+        <p className="section-subtitle mb-10 text-center max-w-2xl mx-auto">
+          Aby zrozumieć chorobę żylną, warto poznać budowę układu żylnego nóg. Poniższe schematy ukazują kluczowe struktury anatomiczne, które odgrywają rolę w powstawaniu żylaków.
+        </p>
+        <div className="grid md:grid-cols-3 gap-8 items-start">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+            className="glass-card rounded-2xl p-4 text-center"
+          >
+            <img
+              src={zylakiAnatomia}
+              alt="Anatomia żył kończyny dolnej — powięź, mięsień, żylak, żyła głęboka, perforator"
+              className="w-full max-w-[280px] mx-auto rounded-xl mb-4"
+              loading="lazy"
+            />
+            <h3 className="font-bold text-foreground text-sm mb-1">Przekrój żył kończyny</h3>
+            <p className="text-xs text-muted-foreground">Żyła głęboka, perforatory i żylak powierzchowny w kontekście powięzi i mięśni.</p>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay: 0.12 }}
+            className="glass-card rounded-2xl p-4 text-center"
+          >
+            <img
+              src={ukladZyl}
+              alt="Układ żył powierzchownych kończyny dolnej"
+              className="w-full max-w-[280px] mx-auto rounded-xl mb-4"
+              loading="lazy"
+            />
+            <h3 className="font-bold text-foreground text-sm mb-1">Układ żył powierzchownych</h3>
+            <p className="text-xs text-muted-foreground">Żyła odpiszczelowa wielka i mała — główne pnie, które najczęściej ulegają niewydolności.</p>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay: 0.24 }}
+            className="glass-card rounded-2xl p-4 text-center"
+          >
+            <img
+              src={zylakiSchemat}
+              alt="Infografika żylaków — czynniki ryzyka, objawy, profilaktyka"
+              className="w-full max-w-[280px] mx-auto rounded-xl mb-4"
+              loading="lazy"
+            />
+            <h3 className="font-bold text-foreground text-sm mb-1">Żylaki — przegląd</h3>
+            <p className="text-xs text-muted-foreground">Czynniki ryzyka, objawy i metody profilaktyki w jednym schemacie.</p>
+          </motion.div>
+        </div>
+      </motion.section>
+
       {/* Mechanizm zastawek */}
       <motion.section {...fadeUp}>
         <h2 className="section-title mb-3 text-center">Mechanizm powstawania: Zastawki</h2>
@@ -152,12 +215,10 @@ const EVLT = () => (
           {/* Zdrowa żyła */}
           <div className="text-center">
             <div className="relative w-20 h-48 mx-auto border-l-[6px] border-r-[6px] border-primary/60 rounded bg-primary/5 mb-4">
-              {/* Zastawki zamknięte */}
               <div className="absolute top-1/3 left-0 w-[45%] h-1 bg-primary/60 origin-left rotate-[-20deg]" />
               <div className="absolute top-1/3 right-0 w-[45%] h-1 bg-primary/60 origin-right rotate-[20deg]" />
               <div className="absolute top-2/3 left-0 w-[45%] h-1 bg-primary/60 origin-left rotate-[-20deg]" />
               <div className="absolute top-2/3 right-0 w-[45%] h-1 bg-primary/60 origin-right rotate-[20deg]" />
-              {/* Strzałki w górę */}
               <span className="absolute top-2 left-1/2 -translate-x-1/2 text-primary text-lg font-bold">↑</span>
               <span className="absolute bottom-2 left-1/2 -translate-x-1/2 text-primary text-lg font-bold">↑</span>
             </div>
@@ -173,16 +234,13 @@ const EVLT = () => (
           {/* Chora żyła */}
           <div className="text-center">
             <div className="relative w-24 h-48 mx-auto border-l-[6px] border-r-[6px] border-destructive/60 rounded-xl bg-destructive/5 mb-4">
-              {/* Zastawki otwarte */}
               <div className="absolute top-1/3 left-0 w-[35%] h-1 bg-destructive/60 origin-left rotate-[30deg]" />
               <div className="absolute top-1/3 right-0 w-[35%] h-1 bg-destructive/60 origin-right rotate-[-30deg]" />
               <div className="absolute top-2/3 left-0 w-[35%] h-1 bg-destructive/60 origin-left rotate-[30deg]" />
               <div className="absolute top-2/3 right-0 w-[35%] h-1 bg-destructive/60 origin-right rotate-[-30deg]" />
-              {/* Strzałki w dół + w górę */}
               <span className="absolute top-2 left-1/3 -translate-x-1/2 text-destructive text-lg font-bold">↓</span>
               <span className="absolute top-2 right-1/3 translate-x-1/2 text-primary text-lg font-bold">↑</span>
               <span className="absolute bottom-2 left-1/2 -translate-x-1/2 text-destructive text-lg font-bold">↓</span>
-              {/* Wybrzuszenie */}
               <div className="absolute top-1/2 -left-4 w-4 h-10 rounded-l-full bg-destructive/10 border-l-[3px] border-destructive/40" />
             </div>
             <h4 className="font-bold text-foreground text-sm">Chora żyła (Żylak)</h4>
@@ -190,6 +248,22 @@ const EVLT = () => (
               Zastawki są niewydolne. Krew opada w dół, rozpychając ściany naczyń.
             </p>
           </div>
+        </div>
+      </motion.section>
+
+      {/* Skala CEAP */}
+      <motion.section {...fadeUp}>
+        <h2 className="section-title mb-3 text-center">Stopnie zaawansowania niewydolności żylnej w skali CEAP</h2>
+        <p className="section-subtitle mb-10 text-center max-w-2xl mx-auto">
+          Klasyfikacja CEAP to międzynarodowy standard oceny zaawansowania przewlekłej choroby żylnej. Pozwala lekarzowi precyzyjnie określić stadium choroby i dobrać optymalne leczenie.
+        </p>
+        <div className="glass-card rounded-2xl p-6 md:p-10 max-w-3xl mx-auto">
+          <img
+            src={ceapSkala}
+            alt="Skala CEAP — ocena kliniczna niewydolności żylnej od C1 (pajączki naczyniowe) do C6 (aktywne owrzodzenie)"
+            className="w-full rounded-xl"
+            loading="lazy"
+          />
         </div>
       </motion.section>
 
