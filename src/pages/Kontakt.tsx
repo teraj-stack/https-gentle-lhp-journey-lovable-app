@@ -57,7 +57,7 @@ const locations = [
   {
     name: "Fimedica – Warszawa",
     address: "ul. Giełdowa 5, 01-211 Warszawa",
-    phone: "+48 665 666 728",
+    phone: ["+48 665 666 728", "+48 22 622 19 38"],
     email: "fimedica@fimedica.pl",
     hours: "Pon–Pt: 8:00–20:00",
     mapSrc:
@@ -171,11 +171,15 @@ const Kontakt = () => {
                       <MapPin className="w-4 h-4 text-primary mt-0.5 shrink-0" />
                       {loc.address}
                     </div>
-                    <div className="flex items-center gap-3 text-muted-foreground">
-                      <Phone className="w-4 h-4 text-primary shrink-0" />
-                      <a href={`tel:${loc.phone.replace(/\s/g, "")}`} className="hover:text-primary transition-colors">
-                        {loc.phone}
-                      </a>
+                    <div className="flex items-start gap-3 text-muted-foreground">
+                      <Phone className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                      <div className="flex flex-col gap-0.5">
+                        {(Array.isArray(loc.phone) ? loc.phone : [loc.phone]).map((p) => (
+                          <a key={p} href={`tel:${p.replace(/\s/g, "")}`} className="hover:text-primary transition-colors">
+                            {p}
+                          </a>
+                        ))}
+                      </div>
                     </div>
                     <div className="flex items-center gap-3 text-muted-foreground">
                       <Mail className="w-4 h-4 text-primary shrink-0" />
