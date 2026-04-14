@@ -156,17 +156,22 @@ const AdminBookings = () => {
             <h2 className="text-lg font-semibold text-foreground">
               Wizyty ({filteredBookings.length})
             </h2>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[180px] bg-background border-border">
-                <SelectValue placeholder="Filtruj status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Wszystkie</SelectItem>
-                {statusOptions.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="flex items-center gap-3">
+              <Button variant="outline" size="sm" onClick={handleExportCSV} disabled={filteredBookings.length === 0}>
+                <Download className="w-4 h-4 mr-1" /> Eksportuj CSV
+              </Button>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-[180px] bg-background border-border">
+                  <SelectValue placeholder="Filtruj status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Wszystkie</SelectItem>
+                  {statusOptions.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           {isLoading ? (
