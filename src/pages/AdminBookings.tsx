@@ -358,6 +358,31 @@ const AdminBookings = () => {
           )}
         </main>
       </div>
+
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Usunąć rezerwację?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Czy na pewno chcesz usunąć rezerwację pacjenta <strong>{deleteTarget?.name}</strong>? Tej operacji nie można cofnąć.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Anuluj</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (deleteTarget) {
+                  deleteBooking.mutate(deleteTarget.id);
+                  setDeleteTarget(null);
+                }
+              }}
+            >
+              Usuń
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 };
