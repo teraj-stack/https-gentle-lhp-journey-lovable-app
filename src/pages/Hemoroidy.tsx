@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import SeoHead from "@/components/shared/SeoHead";
 import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 import RecoveryBoostBanner from "@/components/shared/RecoveryBoostBanner";
+import TestimonialsSection from "@/components/shared/TestimonialsSection";
 import { StaggeredListItem } from "@/components/shared/StaggeredList";
 
 const fadeUp = {
@@ -468,6 +469,8 @@ const Hemoroidy = () => {
       </section>
 
       <RecoveryBoostBanner />
+
+      <TestimonialsSection />
 
       {/* CTA */}
       <section className="glass-card rounded-2xl p-8 md:p-12 text-center max-w-2xl mx-auto">
