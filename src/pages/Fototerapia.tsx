@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, Sun, Zap, ShieldCheck, Heart, Sparkles, Activity } from "lucide-react";
 import FototerapiaFAQ from "@/components/fototerapia/FototerapiaFAQ";
 import ProcedureSummaryTable from "@/components/shared/ProcedureSummaryTable";
+import TestimonialsSection from "@/components/shared/TestimonialsSection";
 import fototerapiaColorsImg from "@/assets/fototerapia-colors.webp";
 import fototerapiaPbmImg from "@/assets/fototerapia-pbm-mechanism.webp";
 
@@ -409,6 +410,12 @@ const Fototerapia = () => (
     <section className="py-16 md:py-20 px-4">
       <div className="max-w-5xl mx-auto">
         <FototerapiaFAQ fadeUp={fadeUp} />
+      </div>
+    </section>
+
+    <section className="py-16 md:py-20 px-4">
+      <div className="max-w-5xl mx-auto">
+        <TestimonialsSection />
       </div>
     </section>
 

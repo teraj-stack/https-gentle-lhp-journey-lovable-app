@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { StaggeredListItem } from "@/components/shared/StaggeredList";
 import { Button } from "@/components/ui/button";
+import TestimonialsSection from "@/components/shared/TestimonialsSection";
 
 const easeOut = [0.16, 1, 0.3, 1] as const;
 
@@ -307,6 +308,8 @@ const PielegnacjaNog = () => {
           Cierpliwość to Twój najlepszy sprzymierzeniec — naczynka potrzebują czasu, aby całkowicie się wchłonąć.
         </motion.p>
       </section>
+
+      <TestimonialsSection />
 
       {/* CTA */}
       <motion.section {...fadeUp} className="glass-card rounded-2xl p-8 md:p-12 text-center max-w-2xl mx-auto">
