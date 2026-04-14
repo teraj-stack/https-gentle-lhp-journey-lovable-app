@@ -196,6 +196,15 @@ const Kontakt = () => {
                       {loc.hours}
                     </div>
                   </div>
+                  <a
+                    href={loc.mapsUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:text-primary/80 transition-colors mt-2"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                    Nawiguj w Google Maps
+                  </a>
                 </div>
               </motion.div>
             ))}
