@@ -6,7 +6,7 @@ import { StaggeredListItem } from "@/components/shared/StaggeredList";
 import ParallaxSection from "@/components/ui/parallax-section";
 import SeoHead from "@/components/shared/SeoHead";
 import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
-import EbookBanner from "@/components/shared/EbookBanner";
+
 import RecoveryBoostBanner from "@/components/shared/RecoveryBoostBanner";
 import FaldyFAQ from "@/components/faldy/FaldyFAQ";
 
@@ -245,7 +245,7 @@ const FaldyOdbytu = () => (
 
       <RecoveryBoostBanner />
 
-      <EbookBanner />
+      
 
       <FaldyFAQ fadeUp={fadeUp} />
 
