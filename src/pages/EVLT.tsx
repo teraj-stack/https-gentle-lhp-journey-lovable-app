@@ -145,12 +145,14 @@ const EVLT = () => (
             transition={{ duration: 0.5 }}
             className="glass-card rounded-2xl p-4 text-center"
           >
-            <img
-              src={zylakiAnatomia}
-              alt="Anatomia żył kończyny dolnej — powięź, mięsień, żylak, żyła głęboka, perforator"
-              className="w-full max-w-[280px] mx-auto rounded-xl mb-4"
-              loading="lazy"
-            />
+            <a href={zylakiAnatomia} target="_blank" rel="noopener noreferrer" className="block">
+              <img
+                src={zylakiAnatomia}
+                alt="Anatomia żył kończyny dolnej — powięź, mięsień, żylak, żyła głęboka, perforator"
+                className="w-full max-w-[280px] mx-auto rounded-xl mb-4 cursor-zoom-in hover:opacity-90 transition-opacity"
+                loading="lazy"
+              />
+            </a>
             <h3 className="font-bold text-foreground text-sm mb-1">Przekrój żył kończyny</h3>
             <p className="text-xs text-muted-foreground">Żyła głęboka, perforatory i żylak powierzchowny w kontekście powięzi i mięśni.</p>
           </motion.div>
@@ -162,12 +164,14 @@ const EVLT = () => (
             transition={{ duration: 0.5, delay: 0.12 }}
             className="glass-card rounded-2xl p-4 text-center"
           >
-            <img
-              src={ukladZyl}
-              alt="Układ żył powierzchownych kończyny dolnej"
-              className="w-full max-w-[280px] mx-auto rounded-xl mb-4"
-              loading="lazy"
-            />
+            <a href={ukladZyl} target="_blank" rel="noopener noreferrer" className="block">
+              <img
+                src={ukladZyl}
+                alt="Układ żył powierzchownych kończyny dolnej"
+                className="w-full max-w-[280px] mx-auto rounded-xl mb-4 cursor-zoom-in hover:opacity-90 transition-opacity"
+                loading="lazy"
+              />
+            </a>
             <h3 className="font-bold text-foreground text-sm mb-1">Układ żył powierzchownych</h3>
             <p className="text-xs text-muted-foreground">Żyła odpiszczelowa wielka i mała — główne pnie, które najczęściej ulegają niewydolności.</p>
           </motion.div>
@@ -179,12 +183,14 @@ const EVLT = () => (
             transition={{ duration: 0.5, delay: 0.24 }}
             className="glass-card rounded-2xl p-4 text-center"
           >
-            <img
-              src={zylakiSchemat}
-              alt="Infografika żylaków — czynniki ryzyka, objawy, profilaktyka"
-              className="w-full max-w-[280px] mx-auto rounded-xl mb-4"
-              loading="lazy"
-            />
+            <a href={zylakiSchemat} target="_blank" rel="noopener noreferrer" className="block">
+              <img
+                src={zylakiSchemat}
+                alt="Infografika żylaków — czynniki ryzyka, objawy, profilaktyka"
+                className="w-full max-w-[280px] mx-auto rounded-xl mb-4 cursor-zoom-in hover:opacity-90 transition-opacity"
+                loading="lazy"
+              />
+            </a>
             <h3 className="font-bold text-foreground text-sm mb-1">Żylaki — przegląd</h3>
             <p className="text-xs text-muted-foreground">Czynniki ryzyka, objawy i metody profilaktyki w jednym schemacie.</p>
           </motion.div>
