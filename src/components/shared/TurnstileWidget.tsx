@@ -65,7 +65,7 @@ const TurnstileWidget = forwardRef<HTMLDivElement, TurnstileWidgetProps>(({ onVe
   }, [renderWidget]);
 
   return <div ref={containerRef} className={className} />;
-};
+});
 
 export const resetTurnstile = () => {
   // Force re-render by removing and re-adding
