@@ -1,4 +1,5 @@
 import React, { lazy, Suspense } from "react";
+import DOMPurify from "dompurify";
 
 const chartComponents: Record<string, React.LazyExoticComponent<React.ComponentType>> = {
   effectiveness: lazy(() => import("@/components/blog/EffectivenessChart")),
