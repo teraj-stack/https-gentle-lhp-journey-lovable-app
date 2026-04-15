@@ -242,13 +242,45 @@ const Kontakt = () => {
           </div>
         </motion.section>
 
-        {/* Rezerwacja wizyt */}
+        {/* Rezerwacja przez kliniki partnerskie */}
         <motion.section {...fadeUp}>
-          <h2 className="section-title mb-3 text-center">Zarezerwuj wizytę online</h2>
-          <p className="section-subtitle mb-10 text-center">
-            Wybierz lokalizację, datę i godzinę — potwierdzenie otrzymasz e-mailem
+          <h2 className="section-title mb-3 text-center">Zarezerwuj wizytę</h2>
+          <p className="section-subtitle mb-10 text-center max-w-2xl mx-auto">
+            Zapisy na wizyty odbywają się za pośrednictwem klinik, z którymi współpracuję. Skontaktuj się bezpośrednio z wybraną lokalizacją — recepcja pomoże dobrać termin.
           </p>
-          <BookingForm />
+          <div className="grid sm:grid-cols-2 gap-6 max-w-3xl mx-auto">
+            {locations.map((loc) => (
+              <div key={loc.name} className="glass-card rounded-2xl p-6 text-center space-y-3">
+                <h3 className="text-lg font-bold text-foreground">{loc.name}</h3>
+                <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                  <Phone className="w-4 h-4 text-primary" />
+                  <div className="flex flex-col">
+                    {(Array.isArray(loc.phone) ? loc.phone : [loc.phone]).map((p) => (
+                      <a key={p} href={`tel:${p.replace(/\s/g, "")}`} className="hover:text-primary transition-colors">
+                        {p}
+                      </a>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                  <Clock className="w-4 h-4 text-primary" />
+                  {loc.hours}
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="text-center mt-8">
+            <Button variant="hero" size="lg" asChild>
+              <a
+                href="https://www.znanylekarz.pl/jan-bujok-2/chirurg-flebolog-proktolog/warszawa"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <ExternalLink className="w-4 h-4 mr-2" />
+                Umów wizytę przez ZnanyLekarz.pl
+              </a>
+            </Button>
+          </div>
         </motion.section>
 
         {/* Formularz */}
