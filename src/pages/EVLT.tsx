@@ -87,7 +87,7 @@ const EVLT = () => (
     </ParallaxSection>
 
     <div className="max-w-5xl mx-auto px-4 py-16 space-y-24">
-      <Breadcrumbs items={[{ label: "Flebologia" }, { label: "Żylaki – EVLT" }]} className="mb-4" />
+      <Breadcrumbs items={[{ label: "Flebologia", href: "/leczenie/flebologia" }, { label: "Żylaki – EVLT" }]} className="mb-4" />
 
       {/* Przyczyny + Sygnały */}
       <div className="grid lg:grid-cols-2 gap-12">

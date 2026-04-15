@@ -49,6 +49,7 @@ const GinekomastiaTluszczowa = lazy(() => import("@/pages/GinekomastiaTluszczowa
 const GinekomastiaMieszana = lazy(() => import("@/pages/GinekomastiaMieszana"));
 const SpazmLonowoodbytniczy = lazy(() => import("@/pages/SpazmLonowoodbytniczy"));
 const Proktologia = lazy(() => import("@/pages/Proktologia"));
+const Flebologia = lazy(() => import("@/pages/Flebologia"));
 const ZaleceniaPoEVLT = lazy(() => import("@/pages/ZaleceniaPoEVLT"));
 const ZaleceniaPoLHP = lazy(() => import("@/pages/ZaleceniaPoLHP"));
 const ZaleceniaPoClacs = lazy(() => import("@/pages/ZaleceniaPoClacs"));
@@ -77,6 +78,7 @@ const App = () => (
               <Route path="/wspolpraca" element={<Wspolpraca />} />
               <Route path="/leczenie/lhp" element={<LHP />} />
               <Route path="/leczenie/proktologia" element={<Proktologia />} />
+              <Route path="/leczenie/flebologia" element={<Flebologia />} />
               <Route path="/leczenie/szczelina" element={<Szczelina />} />
               <Route path="/leczenie/plastyka" element={<Plastyka />} />
               <Route path="/leczenie/anusitis" element={<Anusitis />} />

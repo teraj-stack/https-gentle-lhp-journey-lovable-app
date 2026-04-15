@@ -111,7 +111,7 @@ const CLaCS = () => (
     </ParallaxSection>
 
     <div className="max-w-5xl mx-auto px-4 py-16 space-y-24">
-      <Breadcrumbs items={[{ label: "Flebologia" }, { label: "Pajączki – CLaCS" }]} className="mb-4" />
+      <Breadcrumbs items={[{ label: "Flebologia", href: "/leczenie/flebologia" }, { label: "Pajączki – CLaCS" }]} className="mb-4" />
       {/* Jak działa CLaCS */}
       <motion.section {...fadeUp}>
         <h2 className="section-title mb-3 text-center">Jak działa CLaCS?</h2>
