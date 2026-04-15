@@ -30,9 +30,9 @@ function generateToken(): string {
     .join('')
 }
 
-// Auth note: this function uses verify_jwt = true in config.toml, so Supabase's
-// gateway validates the caller's JWT (anon or service_role) before the request
-// reaches this code. No in-function auth check is needed.
+// Rate-limit configuration: max emails per IP within a sliding window
+const RATE_LIMIT_WINDOW_MINUTES = 15
+const RATE_LIMIT_MAX_SENDS = 5
 
 Deno.serve(async (req) => {
   // Handle CORS preflight
@@ -52,6 +52,53 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       }
     )
+  }
+
+  // --- Authorization & Rate Limiting ---
+  // Determine caller identity: service_role calls bypass rate limiting,
+  // anon/authenticated callers are rate-limited by IP.
+  const authHeader = req.headers.get('Authorization') || ''
+  const token = authHeader.replace('Bearer ', '')
+  const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey)
+
+  let isServiceRole = false
+  if (token) {
+    try {
+      // Decode JWT payload to check role claim
+      const payloadB64 = token.split('.')[1]
+      if (payloadB64) {
+        const payload = JSON.parse(atob(payloadB64))
+        isServiceRole = payload.role === 'service_role'
+      }
+    } catch {
+      // Ignore decode errors — treat as non-service-role
+    }
+  }
+
+  if (!isServiceRole) {
+    // Rate-limit by caller IP
+    const callerIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+      || req.headers.get('cf-connecting-ip')
+      || 'unknown'
+
+    const windowStart = new Date(Date.now() - RATE_LIMIT_WINDOW_MINUTES * 60 * 1000).toISOString()
+
+    const { count, error: countError } = await supabaseAdmin
+      .from('email_send_log')
+      .select('*', { count: 'exact', head: true })
+      .gte('created_at', windowStart)
+      .eq('metadata->>caller_ip', callerIp)
+
+    if (!countError && (count ?? 0) >= RATE_LIMIT_MAX_SENDS) {
+      console.warn('Rate limit exceeded', { callerIp, count })
+      return new Response(
+        JSON.stringify({ error: 'Too many requests. Please try again later.' }),
+        {
+          status: 429,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      )
+    }
   }
 
   // Parse request body
@@ -122,8 +169,11 @@ Deno.serve(async (req) => {
     )
   }
 
-  // Create Supabase client with service role (bypasses RLS)
-  const supabase = createClient(supabaseUrl, supabaseServiceKey)
+  // Reuse the supabaseAdmin client created above (service role, bypasses RLS)
+  const supabase = supabaseAdmin
+  const callerIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+    || req.headers.get('cf-connecting-ip')
+    || 'unknown'
 
   // 2. Check suppression list (fail-closed: if we can't verify, don't send)
   const { data: suppressed, error: suppressionError } = await supabase
@@ -306,6 +356,7 @@ Deno.serve(async (req) => {
     template_name: templateName,
     recipient_email: effectiveRecipient,
     status: 'pending',
+    metadata: { caller_ip: callerIp },
   })
 
   const { error: enqueueError } = await supabase.rpc('enqueue_email', {
