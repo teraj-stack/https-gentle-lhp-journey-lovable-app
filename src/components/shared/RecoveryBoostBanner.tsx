@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Sparkles } from "lucide-react";
+import fototerapiaPbmImg from "@/assets/fototerapia-pbm-mechanism.webp";
 
 const RecoveryBoostBanner = () => (
   <motion.div
@@ -31,6 +32,18 @@ const RecoveryBoostBanner = () => (
         </Link>
       </div>
     </div>
+
+    <figure className="mt-6">
+      <img
+        src={fototerapiaPbmImg}
+        alt="Wpływ światła na regenerację komórkową — schemat fotobiomodulacji (PBM) pokazujący wzrost proliferacji, ATP i migracji komórek"
+        className="w-full max-w-2xl mx-auto rounded-2xl border border-border object-contain"
+        loading="lazy"
+      />
+      <figcaption className="text-center text-sm text-muted-foreground mt-3">
+        Wpływ światła na regenerację — fotobiomodulacja stymuluje proliferację, produkcję ATP i migrację komórek
+      </figcaption>
+    </figure>
   </motion.div>
 );
 
