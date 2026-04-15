@@ -10,7 +10,7 @@ import FototerapiaFAQ from "@/components/fototerapia/FototerapiaFAQ";
 import ProcedureSummaryTable from "@/components/shared/ProcedureSummaryTable";
 import TestimonialsSection from "@/components/shared/TestimonialsSection";
 import fototerapiaColorsImg from "@/assets/fototerapia-colors.webp";
-import fototerapiaPbmImg from "@/assets/fototerapia-pbm-mechanism.webp";
+
 
 const fadeUp = {
   initial: { opacity: 0, y: 24, filter: "blur(4px)" },
