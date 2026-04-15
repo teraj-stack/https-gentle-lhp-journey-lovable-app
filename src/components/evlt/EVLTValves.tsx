@@ -83,7 +83,7 @@ const AnimatedVein = ({ healthy }: { healthy: boolean }) => {
       )}
 
       {/* Upper valve leaflets */}
-      <g transform={`translate(${cx}, 95)`}>
+      <g transform={`translate(${cx}, 95)`} filter={!healthy ? "url(#valve-glow)" : undefined}>
         <line
           x1={-veinWidth / 2} y1={0} x2={-4} y2={0}
           stroke={veinColor} strokeWidth={2.5} strokeLinecap="round"
