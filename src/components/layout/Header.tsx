@@ -53,6 +53,7 @@ const dlaPacjentaItems = [
   { label: "Zalecenia po zabiegu EVLT", href: "/dla-pacjenta/zalecenia-po-evlt", desc: "Rekonwalescencja po laserowym usuwaniu żylaków" },
   { label: "Zalecenia po zabiegu LHP", href: "/dla-pacjenta/zalecenia-po-lhp", desc: "Rekonwalescencja po leczeniu hemoroidów" },
   { label: "Zalecenia po zabiegu CLaCS", href: "/dla-pacjenta/zalecenia-po-clacs", desc: "Pielęgnacja po usuwaniu pajączków" },
+  { label: "Zalecenia po operacji przetoki (FiLaC)", href: "/dla-pacjenta/zalecenia-po-filac", desc: "Rekonwalescencja po leczeniu przetoki" },
 ];
 
 const Header = () => {
