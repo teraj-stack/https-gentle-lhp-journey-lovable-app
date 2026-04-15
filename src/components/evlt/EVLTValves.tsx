@@ -10,19 +10,6 @@ const EVLTValves = ({ fadeUp }: Props) => (
     <p className="section-subtitle mb-10 text-center max-w-2xl mx-auto">
       Wyobraź sobie, że w Twoich żyłach znajdują się małe, jednokierunkowe zawory. Przepuszczają krew do serca, walcząc z grawitacją. Gdy słabną, krew cofa się, tworząc wypukłe zmiany.
     </p>
-    {/* Film */}
-    <div className="max-w-2xl mx-auto mb-10">
-      <div className="relative w-full rounded-xl overflow-hidden shadow-lg" style={{ paddingBottom: '56.25%' }}>
-        <iframe
-          className="absolute inset-0 w-full h-full"
-          src="https://www.youtube.com/embed/9Wf8bLXVwFI?clip=Ugkx7Zf-uAOCFSL1NYwqZjQ5KqzVM5Fyqg6B&clipt=EAAYyJkC&mute=1&autoplay=1&loop=1&playlist=9Wf8bLXVwFI"
-          title="Mechanizm powstawania żylaków"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowFullScreen
-          loading="lazy"
-        />
-      </div>
-    </div>
 
     <div className="flex flex-col md:flex-row items-center justify-center gap-8 md:gap-16">
       {/* Zdrowa żyła */}
