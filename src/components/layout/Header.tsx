@@ -54,6 +54,7 @@ const dlaPacjentaItems = [
   { label: "Zalecenia po zabiegu LHP", href: "/dla-pacjenta/zalecenia-po-lhp", desc: "Rekonwalescencja po leczeniu hemoroidów" },
   { label: "Zalecenia po zabiegu CLaCS", href: "/dla-pacjenta/zalecenia-po-clacs", desc: "Pielęgnacja po usuwaniu pajączków" },
   { label: "Zalecenia po operacji przetoki (FiLaC)", href: "/dla-pacjenta/zalecenia-po-filac", desc: "Rekonwalescencja po leczeniu przetoki" },
+  { label: "Zalecenia po operacji torbieli (SiLaC)", href: "/dla-pacjenta/zalecenia-po-silac", desc: "Rekonwalescencja po leczeniu torbieli pilonidalnej" },
 ];
 
 const Header = () => {
