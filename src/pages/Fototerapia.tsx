@@ -217,17 +217,6 @@ const Fototerapia = () => (
             </motion.div>
           ))}
         </div>
-        <motion.figure {...fadeUp} className="mt-10">
-          <img
-            src={fototerapiaPbmImg}
-            alt="Wpływ światła na regenerację komórkową — schemat fotobiomodulacji (PBM) pokazujący wzrost proliferacji, ATP i migracji komórek"
-            className="w-full max-w-2xl mx-auto rounded-2xl border border-border object-contain"
-            loading="lazy"
-          />
-          <figcaption className="text-center text-sm text-muted-foreground mt-3">
-            Wpływ światła na regenerację — fotobiomodulacja stymuluje proliferację, produkcję ATP i migrację komórek
-          </figcaption>
-        </motion.figure>
       </div>
     </section>
 
