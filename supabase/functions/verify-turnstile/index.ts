@@ -13,8 +13,9 @@ Deno.serve(async (req) => {
   try {
     const secretKey = Deno.env.get("TURNSTILE_SECRET_KEY");
     if (!secretKey) {
-      // In dev/test mode, accept all tokens when no secret key is configured
-      return new Response(JSON.stringify({ success: true }), {
+      console.error("TURNSTILE_SECRET_KEY is not configured");
+      return new Response(JSON.stringify({ success: false, error: "Service unavailable" }), {
+        status: 503,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
