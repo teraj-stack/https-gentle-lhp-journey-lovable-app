@@ -52,6 +52,7 @@ const dlaPacjentaItems = [
   { label: "Przygotowanie do zabiegu LHP", href: "/dla-pacjenta/przygotowanie-lhp", desc: "Checklista przed zabiegiem hemoroidów" },
   { label: "Zalecenia po zabiegu EVLT", href: "/dla-pacjenta/zalecenia-po-evlt", desc: "Rekonwalescencja po laserowym usuwaniu żylaków" },
   { label: "Zalecenia po zabiegu LHP", href: "/dla-pacjenta/zalecenia-po-lhp", desc: "Rekonwalescencja po leczeniu hemoroidów" },
+  { label: "Zalecenia po zabiegu CLaCS", href: "/dla-pacjenta/zalecenia-po-clacs", desc: "Pielęgnacja po usuwaniu pajączków" },
 ];
 
 const Header = () => {
