@@ -1,9 +1,12 @@
 import React, { lazy, Suspense } from "react";
+import DOMPurify from "dompurify";
 
 const chartComponents: Record<string, React.LazyExoticComponent<React.ComponentType>> = {
   effectiveness: lazy(() => import("@/components/blog/EffectivenessChart")),
   hemoroid: lazy(() => import("@/components/blog/HemoroidComparisonChart")),
 };
+const sanitize = (html: string) => DOMPurify.sanitize(html);
+
 const formatInline = (text: string) =>
   text
     .replace(/\*\*(.+?)\*\*/g, "<strong class='text-foreground font-semibold'>$1</strong>")
@@ -32,7 +35,7 @@ const renderTable = (headerLine: string, rows: string[], key: number): React.Rea
             return (
               <tr key={ri} className={ri % 2 === 0 ? "bg-muted/30" : ""}>
                 {cells.map((cell, ci) => (
-                  <td key={ci} className="py-2 px-3 border-b border-border text-muted-foreground" dangerouslySetInnerHTML={{ __html: formatInline(cell) }} />
+                  <td key={ci} className="py-2 px-3 border-b border-border text-muted-foreground" dangerouslySetInnerHTML={{ __html: sanitize(formatInline(cell)) }} />
                 ))}
               </tr>
             );
@@ -53,7 +56,7 @@ const renderMarkdown = (content: string): React.ReactNode[] => {
       elements.push(
         <ul key={`list-${elements.length}`} className="list-disc pl-6 space-y-1 text-muted-foreground mb-6">
           {listItems.map((item, i) => (
-            <li key={i} dangerouslySetInnerHTML={{ __html: formatInline(item) }} />
+            <li key={i} dangerouslySetInnerHTML={{ __html: sanitize(formatInline(item)) }} />
           ))}
         </ul>
       );
@@ -119,7 +122,7 @@ const renderMarkdown = (content: string): React.ReactNode[] => {
         <p
           key={i}
           className="text-muted-foreground leading-relaxed mb-4"
-          dangerouslySetInnerHTML={{ __html: formatInline(line) }}
+          dangerouslySetInnerHTML={{ __html: sanitize(formatInline(line)) }}
         />
       );
     }
