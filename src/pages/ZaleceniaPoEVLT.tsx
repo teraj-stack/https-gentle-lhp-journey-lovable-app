@@ -116,7 +116,6 @@ const ZaleceniaPoEVLT = () => {
         <div className="container mx-auto px-4 max-w-4xl">
           <Breadcrumbs
             items={[
-              { label: "Strona główna", href: "/" },
               { label: "Dla Pacjenta", href: "/dla-pacjenta" },
               { label: "Zalecenia po EVLT" },
             ]}
