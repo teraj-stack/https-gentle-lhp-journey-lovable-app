@@ -56,6 +56,7 @@ const ZaleceniaPoSilac = lazy(() => import("@/pages/ZaleceniaPoSilac"));
 const ZaleceniaPoSkleroterapii = lazy(() => import("@/pages/ZaleceniaPoSkleroterapii"));
 const ZaleceniaPoPlastyce = lazy(() => import("@/pages/ZaleceniaPoPlastyce"));
 const ZaleceniaPoMikroflebektomii = lazy(() => import("@/pages/ZaleceniaPoMikroflebektomii"));
+const ZaleceniaPoGinekomastii = lazy(() => import("@/pages/ZaleceniaPoGinekomastii"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 
 const queryClient = new QueryClient();
@@ -101,6 +102,7 @@ const App = () => (
               <Route path="/dla-pacjenta/zalecenia-po-skleroterapii" element={<ZaleceniaPoSkleroterapii />} />
               <Route path="/dla-pacjenta/zalecenia-po-plastyce" element={<ZaleceniaPoPlastyce />} />
               <Route path="/dla-pacjenta/zalecenia-po-mikroflebektomii" element={<ZaleceniaPoMikroflebektomii />} />
+              <Route path="/dla-pacjenta/zalecenia-po-ginekomastii" element={<ZaleceniaPoGinekomastii />} />
               <Route path="/dla-pacjenta/hemoroidy-infografika" element={<HemoroidyInfografika />} />
               <Route path="/dla-pacjenta/faldy-odbytu" element={<FaldyOdbytu />} />
               <Route path="/leczenie/ginekomastia" element={<Ginekomastia />} />

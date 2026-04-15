@@ -41,6 +41,7 @@ const ginekomastiaItems = [
   { label: "Gruczołowa (prawdziwa)", href: "/leczenie/ginekomastia-gruczolowa", desc: "Rozrost gruczołu piersiowego" },
   { label: "Tłuszczowa (pseudo)", href: "/leczenie/ginekomastia-tluszczowa", desc: "Nadmiar tkanki tłuszczowej" },
   { label: "Mieszana", href: "/leczenie/ginekomastia-mieszana", desc: "Gruczoł + tłuszcz — najczęstsza" },
+  { label: "Zalecenia po zabiegu", href: "/dla-pacjenta/zalecenia-po-ginekomastii", desc: "Kamizelka uciskowa i rekonwalescencja" },
 ];
 
 const dlaPacjentaItems = [
