@@ -33,14 +33,23 @@ const Breadcrumbs = ({ items, className = "" }: Props) => {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <nav
+      <motion.nav
         aria-label="Breadcrumb"
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
         className={`flex items-center gap-1.5 text-xs text-muted-foreground flex-wrap ${className}`}
       >
         {allItems.map((item, i) => {
           const isLast = i === allItems.length - 1;
           return (
-            <span key={i} className="flex items-center gap-1.5">
+            <motion.span
+              key={i}
+              className="flex items-center gap-1.5"
+              initial={{ opacity: 0, x: -6 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.4, delay: i * 0.08, ease: [0.16, 1, 0.3, 1] }}
+            >
               {i > 0 && <ChevronRight className="w-3 h-3 opacity-40 shrink-0" />}
               {isLast ? (
                 <span className="text-foreground/70 font-medium">
@@ -56,10 +65,10 @@ const Breadcrumbs = ({ items, className = "" }: Props) => {
                   {item.label}
                 </Link>
               )}
-            </span>
+            </motion.span>
           );
         })}
-      </nav>
+      </motion.nav>
     </>
   );
 };
