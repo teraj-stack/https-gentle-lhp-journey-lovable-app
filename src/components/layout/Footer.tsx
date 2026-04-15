@@ -30,6 +30,7 @@ const Footer = () =>
             <li><Link to="/leczenie/szczelina" className="hover:text-primary transition-colors">Szczelina odbytu</Link></li>
             <li><Link to="/leczenie/plastyka" className="hover:text-primary transition-colors">Plastyka odbytu</Link></li>
             <li><Link to="/leczenie/anusitis" className="hover:text-primary transition-colors">Zapalenie odbytu</Link></li>
+            <li><Link to="/leczenie/spazm-lonowoodbytniczy" className="hover:text-primary transition-colors">Spazm łonowoodbytniczy</Link></li>
             <li><Link to="/dla-pacjenta/faldy-odbytu" className="hover:text-primary transition-colors">Fałdy odbytu</Link></li>
           </ul>
         </div>
