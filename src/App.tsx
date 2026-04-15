@@ -50,6 +50,7 @@ const GinekomastiaMieszana = lazy(() => import("@/pages/GinekomastiaMieszana"));
 const SpazmLonowoodbytniczy = lazy(() => import("@/pages/SpazmLonowoodbytniczy"));
 const ZaleceniaPoEVLT = lazy(() => import("@/pages/ZaleceniaPoEVLT"));
 const ZaleceniaPoLHP = lazy(() => import("@/pages/ZaleceniaPoLHP"));
+const ZaleceniaPoClacs = lazy(() => import("@/pages/ZaleceniaPoClacs"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 
 const queryClient = new QueryClient();
