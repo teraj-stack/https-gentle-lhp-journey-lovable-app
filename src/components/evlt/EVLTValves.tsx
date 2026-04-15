@@ -43,6 +43,15 @@ const AnimatedVein = ({ healthy }: { healthy: boolean }) => {
           <stop offset="0%" stopColor={healthy ? "#c9a84c" : "#ef4444"} stopOpacity={0.9} />
           <stop offset="100%" stopColor={healthy ? "#c9a84c" : "#ef4444"} stopOpacity={0} />
         </radialGradient>
+        {!healthy && (
+          <filter id="valve-glow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="4" result="blur" />
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+        )}
       </defs>
 
       {/* Vein body fill */}
