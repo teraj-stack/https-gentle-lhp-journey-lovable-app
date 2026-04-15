@@ -56,6 +56,7 @@ const dlaPacjentaItems = [
   { label: "Zalecenia po operacji przetoki (FiLaC)", href: "/dla-pacjenta/zalecenia-po-filac", desc: "Rekonwalescencja po leczeniu przetoki" },
   { label: "Zalecenia po operacji torbieli (SiLaC)", href: "/dla-pacjenta/zalecenia-po-silac", desc: "Rekonwalescencja po leczeniu torbieli pilonidalnej" },
   { label: "Zalecenia po skleroterapii", href: "/dla-pacjenta/zalecenia-po-skleroterapii", desc: "Pończochy uciskowe, spacery i ochrona przed słońcem" },
+  { label: "Zalecenia po plastyce odbytu", href: "/dla-pacjenta/zalecenia-po-plastyce", desc: "Rekonwalescencja po laserowej plastyce" },
 ];
 
 const Header = () => {
