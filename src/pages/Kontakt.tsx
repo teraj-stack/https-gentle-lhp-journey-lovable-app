@@ -270,14 +270,14 @@ const Kontakt = () => {
             ))}
           </div>
           <div className="text-center mt-8">
-            <Button variant="hero" size="lg" asChild>
+            <Button variant="hero" size="lg" asChild className="w-full sm:w-auto">
               <a
                 href="https://www.znanylekarz.pl/jan-bujok-2/chirurg-flebolog-proktolog/warszawa"
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                <ExternalLink className="w-4 h-4 mr-2" />
-                Umów wizytę przez ZnanyLekarz.pl
+                <ExternalLink className="w-4 h-4 mr-2 shrink-0" />
+                <span>Umów wizytę przez ZnanyLekarz.pl</span>
               </a>
             </Button>
           </div>
