@@ -18,6 +18,7 @@ const twojProblemItems = [
 ];
 
 const proktologiaItems = [
+  { label: "Wszystkie zabiegi proktologiczne", href: "/leczenie/proktologia", desc: "Przegląd zabiegów proktologicznych" },
   { label: "Hemoroidy – LHP", href: "/leczenie/lhp", desc: "Laserowa plastyka hemoroidów" },
   { label: "Przetoki – FiLaC", href: "/leczenie/filac", desc: "Laserowe zamykanie przetok" },
   { label: "Torbiel pilonidalna – SiLaC", href: "/leczenie/silac", desc: "Laserowe leczenie torbieli" },
@@ -29,6 +30,7 @@ const proktologiaItems = [
 ];
 
 const flebologiaItems = [
+  { label: "Wszystkie zabiegi flebologiczne", href: "/leczenie/flebologia", desc: "Przegląd zabiegów flebologicznych" },
   { label: "Żylaki – EVLT", href: "/leczenie/evlt", desc: "Ablacja wewnątrzżylna laserem" },
   { label: "Skleroterapia żylaków", href: "/leczenie/skleroterapia", desc: "Zamykanie żylakowatych naczyń" },
   { label: "Pajączki – CLaCS", href: "/leczenie/clacs", desc: "Crio Laser and Crio Sclerotherapy" },

@@ -22,7 +22,7 @@ const Footer = () =>
         </div>
 
         <div>
-          <h4 className="font-semibold text-foreground mb-4 font-sans text-sm uppercase tracking-wider">Proktologia</h4>
+          <h4 className="font-semibold text-foreground mb-4 font-sans text-sm uppercase tracking-wider"><Link to="/leczenie/proktologia" className="hover:text-primary transition-colors">Proktologia</Link></h4>
           <ul className="space-y-2.5 text-sm text-muted-foreground">
             <li><Link to="/leczenie/lhp" className="hover:text-primary transition-colors">Hemoroidy – LHP</Link></li>
             <li><Link to="/leczenie/filac" className="hover:text-primary transition-colors">Przetoki – FiLaC</Link></li>
@@ -35,7 +35,7 @@ const Footer = () =>
         </div>
 
         <div>
-          <h4 className="font-semibold text-foreground mb-4 font-sans text-sm uppercase tracking-wider">Flebologia</h4>
+          <h4 className="font-semibold text-foreground mb-4 font-sans text-sm uppercase tracking-wider"><Link to="/leczenie/flebologia" className="hover:text-primary transition-colors">Flebologia</Link></h4>
           <ul className="space-y-2.5 text-sm text-muted-foreground">
             <li><Link to="/leczenie/evlt" className="hover:text-primary transition-colors">Żylaki – EVLT</Link></li>
             <li><Link to="/leczenie/skleroterapia" className="hover:text-primary transition-colors">Skleroterapia</Link></li>
