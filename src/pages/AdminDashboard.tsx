@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Pencil, Trash2, LogOut, Eye, EyeOff, ShieldAlert, CalendarDays } from "lucide-react";
+import { Plus, Pencil, Trash2, LogOut, Eye, EyeOff, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
 import SeoHead from "@/components/shared/SeoHead";
 
@@ -149,9 +149,6 @@ const AdminDashboard = () => {
         <header className="border-b border-border px-4 py-4 md:px-8 flex items-center justify-between">
           <h1 className="text-xl font-bold font-serif text-foreground">Panel bloga</h1>
           <div className="flex items-center gap-3">
-            <Button variant="outline" size="sm" onClick={() => navigate("/admin/bookings")}>
-              <CalendarDays className="w-4 h-4 mr-1" /> Rezerwacje
-            </Button>
             <span className="text-sm text-muted-foreground hidden sm:inline">{session.user.email}</span>
             <Button variant="ghost" size="sm" onClick={handleLogout}>
               <LogOut className="w-4 h-4 mr-1" /> Wyloguj

@@ -39,7 +39,7 @@ const BlogPost = lazy(() => import("@/pages/BlogPost"));
 const AdminLogin = lazy(() => import("@/pages/AdminLogin"));
 const AdminDashboard = lazy(() => import("@/pages/AdminDashboard"));
 const AdminPostEditor = lazy(() => import("@/pages/AdminPostEditor"));
-const AdminBookings = lazy(() => import("@/pages/AdminBookings"));
+
 const Unsubscribe = lazy(() => import("@/pages/Unsubscribe"));
 const HemoroidyInfografika = lazy(() => import("@/pages/HemoroidyInfografika"));
 const FaldyOdbytu = lazy(() => import("@/pages/FaldyOdbytu"));
@@ -124,7 +124,7 @@ const App = () => (
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/admin/post/:id" element={<AdminPostEditor />} />
-            <Route path="/admin/bookings" element={<AdminBookings />} />
+            
             <Route path="/unsubscribe" element={<Unsubscribe />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
