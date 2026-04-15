@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, forwardRef } from "react";
 
 declare global {
   interface Window {
@@ -21,7 +21,7 @@ interface TurnstileWidgetProps {
   className?: string;
 }
 
-const TurnstileWidget = ({ onVerify, onExpire, onError, className }: TurnstileWidgetProps) => {
+const TurnstileWidget = forwardRef<HTMLDivElement, TurnstileWidgetProps>(({ onVerify, onExpire, onError, className }, _ref) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const widgetIdRef = useRef<string | null>(null);
   const scriptLoadedRef = useRef(false);
@@ -65,7 +65,7 @@ const TurnstileWidget = ({ onVerify, onExpire, onError, className }: TurnstileWi
   }, [renderWidget]);
 
   return <div ref={containerRef} className={className} />;
-};
+});
 
 export const resetTurnstile = () => {
   // Force re-render by removing and re-adding
