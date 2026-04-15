@@ -88,7 +88,6 @@ const GinekomastiaTluszczowa = () => (
     </ParallaxSection>
 
     <Breadcrumbs items={[
-      { label: "Strona główna", href: "/" },
       { label: "Ginekomastia", href: "/leczenie/ginekomastia" },
       { label: "Tłuszczowa" },
     ]} />
