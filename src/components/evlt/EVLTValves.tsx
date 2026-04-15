@@ -5,7 +5,7 @@ interface Props {
 }
 
 const labelStyle = {
-  fontSize: "8px",
+  fontSize: "clamp(9px, 2.5vw, 8px)",
   fontFamily: "Inter, sans-serif",
   letterSpacing: "0.03em",
 } as const;
