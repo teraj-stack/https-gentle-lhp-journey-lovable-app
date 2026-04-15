@@ -39,7 +39,7 @@ const flebologiaItems = [
 ];
 
 const ginekomastiaItems = [
-  { label: "Ginekomastia – przegląd", href: "/leczenie/ginekomastia", desc: "Kompendium wiedzy o ginekomastii" },
+  { label: "Wszystkie zabiegi", href: "/leczenie/ginekomastia", desc: "Kompendium wiedzy o ginekomastii" },
   { label: "Gruczołowa (prawdziwa)", href: "/leczenie/ginekomastia-gruczolowa", desc: "Rozrost gruczołu piersiowego" },
   { label: "Tłuszczowa (pseudo)", href: "/leczenie/ginekomastia-tluszczowa", desc: "Nadmiar tkanki tłuszczowej" },
   { label: "Mieszana", href: "/leczenie/ginekomastia-mieszana", desc: "Gruczoł + tłuszcz — najczęstsza" },

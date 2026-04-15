@@ -45,6 +45,16 @@ const Footer = () =>
         </div>
 
         <div>
+          <h4 className="font-semibold text-foreground mb-4 font-sans text-sm uppercase tracking-wider">Ginekomastia</h4>
+          <ul className="space-y-2.5 text-sm text-muted-foreground">
+            <li><Link to="/leczenie/ginekomastia" className="hover:text-primary transition-colors">Wszystkie zabiegi</Link></li>
+            <li><Link to="/leczenie/ginekomastia-gruczolowa" className="hover:text-primary transition-colors">Gruczołowa</Link></li>
+            <li><Link to="/leczenie/ginekomastia-tluszczowa" className="hover:text-primary transition-colors">Tłuszczowa</Link></li>
+            <li><Link to="/leczenie/ginekomastia-mieszana" className="hover:text-primary transition-colors">Mieszana</Link></li>
+          </ul>
+        </div>
+
+        <div>
           <h4 className="font-semibold text-foreground mb-4 font-sans text-sm uppercase tracking-wider">Informacje</h4>
           <ul className="space-y-2.5 text-sm text-muted-foreground">
             <li><Link to="/o-nas" className="hover:text-primary transition-colors">O nas</Link></li>
