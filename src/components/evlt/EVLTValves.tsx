@@ -4,39 +4,41 @@ interface Props {
   fadeUp: Record<string, unknown>;
 }
 
+const labelStyle = {
+  fontSize: "8px",
+  fontFamily: "Inter, sans-serif",
+  letterSpacing: "0.03em",
+} as const;
+
 /**
- * Animated SVG vein with flowing blood particles and valve leaflets.
- * `healthy` = valves closed, blood flows up.
- * `diseased` = valves open/incompetent, blood refluxes down, vein bulges.
+ * Animated SVG vein with flowing blood particles, valve leaflets,
+ * and anatomical labels with leader lines.
  */
 const AnimatedVein = ({ healthy }: { healthy: boolean }) => {
   const veinColor = healthy ? "hsl(var(--primary))" : "hsl(var(--destructive))";
   const veinColorFaint = healthy
     ? "hsl(var(--primary) / 0.15)"
     : "hsl(var(--destructive) / 0.15)";
+  const labelColor = "hsl(var(--muted-foreground))";
   const veinWidth = healthy ? 40 : 54;
-  const cx = 70;
+  const cx = 130;
   const left = cx - veinWidth / 2;
   const right = cx + veinWidth / 2;
 
-  /* Valve leaflet angles */
-  const leafletClose = healthy ? 20 : -30; // negative = open outward
+  const leafletClose = healthy ? 20 : -30;
 
   return (
     <svg
-      viewBox="0 0 140 260"
-      className="w-[140px] h-[260px] mx-auto"
+      viewBox="0 0 260 280"
+      className="w-[220px] sm:w-[260px] h-auto mx-auto"
       aria-hidden="true"
     >
       <defs>
-        {/* Vein wall gradient */}
         <linearGradient id={`wall-${healthy}`} x1="0" y1="0" x2="1" y2="0">
           <stop offset="0%" stopColor={veinColor} stopOpacity={0.7} />
           <stop offset="50%" stopColor={veinColor} stopOpacity={0.15} />
           <stop offset="100%" stopColor={veinColor} stopOpacity={0.7} />
         </linearGradient>
-
-        {/* Blood particle */}
         <radialGradient id={`blood-${healthy}`}>
           <stop offset="0%" stopColor={healthy ? "#c9a84c" : "#ef4444"} stopOpacity={0.9} />
           <stop offset="100%" stopColor={healthy ? "#c9a84c" : "#ef4444"} stopOpacity={0} />
@@ -46,7 +48,7 @@ const AnimatedVein = ({ healthy }: { healthy: boolean }) => {
       {/* Vein body fill */}
       <rect
         x={left}
-        y={10}
+        y={20}
         width={veinWidth}
         height={240}
         rx={healthy ? 6 : 14}
@@ -54,14 +56,14 @@ const AnimatedVein = ({ healthy }: { healthy: boolean }) => {
       />
 
       {/* Vein walls */}
-      <line x1={left} y1={10} x2={left} y2={250} stroke={veinColor} strokeWidth={3} strokeLinecap="round" />
-      <line x1={right} y1={10} x2={right} y2={250} stroke={veinColor} strokeWidth={3} strokeLinecap="round" />
+      <line x1={left} y1={20} x2={left} y2={260} stroke={veinColor} strokeWidth={3} strokeLinecap="round" />
+      <line x1={right} y1={20} x2={right} y2={260} stroke={veinColor} strokeWidth={3} strokeLinecap="round" />
 
       {/* Bulge on diseased vein */}
       {!healthy && (
         <ellipse
           cx={left - 6}
-          cy={160}
+          cy={170}
           rx={10}
           ry={22}
           fill={veinColorFaint}
@@ -72,49 +74,29 @@ const AnimatedVein = ({ healthy }: { healthy: boolean }) => {
       )}
 
       {/* Upper valve leaflets */}
-      <g transform={`translate(${cx}, 85)`}>
+      <g transform={`translate(${cx}, 95)`}>
         <line
-          x1={-veinWidth / 2}
-          y1={0}
-          x2={-4}
-          y2={0}
-          stroke={veinColor}
-          strokeWidth={2.5}
-          strokeLinecap="round"
+          x1={-veinWidth / 2} y1={0} x2={-4} y2={0}
+          stroke={veinColor} strokeWidth={2.5} strokeLinecap="round"
           transform={`rotate(${leafletClose}, ${-veinWidth / 2}, 0)`}
         />
         <line
-          x1={veinWidth / 2}
-          y1={0}
-          x2={4}
-          y2={0}
-          stroke={veinColor}
-          strokeWidth={2.5}
-          strokeLinecap="round"
+          x1={veinWidth / 2} y1={0} x2={4} y2={0}
+          stroke={veinColor} strokeWidth={2.5} strokeLinecap="round"
           transform={`rotate(${-leafletClose}, ${veinWidth / 2}, 0)`}
         />
       </g>
 
       {/* Lower valve leaflets */}
-      <g transform={`translate(${cx}, 175)`}>
+      <g transform={`translate(${cx}, 185)`}>
         <line
-          x1={-veinWidth / 2}
-          y1={0}
-          x2={-4}
-          y2={0}
-          stroke={veinColor}
-          strokeWidth={2.5}
-          strokeLinecap="round"
+          x1={-veinWidth / 2} y1={0} x2={-4} y2={0}
+          stroke={veinColor} strokeWidth={2.5} strokeLinecap="round"
           transform={`rotate(${leafletClose}, ${-veinWidth / 2}, 0)`}
         />
         <line
-          x1={veinWidth / 2}
-          y1={0}
-          x2={4}
-          y2={0}
-          stroke={veinColor}
-          strokeWidth={2.5}
-          strokeLinecap="round"
+          x1={veinWidth / 2} y1={0} x2={4} y2={0}
+          stroke={veinColor} strokeWidth={2.5} strokeLinecap="round"
           transform={`rotate(${-leafletClose}, ${veinWidth / 2}, 0)`}
         />
       </g>
@@ -131,8 +113,8 @@ const AnimatedVein = ({ healthy }: { healthy: boolean }) => {
               begin={`${delay}s`}
               path={
                 healthy
-                  ? `M${cx + xOffset},240 L${cx + xOffset},10`
-                  : `M${cx + xOffset},30 L${cx + xOffset},240`
+                  ? `M${cx + xOffset},250 L${cx + xOffset},20`
+                  : `M${cx + xOffset},40 L${cx + xOffset},250`
               }
             />
             <animate
@@ -149,15 +131,72 @@ const AnimatedVein = ({ healthy }: { healthy: boolean }) => {
       {/* Direction arrows */}
       {healthy ? (
         <>
-          <text x={cx} y={30} textAnchor="middle" fill={veinColor} fontSize="18" fontWeight="bold">↑</text>
-          <text x={cx} y={245} textAnchor="middle" fill={veinColor} fontSize="18" fontWeight="bold">↑</text>
+          <text x={cx} y={40} textAnchor="middle" fill={veinColor} fontSize="18" fontWeight="bold">↑</text>
+          <text x={cx} y={255} textAnchor="middle" fill={veinColor} fontSize="18" fontWeight="bold">↑</text>
         </>
       ) : (
         <>
-          <text x={cx - 10} y={30} textAnchor="middle" fill="hsl(var(--destructive))" fontSize="16" fontWeight="bold">↓</text>
-          <text x={cx + 10} y={30} textAnchor="middle" fill={veinColor} fontSize="16" fontWeight="bold">↑</text>
-          <text x={cx} y={245} textAnchor="middle" fill="hsl(var(--destructive))" fontSize="18" fontWeight="bold">↓</text>
+          <text x={cx - 10} y={40} textAnchor="middle" fill="hsl(var(--destructive))" fontSize="16" fontWeight="bold">↓</text>
+          <text x={cx + 10} y={40} textAnchor="middle" fill={veinColor} fontSize="16" fontWeight="bold">↑</text>
+          <text x={cx} y={255} textAnchor="middle" fill="hsl(var(--destructive))" fontSize="18" fontWeight="bold">↓</text>
         </>
+      )}
+
+      {/* ──── ANATOMICAL LABELS ──── */}
+
+      {/* Label: Ściana żyły (Vein wall) — right side, pointing to right wall */}
+      <line x1={right + 4} y1={55} x2={right + 22} y2={48} stroke={labelColor} strokeWidth={0.7} strokeDasharray="2 2" />
+      <circle cx={right + 4} cy={55} r={1.5} fill={labelColor} />
+      <text x={right + 25} y={51} fill={labelColor} textAnchor="start" {...labelStyle}>
+        {healthy ? "Ściana żyły" : "Rozciągnięta"}
+      </text>
+      {!healthy && (
+        <text x={right + 25} y={61} fill={labelColor} textAnchor="start" {...labelStyle}>
+          ściana żyły
+        </text>
+      )}
+
+      {/* Label: Zastawka (Valve) — left side, pointing to upper valve */}
+      <line x1={left - 4} y1={95} x2={left - 28} y2={88} stroke={labelColor} strokeWidth={0.7} strokeDasharray="2 2" />
+      <circle cx={left - 4} cy={95} r={1.5} fill={labelColor} />
+      <text x={left - 30} y={91} fill={labelColor} textAnchor="end" {...labelStyle}>
+        {healthy ? "Zastawka" : "Niewydolna"}
+      </text>
+      {!healthy && (
+        <text x={left - 30} y={101} fill={labelColor} textAnchor="end" {...labelStyle}>
+          zastawka
+        </text>
+      )}
+
+      {/* Label: Przepływ krwi / Refluks — right side, mid-vein */}
+      <line x1={right + 4} y1={140} x2={right + 22} y2={133} stroke={labelColor} strokeWidth={0.7} strokeDasharray="2 2" />
+      <circle cx={right + 4} cy={140} r={1.5} fill={labelColor} />
+      <text x={right + 25} y={136} fill={labelColor} textAnchor="start" {...labelStyle}>
+        {healthy ? "Prawidłowy" : "Refluks"}
+      </text>
+      <text x={right + 25} y={146} fill={labelColor} textAnchor="start" {...labelStyle}>
+        {healthy ? "przepływ ↑" : "żylny ↓"}
+      </text>
+
+      {/* Label: Żylak / Wybrzuszenie — left side on diseased vein bulge */}
+      {!healthy && (
+        <>
+          <line x1={left - 16} y1={170} x2={left - 34} y2={163} stroke={labelColor} strokeWidth={0.7} strokeDasharray="2 2" />
+          <circle cx={left - 16} cy={170} r={1.5} fill={labelColor} />
+          <text x={left - 36} y={160} fill={labelColor} textAnchor="end" {...labelStyle}>
+            Żylak
+          </text>
+          <text x={left - 36} y={170} fill={labelColor} textAnchor="end" {...labelStyle}>
+            (wybrzuszenie)
+          </text>
+        </>
+      )}
+
+      {/* Label: Kierunek do serca — top */}
+      {healthy && (
+        <text x={cx} y={14} textAnchor="middle" fill={labelColor} {...labelStyle}>
+          Do serca ♥
+        </text>
       )}
     </svg>
   );
@@ -181,7 +220,7 @@ const EVLTValves = ({ fadeUp }: Props) => (
       >
         <AnimatedVein healthy />
         <h4 className="font-bold text-foreground text-sm mt-3">Zdrowa żyła</h4>
-        <p className="text-xs text-muted-foreground max-w-[180px] mx-auto mt-1">
+        <p className="text-xs text-muted-foreground max-w-[200px] mx-auto mt-1">
           Zastawki szczelnie się zamykają. Krew płynie sprawnie w kierunku serca.
         </p>
       </motion.div>
@@ -199,7 +238,7 @@ const EVLTValves = ({ fadeUp }: Props) => (
       >
         <AnimatedVein healthy={false} />
         <h4 className="font-bold text-foreground text-sm mt-3">Chora żyła (Żylak)</h4>
-        <p className="text-xs text-muted-foreground max-w-[180px] mx-auto mt-1">
+        <p className="text-xs text-muted-foreground max-w-[200px] mx-auto mt-1">
           Zastawki są niewydolne. Krew opada w dół, rozpychając ściany naczyń.
         </p>
       </motion.div>
