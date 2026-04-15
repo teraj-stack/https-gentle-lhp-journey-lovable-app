@@ -146,7 +146,10 @@ const AnimatedVein = ({ healthy }: { healthy: boolean }) => {
 
       {/* Label: Ściana żyły (Vein wall) — right side, pointing to right wall */}
       <line x1={right + 4} y1={55} x2={right + 22} y2={48} stroke={labelColor} strokeWidth={0.7} strokeDasharray="2 2" />
-      <circle cx={right + 4} cy={55} r={1.5} fill={labelColor} />
+      <circle cx={right + 4} cy={55} r={1.5} fill={labelColor}>
+        <animate attributeName="r" values="1.5;3;1.5" dur="3s" repeatCount="indefinite" />
+        <animate attributeName="opacity" values="1;0.4;1" dur="3s" repeatCount="indefinite" />
+      </circle>
       <text x={right + 25} y={51} fill={labelColor} textAnchor="start" {...labelStyle}>
         {healthy ? "Ściana żyły" : "Rozciągnięta"}
       </text>
@@ -158,7 +161,10 @@ const AnimatedVein = ({ healthy }: { healthy: boolean }) => {
 
       {/* Label: Zastawka (Valve) — left side, pointing to upper valve */}
       <line x1={left - 4} y1={95} x2={left - 28} y2={88} stroke={labelColor} strokeWidth={0.7} strokeDasharray="2 2" />
-      <circle cx={left - 4} cy={95} r={1.5} fill={labelColor} />
+      <circle cx={left - 4} cy={95} r={1.5} fill={labelColor}>
+        <animate attributeName="r" values="1.5;3;1.5" dur="3s" begin="0.5s" repeatCount="indefinite" />
+        <animate attributeName="opacity" values="1;0.4;1" dur="3s" begin="0.5s" repeatCount="indefinite" />
+      </circle>
       <text x={left - 30} y={91} fill={labelColor} textAnchor="end" {...labelStyle}>
         {healthy ? "Zastawka" : "Niewydolna"}
       </text>
@@ -170,7 +176,10 @@ const AnimatedVein = ({ healthy }: { healthy: boolean }) => {
 
       {/* Label: Przepływ krwi / Refluks — right side, mid-vein */}
       <line x1={right + 4} y1={140} x2={right + 22} y2={133} stroke={labelColor} strokeWidth={0.7} strokeDasharray="2 2" />
-      <circle cx={right + 4} cy={140} r={1.5} fill={labelColor} />
+      <circle cx={right + 4} cy={140} r={1.5} fill={labelColor}>
+        <animate attributeName="r" values="1.5;3;1.5" dur="3s" begin="1s" repeatCount="indefinite" />
+        <animate attributeName="opacity" values="1;0.4;1" dur="3s" begin="1s" repeatCount="indefinite" />
+      </circle>
       <text x={right + 25} y={136} fill={labelColor} textAnchor="start" {...labelStyle}>
         {healthy ? "Prawidłowy" : "Refluks"}
       </text>
@@ -182,7 +191,10 @@ const AnimatedVein = ({ healthy }: { healthy: boolean }) => {
       {!healthy && (
         <>
           <line x1={left - 16} y1={170} x2={left - 34} y2={163} stroke={labelColor} strokeWidth={0.7} strokeDasharray="2 2" />
-          <circle cx={left - 16} cy={170} r={1.5} fill={labelColor} />
+          <circle cx={left - 16} cy={170} r={1.5} fill={labelColor}>
+            <animate attributeName="r" values="1.5;3;1.5" dur="3s" begin="1.5s" repeatCount="indefinite" />
+            <animate attributeName="opacity" values="1;0.4;1" dur="3s" begin="1.5s" repeatCount="indefinite" />
+          </circle>
           <text x={left - 36} y={160} fill={labelColor} textAnchor="end" {...labelStyle}>
             Żylak
           </text>
