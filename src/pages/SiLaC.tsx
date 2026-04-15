@@ -62,7 +62,7 @@ const SiLaC = () => (
     <SiLaCHero />
 
     <div className="max-w-5xl mx-auto px-4 py-16 space-y-24">
-      <Breadcrumbs items={[{ label: "Proktologia" }, { label: "Torbiel pilonidalna – SiLaC" }]} className="mb-4" />
+      <Breadcrumbs items={[{ label: "Proktologia", href: "/leczenie/proktologia" }, { label: "Torbiel pilonidalna – SiLaC" }]} className="mb-4" />
       <SiLaCProcedure fadeUp={fadeUp} />
       <SiLaCAdvantages fadeUp={fadeUp} />
       <SiLaCComparison fadeUp={fadeUp} />

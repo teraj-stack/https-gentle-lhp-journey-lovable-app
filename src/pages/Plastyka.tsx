@@ -105,7 +105,7 @@ const Plastyka = () => (
     </section>
 
     <div className="max-w-4xl mx-auto px-4 md:px-8 py-16 space-y-20">
-      <Breadcrumbs items={[{ label: "Proktologia" }, { label: "Plastyka odbytu" }]} className="mb-4" />
+      <Breadcrumbs items={[{ label: "Proktologia", href: "/leczenie/proktologia" }, { label: "Plastyka odbytu" }]} className="mb-4" />
       {/* Intro */}
       <motion.section {...fadeUp}>
         <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-6 font-serif">
