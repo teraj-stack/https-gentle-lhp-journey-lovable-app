@@ -51,6 +51,7 @@ const SpazmLonowoodbytniczy = lazy(() => import("@/pages/SpazmLonowoodbytniczy")
 const ZaleceniaPoEVLT = lazy(() => import("@/pages/ZaleceniaPoEVLT"));
 const ZaleceniaPoLHP = lazy(() => import("@/pages/ZaleceniaPoLHP"));
 const ZaleceniaPoClacs = lazy(() => import("@/pages/ZaleceniaPoClacs"));
+const ZaleceniaPoFilac = lazy(() => import("@/pages/ZaleceniaPoFilac"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 
 const queryClient = new QueryClient();
