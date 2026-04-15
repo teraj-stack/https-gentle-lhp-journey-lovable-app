@@ -64,12 +64,12 @@ const Proktologia = () => {
       <SeoHead
         title="Proktologia laserowa – zabiegi | CML"
         description="Kompleksowe leczenie proktologiczne technikami laserowymi: hemoroidy (LHP), przetoki (FiLaC), torbiel pilonidalna (SiLaC), szczelina odbytu i więcej."
-        canonical="https://cml.pl/leczenie/proktologia"
+        path="/leczenie/proktologia"
       />
       <MedicalWebPageSchema
         name="Proktologia laserowa – zabiegi"
         description="Kompleksowe leczenie proktologiczne technikami laserowymi w CML."
-        url="https://cml.pl/leczenie/proktologia"
+        path="/leczenie/proktologia"
       />
 
       {/* Hero */}
