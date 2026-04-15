@@ -50,6 +50,7 @@ const dlaPacjentaItems = [
   { label: "E-book o pajączkach naczyniowych i teleangiektazjach", href: "/dla-pacjenta/ebook-pajaczki", desc: "E-book o pajączkach żylnych" },
   { label: "Przygotowanie do zabiegu EVLT", href: "/dla-pacjenta/przygotowanie-evlt", desc: "Checklista przed zabiegiem laserowym" },
   { label: "Przygotowanie do zabiegu LHP", href: "/dla-pacjenta/przygotowanie-lhp", desc: "Checklista przed zabiegiem hemoroidów" },
+  { label: "Zalecenia po zabiegu EVLT", href: "/dla-pacjenta/zalecenia-po-evlt", desc: "Rekonwalescencja po laserowym usuwaniu żylaków" },
 ];
 
 const Header = () => {
