@@ -57,6 +57,7 @@ const dlaPacjentaItems = [
   { label: "Zalecenia po operacji torbieli (SiLaC)", href: "/dla-pacjenta/zalecenia-po-silac", desc: "Rekonwalescencja po leczeniu torbieli pilonidalnej" },
   { label: "Zalecenia po skleroterapii", href: "/dla-pacjenta/zalecenia-po-skleroterapii", desc: "Pończochy uciskowe, spacery i ochrona przed słońcem" },
   { label: "Zalecenia po plastyce odbytu", href: "/dla-pacjenta/zalecenia-po-plastyce", desc: "Rekonwalescencja po laserowej plastyce" },
+  { label: "Zalecenia po mikroflebektomii", href: "/dla-pacjenta/zalecenia-po-mikroflebektomii", desc: "Pończochy uciskowe i pielęgnacja nacięć" },
 ];
 
 const Header = () => {
