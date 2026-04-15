@@ -53,6 +53,7 @@ const ZaleceniaPoLHP = lazy(() => import("@/pages/ZaleceniaPoLHP"));
 const ZaleceniaPoClacs = lazy(() => import("@/pages/ZaleceniaPoClacs"));
 const ZaleceniaPoFilac = lazy(() => import("@/pages/ZaleceniaPoFilac"));
 const ZaleceniaPoSilac = lazy(() => import("@/pages/ZaleceniaPoSilac"));
+const ZaleceniaPoSkleroterapii = lazy(() => import("@/pages/ZaleceniaPoSkleroterapii"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 
 const queryClient = new QueryClient();
