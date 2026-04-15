@@ -115,41 +115,37 @@ const BookingForm = () => {
 
     setSending(true);
 
-    // Verify turnstile token server-side
+    const appointmentDate = format(result.data.date, "yyyy-MM-dd");
+    const formattedDate = format(result.data.date, "d MMMM yyyy", { locale: pl });
+
     try {
-      const { data: verification } = await supabase.functions.invoke("verify-turnstile", {
-        body: { token: turnstileToken },
+      // Create booking via edge function (server-side CAPTCHA + insert)
+      const { data: bookingResult, error: bookingError } = await supabase.functions.invoke("create-booking", {
+        body: {
+          turnstileToken,
+          location: result.data.location,
+          patient_name: result.data.name,
+          patient_email: result.data.email,
+          patient_phone: result.data.phone,
+          appointment_date: appointmentDate,
+          appointment_time: result.data.time,
+          message: result.data.message || null,
+        },
       });
-      if (!verification?.success) {
-        toast({ title: "Błąd weryfikacji", description: "Weryfikacja CAPTCHA nie powiodła się. Spróbuj ponownie.", variant: "destructive" });
+
+      if (bookingError || !bookingResult?.success) {
+        const errMsg = bookingResult?.error || "Nie udało się wysłać rezerwacji.";
+        if (errMsg.includes("CAPTCHA")) {
+          setTurnstileToken(null);
+        }
+        toast({ title: "Błąd", description: errMsg === "CAPTCHA verification failed" ? "Weryfikacja CAPTCHA nie powiodła się. Spróbuj ponownie." : "Nie udało się wysłać rezerwacji. Spróbuj ponownie.", variant: "destructive" });
         setSending(false);
-        setTurnstileToken(null);
         return;
       }
-    } catch {
-      toast({ title: "Błąd", description: "Nie udało się zweryfikować CAPTCHA.", variant: "destructive" });
-      setSending(false);
-      return;
-    }
-    const id = crypto.randomUUID();
-    const appointmentDate = format(result.data.date, "yyyy-MM-dd");
 
-    try {
-      const { error } = await supabase.from("bookings").insert({
-        id,
-        location: result.data.location,
-        patient_name: result.data.name,
-        patient_email: result.data.email,
-        patient_phone: result.data.phone,
-        appointment_date: appointmentDate,
-        appointment_time: result.data.time,
-        message: result.data.message || null,
-      });
+      const id = bookingResult.id;
 
-      if (error) throw error;
-
-      const formattedDate = format(result.data.date, "d MMMM yyyy", { locale: pl });
-
+      // Send confirmation emails
       await Promise.all([
         supabase.functions.invoke("send-transactional-email", {
           body: {
