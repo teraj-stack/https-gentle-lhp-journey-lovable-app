@@ -90,6 +90,7 @@ const App = () => (
               <Route path="/dla-pacjenta/przygotowanie-lhp" element={<PrzygotowanieLHP />} />
               <Route path="/dla-pacjenta/zalecenia-po-evlt" element={<ZaleceniaPoEVLT />} />
               <Route path="/dla-pacjenta/zalecenia-po-lhp" element={<ZaleceniaPoLHP />} />
+              <Route path="/dla-pacjenta/zalecenia-po-clacs" element={<ZaleceniaPoClacs />} />
               <Route path="/dla-pacjenta/hemoroidy-infografika" element={<HemoroidyInfografika />} />
               <Route path="/dla-pacjenta/faldy-odbytu" element={<FaldyOdbytu />} />
               <Route path="/leczenie/ginekomastia" element={<Ginekomastia />} />
