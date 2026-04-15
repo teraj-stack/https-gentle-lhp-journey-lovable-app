@@ -269,15 +269,17 @@ const Kontakt = () => {
               </div>
             ))}
           </div>
-          <div className="text-center mt-8">
-            <Button variant="hero" size="lg" asChild>
+          <div className="text-center mt-8 px-4">
+            <Button variant="hero" size="lg" asChild className="w-full sm:w-auto">
               <a
                 href="https://www.znanylekarz.pl/jan-bujok-2/chirurg-flebolog-proktolog/warszawa"
                 target="_blank"
                 rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 text-sm"
               >
-                <ExternalLink className="w-4 h-4 mr-2" />
-                Umów wizytę przez ZnanyLekarz.pl
+                <ExternalLink className="w-4 h-4 shrink-0" />
+                <span className="hidden sm:inline">Umów wizytę przez ZnanyLekarz.pl</span>
+                <span className="sm:hidden">Umów wizytę — ZnanyLekarz</span>
               </a>
             </Button>
           </div>
