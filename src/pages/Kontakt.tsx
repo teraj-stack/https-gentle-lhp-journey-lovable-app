@@ -12,7 +12,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { z } from "zod";
 import SeoHead from "@/components/shared/SeoHead";
 import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
-import BookingForm from "@/components/kontakt/BookingForm";
+
 import TurnstileWidget from "@/components/shared/TurnstileWidget";
 
 const fadeUp = {
