@@ -187,13 +187,13 @@ const Kontakt = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: i * 0.15 }}
-                className="glass-card rounded-2xl overflow-hidden"
+                className="glass-card rounded-2xl overflow-hidden group"
               >
                 <div className="h-52 w-full overflow-hidden">
                   <img
                     src={loc.image}
                     alt={`Wnętrze kliniki — ${loc.name}`}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-110"
                     loading="lazy"
                   />
                 </div>
