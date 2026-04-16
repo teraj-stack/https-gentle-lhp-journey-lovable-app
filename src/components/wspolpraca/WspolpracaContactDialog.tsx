@@ -19,6 +19,7 @@ import TurnstileWidget from "@/components/shared/TurnstileWidget";
 import { Mail } from "lucide-react";
 
 const schema = z.object({
+  facility: z.string().trim().min(2, "Podaj nazwę placówki").max(150, "Maks. 150 znaków"),
   email: z.string().trim().email("Nieprawidłowy adres e-mail").max(255),
   message: z.string().trim().min(1, "Wiadomość jest wymagana").max(2000),
   consent: z.literal(true, { errorMap: () => ({ message: "Zgoda jest wymagana" }) }),
@@ -31,6 +32,7 @@ interface Props {
 
 const WspolpracaContactDialog = ({ open, onOpenChange }: Props) => {
   const { toast } = useToast();
+  const [facility, setFacility] = useState("");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
   const [consent, setConsent] = useState(false);
@@ -42,6 +44,7 @@ const WspolpracaContactDialog = ({ open, onOpenChange }: Props) => {
   const handleExpire = useCallback(() => setTurnstileToken(null), []);
 
   const reset = () => {
+    setFacility("");
     setEmail("");
     setMessage("");
     setConsent(false);
@@ -51,7 +54,7 @@ const WspolpracaContactDialog = ({ open, onOpenChange }: Props) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const result = schema.safeParse({ email, message, consent });
+    const result = schema.safeParse({ facility, email, message, consent });
     if (!result.success) {
       const fieldErrors: Record<string, string> = {};
       result.error.errors.forEach((err) => {
@@ -103,7 +106,7 @@ const WspolpracaContactDialog = ({ open, onOpenChange }: Props) => {
             recipientEmail: result.data.email,
             idempotencyKey: `wspolpraca-b2b-confirm-${id}`,
             templateData: {
-              name: result.data.email,
+              name: result.data.facility,
               subject: "Współpraca B2B – CML",
               message: result.data.message,
             },
@@ -116,6 +119,7 @@ const WspolpracaContactDialog = ({ open, onOpenChange }: Props) => {
             idempotencyKey: `wspolpraca-b2b-notify-${id}`,
             templateData: {
               senderEmail: result.data.email,
+              facility: result.data.facility,
               message: result.data.message,
               source: "wspolpraca-b2b",
             },
@@ -155,6 +159,23 @@ const WspolpracaContactDialog = ({ open, onOpenChange }: Props) => {
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4 mt-2">
+          <div className="space-y-1.5">
+            <Label htmlFor="b2b-facility">Nazwa placówki</Label>
+            <Input
+              id="b2b-facility"
+              type="text"
+              value={facility}
+              onChange={(e) => {
+                setFacility(e.target.value);
+                setErrors((p) => ({ ...p, facility: "" }));
+              }}
+              placeholder="np. Klinika XYZ, Warszawa"
+              autoComplete="organization"
+              maxLength={150}
+            />
+            {errors.facility && <p className="text-xs text-destructive">{errors.facility}</p>}
+          </div>
+
           <div className="space-y-1.5">
             <Label htmlFor="b2b-email">E-mail</Label>
             <Input

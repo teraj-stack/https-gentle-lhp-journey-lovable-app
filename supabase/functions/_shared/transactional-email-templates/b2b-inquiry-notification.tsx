@@ -8,14 +8,15 @@ const SITE_NAME = "CML Centrum Medycyny Laserowej"
 
 interface B2BInquiryNotificationProps {
   senderEmail?: string
+  facility?: string
   message?: string
   source?: string
 }
 
-const B2BInquiryNotificationEmail = ({ senderEmail, message, source }: B2BInquiryNotificationProps) => (
+const B2BInquiryNotificationEmail = ({ senderEmail, facility, message, source }: B2BInquiryNotificationProps) => (
   <Html lang="pl" dir="ltr">
     <Head />
-    <Preview>Nowe zapytanie B2B od {senderEmail || 'kontrahenta'}</Preview>
+    <Preview>Nowe zapytanie B2B{facility ? ` od ${facility}` : ''}</Preview>
     <Body style={main}>
       <Container style={container}>
         <Text style={logo}>{SITE_NAME}</Text>
@@ -26,6 +27,14 @@ const B2BInquiryNotificationEmail = ({ senderEmail, message, source }: B2BInquir
         </Text>
 
         <Section style={infoBox}>
+          {facility && (
+            <>
+              <Text style={label}>Nazwa placówki</Text>
+              <Text style={value}>{facility}</Text>
+              <Hr style={innerDivider} />
+            </>
+          )}
+
           <Text style={label}>Adres e-mail nadawcy</Text>
           <Text style={value}>{senderEmail || '—'}</Text>
 
@@ -51,11 +60,12 @@ const B2BInquiryNotificationEmail = ({ senderEmail, message, source }: B2BInquir
 export const template = {
   component: B2BInquiryNotificationEmail,
   subject: (data: Record<string, any>) =>
-    `Nowe zapytanie B2B${data?.senderEmail ? ` od ${data.senderEmail}` : ''} — CML`,
+    `Nowe zapytanie B2B${data?.facility ? ` – ${data.facility}` : data?.senderEmail ? ` od ${data.senderEmail}` : ''} — CML`,
   to: 'dr.bujok@cml.pl',
   displayName: 'Powiadomienie o zapytaniu B2B (admin)',
   previewData: {
     senderEmail: 'placowka@example.pl',
+    facility: 'Klinika Zdrowie, Kraków',
     message: 'Dzień dobry, jesteśmy zainteresowani modelem kooperacyjnym CML.',
     source: 'wspolpraca-b2b',
   },
