@@ -113,19 +113,21 @@ const WspolpracaContactDialog = ({ open, onOpenChange }: Props) => {
             },
           },
         }),
-        supabase.functions.invoke("send-transactional-email", {
-          body: {
-            templateName: "b2b-inquiry-notification",
-            recipientEmail: "dr.bujok@cml.pl",
-            idempotencyKey: `wspolpraca-b2b-notify-${id}`,
-            templateData: {
-              senderEmail: result.data.email,
-              facility: facilityValue,
-              message: result.data.message,
-              source: "wspolpraca-b2b",
+        ...["dr.bujok@cml.pl", "biuro@cml.pl"].map((recipient) =>
+          supabase.functions.invoke("send-transactional-email", {
+            body: {
+              templateName: "b2b-inquiry-notification",
+              recipientEmail: recipient,
+              idempotencyKey: `wspolpraca-b2b-notify-${id}-${recipient}`,
+              templateData: {
+                senderEmail: result.data.email,
+                facility: facilityValue,
+                message: result.data.message,
+                source: "wspolpraca-b2b",
+              },
             },
-          },
-        }),
+          })
+        ),
       ]);
     } catch (err) {
       console.error("Email send failed:", err);

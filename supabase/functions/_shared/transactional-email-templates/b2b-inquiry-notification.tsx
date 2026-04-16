@@ -61,7 +61,7 @@ export const template = {
   component: B2BInquiryNotificationEmail,
   subject: (data: Record<string, any>) =>
     `Nowe zapytanie B2B${data?.facility ? ` – ${data.facility}` : data?.senderEmail ? ` od ${data.senderEmail}` : ''} — CML`,
-  to: 'dr.bujok@cml.pl',
+  // Recipient is set per-invocation (dr.bujok@cml.pl + biuro@cml.pl) — no fixed `to`.
   displayName: 'Powiadomienie o zapytaniu B2B (admin)',
   previewData: {
     senderEmail: 'placowka@example.pl',
