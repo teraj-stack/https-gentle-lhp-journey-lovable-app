@@ -57,6 +57,12 @@ const WspolpracaCTA = () => (
               <ArrowRight className="w-4 h-4 ml-2" />
             </a>
           </Button>
+          <Button variant="outline" size="lg" className="px-10 py-6 text-base" asChild>
+            <Link to="/kontakt">
+              <Mail className="w-4 h-4 mr-2" />
+              Napisz do nas
+            </Link>
+          </Button>
         </div>
 
         <div className="flex flex-wrap justify-center gap-6 mt-12 text-xs text-muted-foreground">
