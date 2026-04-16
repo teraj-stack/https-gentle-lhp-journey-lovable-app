@@ -39,7 +39,20 @@ const WspolpracaCTA = () => (
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mt-10">
           <Button variant="hero" size="lg" className="px-10 py-6 text-base" asChild>
-            <a href="https://www.znanylekarz.pl/jan-bujok-2/chirurg-flebolog-proktolog/warszawa" target="_blank" rel="noopener noreferrer">
+            <a
+              href={(() => {
+                const now = new Date();
+                const start = new Date(now);
+                start.setDate(start.getDate() + ((1 + 7 - start.getDay()) % 7 || 7));
+                start.setHours(10, 0, 0, 0);
+                const end = new Date(start);
+                end.setMinutes(15);
+                const fmt = (d: Date) => d.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+                return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent("Wirtualna kawa – współpraca B2B z CML")}&dates=${fmt(start)}/${fmt(end)}&details=${encodeURIComponent("Niezobowiązująca, 15-minutowa rozmowa z dr. Janem Bujokiem na temat modelu kooperacyjnego CML.\n\nStrona: https://cml.pl/wspolpraca")}&location=${encodeURIComponent("Online (Google Meet)")}`;
+              })()}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
               Umów wirtualną kawę
               <ArrowRight className="w-4 h-4 ml-2" />
             </a>
