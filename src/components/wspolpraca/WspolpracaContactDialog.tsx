@@ -106,7 +106,7 @@ const WspolpracaContactDialog = ({ open, onOpenChange }: Props) => {
             recipientEmail: result.data.email,
             idempotencyKey: `wspolpraca-b2b-confirm-${id}`,
             templateData: {
-              name: result.data.email,
+              name: result.data.facility,
               subject: "Współpraca B2B – CML",
               message: result.data.message,
             },
@@ -119,6 +119,7 @@ const WspolpracaContactDialog = ({ open, onOpenChange }: Props) => {
             idempotencyKey: `wspolpraca-b2b-notify-${id}`,
             templateData: {
               senderEmail: result.data.email,
+              facility: result.data.facility,
               message: result.data.message,
               source: "wspolpraca-b2b",
             },
@@ -158,6 +159,23 @@ const WspolpracaContactDialog = ({ open, onOpenChange }: Props) => {
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4 mt-2">
+          <div className="space-y-1.5">
+            <Label htmlFor="b2b-facility">Nazwa placówki</Label>
+            <Input
+              id="b2b-facility"
+              type="text"
+              value={facility}
+              onChange={(e) => {
+                setFacility(e.target.value);
+                setErrors((p) => ({ ...p, facility: "" }));
+              }}
+              placeholder="np. Klinika XYZ, Warszawa"
+              autoComplete="organization"
+              maxLength={150}
+            />
+            {errors.facility && <p className="text-xs text-destructive">{errors.facility}</p>}
+          </div>
+
           <div className="space-y-1.5">
             <Label htmlFor="b2b-email">E-mail</Label>
             <Input
