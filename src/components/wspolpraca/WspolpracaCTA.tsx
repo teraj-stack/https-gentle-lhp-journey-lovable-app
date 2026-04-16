@@ -1,7 +1,8 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, CheckCircle2, Mail, Users } from "lucide-react";
+import WspolpracaContactDialog from "./WspolpracaContactDialog";
 
 const fadeUp = {
   initial: { opacity: 0, y: 30 },
