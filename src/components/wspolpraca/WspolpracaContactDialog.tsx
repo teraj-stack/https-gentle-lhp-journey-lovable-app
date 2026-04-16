@@ -96,18 +96,32 @@ const WspolpracaContactDialog = ({ open, onOpenChange }: Props) => {
 
     const id = crypto.randomUUID();
     try {
-      await supabase.functions.invoke("send-transactional-email", {
-        body: {
-          templateName: "contact-confirmation",
-          recipientEmail: result.data.email,
-          idempotencyKey: `wspolpraca-b2b-${id}`,
-          templateData: {
-            name: result.data.email,
-            subject: "Współpraca B2B – CML",
-            message: result.data.message,
+      await Promise.all([
+        supabase.functions.invoke("send-transactional-email", {
+          body: {
+            templateName: "contact-confirmation",
+            recipientEmail: result.data.email,
+            idempotencyKey: `wspolpraca-b2b-confirm-${id}`,
+            templateData: {
+              name: result.data.email,
+              subject: "Współpraca B2B – CML",
+              message: result.data.message,
+            },
           },
-        },
-      });
+        }),
+        supabase.functions.invoke("send-transactional-email", {
+          body: {
+            templateName: "b2b-inquiry-notification",
+            recipientEmail: "dr.bujok@cml.pl",
+            idempotencyKey: `wspolpraca-b2b-notify-${id}`,
+            templateData: {
+              senderEmail: result.data.email,
+              message: result.data.message,
+              source: "wspolpraca-b2b",
+            },
+          },
+        }),
+      ]);
     } catch (err) {
       console.error("Email send failed:", err);
     }
