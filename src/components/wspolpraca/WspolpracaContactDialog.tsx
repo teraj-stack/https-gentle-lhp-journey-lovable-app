@@ -19,7 +19,7 @@ import TurnstileWidget from "@/components/shared/TurnstileWidget";
 import { Mail } from "lucide-react";
 
 const schema = z.object({
-  facility: z.string().trim().min(2, "Podaj nazwę placówki").max(150, "Maks. 150 znaków"),
+  facility: z.string().trim().max(150, "Maks. 150 znaków").optional().or(z.literal("")),
   email: z.string().trim().email("Nieprawidłowy adres e-mail").max(255),
   message: z.string().trim().min(1, "Wiadomość jest wymagana").max(2000),
   consent: z.literal(true, { errorMap: () => ({ message: "Zgoda jest wymagana" }) }),
@@ -98,6 +98,7 @@ const WspolpracaContactDialog = ({ open, onOpenChange }: Props) => {
     }
 
     const id = crypto.randomUUID();
+    const facilityValue = result.data.facility?.trim() || undefined;
     try {
       await Promise.all([
         supabase.functions.invoke("send-transactional-email", {
@@ -106,7 +107,7 @@ const WspolpracaContactDialog = ({ open, onOpenChange }: Props) => {
             recipientEmail: result.data.email,
             idempotencyKey: `wspolpraca-b2b-confirm-${id}`,
             templateData: {
-              name: result.data.facility,
+              name: facilityValue,
               subject: "Współpraca B2B – CML",
               message: result.data.message,
             },
@@ -119,7 +120,7 @@ const WspolpracaContactDialog = ({ open, onOpenChange }: Props) => {
             idempotencyKey: `wspolpraca-b2b-notify-${id}`,
             templateData: {
               senderEmail: result.data.email,
-              facility: result.data.facility,
+              facility: facilityValue,
               message: result.data.message,
               source: "wspolpraca-b2b",
             },
@@ -160,7 +161,9 @@ const WspolpracaContactDialog = ({ open, onOpenChange }: Props) => {
 
         <form onSubmit={handleSubmit} className="space-y-4 mt-2">
           <div className="space-y-1.5">
-            <Label htmlFor="b2b-facility">Nazwa placówki</Label>
+            <Label htmlFor="b2b-facility">
+              Nazwa placówki <span className="text-muted-foreground font-normal">(opcjonalne)</span>
+            </Label>
             <Input
               id="b2b-facility"
               type="text"
