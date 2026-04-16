@@ -100,7 +100,11 @@ const FiLaCFistulaTypes = ({ fadeUp }: Props) => (
       </div>
     </div>
 
-    <p className="text-sm text-muted-foreground text-center mt-8 max-w-xl mx-auto">
+    <p className="text-sm text-muted-foreground text-center mt-6 max-w-xl mx-auto">
+      <strong className="text-foreground">Przetoki przezzwieraczowe (A) i międzyzwieraczowe (B)</strong> charakteryzują się najmniejszym ryzykiem wystąpienia niepożądanych zdarzeń w przebiegu leczenia. 
+      Dla tych typów <strong className="text-accent">zabieg laserowy FiLaC</strong> jest metodą z wyboru — oferuje najwyższą skuteczność przy minimalnym urazie tkanek i pełnej ochronie funkcji zwieraczy.
+    </p>
+    <p className="text-sm text-muted-foreground text-center mt-4 max-w-xl mx-auto">
       Metoda FiLaC jest szczególnie skuteczna w przetokach przezzwieraczowych,
       międzyzwieraczowych i powierzchownych. Typy nadzwieraczowe i pozazwieraczowe
       wymagają indywidualnej oceny chirurgicznej.
