@@ -189,14 +189,12 @@ const Kontakt = () => {
                 transition={{ duration: 0.5, delay: i * 0.15 }}
                 className="glass-card rounded-2xl overflow-hidden"
               >
-                <div className="h-52 w-full">
-                  <iframe
-                    src={loc.mapSrc}
-                    className="w-full h-full border-0"
-                    allowFullScreen
+                <div className="h-52 w-full overflow-hidden">
+                  <img
+                    src={loc.image}
+                    alt={`Wnętrze kliniki — ${loc.name}`}
+                    className="w-full h-full object-cover"
                     loading="lazy"
-                    referrerPolicy="no-referrer-when-downgrade"
-                    title={`Mapa — ${loc.name}`}
                   />
                 </div>
                 <div className="p-6 space-y-4">
