@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, CheckCircle2, Users } from "lucide-react";
+import { ArrowRight, CheckCircle2, Mail, Users } from "lucide-react";
 
 const fadeUp = {
   initial: { opacity: 0, y: 30 },
@@ -56,6 +56,12 @@ const WspolpracaCTA = () => (
               Umów wirtualną kawę
               <ArrowRight className="w-4 h-4 ml-2" />
             </a>
+          </Button>
+          <Button variant="outline" size="lg" className="px-10 py-6 text-base" asChild>
+            <Link to="/kontakt">
+              <Mail className="w-4 h-4 mr-2" />
+              Napisz do nas
+            </Link>
           </Button>
         </div>
 
