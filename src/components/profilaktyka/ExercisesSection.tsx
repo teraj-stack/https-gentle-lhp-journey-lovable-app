@@ -34,6 +34,7 @@ const exercises: Exercise[] = [
       "Unieś jedną stopę kilka cm nad podłogą i wykonuj powolne, pełne koła w stawie skokowym — najpierw w jedną, potem w drugą stronę.",
     dose: "10 kółek × 2 strony × każda noga",
     duration: "~2 minuty",
+    durationSec: 60,
     benefit: "Aktywuje pompę mięśniową łydki i poprawia odpływ krwi z żył głębokich.",
   },
   {
@@ -44,6 +45,7 @@ const exercises: Exercise[] = [
       "Mocno przyciągnij palce stóp do siebie (jak najwyżej), następnie wyciągnij je maksymalnie w dół, jak baletnica.",
     dose: "20 powtórzeń",
     duration: "~1 minuta",
+    durationSec: 45,
     benefit: "Najlepsze ćwiczenie podczas długich podróży — chroni przed zakrzepicą.",
   },
   {
@@ -54,6 +56,7 @@ const exercises: Exercise[] = [
       "Powoli unieś się wysoko na palcach stóp, zatrzymaj na 2 sekundy w górze i powoli opuść pięty (nie uderzaj nimi o podłogę).",
     dose: "3 serie × 15 powtórzeń",
     duration: "~3 minuty",
+    durationSec: 60,
     benefit: "Wzmacnia łydki — mechanizm „drugiego serca” dla układu żylnego.",
   },
   {
@@ -64,6 +67,7 @@ const exercises: Exercise[] = [
       "Unieś nogi do kąta ok. 90° i imituj pedałowanie roweru w powietrzu, naprzemiennie zginając kolana.",
     dose: "2 serie × 30 sekund",
     duration: "~2 minuty",
+    durationSec: 60,
     benefit: "Łączy elewację nóg z aktywnością mięśni — odciąża żyły i pobudza krążenie.",
   },
   {
@@ -74,6 +78,7 @@ const exercises: Exercise[] = [
       "Połóż się i oprzyj wyprostowane nogi o ścianę pod kątem 90°. Pozostań w pozycji, oddychaj spokojnie i delikatnie ruszaj palcami.",
     dose: "1 serie × 5–10 minut",
     duration: "~5–10 minut",
+    durationSec: 120,
     benefit: "Klasyczna „pozycja Trendelenburga light” — błyskawicznie redukuje obrzęki kostek.",
   },
   {
@@ -84,6 +89,7 @@ const exercises: Exercise[] = [
       "Maszeruj w miejscu, podnosząc kolana wysoko. Co kilka kroków przejdź chwilę na samych piętach, a następnie na palcach.",
     dose: "60 sekund co godzinę pracy",
     duration: "~1 minuta",
+    durationSec: 60,
     benefit: "Mikro-przerwa idealna dla osób pracujących stojąco lub siedząco.",
   },
 ];
