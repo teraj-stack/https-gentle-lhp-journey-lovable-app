@@ -142,8 +142,19 @@ const AdminPostEditor = () => {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
+  const deleteOldCover = async (oldUrl: string | null | undefined, newUrl: string) => {
+    if (!oldUrl || oldUrl === newUrl) return;
+    if (!oldUrl.includes("/blog-covers/")) return;
+    try {
+      await supabase.functions.invoke("delete-blog-cover", { body: { url: oldUrl } });
+    } catch (e) {
+      console.warn("Nie udało się usunąć starej okładki:", e);
+    }
+  };
+
   const saveMutation = useMutation({
     mutationFn: async () => {
+      const newCoverUrl = coverImageUrl || null;
       const postData = {
         title,
         slug: slug || generateSlug(title),
@@ -151,15 +162,20 @@ const AdminPostEditor = () => {
         content,
         published,
         published_at: published ? new Date().toISOString() : null,
-        cover_image_url: coverImageUrl || null,
+        cover_image_url: newCoverUrl,
       };
 
       if (isNew) {
         const { error } = await supabase.from("blog_posts").insert(postData);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("blog_posts").update({ ...postData, updated_at: new Date().toISOString() }).eq("id", id!);
+        const { error } = await supabase
+          .from("blog_posts")
+          .update({ ...postData, updated_at: new Date().toISOString() })
+          .eq("id", id!);
         if (error) throw error;
+        // After successful update, clean up the old cover if it changed.
+        await deleteOldCover(existingPost?.cover_image_url, newCoverUrl ?? "");
       }
     },
     onSuccess: () => {

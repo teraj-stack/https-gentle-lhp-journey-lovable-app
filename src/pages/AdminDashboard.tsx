@@ -78,8 +78,18 @@ const AdminDashboard = () => {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
+      const post = posts.find((p) => p.id === id);
       const { error } = await supabase.from("blog_posts").delete().eq("id", id);
       if (error) throw error;
+      // Clean up cover image from storage if it lived in our bucket.
+      const coverUrl = post?.cover_image_url;
+      if (coverUrl && coverUrl.includes("/blog-covers/")) {
+        try {
+          await supabase.functions.invoke("delete-blog-cover", { body: { url: coverUrl } });
+        } catch (e) {
+          console.warn("Nie udało się usunąć okładki ze storage:", e);
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-blog-posts"] });
