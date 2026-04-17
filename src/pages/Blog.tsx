@@ -1,9 +1,14 @@
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Calendar, ArrowRight } from "lucide-react";
+import { Calendar, ArrowRight, Sparkles } from "lucide-react";
 import SeoHead from "@/components/shared/SeoHead";
 import Breadcrumbs from "@/components/layout/Breadcrumbs";
+import { Badge } from "@/components/ui/badge";
+
+const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+const isNew = (publishedAt: string | null) =>
+  !!publishedAt && Date.now() - new Date(publishedAt).getTime() <= SEVEN_DAYS_MS;
 
 const Blog = () => {
   const { data: posts, isLoading } = useQuery({
