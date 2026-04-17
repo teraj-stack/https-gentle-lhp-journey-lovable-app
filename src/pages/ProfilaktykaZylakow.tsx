@@ -21,6 +21,7 @@ import {
   ArrowRight,
   AlertCircle,
   CheckCircle2,
+  Upload,
 } from "lucide-react";
 import schematImg from "@/assets/profilaktyka-zylakow-schemat.png";
 import RiskQuiz from "@/components/profilaktyka/RiskQuiz";
