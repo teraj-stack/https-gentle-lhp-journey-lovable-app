@@ -24,6 +24,7 @@ import {
 import WorkoutModal, { type WorkoutExercise } from "./WorkoutModal";
 import StreakCalendar from "./StreakCalendar";
 import { useWorkoutStreak } from "@/hooks/useWorkoutStreak";
+import { getNextMilestone } from "@/lib/streakMilestones";
 import { toast } from "sonner";
 
 const easeOut = [0.16, 1, 0.3, 1] as const;
