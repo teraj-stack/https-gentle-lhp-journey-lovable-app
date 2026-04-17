@@ -91,9 +91,9 @@ const Blog = () => {
                 </div>
               ))}
             </div>
-          ) : posts && posts.length > 0 ? (
+          ) : filteredPosts && filteredPosts.length > 0 ? (
             <div className="space-y-10">
-              {posts.map((post) => (
+              {filteredPosts.map((post) => (
                 <article
                   key={post.id}
                   className="group border-b border-border pb-10 last:border-0"
