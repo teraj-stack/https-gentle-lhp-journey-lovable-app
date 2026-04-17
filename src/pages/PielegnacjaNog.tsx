@@ -10,6 +10,7 @@ import {
 import { StaggeredListItem } from "@/components/shared/StaggeredList";
 import { Button } from "@/components/ui/button";
 import TestimonialsSection from "@/components/shared/TestimonialsSection";
+import PostOpExercises from "@/components/profilaktyka/PostOpExercises";
 
 const easeOut = [0.16, 1, 0.3, 1] as const;
 
@@ -308,6 +309,8 @@ const PielegnacjaNog = () => {
           Cierpliwość to Twój najlepszy sprzymierzeniec — naczynka potrzebują czasu, aby całkowicie się wchłonąć.
         </motion.p>
       </section>
+
+      <PostOpExercises />
 
       <TestimonialsSection />
 
