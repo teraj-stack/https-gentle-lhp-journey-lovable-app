@@ -110,7 +110,7 @@ const exercises: Exercise[] = [
 
 const ExercisesSection = () => {
   const [workoutOpen, setWorkoutOpen] = useState(false);
-  const { currentStreak, totalDays, completedToday, days } = useWorkoutStreak();
+  const { currentStreak, totalDays, completedToday, days, reset } = useWorkoutStreak();
   const totalMinutes = Math.round(
     (exercises.reduce((s, e) => s + e.durationSec, 0) + (exercises.length - 1) * 10) / 60,
   );
