@@ -62,12 +62,23 @@ const Blog = () => {
                   <Link to={`/blog/${post.slug}`} className="block md:flex md:gap-6">
                     <div className="mb-4 md:mb-0 md:flex-shrink-0 md:w-48 lg:w-56">
                       {post.cover_image_url ? (
-                        <img
-                          src={post.cover_image_url}
-                          alt={post.title}
-                          className="w-full h-40 md:h-32 lg:h-36 object-cover rounded-lg"
-                          loading="lazy"
-                        />
+                        <div className="relative w-full h-40 md:h-32 lg:h-36 rounded-lg overflow-hidden bg-background">
+                          <img
+                            src={post.cover_image_url}
+                            alt={post.title}
+                            className="absolute inset-0 w-full h-full object-cover"
+                            loading="lazy"
+                          />
+                          {/* Subtelny ciemny gradient harmonizujący z dark theme */}
+                          <div
+                            className="absolute inset-0 bg-gradient-to-t from-background/70 via-background/25 to-background/10 mix-blend-multiply pointer-events-none"
+                            aria-hidden="true"
+                          />
+                          <div
+                            className="absolute inset-0 rounded-lg ring-1 ring-inset ring-border/40 pointer-events-none"
+                            aria-hidden="true"
+                          />
+                        </div>
                       ) : (
                         <div className="w-full h-40 md:h-32 lg:h-36 rounded-lg bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
                           <span className="text-3xl opacity-60">📝</span>
