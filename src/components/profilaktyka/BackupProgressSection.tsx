@@ -244,11 +244,31 @@ const BackupProgressSection = () => {
             className="w-[min(92vw,30rem)] p-0 border-primary/20 bg-card/95 backdrop-blur"
           >
             <div className="p-4 border-b border-border/50">
-              <div className="flex items-center gap-2 mb-1.5">
-                <FileJson className="w-4 h-4 text-primary" aria-hidden="true" />
-                <p className="text-[11px] font-sans uppercase tracking-[0.18em] text-primary">
-                  Pełna transparentność
-                </p>
+              <div className="flex items-center justify-between gap-3 mb-1.5">
+                <div className="flex items-center gap-2 min-w-0">
+                  <FileJson className="w-4 h-4 text-primary shrink-0" aria-hidden="true" />
+                  <p className="text-[11px] font-sans uppercase tracking-[0.18em] text-primary truncate">
+                    Pełna transparentność
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleCopySample}
+                  className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.16em] font-sans text-muted-foreground/80 hover:text-primary transition-colors shrink-0 px-2 py-1 rounded-md border border-border/50 hover:border-primary/40 hover:bg-primary/5"
+                  aria-label={copied ? "Skopiowano przykład JSON do schowka" : "Skopiuj przykład JSON do schowka"}
+                >
+                  {copied ? (
+                    <>
+                      <Check className="w-3 h-3 text-primary" aria-hidden="true" />
+                      Skopiowano
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-3 h-3" aria-hidden="true" />
+                      Skopiuj przykład
+                    </>
+                  )}
+                </button>
               </div>
               <p className="text-sm text-foreground leading-snug">
                 Plik <code className="font-mono text-[12px] bg-primary/10 text-foreground/90 px-1.5 py-0.5 rounded">.json</code>{" "}
