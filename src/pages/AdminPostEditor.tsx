@@ -171,6 +171,7 @@ const AdminPostEditor = () => {
       if (isNew) {
         const { error } = await supabase.from("blog_posts").insert(postData);
         if (error) throw error;
+        return { oldCoverDeleted: false };
       } else {
         const { error } = await supabase
           .from("blog_posts")
@@ -178,11 +179,15 @@ const AdminPostEditor = () => {
           .eq("id", id!);
         if (error) throw error;
         // After successful update, clean up the old cover if it changed.
-        await deleteOldCover(existingPost?.cover_image_url, newCoverUrl ?? "");
+        const oldCoverDeleted = await deleteOldCover(existingPost?.cover_image_url, newCoverUrl ?? "");
+        return { oldCoverDeleted };
       }
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       toast.success(isNew ? "Artykuł dodany" : "Artykuł zaktualizowany");
+      if (result?.oldCoverDeleted) {
+        toast.info("Stara okładka usunięta ze storage");
+      }
       navigate("/admin");
     },
     onError: (e) => {
