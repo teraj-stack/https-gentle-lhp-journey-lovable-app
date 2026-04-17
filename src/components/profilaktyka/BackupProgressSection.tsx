@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { motion } from "framer-motion";
 import {
   Download,
@@ -8,6 +8,8 @@ import {
   Smartphone,
   FileJson,
   HelpCircle,
+  Copy,
+  Check,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
