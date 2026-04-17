@@ -57,6 +57,7 @@ const WorkoutModal = ({ open, onOpenChange, exercises }: Props) => {
   const recordedRef = useRef(false);
   const milestoneFiredRef = useRef(false);
   const [milestone, setMilestone] = useState<MilestoneInfo | null>(null);
+  const [fanfareOn, setFanfareOn] = useState(() => isFanfareEnabled());
   const { currentStreak, recordCompletion } = useWorkoutStreak();
 
   useEffect(() => {
