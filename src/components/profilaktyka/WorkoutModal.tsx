@@ -104,7 +104,8 @@ const WorkoutModal = ({ open, onOpenChange, exercises }: Props) => {
       window.setTimeout(() => fireMilestoneConfetti(), 350);
       window.setTimeout(() => fireMilestoneConfetti(), 900);
       // Subtelne fanfary — Web Audio (respektuje toggle w localStorage)
-      window.setTimeout(() => playMilestoneFanfare(), 250);
+      // Wariant zależny od milestone (7 / 14 / 30 / 100) z rosnącą intensywnością
+      window.setTimeout(() => playMilestoneFanfare(m.days), 250);
     }
   }, [phase, currentStreak]);
 
