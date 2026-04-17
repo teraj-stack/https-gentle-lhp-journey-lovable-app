@@ -58,6 +58,24 @@ const Blog = () => {
             Wiedza medyczna w przystępnej formie. Artykuły naszych specjalistów o proktologii, flebologii i leczeniu laserowym.
           </p>
           <div className="premium-divider !mx-0 mt-8" />
+
+          <Tabs
+            value={filter}
+            onValueChange={(v) => setFilter(v as FilterValue)}
+            className="mt-8"
+          >
+            <TabsList className="bg-card border border-border">
+              <TabsTrigger value="all" className="gap-2">
+                Wszystkie
+                <span className="text-xs text-muted-foreground">({posts?.length ?? 0})</span>
+              </TabsTrigger>
+              <TabsTrigger value="new" className="gap-2" disabled={newCount === 0}>
+                <Sparkles className="w-3.5 h-3.5" />
+                Nowe
+                <span className="text-xs text-muted-foreground">({newCount})</span>
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
       </section>
 
