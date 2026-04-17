@@ -429,6 +429,66 @@ const WorkoutModal = ({ open, onOpenChange, exercises }: Props) => {
                           </p>
                           <Sparkles className="w-3.5 h-3.5 text-primary" />
                         </div>
+
+                        {/* Wskaźnik intensywności fanfary — 1✦ (7 dni) → 4✦ (100 dni) */}
+                        {(() => {
+                          const intensity =
+                            milestone.days === 7
+                              ? 1
+                              : milestone.days === 14
+                                ? 2
+                                : milestone.days === 30
+                                  ? 3
+                                  : 4;
+                          const labels: Record<number, string> = {
+                            1: "Subtelna fanfara",
+                            2: "Pełniejsza fanfara",
+                            3: "Rozbudowana fanfara",
+                            4: "Pełna kulminacja orkiestrowa",
+                          };
+                          return (
+                            <div
+                              className="flex flex-col items-center gap-1 mb-2"
+                              role="img"
+                              aria-label={`Intensywność celebracji: ${intensity} z 4 — ${labels[intensity]}`}
+                              title={labels[intensity]}
+                            >
+                              <div className="flex items-center gap-1">
+                                {[1, 2, 3, 4].map((i) => {
+                                  const active = i <= intensity;
+                                  return (
+                                    <motion.span
+                                      key={i}
+                                      initial={{ opacity: 0, scale: 0.4, y: 4 }}
+                                      animate={{
+                                        opacity: active ? 1 : 0.18,
+                                        scale: active ? 1 : 0.85,
+                                        y: 0,
+                                      }}
+                                      transition={{
+                                        duration: 0.45,
+                                        delay: 0.55 + i * 0.09,
+                                        ease: easeOut,
+                                      }}
+                                      className={
+                                        active
+                                          ? "text-primary text-base leading-none drop-shadow-[0_0_6px_hsl(var(--primary)/0.55)]"
+                                          : "text-muted-foreground/40 text-base leading-none"
+                                      }
+                                      aria-hidden="true"
+                                    >
+                                      ✦
+                                    </motion.span>
+                                  );
+                                })}
+                              </div>
+                              <span className="text-[9px] uppercase tracking-[0.18em] text-muted-foreground/80 font-sans">
+                                {labels[intensity]}
+                              </span>
+                            </div>
+                          );
+                        })()}
+
                         <h5 className="font-heading text-2xl text-foreground mb-2">
                           {milestone.title}
                         </h5>
