@@ -46,6 +46,8 @@ const WorkoutModal = ({ open, onOpenChange, exercises }: Props) => {
   const [voiceOn, setVoiceOn] = useState(true);
   const intervalRef = useRef<number | null>(null);
   const voiceOnRef = useRef(voiceOn);
+  const recordedRef = useRef(false);
+  const { currentStreak, recordCompletion } = useWorkoutStreak();
 
   useEffect(() => {
     voiceOnRef.current = voiceOn;
@@ -73,6 +75,7 @@ const WorkoutModal = ({ open, onOpenChange, exercises }: Props) => {
     setPhase("exercise");
     setRemaining(exercises[0]?.durationSec ?? 30);
     setPaused(false);
+    recordedRef.current = false;
   };
 
   // start / restart przy otwarciu
@@ -115,6 +118,10 @@ const WorkoutModal = ({ open, onOpenChange, exercises }: Props) => {
       const isLast = step >= exercises.length - 1;
       if (isLast) {
         setPhase("done");
+        if (!recordedRef.current) {
+          recordedRef.current = true;
+          recordCompletion();
+        }
         speak("Brawo! Trening dnia zakończony.");
         return;
       }
