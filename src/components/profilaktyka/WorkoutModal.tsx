@@ -141,7 +141,29 @@ const WorkoutModal = ({ open, onOpenChange, exercises }: Props) => {
 
   const skip = () => {
     if (phase === "done") return;
-    setRemaining(0);
+    if (phase === "exercise") {
+      const isLast = step >= exercises.length - 1;
+      if (isLast) {
+        setPhase("done");
+        setRemaining(0);
+        if (!recordedRef.current) {
+          recordedRef.current = true;
+          recordCompletion();
+        }
+        speak("Brawo! Trening dnia zakończony.");
+        return;
+      }
+      setPhase("rest");
+      setRemaining(REST_SEC);
+      const nextTitle = exercises[step + 1]?.title;
+      speak(`Świetnie. Przerwa ${REST_SEC} sekund. Następne ćwiczenie: ${nextTitle}.`);
+    } else if (phase === "rest") {
+      const nextStep = step + 1;
+      setStep(nextStep);
+      setPhase("exercise");
+      setRemaining(exercises[nextStep]?.durationSec ?? 30);
+      speak(`Start. ${exercises[nextStep]?.title}.`);
+    }
   };
 
   const togglePause = () => {
