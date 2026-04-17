@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Clock, Repeat, Play, Download } from "lucide-react";
+import { Clock, Repeat, Play, Download, Flame, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   FootCircleIcon,
@@ -11,6 +11,7 @@ import {
   WallSitIcon,
 } from "./ExerciseIcons";
 import WorkoutModal, { type WorkoutExercise } from "./WorkoutModal";
+import { useWorkoutStreak } from "@/hooks/useWorkoutStreak";
 
 const easeOut = [0.16, 1, 0.3, 1] as const;
 
@@ -96,6 +97,7 @@ const exercises: Exercise[] = [
 
 const ExercisesSection = () => {
   const [workoutOpen, setWorkoutOpen] = useState(false);
+  const { currentStreak, totalDays, completedToday } = useWorkoutStreak();
   const totalMinutes = Math.round(
     (exercises.reduce((s, e) => s + e.durationSec, 0) + (exercises.length - 1) * 10) / 60,
   );
