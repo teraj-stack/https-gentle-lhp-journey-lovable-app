@@ -260,6 +260,50 @@ const ExercisesSection = () => {
         </p>
       </motion.div>
 
+      {totalDays > 0 && (
+        <div className="flex justify-center pt-2">
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <button
+                type="button"
+                className="inline-flex items-center gap-1.5 text-[11px] uppercase tracking-[0.18em] font-sans text-muted-foreground/70 hover:text-primary transition-colors"
+                aria-label="Zresetuj postęp treningu"
+              >
+                <RotateCcw className="w-3 h-3" />
+                Zresetuj postęp
+              </button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle className="font-heading">
+                  Zresetować cały postęp?
+                </AlertDialogTitle>
+                <AlertDialogDescription>
+                  Stracisz aktualny streak ({currentStreak}{" "}
+                  {currentStreak === 1 ? "dzień" : "dni"} z rzędu) oraz historię{" "}
+                  {totalDays} ukończonych dni. Tej operacji nie można cofnąć.
+                  <br />
+                  <br />
+                  Przydatne, jeśli udostępniasz to urządzenie innej osobie lub testowałeś tryb treningu.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Anuluj</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => {
+                    reset();
+                    toast.success("Postęp został zresetowany.");
+                  }}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  Tak, zresetuj
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
+      )}
+
       <WorkoutModal
         open={workoutOpen}
         onOpenChange={setWorkoutOpen}
