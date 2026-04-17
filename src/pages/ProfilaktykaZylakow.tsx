@@ -312,7 +312,7 @@ const ProfilaktykaZylakow = () => {
             </h2>
             <div className="premium-divider mb-4" />
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              Konsekwencja > intensywność. Drobne, codzienne nawyki działają lepiej niż okazjonalne maratony.
+              Konsekwencja {'>'} intensywność. Drobne, codzienne nawyki działają lepiej niż okazjonalne maratony.
             </p>
           </motion.div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
