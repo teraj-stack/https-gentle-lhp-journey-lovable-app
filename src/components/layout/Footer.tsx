@@ -42,6 +42,7 @@ const Footer = () =>
             <li><Link to="/leczenie/skleroterapia" className="hover:text-primary transition-colors">Skleroterapia</Link></li>
             <li><Link to="/leczenie/mikroflebektomia" className="hover:text-primary transition-colors">Mikroflebektomia</Link></li>
             <li><Link to="/leczenie/clacs" className="hover:text-primary transition-colors">Pajączki – CLaCS</Link></li>
+            <li><Link to="/dla-pacjenta/profilaktyka-zylakow" className="hover:text-primary transition-colors">Profilaktyka żylaków</Link></li>
           </ul>
         </div>
 
