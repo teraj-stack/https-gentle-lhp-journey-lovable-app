@@ -209,6 +209,18 @@ const ProfilaktykaZylakow = () => {
               Żylaki to nie wyłącznie problem estetyczny — to przewlekła choroba żylna, która rozwija się latami.
               Świadoma profilaktyka potrafi opóźnić ją o dekady.
             </p>
+            <a
+              href="#backup"
+              className="group inline-flex items-center gap-2 mt-6 px-4 py-2 rounded-full border border-primary/30 bg-primary/5 hover:bg-primary/10 hover:border-primary/50 transition-colors text-sm text-foreground/90"
+              aria-label="Przejdź do sekcji backup postępu treningu — import historii z innego urządzenia"
+            >
+              <Upload className="w-3.5 h-3.5 text-primary" aria-hidden="true" />
+              <span>
+                Wracasz z innego urządzenia?{" "}
+                <span className="text-primary font-medium">Wczytaj swój postęp</span>
+              </span>
+              <ArrowRight className="w-3.5 h-3.5 text-primary/70 group-hover:translate-x-0.5 transition-transform" aria-hidden="true" />
+            </a>
           </motion.div>
         </div>
       </section>
