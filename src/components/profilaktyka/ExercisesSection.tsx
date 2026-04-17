@@ -156,6 +156,7 @@ const ExercisesSection = () => {
               )}
             </motion.div>
           )}
+          {totalDays > 0 && <StreakCalendar completedDays={days} />}
           <div className="flex flex-col sm:flex-row items-center gap-3">
             <Button
               variant="hero"
