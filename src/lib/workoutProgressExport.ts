@@ -5,6 +5,7 @@
  */
 
 import { getMilestone, STREAK_MILESTONES } from "./streakMilestones";
+import { markWorkoutProgressExported } from "@/hooks/useLastExportTimestamp";
 
 const SCHEMA_VERSION = 1;
 
@@ -111,6 +112,9 @@ export const downloadWorkoutProgressJson = (args: BuildArgs) => {
   document.body.removeChild(a);
   // Drobne opóźnienie zwolnienia URL — Safari/iOS bywa wybredne
   window.setTimeout(() => URL.revokeObjectURL(url), 1500);
+
+  // Zapamiętaj timestamp eksportu dla licznika "ostatni eksport: X dni temu".
+  markWorkoutProgressExported();
 
   return { filename, totalDays: args.totalDays };
 };
