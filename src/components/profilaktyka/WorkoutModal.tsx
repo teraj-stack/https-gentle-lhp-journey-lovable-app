@@ -79,7 +79,24 @@ const WorkoutModal = ({ open, onOpenChange, exercises }: Props) => {
     setRemaining(exercises[0]?.durationSec ?? 30);
     setPaused(false);
     recordedRef.current = false;
+    milestoneFiredRef.current = false;
+    setMilestone(null);
   };
+
+  // Detekcja kamienia milowego po zakończeniu treningu
+  useEffect(() => {
+    if (phase !== "done") return;
+    if (!recordedRef.current) return;
+    if (milestoneFiredRef.current) return;
+    const m = getMilestone(currentStreak);
+    if (m) {
+      milestoneFiredRef.current = true;
+      setMilestone(m);
+      // mały delay, żeby ekran "Brawo" zdążył się pojawić
+      window.setTimeout(() => fireMilestoneConfetti(), 350);
+      window.setTimeout(() => fireMilestoneConfetti(), 900);
+    }
+  }, [phase, currentStreak]);
 
   // start / restart przy otwarciu
   useEffect(() => {
