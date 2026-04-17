@@ -127,6 +127,20 @@ const ExercisesSection = () => {
           Sześć prostych ćwiczeń, które aktywują pompę mięśniową łydki — naturalny mechanizm
           odprowadzający krew z nóg. Wystarczy 10–15 minut dziennie.
         </p>
+        <div className="mt-6 flex flex-col items-center gap-2">
+          <Button
+            variant="hero"
+            size="lg"
+            onClick={() => setWorkoutOpen(true)}
+            className="gap-2"
+          >
+            <Play className="w-4 h-4" />
+            Uruchom „Trening dnia”
+          </Button>
+          <p className="text-xs text-muted-foreground">
+            ~{totalMinutes} min · timer + powiadomienia głosowe
+          </p>
+        </div>
       </motion.div>
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
