@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { Clock, Repeat, Play, Download, Flame, CheckCircle2, RotateCcw, FileJson } from "lucide-react";
+import { Clock, Repeat, Play, Download, Flame, CheckCircle2, RotateCcw, FileJson, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -27,6 +27,7 @@ import { useWorkoutStreak } from "@/hooks/useWorkoutStreak";
 import { getNextMilestone } from "@/lib/streakMilestones";
 import { toast } from "sonner";
 import { downloadWorkoutProgressJson } from "@/lib/workoutProgressExport";
+import { parseWorkoutProgressFile } from "@/lib/workoutProgressImport";
 
 const easeOut = [0.16, 1, 0.3, 1] as const;
 
@@ -112,7 +113,38 @@ const exercises: Exercise[] = [
 
 const ExercisesSection = () => {
   const [workoutOpen, setWorkoutOpen] = useState(false);
-  const { currentStreak, totalDays, completedToday, days, reset } = useWorkoutStreak();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { currentStreak, totalDays, completedToday, days, reset, mergeImportedDays } = useWorkoutStreak();
+
+  const handleImportClick = () => fileInputRef.current?.click();
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    // reset, by ten sam plik mógł być wybrany ponownie
+    if (fileInputRef.current) fileInputRef.current.value = "";
+    if (!file) return;
+
+    const result = await parseWorkoutProgressFile(file);
+    if (!result.ok) {
+      toast.error("Nie udało się zaimportować pliku.", {
+        description: result.error.message,
+      });
+      return;
+    }
+
+    const stats = mergeImportedDays(result.data.days);
+    if (stats.added === 0) {
+      toast.info("Brak nowych dni do dodania.", {
+        description: `Wszystkie ${stats.duplicates} ${stats.duplicates === 1 ? "dzień" : "dni"} z pliku już istnieją w historii.`,
+      });
+      return;
+    }
+
+    toast.success("Postęp został zaimportowany.", {
+      description: `Dodano ${stats.added} ${stats.added === 1 ? "nowy dzień" : "nowych dni"}${stats.duplicates > 0 ? ` · pominięto ${stats.duplicates} duplikat${stats.duplicates === 1 ? "" : "ów"}` : ""} · łącznie ${stats.total} dni w historii.`,
+    });
+  };
+
   const totalMinutes = Math.round(
     (exercises.reduce((s, e) => s + e.durationSec, 0) + (exercises.length - 1) * 10) / 60,
   );
