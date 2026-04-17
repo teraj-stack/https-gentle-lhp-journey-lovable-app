@@ -1,5 +1,4 @@
-import { useEffect, useRef, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useRef, useState } from "react";
 import { motion } from "framer-motion";
 import {
   Download,
@@ -59,20 +58,7 @@ const BackupProgressSection = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [copied, setCopied] = useState(false);
   const { currentStreak, totalDays, days, reset, mergeImportedDays } = useWorkoutStreak();
-  const location = useLocation();
-
-  // Scroll-to-anchor: React Router nie scrolluje sam do #backup po wczytaniu strony.
-  // Krótki rAF + setTimeout dają sekcji czas na zamontowanie i animację framer-motion,
-  // żeby scrollIntoView trafił we właściwą pozycję (a nie w placeholder przed animacją).
-  useEffect(() => {
-    if (location.hash !== "#backup") return;
-    const target = document.getElementById("backup");
-    if (!target) return;
-    const id = window.setTimeout(() => {
-      target.scrollIntoView({ behavior: "smooth", block: "start" });
-    }, 120);
-    return () => window.clearTimeout(id);
-  }, [location.hash]);
+  // Scroll-to-anchor (#backup) obsługuje teraz globalny hook `useScrollToHash` w Layout.tsx.
 
   const handleCopySample = async () => {
     try {
