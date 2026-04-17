@@ -1,18 +1,7 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
-import { Clock, Repeat, Play, Download, Flame, CheckCircle2, RotateCcw, FileJson, Upload } from "lucide-react";
+import { Clock, Repeat, Play, Download, Flame, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 import {
   FootCircleIcon,
   ToeRaiseIcon,
@@ -23,11 +12,9 @@ import {
 } from "./ExerciseIcons";
 import WorkoutModal, { type WorkoutExercise } from "./WorkoutModal";
 import StreakCalendar from "./StreakCalendar";
+import BackupProgressSection from "./BackupProgressSection";
 import { useWorkoutStreak } from "@/hooks/useWorkoutStreak";
 import { getNextMilestone } from "@/lib/streakMilestones";
-import { toast } from "sonner";
-import { downloadWorkoutProgressJson } from "@/lib/workoutProgressExport";
-import { parseWorkoutProgressFile } from "@/lib/workoutProgressImport";
 
 const easeOut = [0.16, 1, 0.3, 1] as const;
 
@@ -113,37 +100,7 @@ const exercises: Exercise[] = [
 
 const ExercisesSection = () => {
   const [workoutOpen, setWorkoutOpen] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const { currentStreak, totalDays, completedToday, days, reset, mergeImportedDays } = useWorkoutStreak();
-
-  const handleImportClick = () => fileInputRef.current?.click();
-
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    // reset, by ten sam plik mógł być wybrany ponownie
-    if (fileInputRef.current) fileInputRef.current.value = "";
-    if (!file) return;
-
-    const result = await parseWorkoutProgressFile(file);
-    if (result.ok === false) {
-      toast.error("Nie udało się zaimportować pliku.", {
-        description: result.error.message,
-      });
-      return;
-    }
-
-    const stats = mergeImportedDays(result.data.days);
-    if (stats.added === 0) {
-      toast.info("Brak nowych dni do dodania.", {
-        description: `Wszystkie ${stats.duplicates} ${stats.duplicates === 1 ? "dzień" : "dni"} z pliku już istnieją w historii.`,
-      });
-      return;
-    }
-
-    toast.success("Postęp został zaimportowany.", {
-      description: `Dodano ${stats.added} ${stats.added === 1 ? "nowy dzień" : "nowych dni"}${stats.duplicates > 0 ? ` · pominięto ${stats.duplicates} duplikat${stats.duplicates === 1 ? "" : "ów"}` : ""} · łącznie ${stats.total} dni w historii.`,
-    });
-  };
+  const { currentStreak, totalDays, completedToday, days } = useWorkoutStreak();
 
   const totalMinutes = Math.round(
     (exercises.reduce((s, e) => s + e.durationSec, 0) + (exercises.length - 1) * 10) / 60,
@@ -328,91 +285,7 @@ const ExercisesSection = () => {
         </p>
       </motion.div>
 
-      <div className="flex flex-wrap justify-center items-center gap-x-6 gap-y-3 pt-2">
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="application/json,.json"
-          className="hidden"
-          onChange={handleFileChange}
-          aria-hidden="true"
-          tabIndex={-1}
-        />
-        <button
-          type="button"
-          onClick={handleImportClick}
-          className="inline-flex items-center gap-1.5 text-[11px] uppercase tracking-[0.18em] font-sans text-muted-foreground/70 hover:text-primary transition-colors"
-          aria-label="Importuj postęp treningu z pliku JSON"
-        >
-          <Upload className="w-3 h-3" />
-          Importuj postęp (JSON)
-        </button>
-        {totalDays > 0 && (
-          <>
-            <button
-              type="button"
-              onClick={() => {
-                const result = downloadWorkoutProgressJson({
-                  currentStreak,
-                  totalDays,
-                  days,
-                });
-                if (result) {
-                  toast.success("Postęp wyeksportowany do pliku JSON.", {
-                    description: `${result.filename} · ${result.totalDays} ${result.totalDays === 1 ? "ukończony dzień" : "ukończonych dni"}`,
-                  });
-                }
-              }}
-              className="inline-flex items-center gap-1.5 text-[11px] uppercase tracking-[0.18em] font-sans text-muted-foreground/70 hover:text-primary transition-colors"
-              aria-label="Eksportuj postęp treningu do pliku JSON"
-            >
-              <FileJson className="w-3 h-3" />
-              Eksportuj postęp (JSON)
-            </button>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <button
-                  type="button"
-                  className="inline-flex items-center gap-1.5 text-[11px] uppercase tracking-[0.18em] font-sans text-muted-foreground/70 hover:text-primary transition-colors"
-                  aria-label="Zresetuj postęp treningu"
-                >
-                  <RotateCcw className="w-3 h-3" />
-                  Zresetuj postęp
-                </button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle className="font-heading">
-                    Zresetować cały postęp?
-                  </AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Stracisz aktualny streak ({currentStreak}{" "}
-                    {currentStreak === 1 ? "dzień" : "dni"} z rzędu) oraz historię{" "}
-                    {totalDays} ukończonych dni. Tej operacji nie można cofnąć.
-                    <br />
-                    <br />
-                    <span className="text-foreground font-semibold">Wskazówka:</span>{" "}
-                    jeśli chcesz zachować historię, najpierw skorzystaj z opcji{" "}
-                    <span className="text-foreground">Eksportuj postęp (JSON)</span>.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Anuluj</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={() => {
-                      reset();
-                      toast.success("Postęp został zresetowany.");
-                    }}
-                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                  >
-                    Tak, zresetuj
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </>
-        )}
-      </div>
+      <BackupProgressSection />
 
 
       <WorkoutModal
