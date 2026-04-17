@@ -1,18 +1,7 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
-import { Clock, Repeat, Play, Download, Flame, CheckCircle2, RotateCcw, FileJson, Upload } from "lucide-react";
+import { Clock, Repeat, Play, Download, Flame, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 import {
   FootCircleIcon,
   ToeRaiseIcon,
@@ -23,11 +12,9 @@ import {
 } from "./ExerciseIcons";
 import WorkoutModal, { type WorkoutExercise } from "./WorkoutModal";
 import StreakCalendar from "./StreakCalendar";
+import BackupProgressSection from "./BackupProgressSection";
 import { useWorkoutStreak } from "@/hooks/useWorkoutStreak";
 import { getNextMilestone } from "@/lib/streakMilestones";
-import { toast } from "sonner";
-import { downloadWorkoutProgressJson } from "@/lib/workoutProgressExport";
-import { parseWorkoutProgressFile } from "@/lib/workoutProgressImport";
 
 const easeOut = [0.16, 1, 0.3, 1] as const;
 
