@@ -171,7 +171,22 @@ const ExercisesSection = () => {
           )}
           {currentStreak > 0 && (() => {
             const next = getNextMilestone(currentStreak);
-            if (!next) return null;
+            if (!next) {
+              // Wszystkie kamienie milowe zaliczone (streak ≥ 100)
+              return (
+                <motion.p
+                  initial={{ opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, delay: 0.1, ease: easeOut }}
+                  className="text-[11px] font-sans uppercase tracking-[0.18em] -mt-1"
+                  aria-label="Jesteś w elicie profilaktyki — wszystkie kamienie milowe zaliczone"
+                >
+                  <span className="text-primary font-semibold">Jesteś w elicie</span>{" "}
+                  <span className="text-muted-foreground/80">profilaktyki</span>{" "}
+                  <span className="text-primary">✦</span>
+                </motion.p>
+              );
+            }
             const remaining = next - currentStreak;
             return (
               <motion.p
