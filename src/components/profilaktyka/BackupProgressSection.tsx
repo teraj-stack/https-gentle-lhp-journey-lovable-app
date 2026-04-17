@@ -68,11 +68,12 @@ const BackupProgressSection = () => {
 
   return (
     <motion.section
+      id="backup"
       initial={{ opacity: 0, y: 24 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.15 }}
       transition={{ duration: 0.6, ease: easeOut }}
-      className="glass-card rounded-2xl p-6 md:p-8 max-w-3xl mx-auto"
+      className="glass-card rounded-2xl p-6 md:p-8 max-w-3xl mx-auto scroll-mt-24"
       aria-labelledby="backup-progress-heading"
     >
       <input
