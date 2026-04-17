@@ -311,6 +311,28 @@ const PielegnacjaNog = () => {
 
       <TestimonialsSection />
 
+      {/* Cross-link: Profilaktyka żylaków */}
+      <motion.section {...fadeUp}>
+        <a
+          href="/dla-pacjenta/profilaktyka-zylakow"
+          className="group block rounded-2xl border border-primary/20 bg-gradient-to-r from-primary/5 to-transparent p-6 md:p-8 hover:border-primary/40 hover:from-primary/10 transition-all max-w-3xl mx-auto"
+        >
+          <div className="flex items-center gap-6 flex-wrap">
+            <div className="text-4xl shrink-0">🛡️</div>
+            <div className="flex-1 min-w-[200px]">
+              <p className="text-xs uppercase tracking-widest text-primary/70 mb-1">Strefa Pacjenta</p>
+              <h3 className="text-xl md:text-2xl font-bold text-foreground mb-1 group-hover:text-primary transition-colors">
+                Jak na co dzień zapobiegać nawrotom?
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                Czynniki ryzyka, sygnały ostrzegawcze i 6 filarów codziennej profilaktyki żylaków.
+              </p>
+            </div>
+            <ArrowRight className="w-5 h-5 text-primary shrink-0 transition-transform group-hover:translate-x-1" />
+          </div>
+        </a>
+      </motion.section>
+
       {/* CTA */}
       <motion.section {...fadeUp} className="glass-card rounded-2xl p-8 md:p-12 text-center max-w-2xl mx-auto">
         <div className="text-4xl mb-4">🩺</div>

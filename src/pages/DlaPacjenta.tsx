@@ -77,6 +77,13 @@ const onlineGuides = [
     icon: "🦵",
   },
   {
+    title: "Profilaktyka żylaków — jak dbać o nogi",
+    subtitle: "Przewodnik profilaktyczny",
+    desc: "Czynniki ryzyka, sygnały ostrzegawcze i 6 filarów codziennej profilaktyki, które potrafią opóźnić żylaki o dekady.",
+    href: "/dla-pacjenta/profilaktyka-zylakow",
+    icon: "🛡️",
+  },
+  {
     title: "Dlaczego edukacja przed wizytą jest kluczowa?",
     subtitle: "Infografika edukacyjna",
     desc: "Jak przygotowanie merytoryczne optymalizuje czas konsultacji, redukuje stres i pomaga podjąć świadomą decyzję o leczeniu.",

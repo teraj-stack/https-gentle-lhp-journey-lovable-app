@@ -141,6 +141,32 @@ const Flebologia = () => {
         </div>
       </section>
 
+      {/* Educational cross-link */}
+      <motion.section {...sectionAnim} className="py-12">
+        <div className="container mx-auto px-4 max-w-4xl">
+          <Link
+            to="/dla-pacjenta/profilaktyka-zylakow"
+            className="group block rounded-2xl border border-primary/20 bg-gradient-to-r from-primary/5 to-transparent p-6 md:p-8 hover:border-primary/40 hover:from-primary/10 transition-all"
+          >
+            <div className="flex items-center gap-6 flex-wrap">
+              <div className="text-4xl shrink-0">🛡️</div>
+              <div className="flex-1 min-w-[200px]">
+                <p className="text-xs uppercase tracking-widest text-primary/70 mb-1 font-sans">
+                  Strefa Pacjenta
+                </p>
+                <h3 className="font-heading text-xl md:text-2xl text-foreground mb-1 group-hover:text-primary transition-colors">
+                  Jak zapobiegać żylakom?
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  Czynniki ryzyka, objawy ostrzegawcze i 6 filarów codziennej profilaktyki.
+                </p>
+              </div>
+              <ArrowRight className="w-5 h-5 text-primary shrink-0 transition-transform group-hover:translate-x-1" />
+            </div>
+          </Link>
+        </div>
+      </motion.section>
+
       {/* CTA */}
       <motion.section {...sectionAnim} className="py-16 md:py-24 bg-card/30">
         <div className="container mx-auto px-4 text-center max-w-2xl">
