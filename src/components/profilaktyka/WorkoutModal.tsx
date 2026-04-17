@@ -104,7 +104,8 @@ const WorkoutModal = ({ open, onOpenChange, exercises }: Props) => {
       window.setTimeout(() => fireMilestoneConfetti(), 350);
       window.setTimeout(() => fireMilestoneConfetti(), 900);
       // Subtelne fanfary — Web Audio (respektuje toggle w localStorage)
-      window.setTimeout(() => playMilestoneFanfare(), 250);
+      // Wariant zależny od milestone (7 / 14 / 30 / 100) z rosnącą intensywnością
+      window.setTimeout(() => playMilestoneFanfare(m.days), 250);
     }
   }, [phase, currentStreak]);
 
@@ -466,8 +467,8 @@ const WorkoutModal = ({ open, onOpenChange, exercises }: Props) => {
                           setFanfareOn(next);
                           setFanfareEnabled(next);
                           if (next) {
-                            // Podgląd dźwięku po włączeniu
-                            playMilestoneFanfare();
+                            // Podgląd dźwięku — wariant odpowiadający aktualnemu milestone
+                            playMilestoneFanfare(milestone.days);
                           }
                         }}
                         className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.18em] font-sans text-muted-foreground/70 hover:text-primary transition-colors"
