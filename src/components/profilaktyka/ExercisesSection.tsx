@@ -1,5 +1,7 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
-import { Clock, Repeat } from "lucide-react";
+import { Clock, Repeat, Play } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   FootCircleIcon,
   ToeRaiseIcon,
@@ -8,6 +10,7 @@ import {
   AnkleFlexIcon,
   WallSitIcon,
 } from "./ExerciseIcons";
+import WorkoutModal, { type WorkoutExercise } from "./WorkoutModal";
 
 const easeOut = [0.16, 1, 0.3, 1] as const;
 
@@ -18,6 +21,7 @@ type Exercise = {
   technique: string;
   dose: string;
   duration: string;
+  durationSec: number; // czas dla trybu Trening dnia
   benefit: string;
 };
 
