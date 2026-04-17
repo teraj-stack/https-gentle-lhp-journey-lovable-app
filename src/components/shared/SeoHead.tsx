@@ -64,7 +64,6 @@ const SeoHead = ({ title, description, path, type = "article", image }: SeoHeadP
     return () => {
       // Restore defaults on unmount
       document.title = "CML – Centrum Medycyny Laserowej | Warszawa, Siedlce";
-      void 0;
       createdElements.forEach((el) => el.remove());
 
       // Restore canonical
