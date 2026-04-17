@@ -248,6 +248,72 @@ const ExercisesSection = () => {
             ~{totalMinutes} min · timer + powiadomienia głosowe · PDF do druku
             {totalDays > 0 && ` · ${totalDays} ${totalDays === 1 ? "ukończony dzień" : totalDays < 5 ? "ukończone dni" : "ukończonych dni"}`}
           </p>
+
+          {/* Toggle fanfar + statyczny wskaźnik intensywności następnego milestone */}
+          <motion.div
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.15, ease: easeOut }}
+            className="inline-flex items-center gap-3 mt-1 px-3 py-1.5 rounded-full bg-card/40 border border-border/40"
+          >
+            <button
+              type="button"
+              onClick={() => {
+                const next = !fanfareOn;
+                setFanfareOn(next);
+                setFanfareEnabled(next);
+              }}
+              className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.18em] font-sans text-muted-foreground/80 hover:text-primary transition-colors"
+              aria-label={
+                fanfareOn
+                  ? "Wycisz dźwięk fanfar przy kolejnych kamieniach milowych"
+                  : "Włącz dźwięk fanfar przy kolejnych kamieniach milowych"
+              }
+              aria-pressed={fanfareOn}
+            >
+              {fanfareOn ? (
+                <Volume2 className="w-3 h-3" />
+              ) : (
+                <VolumeX className="w-3 h-3" />
+              )}
+              {fanfareOn ? "Fanfary włączone" : "Fanfary wyciszone"}
+            </button>
+
+            <span className="h-3 w-px bg-border/60" aria-hidden="true" />
+
+            <div
+              className="inline-flex items-center gap-1.5"
+              role="img"
+              aria-label={
+                nextMilestone
+                  ? `Następny wariant fanfary: ${intensity.label} (poziom ${intensity.level} z 4) — odtworzy się przy ${nextMilestone} dniach`
+                  : `Maksymalny wariant fanfary: ${intensity.label} (poziom 4 z 4)`
+              }
+            >
+              <div className="flex items-center gap-0.5">
+                {[1, 2, 3, 4].map((lvl) => {
+                  const active = lvl <= intensity.level;
+                  return (
+                    <span
+                      key={lvl}
+                      className={`text-[11px] leading-none transition-colors ${
+                        active && fanfareOn
+                          ? "text-primary"
+                          : active
+                            ? "text-primary/40"
+                            : "text-muted-foreground/25"
+                      }`}
+                    >
+                      ✦
+                    </span>
+                  );
+                })}
+              </div>
+              <span className="text-[10px] uppercase tracking-[0.16em] font-sans text-muted-foreground/80">
+                {nextMilestone ? `Następna · ${nextMilestone} dni` : "Maks. wariant"}
+              </span>
+            </div>
+          </motion.div>
         </div>
       </motion.div>
 
