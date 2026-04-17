@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Clock, Repeat, Play, Download } from "lucide-react";
+import { Clock, Repeat, Play, Download, Flame, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   FootCircleIcon,
@@ -11,6 +11,7 @@ import {
   WallSitIcon,
 } from "./ExerciseIcons";
 import WorkoutModal, { type WorkoutExercise } from "./WorkoutModal";
+import { useWorkoutStreak } from "@/hooks/useWorkoutStreak";
 
 const easeOut = [0.16, 1, 0.3, 1] as const;
 
@@ -96,6 +97,7 @@ const exercises: Exercise[] = [
 
 const ExercisesSection = () => {
   const [workoutOpen, setWorkoutOpen] = useState(false);
+  const { currentStreak, totalDays, completedToday } = useWorkoutStreak();
   const totalMinutes = Math.round(
     (exercises.reduce((s, e) => s + e.durationSec, 0) + (exercises.length - 1) * 10) / 60,
   );
@@ -128,6 +130,31 @@ const ExercisesSection = () => {
           odprowadzający krew z nóg. Wystarczy 10–15 minut dziennie.
         </p>
         <div className="mt-6 flex flex-col items-center gap-3">
+          {currentStreak > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: -8, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: 0.5, ease: easeOut }}
+              className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-gradient-to-r from-primary/15 via-primary/10 to-primary/15 border border-primary/40 shadow-[0_0_24px_-8px_hsl(var(--primary)/0.5)]"
+              aria-label={`Streak: ${currentStreak} dni z rzędu`}
+            >
+              <Flame className="w-4 h-4 text-primary" />
+              <span className="font-heading text-sm text-foreground">
+                {currentStreak === 1
+                  ? "1 dzień z rzędu"
+                  : `${currentStreak} dni z rzędu`}
+              </span>
+              <span className="text-[10px] uppercase tracking-[0.18em] text-primary font-sans font-semibold">
+                Streak
+              </span>
+              {completedToday && (
+                <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-[0.15em] text-primary/80 font-sans pl-1.5 ml-0.5 border-l border-primary/30">
+                  <CheckCircle2 className="w-3 h-3" />
+                  Dziś
+                </span>
+              )}
+            </motion.div>
+          )}
           <div className="flex flex-col sm:flex-row items-center gap-3">
             <Button
               variant="hero"
@@ -155,6 +182,7 @@ const ExercisesSection = () => {
           </div>
           <p className="text-xs text-muted-foreground">
             ~{totalMinutes} min · timer + powiadomienia głosowe · PDF do druku
+            {totalDays > 0 && ` · ${totalDays} ${totalDays === 1 ? "ukończony dzień" : totalDays < 5 ? "ukończone dni" : "ukończonych dni"}`}
           </p>
         </div>
       </motion.div>
