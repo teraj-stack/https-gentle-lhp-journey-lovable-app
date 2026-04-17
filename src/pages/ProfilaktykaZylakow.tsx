@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import schematImg from "@/assets/profilaktyka-zylakow-schemat.png";
 import RiskQuiz from "@/components/profilaktyka/RiskQuiz";
+import ExercisesSection from "@/components/profilaktyka/ExercisesSection";
 
 const easeOut = [0.16, 1, 0.3, 1] as const;
 
@@ -376,6 +377,9 @@ const ProfilaktykaZylakow = () => {
             </div>
           </div>
         </motion.section>
+
+        {/* Ćwiczenia profilaktyczne */}
+        <ExercisesSection />
 
         {/* Quiz — Test ryzyka */}
         <motion.section {...fadeUp} className="space-y-6">
