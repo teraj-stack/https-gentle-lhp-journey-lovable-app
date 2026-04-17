@@ -163,7 +163,9 @@ const Blog = () => {
             </div>
           ) : (
             <p className="text-muted-foreground text-center py-12">
-              Brak opublikowanych artykułów. Wróć wkrótce!
+              {filter === "new"
+                ? "Brak nowych artykułów z ostatnich 7 dni."
+                : "Brak opublikowanych artykułów. Wróć wkrótce!"}
             </p>
           )}
         </div>
