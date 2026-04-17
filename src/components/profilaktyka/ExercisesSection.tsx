@@ -201,6 +201,12 @@ const ExercisesSection = () => {
           bezpieczne także po zabiegach laserowych — chyba że flebolog zaleci inaczej.
         </p>
       </motion.div>
+
+      <WorkoutModal
+        open={workoutOpen}
+        onOpenChange={setWorkoutOpen}
+        exercises={workoutExercises}
+      />
     </section>
   );
 };
