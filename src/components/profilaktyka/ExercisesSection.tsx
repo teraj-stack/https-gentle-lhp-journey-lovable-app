@@ -95,6 +95,18 @@ const exercises: Exercise[] = [
 ];
 
 const ExercisesSection = () => {
+  const [workoutOpen, setWorkoutOpen] = useState(false);
+  const totalMinutes = Math.round(
+    (exercises.reduce((s, e) => s + e.durationSec, 0) + (exercises.length - 1) * 10) / 60,
+  );
+
+  const workoutExercises: WorkoutExercise[] = exercises.map((e) => ({
+    Icon: e.Icon,
+    title: e.title,
+    technique: e.technique,
+    durationSec: e.durationSec,
+  }));
+
   return (
     <section className="space-y-8">
       <motion.div
