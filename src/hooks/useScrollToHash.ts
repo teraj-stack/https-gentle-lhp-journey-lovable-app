@@ -40,21 +40,37 @@ export const useScrollToHash = () => {
 
     const behavior: ScrollBehavior = prefersReducedMotion ? "auto" : "smooth";
 
-    // 120 ms okazało się stabilne na sekcji #backup (framer-motion entry ~600 ms,
-    // ale layout final wysokości jest znany już po pierwszym paint). Dwustopniowe
-    // opóźnienie (rAF → setTimeout) eliminuje race condition na powolnych urządzeniach.
-    let timeoutId: number | undefined;
+    // Strategia: ścigamy się ze zmianami layoutu — sekcje powyżej anchora mogą rosnąć
+    // (lazy-loadowane obrazy, framer-motion `whileInView`, czcionki webfont).
+    // Zamiast jednego scrolla po 120 ms, korygujemy pozycję kilkukrotnie aż element
+    // znajdzie się w viewporcie ALBO upłynie ~1.2 s. Każda korekta jest tania.
+    let attempts = 0;
+    const maxAttempts = 8;
+    const intervalMs = 150;
+
+    const scrollToTarget = () => {
+      const target = document.getElementById(id);
+      if (!target) return false;
+      target.scrollIntoView({ behavior, block: "start" });
+      return true;
+    };
+
     const rafId = window.requestAnimationFrame(() => {
-      timeoutId = window.setTimeout(() => {
-        const target = document.getElementById(id);
-        if (!target) return;
-        target.scrollIntoView({ behavior, block: "start" });
-      }, 120);
+      // Pierwszy strzał szybko (po ~16 ms), żeby uniknąć błysku "u góry strony".
+      scrollToTarget();
     });
+
+    const intervalId = window.setInterval(() => {
+      attempts += 1;
+      const ok = scrollToTarget();
+      if (!ok || attempts >= maxAttempts) {
+        window.clearInterval(intervalId);
+      }
+    }, intervalMs);
 
     return () => {
       window.cancelAnimationFrame(rafId);
-      if (timeoutId !== undefined) window.clearTimeout(timeoutId);
+      window.clearInterval(intervalId);
     };
   }, [hash, pathname]);
 };
