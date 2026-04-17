@@ -17,6 +17,11 @@ import {
 } from "lucide-react";
 import { useWorkoutStreak } from "@/hooks/useWorkoutStreak";
 import { fireMilestoneConfetti, getMilestone, type MilestoneInfo } from "@/lib/streakMilestones";
+import {
+  isFanfareEnabled,
+  setFanfareEnabled,
+  playMilestoneFanfare,
+} from "@/lib/milestoneFanfare";
 
 export type WorkoutExercise = {
   Icon: () => JSX.Element;
