@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { useMemo } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Calendar, ArrowRight, Sparkles } from "lucide-react";
@@ -15,7 +15,15 @@ const isNew = (publishedAt: string | null) =>
 type FilterValue = "all" | "new";
 
 const Blog = () => {
-  const [filter, setFilter] = useState<FilterValue>("all");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const filter: FilterValue = searchParams.get("filter") === "new" ? "new" : "all";
+
+  const setFilter = (next: FilterValue) => {
+    const params = new URLSearchParams(searchParams);
+    if (next === "all") params.delete("filter");
+    else params.set("filter", next);
+    setSearchParams(params, { replace: true });
+  };
 
   const { data: posts, isLoading } = useQuery({
     queryKey: ["blog-posts"],
