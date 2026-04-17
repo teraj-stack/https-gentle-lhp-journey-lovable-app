@@ -14,6 +14,7 @@ import {
   Flame,
 } from "lucide-react";
 import { useWorkoutStreak } from "@/hooks/useWorkoutStreak";
+import { fireMilestoneConfetti, getMilestone, type MilestoneInfo } from "@/lib/streakMilestones";
 
 export type WorkoutExercise = {
   Icon: () => JSX.Element;
