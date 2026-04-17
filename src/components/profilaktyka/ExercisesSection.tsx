@@ -121,7 +121,11 @@ const exercises: Exercise[] = [
 
 const ExercisesSection = () => {
   const [workoutOpen, setWorkoutOpen] = useState(false);
+  const [fanfareOn, setFanfareOn] = useState(() => isFanfareEnabled());
   const { currentStreak, totalDays, completedToday, days } = useWorkoutStreak();
+
+  const nextMilestone = getNextMilestone(currentStreak);
+  const intensity = milestoneIntensity(nextMilestone);
 
   const totalMinutes = Math.round(
     (exercises.reduce((s, e) => s + e.durationSec, 0) + (exercises.length - 1) * 10) / 60,
