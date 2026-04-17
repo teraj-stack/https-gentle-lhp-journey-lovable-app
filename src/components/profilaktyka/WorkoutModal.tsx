@@ -12,6 +12,8 @@ import {
   CheckCircle2,
   RotateCcw,
   Flame,
+  Trophy,
+  Sparkles,
 } from "lucide-react";
 import { useWorkoutStreak } from "@/hooks/useWorkoutStreak";
 import { fireMilestoneConfetti, getMilestone, type MilestoneInfo } from "@/lib/streakMilestones";
