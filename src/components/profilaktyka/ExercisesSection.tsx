@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Clock, Repeat, Play, Download, Flame, CheckCircle2, RotateCcw } from "lucide-react";
+import { Clock, Repeat, Play, Download, Flame, CheckCircle2, RotateCcw, FileJson } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -26,6 +26,7 @@ import StreakCalendar from "./StreakCalendar";
 import { useWorkoutStreak } from "@/hooks/useWorkoutStreak";
 import { getNextMilestone } from "@/lib/streakMilestones";
 import { toast } from "sonner";
+import { downloadWorkoutProgressJson } from "@/lib/workoutProgressExport";
 
 const easeOut = [0.16, 1, 0.3, 1] as const;
 
@@ -296,7 +297,27 @@ const ExercisesSection = () => {
       </motion.div>
 
       {totalDays > 0 && (
-        <div className="flex justify-center pt-2">
+        <div className="flex flex-wrap justify-center items-center gap-x-6 gap-y-3 pt-2">
+          <button
+            type="button"
+            onClick={() => {
+              const result = downloadWorkoutProgressJson({
+                currentStreak,
+                totalDays,
+                days,
+              });
+              if (result) {
+                toast.success("Postęp wyeksportowany do pliku JSON.", {
+                  description: `${result.filename} · ${result.totalDays} ${result.totalDays === 1 ? "ukończony dzień" : "ukończonych dni"}`,
+                });
+              }
+            }}
+            className="inline-flex items-center gap-1.5 text-[11px] uppercase tracking-[0.18em] font-sans text-muted-foreground/70 hover:text-primary transition-colors"
+            aria-label="Eksportuj postęp treningu do pliku JSON"
+          >
+            <FileJson className="w-3 h-3" />
+            Eksportuj postęp (JSON)
+          </button>
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <button
@@ -319,7 +340,9 @@ const ExercisesSection = () => {
                   {totalDays} ukończonych dni. Tej operacji nie można cofnąć.
                   <br />
                   <br />
-                  Przydatne, jeśli udostępniasz to urządzenie innej osobie lub testowałeś tryb treningu.
+                  <span className="text-foreground font-semibold">Wskazówka:</span>{" "}
+                  jeśli chcesz zachować historię, najpierw skorzystaj z opcji{" "}
+                  <span className="text-foreground">Eksportuj postęp (JSON)</span>.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
