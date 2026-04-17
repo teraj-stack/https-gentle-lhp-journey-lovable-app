@@ -24,7 +24,7 @@ import StreakCalendar from "./StreakCalendar";
 import BackupProgressSection from "./BackupProgressSection";
 import { useWorkoutStreak } from "@/hooks/useWorkoutStreak";
 import { getNextMilestone } from "@/lib/streakMilestones";
-import { isFanfareEnabled, setFanfareEnabled } from "@/lib/milestoneFanfare";
+import { isFanfareEnabled, setFanfareEnabled, playMilestoneFanfare } from "@/lib/milestoneFanfare";
 
 const easeOut = [0.16, 1, 0.3, 1] as const;
 
@@ -262,12 +262,20 @@ const ExercisesSection = () => {
                 const next = !fanfareOn;
                 setFanfareOn(next);
                 setFanfareEnabled(next);
+                // Podgląd 1s — tylko przy włączaniu, świadoma akcja użytkownika.
+                // Pokazuje wariant, który zagra przy najbliższym milestone (lub 100 gdy wszystkie zaliczone).
+                if (next) {
+                  playMilestoneFanfare(nextMilestone ?? 100, {
+                    maxDurationSec: 1,
+                    force: true,
+                  });
+                }
               }}
               className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.18em] font-sans text-muted-foreground/80 hover:text-primary transition-colors"
               aria-label={
                 fanfareOn
                   ? "Wycisz dźwięk fanfar przy kolejnych kamieniach milowych"
-                  : "Włącz dźwięk fanfar przy kolejnych kamieniach milowych"
+                  : "Włącz dźwięk fanfar przy kolejnych kamieniach milowych — odtworzy się 1-sekundowy podgląd"
               }
               aria-pressed={fanfareOn}
             >
