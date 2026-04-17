@@ -190,20 +190,52 @@ const SPECS: Record<7 | 14 | 30 | 100, FanfareSpec> = {
 const isMilestone = (n: number): n is 7 | 14 | 30 | 100 =>
   n === 7 || n === 14 || n === 30 || n === 100;
 
+type PlayOptions = {
+  /** Maksymalna długość odtwarzania (sekundy). Pominięte → pełna fanfara. */
+  maxDurationSec?: number;
+  /** Pomiń sprawdzenie isFanfareEnabled — np. dla świadomego podglądu w UI. */
+  force?: boolean;
+};
+
 /**
  * Odtwórz fanfarę odpowiadającą danemu milestone.
  * Domyślnie 7-dniowy wariant (subtelny baseline) — używany też do podglądu w UI.
  */
-export const playMilestoneFanfare = (milestone?: number) => {
+export const playMilestoneFanfare = (milestone?: number, opts: PlayOptions = {}) => {
   if (typeof window === "undefined") return;
-  if (!isFanfareEnabled()) return;
+  if (!opts.force && !isFanfareEnabled()) return;
 
   const AudioCtx =
     window.AudioContext ||
     (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
   if (!AudioCtx) return;
 
-  const spec: FanfareSpec = milestone && isMilestone(milestone) ? SPECS[milestone] : SPECS[7];
+  const baseSpec: FanfareSpec = milestone && isMilestone(milestone) ? SPECS[milestone] : SPECS[7];
+
+  // Tryb podglądu: przytnij wszystkie nuty/shimmer/bas do okna [0, maxDurationSec]
+  // i zostaw mały ogon na fade-out (≈0.3s) przed zamknięciem kontekstu.
+  const spec: FanfareSpec = (() => {
+    const cap = opts.maxDurationSec;
+    if (!cap || cap <= 0) return baseSpec;
+
+    const trimNote = <T extends { start: number; duration: number }>(n: T): T | null => {
+      if (n.start >= cap) return null;
+      const remaining = cap - n.start;
+      return { ...n, duration: Math.min(n.duration, remaining) };
+    };
+
+    return {
+      ...baseSpec,
+      notes: baseSpec.notes.map(trimNote).filter((n): n is Note => n !== null),
+      shimmer: baseSpec.shimmer
+        .map((s) => trimNote({ ...s, duration: s.duration ?? 0.35 }))
+        .filter((s): s is NonNullable<typeof s> => s !== null),
+      bass: baseSpec.bass
+        ? baseSpec.bass.map(trimNote).filter((n): n is Note => n !== null)
+        : undefined,
+      closeAfterSec: Math.min(baseSpec.closeAfterSec, cap + 0.3),
+    };
+  })();
 
   let ctx: AudioContext;
   try {
