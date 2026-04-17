@@ -12,8 +12,11 @@ import {
   CheckCircle2,
   RotateCcw,
   Flame,
+  Trophy,
+  Sparkles,
 } from "lucide-react";
 import { useWorkoutStreak } from "@/hooks/useWorkoutStreak";
+import { fireMilestoneConfetti, getMilestone, type MilestoneInfo } from "@/lib/streakMilestones";
 
 export type WorkoutExercise = {
   Icon: () => JSX.Element;
@@ -47,6 +50,8 @@ const WorkoutModal = ({ open, onOpenChange, exercises }: Props) => {
   const intervalRef = useRef<number | null>(null);
   const voiceOnRef = useRef(voiceOn);
   const recordedRef = useRef(false);
+  const milestoneFiredRef = useRef(false);
+  const [milestone, setMilestone] = useState<MilestoneInfo | null>(null);
   const { currentStreak, recordCompletion } = useWorkoutStreak();
 
   useEffect(() => {
@@ -76,7 +81,24 @@ const WorkoutModal = ({ open, onOpenChange, exercises }: Props) => {
     setRemaining(exercises[0]?.durationSec ?? 30);
     setPaused(false);
     recordedRef.current = false;
+    milestoneFiredRef.current = false;
+    setMilestone(null);
   };
+
+  // Detekcja kamienia milowego po zakończeniu treningu
+  useEffect(() => {
+    if (phase !== "done") return;
+    if (!recordedRef.current) return;
+    if (milestoneFiredRef.current) return;
+    const m = getMilestone(currentStreak);
+    if (m) {
+      milestoneFiredRef.current = true;
+      setMilestone(m);
+      // mały delay, żeby ekran "Brawo" zdążył się pojawić
+      window.setTimeout(() => fireMilestoneConfetti(), 350);
+      window.setTimeout(() => fireMilestoneConfetti(), 900);
+    }
+  }, [phase, currentStreak]);
 
   // start / restart przy otwarciu
   useEffect(() => {
@@ -366,20 +388,61 @@ const WorkoutModal = ({ open, onOpenChange, exercises }: Props) => {
                     właśnie pracowała przez pełne {totalSteps} ćwiczeń.
                   </p>
 
-                  {/* Streak badge */}
-                  <div className="flex justify-center mb-6">
-                    <div className="inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full bg-primary/10 border border-primary/30">
-                      <Flame className="w-5 h-5 text-primary" />
-                      <span className="font-heading text-base text-foreground">
-                        {currentStreak === 1
-                          ? "1 dzień z rzędu"
-                          : `${currentStreak} dni z rzędu`}
-                      </span>
-                      <span className="text-xs uppercase tracking-[0.15em] text-primary font-sans">
-                        Streak
-                      </span>
+                  {/* Kamień milowy lub zwykły streak badge */}
+                  {milestone ? (
+                    <motion.div
+                      initial={{ opacity: 0, y: 18, scale: 0.92 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      transition={{ duration: 0.7, ease: easeOut, delay: 0.15 }}
+                      className="relative mb-6 mx-auto max-w-md rounded-2xl p-[1.5px] bg-gradient-to-br from-primary via-warm-beige to-primary shadow-[0_0_40px_-8px_hsl(var(--primary)/0.55)]"
+                    >
+                      <div className="rounded-2xl bg-card/95 backdrop-blur p-5 text-center">
+                        <div className="flex justify-center mb-2.5">
+                          <motion.div
+                            initial={{ rotate: -8, scale: 0.7 }}
+                            animate={{ rotate: 0, scale: 1 }}
+                            transition={{
+                              duration: 0.6,
+                              ease: easeOut,
+                              delay: 0.3,
+                              type: "spring",
+                              bounce: 0.4,
+                            }}
+                            className="w-14 h-14 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-[0_0_20px_-4px_hsl(var(--primary)/0.7)]"
+                          >
+                            <Trophy className="w-7 h-7 text-primary-foreground" />
+                          </motion.div>
+                        </div>
+                        <div className="flex items-center justify-center gap-1.5 mb-1.5">
+                          <Sparkles className="w-3.5 h-3.5 text-primary" />
+                          <p className="text-[10px] uppercase tracking-[0.22em] text-primary font-sans font-semibold">
+                            Kamień milowy · {milestone.days} dni
+                          </p>
+                          <Sparkles className="w-3.5 h-3.5 text-primary" />
+                        </div>
+                        <h5 className="font-heading text-2xl text-foreground mb-2">
+                          {milestone.title}
+                        </h5>
+                        <p className="text-sm text-muted-foreground leading-relaxed">
+                          {milestone.message}
+                        </p>
+                      </div>
+                    </motion.div>
+                  ) : (
+                    <div className="flex justify-center mb-6">
+                      <div className="inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full bg-primary/10 border border-primary/30">
+                        <Flame className="w-5 h-5 text-primary" />
+                        <span className="font-heading text-base text-foreground">
+                          {currentStreak === 1
+                            ? "1 dzień z rzędu"
+                            : `${currentStreak} dni z rzędu`}
+                        </span>
+                        <span className="text-xs uppercase tracking-[0.15em] text-primary font-sans">
+                          Streak
+                        </span>
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   <div className="flex flex-col sm:flex-row gap-3 justify-center">
                     <Button variant="hero" size="lg" onClick={reset} className="gap-2">
