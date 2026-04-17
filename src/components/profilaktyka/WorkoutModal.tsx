@@ -11,7 +11,9 @@ import {
   VolumeX,
   CheckCircle2,
   RotateCcw,
+  Flame,
 } from "lucide-react";
+import { useWorkoutStreak } from "@/hooks/useWorkoutStreak";
 
 export type WorkoutExercise = {
   Icon: () => JSX.Element;
