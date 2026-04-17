@@ -39,6 +39,14 @@ export const getMilestone = (streak: number): MilestoneInfo | null => {
   return null;
 };
 
+/** Zwraca najbliższy nieosiągnięty kamień milowy lub null jeśli wszystkie zaliczone. */
+export const getNextMilestone = (streak: number): number | null => {
+  for (const m of STREAK_MILESTONES) {
+    if (streak < m) return m;
+  }
+  return null;
+};
+
 /** Confetti dopasowane do złotej palety CML — gold + warm-beige + biel */
 export const fireMilestoneConfetti = () => {
   if (typeof window === "undefined") return;
