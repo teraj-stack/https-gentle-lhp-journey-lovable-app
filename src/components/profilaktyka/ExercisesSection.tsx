@@ -1,7 +1,18 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Clock, Repeat, Play, Download, Flame, CheckCircle2 } from "lucide-react";
+import { Clock, Repeat, Play, Download, Flame, CheckCircle2, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import {
   FootCircleIcon,
   ToeRaiseIcon,
@@ -13,6 +24,7 @@ import {
 import WorkoutModal, { type WorkoutExercise } from "./WorkoutModal";
 import StreakCalendar from "./StreakCalendar";
 import { useWorkoutStreak } from "@/hooks/useWorkoutStreak";
+import { toast } from "sonner";
 
 const easeOut = [0.16, 1, 0.3, 1] as const;
 
@@ -98,7 +110,7 @@ const exercises: Exercise[] = [
 
 const ExercisesSection = () => {
   const [workoutOpen, setWorkoutOpen] = useState(false);
-  const { currentStreak, totalDays, completedToday, days } = useWorkoutStreak();
+  const { currentStreak, totalDays, completedToday, days, reset } = useWorkoutStreak();
   const totalMinutes = Math.round(
     (exercises.reduce((s, e) => s + e.durationSec, 0) + (exercises.length - 1) * 10) / 60,
   );
@@ -247,6 +259,50 @@ const ExercisesSection = () => {
           bezpieczne także po zabiegach laserowych — chyba że flebolog zaleci inaczej.
         </p>
       </motion.div>
+
+      {totalDays > 0 && (
+        <div className="flex justify-center pt-2">
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <button
+                type="button"
+                className="inline-flex items-center gap-1.5 text-[11px] uppercase tracking-[0.18em] font-sans text-muted-foreground/70 hover:text-primary transition-colors"
+                aria-label="Zresetuj postęp treningu"
+              >
+                <RotateCcw className="w-3 h-3" />
+                Zresetuj postęp
+              </button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle className="font-heading">
+                  Zresetować cały postęp?
+                </AlertDialogTitle>
+                <AlertDialogDescription>
+                  Stracisz aktualny streak ({currentStreak}{" "}
+                  {currentStreak === 1 ? "dzień" : "dni"} z rzędu) oraz historię{" "}
+                  {totalDays} ukończonych dni. Tej operacji nie można cofnąć.
+                  <br />
+                  <br />
+                  Przydatne, jeśli udostępniasz to urządzenie innej osobie lub testowałeś tryb treningu.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Anuluj</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => {
+                    reset();
+                    toast.success("Postęp został zresetowany.");
+                  }}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  Tak, zresetuj
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
+      )}
 
       <WorkoutModal
         open={workoutOpen}
