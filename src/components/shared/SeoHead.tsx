@@ -8,7 +8,7 @@ interface SeoHeadProps {
   image?: string;
 }
 
-const BASE_URL = "https://cml.pl";
+const BASE_URL = "https://bestcml.io";
 const OG_IMAGE = `${BASE_URL}/og-image.png`;
 
 const SeoHead = ({ title, description, path, type = "article", image }: SeoHeadProps) => {
