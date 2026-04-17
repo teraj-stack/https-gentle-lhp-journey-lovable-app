@@ -287,8 +287,7 @@ const BackupProgressSection = () => {
         </Popover>
 
         {/* Licznik 'Ostatni eksport: X dni temu' — pojawia się dopiero
-            po pierwszym pobraniu pliku (czyta localStorage). */}
-        <span className="hidden sm:inline-block h-3 w-px bg-border/60" aria-hidden="true" />
+            po pierwszym pobraniu pliku (sam renderuje swój separator). */}
         <LastExportIndicator />
 
         {totalDays > 0 && (

@@ -58,14 +58,20 @@ const LastExportIndicator = () => {
   if (!formatted) return null;
 
   return (
-    <span
-      className="inline-flex items-center gap-1.5 text-[11px] uppercase tracking-[0.18em] font-sans text-muted-foreground/70"
-      title={`Ostatni eksport: ${formatted.title}`}
-      aria-label={`Ostatni eksport postępu: ${formatted.label}, dokładnie ${formatted.title}`}
-    >
-      <Clock className="w-3 h-3" aria-hidden="true" />
-      Ostatni eksport: <span className="text-foreground/80">{formatted.label}</span>
-    </span>
+    <>
+      <span
+        className="hidden sm:inline-block h-3 w-px bg-border/60"
+        aria-hidden="true"
+      />
+      <span
+        className="inline-flex items-center gap-1.5 text-[11px] uppercase tracking-[0.18em] font-sans text-muted-foreground/70"
+        title={`Ostatni eksport: ${formatted.title}`}
+        aria-label={`Ostatni eksport postępu: ${formatted.label}, dokładnie ${formatted.title}`}
+      >
+        <Clock className="w-3 h-3" aria-hidden="true" />
+        Ostatni eksport: <span className="text-foreground/80">{formatted.label}</span>
+      </span>
+    </>
   );
 };
 
