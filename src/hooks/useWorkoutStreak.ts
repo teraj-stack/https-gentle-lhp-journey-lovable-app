@@ -117,6 +117,7 @@ export const useWorkoutStreak = () => {
     totalDays: data.days.length,
     completedToday,
     lastCompletedISO,
+    days: data.days,
     recordCompletion,
     reset,
   };
