@@ -1,3 +1,4 @@
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -5,12 +6,17 @@ import { Calendar, ArrowRight, Sparkles } from "lucide-react";
 import SeoHead from "@/components/shared/SeoHead";
 import Breadcrumbs from "@/components/layout/Breadcrumbs";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 const isNew = (publishedAt: string | null) =>
   !!publishedAt && Date.now() - new Date(publishedAt).getTime() <= SEVEN_DAYS_MS;
 
+type FilterValue = "all" | "new";
+
 const Blog = () => {
+  const [filter, setFilter] = useState<FilterValue>("all");
+
   const { data: posts, isLoading } = useQuery({
     queryKey: ["blog-posts"],
     queryFn: async () => {
@@ -23,6 +29,16 @@ const Blog = () => {
       return data;
     },
   });
+
+  const newCount = useMemo(
+    () => (posts ?? []).filter((p) => isNew(p.published_at)).length,
+    [posts],
+  );
+
+  const filteredPosts = useMemo(() => {
+    if (!posts) return posts;
+    return filter === "new" ? posts.filter((p) => isNew(p.published_at)) : posts;
+  }, [posts, filter]);
 
   return (
     <>
@@ -42,6 +58,24 @@ const Blog = () => {
             Wiedza medyczna w przystępnej formie. Artykuły naszych specjalistów o proktologii, flebologii i leczeniu laserowym.
           </p>
           <div className="premium-divider !mx-0 mt-8" />
+
+          <Tabs
+            value={filter}
+            onValueChange={(v) => setFilter(v as FilterValue)}
+            className="mt-8"
+          >
+            <TabsList className="bg-card border border-border">
+              <TabsTrigger value="all" className="gap-2">
+                Wszystkie
+                <span className="text-xs text-muted-foreground">({posts?.length ?? 0})</span>
+              </TabsTrigger>
+              <TabsTrigger value="new" className="gap-2" disabled={newCount === 0}>
+                <Sparkles className="w-3.5 h-3.5" />
+                Nowe
+                <span className="text-xs text-muted-foreground">({newCount})</span>
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
       </section>
 
@@ -57,9 +91,9 @@ const Blog = () => {
                 </div>
               ))}
             </div>
-          ) : posts && posts.length > 0 ? (
+          ) : filteredPosts && filteredPosts.length > 0 ? (
             <div className="space-y-10">
-              {posts.map((post) => (
+              {filteredPosts.map((post) => (
                 <article
                   key={post.id}
                   className="group border-b border-border pb-10 last:border-0"
@@ -129,7 +163,9 @@ const Blog = () => {
             </div>
           ) : (
             <p className="text-muted-foreground text-center py-12">
-              Brak opublikowanych artykułów. Wróć wkrótce!
+              {filter === "new"
+                ? "Brak nowych artykułów z ostatnich 7 dni."
+                : "Brak opublikowanych artykułów. Wróć wkrótce!"}
             </p>
           )}
         </div>
