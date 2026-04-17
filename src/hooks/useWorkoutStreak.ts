@@ -152,5 +152,6 @@ export const useWorkoutStreak = () => {
     days: data.days,
     recordCompletion,
     reset,
+    mergeImportedDays,
   };
 };
