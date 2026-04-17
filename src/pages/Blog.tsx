@@ -1,3 +1,4 @@
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -5,12 +6,17 @@ import { Calendar, ArrowRight, Sparkles } from "lucide-react";
 import SeoHead from "@/components/shared/SeoHead";
 import Breadcrumbs from "@/components/layout/Breadcrumbs";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 const isNew = (publishedAt: string | null) =>
   !!publishedAt && Date.now() - new Date(publishedAt).getTime() <= SEVEN_DAYS_MS;
 
+type FilterValue = "all" | "new";
+
 const Blog = () => {
+  const [filter, setFilter] = useState<FilterValue>("all");
+
   const { data: posts, isLoading } = useQuery({
     queryKey: ["blog-posts"],
     queryFn: async () => {
@@ -23,6 +29,16 @@ const Blog = () => {
       return data;
     },
   });
+
+  const newCount = useMemo(
+    () => (posts ?? []).filter((p) => isNew(p.published_at)).length,
+    [posts],
+  );
+
+  const filteredPosts = useMemo(() => {
+    if (!posts) return posts;
+    return filter === "new" ? posts.filter((p) => isNew(p.published_at)) : posts;
+  }, [posts, filter]);
 
   return (
     <>
