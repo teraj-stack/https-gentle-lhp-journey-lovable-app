@@ -101,7 +101,7 @@ const faqSchema = {
   "@context": "https://schema.org",
   "@type": "FAQPage",
   name: "Hemoroidy i wizyta u proktologa — najczęstsze pytania",
-  url: "https://cml.pl/dla-pacjenta/proktolog-faq",
+  url: "https://bestcml.io/dla-pacjenta/proktolog-faq",
   mainEntity: qaItems.map((item) => ({
     "@type": "Question",
     name: item.q,

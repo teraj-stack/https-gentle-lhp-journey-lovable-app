@@ -165,7 +165,7 @@ const faqs = [
 ];
 
 const ProfilaktykaZylakow = () => {
-  const url = "https://cml.pl/dla-pacjenta/profilaktyka-zylakow";
+  const url = "https://bestcml.io/dla-pacjenta/profilaktyka-zylakow";
 
   return (
     <div className="min-h-screen bg-background pt-20">

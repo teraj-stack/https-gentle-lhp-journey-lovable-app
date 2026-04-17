@@ -40,7 +40,7 @@ interface LHPFAQProps {
 
 const LHPFAQ = ({ fadeUp }: LHPFAQProps) => (
   <motion.section {...fadeUp}>
-    <FaqSchema faqs={lhpFaqs} name="FAQ – LHP laserowe leczenie hemoroidów" url="https://cml.pl/leczenie/lhp" />
+    <FaqSchema faqs={lhpFaqs} name="FAQ – LHP laserowe leczenie hemoroidów" url="https://bestcml.io/leczenie/lhp" />
     <h2 className="section-title mb-3 text-center">
       Najczęściej zadawane pytania
     </h2>
