@@ -56,7 +56,35 @@ const SAMPLE_JSON = `{
 
 const BackupProgressSection = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [copied, setCopied] = useState(false);
   const { currentStreak, totalDays, days, reset, mergeImportedDays } = useWorkoutStreak();
+
+  const handleCopySample = async () => {
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(SAMPLE_JSON);
+      } else {
+        const ta = document.createElement("textarea");
+        ta.value = SAMPLE_JSON;
+        ta.setAttribute("readonly", "");
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+      }
+      setCopied(true);
+      toast.success("Przykład JSON skopiowany do schowka.", {
+        description: "Wklej go w edytorze, żeby obejrzeć strukturę.",
+      });
+      window.setTimeout(() => setCopied(false), 2200);
+    } catch {
+      toast.error("Nie udało się skopiować przykładu.", {
+        description: "Spróbuj zaznaczyć tekst w polu poniżej i skopiować ręcznie.",
+      });
+    }
+  };
 
   const handleExport = () => {
     if (totalDays === 0) {
