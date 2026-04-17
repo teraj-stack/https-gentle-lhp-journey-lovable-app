@@ -107,6 +107,38 @@ export const useWorkoutStreak = () => {
     setData(next);
   }, []);
 
+  /**
+   * Merge zaimportowanych dni z aktualną historią.
+   * Zwraca statystyki: ile dodano nowych dni, ile pominięto duplikatów.
+   */
+  const mergeImportedDays = useCallback(
+    (importedDays: string[]): { added: number; duplicates: number; total: number } => {
+      let stats = { added: 0, duplicates: 0, total: 0 };
+      setData((prev) => {
+        const existing = new Set(prev.days);
+        let added = 0;
+        let duplicates = 0;
+        for (const d of importedDays) {
+          if (existing.has(d)) duplicates += 1;
+          else {
+            existing.add(d);
+            added += 1;
+          }
+        }
+        const merged = Array.from(existing).sort();
+        const next: StreakData = {
+          days: merged,
+          totalCompletions: prev.totalCompletions + added,
+        };
+        writeStorage(next);
+        stats = { added, duplicates, total: merged.length };
+        return next;
+      });
+      return stats;
+    },
+    [],
+  );
+
   const currentStreak = calcCurrentStreak(data.days);
   const lastCompletedISO = data.days[data.days.length - 1] ?? null;
   const completedToday = lastCompletedISO === todayISO();
