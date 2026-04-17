@@ -8,7 +8,7 @@ interface SeoHeadProps {
   image?: string;
 }
 
-const BASE_URL = "https://cml.pl";
+const BASE_URL = "https://bestcml.io";
 const OG_IMAGE = `${BASE_URL}/og-image.png`;
 
 const SeoHead = ({ title, description, path, type = "article", image }: SeoHeadProps) => {
@@ -64,6 +64,7 @@ const SeoHead = ({ title, description, path, type = "article", image }: SeoHeadP
     return () => {
       // Restore defaults on unmount
       document.title = "CML – Centrum Medycyny Laserowej | Warszawa, Siedlce";
+      void 0;
       createdElements.forEach((el) => el.remove());
 
       // Restore canonical

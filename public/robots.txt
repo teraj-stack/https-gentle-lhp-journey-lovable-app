@@ -13,4 +13,4 @@ Allow: /
 User-agent: *
 Allow: /
 
-Sitemap: https://cml.pl/sitemap.xml
+Sitemap: https://bestcml.io/sitemap.xml
