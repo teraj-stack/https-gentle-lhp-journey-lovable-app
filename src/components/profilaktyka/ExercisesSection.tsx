@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Clock, Repeat, Play } from "lucide-react";
+import { Clock, Repeat, Play, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   FootCircleIcon,
@@ -127,18 +127,34 @@ const ExercisesSection = () => {
           Sześć prostych ćwiczeń, które aktywują pompę mięśniową łydki — naturalny mechanizm
           odprowadzający krew z nóg. Wystarczy 10–15 minut dziennie.
         </p>
-        <div className="mt-6 flex flex-col items-center gap-2">
-          <Button
-            variant="hero"
-            size="lg"
-            onClick={() => setWorkoutOpen(true)}
-            className="gap-2"
-          >
-            <Play className="w-4 h-4" />
-            Uruchom „Trening dnia”
-          </Button>
+        <div className="mt-6 flex flex-col items-center gap-3">
+          <div className="flex flex-col sm:flex-row items-center gap-3">
+            <Button
+              variant="hero"
+              size="lg"
+              onClick={() => setWorkoutOpen(true)}
+              className="gap-2"
+            >
+              <Play className="w-4 h-4" />
+              Uruchom „Trening dnia”
+            </Button>
+            <Button
+              variant="outline"
+              size="lg"
+              asChild
+              className="gap-2"
+            >
+              <a
+                href="/cwiczenia-profilaktyka-zylakow.pdf"
+                download="CML-6-cwiczen-profilaktyki-zylakow.pdf"
+              >
+                <Download className="w-4 h-4" />
+                Pobierz PDF
+              </a>
+            </Button>
+          </div>
           <p className="text-xs text-muted-foreground">
-            ~{totalMinutes} min · timer + powiadomienia głosowe
+            ~{totalMinutes} min · timer + powiadomienia głosowe · PDF do druku
           </p>
         </div>
       </motion.div>
