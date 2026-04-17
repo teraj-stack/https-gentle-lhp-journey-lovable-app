@@ -36,9 +36,13 @@ const todayISO = () => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 };
 
+export type ParseResult =
+  | { ok: true; data: ImportedProgress }
+  | { ok: false; error: ImportError };
+
 export const parseWorkoutProgressFile = async (
   file: File,
-): Promise<{ ok: true; data: ImportedProgress } | { ok: false; error: ImportError }> => {
+): Promise<ParseResult> => {
   if (file.size > MAX_BYTES) {
     return {
       ok: false,
