@@ -35,7 +35,7 @@ const MedicalProcedureSchema = ({
       ...(followup && { followup }),
       ...(howPerformed && { howPerformed }),
       ...(risks && { outcome: risks }),
-      url: `https://cml.pl${url}`,
+      url: `https://bestcml.io${url}`,
       performer: {
         "@type": "Physician",
         name: "lek. med. Jan Bujok",

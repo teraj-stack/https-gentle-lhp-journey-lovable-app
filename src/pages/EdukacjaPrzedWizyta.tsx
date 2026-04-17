@@ -135,7 +135,7 @@ const EdukacjaPrzedWizyta = () => {
       name: "Dlaczego edukacja przed wizytą jest kluczowa – Świadomy pacjent w gabinecie",
       description:
         "Dowiedz się, jak przygotowanie merytoryczne przed wizytą u proktologa lub flebologa optymalizuje czas konsultacji i podnosi jakość leczenia.",
-      url: "https://cml.pl/dla-pacjenta/edukacja",
+      url: "https://bestcml.io/dla-pacjenta/edukacja",
       lastReviewed: "2025-06-01",
       medicalAudience: {
         "@type": "PatientAudience",
@@ -157,7 +157,7 @@ const EdukacjaPrzedWizyta = () => {
       publisher: {
         "@type": "MedicalClinic",
         name: "CML – Centrum Medycyny Laserowej",
-        url: "https://cml.pl",
+        url: "https://bestcml.io",
       },
     };
 
@@ -182,7 +182,7 @@ const EdukacjaPrzedWizyta = () => {
     <FaqSchema
       faqs={faqs}
       name="FAQ – Edukacja pacjenta przed wizytą"
-      url="https://cml.pl/dla-pacjenta/edukacja"
+      url="https://bestcml.io/dla-pacjenta/edukacja"
     />
 
     {/* Hero */}

@@ -13,7 +13,7 @@ const medicalWebPageSchema = {
   "@type": "MedicalWebPage",
   "name": "O nas – CML Centrum Medycyny Laserowej",
   "description": "Poznaj dr. Jana Bujoka, twórcę projektu S.C.A.L.E., i filozofię CML. Innowacyjne leczenie laserowe hemoroidów, żylaków i przetok.",
-  "url": "https://cml.pl/o-nas",
+  "url": "https://bestcml.io/o-nas",
   "inLanguage": "pl-PL",
   "medicalAudience": {
     "@type": "MedicalAudience",

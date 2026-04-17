@@ -100,7 +100,7 @@ const Wspolpraca = () => (
       path="/wspolpraca"
       audienceType="Clinician"
     />
-    <FaqSchema faqs={faq} name="FAQ – Współpraca B2B dla placówek medycznych" url="https://cml.pl/wspolpraca" />
+    <FaqSchema faqs={faq} name="FAQ – Współpraca B2B dla placówek medycznych" url="https://bestcml.io/wspolpraca" />
     <WspolpracaHero />
 
     {/* EBM */}
