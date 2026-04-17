@@ -27,6 +27,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { useWorkoutStreak } from "@/hooks/useWorkoutStreak";
 import { downloadWorkoutProgressJson } from "@/lib/workoutProgressExport";
 import { parseWorkoutProgressFile } from "@/lib/workoutProgressImport";
+import LastExportIndicator from "./LastExportIndicator";
 
 const easeOut = [0.16, 1, 0.3, 1] as const;
 
