@@ -157,6 +157,7 @@ const ExercisesSection = () => {
           </div>
           <p className="text-xs text-muted-foreground">
             ~{totalMinutes} min · timer + powiadomienia głosowe · PDF do druku
+            {totalDays > 0 && ` · ${totalDays} ${totalDays === 1 ? "ukończony dzień" : totalDays < 5 ? "ukończone dni" : "ukończonych dni"}`}
           </p>
         </div>
       </motion.div>
