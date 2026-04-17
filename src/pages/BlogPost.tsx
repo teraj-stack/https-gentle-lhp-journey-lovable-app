@@ -76,6 +76,17 @@ const BlogPost = () => {
             Wróć do bloga
           </Link>
 
+          {post.cover_image_url && (
+            <figure className="mb-8 -mx-4 md:mx-0 overflow-hidden md:rounded-lg border-y md:border border-border/50 bg-muted/30">
+              <img
+                src={post.cover_image_url}
+                alt={post.title}
+                className="w-full h-auto max-h-[480px] object-cover"
+                loading="eager"
+              />
+            </figure>
+          )}
+
           <h1 className="text-3xl md:text-4xl font-bold font-serif text-foreground mb-4 whitespace-pre-line">
             {post.title}
           </h1>
