@@ -339,10 +339,26 @@ const WorkoutModal = ({ open, onOpenChange, exercises }: Props) => {
                   <h4 className="font-heading text-3xl md:text-4xl text-foreground mb-3">
                     Brawo!
                   </h4>
-                  <p className="text-muted-foreground max-w-md mx-auto leading-relaxed mb-6">
+                  <p className="text-muted-foreground max-w-md mx-auto leading-relaxed mb-5">
                     Ukończyłeś trening dnia. Twoje żyły dziękują — pompa mięśniowa łydki
                     właśnie pracowała przez pełne {totalSteps} ćwiczeń.
                   </p>
+
+                  {/* Streak badge */}
+                  <div className="flex justify-center mb-6">
+                    <div className="inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full bg-primary/10 border border-primary/30">
+                      <Flame className="w-5 h-5 text-primary" />
+                      <span className="font-heading text-base text-foreground">
+                        {currentStreak === 1
+                          ? "1 dzień z rzędu"
+                          : `${currentStreak} dni z rzędu`}
+                      </span>
+                      <span className="text-xs uppercase tracking-[0.15em] text-primary font-sans">
+                        Streak
+                      </span>
+                    </div>
+                  </div>
+
                   <div className="flex flex-col sm:flex-row gap-3 justify-center">
                     <Button variant="hero" size="lg" onClick={reset} className="gap-2">
                       <RotateCcw className="w-4 h-4" /> Powtórz trening
