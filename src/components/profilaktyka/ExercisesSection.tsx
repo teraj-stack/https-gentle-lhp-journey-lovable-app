@@ -24,6 +24,7 @@ import {
 import WorkoutModal, { type WorkoutExercise } from "./WorkoutModal";
 import StreakCalendar from "./StreakCalendar";
 import { useWorkoutStreak } from "@/hooks/useWorkoutStreak";
+import { getNextMilestone } from "@/lib/streakMilestones";
 import { toast } from "sonner";
 
 const easeOut = [0.16, 1, 0.3, 1] as const;
@@ -168,6 +169,25 @@ const ExercisesSection = () => {
               )}
             </motion.div>
           )}
+          {currentStreak > 0 && (() => {
+            const next = getNextMilestone(currentStreak);
+            if (!next) return null;
+            const remaining = next - currentStreak;
+            return (
+              <motion.p
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.1, ease: easeOut }}
+                className="text-[11px] font-sans uppercase tracking-[0.15em] text-muted-foreground/80 -mt-1"
+                aria-label={`Jeszcze ${remaining} ${remaining === 1 ? "dzień" : "dni"} do kamienia milowego ${next} dni`}
+              >
+                Jeszcze{" "}
+                <span className="text-primary font-semibold">{remaining}</span>{" "}
+                {remaining === 1 ? "dzień" : "dni"} do{" "}
+                <span className="text-primary font-semibold">{next}</span>
+              </motion.p>
+            );
+          })()}
           {totalDays > 0 && <StreakCalendar completedDays={days} />}
           <div className="flex flex-col sm:flex-row items-center gap-3">
             <Button
