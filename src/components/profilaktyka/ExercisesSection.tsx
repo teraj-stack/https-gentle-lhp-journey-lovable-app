@@ -1,6 +1,15 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Clock, Repeat, Play, Download, Flame, CheckCircle2 } from "lucide-react";
+import {
+  Clock,
+  Repeat,
+  Play,
+  Download,
+  Flame,
+  CheckCircle2,
+  Volume2,
+  VolumeX,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   FootCircleIcon,
@@ -15,8 +24,20 @@ import StreakCalendar from "./StreakCalendar";
 import BackupProgressSection from "./BackupProgressSection";
 import { useWorkoutStreak } from "@/hooks/useWorkoutStreak";
 import { getNextMilestone } from "@/lib/streakMilestones";
+import { isFanfareEnabled, setFanfareEnabled } from "@/lib/milestoneFanfare";
 
 const easeOut = [0.16, 1, 0.3, 1] as const;
+
+/** Mapowanie milestone (dni) → poziom intensywności fanfary (1-4) i jego etykieta. */
+const milestoneIntensity = (
+  days: number | null,
+): { level: 1 | 2 | 3 | 4; label: string } => {
+  if (days === 7) return { level: 1, label: "Subtelna fanfara" };
+  if (days === 14) return { level: 2, label: "Pełniejsza fanfara" };
+  if (days === 30) return { level: 3, label: "Rozbudowana fanfara" };
+  // 100 dni lub null (wszystkie zaliczone — pokaż maksymalny wariant jako referencję)
+  return { level: 4, label: "Pełna kulminacja orkiestrowa" };
+};
 
 type Exercise = {
   Icon: () => JSX.Element;
