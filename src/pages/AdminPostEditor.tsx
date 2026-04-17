@@ -142,13 +142,16 @@ const AdminPostEditor = () => {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  const deleteOldCover = async (oldUrl: string | null | undefined, newUrl: string) => {
-    if (!oldUrl || oldUrl === newUrl) return;
-    if (!oldUrl.includes("/blog-covers/")) return;
+  const deleteOldCover = async (oldUrl: string | null | undefined, newUrl: string): Promise<boolean> => {
+    if (!oldUrl || oldUrl === newUrl) return false;
+    if (!oldUrl.includes("/blog-covers/")) return false;
     try {
-      await supabase.functions.invoke("delete-blog-cover", { body: { url: oldUrl } });
+      const { error } = await supabase.functions.invoke("delete-blog-cover", { body: { url: oldUrl } });
+      if (error) throw error;
+      return true;
     } catch (e) {
       console.warn("Nie udało się usunąć starej okładki:", e);
+      return false;
     }
   };
 
@@ -168,6 +171,7 @@ const AdminPostEditor = () => {
       if (isNew) {
         const { error } = await supabase.from("blog_posts").insert(postData);
         if (error) throw error;
+        return { oldCoverDeleted: false };
       } else {
         const { error } = await supabase
           .from("blog_posts")
@@ -175,11 +179,15 @@ const AdminPostEditor = () => {
           .eq("id", id!);
         if (error) throw error;
         // After successful update, clean up the old cover if it changed.
-        await deleteOldCover(existingPost?.cover_image_url, newCoverUrl ?? "");
+        const oldCoverDeleted = await deleteOldCover(existingPost?.cover_image_url, newCoverUrl ?? "");
+        return { oldCoverDeleted };
       }
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       toast.success(isNew ? "Artykuł dodany" : "Artykuł zaktualizowany");
+      if (result?.oldCoverDeleted) {
+        toast.info("Stara okładka usunięta ze storage");
+      }
       navigate("/admin");
     },
     onError: (e) => {
