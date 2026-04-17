@@ -1,6 +1,14 @@
 import { useRef } from "react";
 import { motion } from "framer-motion";
-import { Download, Upload, RotateCcw, ShieldCheck, Smartphone, FileJson } from "lucide-react";
+import {
+  Download,
+  Upload,
+  RotateCcw,
+  ShieldCheck,
+  Smartphone,
+  FileJson,
+  HelpCircle,
+} from "lucide-react";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -13,11 +21,36 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useWorkoutStreak } from "@/hooks/useWorkoutStreak";
 import { downloadWorkoutProgressJson } from "@/lib/workoutProgressExport";
 import { parseWorkoutProgressFile } from "@/lib/workoutProgressImport";
 
 const easeOut = [0.16, 1, 0.3, 1] as const;
+
+/** Statyczny przykład struktury eksportu — pokazywany w Popoverze "Co jest w pliku?". */
+const SAMPLE_JSON = `{
+  "schema": "cml-workout-progress",
+  "schemaVersion": 1,
+  "exportedAt": "2026-04-17T08:30:00.000Z",
+  "source": {
+    "app": "Centrum Medycyny Laserowej",
+    "page": "/dla-pacjenta/profilaktyka-zylakow",
+    "feature": "Trening dnia — profilaktyka żylaków"
+  },
+  "summary": {
+    "currentStreak": 14,
+    "totalDays": 18,
+    "firstDayISO": "2026-03-30",
+    "lastDayISO": "2026-04-17",
+    "milestonesAchieved": [7, 14],
+    "nextMilestone": 30,
+    "daysToNextMilestone": 16
+  },
+  "history": {
+    "days": ["2026-03-30", "2026-03-31", "...", "2026-04-17"]
+  }
+}`;
 
 const BackupProgressSection = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
