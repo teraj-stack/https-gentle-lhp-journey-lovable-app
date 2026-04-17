@@ -1,9 +1,14 @@
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Calendar, ArrowRight } from "lucide-react";
+import { Calendar, ArrowRight, Sparkles } from "lucide-react";
 import SeoHead from "@/components/shared/SeoHead";
 import Breadcrumbs from "@/components/layout/Breadcrumbs";
+import { Badge } from "@/components/ui/badge";
+
+const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+const isNew = (publishedAt: string | null) =>
+  !!publishedAt && Date.now() - new Date(publishedAt).getTime() <= SEVEN_DAYS_MS;
 
 const Blog = () => {
   const { data: posts, isLoading } = useQuery({
@@ -86,9 +91,17 @@ const Blog = () => {
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h2 className="text-xl md:text-2xl font-semibold font-serif text-foreground group-hover:text-primary transition-colors mb-2">
-                        {post.title}
-                      </h2>
+                      <div className="flex items-start gap-2 mb-2 flex-wrap">
+                        <h2 className="text-xl md:text-2xl font-semibold font-serif text-foreground group-hover:text-primary transition-colors">
+                          {post.title}
+                        </h2>
+                        {isNew(post.published_at) && (
+                          <Badge className="bg-primary text-primary-foreground gap-1 mt-1 shrink-0">
+                            <Sparkles className="w-3 h-3" />
+                            Nowy
+                          </Badge>
+                        )}
+                      </div>
                       {post.published_at && (
                         <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-3">
                           <Calendar className="w-3.5 h-3.5" />
