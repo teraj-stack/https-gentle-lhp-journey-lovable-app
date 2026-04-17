@@ -1,5 +1,7 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
-import { Clock, Repeat } from "lucide-react";
+import { Clock, Repeat, Play } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   FootCircleIcon,
   ToeRaiseIcon,
@@ -8,6 +10,7 @@ import {
   AnkleFlexIcon,
   WallSitIcon,
 } from "./ExerciseIcons";
+import WorkoutModal, { type WorkoutExercise } from "./WorkoutModal";
 
 const easeOut = [0.16, 1, 0.3, 1] as const;
 
@@ -18,6 +21,7 @@ type Exercise = {
   technique: string;
   dose: string;
   duration: string;
+  durationSec: number; // czas dla trybu Trening dnia
   benefit: string;
 };
 
@@ -30,6 +34,7 @@ const exercises: Exercise[] = [
       "Unieś jedną stopę kilka cm nad podłogą i wykonuj powolne, pełne koła w stawie skokowym — najpierw w jedną, potem w drugą stronę.",
     dose: "10 kółek × 2 strony × każda noga",
     duration: "~2 minuty",
+    durationSec: 60,
     benefit: "Aktywuje pompę mięśniową łydki i poprawia odpływ krwi z żył głębokich.",
   },
   {
@@ -40,6 +45,7 @@ const exercises: Exercise[] = [
       "Mocno przyciągnij palce stóp do siebie (jak najwyżej), następnie wyciągnij je maksymalnie w dół, jak baletnica.",
     dose: "20 powtórzeń",
     duration: "~1 minuta",
+    durationSec: 45,
     benefit: "Najlepsze ćwiczenie podczas długich podróży — chroni przed zakrzepicą.",
   },
   {
@@ -50,6 +56,7 @@ const exercises: Exercise[] = [
       "Powoli unieś się wysoko na palcach stóp, zatrzymaj na 2 sekundy w górze i powoli opuść pięty (nie uderzaj nimi o podłogę).",
     dose: "3 serie × 15 powtórzeń",
     duration: "~3 minuty",
+    durationSec: 60,
     benefit: "Wzmacnia łydki — mechanizm „drugiego serca” dla układu żylnego.",
   },
   {
@@ -60,6 +67,7 @@ const exercises: Exercise[] = [
       "Unieś nogi do kąta ok. 90° i imituj pedałowanie roweru w powietrzu, naprzemiennie zginając kolana.",
     dose: "2 serie × 30 sekund",
     duration: "~2 minuty",
+    durationSec: 60,
     benefit: "Łączy elewację nóg z aktywnością mięśni — odciąża żyły i pobudza krążenie.",
   },
   {
@@ -70,6 +78,7 @@ const exercises: Exercise[] = [
       "Połóż się i oprzyj wyprostowane nogi o ścianę pod kątem 90°. Pozostań w pozycji, oddychaj spokojnie i delikatnie ruszaj palcami.",
     dose: "1 serie × 5–10 minut",
     duration: "~5–10 minut",
+    durationSec: 120,
     benefit: "Klasyczna „pozycja Trendelenburga light” — błyskawicznie redukuje obrzęki kostek.",
   },
   {
@@ -80,11 +89,24 @@ const exercises: Exercise[] = [
       "Maszeruj w miejscu, podnosząc kolana wysoko. Co kilka kroków przejdź chwilę na samych piętach, a następnie na palcach.",
     dose: "60 sekund co godzinę pracy",
     duration: "~1 minuta",
+    durationSec: 60,
     benefit: "Mikro-przerwa idealna dla osób pracujących stojąco lub siedząco.",
   },
 ];
 
 const ExercisesSection = () => {
+  const [workoutOpen, setWorkoutOpen] = useState(false);
+  const totalMinutes = Math.round(
+    (exercises.reduce((s, e) => s + e.durationSec, 0) + (exercises.length - 1) * 10) / 60,
+  );
+
+  const workoutExercises: WorkoutExercise[] = exercises.map((e) => ({
+    Icon: e.Icon,
+    title: e.title,
+    technique: e.technique,
+    durationSec: e.durationSec,
+  }));
+
   return (
     <section className="space-y-8">
       <motion.div
@@ -105,6 +127,20 @@ const ExercisesSection = () => {
           Sześć prostych ćwiczeń, które aktywują pompę mięśniową łydki — naturalny mechanizm
           odprowadzający krew z nóg. Wystarczy 10–15 minut dziennie.
         </p>
+        <div className="mt-6 flex flex-col items-center gap-2">
+          <Button
+            variant="hero"
+            size="lg"
+            onClick={() => setWorkoutOpen(true)}
+            className="gap-2"
+          >
+            <Play className="w-4 h-4" />
+            Uruchom „Trening dnia”
+          </Button>
+          <p className="text-xs text-muted-foreground">
+            ~{totalMinutes} min · timer + powiadomienia głosowe
+          </p>
+        </div>
       </motion.div>
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -165,6 +201,12 @@ const ExercisesSection = () => {
           bezpieczne także po zabiegach laserowych — chyba że flebolog zaleci inaczej.
         </p>
       </motion.div>
+
+      <WorkoutModal
+        open={workoutOpen}
+        onOpenChange={setWorkoutOpen}
+        exercises={workoutExercises}
+      />
     </section>
   );
 };
