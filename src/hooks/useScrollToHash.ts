@@ -2,22 +2,38 @@ import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 
 /**
- * Globalny scroll-to-anchor dla React Router.
+ * Globalny scroll-to-anchor dla React Router z offsetem pod sticky header.
  *
  * React Router nie wykonuje natywnego scrolla do `#hash` po wczytaniu strony
  * ani po nawigacji client-side. Ten hook nasłuchuje zmian `location.hash`
  * (a także zmian `pathname` — bo użytkownik może wejść np. z `/?#sekcja`)
  * i scrolluje do elementu o danym `id`.
  *
- * Krótki łańcuch rAF + setTimeout daje sekcjom czas na zamontowanie
- * i animację framer-motion (`whileInView`/`initial`), żeby `scrollIntoView`
- * trafił we właściwą pozycję — a nie w placeholder przed animacją.
+ * Header w `Header.tsx` jest `position: fixed` (h-16 = 64 px), więc bez offsetu
+ * tytuł sekcji byłby przykryty. Hook mierzy realną wysokość `<header>` przez
+ * `getBoundingClientRect()` (uwzględnia paddingi, border, mobile vs desktop)
+ * i odejmuje ją od docelowego scroll-position.
+ *
+ * Strategia retry-loop: layout sekcji rośnie po lazy-load obrazów,
+ * framer-motion `whileInView` i webfontach — korygujemy pozycję ~8× przez
+ * ~1.2 s. Każda korekta jest tania.
  *
  * Bezpieczne fallbacki:
- * - jeśli `hash` jest pusty → no-op (pozwala domyślnemu zachowaniu Routera zarządzać top-scroll)
- * - jeśli element nie istnieje w DOM → no-op (np. literówka w linku)
- * - jeśli użytkownik preferuje `prefers-reduced-motion: reduce` → scroll bez animacji
+ * - hash pusty → no-op
+ * - element nie istnieje → no-op
+ * - brak `<header>` → fallback offset 80 px
+ * - `prefers-reduced-motion: reduce` → scroll bez animacji
  */
+
+const HEADER_FALLBACK_OFFSET = 80;
+const ANCHOR_BREATHING_ROOM = 12;
+
+const getHeaderOffset = () => {
+  const header = document.querySelector("header");
+  if (!header) return HEADER_FALLBACK_OFFSET;
+  return header.getBoundingClientRect().height;
+};
+
 export const useScrollToHash = () => {
   const { hash, pathname } = useLocation();
 
@@ -40,10 +56,6 @@ export const useScrollToHash = () => {
 
     const behavior: ScrollBehavior = prefersReducedMotion ? "auto" : "smooth";
 
-    // Strategia: ścigamy się ze zmianami layoutu — sekcje powyżej anchora mogą rosnąć
-    // (lazy-loadowane obrazy, framer-motion `whileInView`, czcionki webfont).
-    // Zamiast jednego scrolla po 120 ms, korygujemy pozycję kilkukrotnie aż element
-    // znajdzie się w viewporcie ALBO upłynie ~1.2 s. Każda korekta jest tania.
     let attempts = 0;
     const maxAttempts = 8;
     const intervalMs = 150;
@@ -51,7 +63,16 @@ export const useScrollToHash = () => {
     const scrollToTarget = () => {
       const target = document.getElementById(id);
       if (!target) return false;
-      target.scrollIntoView({ behavior, block: "start" });
+
+      // Liczymy absolutną pozycję elementu w dokumencie i odejmujemy
+      // wysokość headera + mały oddech (12 px), żeby tytuł sekcji nie
+      // dotykał dolnej krawędzi paska nawigacji.
+      const rect = target.getBoundingClientRect();
+      const absoluteTop = rect.top + window.scrollY;
+      const offset = getHeaderOffset() + ANCHOR_BREATHING_ROOM;
+      const top = Math.max(0, absoluteTop - offset);
+
+      window.scrollTo({ top, behavior });
       return true;
     };
 
