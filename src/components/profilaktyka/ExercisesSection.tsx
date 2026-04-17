@@ -125,7 +125,7 @@ const ExercisesSection = () => {
     if (!file) return;
 
     const result = await parseWorkoutProgressFile(file);
-    if (!result.ok) {
+    if (result.ok === false) {
       toast.error("Nie udało się zaimportować pliku.", {
         description: result.error.message,
       });
