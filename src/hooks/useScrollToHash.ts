@@ -28,7 +28,19 @@ import { useLocation } from "react-router-dom";
 const HEADER_FALLBACK_OFFSET = 80;
 const ANCHOR_BREATHING_ROOM = 12;
 
+/**
+ * Preferuje CSS var `--header-height` (ustawiana w Header.tsx przez ResizeObserver) —
+ * jedno źródło prawdy współdzielone z `scroll-mt-[var(--header-height)]` itd.
+ * Fallback do `getBoundingClientRect()` na <header>, ostatecznie 80 px.
+ */
 const getHeaderOffset = () => {
+  const cssVar = getComputedStyle(document.documentElement)
+    .getPropertyValue("--header-height")
+    .trim();
+  if (cssVar) {
+    const parsed = parseFloat(cssVar);
+    if (Number.isFinite(parsed) && parsed > 0) return parsed;
+  }
   const header = document.querySelector("header");
   if (!header) return HEADER_FALLBACK_OFFSET;
   return header.getBoundingClientRect().height;

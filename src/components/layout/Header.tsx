@@ -69,8 +69,39 @@ const Header = () => {
   const [megaOpen, setMegaOpen] = useState<string | null>(null);
   const [navKey, setNavKey] = useState(0);
   const megaLockedUntil = useRef(0);
+  const headerRef = useRef<HTMLElement>(null);
   const location = useLocation();
   const pathname = location.pathname;
+
+  // Publikuje realną wysokość headera jako CSS var `--header-height` na <html>.
+  // Jedno źródło prawdy dla:
+  //   - useScrollToHash (offset pod sticky headerem)
+  //   - klas `scroll-mt-[var(--header-height)]` na sekcjach z id
+  //   - innych sticky elementów (np. boczny sidebar `top: var(--header-height)`)
+  // ResizeObserver łapie zmiany wysokości na resize, mobile vs desktop (h-16 vs h-20),
+  // toggle stanu `scrolled` (border-b dodaje 1px), oraz lazy-load logo/webfonty.
+  useEffect(() => {
+    const el = headerRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+
+    const setVar = (height: number) => {
+      document.documentElement.style.setProperty(
+        "--header-height",
+        `${Math.round(height)}px`,
+      );
+    };
+
+    setVar(el.getBoundingClientRect().height);
+
+    const ro = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        setVar(entry.contentRect.height);
+      }
+    });
+    ro.observe(el);
+
+    return () => ro.disconnect();
+  }, []);
 
   const handleMegaEnter = useCallback((key: string) => {
     if (Date.now() < megaLockedUntil.current) return;
@@ -104,6 +135,7 @@ const Header = () => {
 
   return (
     <header
+      ref={headerRef}
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         scrolled
           ? "bg-background/95 backdrop-blur-md shadow-sm border-b border-border"
