@@ -23,6 +23,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import schematImg from "@/assets/profilaktyka-zylakow-schemat.png";
+import RiskQuiz from "@/components/profilaktyka/RiskQuiz";
 
 const easeOut = [0.16, 1, 0.3, 1] as const;
 
@@ -374,6 +375,23 @@ const ProfilaktykaZylakow = () => {
               </ul>
             </div>
           </div>
+        </motion.section>
+
+        {/* Quiz — Test ryzyka */}
+        <motion.section {...fadeUp} className="space-y-6">
+          <div className="text-center">
+            <p className="text-sm font-sans uppercase tracking-[0.15em] text-primary mb-3">
+              Sprawdź siebie
+            </p>
+            <h2 className="font-heading text-3xl md:text-4xl text-foreground mb-3">
+              Test ryzyka żylaków
+            </h2>
+            <div className="premium-divider mb-4" />
+            <p className="text-muted-foreground max-w-2xl mx-auto">
+              Pięć krótkich pytań, które pomogą oszacować Twoje indywidualne ryzyko przewlekłej choroby żylnej.
+            </p>
+          </div>
+          <RiskQuiz />
         </motion.section>
 
         {/* Metody leczenia — krótkie */}
