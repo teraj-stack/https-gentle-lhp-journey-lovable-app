@@ -48,6 +48,8 @@ const WorkoutModal = ({ open, onOpenChange, exercises }: Props) => {
   const intervalRef = useRef<number | null>(null);
   const voiceOnRef = useRef(voiceOn);
   const recordedRef = useRef(false);
+  const milestoneFiredRef = useRef(false);
+  const [milestone, setMilestone] = useState<MilestoneInfo | null>(null);
   const { currentStreak, recordCompletion } = useWorkoutStreak();
 
   useEffect(() => {
