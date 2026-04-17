@@ -91,9 +91,17 @@ const Blog = () => {
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h2 className="text-xl md:text-2xl font-semibold font-serif text-foreground group-hover:text-primary transition-colors mb-2">
-                        {post.title}
-                      </h2>
+                      <div className="flex items-start gap-2 mb-2 flex-wrap">
+                        <h2 className="text-xl md:text-2xl font-semibold font-serif text-foreground group-hover:text-primary transition-colors">
+                          {post.title}
+                        </h2>
+                        {isNew(post.published_at) && (
+                          <Badge className="bg-primary text-primary-foreground gap-1 mt-1 shrink-0">
+                            <Sparkles className="w-3 h-3" />
+                            Nowy
+                          </Badge>
+                        )}
+                      </div>
                       {post.published_at && (
                         <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-3">
                           <Calendar className="w-3.5 h-3.5" />
