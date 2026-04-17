@@ -452,20 +452,6 @@ const WorkoutModal = ({ open, onOpenChange, exercises }: Props) => {
                     </div>
                   )}
 
-                  <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                    <Button variant="hero" size="lg" onClick={reset} className="gap-2">
-                      <RotateCcw className="w-4 h-4" /> Powtórz trening
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="lg"
-                      onClick={() => onOpenChange(false)}
-                    >
-                      Zamknij
-                    </Button>
-                      </div>
-                    </motion.div>
-                  )}
                   {milestone && (
                     <motion.div
                       initial={{ opacity: 0 }}
@@ -500,6 +486,21 @@ const WorkoutModal = ({ open, onOpenChange, exercises }: Props) => {
                       </button>
                     </motion.div>
                   )}
+
+                  <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                    <Button variant="hero" size="lg" onClick={reset} className="gap-2">
+                      <RotateCcw className="w-4 h-4" /> Powtórz trening
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      onClick={() => onOpenChange(false)}
+                    >
+                      Zamknij
+                    </Button>
+                  </div>
+                </motion.div>
+              )}
             </AnimatePresence>
           </div>
         </div>
