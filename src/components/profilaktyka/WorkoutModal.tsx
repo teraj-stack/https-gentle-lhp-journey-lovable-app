@@ -17,6 +17,11 @@ import {
 } from "lucide-react";
 import { useWorkoutStreak } from "@/hooks/useWorkoutStreak";
 import { fireMilestoneConfetti, getMilestone, type MilestoneInfo } from "@/lib/streakMilestones";
+import {
+  isFanfareEnabled,
+  setFanfareEnabled,
+  playMilestoneFanfare,
+} from "@/lib/milestoneFanfare";
 
 export type WorkoutExercise = {
   Icon: () => JSX.Element;
@@ -52,6 +57,7 @@ const WorkoutModal = ({ open, onOpenChange, exercises }: Props) => {
   const recordedRef = useRef(false);
   const milestoneFiredRef = useRef(false);
   const [milestone, setMilestone] = useState<MilestoneInfo | null>(null);
+  const [fanfareOn, setFanfareOn] = useState(() => isFanfareEnabled());
   const { currentStreak, recordCompletion } = useWorkoutStreak();
 
   useEffect(() => {
@@ -97,6 +103,8 @@ const WorkoutModal = ({ open, onOpenChange, exercises }: Props) => {
       // mały delay, żeby ekran "Brawo" zdążył się pojawić
       window.setTimeout(() => fireMilestoneConfetti(), 350);
       window.setTimeout(() => fireMilestoneConfetti(), 900);
+      // Subtelne fanfary — Web Audio (respektuje toggle w localStorage)
+      window.setTimeout(() => playMilestoneFanfare(), 250);
     }
   }, [phase, currentStreak]);
 
@@ -442,6 +450,41 @@ const WorkoutModal = ({ open, onOpenChange, exercises }: Props) => {
                         </span>
                       </div>
                     </div>
+                  )}
+
+                  {milestone && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ duration: 0.4, delay: 0.6 }}
+                      className="flex justify-center -mt-3 mb-5"
+                    >
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const next = !fanfareOn;
+                          setFanfareOn(next);
+                          setFanfareEnabled(next);
+                          if (next) {
+                            // Podgląd dźwięku po włączeniu
+                            playMilestoneFanfare();
+                          }
+                        }}
+                        className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.18em] font-sans text-muted-foreground/70 hover:text-primary transition-colors"
+                        aria-label={
+                          fanfareOn
+                            ? "Wycisz dźwięk fanfar przy kolejnych kamieniach milowych"
+                            : "Włącz dźwięk fanfar przy kolejnych kamieniach milowych"
+                        }
+                      >
+                        {fanfareOn ? (
+                          <Volume2 className="w-3 h-3" />
+                        ) : (
+                          <VolumeX className="w-3 h-3" />
+                        )}
+                        {fanfareOn ? "Fanfary włączone" : "Fanfary wyciszone"}
+                      </button>
+                    </motion.div>
                   )}
 
                   <div className="flex flex-col sm:flex-row gap-3 justify-center">
