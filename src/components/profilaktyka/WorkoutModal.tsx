@@ -103,6 +103,8 @@ const WorkoutModal = ({ open, onOpenChange, exercises }: Props) => {
       // mały delay, żeby ekran "Brawo" zdążył się pojawić
       window.setTimeout(() => fireMilestoneConfetti(), 350);
       window.setTimeout(() => fireMilestoneConfetti(), 900);
+      // Subtelne fanfary — Web Audio (respektuje toggle w localStorage)
+      window.setTimeout(() => playMilestoneFanfare(), 250);
     }
   }, [phase, currentStreak]);
 
