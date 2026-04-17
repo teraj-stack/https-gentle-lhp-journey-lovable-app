@@ -11,6 +11,7 @@ import {
   WallSitIcon,
 } from "./ExerciseIcons";
 import WorkoutModal, { type WorkoutExercise } from "./WorkoutModal";
+import StreakCalendar from "./StreakCalendar";
 import { useWorkoutStreak } from "@/hooks/useWorkoutStreak";
 
 const easeOut = [0.16, 1, 0.3, 1] as const;
@@ -97,7 +98,7 @@ const exercises: Exercise[] = [
 
 const ExercisesSection = () => {
   const [workoutOpen, setWorkoutOpen] = useState(false);
-  const { currentStreak, totalDays, completedToday } = useWorkoutStreak();
+  const { currentStreak, totalDays, completedToday, days } = useWorkoutStreak();
   const totalMinutes = Math.round(
     (exercises.reduce((s, e) => s + e.durationSec, 0) + (exercises.length - 1) * 10) / 60,
   );
@@ -155,6 +156,7 @@ const ExercisesSection = () => {
               )}
             </motion.div>
           )}
+          {totalDays > 0 && <StreakCalendar completedDays={days} />}
           <div className="flex flex-col sm:flex-row items-center gap-3">
             <Button
               variant="hero"
