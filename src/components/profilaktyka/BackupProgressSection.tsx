@@ -1,6 +1,14 @@
 import { useRef } from "react";
 import { motion } from "framer-motion";
-import { Download, Upload, RotateCcw, ShieldCheck, Smartphone, FileJson } from "lucide-react";
+import {
+  Download,
+  Upload,
+  RotateCcw,
+  ShieldCheck,
+  Smartphone,
+  FileJson,
+  HelpCircle,
+} from "lucide-react";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -13,11 +21,36 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useWorkoutStreak } from "@/hooks/useWorkoutStreak";
 import { downloadWorkoutProgressJson } from "@/lib/workoutProgressExport";
 import { parseWorkoutProgressFile } from "@/lib/workoutProgressImport";
 
 const easeOut = [0.16, 1, 0.3, 1] as const;
+
+/** Statyczny przykład struktury eksportu — pokazywany w Popoverze "Co jest w pliku?". */
+const SAMPLE_JSON = `{
+  "schema": "cml-workout-progress",
+  "schemaVersion": 1,
+  "exportedAt": "2026-04-17T08:30:00.000Z",
+  "source": {
+    "app": "Centrum Medycyny Laserowej",
+    "page": "/dla-pacjenta/profilaktyka-zylakow",
+    "feature": "Trening dnia — profilaktyka żylaków"
+  },
+  "summary": {
+    "currentStreak": 14,
+    "totalDays": 18,
+    "firstDayISO": "2026-03-30",
+    "lastDayISO": "2026-04-17",
+    "milestonesAchieved": [7, 14],
+    "nextMilestone": 30,
+    "daysToNextMilestone": 16
+  },
+  "history": {
+    "days": ["2026-03-30", "2026-03-31", "...", "2026-04-17"]
+  }
+}`;
 
 const BackupProgressSection = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -163,51 +196,91 @@ const BackupProgressSection = () => {
         </button>
       </div>
 
-      {totalDays > 0 && (
-        <div className="mt-5 pt-4 border-t border-border/40 flex justify-center">
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <button
-                type="button"
-                className="inline-flex items-center gap-1.5 text-[11px] uppercase tracking-[0.18em] font-sans text-muted-foreground/70 hover:text-destructive transition-colors"
-                aria-label="Zresetuj postęp treningu"
-              >
-                <RotateCcw className="w-3 h-3" />
-                Zresetuj postęp
-              </button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle className="font-heading">
-                  Zresetować cały postęp?
-                </AlertDialogTitle>
-                <AlertDialogDescription>
-                  Stracisz aktualny streak ({currentStreak}{" "}
-                  {currentStreak === 1 ? "dzień" : "dni"} z rzędu) oraz historię {totalDays}{" "}
-                  ukończonych dni. Tej operacji nie można cofnąć.
-                  <br />
-                  <br />
-                  <span className="text-foreground font-semibold">Wskazówka:</span>{" "}
-                  jeśli chcesz zachować historię, najpierw użyj opcji{" "}
-                  <span className="text-foreground">Eksportuj postęp</span> powyżej.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Anuluj</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={() => {
-                    reset();
-                    toast.success("Postęp został zresetowany.");
-                  }}
-                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+      <div className="mt-5 pt-4 border-t border-border/40 flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
+        <Popover>
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              className="inline-flex items-center gap-1.5 text-[11px] uppercase tracking-[0.18em] font-sans text-muted-foreground/70 hover:text-primary transition-colors"
+              aria-label="Pokaż przykładową strukturę pliku JSON z postępem"
+            >
+              <HelpCircle className="w-3 h-3" />
+              Co jest w pliku?
+            </button>
+          </PopoverTrigger>
+          <PopoverContent
+            side="top"
+            align="center"
+            className="w-[min(92vw,30rem)] p-0 border-primary/20 bg-card/95 backdrop-blur"
+          >
+            <div className="p-4 border-b border-border/50">
+              <div className="flex items-center gap-2 mb-1.5">
+                <FileJson className="w-4 h-4 text-primary" aria-hidden="true" />
+                <p className="text-[11px] font-sans uppercase tracking-[0.18em] text-primary">
+                  Pełna transparentność
+                </p>
+              </div>
+              <p className="text-sm text-foreground leading-snug">
+                Plik <code className="font-mono text-[12px] bg-primary/10 text-foreground/90 px-1.5 py-0.5 rounded">.json</code>{" "}
+                zawiera wyłącznie Twoją historię treningu — bez danych osobowych, bez identyfikatorów, bez śledzenia.
+              </p>
+            </div>
+            <pre
+              className="text-[10.5px] leading-relaxed font-mono text-foreground/85 p-4 max-h-72 overflow-auto bg-background/40 rounded-b-md"
+              aria-label="Przykładowa struktura pliku JSON"
+            >
+              <code>{SAMPLE_JSON}</code>
+            </pre>
+          </PopoverContent>
+        </Popover>
+
+        {totalDays > 0 && (
+          <>
+            <span className="hidden sm:inline-block h-3 w-px bg-border/60" aria-hidden="true" />
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-1.5 text-[11px] uppercase tracking-[0.18em] font-sans text-muted-foreground/70 hover:text-destructive transition-colors"
+                  aria-label="Zresetuj postęp treningu"
                 >
-                  Tak, zresetuj
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </div>
-      )}
+                  <RotateCcw className="w-3 h-3" />
+                  Zresetuj postęp
+                </button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle className="font-heading">
+                    Zresetować cały postęp?
+                  </AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Stracisz aktualny streak ({currentStreak}{" "}
+                    {currentStreak === 1 ? "dzień" : "dni"} z rzędu) oraz historię {totalDays}{" "}
+                    ukończonych dni. Tej operacji nie można cofnąć.
+                    <br />
+                    <br />
+                    <span className="text-foreground font-semibold">Wskazówka:</span>{" "}
+                    jeśli chcesz zachować historię, najpierw użyj opcji{" "}
+                    <span className="text-foreground">Eksportuj postęp</span> powyżej.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Anuluj</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() => {
+                      reset();
+                      toast.success("Postęp został zresetowany.");
+                    }}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    Tak, zresetuj
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </>
+        )}
+      </div>
     </motion.section>
   );
 };
