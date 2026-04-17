@@ -77,13 +77,20 @@ const BlogPost = () => {
           </Link>
 
           {post.cover_image_url && (
-            <figure className="mb-8 -mx-4 md:mx-0 overflow-hidden md:rounded-lg border-y md:border border-border/50 bg-muted/30">
-              <img
-                src={post.cover_image_url}
-                alt={post.title}
-                className="w-full h-auto max-h-[480px] object-cover"
-                loading="eager"
-              />
+            <figure className="mb-8 -mx-4 md:mx-0 overflow-hidden md:rounded-lg border-y md:border border-border/50 bg-background">
+              <div className="relative w-full max-h-[480px]">
+                <img
+                  src={post.cover_image_url}
+                  alt={post.title}
+                  className="w-full h-auto max-h-[480px] object-cover"
+                  loading="eager"
+                />
+                {/* Subtelny ciemny gradient harmonizujący z dark theme — spójny z listą /blog */}
+                <div
+                  className="absolute inset-0 bg-gradient-to-t from-background/70 via-background/25 to-background/10 mix-blend-multiply pointer-events-none"
+                  aria-hidden="true"
+                />
+              </div>
             </figure>
           )}
 
