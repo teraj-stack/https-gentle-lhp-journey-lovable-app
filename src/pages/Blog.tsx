@@ -5,12 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Calendar, ArrowRight, Sparkles } from "lucide-react";
 import SeoHead from "@/components/shared/SeoHead";
 import Breadcrumbs from "@/components/layout/Breadcrumbs";
-import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
-const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
-const isNew = (publishedAt: string | null) =>
-  !!publishedAt && Date.now() - new Date(publishedAt).getTime() <= SEVEN_DAYS_MS;
+import NewBadge, { isNew } from "@/components/blog/NewBadge";
 
 type FilterValue = "all" | "new";
 
@@ -137,12 +133,7 @@ const Blog = () => {
                         <h2 className="text-xl md:text-2xl font-semibold font-serif text-foreground group-hover:text-primary transition-colors">
                           {post.title}
                         </h2>
-                        {isNew(post.published_at) && (
-                          <Badge className="bg-primary text-primary-foreground gap-1 mt-1 shrink-0">
-                            <Sparkles className="w-3 h-3" />
-                            Nowy
-                          </Badge>
-                        )}
+                        {isNew(post.published_at) && <NewBadge className="mt-1" />}
                       </div>
                       {post.published_at && (
                         <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-3">
