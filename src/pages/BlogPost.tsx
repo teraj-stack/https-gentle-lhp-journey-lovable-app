@@ -99,12 +99,7 @@ const BlogPost = () => {
             <h1 className="text-3xl md:text-4xl font-bold font-serif text-foreground whitespace-pre-line">
               {post.title}
             </h1>
-            {isNew(post.published_at) && (
-              <Badge className="bg-primary text-primary-foreground gap-1 mt-2 shrink-0">
-                <Sparkles className="w-3 h-3" />
-                Nowy
-              </Badge>
-            )}
+            {isNew(post.published_at) && <NewBadge className="mt-2" />}
           </div>
 
           {post.published_at && (
