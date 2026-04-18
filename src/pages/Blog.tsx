@@ -2,22 +2,45 @@ import { useMemo } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Calendar, ArrowRight, Sparkles } from "lucide-react";
+import { Calendar, ArrowRight, Sparkles, X } from "lucide-react";
 import SeoHead from "@/components/shared/SeoHead";
 import Breadcrumbs from "@/components/layout/Breadcrumbs";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 import NewBadge, { isNew } from "@/components/blog/NewBadge";
+import {
+  CATEGORY_LABELS,
+  CATEGORY_ORDER,
+  detectCategory,
+  type BlogCategory,
+} from "@/lib/blogCategories";
 
 type FilterValue = "all" | "new";
+
+const FILTERABLE_CATEGORIES: BlogCategory[] = CATEGORY_ORDER.filter(
+  (c) => c !== "inne",
+);
 
 const Blog = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const filter: FilterValue = searchParams.get("filter") === "new" ? "new" : "all";
+  const categoryParam = searchParams.get("category");
+  const activeCategory: BlogCategory | null =
+    categoryParam && (FILTERABLE_CATEGORIES as string[]).includes(categoryParam)
+      ? (categoryParam as BlogCategory)
+      : null;
 
   const setFilter = (next: FilterValue) => {
     const params = new URLSearchParams(searchParams);
     if (next === "all") params.delete("filter");
     else params.set("filter", next);
+    setSearchParams(params, { replace: true });
+  };
+
+  const setCategory = (next: BlogCategory | null) => {
+    const params = new URLSearchParams(searchParams);
+    if (!next) params.delete("category");
+    else params.set("category", next);
     setSearchParams(params, { replace: true });
   };
 
@@ -34,15 +57,35 @@ const Blog = () => {
     },
   });
 
-  const newCount = useMemo(
-    () => (posts ?? []).filter((p) => isNew(p.published_at)).length,
+  /** Wpisy z dopisaną kategorią — liczone raz. */
+  const postsWithCategory = useMemo(
+    () => (posts ?? []).map((p) => ({ ...p, category: detectCategory(p) })),
     [posts],
   );
 
+  const newCount = useMemo(
+    () => postsWithCategory.filter((p) => isNew(p.published_at)).length,
+    [postsWithCategory],
+  );
+
+  /** Liczba wpisów per kategoria — do wyświetlenia w chipach. */
+  const categoryCounts = useMemo(() => {
+    const counts: Record<BlogCategory, number> = {
+      flebologia: 0,
+      proktologia: 0,
+      ginekomastia: 0,
+      inne: 0,
+    };
+    for (const p of postsWithCategory) counts[p.category]++;
+    return counts;
+  }, [postsWithCategory]);
+
   const filteredPosts = useMemo(() => {
-    if (!posts) return posts;
-    return filter === "new" ? posts.filter((p) => isNew(p.published_at)) : posts;
-  }, [posts, filter]);
+    let result = postsWithCategory;
+    if (filter === "new") result = result.filter((p) => isNew(p.published_at));
+    if (activeCategory) result = result.filter((p) => p.category === activeCategory);
+    return result;
+  }, [postsWithCategory, filter, activeCategory]);
 
   return (
     <>
