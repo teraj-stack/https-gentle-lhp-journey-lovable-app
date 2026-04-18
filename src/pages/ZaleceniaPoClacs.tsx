@@ -144,7 +144,7 @@ const ZaleceniaPoClacs = () => {
                 Zabieg CLaCS to <strong className="text-foreground">połączenie trzech technologii</strong> — lasera przezskórnego, krioskleroterapii i chłodzenia — które razem dają najskuteczniejsze efekty w usuwaniu pajączków naczyniowych. Procedura jest ambulatoryjna, a powrót do codziennych aktywności natychmiastowy.
               </p>
               <p>
-                Poniższe wskazówki pomogą Ci maksymalnie wykorzystać efekty zabiegu i uniknąć przebarwień. Kluczowe filary: <strong className="text-foreground">kompresja, ochrona przeciwsłoneczna i cierpliwość</strong> — pełny efekt widoczny jest po 4–8 tygodniach.
+                Poniższe wskazówki pomogą Ci maksymalnie wykorzystać efekty zabiegu i uniknąć przebarwień. Kluczowe filary: <strong className="text-foreground">unikanie ciasnych ubrań, BEZWZGLĘDNY ZAKAZ NOSZENIA WYROBÓW UCISKOWYCH, stosowanie kremów robionych (dają ochronę przeciwsłoneczną i cierpliwość</strong> — pełny efekt widoczny jest po 4–8 tygodniach.
               </p>
             </div>
           </motion.div>
