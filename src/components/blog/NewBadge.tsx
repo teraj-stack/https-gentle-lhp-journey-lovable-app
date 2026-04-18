@@ -48,7 +48,7 @@ const NewBadge = ({ className }: NewBadgeProps) => (
           </Badge>
         </span>
       </TooltipTrigger>
-      <TooltipContent side="top">
+      <TooltipContent side="right">
         Wpis opublikowany w ciągu ostatnich 7 dni
       </TooltipContent>
     </Tooltip>
