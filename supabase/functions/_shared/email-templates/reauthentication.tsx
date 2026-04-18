@@ -7,7 +7,6 @@ import {
   Container,
   Head,
   Heading,
-  Hr,
   Html,
   Preview,
   Text,
@@ -18,19 +17,17 @@ interface ReauthenticationEmailProps {
 }
 
 export const ReauthenticationEmail = ({ token }: ReauthenticationEmailProps) => (
-  <Html lang="pl" dir="ltr">
+  <Html lang="en" dir="ltr">
     <Head />
-    <Preview>Twój kod weryfikacyjny</Preview>
+    <Preview>Your verification code</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Text style={logo}>CML Centrum Medycyny Laserowej</Text>
-        <Hr style={divider} />
-        <Heading style={h1}>Kod weryfikacyjny</Heading>
-        <Text style={text}>Użyj poniższego kodu, aby potwierdzić swoją tożsamość:</Text>
+        <Heading style={h1}>Confirm reauthentication</Heading>
+        <Text style={text}>Use the code below to confirm your identity:</Text>
         <Text style={codeStyle}>{token}</Text>
-        <Hr style={divider} />
         <Text style={footer}>
-          Kod wygaśnie wkrótce. Jeśli nie prosiłeś/aś o ten kod, zignoruj tę wiadomość.
+          This code will expire shortly. If you didn't request this, you can
+          safely ignore this email.
         </Text>
       </Container>
     </Body>
@@ -39,11 +36,25 @@ export const ReauthenticationEmail = ({ token }: ReauthenticationEmailProps) => 
 
 export default ReauthenticationEmail
 
-const main = { backgroundColor: '#ffffff', fontFamily: "'Inter', Arial, sans-serif" }
-const container = { padding: '32px 28px', maxWidth: '560px', margin: '0 auto' }
-const logo = { fontSize: '13px', fontWeight: '600' as const, color: '#c9a84c', letterSpacing: '0.12em', textTransform: 'uppercase' as const, margin: '0 0 16px' }
-const divider = { borderColor: '#e8e0d0', margin: '20px 0' }
-const h1 = { fontSize: '22px', fontWeight: '700' as const, color: '#1a1d24', margin: '0 0 20px', fontFamily: "'Cormorant Garamond', Georgia, serif" }
-const text = { fontSize: '14px', color: '#55575d', lineHeight: '1.6', margin: '0 0 16px' }
-const codeStyle = { fontFamily: "'Cormorant Garamond', Courier, monospace", fontSize: '28px', fontWeight: '700' as const, color: '#c9a84c', margin: '0 0 30px', letterSpacing: '0.15em' }
-const footer = { fontSize: '12px', color: '#999999', margin: '24px 0 0' }
+const main = { backgroundColor: '#ffffff', fontFamily: 'Arial, sans-serif' }
+const container = { padding: '20px 25px' }
+const h1 = {
+  fontSize: '22px',
+  fontWeight: 'bold' as const,
+  color: '#000000',
+  margin: '0 0 20px',
+}
+const text = {
+  fontSize: '14px',
+  color: '#55575d',
+  lineHeight: '1.5',
+  margin: '0 0 25px',
+}
+const codeStyle = {
+  fontFamily: 'Courier, monospace',
+  fontSize: '22px',
+  fontWeight: 'bold' as const,
+  color: '#000000',
+  margin: '0 0 30px',
+}
+const footer = { fontSize: '12px', color: '#999999', margin: '30px 0 0' }

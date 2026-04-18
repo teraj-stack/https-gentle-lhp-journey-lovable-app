@@ -37,9 +37,9 @@ const EMAIL_TEMPLATES: Record<string, React.ComponentType<any>> = {
 
 // Configuration
 const SITE_NAME = "gentle-lhp-journey"
-const SENDER_DOMAIN = "notify.mcml.pl"
-const ROOT_DOMAIN = "mcml.pl"
-const FROM_DOMAIN = "mcml.pl" // Domain shown in From address (may be root or sender subdomain)
+const SENDER_DOMAIN = "notify.bestcml.io"
+const ROOT_DOMAIN = "bestcml.io"
+const FROM_DOMAIN = "bestcml.io" // Domain shown in From address (may be root or sender subdomain)
 
 // Sample data for preview mode ONLY (not used in actual email sending).
 // URLs are baked in at scaffold time from the project's real data.
