@@ -33,20 +33,20 @@ export const InviteEmail = ({
       <Container style={container}>
         <Text style={logo}>CML Centrum Medycyny Laserowej</Text>
         <Hr style={divider} />
-        <Heading style={h1}>Otrzymałeś/aś zaproszenie</Heading>
+        <Heading style={h1}>Otrzymujesz zaproszenie</Heading>
         <Text style={text}>
-          Zostałeś/aś zaproszony/a do{' '}
+          Zostałeś/aś zaproszony/a do dołączenia do{' '}
           <Link href={siteUrl} style={linkStyle}>
             <strong>{siteName}</strong>
           </Link>
-          . Kliknij przycisk poniżej, aby zaakceptować zaproszenie i utworzyć konto.
+          . Kliknij przycisk poniżej, aby przyjąć zaproszenie i utworzyć konto.
         </Text>
         <Button style={button} href={confirmationUrl}>
-          Zaakceptuj zaproszenie
+          Przyjmij zaproszenie
         </Button>
         <Hr style={divider} />
         <Text style={footer}>
-          Jeśli nie spodziewałeś/aś się tego zaproszenia, możesz zignorować tę wiadomość.
+          Jeśli nie spodziewałeś/aś się tej wiadomości, możesz ją zignorować.
         </Text>
       </Container>
     </Body>

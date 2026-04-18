@@ -25,21 +25,22 @@ export const RecoveryEmail = ({
 }: RecoveryEmailProps) => (
   <Html lang="pl" dir="ltr">
     <Head />
-    <Preview>Zresetuj hasło — {siteName}</Preview>
+    <Preview>Resetowanie hasła — {siteName}</Preview>
     <Body style={main}>
       <Container style={container}>
         <Text style={logo}>CML Centrum Medycyny Laserowej</Text>
         <Hr style={divider} />
-        <Heading style={h1}>Resetowanie hasła</Heading>
+        <Heading style={h1}>Zresetuj swoje hasło</Heading>
         <Text style={text}>
-          Otrzymaliśmy prośbę o zresetowanie hasła do Twojego konta w {siteName}. Kliknij przycisk poniżej, aby ustawić nowe hasło.
+          Otrzymaliśmy prośbę o zresetowanie hasła do konta w {siteName}.
+          Kliknij przycisk poniżej, aby ustawić nowe hasło.
         </Text>
         <Button style={button} href={confirmationUrl}>
-          Ustaw nowe hasło
+          Zresetuj hasło
         </Button>
         <Hr style={divider} />
         <Text style={footer}>
-          Jeśli nie prosiłeś/aś o reset hasła, zignoruj tę wiadomość. Twoje hasło pozostanie bez zmian.
+          Jeśli nie prosiłeś/aś o zmianę hasła, zignoruj tę wiadomość — Twoje hasło pozostanie bez zmian.
         </Text>
       </Container>
     </Body>

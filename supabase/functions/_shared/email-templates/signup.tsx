@@ -41,10 +41,10 @@ export const SignupEmail = ({
           <Link href={siteUrl} style={linkStyle}>
             <strong>{siteName}</strong>
           </Link>
-          !
+          .
         </Text>
         <Text style={text}>
-          Potwierdź swój adres e-mail (
+          Potwierdź swój adres (
           <Link href={`mailto:${recipient}`} style={linkStyle}>
             {recipient}
           </Link>
