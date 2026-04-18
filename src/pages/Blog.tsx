@@ -5,12 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Calendar, ArrowRight, Sparkles } from "lucide-react";
 import SeoHead from "@/components/shared/SeoHead";
 import Breadcrumbs from "@/components/layout/Breadcrumbs";
-import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
-const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
-const isNew = (publishedAt: string | null) =>
-  !!publishedAt && Date.now() - new Date(publishedAt).getTime() <= SEVEN_DAYS_MS;
+import NewBadge, { isNew } from "@/components/blog/NewBadge";
 
 type FilterValue = "all" | "new";
 
