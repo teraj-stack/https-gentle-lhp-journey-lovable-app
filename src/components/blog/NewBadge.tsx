@@ -48,7 +48,12 @@ const NewBadge = ({ className }: NewBadgeProps) => (
           </Badge>
         </span>
       </TooltipTrigger>
-      <TooltipContent side="bottom" align="start" collisionPadding={12}>
+      <TooltipContent
+        side="bottom"
+        align="start"
+        collisionPadding={16}
+        className="max-w-[calc(100vw-2rem)]"
+      >
         Wpis opublikowany w ciągu ostatnich 7 dni
       </TooltipContent>
     </Tooltip>
