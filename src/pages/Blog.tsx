@@ -8,6 +8,7 @@ import Breadcrumbs from "@/components/layout/Breadcrumbs";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import NewBadge, { isNew } from "@/components/blog/NewBadge";
+import CategoryBadge from "@/components/blog/CategoryBadge";
 import {
   CATEGORY_LABELS,
   CATEGORY_ORDER,
@@ -214,12 +215,17 @@ const Blog = () => {
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-start gap-2 mb-2 flex-wrap">
-                        <h2 className="text-xl md:text-2xl font-semibold font-serif text-foreground group-hover:text-primary transition-colors">
-                          {post.title}
-                        </h2>
-                        {isNew(post.published_at) && <NewBadge className="mt-1" />}
+                      <div className="flex items-center gap-2 mb-2 flex-wrap">
+                        <CategoryBadge
+                          category={post.category}
+                          linkToFilter
+                          stopPropagation
+                        />
+                        {isNew(post.published_at) && <NewBadge />}
                       </div>
+                      <h2 className="text-xl md:text-2xl font-semibold font-serif text-foreground group-hover:text-primary transition-colors mb-2">
+                        {post.title}
+                      </h2>
                       {post.published_at && (
                         <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-3">
                           <Calendar className="w-3.5 h-3.5" />

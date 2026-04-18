@@ -6,6 +6,8 @@ import SeoHead from "@/components/shared/SeoHead";
 import Breadcrumbs from "@/components/layout/Breadcrumbs";
 import MarkdownRenderer from "@/components/shared/MarkdownRenderer";
 import NewBadge, { isNew } from "@/components/blog/NewBadge";
+import CategoryBadge from "@/components/blog/CategoryBadge";
+import { detectCategory } from "@/lib/blogCategories";
 
 const BlogPost = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -95,12 +97,13 @@ const BlogPost = () => {
             </figure>
           )}
 
-          <div className="flex items-start gap-3 flex-wrap mb-4">
-            <h1 className="text-3xl md:text-4xl font-bold font-serif text-foreground whitespace-pre-line">
-              {post.title}
-            </h1>
-            {isNew(post.published_at) && <NewBadge className="mt-2" />}
+          <div className="flex items-center gap-2 flex-wrap mb-3">
+            <CategoryBadge category={detectCategory(post)} linkToFilter />
+            {isNew(post.published_at) && <NewBadge />}
           </div>
+          <h1 className="text-3xl md:text-4xl font-bold font-serif text-foreground whitespace-pre-line mb-4">
+            {post.title}
+          </h1>
 
           {post.published_at && (
             <div className="flex items-center gap-1.5 text-sm text-muted-foreground mb-8">
