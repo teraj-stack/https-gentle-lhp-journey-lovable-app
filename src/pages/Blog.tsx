@@ -2,22 +2,45 @@ import { useMemo } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Calendar, ArrowRight, Sparkles } from "lucide-react";
+import { Calendar, ArrowRight, Sparkles, X } from "lucide-react";
 import SeoHead from "@/components/shared/SeoHead";
 import Breadcrumbs from "@/components/layout/Breadcrumbs";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 import NewBadge, { isNew } from "@/components/blog/NewBadge";
+import {
+  CATEGORY_LABELS,
+  CATEGORY_ORDER,
+  detectCategory,
+  type BlogCategory,
+} from "@/lib/blogCategories";
 
 type FilterValue = "all" | "new";
+
+const FILTERABLE_CATEGORIES: BlogCategory[] = CATEGORY_ORDER.filter(
+  (c) => c !== "inne",
+);
 
 const Blog = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const filter: FilterValue = searchParams.get("filter") === "new" ? "new" : "all";
+  const categoryParam = searchParams.get("category");
+  const activeCategory: BlogCategory | null =
+    categoryParam && (FILTERABLE_CATEGORIES as string[]).includes(categoryParam)
+      ? (categoryParam as BlogCategory)
+      : null;
 
   const setFilter = (next: FilterValue) => {
     const params = new URLSearchParams(searchParams);
     if (next === "all") params.delete("filter");
     else params.set("filter", next);
+    setSearchParams(params, { replace: true });
+  };
+
+  const setCategory = (next: BlogCategory | null) => {
+    const params = new URLSearchParams(searchParams);
+    if (!next) params.delete("category");
+    else params.set("category", next);
     setSearchParams(params, { replace: true });
   };
 
@@ -34,15 +57,35 @@ const Blog = () => {
     },
   });
 
-  const newCount = useMemo(
-    () => (posts ?? []).filter((p) => isNew(p.published_at)).length,
+  /** Wpisy z dopisaną kategorią — liczone raz. */
+  const postsWithCategory = useMemo(
+    () => (posts ?? []).map((p) => ({ ...p, category: detectCategory(p) })),
     [posts],
   );
 
+  const newCount = useMemo(
+    () => postsWithCategory.filter((p) => isNew(p.published_at)).length,
+    [postsWithCategory],
+  );
+
+  /** Liczba wpisów per kategoria — do wyświetlenia w chipach. */
+  const categoryCounts = useMemo(() => {
+    const counts: Record<BlogCategory, number> = {
+      flebologia: 0,
+      proktologia: 0,
+      ginekomastia: 0,
+      inne: 0,
+    };
+    for (const p of postsWithCategory) counts[p.category]++;
+    return counts;
+  }, [postsWithCategory]);
+
   const filteredPosts = useMemo(() => {
-    if (!posts) return posts;
-    return filter === "new" ? posts.filter((p) => isNew(p.published_at)) : posts;
-  }, [posts, filter]);
+    let result = postsWithCategory;
+    if (filter === "new") result = result.filter((p) => isNew(p.published_at));
+    if (activeCategory) result = result.filter((p) => p.category === activeCategory);
+    return result;
+  }, [postsWithCategory, filter, activeCategory]);
 
   return (
     <>
@@ -71,7 +114,7 @@ const Blog = () => {
             <TabsList className="bg-card border border-border">
               <TabsTrigger value="all" className="gap-2">
                 Wszystkie
-                <span className="text-xs text-muted-foreground">({posts?.length ?? 0})</span>
+                <span className="text-xs text-muted-foreground">({postsWithCategory.length})</span>
               </TabsTrigger>
               <TabsTrigger value="new" className="gap-2" disabled={newCount === 0}>
                 <Sparkles className="w-3.5 h-3.5" />
@@ -80,6 +123,48 @@ const Blog = () => {
               </TabsTrigger>
             </TabsList>
           </Tabs>
+
+          {/* Filtr kategorii — kumuluje się z zakładkami Wszystkie/Nowe */}
+          <div
+            className="mt-4 flex flex-wrap items-center gap-2"
+            role="group"
+            aria-label="Filtruj według kategorii"
+          >
+            <span className="text-xs text-muted-foreground mr-1">Kategoria:</span>
+            {FILTERABLE_CATEGORIES.map((cat) => {
+              const count = categoryCounts[cat];
+              const isActive = activeCategory === cat;
+              const isDisabled = count === 0;
+              return (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => setCategory(isActive ? null : cat)}
+                  disabled={isDisabled}
+                  aria-pressed={isActive}
+                  className="focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-full disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  <Badge
+                    variant={isActive ? "default" : "outline"}
+                    className="gap-1.5 cursor-pointer hover:bg-primary/20 transition-colors"
+                  >
+                    {CATEGORY_LABELS[cat]}
+                    <span className="text-[10px] opacity-70">({count})</span>
+                  </Badge>
+                </button>
+              );
+            })}
+            {activeCategory && (
+              <button
+                type="button"
+                onClick={() => setCategory(null)}
+                className="ml-1 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+                aria-label="Wyczyść filtr kategorii"
+              >
+                <X className="w-3 h-3" /> Wyczyść
+              </button>
+            )}
+          </div>
         </div>
       </section>
 
@@ -162,9 +247,13 @@ const Blog = () => {
             </div>
           ) : (
             <p className="text-muted-foreground text-center py-12">
-              {filter === "new"
-                ? "Brak nowych artykułów z ostatnich 7 dni."
-                : "Brak opublikowanych artykułów. Wróć wkrótce!"}
+              {activeCategory && filter === "new"
+                ? `Brak nowych artykułów w kategorii „${CATEGORY_LABELS[activeCategory]}”.`
+                : activeCategory
+                  ? `Brak artykułów w kategorii „${CATEGORY_LABELS[activeCategory]}”.`
+                  : filter === "new"
+                    ? "Brak nowych artykułów z ostatnich 7 dni."
+                    : "Brak opublikowanych artykułów. Wróć wkrótce!"}
             </p>
           )}
         </div>
