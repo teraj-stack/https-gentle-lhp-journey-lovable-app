@@ -133,12 +133,7 @@ const Blog = () => {
                         <h2 className="text-xl md:text-2xl font-semibold font-serif text-foreground group-hover:text-primary transition-colors">
                           {post.title}
                         </h2>
-                        {isNew(post.published_at) && (
-                          <Badge className="bg-primary text-primary-foreground gap-1 mt-1 shrink-0">
-                            <Sparkles className="w-3 h-3" />
-                            Nowy
-                          </Badge>
-                        )}
+                        {isNew(post.published_at) && <NewBadge className="mt-1" />}
                       </div>
                       {post.published_at && (
                         <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-3">
