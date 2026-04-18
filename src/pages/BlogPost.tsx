@@ -1,15 +1,11 @@
 import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Calendar, ArrowLeft, Sparkles } from "lucide-react";
+import { Calendar, ArrowLeft } from "lucide-react";
 import SeoHead from "@/components/shared/SeoHead";
 import Breadcrumbs from "@/components/layout/Breadcrumbs";
 import MarkdownRenderer from "@/components/shared/MarkdownRenderer";
-import { Badge } from "@/components/ui/badge";
-
-const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
-const isNew = (publishedAt: string | null) =>
-  !!publishedAt && Date.now() - new Date(publishedAt).getTime() <= SEVEN_DAYS_MS;
+import NewBadge, { isNew } from "@/components/blog/NewBadge";
 
 const BlogPost = () => {
   const { slug } = useParams<{ slug: string }>();
