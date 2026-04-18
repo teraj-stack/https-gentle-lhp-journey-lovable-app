@@ -1,10 +1,15 @@
 import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Calendar, ArrowLeft } from "lucide-react";
+import { Calendar, ArrowLeft, Sparkles } from "lucide-react";
 import SeoHead from "@/components/shared/SeoHead";
 import Breadcrumbs from "@/components/layout/Breadcrumbs";
 import MarkdownRenderer from "@/components/shared/MarkdownRenderer";
+import { Badge } from "@/components/ui/badge";
+
+const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+const isNew = (publishedAt: string | null) =>
+  !!publishedAt && Date.now() - new Date(publishedAt).getTime() <= SEVEN_DAYS_MS;
 
 const BlogPost = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -94,9 +99,17 @@ const BlogPost = () => {
             </figure>
           )}
 
-          <h1 className="text-3xl md:text-4xl font-bold font-serif text-foreground mb-4 whitespace-pre-line">
-            {post.title}
-          </h1>
+          <div className="flex items-start gap-3 flex-wrap mb-4">
+            <h1 className="text-3xl md:text-4xl font-bold font-serif text-foreground whitespace-pre-line">
+              {post.title}
+            </h1>
+            {isNew(post.published_at) && (
+              <Badge className="bg-primary text-primary-foreground gap-1 mt-2 shrink-0">
+                <Sparkles className="w-3 h-3" />
+                Nowy
+              </Badge>
+            )}
+          </div>
 
           {post.published_at && (
             <div className="flex items-center gap-1.5 text-sm text-muted-foreground mb-8">
