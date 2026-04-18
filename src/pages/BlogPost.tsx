@@ -7,6 +7,7 @@ import Breadcrumbs from "@/components/layout/Breadcrumbs";
 import MarkdownRenderer from "@/components/shared/MarkdownRenderer";
 import NewBadge, { isNew } from "@/components/blog/NewBadge";
 import CategoryBadge from "@/components/blog/CategoryBadge";
+import RelatedPosts from "@/components/blog/RelatedPosts";
 import { detectCategory } from "@/lib/blogCategories";
 
 const BlogPost = () => {
@@ -121,6 +122,8 @@ const BlogPost = () => {
           <div className="premium-divider !mx-0 mb-8" />
 
           <MarkdownRenderer content={post.content} className="prose-custom" />
+
+          <RelatedPosts currentSlug={post.slug} category={detectCategory(post)} />
         </div>
       </article>
     </>
