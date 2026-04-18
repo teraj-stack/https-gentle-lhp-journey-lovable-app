@@ -114,7 +114,7 @@ const Blog = () => {
             <TabsList className="bg-card border border-border">
               <TabsTrigger value="all" className="gap-2">
                 Wszystkie
-                <span className="text-xs text-muted-foreground">({posts?.length ?? 0})</span>
+                <span className="text-xs text-muted-foreground">({postsWithCategory.length})</span>
               </TabsTrigger>
               <TabsTrigger value="new" className="gap-2" disabled={newCount === 0}>
                 <Sparkles className="w-3.5 h-3.5" />
@@ -123,6 +123,48 @@ const Blog = () => {
               </TabsTrigger>
             </TabsList>
           </Tabs>
+
+          {/* Filtr kategorii — kumuluje się z zakładkami Wszystkie/Nowe */}
+          <div
+            className="mt-4 flex flex-wrap items-center gap-2"
+            role="group"
+            aria-label="Filtruj według kategorii"
+          >
+            <span className="text-xs text-muted-foreground mr-1">Kategoria:</span>
+            {FILTERABLE_CATEGORIES.map((cat) => {
+              const count = categoryCounts[cat];
+              const isActive = activeCategory === cat;
+              const isDisabled = count === 0;
+              return (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => setCategory(isActive ? null : cat)}
+                  disabled={isDisabled}
+                  aria-pressed={isActive}
+                  className="focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-full disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  <Badge
+                    variant={isActive ? "default" : "outline"}
+                    className="gap-1.5 cursor-pointer hover:bg-primary/20 transition-colors"
+                  >
+                    {CATEGORY_LABELS[cat]}
+                    <span className="text-[10px] opacity-70">({count})</span>
+                  </Badge>
+                </button>
+              );
+            })}
+            {activeCategory && (
+              <button
+                type="button"
+                onClick={() => setCategory(null)}
+                className="ml-1 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+                aria-label="Wyczyść filtr kategorii"
+              >
+                <X className="w-3 h-3" /> Wyczyść
+              </button>
+            )}
+          </div>
         </div>
       </section>
 
