@@ -247,9 +247,13 @@ const Blog = () => {
             </div>
           ) : (
             <p className="text-muted-foreground text-center py-12">
-              {filter === "new"
-                ? "Brak nowych artykułów z ostatnich 7 dni."
-                : "Brak opublikowanych artykułów. Wróć wkrótce!"}
+              {activeCategory && filter === "new"
+                ? `Brak nowych artykułów w kategorii „${CATEGORY_LABELS[activeCategory]}”.`
+                : activeCategory
+                  ? `Brak artykułów w kategorii „${CATEGORY_LABELS[activeCategory]}”.`
+                  : filter === "new"
+                    ? "Brak nowych artykułów z ostatnich 7 dni."
+                    : "Brak opublikowanych artykułów. Wróć wkrótce!"}
             </p>
           )}
         </div>
