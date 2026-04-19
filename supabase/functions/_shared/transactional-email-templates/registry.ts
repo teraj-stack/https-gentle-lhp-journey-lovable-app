@@ -14,6 +14,7 @@ import { template as b2bInquiryNotification } from './b2b-inquiry-notification.t
 import { template as bookingConfirmation } from './booking-confirmation.tsx'
 import { template as bookingNotification } from './booking-notification.tsx'
 import { template as bookingReminder } from './booking-reminder.tsx'
+import { template as bookingReminder2h } from './booking-reminder-2h.tsx'
 import { template as bookingStatusUpdate } from './booking-status-update.tsx'
 
 export const TEMPLATES: Record<string, TemplateEntry> = {
@@ -22,5 +23,6 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'booking-confirmation': bookingConfirmation,
   'booking-notification': bookingNotification,
   'booking-reminder': bookingReminder,
+  'booking-reminder-2h': bookingReminder2h,
   'booking-status-update': bookingStatusUpdate,
 }
