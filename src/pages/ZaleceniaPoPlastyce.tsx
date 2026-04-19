@@ -120,8 +120,10 @@ const ZaleceniaPoPlastyce = () => {
         <div className="container mx-auto px-4 max-w-4xl">
           <Breadcrumbs
             items={[
-              { label: "Dla Pacjenta", href: "/dla-pacjenta" },
-              { label: "Zalecenia po plastyce odbytu" },
+              { label: "Zabieg" },
+              { label: "Proktologia", href: "/leczenie/proktologia" },
+              { label: "Plastyka", href: "/leczenie/plastyka" },
+              { label: "Zalecenia po zabiegu" },
             ]}
           />
           <motion.div {...fadeUp} className="mt-8 text-center">

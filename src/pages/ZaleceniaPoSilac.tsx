@@ -120,8 +120,10 @@ const ZaleceniaPoSilac = () => {
         <div className="container mx-auto px-4 max-w-4xl">
           <Breadcrumbs
             items={[
-              { label: "Dla Pacjenta", href: "/dla-pacjenta" },
-              { label: "Zalecenia po operacji torbieli pilonidalnej" },
+              { label: "Zabieg" },
+              { label: "Proktologia", href: "/leczenie/proktologia" },
+              { label: "SiLaC", href: "/leczenie/silac" },
+              { label: "Zalecenia po zabiegu" },
             ]}
           />
           <motion.div {...fadeUp} className="mt-8 text-center">

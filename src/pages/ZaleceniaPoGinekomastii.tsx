@@ -123,8 +123,9 @@ const ZaleceniaPoGinekomastii = () => {
         <div className="container mx-auto px-4 max-w-4xl">
           <Breadcrumbs
             items={[
-              { label: "Dla Pacjenta", href: "/dla-pacjenta" },
-              { label: "Zalecenia po zabiegu ginekomastii" },
+              { label: "Zabieg" },
+              { label: "Ginekomastia", href: "/leczenie/ginekomastia" },
+              { label: "Zalecenia po zabiegu" },
             ]}
           />
           <motion.div {...fadeUp} className="mt-8 text-center">

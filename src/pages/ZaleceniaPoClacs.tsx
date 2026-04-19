@@ -116,8 +116,10 @@ const ZaleceniaPoClacs = () => {
         <div className="container mx-auto px-4 max-w-4xl">
           <Breadcrumbs
             items={[
-              { label: "Dla Pacjenta", href: "/dla-pacjenta" },
-              { label: "Zalecenia po CLaCS" },
+              { label: "Zabieg" },
+              { label: "Flebologia", href: "/leczenie/flebologia" },
+              { label: "CLaCS", href: "/leczenie/clacs" },
+              { label: "Zalecenia po zabiegu" },
             ]}
           />
           <motion.div {...fadeUp} className="mt-8 text-center">
