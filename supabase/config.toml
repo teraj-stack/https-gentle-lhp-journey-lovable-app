@@ -15,3 +15,5 @@ project_id = "jowtjcyevactqmhqrytz"
     verify_jwt = true
   [functions.sitemap-blog]
     verify_jwt = false
+  [functions.on-booking-created]
+    verify_jwt = false
