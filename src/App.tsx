@@ -42,6 +42,7 @@ const AdminDashboard = lazy(() => import("@/pages/AdminDashboard"));
 const AdminPostEditor = lazy(() => import("@/pages/AdminPostEditor"));
 
 const Unsubscribe = lazy(() => import("@/pages/Unsubscribe"));
+const BookingAction = lazy(() => import("@/pages/BookingAction"));
 const HemoroidyInfografika = lazy(() => import("@/pages/HemoroidyInfografika"));
 const FaldyOdbytu = lazy(() => import("@/pages/FaldyOdbytu"));
 const Ginekomastia = lazy(() => import("@/pages/Ginekomastia"));
