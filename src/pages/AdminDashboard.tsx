@@ -159,6 +159,9 @@ const AdminDashboard = () => {
         <header className="border-b border-border px-4 py-4 md:px-8 flex items-center justify-between">
           <h1 className="text-xl font-bold font-serif text-foreground">Panel bloga</h1>
           <div className="flex items-center gap-3">
+            <Button variant="ghost" size="sm" onClick={() => navigate("/admin/bookings")}>
+              Rezerwacje
+            </Button>
             <span className="text-sm text-muted-foreground hidden sm:inline">{session.user.email}</span>
             <Button variant="ghost" size="sm" onClick={handleLogout}>
               <LogOut className="w-4 h-4 mr-1" /> Wyloguj

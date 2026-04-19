@@ -40,6 +40,7 @@ const BlogPost = lazy(() => import("@/pages/BlogPost"));
 const AdminLogin = lazy(() => import("@/pages/AdminLogin"));
 const AdminDashboard = lazy(() => import("@/pages/AdminDashboard"));
 const AdminPostEditor = lazy(() => import("@/pages/AdminPostEditor"));
+const AdminBookings = lazy(() => import("@/pages/AdminBookings"));
 
 const Unsubscribe = lazy(() => import("@/pages/Unsubscribe"));
 const BookingAction = lazy(() => import("@/pages/BookingAction"));
@@ -127,6 +128,7 @@ const App = () => (
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/admin/post/:id" element={<AdminPostEditor />} />
+            <Route path="/admin/bookings" element={<AdminBookings />} />
             
             <Route path="/unsubscribe" element={<Unsubscribe />} />
             <Route path="/booking-action" element={<BookingAction />} />
