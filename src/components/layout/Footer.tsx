@@ -1,10 +1,13 @@
 import { Link } from "react-router-dom";
-import { MapPin, Phone, Mail, Clock, Facebook, Instagram } from "lucide-react";
+import { MapPin, Phone, Facebook, Instagram } from "lucide-react";
 
-const Footer = () =>
-<footer className="bg-background border-t border-border">
+const linkCls = "hover:text-primary transition-colors";
+
+const Footer = () => (
+  <footer className="bg-background border-t border-border">
     <div className="max-w-7xl mx-auto px-4 md:px-8 py-16">
-      <div className="grid md:grid-cols-2 lg:grid-cols-6 gap-10">
+      <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-10">
+        {/* Brand */}
         <div className="lg:col-span-1">
           <span className="text-2xl font-bold font-serif text-primary">CML</span>
           <p className="text-sm mt-3 leading-relaxed text-muted-foreground">
@@ -19,133 +22,125 @@ const Footer = () =>
             </a>
           </div>
           <div className="premium-divider !mx-0 mt-4" />
-        </div>
-
-        <div>
-          <h4 className="font-semibold text-foreground mb-4 font-sans text-sm uppercase tracking-wider"><Link to="/leczenie/proktologia" className="hover:text-primary transition-colors">Proktologia</Link></h4>
-          <ul className="space-y-2.5 text-sm text-muted-foreground">
-            <li><Link to="/leczenie/lhp" className="hover:text-primary transition-colors">Hemoroidy – LHP</Link></li>
-            <li><Link to="/leczenie/filac" className="hover:text-primary transition-colors">Przetoki – FiLaC</Link></li>
-            <li><Link to="/leczenie/silac" className="hover:text-primary transition-colors">Torbiel pilonidalna – SiLaC</Link></li>
-            <li><Link to="/leczenie/szczelina" className="hover:text-primary transition-colors">Szczelina odbytu</Link></li>
-            <li><Link to="/leczenie/plastyka" className="hover:text-primary transition-colors">Plastyka odbytu</Link></li>
-            <li><Link to="/leczenie/anusitis" className="hover:text-primary transition-colors">Zapalenie odbytu</Link></li>
-            <li><Link to="/leczenie/spazm-lonowoodbytniczy" className="hover:text-primary transition-colors">Spazm łonowoodbytniczy</Link></li>
-            <li><Link to="/dla-pacjenta/faldy-odbytu" className="hover:text-primary transition-colors">Fałdy odbytu</Link></li>
+          <ul className="space-y-2 mt-4 text-sm text-muted-foreground">
+            <li><Link to="/o-nas" className={linkCls}>O nas</Link></li>
+            <li><Link to="/wspolpraca" className={linkCls}>Współpraca B2B</Link></li>
+            <li><Link to="/cennik" className={linkCls}>Cennik</Link></li>
+            <li><Link to="/kontakt" className={linkCls}>Kontakt</Link></li>
           </ul>
         </div>
 
+        {/* PROBLEM */}
         <div>
-          <h4 className="font-semibold text-foreground mb-4 font-sans text-sm uppercase tracking-wider"><Link to="/leczenie/flebologia" className="hover:text-primary transition-colors">Flebologia</Link></h4>
+          <h4 className="font-semibold text-foreground mb-4 font-sans text-sm uppercase tracking-wider text-primary">Problem</h4>
           <ul className="space-y-2.5 text-sm text-muted-foreground">
-            <li><Link to="/leczenie/evlt" className="hover:text-primary transition-colors">Żylaki – EVLT</Link></li>
-            <li><Link to="/leczenie/skleroterapia" className="hover:text-primary transition-colors">Skleroterapia</Link></li>
-            <li><Link to="/leczenie/mikroflebektomia" className="hover:text-primary transition-colors">Mikroflebektomia</Link></li>
-            <li><Link to="/leczenie/clacs" className="hover:text-primary transition-colors">Pajączki – CLaCS</Link></li>
-            <li><Link to="/dla-pacjenta/profilaktyka-zylakow" className="hover:text-primary transition-colors">Profilaktyka żylaków</Link></li>
+            <li><Link to="/dla-pacjenta/hemoroidy" className={linkCls}>Hemoroidy</Link></li>
+            <li><Link to="/leczenie/szczelina" className={linkCls}>Szczelina odbytu</Link></li>
+            <li><Link to="/leczenie/filac" className={linkCls}>Przetoka okołoodbytnicza</Link></li>
+            <li><Link to="/leczenie/silac" className={linkCls}>Torbiel pilonidalna</Link></li>
+            <li><Link to="/leczenie/anusitis" className={linkCls}>Ból i zapalenie odbytu</Link></li>
+            <li><Link to="/leczenie/spazm-lonowoodbytniczy" className={linkCls}>Spazm łonowoodbytniczy</Link></li>
+            <li><Link to="/dla-pacjenta/faldy-odbytu" className={linkCls}>Fałdy odbytu</Link></li>
+            <li><Link to="/leczenie/flebologia" className={linkCls}>Żylaki kończyn</Link></li>
+            <li><Link to="/leczenie/clacs" className={linkCls}>Pajączki naczyniowe</Link></li>
+            <li><Link to="/leczenie/ginekomastia" className={linkCls}>Ginekomastia</Link></li>
           </ul>
         </div>
 
+        {/* ZABIEG */}
         <div>
-          <h4 className="font-semibold text-foreground mb-4 font-sans text-sm uppercase tracking-wider">Ginekomastia</h4>
-          <ul className="space-y-2.5 text-sm text-muted-foreground">
-            <li><Link to="/leczenie/ginekomastia" className="hover:text-primary transition-colors">Wszystkie zabiegi</Link></li>
-            <li><Link to="/leczenie/ginekomastia-gruczolowa" className="hover:text-primary transition-colors">Gruczołowa</Link></li>
-            <li><Link to="/leczenie/ginekomastia-tluszczowa" className="hover:text-primary transition-colors">Tłuszczowa</Link></li>
-            <li><Link to="/leczenie/ginekomastia-mieszana" className="hover:text-primary transition-colors">Mieszana</Link></li>
-          </ul>
-        </div>
-
-        <div>
-          <h4 className="font-semibold text-foreground mb-4 font-sans text-sm uppercase tracking-wider">Informacje</h4>
-          <ul className="space-y-2.5 text-sm text-muted-foreground">
-            <li><Link to="/o-nas" className="hover:text-primary transition-colors">O nas</Link></li>
-            <li><Link to="/dla-pacjenta" className="hover:text-primary transition-colors">Dla Pacjenta</Link></li>
-            <li><Link to="/blog" className="hover:text-primary transition-colors">Blog</Link></li>
-            <li><Link to="/wspolpraca" className="hover:text-primary transition-colors">Współpraca B2B</Link></li>
-            <li><Link to="/kontakt" className="hover:text-primary transition-colors">Kontakt</Link></li>
-            <li><Link to="/cennik" className="hover:text-primary transition-colors">Cennik</Link></li>
-          </ul>
-        </div>
-
-        <div>
-          <h4 className="font-semibold text-foreground mb-4 font-sans text-sm uppercase tracking-wider">Kontakt</h4>
-          
+          <h4 className="font-semibold text-foreground mb-4 font-sans text-sm uppercase tracking-wider text-primary">Zabieg</h4>
           <div className="space-y-5">
             <div>
-              <p className="text-xs font-semibold text-foreground/80 mb-1.5">Warszawa Wilanów</p>
+              <p className="text-xs font-semibold text-foreground/80 mb-2">
+                <Link to="/leczenie/proktologia" className={linkCls}>Proktologia</Link>
+              </p>
               <ul className="space-y-1.5 text-sm text-muted-foreground">
-                <li className="flex items-start gap-2">
-                  <MapPin className="w-3.5 h-3.5 mt-0.5 shrink-0 text-primary/50" />
-                  <span>ul. Branickiego 10/U6<br />02-972 Warszawa</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Clock className="w-3.5 h-3.5 shrink-0 text-primary/50" />
-                  <span>Pon–Pt: 8:00–18:00</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Phone className="w-3.5 h-3.5 shrink-0 text-primary/50" />
-                  <span>+48 500600509</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Mail className="w-3.5 h-3.5 shrink-0 text-primary/50" />
-                  <span>Ginekologia@branickiego10.pl</span>
-                </li>
+                <li><Link to="/leczenie/lhp" className={linkCls}>LHP – hemoroidy</Link></li>
+                <li><Link to="/leczenie/filac" className={linkCls}>FiLaC – przetoki</Link></li>
+                <li><Link to="/leczenie/silac" className={linkCls}>SiLaC – torbiel</Link></li>
+                <li><Link to="/leczenie/plastyka" className={linkCls}>Plastyka odbytu</Link></li>
               </ul>
             </div>
-
             <div>
-              <p className="text-xs font-semibold text-foreground/80 mb-1.5">Siedlce</p>
+              <p className="text-xs font-semibold text-foreground/80 mb-2">
+                <Link to="/leczenie/flebologia" className={linkCls}>Flebologia</Link>
+              </p>
               <ul className="space-y-1.5 text-sm text-muted-foreground">
-                <li className="flex items-start gap-2">
-                  <MapPin className="w-3.5 h-3.5 mt-0.5 shrink-0 text-primary/50" />
-                  <span>ul. Brzeska 125<br />08-110 Siedlce</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Clock className="w-3.5 h-3.5 shrink-0 text-primary/50" />
-                  <span>Pon–Pt: 8:00–20:00</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Phone className="w-3.5 h-3.5 shrink-0 text-primary/50" />
-                  <span>+48 572 001 200</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Mail className="w-3.5 h-3.5 shrink-0 text-primary/50" />
-                  <span>Ilona.Moscicka@bmclinic.pl</span>
-                </li>
+                <li><Link to="/leczenie/evlt" className={linkCls}>EVLT – żylaki</Link></li>
+                <li><Link to="/leczenie/skleroterapia" className={linkCls}>Skleroterapia</Link></li>
+                <li><Link to="/leczenie/mikroflebektomia" className={linkCls}>Mikroflebektomia</Link></li>
+                <li><Link to="/leczenie/clacs" className={linkCls}>CLaCS – pajączki</Link></li>
               </ul>
             </div>
-
             <div>
-              <p className="text-xs font-semibold text-foreground/80 mb-1.5">Rzeszów – IP Cliniq</p>
+              <p className="text-xs font-semibold text-foreground/80 mb-2">
+                <Link to="/leczenie/ginekomastia" className={linkCls}>Ginekomastia</Link>
+              </p>
               <ul className="space-y-1.5 text-sm text-muted-foreground">
-                <li className="flex items-start gap-2">
-                  <MapPin className="w-3.5 h-3.5 mt-0.5 shrink-0 text-primary/50" />
-                  <span>al. Rejtana 53, IV piętro<br />35-326 Rzeszów</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Clock className="w-3.5 h-3.5 shrink-0 text-primary/50" />
-                  <span>Pon–Pt: 8:00–20:00, Sb: 8:00–16:00</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Phone className="w-3.5 h-3.5 shrink-0 text-primary/50" />
-                  <span>+48 507 025 840</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Mail className="w-3.5 h-3.5 shrink-0 text-primary/50" />
-                  <span>recepcja@ipcliniq.pl</span>
-                </li>
+                <li><Link to="/leczenie/ginekomastia-gruczolowa" className={linkCls}>Gruczołowa</Link></li>
+                <li><Link to="/leczenie/ginekomastia-tluszczowa" className={linkCls}>Tłuszczowa</Link></li>
+                <li><Link to="/leczenie/ginekomastia-mieszana" className={linkCls}>Mieszana</Link></li>
               </ul>
             </div>
+          </div>
+        </div>
 
+        {/* WIEDZA */}
+        <div>
+          <h4 className="font-semibold text-foreground mb-4 font-sans text-sm uppercase tracking-wider text-primary">Wiedza</h4>
+          <div className="space-y-5">
             <div>
-              <p className="text-xs font-semibold text-foreground/80 mb-1.5">Warszawa – Fimedica</p>
+              <p className="text-xs font-semibold text-foreground/80 mb-2">Edukacja</p>
               <ul className="space-y-1.5 text-sm text-muted-foreground">
-                <li className="flex items-start gap-2">
-                  <MapPin className="w-3.5 h-3.5 mt-0.5 shrink-0 text-primary/50" />
-                  <span>ul. Giełdowa 5<br />Warszawa</span>
-                </li>
+                <li><Link to="/dla-pacjenta" className={linkCls}>Dla Pacjenta</Link></li>
+                <li><Link to="/dla-pacjenta/edukacja" className={linkCls}>Świadomy pacjent</Link></li>
+                <li><Link to="/dla-pacjenta/hemoroidy" className={linkCls}>Hemoroidy A–Z</Link></li>
+                <li><Link to="/dla-pacjenta/profilaktyka-zylakow" className={linkCls}>Profilaktyka żylaków</Link></li>
+                <li><Link to="/dla-pacjenta/proktolog-faq" className={linkCls}>FAQ proktolog</Link></li>
               </ul>
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-foreground/80 mb-2">Przed wizytą</p>
+              <ul className="space-y-1.5 text-sm text-muted-foreground">
+                <li><Link to="/dla-pacjenta/przygotowanie-lhp" className={linkCls}>Przygotowanie LHP</Link></li>
+                <li><Link to="/dla-pacjenta/przygotowanie-evlt" className={linkCls}>Przygotowanie EVLT</Link></li>
+                <li><Link to="/dla-pacjenta/pielegnacja-nog" className={linkCls}>Pielęgnacja nóg</Link></li>
+              </ul>
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-foreground/80 mb-2">Materiały</p>
+              <ul className="space-y-1.5 text-sm text-muted-foreground">
+                <li><Link to="/blog" className={linkCls}>Blog</Link></li>
+                <li><Link to="/dla-pacjenta/ebook-pajaczki" className={linkCls}>E-book: Pajączki</Link></li>
+                <li><Link to="/dla-pacjenta/hemoroidy-infografika" className={linkCls}>Infografika: Hemoroidy</Link></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        {/* KLINIKA */}
+        <div>
+          <h4 className="font-semibold text-foreground mb-4 font-sans text-sm uppercase tracking-wider text-primary">Klinika</h4>
+          <div className="space-y-4 text-sm text-muted-foreground">
+            <div>
+              <p className="text-xs font-semibold text-foreground/80 mb-1">Warszawa Wilanów</p>
+              <p className="flex items-start gap-2"><MapPin className="w-3.5 h-3.5 mt-0.5 shrink-0 text-primary/50" /><span>ul. Branickiego 10/U6</span></p>
+              <p className="flex items-center gap-2"><Phone className="w-3.5 h-3.5 shrink-0 text-primary/50" /><span>+48 500 600 509</span></p>
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-foreground/80 mb-1">Warszawa Fimedica</p>
+              <p className="flex items-start gap-2"><MapPin className="w-3.5 h-3.5 mt-0.5 shrink-0 text-primary/50" /><span>ul. Giełdowa 5</span></p>
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-foreground/80 mb-1">Siedlce</p>
+              <p className="flex items-start gap-2"><MapPin className="w-3.5 h-3.5 mt-0.5 shrink-0 text-primary/50" /><span>ul. Brzeska 125</span></p>
+              <p className="flex items-center gap-2"><Phone className="w-3.5 h-3.5 shrink-0 text-primary/50" /><span>+48 572 001 200</span></p>
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-foreground/80 mb-1">Rzeszów – IP Cliniq</p>
+              <p className="flex items-start gap-2"><MapPin className="w-3.5 h-3.5 mt-0.5 shrink-0 text-primary/50" /><span>al. Rejtana 53, IV p.</span></p>
+              <p className="flex items-center gap-2"><Phone className="w-3.5 h-3.5 shrink-0 text-primary/50" /><span>+48 507 025 840</span></p>
             </div>
           </div>
         </div>
@@ -159,7 +154,7 @@ const Footer = () =>
         </div>
       </div>
     </div>
-  </footer>;
-
+  </footer>
+);
 
 export default Footer;
