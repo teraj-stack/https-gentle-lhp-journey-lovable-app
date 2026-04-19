@@ -5,63 +5,109 @@ import { Menu, X, ChevronDown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import logoCml from "@/assets/logo-cml.webp";
 
+// =============================================================================
+// NAV STRUCTURE — uproszczona, oparta o rolę pacjenta:
+//   Problem (objawy/schorzenia) → Zabieg (technologie) → Wiedza (edukacja+blog).
+// "Zalecenia po…" świadomie pominięte — dostępne z każdej strony zabiegu.
+// =============================================================================
 
-const twojProblemItems = [
-  { label: "Hemoroidy", href: "/dla-pacjenta/hemoroidy", desc: "Objawy, stopnie i metody leczenia" },
+interface NavItem {
+  label: string;
+  href: string;
+  desc?: string;
+}
+
+interface MegaColumn {
+  title: string;
+  items: NavItem[];
+}
+
+// --- PROBLEM (po objawie) ---
+const problemItems: NavItem[] = [
+  { label: "Hemoroidy", href: "/dla-pacjenta/hemoroidy", desc: "Krwawienie, swędzenie, guzki" },
   { label: "Żylaki nóg", href: "/leczenie/evlt", desc: "Ból, obrzęki, widoczne żyły" },
   { label: "Pajączki naczyniowe", href: "/leczenie/clacs", desc: "Czerwone i fioletowe naczynka" },
   { label: "Szczelina odbytu", href: "/leczenie/szczelina", desc: "Ból i krwawienie przy wypróżnieniu" },
   { label: "Przetoka odbytu", href: "/leczenie/filac", desc: "Sączenie, ropień, nawracający ból" },
-  { label: "Torbiel pilonidalna", href: "/leczenie/silac", desc: "Guzek, ból i sączenie w okolicy kości ogonowej" },
-  { label: "Fałdy okolicy odbytu", href: "/dla-pacjenta/faldy-odbytu", desc: "Wariant anatomiczny czy powód kompleksów?" },
+  { label: "Torbiel pilonidalna", href: "/leczenie/silac", desc: "Guzek przy kości ogonowej" },
+  { label: "Fałdy okolicy odbytu", href: "/dla-pacjenta/faldy-odbytu", desc: "Wariant anatomiczny czy problem?" },
   { label: "Przewlekły ból odbytu", href: "/leczenie/spazm-lonowoodbytniczy", desc: "Spazm mięśnia łonowo-odbytniczego" },
+  { label: "Ginekomastia", href: "/leczenie/ginekomastia", desc: "Powiększenie piersi u mężczyzn" },
 ];
 
-const proktologiaItems = [
-  { label: "Wszystkie zabiegi proktologiczne", href: "/leczenie/proktologia", desc: "Przegląd zabiegów proktologicznych" },
-  { label: "Hemoroidy – LHP", href: "/leczenie/lhp", desc: "Laserowa plastyka hemoroidów" },
-  { label: "Przetoki – FiLaC", href: "/leczenie/filac", desc: "Laserowe zamykanie przetok" },
-  { label: "Torbiel pilonidalna – SiLaC", href: "/leczenie/silac", desc: "Laserowe leczenie torbieli" },
-  { label: "Szczelina odbytu", href: "/leczenie/szczelina", desc: "Od diety do lasera" },
-  { label: "Plastyka odbytu", href: "/leczenie/plastyka", desc: "Estetyka i komfort" },
-  { label: "Zapalenie odbytu", href: "/leczenie/anusitis", desc: "Leczenie farmakologiczne" },
-  { label: "Fałdy odbytu", href: "/dla-pacjenta/faldy-odbytu", desc: "Diagnostyka i leczenie fałdów" },
-  { label: "Spazm łonowo-odbytniczy", href: "/leczenie/spazm-lonowoodbytniczy", desc: "Przewlekły ból odbytu" },
+// --- ZABIEG (3-kolumnowe mega-menu po dziedzinie) ---
+const zabiegColumns: MegaColumn[] = [
+  {
+    title: "Proktologia",
+    items: [
+      { label: "Wszystkie zabiegi", href: "/leczenie/proktologia" },
+      { label: "LHP – hemoroidy", href: "/leczenie/lhp" },
+      { label: "FiLaC – przetoka", href: "/leczenie/filac" },
+      { label: "SiLaC – torbiel", href: "/leczenie/silac" },
+      { label: "Szczelina odbytu", href: "/leczenie/szczelina" },
+      { label: "Plastyka odbytu", href: "/leczenie/plastyka" },
+      { label: "Anusitis", href: "/leczenie/anusitis" },
+      { label: "Spazm łonowo-odbytniczy", href: "/leczenie/spazm-lonowoodbytniczy" },
+    ],
+  },
+  {
+    title: "Flebologia",
+    items: [
+      { label: "Wszystkie zabiegi", href: "/leczenie/flebologia" },
+      { label: "EVLT – żylaki", href: "/leczenie/evlt" },
+      { label: "CLaCS – pajączki", href: "/leczenie/clacs" },
+      { label: "Skleroterapia", href: "/leczenie/skleroterapia" },
+      { label: "Mikroflebektomia", href: "/leczenie/mikroflebektomia" },
+      { label: "Fototerapia LED", href: "/leczenie/fototerapia" },
+    ],
+  },
+  {
+    title: "Ginekomastia",
+    items: [
+      { label: "Wszystkie typy", href: "/leczenie/ginekomastia" },
+      { label: "Gruczołowa", href: "/leczenie/ginekomastia-gruczolowa" },
+      { label: "Tłuszczowa", href: "/leczenie/ginekomastia-tluszczowa" },
+      { label: "Mieszana", href: "/leczenie/ginekomastia-mieszana" },
+    ],
+  },
 ];
 
-const flebologiaItems = [
-  { label: "Wszystkie zabiegi flebologiczne", href: "/leczenie/flebologia", desc: "Przegląd zabiegów flebologicznych" },
-  { label: "Żylaki – EVLT", href: "/leczenie/evlt", desc: "Ablacja wewnątrzżylna laserem" },
-  { label: "Skleroterapia żylaków", href: "/leczenie/skleroterapia", desc: "Zamykanie żylakowatych naczyń" },
-  { label: "Pajączki – CLaCS", href: "/leczenie/clacs", desc: "Crio Laser and Crio Sclerotherapy" },
-  { label: "Mikroflebektomia", href: "/leczenie/mikroflebektomia", desc: "Usuwanie żylaków bez skalpela" },
-  { label: "Fototerapia LED (PBM)", href: "/leczenie/fototerapia", desc: "Gojenie i redukcja naczynek" },
+// --- WIEDZA (edukacja, przygotowania, blog) ---
+const wiedzaColumns: MegaColumn[] = [
+  {
+    title: "Edukacja",
+    items: [
+      { label: "Hemoroidy A–Z", href: "/dla-pacjenta/hemoroidy" },
+      { label: "Pajączki naczyniowe", href: "/dla-pacjenta/pajaczki" },
+      { label: "Profilaktyka żylaków", href: "/dla-pacjenta/profilaktyka-zylakow" },
+      { label: "Pielęgnacja nóg", href: "/dla-pacjenta/pielegnacja-nog" },
+      { label: "Fałdy okolicy odbytu", href: "/dla-pacjenta/faldy-odbytu" },
+      { label: "Świadomy pacjent", href: "/dla-pacjenta/edukacja" },
+    ],
+  },
+  {
+    title: "Przed wizytą",
+    items: [
+      { label: "Przygotowanie do EVLT", href: "/dla-pacjenta/przygotowanie-evlt" },
+      { label: "Przygotowanie do LHP", href: "/dla-pacjenta/przygotowanie-lhp" },
+      { label: "FAQ proktologiczne", href: "/dla-pacjenta/proktolog-faq" },
+      { label: "Strefa pacjenta", href: "/dla-pacjenta" },
+    ],
+  },
+  {
+    title: "Materiały",
+    items: [
+      { label: "Blog", href: "/blog" },
+      { label: "E-book: Pajączki", href: "/dla-pacjenta/ebook-pajaczki" },
+      { label: "Hemoroidy – infografika", href: "/dla-pacjenta/hemoroidy-infografika" },
+    ],
+  },
 ];
 
-const ginekomastiaItems = [
-  { label: "Wszystkie zabiegi", href: "/leczenie/ginekomastia", desc: "Kompendium wiedzy o ginekomastii" },
-  { label: "Gruczołowa (prawdziwa)", href: "/leczenie/ginekomastia-gruczolowa", desc: "Rozrost gruczołu piersiowego" },
-  { label: "Tłuszczowa (pseudo)", href: "/leczenie/ginekomastia-tluszczowa", desc: "Nadmiar tkanki tłuszczowej" },
-  { label: "Mieszana", href: "/leczenie/ginekomastia-mieszana", desc: "Gruczoł + tłuszcz — najczęstsza" },
-  { label: "Zalecenia po zabiegu", href: "/dla-pacjenta/zalecenia-po-ginekomastii", desc: "Kamizelka uciskowa i rekonwalescencja" },
-];
-
-const dlaPacjentaItems = [
-  { label: "Przygotowanie do wizyty proktologicznej", href: "/dla-pacjenta", desc: "Informacje przed wizytą" },
-  { label: "Hemoroidy od A do Z", href: "/dla-pacjenta/hemoroidy", desc: "Kompleksowy przewodnik pacjenta" },
-  { label: "Lekarz odpowiada", href: "/dla-pacjenta/proktolog-faq", desc: "FAQ o hemoroidach i wizycie" },
-  { label: "E-book o pajączkach naczyniowych i teleangiektazjach", href: "/dla-pacjenta/ebook-pajaczki", desc: "E-book o pajączkach żylnych" },
-  { label: "Przygotowanie do zabiegu EVLT", href: "/dla-pacjenta/przygotowanie-evlt", desc: "Checklista przed zabiegiem laserowym" },
-  { label: "Przygotowanie do zabiegu LHP", href: "/dla-pacjenta/przygotowanie-lhp", desc: "Checklista przed zabiegiem hemoroidów" },
-  { label: "Zalecenia po zabiegu EVLT", href: "/dla-pacjenta/zalecenia-po-evlt", desc: "Rekonwalescencja po laserowym usuwaniu żylaków" },
-  { label: "Zalecenia po zabiegu LHP", href: "/dla-pacjenta/zalecenia-po-lhp", desc: "Rekonwalescencja po leczeniu hemoroidów" },
-  { label: "Zalecenia po zabiegu CLaCS", href: "/dla-pacjenta/zalecenia-po-clacs", desc: "Pielęgnacja po usuwaniu pajączków" },
-  { label: "Zalecenia po operacji przetoki (FiLaC)", href: "/dla-pacjenta/zalecenia-po-filac", desc: "Rekonwalescencja po leczeniu przetoki" },
-  { label: "Zalecenia po operacji torbieli (SiLaC)", href: "/dla-pacjenta/zalecenia-po-silac", desc: "Rekonwalescencja po leczeniu torbieli pilonidalnej" },
-  { label: "Zalecenia po skleroterapii", href: "/dla-pacjenta/zalecenia-po-skleroterapii", desc: "Pończochy uciskowe, spacery i ochrona przed słońcem" },
-  { label: "Zalecenia po plastyce odbytu", href: "/dla-pacjenta/zalecenia-po-plastyce", desc: "Rekonwalescencja po laserowej plastyce" },
-  { label: "Zalecenia po mikroflebektomii", href: "/dla-pacjenta/zalecenia-po-mikroflebektomii", desc: "Pończochy uciskowe i pielęgnacja nacięć" },
-];
+// Spłaszczone listy do isSectionActive
+const flatten = (cols: MegaColumn[]): NavItem[] => cols.flatMap((c) => c.items);
+const allZabiegItems = flatten(zabiegColumns);
+const allWiedzaItems = flatten(wiedzaColumns);
 
 const Header = () => {
   const [scrolled, setScrolled] = useState(false);
@@ -73,33 +119,17 @@ const Header = () => {
   const location = useLocation();
   const pathname = location.pathname;
 
-  // Publikuje realną wysokość headera jako CSS var `--header-height` na <html>.
-  // Jedno źródło prawdy dla:
-  //   - useScrollToHash (offset pod sticky headerem)
-  //   - klas `scroll-mt-[var(--header-height)]` na sekcjach z id
-  //   - innych sticky elementów (np. boczny sidebar `top: var(--header-height)`)
-  // ResizeObserver łapie zmiany wysokości na resize, mobile vs desktop (h-16 vs h-20),
-  // toggle stanu `scrolled` (border-b dodaje 1px), oraz lazy-load logo/webfonty.
+  // CSS var --header-height (single source of truth)
   useEffect(() => {
     const el = headerRef.current;
     if (!el || typeof ResizeObserver === "undefined") return;
-
-    const setVar = (height: number) => {
-      document.documentElement.style.setProperty(
-        "--header-height",
-        `${Math.round(height)}px`,
-      );
-    };
-
+    const setVar = (h: number) =>
+      document.documentElement.style.setProperty("--header-height", `${Math.round(h)}px`);
     setVar(el.getBoundingClientRect().height);
-
     const ro = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        setVar(entry.contentRect.height);
-      }
+      for (const e of entries) setVar(e.contentRect.height);
     });
     ro.observe(el);
-
     return () => ro.disconnect();
   }, []);
 
@@ -107,19 +137,15 @@ const Header = () => {
     if (Date.now() < megaLockedUntil.current) return;
     setMegaOpen(key);
   }, []);
-
-  const handleMegaLeave = useCallback(() => {
-    setMegaOpen(null);
-  }, []);
-
+  const handleMegaLeave = useCallback(() => setMegaOpen(null), []);
   const handleMegaLinkClick = useCallback(() => {
     setMegaOpen(null);
     megaLockedUntil.current = Date.now() + 2000;
-    setNavKey(k => k + 1);
+    setNavKey((k) => k + 1);
   }, []);
 
   const isActive = (href: string) => pathname === href;
-  const isSectionActive = (items: { href: string }[]) => items.some((item) => pathname === item.href);
+  const isSectionActive = (items: NavItem[]) => items.some((i) => pathname === i.href);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -133,6 +159,147 @@ const Header = () => {
     megaLockedUntil.current = Date.now() + 1500;
   }, [location]);
 
+  // ---------- Reusable single-column dropdown ----------
+  const SingleDropdown = ({
+    keyName,
+    label,
+    items,
+    align = "left",
+  }: {
+    keyName: string;
+    label: string;
+    items: NavItem[];
+    align?: "left" | "right";
+  }) => (
+    <div
+      key={`${keyName}-${navKey}`}
+      className="relative"
+      onMouseEnter={() => handleMegaEnter(keyName)}
+      onMouseLeave={handleMegaLeave}
+    >
+      <button
+        className={`flex items-center gap-1 px-4 py-2 text-sm font-medium transition-colors rounded-lg hover:bg-accent/50 ${
+          isSectionActive(items)
+            ? "text-primary bg-accent/50"
+            : "text-foreground/80 hover:text-primary"
+        }`}
+      >
+        {label}
+        <ChevronDown
+          className={`w-3.5 h-3.5 transition-transform ${megaOpen === keyName ? "rotate-180" : ""}`}
+        />
+      </button>
+      <AnimatePresence>
+        {megaOpen === keyName && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 8 }}
+            transition={{ duration: 0.2 }}
+            className={`absolute top-full ${align === "right" ? "right-0" : "left-0"} mt-1 w-80 bg-card rounded-xl shadow-lg border border-border p-2`}
+          >
+            {items.map((item) => (
+              <Link
+                key={item.href}
+                to={item.href}
+                onClick={handleMegaLinkClick}
+                className={`block px-4 py-3 rounded-lg hover:bg-accent/50 transition-colors group ${
+                  isActive(item.href) ? "bg-accent/50" : ""
+                }`}
+              >
+                <div
+                  className={`text-sm font-medium transition-colors ${
+                    isActive(item.href)
+                      ? "text-primary"
+                      : "text-foreground group-hover:text-primary"
+                  }`}
+                >
+                  {item.label}
+                </div>
+                {item.desc && (
+                  <div className="text-xs text-muted-foreground mt-0.5">{item.desc}</div>
+                )}
+              </Link>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+
+  // ---------- Multi-column mega dropdown ----------
+  const MegaDropdown = ({
+    keyName,
+    label,
+    columns,
+  }: {
+    keyName: string;
+    label: string;
+    columns: MegaColumn[];
+  }) => {
+    const allItems = flatten(columns);
+    return (
+      <div
+        key={`${keyName}-${navKey}`}
+        className="relative"
+        onMouseEnter={() => handleMegaEnter(keyName)}
+        onMouseLeave={handleMegaLeave}
+      >
+        <button
+          className={`flex items-center gap-1 px-4 py-2 text-sm font-medium transition-colors rounded-lg hover:bg-accent/50 ${
+            isSectionActive(allItems)
+              ? "text-primary bg-accent/50"
+              : "text-foreground/80 hover:text-primary"
+          }`}
+        >
+          {label}
+          <ChevronDown
+            className={`w-3.5 h-3.5 transition-transform ${megaOpen === keyName ? "rotate-180" : ""}`}
+          />
+        </button>
+        <AnimatePresence>
+          {megaOpen === keyName && (
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 8 }}
+              transition={{ duration: 0.2 }}
+              className="absolute top-full left-1/2 -translate-x-1/2 mt-1 bg-card rounded-xl shadow-lg border border-border p-5 grid gap-6"
+              style={{
+                gridTemplateColumns: `repeat(${columns.length}, minmax(180px, 220px))`,
+              }}
+            >
+              {columns.map((col) => (
+                <div key={col.title}>
+                  <div className="px-2 pb-2 mb-1 text-[11px] font-semibold uppercase tracking-[0.15em] text-primary border-b border-primary/20">
+                    {col.title}
+                  </div>
+                  <ul className="space-y-0.5">
+                    {col.items.map((item) => (
+                      <li key={item.href}>
+                        <Link
+                          to={item.href}
+                          onClick={handleMegaLinkClick}
+                          className={`block px-2 py-1.5 rounded-md text-sm transition-colors ${
+                            isActive(item.href)
+                              ? "text-primary bg-accent/50 font-medium"
+                              : "text-foreground/80 hover:text-primary hover:bg-accent/40"
+                          }`}
+                        >
+                          {item.label}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    );
+  };
+
   return (
     <header
       ref={headerRef}
@@ -145,265 +312,46 @@ const Header = () => {
       <div className="max-w-7xl mx-auto px-4 md:px-8">
         <div className="flex items-center justify-between h-16 md:h-20">
           <Link to="/" className="flex items-center gap-3">
-            <img src={logoCml} alt="CML – Centrum Medycyny Laserowej" className="h-12 sm:h-10 md:h-12 w-auto" />
+            <img
+              src={logoCml}
+              alt="CML – Centrum Medycyny Laserowej"
+              className="h-12 sm:h-10 md:h-12 w-auto"
+            />
           </Link>
 
           <nav className="hidden lg:flex items-center gap-1">
             <Link
               to="/o-nas"
               className={`px-4 py-2 text-sm font-medium transition-colors rounded-lg hover:bg-accent/50 ${
-                isActive("/o-nas") ? "text-primary bg-accent/50" : "text-foreground/80 hover:text-primary"
+                isActive("/o-nas")
+                  ? "text-primary bg-accent/50"
+                  : "text-foreground/80 hover:text-primary"
               }`}
             >
               O nas
             </Link>
 
-            {/* Twój Problem Mega */}
-            <div
-              key={`problem-${navKey}`}
-              className="relative"
-              
-              onMouseEnter={() => handleMegaEnter("problem")}
-              onMouseLeave={handleMegaLeave}
-            >
-              <button className={`flex items-center gap-1 px-4 py-2 text-sm font-medium transition-colors rounded-lg hover:bg-accent/50 ${
-                isSectionActive(twojProblemItems) ? "text-primary bg-accent/50" : "text-foreground/80 hover:text-primary"
-              }`}>
-                Twój Problem
-                <ChevronDown className={`w-3.5 h-3.5 transition-transform ${megaOpen === "problem" ? "rotate-180" : ""}`} />
-              </button>
-              <AnimatePresence>
-                {megaOpen === "problem" && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 8 }}
-                    transition={{ duration: 0.2 }}
-                    className="absolute top-full left-0 mt-1 w-72 bg-card rounded-xl shadow-lg border border-border p-2"
-                  >
-                    {twojProblemItems.map((item) => (
-                      <Link
-                        key={item.href}
-                        to={item.href}
-                        onClick={handleMegaLinkClick}
-                        className={`block px-4 py-3 rounded-lg hover:bg-accent/50 transition-colors group ${
-                          isActive(item.href) ? "bg-accent/50" : ""
-                        }`}
-                      >
-                        <div className={`text-sm font-medium transition-colors ${
-                          isActive(item.href) ? "text-primary" : "text-foreground group-hover:text-primary"
-                        }`}>
-                          {item.label}
-                        </div>
-                        <div className="text-xs text-muted-foreground mt-0.5">{item.desc}</div>
-                      </Link>
-                    ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-
-            {/* Proktologia Mega */}
-            <div
-              key={`prokto-${navKey}`}
-              className="relative"
-              
-              onMouseEnter={() => handleMegaEnter("prokto")}
-              onMouseLeave={handleMegaLeave}
-            >
-              <button className={`flex items-center gap-1 px-4 py-2 text-sm font-medium transition-colors rounded-lg hover:bg-accent/50 ${
-                isSectionActive(proktologiaItems) ? "text-primary bg-accent/50" : "text-foreground/80 hover:text-primary"
-              }`}>
-                Proktologia
-                <ChevronDown className={`w-3.5 h-3.5 transition-transform ${megaOpen === "prokto" ? "rotate-180" : ""}`} />
-              </button>
-              <AnimatePresence>
-                {megaOpen === "prokto" && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 8 }}
-                    transition={{ duration: 0.2 }}
-                    className="absolute top-full left-0 mt-1 w-72 bg-card rounded-xl shadow-lg border border-border p-2"
-                  >
-                    {proktologiaItems.map((item) => (
-                      <Link
-                        key={item.href}
-                        to={item.href}
-                        onClick={handleMegaLinkClick}
-                        className={`block px-4 py-3 rounded-lg hover:bg-accent/50 transition-colors group ${
-                          isActive(item.href) ? "bg-accent/50" : ""
-                        }`}
-                      >
-                        <div className={`text-sm font-medium transition-colors ${
-                          isActive(item.href) ? "text-primary" : "text-foreground group-hover:text-primary"
-                        }`}>
-                          {item.label}
-                        </div>
-                        <div className="text-xs text-muted-foreground mt-0.5">{item.desc}</div>
-                      </Link>
-                    ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-
-            {/* Flebologia Mega */}
-            <div
-              key={`flebo-${navKey}`}
-              className="relative"
-              
-              onMouseEnter={() => handleMegaEnter("flebo")}
-              onMouseLeave={handleMegaLeave}
-            >
-              <button className={`flex items-center gap-1 px-4 py-2 text-sm font-medium transition-colors rounded-lg hover:bg-accent/50 ${
-                isSectionActive(flebologiaItems) ? "text-primary bg-accent/50" : "text-foreground/80 hover:text-primary"
-              }`}>
-                Flebologia
-                <ChevronDown className={`w-3.5 h-3.5 transition-transform ${megaOpen === "flebo" ? "rotate-180" : ""}`} />
-              </button>
-              <AnimatePresence>
-                {megaOpen === "flebo" && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 8 }}
-                    transition={{ duration: 0.2 }}
-                    className="absolute top-full left-0 mt-1 w-72 bg-card rounded-xl shadow-lg border border-border p-2"
-                  >
-                    {flebologiaItems.map((item) => (
-                      <Link
-                        key={item.href}
-                        to={item.href}
-                        onClick={handleMegaLinkClick}
-                        className={`block px-4 py-3 rounded-lg hover:bg-accent/50 transition-colors group ${
-                          isActive(item.href) ? "bg-accent/50" : ""
-                        }`}
-                      >
-                        <div className={`text-sm font-medium transition-colors ${
-                          isActive(item.href) ? "text-primary" : "text-foreground group-hover:text-primary"
-                        }`}>
-                          {item.label}
-                        </div>
-                        <div className="text-xs text-muted-foreground mt-0.5">{item.desc}</div>
-                      </Link>
-                    ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-
-            {/* Dla Pacjenta Mega */}
-            <div
-              key={`pacjent-${navKey}`}
-              className="relative"
-              
-              onMouseEnter={() => handleMegaEnter("pacjent")}
-              onMouseLeave={handleMegaLeave}
-            >
-              <button className={`flex items-center gap-1 px-4 py-2 text-sm font-medium transition-colors rounded-lg hover:bg-accent/50 ${
-                isSectionActive(dlaPacjentaItems) ? "text-primary bg-accent/50" : "text-foreground/80 hover:text-primary"
-              }`}>
-                Dla Pacjenta
-                <ChevronDown className={`w-3.5 h-3.5 transition-transform ${megaOpen === "pacjent" ? "rotate-180" : ""}`} />
-              </button>
-              <AnimatePresence>
-                {megaOpen === "pacjent" && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 8 }}
-                    transition={{ duration: 0.2 }}
-                    className="absolute top-full left-0 mt-1 w-72 bg-card rounded-xl shadow-lg border border-border p-2"
-                  >
-                    {dlaPacjentaItems.map((item) => (
-                      <Link
-                        key={item.href}
-                        to={item.href}
-                        onClick={handleMegaLinkClick}
-                        className={`block px-4 py-3 rounded-lg hover:bg-accent/50 transition-colors group ${
-                          isActive(item.href) ? "bg-accent/50" : ""
-                        }`}
-                      >
-                        <div className={`text-sm font-medium transition-colors ${
-                          isActive(item.href) ? "text-primary" : "text-foreground group-hover:text-primary"
-                        }`}>
-                          {item.label}
-                        </div>
-                        <div className="text-xs text-muted-foreground mt-0.5">{item.desc}</div>
-                      </Link>
-                    ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
+            <SingleDropdown keyName="problem" label="Problem" items={problemItems} />
+            <MegaDropdown keyName="zabieg" label="Zabieg" columns={zabiegColumns} />
+            <MegaDropdown keyName="wiedza" label="Wiedza" columns={wiedzaColumns} />
 
             <Link
               to="/wspolpraca"
               className={`px-4 py-2 text-sm font-medium transition-colors rounded-lg hover:bg-accent/50 ${
-                isActive("/wspolpraca") ? "text-primary bg-accent/50" : "text-foreground/80 hover:text-primary"
+                isActive("/wspolpraca")
+                  ? "text-primary bg-accent/50"
+                  : "text-foreground/80 hover:text-primary"
               }`}
             >
               Współpraca
             </Link>
 
-            {/* Ginekomastia Mega */}
-            <div
-              key={`gineko-${navKey}`}
-              className="relative"
-              onMouseEnter={() => handleMegaEnter("gineko")}
-              onMouseLeave={handleMegaLeave}
-            >
-              <button className={`flex items-center gap-1 px-4 py-2 text-sm font-medium transition-colors rounded-lg hover:bg-accent/50 ${
-                isSectionActive(ginekomastiaItems) ? "text-primary bg-accent/50" : "text-foreground/80 hover:text-primary"
-              }`}>
-                Ginekomastia
-                <ChevronDown className={`w-3.5 h-3.5 transition-transform ${megaOpen === "gineko" ? "rotate-180" : ""}`} />
-              </button>
-              <AnimatePresence>
-                {megaOpen === "gineko" && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 8 }}
-                    transition={{ duration: 0.2 }}
-                    className="absolute top-full right-0 mt-1 w-72 bg-card rounded-xl shadow-lg border border-border p-2"
-                  >
-                    {ginekomastiaItems.map((item) => (
-                      <Link
-                        key={item.href}
-                        to={item.href}
-                        onClick={handleMegaLinkClick}
-                        className={`block px-4 py-3 rounded-lg hover:bg-accent/50 transition-colors group ${
-                          isActive(item.href) ? "bg-accent/50" : ""
-                        }`}
-                      >
-                        <div className={`text-sm font-medium transition-colors ${
-                          isActive(item.href) ? "text-primary" : "text-foreground group-hover:text-primary"
-                        }`}>
-                          {item.label}
-                        </div>
-                        <div className="text-xs text-muted-foreground mt-0.5">{item.desc}</div>
-                      </Link>
-                    ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-
-            <Link
-              to="/blog"
-              className={`px-4 py-2 text-sm font-medium transition-colors rounded-lg hover:bg-accent/50 ${
-                isActive("/blog") || pathname.startsWith("/blog/") ? "text-primary bg-accent/50" : "text-foreground/80 hover:text-primary"
-              }`}
-            >
-              Blog
-            </Link>
-
             <Link
               to="/cennik"
               className={`px-4 py-2 text-sm font-medium transition-colors rounded-lg hover:bg-accent/50 ${
-                isActive("/cennik") ? "text-primary bg-accent/50" : "text-foreground/80 hover:text-primary"
+                isActive("/cennik")
+                  ? "text-primary bg-accent/50"
+                  : "text-foreground/80 hover:text-primary"
               }`}
             >
               Cennik
@@ -412,7 +360,9 @@ const Header = () => {
             <Link
               to="/kontakt"
               className={`px-4 py-2 text-sm font-medium transition-colors rounded-lg hover:bg-accent/50 ${
-                isActive("/kontakt") ? "text-primary bg-accent/50" : "text-foreground/80 hover:text-primary"
+                isActive("/kontakt")
+                  ? "text-primary bg-accent/50"
+                  : "text-foreground/80 hover:text-primary"
               }`}
             >
               Kontakt
@@ -421,7 +371,13 @@ const Header = () => {
 
           <div className="flex items-center gap-3">
             <Button variant="hero" size="default" className="hidden sm:inline-flex" asChild>
-              <a href="https://www.znanylekarz.pl/jan-bujok-2/chirurg-flebolog-proktolog/warszawa" target="_blank" rel="noopener noreferrer">Umów Konsultację</a>
+              <a
+                href="https://www.znanylekarz.pl/jan-bujok-2/chirurg-flebolog-proktolog/warszawa"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Umów Konsultację
+              </a>
             </Button>
             <button
               className="lg:hidden p-2 rounded-lg hover:bg-accent/50 transition-colors text-foreground"
@@ -458,6 +414,7 @@ const Header = () => {
         </div>
       </div>
 
+      {/* MOBILE MENU */}
       <AnimatePresence>
         {mobileOpen && (
           <>
@@ -476,65 +433,148 @@ const Header = () => {
               transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
               className="lg:hidden bg-card border-t border-border overflow-hidden max-h-[calc(100vh-4rem)] overflow-y-auto"
             >
-            <div className="px-4 py-4 space-y-1">
-              {[
-                <Link key="o-nas" to="/o-nas" className={`block px-4 py-3 rounded-lg text-sm font-medium hover:bg-accent/50 ${isActive("/o-nas") ? "text-primary bg-accent/50" : "text-foreground"}`}>O nas</Link>,
-                <div key="problem-label" className="px-4 py-2 text-xs font-semibold text-primary uppercase tracking-wider mt-2">Twój Problem</div>,
-                ...twojProblemItems.map((item) => (
-                  <Link key={`problem-${item.href}`} to={item.href} className={`block px-6 py-2.5 rounded-lg text-sm hover:bg-accent/50 ${isActive(item.href) ? "text-primary bg-accent/50 font-medium" : "text-foreground/80"}`}>
-                    {item.label}
-                  </Link>
-                )),
-                <div key="prokto-label" className="px-4 py-2 text-xs font-semibold text-primary uppercase tracking-wider mt-2">Proktologia</div>,
-                ...proktologiaItems.map((item) => (
-                  <Link key={item.href} to={item.href} className={`block px-6 py-2.5 rounded-lg text-sm hover:bg-accent/50 ${isActive(item.href) ? "text-primary bg-accent/50 font-medium" : "text-foreground/80"}`}>
-                    {item.label}
-                  </Link>
-                )),
-                <div key="flebo-label" className="px-4 py-2 text-xs font-semibold text-primary uppercase tracking-wider mt-2">Flebologia</div>,
-                ...flebologiaItems.map((item) => (
-                  <Link key={item.href} to={item.href} className={`block px-6 py-2.5 rounded-lg text-sm hover:bg-accent/50 ${isActive(item.href) ? "text-primary bg-accent/50 font-medium" : "text-foreground/80"}`}>
-                    {item.label}
-                  </Link>
-                )),
-                <div key="pacjent-label" className="px-4 py-2 text-xs font-semibold text-primary uppercase tracking-wider mt-2">Dla Pacjenta</div>,
-                ...dlaPacjentaItems.map((item) => (
-                  <Link key={item.href} to={item.href} className={`block px-6 py-2.5 rounded-lg text-sm hover:bg-accent/50 ${isActive(item.href) ? "text-primary bg-accent/50 font-medium" : "text-foreground/80"}`}>
-                    {item.label}
-                  </Link>
-                )),
-                <div key="gineko-label" className="px-4 py-2 text-xs font-semibold text-primary uppercase tracking-wider mt-2">Ginekomastia</div>,
-                ...ginekomastiaItems.map((item) => (
-                  <Link key={item.href} to={item.href} className={`block px-6 py-2.5 rounded-lg text-sm hover:bg-accent/50 ${isActive(item.href) ? "text-primary bg-accent/50 font-medium" : "text-foreground/80"}`}>
-                    {item.label}
-                  </Link>
-                )),
-                <Link key="wspolpraca" to="/wspolpraca" className={`block px-4 py-3 rounded-lg text-sm font-medium hover:bg-accent/50 ${isActive("/wspolpraca") ? "text-primary bg-accent/50" : "text-foreground"}`}>Współpraca</Link>,
-                <Link key="cennik" to="/cennik" className={`block px-4 py-3 rounded-lg text-sm font-medium hover:bg-accent/50 ${isActive("/cennik") ? "text-primary bg-accent/50" : "text-foreground"}`}>Cennik</Link>,
-                <Link key="blog" to="/blog" className={`block px-4 py-3 rounded-lg text-sm font-medium hover:bg-accent/50 ${isActive("/blog") || pathname.startsWith("/blog/") ? "text-primary bg-accent/50" : "text-foreground"}`}>Blog</Link>,
-                <Link key="kontakt" to="/kontakt" className={`block px-4 py-3 rounded-lg text-sm font-medium hover:bg-accent/50 ${isActive("/kontakt") ? "text-primary bg-accent/50" : "text-foreground"}`}>Kontakt</Link>,
-              ].map((child, i) => (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, x: -16 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.3, delay: 0.05 * i, ease: [0.16, 1, 0.3, 1] }}
-                >
-                  {child}
-                </motion.div>
-              ))}
+              <div className="px-4 py-4 space-y-1">
+                {[
+                  <Link
+                    key="o-nas"
+                    to="/o-nas"
+                    className={`block px-4 py-3 rounded-lg text-sm font-medium hover:bg-accent/50 ${
+                      isActive("/o-nas")
+                        ? "text-primary bg-accent/50"
+                        : "text-foreground"
+                    }`}
+                  >
+                    O nas
+                  </Link>,
+                  <div
+                    key="problem-label"
+                    className="px-4 py-2 text-xs font-semibold text-primary uppercase tracking-wider mt-2"
+                  >
+                    Problem
+                  </div>,
+                  ...problemItems.map((item) => (
+                    <Link
+                      key={`problem-${item.href}`}
+                      to={item.href}
+                      className={`block px-6 py-2.5 rounded-lg text-sm hover:bg-accent/50 ${
+                        isActive(item.href)
+                          ? "text-primary bg-accent/50 font-medium"
+                          : "text-foreground/80"
+                      }`}
+                    >
+                      {item.label}
+                    </Link>
+                  )),
 
-              <motion.div
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: 0.5 }}
-                className="pt-3"
-              >
-                <Button variant="hero" className="w-full" asChild>
-                  <a href="https://www.znanylekarz.pl/jan-bujok-2/chirurg-flebolog-proktolog/warszawa" target="_blank" rel="noopener noreferrer">Umów Konsultację</a>
-                </Button>
-              </motion.div>
-            </div>
+                  ...zabiegColumns.flatMap((col, i) => [
+                    <div
+                      key={`zabieg-label-${i}`}
+                      className="px-4 py-2 text-xs font-semibold text-primary uppercase tracking-wider mt-2"
+                    >
+                      Zabieg · {col.title}
+                    </div>,
+                    ...col.items.map((item) => (
+                      <Link
+                        key={`zabieg-${item.href}`}
+                        to={item.href}
+                        className={`block px-6 py-2.5 rounded-lg text-sm hover:bg-accent/50 ${
+                          isActive(item.href)
+                            ? "text-primary bg-accent/50 font-medium"
+                            : "text-foreground/80"
+                        }`}
+                      >
+                        {item.label}
+                      </Link>
+                    )),
+                  ]),
+
+                  ...wiedzaColumns.flatMap((col, i) => [
+                    <div
+                      key={`wiedza-label-${i}`}
+                      className="px-4 py-2 text-xs font-semibold text-primary uppercase tracking-wider mt-2"
+                    >
+                      Wiedza · {col.title}
+                    </div>,
+                    ...col.items.map((item) => (
+                      <Link
+                        key={`wiedza-${item.href}`}
+                        to={item.href}
+                        className={`block px-6 py-2.5 rounded-lg text-sm hover:bg-accent/50 ${
+                          isActive(item.href)
+                            ? "text-primary bg-accent/50 font-medium"
+                            : "text-foreground/80"
+                        }`}
+                      >
+                        {item.label}
+                      </Link>
+                    )),
+                  ]),
+
+                  <Link
+                    key="wspolpraca"
+                    to="/wspolpraca"
+                    className={`block px-4 py-3 rounded-lg text-sm font-medium hover:bg-accent/50 mt-2 ${
+                      isActive("/wspolpraca")
+                        ? "text-primary bg-accent/50"
+                        : "text-foreground"
+                    }`}
+                  >
+                    Współpraca
+                  </Link>,
+                  <Link
+                    key="cennik"
+                    to="/cennik"
+                    className={`block px-4 py-3 rounded-lg text-sm font-medium hover:bg-accent/50 ${
+                      isActive("/cennik")
+                        ? "text-primary bg-accent/50"
+                        : "text-foreground"
+                    }`}
+                  >
+                    Cennik
+                  </Link>,
+                  <Link
+                    key="kontakt"
+                    to="/kontakt"
+                    className={`block px-4 py-3 rounded-lg text-sm font-medium hover:bg-accent/50 ${
+                      isActive("/kontakt")
+                        ? "text-primary bg-accent/50"
+                        : "text-foreground"
+                    }`}
+                  >
+                    Kontakt
+                  </Link>,
+                ].map((child, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, x: -16 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{
+                      duration: 0.3,
+                      delay: 0.02 * i,
+                      ease: [0.16, 1, 0.3, 1],
+                    }}
+                  >
+                    {child}
+                  </motion.div>
+                ))}
+
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: 0.5 }}
+                  className="pt-3"
+                >
+                  <Button variant="hero" className="w-full" asChild>
+                    <a
+                      href="https://www.znanylekarz.pl/jan-bujok-2/chirurg-flebolog-proktolog/warszawa"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Umów Konsultację
+                    </a>
+                  </Button>
+                </motion.div>
+              </div>
             </motion.div>
           </>
         )}
