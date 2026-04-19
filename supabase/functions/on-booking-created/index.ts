@@ -28,7 +28,13 @@ interface BookingRecord {
   location: string
   message?: string | null
   status?: string
+  /** Per-booking extra recipients added from the admin panel (e.g. day-shift assistant). */
+  cc_emails?: string[] | null
 }
+
+// Basic RFC 5322-ish email check — strict enough to drop obvious garbage,
+// loose enough not to false-reject valid corporate addresses.
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 interface WebhookPayload {
   type: 'INSERT' | 'UPDATE' | 'DELETE'
