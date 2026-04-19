@@ -83,7 +83,7 @@ const FaldyOdbytu = () => (
     </section>
 
     <div className="max-w-4xl mx-auto px-4 md:px-8 py-16 space-y-20">
-      <Breadcrumbs items={[{ label: "Dla Pacjenta", href: "/dla-pacjenta" }, { label: "Fałdy okolicy odbytu" }]} className="mb-4" />
+      <Breadcrumbs items={[{ label: "Wiedza" }, { label: "Dla Pacjenta", href: "/dla-pacjenta" }, { label: "Fałdy okolicy odbytu" }]} className="mb-4" />
 
       {/* Czym są fałdy */}
       <motion.section {...fadeUp}>

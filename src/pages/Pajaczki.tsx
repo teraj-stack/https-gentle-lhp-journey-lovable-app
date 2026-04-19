@@ -73,7 +73,7 @@ const Pajaczki = () => (
     </ParallaxSection>
 
     <div className="max-w-5xl mx-auto px-4 py-16 space-y-24">
-      <Breadcrumbs items={[{ label: "Dla Pacjenta", href: "/dla-pacjenta" }, { label: "Odzyskaj beztroskę" }]} className="mb-4" />
+      <Breadcrumbs items={[{ label: "Wiedza" }, { label: "Dla Pacjenta", href: "/dla-pacjenta" }, { label: "Odzyskaj beztroskę" }]} className="mb-4" />
 
       {/* Intro */}
       <motion.section {...fadeUp} className="max-w-3xl mx-auto">
