@@ -1,6 +1,6 @@
 import * as React from 'npm:react@18.3.1'
 import {
-  Body, Container, Head, Heading, Html, Preview, Text, Hr, Section,
+  Body, Button, Container, Head, Heading, Html, Preview, Text, Hr, Section,
 } from 'npm:@react-email/components@0.0.22'
 import type { TemplateEntry } from './registry.ts'
 
@@ -16,6 +16,10 @@ interface BookingNotificationProps {
   locationLabel?: string
   message?: string
   bookingId?: string
+  /** Pełne URL-e do strony /booking-action z osadzonym tokenem akcji. Generowane w on-booking-created per recipient. */
+  confirmUrl?: string
+  cancelUrl?: string
+  needsContactUrl?: string
 }
 
 const formatDate = (date?: string) => {
@@ -44,6 +48,9 @@ const BookingNotificationEmail = ({
   locationLabel,
   message,
   bookingId,
+  confirmUrl,
+  cancelUrl,
+  needsContactUrl,
 }: BookingNotificationProps) => (
   <Html lang="pl" dir="ltr">
     <Head />
@@ -102,9 +109,35 @@ const BookingNotificationEmail = ({
           )}
         </Section>
 
+        {(confirmUrl || cancelUrl || needsContactUrl) && (
+          <>
+            <Text style={actionsLabel}>Szybka akcja recepcji</Text>
+            <Section style={actionsRow}>
+              {confirmUrl && (
+                <Button href={confirmUrl} style={btnConfirm}>
+                  ✓ Potwierdź wizytę
+                </Button>
+              )}
+              {cancelUrl && (
+                <Button href={cancelUrl} style={btnCancel}>
+                  ✕ Odwołaj wizytę
+                </Button>
+              )}
+              {needsContactUrl && (
+                <Button href={needsContactUrl} style={btnContact}>
+                  ☎ Wymaga kontaktu
+                </Button>
+              )}
+            </Section>
+            <Text style={actionsHint}>
+              Każdy link otworzy stronę z potwierdzeniem akcji. Linki ważne 7 dni, jednorazowe.
+              Po wykonaniu akcji pozostałe przyciski przestają działać.
+            </Text>
+          </>
+        )}
+
         <Text style={text}>
-          Aby potwierdzić termin, skontaktuj się z pacjentem telefonicznie lub
-          mailowo na powyższy adres.
+          Można też skontaktować się z pacjentem telefonicznie lub mailowo.
         </Text>
 
         <Hr style={divider} />
@@ -136,6 +169,9 @@ export const template = {
     locationLabel: 'Warszawa Wilanów (ul. Adama Branickiego 10/U6)',
     message: 'Pierwsza wizyta — konsultacja flebologiczna.',
     bookingId: '00000000-0000-0000-0000-000000000999',
+    confirmUrl: 'https://www.bestcml.io/booking-action?token=preview-confirm-token',
+    cancelUrl: 'https://www.bestcml.io/booking-action?token=preview-cancel-token',
+    needsContactUrl: 'https://www.bestcml.io/booking-action?token=preview-contact-token',
   },
 } satisfies TemplateEntry
 
@@ -152,3 +188,21 @@ const value = { fontSize: '14px', color: '#1a1d24', fontWeight: '600' as const, 
 const messageText = { fontSize: '14px', color: '#1a1d24', lineHeight: '1.6', margin: '0', whiteSpace: 'pre-wrap' as const }
 const mono = { fontSize: '12px', color: '#55575d', fontFamily: 'monospace', margin: '0' }
 const footer = { fontSize: '12px', color: '#999999', margin: '24px 0 0' }
+
+// --- Action button styles (recepcja) ---
+const actionsLabel = { fontSize: '11px', fontWeight: '600' as const, color: '#999999', textTransform: 'uppercase' as const, letterSpacing: '0.08em', margin: '24px 0 10px' }
+const actionsRow = { textAlign: 'center' as const, margin: '0 0 12px' }
+const btnBase = {
+  display: 'inline-block',
+  padding: '11px 18px',
+  fontSize: '14px',
+  fontWeight: '600' as const,
+  borderRadius: '6px',
+  textDecoration: 'none',
+  margin: '4px 6px',
+  textAlign: 'center' as const,
+}
+const btnConfirm = { ...btnBase, backgroundColor: '#2f7d54', color: '#ffffff' }
+const btnCancel = { ...btnBase, backgroundColor: '#a83232', color: '#ffffff' }
+const btnContact = { ...btnBase, backgroundColor: '#c9a84c', color: '#1a1d24' }
+const actionsHint = { fontSize: '11px', color: '#999999', lineHeight: '1.5', margin: '0 0 20px', fontStyle: 'italic' as const }

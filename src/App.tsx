@@ -42,6 +42,7 @@ const AdminDashboard = lazy(() => import("@/pages/AdminDashboard"));
 const AdminPostEditor = lazy(() => import("@/pages/AdminPostEditor"));
 
 const Unsubscribe = lazy(() => import("@/pages/Unsubscribe"));
+const BookingAction = lazy(() => import("@/pages/BookingAction"));
 const HemoroidyInfografika = lazy(() => import("@/pages/HemoroidyInfografika"));
 const FaldyOdbytu = lazy(() => import("@/pages/FaldyOdbytu"));
 const Ginekomastia = lazy(() => import("@/pages/Ginekomastia"));
@@ -128,6 +129,7 @@ const App = () => (
             <Route path="/admin/post/:id" element={<AdminPostEditor />} />
             
             <Route path="/unsubscribe" element={<Unsubscribe />} />
+            <Route path="/booking-action" element={<BookingAction />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
