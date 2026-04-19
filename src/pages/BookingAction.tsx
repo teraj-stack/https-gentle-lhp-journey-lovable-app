@@ -34,14 +34,14 @@ const ACTION_META: Record<ActionType, { label: string; icon: typeof CheckCircle2
   confirm: {
     label: "Potwierdź wizytę",
     icon: CheckCircle2,
-    tone: "text-emerald-400",
+    tone: "text-primary",
     cta: "Potwierdzam wizytę",
     resultLabel: "Wizyta potwierdzona",
   },
   cancel: {
     label: "Odwołaj wizytę",
     icon: XCircle,
-    tone: "text-red-400",
+    tone: "text-destructive",
     cta: "Odwołuję wizytę",
     resultLabel: "Wizyta odwołana",
   },
