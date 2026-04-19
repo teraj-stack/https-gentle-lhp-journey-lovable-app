@@ -67,7 +67,6 @@ const Unsubscribe = () => {
       <SeoHead
         title="Wypisanie z wiadomości e-mail | CML"
         description="Zarządzaj swoimi preferencjami komunikacji z Centrum Medycyny Laserowej."
-        noindex
       />
       <div className="min-h-screen bg-background flex items-center justify-center px-4 py-16 relative overflow-hidden">
         {/* Subtle gold radial glow */}
