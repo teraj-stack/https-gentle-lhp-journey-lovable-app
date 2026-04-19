@@ -53,6 +53,56 @@ export type Database = {
         }
         Relationships: []
       }
+      booking_action_tokens: {
+        Row: {
+          action: Database["public"]["Enums"]["booking_action_type"]
+          booking_id: string
+          created_at: string
+          expires_at: string
+          id: string
+          recipient_email: string
+          token: string
+          used_at: string | null
+          used_by_email: string | null
+          used_by_ip: string | null
+          used_by_ua: string | null
+        }
+        Insert: {
+          action: Database["public"]["Enums"]["booking_action_type"]
+          booking_id: string
+          created_at?: string
+          expires_at: string
+          id?: string
+          recipient_email: string
+          token: string
+          used_at?: string | null
+          used_by_email?: string | null
+          used_by_ip?: string | null
+          used_by_ua?: string | null
+        }
+        Update: {
+          action?: Database["public"]["Enums"]["booking_action_type"]
+          booking_id?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          recipient_email?: string
+          token?: string
+          used_at?: string | null
+          used_by_email?: string | null
+          used_by_ip?: string | null
+          used_by_ua?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_action_tokens_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bookings: {
         Row: {
           appointment_date: string
@@ -66,6 +116,8 @@ export type Database = {
           patient_name: string
           patient_phone: string
           status: string
+          status_changed_at: string | null
+          status_changed_by: string | null
           updated_at: string
         }
         Insert: {
@@ -80,6 +132,8 @@ export type Database = {
           patient_name: string
           patient_phone: string
           status?: string
+          status_changed_at?: string | null
+          status_changed_by?: string | null
           updated_at?: string
         }
         Update: {
@@ -94,6 +148,8 @@ export type Database = {
           patient_name?: string
           patient_phone?: string
           status?: string
+          status_changed_at?: string | null
+          status_changed_by?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -301,6 +357,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
+      booking_action_type: "confirm" | "cancel" | "needs_contact"
       notification_recipient_role: "reception" | "hq" | "doctor"
     }
     CompositeTypes: {
@@ -430,6 +487,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "moderator", "user"],
+      booking_action_type: ["confirm", "cancel", "needs_contact"],
       notification_recipient_role: ["reception", "hq", "doctor"],
     },
   },
