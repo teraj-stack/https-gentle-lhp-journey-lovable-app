@@ -270,7 +270,7 @@ const BookingAction = () => {
 
 const Wrapper = ({ title, children }: { title: string; children: React.ReactNode }) => (
   <>
-    <SeoHead title={`${title} — CML`} description="Strona akcji recepcji dla rezerwacji wizyt." path="/booking-action" noIndex />
+    <SeoHead title={title} description="Strona akcji recepcji dla rezerwacji wizyt." path="/booking-action" />
     <div className="min-h-screen bg-background flex items-start justify-center px-4 py-12 md:py-20">
       <div className="w-full max-w-lg space-y-5">
         <header className="space-y-2">
