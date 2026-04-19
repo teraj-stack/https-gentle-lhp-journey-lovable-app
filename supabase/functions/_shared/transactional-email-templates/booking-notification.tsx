@@ -48,6 +48,9 @@ const BookingNotificationEmail = ({
   locationLabel,
   message,
   bookingId,
+  confirmUrl,
+  cancelUrl,
+  needsContactUrl,
 }: BookingNotificationProps) => (
   <Html lang="pl" dir="ltr">
     <Head />
@@ -106,9 +109,35 @@ const BookingNotificationEmail = ({
           )}
         </Section>
 
+        {(confirmUrl || cancelUrl || needsContactUrl) && (
+          <>
+            <Text style={actionsLabel}>Szybka akcja recepcji</Text>
+            <Section style={actionsRow}>
+              {confirmUrl && (
+                <Button href={confirmUrl} style={btnConfirm}>
+                  ✓ Potwierdź wizytę
+                </Button>
+              )}
+              {cancelUrl && (
+                <Button href={cancelUrl} style={btnCancel}>
+                  ✕ Odwołaj wizytę
+                </Button>
+              )}
+              {needsContactUrl && (
+                <Button href={needsContactUrl} style={btnContact}>
+                  ☎ Wymaga kontaktu
+                </Button>
+              )}
+            </Section>
+            <Text style={actionsHint}>
+              Każdy link otworzy stronę z potwierdzeniem akcji. Linki ważne 7 dni, jednorazowe.
+              Po wykonaniu akcji pozostałe przyciski przestają działać.
+            </Text>
+          </>
+        )}
+
         <Text style={text}>
-          Aby potwierdzić termin, skontaktuj się z pacjentem telefonicznie lub
-          mailowo na powyższy adres.
+          Można też skontaktować się z pacjentem telefonicznie lub mailowo.
         </Text>
 
         <Hr style={divider} />
