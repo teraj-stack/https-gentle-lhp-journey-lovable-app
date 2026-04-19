@@ -28,7 +28,13 @@ interface BookingRecord {
   location: string
   message?: string | null
   status?: string
+  /** Per-booking extra recipients added from the admin panel (e.g. day-shift assistant). */
+  cc_emails?: string[] | null
 }
+
+// Basic RFC 5322-ish email check — strict enough to drop obvious garbage,
+// loose enough not to false-reject valid corporate addresses.
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 interface WebhookPayload {
   type: 'INSERT' | 'UPDATE' | 'DELETE'
@@ -138,11 +144,16 @@ Deno.serve(async (req) => {
 
   const { email: receptionEmail, label: locationLabel } = resolveLocation(booking.location)
 
+  // Validate per-booking extra recipients (cc_emails) — drop empties and malformed addresses.
+  const ccEmails = (booking.cc_emails ?? [])
+    .map((e) => (typeof e === 'string' ? e.trim().toLowerCase() : ''))
+    .filter((e) => e.length > 0 && EMAIL_REGEX.test(e))
+
   // Build deduplicated recipient list for the staff notification:
-  //   reception (if known) + biuro@cml.pl + dr.bujok@cml.pl (always)
+  //   reception (if known) + biuro@cml.pl + dr.bujok@cml.pl (always) + cc_emails (per-booking, optional)
   const staffRecipients = Array.from(
     new Set(
-      [receptionEmail, ...HQ_NOTIFICATION_EMAILS]
+      [receptionEmail, ...HQ_NOTIFICATION_EMAILS, ...ccEmails]
         .filter((e): e is string => !!e)
         .map((e) => e.toLowerCase())
     )

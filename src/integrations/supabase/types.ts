@@ -57,6 +57,7 @@ export type Database = {
         Row: {
           appointment_date: string
           appointment_time: string
+          cc_emails: string[]
           created_at: string
           id: string
           location: string
@@ -70,6 +71,7 @@ export type Database = {
         Insert: {
           appointment_date: string
           appointment_time: string
+          cc_emails?: string[]
           created_at?: string
           id?: string
           location: string
@@ -83,6 +85,7 @@ export type Database = {
         Update: {
           appointment_date?: string
           appointment_time?: string
+          cc_emails?: string[]
           created_at?: string
           id?: string
           location?: string
