@@ -195,7 +195,7 @@ const BookingAction = () => {
     const Icon = meta?.icon ?? CheckCircle2;
     return (
       <Wrapper title={meta?.resultLabel ?? "Status zmieniony"}>
-        <div className="flex items-start gap-3 rounded-lg border border-emerald-500/40 bg-emerald-500/10 p-4">
+        <div className="flex items-start gap-3 rounded-lg border border-primary/40 bg-primary/10 p-4">
           <Icon className={`w-5 h-5 mt-0.5 shrink-0 ${meta?.tone ?? ""}`} />
           <div className="text-sm">
             <p className="font-medium mb-1 text-foreground">
