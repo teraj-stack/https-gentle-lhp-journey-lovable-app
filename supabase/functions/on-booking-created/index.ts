@@ -144,11 +144,16 @@ Deno.serve(async (req) => {
 
   const { email: receptionEmail, label: locationLabel } = resolveLocation(booking.location)
 
+  // Validate per-booking extra recipients (cc_emails) — drop empties and malformed addresses.
+  const ccEmails = (booking.cc_emails ?? [])
+    .map((e) => (typeof e === 'string' ? e.trim().toLowerCase() : ''))
+    .filter((e) => e.length > 0 && EMAIL_REGEX.test(e))
+
   // Build deduplicated recipient list for the staff notification:
-  //   reception (if known) + biuro@cml.pl + dr.bujok@cml.pl (always)
+  //   reception (if known) + biuro@cml.pl + dr.bujok@cml.pl (always) + cc_emails (per-booking, optional)
   const staffRecipients = Array.from(
     new Set(
-      [receptionEmail, ...HQ_NOTIFICATION_EMAILS]
+      [receptionEmail, ...HQ_NOTIFICATION_EMAILS, ...ccEmails]
         .filter((e): e is string => !!e)
         .map((e) => e.toLowerCase())
     )
