@@ -118,8 +118,10 @@ const ZaleceniaPoSkleroterapii = () => {
         <div className="container mx-auto px-4 max-w-4xl">
           <Breadcrumbs
             items={[
-              { label: "Dla Pacjenta", href: "/dla-pacjenta" },
-              { label: "Zalecenia po skleroterapii" },
+              { label: "Zabieg" },
+              { label: "Flebologia", href: "/leczenie/flebologia" },
+              { label: "Skleroterapia", href: "/leczenie/skleroterapia" },
+              { label: "Zalecenia po zabiegu" },
             ]}
           />
           <motion.div {...fadeUp} className="mt-8 text-center">

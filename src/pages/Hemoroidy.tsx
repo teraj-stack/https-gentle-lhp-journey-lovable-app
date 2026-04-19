@@ -164,7 +164,7 @@ const Hemoroidy = () => {
     </ParallaxSection>
 
     <div className="max-w-5xl mx-auto px-4 py-16 space-y-24">
-      <Breadcrumbs items={[{ label: "Dla pacjenta", href: "/dla-pacjenta" }, { label: "Hemoroidy od A do Z" }]} className="mb-4" />
+      <Breadcrumbs items={[{ label: "Wiedza" }, { label: "Dla Pacjenta", href: "/dla-pacjenta" }, { label: "Hemoroidy od A do Z" }]} className="mb-4" />
 
       {/* CHAPTER 1 */}
       <section>

@@ -104,7 +104,7 @@ const SpazmLonowoodbytniczy = () => (
     </section>
 
     <div className="max-w-4xl mx-auto px-4 md:px-8 py-16 space-y-20">
-      <Breadcrumbs items={[{ label: "Proktologia", href: "/leczenie/proktologia" }, { label: "Przewlekły ból odbytu" }]} className="mb-4" />
+      <Breadcrumbs items={[{ label: "Zabieg" }, { label: "Proktologia", href: "/leczenie/proktologia" }, { label: "Spazm łonowoodbytniczy" }]} className="mb-4" />
 
       {/* Co to jest */}
       <motion.section {...fadeUp}>

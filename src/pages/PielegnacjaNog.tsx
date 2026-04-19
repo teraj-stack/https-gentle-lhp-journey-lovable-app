@@ -175,7 +175,7 @@ const PielegnacjaNog = () => {
     </section>
 
     <div className="max-w-4xl mx-auto px-4 pb-20 space-y-20">
-      <Breadcrumbs items={[{ label: "Dla Pacjenta", href: "/dla-pacjenta" }, { label: "Pielęgnacja nóg" }]} className="mb-4" />
+      <Breadcrumbs items={[{ label: "Wiedza" }, { label: "Dla Pacjenta", href: "/dla-pacjenta" }, { label: "Pielęgnacja nóg" }]} className="mb-4" />
 
       {/* Kluczowa zasada */}
       <motion.section {...fadeUp} className="glass-card rounded-2xl p-8 md:p-10 border-l-4 border-primary">

@@ -116,8 +116,10 @@ const ZaleceniaPoEVLT = () => {
         <div className="container mx-auto px-4 max-w-4xl">
           <Breadcrumbs
             items={[
-              { label: "Dla Pacjenta", href: "/dla-pacjenta" },
-              { label: "Zalecenia po EVLT" },
+              { label: "Zabieg" },
+              { label: "Flebologia", href: "/leczenie/flebologia" },
+              { label: "EVLT", href: "/leczenie/evlt" },
+              { label: "Zalecenia po zabiegu" },
             ]}
           />
           <motion.div {...fadeUp} className="mt-8 text-center">

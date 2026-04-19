@@ -30,8 +30,9 @@ const HemoroidyInfografika = () => (
 
     <div className="min-h-screen">
       <Breadcrumbs items={[
+        { label: "Wiedza" },
         { label: "Dla Pacjenta", href: "/dla-pacjenta" },
-        { label: "Hemoroidy od A do Z" },
+        { label: "Hemoroidy – infografika" },
       ]} />
 
       {/* HERO */}

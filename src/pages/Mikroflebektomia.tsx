@@ -97,7 +97,7 @@ const Mikroflebektomia = () => (
     </ParallaxSection>
 
     <div className="max-w-5xl mx-auto px-4 py-16 space-y-24">
-      <Breadcrumbs items={[{ label: "Flebologia", href: "/leczenie/flebologia" }, { label: "Mikroflebektomia piankowa" }]} className="mb-4" />
+      <Breadcrumbs items={[{ label: "Zabieg" }, { label: "Flebologia", href: "/leczenie/flebologia" }, { label: "Mikroflebektomia piankowa" }]} className="mb-4" />
 
       {/* Intro */}
       <motion.section {...fadeUp}>

@@ -118,8 +118,10 @@ const ZaleceniaPoLHP = () => {
         <div className="container mx-auto px-4 max-w-4xl">
           <Breadcrumbs
             items={[
-              { label: "Dla Pacjenta", href: "/dla-pacjenta" },
-              { label: "Zalecenia po LHP" },
+              { label: "Zabieg" },
+              { label: "Proktologia", href: "/leczenie/proktologia" },
+              { label: "LHP", href: "/leczenie/lhp" },
+              { label: "Zalecenia po zabiegu" },
             ]}
           />
           <motion.div {...fadeUp} className="mt-8 text-center">

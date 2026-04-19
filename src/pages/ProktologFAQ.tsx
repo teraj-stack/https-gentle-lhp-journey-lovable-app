@@ -169,7 +169,7 @@ const ProktologFAQ = () => (
     </ParallaxSection>
 
     <div className="max-w-3xl mx-auto px-4 py-16 space-y-16">
-      <Breadcrumbs items={[{ label: "Dla Pacjenta", href: "/dla-pacjenta" }, { label: "Lekarz odpowiada" }]} className="mb-4" />
+      <Breadcrumbs items={[{ label: "Wiedza" }, { label: "Dla Pacjenta", href: "/dla-pacjenta" }, { label: "Lekarz odpowiada" }]} className="mb-4" />
 
       {/* Key highlights */}
       <motion.div {...fadeUp} className="grid sm:grid-cols-3 gap-4">
