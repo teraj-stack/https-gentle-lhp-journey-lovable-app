@@ -5,10 +5,10 @@
 //   Type: Supabase Edge Functions
 //   Edge Function: on-booking-created
 //   HTTP Method: POST
-//   HTTP Headers: (default — Authorization with service-role JWT is added automatically)
 //
-// The webhook payload follows Supabase's standard format:
-// { type: 'INSERT', table: 'bookings', schema: 'public', record: {...}, old_record: null }
+// Sends two emails:
+//   1) booking-confirmation → patient
+//   2) booking-notification → reception of the chosen location + biuro@cml.pl
 
 import { createClient } from 'npm:@supabase/supabase-js@2'
 
@@ -38,6 +38,52 @@ interface WebhookPayload {
   old_record: BookingRecord | null
 }
 
+// Always-CC for every booking notification
+const HQ_NOTIFICATION_EMAIL = 'biuro@cml.pl'
+
+// Map booking.location → reception email + friendly label.
+// `match` is checked as a case-insensitive substring against the raw location value,
+// so different shapes (slug, name, label) all resolve correctly.
+interface LocationMapping {
+  match: string[]
+  email: string
+  label: string
+}
+
+const LOCATION_MAP: LocationMapping[] = [
+  {
+    match: ['wilanow', 'wilanów', 'branickiego', 'warszawa-wilanow'],
+    email: 'warszawa@cml.pl',
+    label: 'Warszawa Wilanów (ul. Adama Branickiego 10/U6)',
+  },
+  {
+    match: ['fimedica', 'gieldowa', 'giełdowa'],
+    email: 'fimedica@fimedica.pl',
+    label: 'Fimedica – Warszawa (ul. Giełdowa 5)',
+  },
+  {
+    match: ['siedlce', 'beauty-and-mind', 'beauty', 'brzeska'],
+    email: 'siedlce@cml.pl',
+    label: 'Beauty & Mind – Siedlce (ul. Brzeska 125)',
+  },
+  {
+    match: ['rzeszow', 'rzeszów', 'ipcliniq', 'ip-cliniq', 'rejtana'],
+    email: 'recepcja@ipcliniq.pl',
+    label: 'IP Cliniq – Rzeszów (al. Rejtana 53)',
+  },
+]
+
+function resolveLocation(location?: string): { email: string | null; label: string } {
+  if (!location) return { email: null, label: '—' }
+  const norm = location.toLowerCase()
+  for (const mapping of LOCATION_MAP) {
+    if (mapping.match.some((m) => norm.includes(m))) {
+      return { email: mapping.email, label: mapping.label }
+    }
+  }
+  return { email: null, label: location }
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
@@ -60,7 +106,6 @@ Deno.serve(async (req) => {
     )
   }
 
-  // Only process INSERT events
   if (payload.type !== 'INSERT' || payload.table !== 'bookings' || !payload.record) {
     return new Response(
       JSON.stringify({ skipped: true, reason: 'not an INSERT on bookings' }),
@@ -70,9 +115,8 @@ Deno.serve(async (req) => {
 
   const booking = payload.record
 
-  // Basic validation: must have email + id to send confirmation
   if (!booking.id || !booking.patient_email) {
-    console.warn('Booking missing id or email — skipping email send', { id: booking.id })
+    console.warn('Booking missing id or email — skipping', { id: booking.id })
     return new Response(
       JSON.stringify({ skipped: true, reason: 'missing id or patient_email' }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -92,12 +136,26 @@ Deno.serve(async (req) => {
 
   const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
+  const { email: receptionEmail, label: locationLabel } = resolveLocation(booking.location)
+
+  // Build deduplicated recipient list for the staff notification:
+  //   reception (if known) + biuro@cml.pl (always)
+  const staffRecipients = Array.from(
+    new Set(
+      [receptionEmail, HQ_NOTIFICATION_EMAIL]
+        .filter((e): e is string => !!e)
+        .map((e) => e.toLowerCase())
+    )
+  )
+
+  const sendResults: Record<string, { ok: boolean; error?: string }> = {}
+
+  // 1) Patient confirmation
   try {
     const { error } = await supabase.functions.invoke('send-transactional-email', {
       body: {
         templateName: 'booking-confirmation',
         recipientEmail: booking.patient_email,
-        // Idempotent per booking — safe against webhook retries / duplicate events
         idempotencyKey: `booking-confirm-${booking.id}`,
         templateData: {
           patientName: booking.patient_name,
@@ -108,24 +166,62 @@ Deno.serve(async (req) => {
         },
       },
     })
-
-    if (error) {
-      console.error('send-transactional-email invoke failed:', error)
-      return new Response(
-        JSON.stringify({ success: false, error: error.message }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    return new Response(
-      JSON.stringify({ success: true, bookingId: booking.id }),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
+    sendResults[`patient:${booking.patient_email}`] = error
+      ? { ok: false, error: error.message }
+      : { ok: true }
+    if (error) console.error('booking-confirmation failed:', error)
   } catch (err) {
-    console.error('Unexpected error:', err)
-    return new Response(
-      JSON.stringify({ success: false, error: String(err) }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
+    sendResults[`patient:${booking.patient_email}`] = { ok: false, error: String(err) }
+    console.error('booking-confirmation threw:', err)
   }
+
+  // 2) Staff notifications (reception + HQ)
+  await Promise.all(
+    staffRecipients.map(async (recipient) => {
+      try {
+        const { error } = await supabase.functions.invoke('send-transactional-email', {
+          body: {
+            templateName: 'booking-notification',
+            recipientEmail: recipient,
+            // Per-recipient idempotency key — each address gets exactly one notification per booking
+            idempotencyKey: `booking-notify-${booking.id}-${recipient}`,
+            templateData: {
+              patientName: booking.patient_name,
+              patientEmail: booking.patient_email,
+              patientPhone: booking.patient_phone ?? undefined,
+              appointmentDate: booking.appointment_date,
+              appointmentTime: booking.appointment_time,
+              location: booking.location,
+              locationLabel,
+              message: booking.message ?? undefined,
+              bookingId: booking.id,
+            },
+          },
+        })
+        sendResults[`staff:${recipient}`] = error
+          ? { ok: false, error: error.message }
+          : { ok: true }
+        if (error) console.error(`booking-notification → ${recipient} failed:`, error)
+      } catch (err) {
+        sendResults[`staff:${recipient}`] = { ok: false, error: String(err) }
+        console.error(`booking-notification → ${recipient} threw:`, err)
+      }
+    })
+  )
+
+  const allOk = Object.values(sendResults).every((r) => r.ok)
+
+  return new Response(
+    JSON.stringify({
+      success: allOk,
+      bookingId: booking.id,
+      receptionEmail,
+      locationLabel,
+      results: sendResults,
+    }),
+    {
+      status: allOk ? 200 : 207, // 207 Multi-Status if some sends failed
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    }
+  )
 })
