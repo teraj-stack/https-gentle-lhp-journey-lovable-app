@@ -10,9 +10,10 @@
 //   1) booking-confirmation → patient
 //   2) booking-notification → reception of the chosen location + global HQ/doctor recipients
 //
-// Recipients are loaded from public.notification_recipients (managed in /admin)
-// instead of being hardcoded — so the office staff can rotate addresses without
-// requiring a code change + redeploy.
+// For every staff recipient we generate ONE-TIME action tokens (confirm / cancel /
+// needs_contact) valid for 7 days, persist them in public.booking_action_tokens,
+// and inject the resulting /booking-action URLs into the email template so the
+// reception can change booking status with a single click.
 
 import { createClient } from 'npm:@supabase/supabase-js@2'
 
@@ -32,13 +33,20 @@ interface BookingRecord {
   location: string
   message?: string | null
   status?: string
-  /** Per-booking extra recipients added from the admin panel (e.g. day-shift assistant). */
   cc_emails?: string[] | null
 }
 
-// Basic RFC 5322-ish email check — strict enough to drop obvious garbage,
-// loose enough not to false-reject valid corporate addresses.
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+// Public site origin used in booking-action links inside emails.
+// Falls back to the canonical custom domain if env not set.
+const ACTION_SITE_ORIGIN = (Deno.env.get('PUBLIC_SITE_URL') ?? 'https://www.bestcml.io').replace(/\/+$/, '')
+
+// Token TTL — 7 days, jednorazowy (decision: 7 dni, jednorazowy).
+const TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000
+
+type BookingActionType = 'confirm' | 'cancel' | 'needs_contact'
+const ACTIONS: BookingActionType[] = ['confirm', 'cancel', 'needs_contact']
 
 interface WebhookPayload {
   type: 'INSERT' | 'UPDATE' | 'DELETE'
@@ -56,18 +64,12 @@ interface NotificationRecipientRow {
   enabled: boolean
 }
 
-/**
- * Resolve reception email + label for a given booking.location by checking each
- * `reception` row's `location_match` substring against the raw location value
- * (case-insensitive). Returns the first match, or a fallback when none matches.
- */
 function resolveLocation(
   location: string | undefined,
   recipients: NotificationRecipientRow[],
 ): { email: string | null; label: string } {
   if (!location) return { email: null, label: '—' }
   const norm = location.toLowerCase()
-
   for (const row of recipients) {
     if (row.role !== 'reception' || !row.enabled) continue
     const match = (row.location_match ?? '').toLowerCase().trim()
@@ -76,6 +78,13 @@ function resolveLocation(
     }
   }
   return { email: null, label: location }
+}
+
+// Build a URL-safe random token. crypto.randomUUID + extra entropy = 32+ chars.
+function generateToken(): string {
+  const a = crypto.randomUUID().replace(/-/g, '')
+  const b = crypto.randomUUID().replace(/-/g, '')
+  return `${a}${b}` // 64 hex chars
 }
 
 Deno.serve(async (req) => {
@@ -148,18 +157,14 @@ Deno.serve(async (req) => {
 
   const { email: receptionEmail, label: locationLabel } = resolveLocation(booking.location, recipients)
 
-  // Global recipients (HQ + doctor) — always CC'd, independent of location.
   const globalEmails = recipients
     .filter((r) => (r.role === 'hq' || r.role === 'doctor') && r.enabled)
     .map((r) => r.email)
 
-  // Validate per-booking extra recipients (cc_emails) — drop empties and malformed addresses.
   const ccEmails = (booking.cc_emails ?? [])
     .map((e) => (typeof e === 'string' ? e.trim().toLowerCase() : ''))
     .filter((e) => e.length > 0 && EMAIL_REGEX.test(e))
 
-  // Build deduplicated recipient list for the staff notification:
-  //   reception (if known) + globals (HQ/doctor, from DB) + cc_emails (per-booking, optional)
   const staffRecipients = Array.from(
     new Set(
       [receptionEmail, ...globalEmails, ...ccEmails]
@@ -195,15 +200,49 @@ Deno.serve(async (req) => {
     console.error('booking-confirmation threw:', err)
   }
 
-  // 2) Staff notifications (reception + HQ + doctor + per-booking CC)
+  // 2) Pre-generate action tokens for ALL staff recipients in one batch insert.
+  //    Each recipient gets a unique set (confirm/cancel/needs_contact) so we know
+  //    via audit log which mailbox actually clicked.
+  const expiresAt = new Date(Date.now() + TOKEN_TTL_MS).toISOString()
+  const tokenRows = staffRecipients.flatMap((recipient) =>
+    ACTIONS.map((action) => ({
+      booking_id: booking.id,
+      action,
+      token: generateToken(),
+      recipient_email: recipient,
+      expires_at: expiresAt,
+    }))
+  )
+
+  // recipient → { confirm: url, cancel: url, needs_contact: url }
+  const tokensByRecipient: Record<string, Record<BookingActionType, string>> = {}
+
+  if (tokenRows.length > 0) {
+    const { error: insertError } = await supabase
+      .from('booking_action_tokens')
+      .insert(tokenRows)
+
+    if (insertError) {
+      console.error('Failed to insert booking_action_tokens:', insertError)
+      // Mail wyśle się bez przycisków akcji — recepcja zadzwoni jak dotychczas.
+    } else {
+      for (const row of tokenRows) {
+        tokensByRecipient[row.recipient_email] ??= {} as Record<BookingActionType, string>
+        const url = `${ACTION_SITE_ORIGIN}/booking-action?token=${encodeURIComponent(row.token)}`
+        tokensByRecipient[row.recipient_email][row.action as BookingActionType] = url
+      }
+    }
+  }
+
+  // 3) Staff notifications (reception + HQ + doctor + per-booking CC)
   await Promise.all(
     staffRecipients.map(async (recipient) => {
+      const urls = tokensByRecipient[recipient] ?? {} as Partial<Record<BookingActionType, string>>
       try {
         const { error } = await supabase.functions.invoke('send-transactional-email', {
           body: {
             templateName: 'booking-notification',
             recipientEmail: recipient,
-            // Per-recipient idempotency key — each address gets exactly one notification per booking
             idempotencyKey: `booking-notify-${booking.id}-${recipient}`,
             templateData: {
               patientName: booking.patient_name,
@@ -215,6 +254,9 @@ Deno.serve(async (req) => {
               locationLabel,
               message: booking.message ?? undefined,
               bookingId: booking.id,
+              confirmUrl: urls.confirm,
+              cancelUrl: urls.cancel,
+              needsContactUrl: urls.needs_contact,
             },
           },
         })
@@ -238,10 +280,11 @@ Deno.serve(async (req) => {
       receptionEmail,
       locationLabel,
       globalRecipients: globalEmails,
+      tokensIssued: tokenRows.length,
       results: sendResults,
     }),
     {
-      status: allOk ? 200 : 207, // 207 Multi-Status if some sends failed
+      status: allOk ? 200 : 207,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     }
   )
