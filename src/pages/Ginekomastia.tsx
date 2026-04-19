@@ -132,6 +132,7 @@ const Ginekomastia = () => (
     </ParallaxSection>
 
     <Breadcrumbs items={[
+      { label: "Zabieg" },
       { label: "Ginekomastia" },
     ]} />
 

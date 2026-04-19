@@ -165,6 +165,7 @@ const Fototerapia = () => (
 
     <Breadcrumbs
       items={[
+        { label: "Zabieg" },
         { label: "Flebologia", href: "/leczenie/flebologia" },
         { label: "Fototerapia LED (PBM)" },
       ]}

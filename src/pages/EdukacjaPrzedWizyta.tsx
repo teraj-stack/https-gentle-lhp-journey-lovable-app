@@ -211,8 +211,9 @@ const EdukacjaPrzedWizyta = () => {
     <div className="max-w-4xl mx-auto px-4 py-16 space-y-20">
       <Breadcrumbs
         items={[
+          { label: "Wiedza" },
           { label: "Dla Pacjenta", href: "/dla-pacjenta" },
-          { label: "Edukacja przed wizytą" },
+          { label: "Świadomy pacjent" },
         ]}
         className="mb-4"
       />

@@ -188,6 +188,7 @@ const ProfilaktykaZylakow = () => {
         <div className="container mx-auto px-4 relative z-10">
           <Breadcrumbs
             items={[
+              { label: "Wiedza" },
               { label: "Dla Pacjenta", href: "/dla-pacjenta" },
               { label: "Profilaktyka żylaków" },
             ]}
