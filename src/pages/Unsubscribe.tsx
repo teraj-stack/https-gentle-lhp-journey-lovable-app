@@ -65,6 +65,7 @@ const Unsubscribe = () => {
   return (
     <>
       <SeoHead
+        path="/unsubscribe"
         title="Wypisanie z wiadomości e-mail | CML"
         description="Zarządzaj swoimi preferencjami komunikacji z Centrum Medycyny Laserowej."
       />
