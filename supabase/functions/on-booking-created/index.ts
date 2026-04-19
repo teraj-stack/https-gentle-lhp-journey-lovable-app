@@ -8,7 +8,11 @@
 //
 // Sends two emails:
 //   1) booking-confirmation → patient
-//   2) booking-notification → reception of the chosen location + biuro@cml.pl
+//   2) booking-notification → reception of the chosen location + global HQ/doctor recipients
+//
+// Recipients are loaded from public.notification_recipients (managed in /admin)
+// instead of being hardcoded — so the office staff can rotate addresses without
+// requiring a code change + redeploy.
 
 import { createClient } from 'npm:@supabase/supabase-js@2'
 
@@ -44,47 +48,31 @@ interface WebhookPayload {
   old_record: BookingRecord | null
 }
 
-// Always-CC for every booking notification (HQ + lekarz prowadzący)
-const HQ_NOTIFICATION_EMAILS = ['biuro@cml.pl', 'dr.bujok@cml.pl']
-
-// Map booking.location → reception email + friendly label.
-// `match` is checked as a case-insensitive substring against the raw location value,
-// so different shapes (slug, name, label) all resolve correctly.
-interface LocationMapping {
-  match: string[]
+interface NotificationRecipientRow {
   email: string
-  label: string
+  role: 'reception' | 'hq' | 'doctor'
+  location_match: string | null
+  location_label: string | null
+  enabled: boolean
 }
 
-const LOCATION_MAP: LocationMapping[] = [
-  {
-    match: ['wilanow', 'wilanów', 'branickiego', 'warszawa-wilanow'],
-    email: 'warszawa@cml.pl',
-    label: 'Warszawa Wilanów (ul. Adama Branickiego 10/U6)',
-  },
-  {
-    match: ['fimedica', 'gieldowa', 'giełdowa'],
-    email: 'fimedica@fimedica.pl',
-    label: 'Fimedica – Warszawa (ul. Giełdowa 5)',
-  },
-  {
-    match: ['siedlce', 'beauty-and-mind', 'beauty', 'brzeska'],
-    email: 'siedlce@cml.pl',
-    label: 'Beauty & Mind – Siedlce (ul. Brzeska 125)',
-  },
-  {
-    match: ['rzeszow', 'rzeszów', 'ipcliniq', 'ip-cliniq', 'rejtana'],
-    email: 'recepcja@ipcliniq.pl',
-    label: 'IP Cliniq – Rzeszów (al. Rejtana 53)',
-  },
-]
-
-function resolveLocation(location?: string): { email: string | null; label: string } {
+/**
+ * Resolve reception email + label for a given booking.location by checking each
+ * `reception` row's `location_match` substring against the raw location value
+ * (case-insensitive). Returns the first match, or a fallback when none matches.
+ */
+function resolveLocation(
+  location: string | undefined,
+  recipients: NotificationRecipientRow[],
+): { email: string | null; label: string } {
   if (!location) return { email: null, label: '—' }
   const norm = location.toLowerCase()
-  for (const mapping of LOCATION_MAP) {
-    if (mapping.match.some((m) => norm.includes(m))) {
-      return { email: mapping.email, label: mapping.label }
+
+  for (const row of recipients) {
+    if (row.role !== 'reception' || !row.enabled) continue
+    const match = (row.location_match ?? '').toLowerCase().trim()
+    if (match.length > 0 && norm.includes(match)) {
+      return { email: row.email, label: row.location_label ?? location }
     }
   }
   return { email: null, label: location }
@@ -142,7 +130,28 @@ Deno.serve(async (req) => {
 
   const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-  const { email: receptionEmail, label: locationLabel } = resolveLocation(booking.location)
+  // Load active notification recipients from DB (managed via /admin).
+  const { data: recipientsData, error: recipientsError } = await supabase
+    .from('notification_recipients')
+    .select('email, role, location_match, location_label, enabled')
+    .eq('enabled', true)
+
+  if (recipientsError) {
+    console.error('Failed to load notification_recipients:', recipientsError)
+    return new Response(
+      JSON.stringify({ error: 'Failed to load notification recipients', details: recipientsError.message }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
+  }
+
+  const recipients = (recipientsData ?? []) as NotificationRecipientRow[]
+
+  const { email: receptionEmail, label: locationLabel } = resolveLocation(booking.location, recipients)
+
+  // Global recipients (HQ + doctor) — always CC'd, independent of location.
+  const globalEmails = recipients
+    .filter((r) => (r.role === 'hq' || r.role === 'doctor') && r.enabled)
+    .map((r) => r.email)
 
   // Validate per-booking extra recipients (cc_emails) — drop empties and malformed addresses.
   const ccEmails = (booking.cc_emails ?? [])
@@ -150,10 +159,10 @@ Deno.serve(async (req) => {
     .filter((e) => e.length > 0 && EMAIL_REGEX.test(e))
 
   // Build deduplicated recipient list for the staff notification:
-  //   reception (if known) + biuro@cml.pl + dr.bujok@cml.pl (always) + cc_emails (per-booking, optional)
+  //   reception (if known) + globals (HQ/doctor, from DB) + cc_emails (per-booking, optional)
   const staffRecipients = Array.from(
     new Set(
-      [receptionEmail, ...HQ_NOTIFICATION_EMAILS, ...ccEmails]
+      [receptionEmail, ...globalEmails, ...ccEmails]
         .filter((e): e is string => !!e)
         .map((e) => e.toLowerCase())
     )
@@ -186,7 +195,7 @@ Deno.serve(async (req) => {
     console.error('booking-confirmation threw:', err)
   }
 
-  // 2) Staff notifications (reception + HQ)
+  // 2) Staff notifications (reception + HQ + doctor + per-booking CC)
   await Promise.all(
     staffRecipients.map(async (recipient) => {
       try {
@@ -228,6 +237,7 @@ Deno.serve(async (req) => {
       bookingId: booking.id,
       receptionEmail,
       locationLabel,
+      globalRecipients: globalEmails,
       results: sendResults,
     }),
     {

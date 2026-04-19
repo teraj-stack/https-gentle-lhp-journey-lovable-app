@@ -185,6 +185,42 @@ export type Database = {
         }
         Relationships: []
       }
+      notification_recipients: {
+        Row: {
+          created_at: string
+          email: string
+          enabled: boolean
+          id: string
+          location_label: string | null
+          location_match: string | null
+          notes: string | null
+          role: Database["public"]["Enums"]["notification_recipient_role"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          enabled?: boolean
+          id?: string
+          location_label?: string | null
+          location_match?: string | null
+          notes?: string | null
+          role: Database["public"]["Enums"]["notification_recipient_role"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          enabled?: boolean
+          id?: string
+          location_label?: string | null
+          location_match?: string | null
+          notes?: string | null
+          role?: Database["public"]["Enums"]["notification_recipient_role"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       suppressed_emails: {
         Row: {
           created_at: string
@@ -265,6 +301,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
+      notification_recipient_role: "reception" | "hq" | "doctor"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -393,6 +430,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "moderator", "user"],
+      notification_recipient_role: ["reception", "hq", "doctor"],
     },
   },
 } as const
