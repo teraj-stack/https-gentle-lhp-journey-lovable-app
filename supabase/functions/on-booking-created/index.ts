@@ -38,8 +38,8 @@ interface WebhookPayload {
   old_record: BookingRecord | null
 }
 
-// Always-CC for every booking notification
-const HQ_NOTIFICATION_EMAIL = 'biuro@cml.pl'
+// Always-CC for every booking notification (HQ + lekarz prowadzący)
+const HQ_NOTIFICATION_EMAILS = ['biuro@cml.pl', 'dr.bujok@cml.pl']
 
 // Map booking.location → reception email + friendly label.
 // `match` is checked as a case-insensitive substring against the raw location value,
@@ -139,10 +139,10 @@ Deno.serve(async (req) => {
   const { email: receptionEmail, label: locationLabel } = resolveLocation(booking.location)
 
   // Build deduplicated recipient list for the staff notification:
-  //   reception (if known) + biuro@cml.pl (always)
+  //   reception (if known) + biuro@cml.pl + dr.bujok@cml.pl (always)
   const staffRecipients = Array.from(
     new Set(
-      [receptionEmail, HQ_NOTIFICATION_EMAIL]
+      [receptionEmail, ...HQ_NOTIFICATION_EMAILS]
         .filter((e): e is string => !!e)
         .map((e) => e.toLowerCase())
     )
