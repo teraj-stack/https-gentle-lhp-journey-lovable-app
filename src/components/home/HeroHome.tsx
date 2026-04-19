@@ -2,6 +2,7 @@ import { motion, useScroll, useTransform } from "framer-motion";
 import { useRef } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import TopicSearch from "@/components/home/TopicSearch";
 import heroImage from "@/assets/hero-clinic-fixed.webp";
 
 
@@ -61,7 +62,7 @@ const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
           Proktologia laserowa i flebologia — pod jedną marką,
           w jednym standardzie premium.
         </motion.p>
-        <div className="flex flex-col sm:flex-row gap-4">
+        <div className="flex flex-col sm:flex-row gap-4 mb-10">
           <Button variant="hero" size="lg" className="px-8 py-6 text-base" asChild>
             <a href="https://www.znanylekarz.pl/jan-bujok-2/chirurg-flebolog-proktolog/warszawa" target="_blank" rel="noopener noreferrer">Umów Konsultację</a>
           </Button>
@@ -74,6 +75,17 @@ const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
             <Link to="/o-nas">Poznaj twórcę projektu</Link>
           </Button>
         </div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.9, ease: [0.16, 1, 0.3, 1] }}
+        >
+          <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground mb-3" style={{ textShadow: "none" }}>
+            Znajdź interesujący Cię temat
+          </p>
+          <TopicSearch />
+        </motion.div>
       </motion.div>
 
 
