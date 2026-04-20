@@ -172,7 +172,8 @@ Deno.serve(async (req) => {
   if (!token) return json(400, { error: 'Missing token' })
 
   const confirmedByEmail = (body.confirmedByEmail ?? '').trim().toLowerCase() || null
-  const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? null
+  // `ip` already computed above for rate limiting; reuse here for audit trail.
+  const auditIp = ip === 'unknown' ? null : ip
   const ua = req.headers.get('user-agent') ?? null
 
   // 1) Atomowy token consume — UPDATE z warunkiem used_at IS NULL gwarantuje single-use
