@@ -253,6 +253,7 @@ async function dispatchOne(
         recipientEmail: booking.patient_email,
         idempotencyKey,
         templateData,
+        metadata: { booking_id: booking.id, variant: cfg.templateName === 'booking-reminder-2h' ? '2h' : '24h' },
       },
     })
     if (error) {

@@ -167,6 +167,7 @@ Deno.serve(async (req) => {
               appointmentDate: formatPolishDate(booking.appointment_date),
               locationLabel: resolveLocationLabel(booking.location),
             },
+            metadata: { booking_id: booking.id },
           },
         })
         if (error) {
