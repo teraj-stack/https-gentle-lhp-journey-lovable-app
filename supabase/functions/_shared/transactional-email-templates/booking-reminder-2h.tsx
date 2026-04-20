@@ -10,12 +10,14 @@ interface BookingReminder2hProps {
   patientName?: string
   appointmentTime?: string
   locationLabel?: string
+  reminderOptOutUrl?: string
 }
 
 const BookingReminder2hEmail = ({
   patientName,
   appointmentTime,
   locationLabel,
+  reminderOptOutUrl,
 }: BookingReminder2hProps) => (
   <Html lang="pl" dir="ltr">
     <Head />
@@ -44,6 +46,15 @@ const BookingReminder2hEmail = ({
           Do zobaczenia,<br />
           Zespół {SITE_NAME}
         </Text>
+        {reminderOptOutUrl && (
+          <Text style={optOut}>
+            Nie chcesz przypomnień o tej wizycie?{' '}
+            <a href={reminderOptOutUrl} style={optOutLink}>
+              Wypisz się jednym kliknięciem
+            </a>
+            .
+          </Text>
+        )}
       </Container>
     </Body>
   </Html>
@@ -71,3 +82,5 @@ const h1 = { fontSize: '20px', fontWeight: '700' as const, color: '#1a1d24', mar
 const text = { fontSize: '14px', color: '#55575d', lineHeight: '1.6', margin: '0 0 14px' }
 const highlight = { fontSize: '15px', color: '#1a1d24', backgroundColor: '#faf7f0', borderRadius: '8px', padding: '14px 18px', lineHeight: '1.7', margin: '0 0 16px' }
 const footer = { fontSize: '12px', color: '#999999', margin: '20px 0 0' }
+const optOut = { fontSize: '11px', color: '#b5b5b5', margin: '14px 0 0', lineHeight: '1.5' }
+const optOutLink = { color: '#888888', textDecoration: 'underline' }

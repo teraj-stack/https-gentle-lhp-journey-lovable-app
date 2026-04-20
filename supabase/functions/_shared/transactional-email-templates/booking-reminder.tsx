@@ -12,6 +12,7 @@ interface BookingReminderProps {
   appointmentTime?: string
   location?: string
   locationLabel?: string
+  reminderOptOutUrl?: string
 }
 
 const LOCATION_LABELS: Record<string, string> = {
@@ -55,6 +56,7 @@ const BookingReminderEmail = ({
   appointmentTime,
   location,
   locationLabel,
+  reminderOptOutUrl,
 }: BookingReminderProps) => (
   <Html lang="pl" dir="ltr">
     <Head />
@@ -109,6 +111,15 @@ const BookingReminderEmail = ({
           Do zobaczenia jutro,<br />
           Zespół {SITE_NAME}
         </Text>
+        {reminderOptOutUrl && (
+          <Text style={optOut}>
+            Nie chcesz otrzymywać przypomnień o tej wizycie?{' '}
+            <a href={reminderOptOutUrl} style={optOutLink}>
+              Wypisz się jednym kliknięciem
+            </a>
+            .
+          </Text>
+        )}
       </Container>
     </Body>
   </Html>
@@ -142,3 +153,5 @@ const infoBox = { backgroundColor: '#faf7f0', borderRadius: '8px', padding: '18p
 const label = { fontSize: '11px', fontWeight: '600' as const, color: '#999999', textTransform: 'uppercase' as const, letterSpacing: '0.08em', margin: '0 0 4px' }
 const value = { fontSize: '14px', color: '#1a1d24', fontWeight: '600' as const, margin: '0 0 4px' }
 const footer = { fontSize: '12px', color: '#999999', margin: '24px 0 0' }
+const optOut = { fontSize: '11px', color: '#b5b5b5', margin: '16px 0 0', lineHeight: '1.5' }
+const optOutLink = { color: '#888888', textDecoration: 'underline' }
