@@ -195,10 +195,21 @@ const EVLT = () => (
 
       <PreparationRecoveryCards
         procedureLabel="EVLT — laserowe zamknięcie żył"
-        preparationDescription="Nawodnienie, odpowiednie ubranie, zakaz golenia i kremów na nogach. Krótka lista, która ułatwi pracę lasera i Twoje samopoczucie."
+        variant="rich"
+        preparationDescription="Krótka lista, która ułatwi pracę lasera i Twoje samopoczucie — bez stresu i bez przerwy w codziennych planach."
         preparationHref="/dla-pacjenta/przygotowanie-evlt"
+        preparationPreviewItems={[
+          "Nawodnienie 2–2,5 l wody na dzień przed zabiegiem",
+          "Bez golenia i kremów na nogach na 24 h przed",
+          "Lekki posiłek 2 h przed wizytą — nie jesteś na czczo",
+        ]}
         recoveryDescription="Pończocha uciskowa, spacery, kontrole USG — dokładny plan rekonwalescencji po EVLT, dzień po dniu."
         recoveryHref="/dla-pacjenta/zalecenia-po-evlt"
+        recoveryPreviewItems={[
+          "Pończocha II klasy ucisku przez 7 dni",
+          "Spacer 30–60 min jeszcze tego samego dnia",
+          "Kontrolne USG po 7–10 dniach od zabiegu",
+        ]}
       />
 
       <RecoveryBoostBanner />

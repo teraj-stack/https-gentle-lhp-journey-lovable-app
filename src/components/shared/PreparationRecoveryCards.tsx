@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { ClipboardCheck, HeartPulse, ArrowRight } from "lucide-react";
+import { ClipboardCheck, HeartPulse, ArrowRight, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface PreparationRecoveryCardsProps {
@@ -14,6 +14,12 @@ interface PreparationRecoveryCardsProps {
   recoveryHref: string;
   /** Opcjonalny nadtytuł (np. nazwa zabiegu) — wyświetlany pod h2 */
   procedureLabel?: string;
+  /** Wariant karty: "default" (tylko opis) lub "rich" (opis + preview-lista 3 punktów). Default: "default". */
+  variant?: "default" | "rich";
+  /** 3 kluczowe punkty z checklisty przygotowania — pokazywane gdy variant="rich" */
+  preparationPreviewItems?: string[];
+  /** 3 kluczowe punkty z checklisty zaleceń pozabiegowych — pokazywane gdy variant="rich" */
+  recoveryPreviewItems?: string[];
 }
 
 const cardAnim = {
@@ -23,13 +29,31 @@ const cardAnim = {
   transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] as const },
 };
 
+const PreviewList = ({ items }: { items: string[] }) => (
+  <ul className="relative space-y-2 pt-1">
+    {items.map((item, idx) => (
+      <li key={idx} className="flex items-start gap-2.5 text-sm text-muted-foreground leading-snug">
+        <span className="mt-0.5 flex-shrink-0 w-4 h-4 rounded-full bg-primary/15 flex items-center justify-center">
+          <Check className="w-2.5 h-2.5 text-primary" strokeWidth={3} />
+        </span>
+        <span>{item}</span>
+      </li>
+    ))}
+  </ul>
+);
+
 const PreparationRecoveryCards = ({
   preparationDescription,
   preparationHref,
   recoveryDescription,
   recoveryHref,
   procedureLabel,
+  variant = "default",
+  preparationPreviewItems,
+  recoveryPreviewItems,
 }: PreparationRecoveryCardsProps) => {
+  const isRich = variant === "rich";
+
   return (
     <motion.section {...cardAnim} id="przygotowanie-zalecenia" aria-labelledby="prep-recovery-heading" className="scroll-mt-24">
       <h2 id="prep-recovery-heading" className="section-title mb-3 text-center">
@@ -60,12 +84,15 @@ const PreparationRecoveryCards = ({
             </div>
             <h3 className="text-lg font-semibold text-primary tracking-wide">Przed zabiegiem</h3>
           </div>
-          <p className="relative text-sm text-muted-foreground leading-relaxed flex-1">
+          <p className="relative text-sm text-muted-foreground leading-relaxed">
             {preparationDescription}
           </p>
+          {isRich && preparationPreviewItems && preparationPreviewItems.length > 0 && (
+            <PreviewList items={preparationPreviewItems} />
+          )}
           <Button asChild variant="outline" className="relative w-full mt-auto">
             <Link to={preparationHref}>
-              Zobacz checklistę
+              Zobacz pełną checklistę
               <ArrowRight className="w-4 h-4 ml-1 transition-transform group-hover:translate-x-0.5" />
             </Link>
           </Button>
@@ -87,12 +114,15 @@ const PreparationRecoveryCards = ({
             </div>
             <h3 className="text-lg font-semibold text-primary tracking-wide">Po zabiegu</h3>
           </div>
-          <p className="relative text-sm text-muted-foreground leading-relaxed flex-1">
+          <p className="relative text-sm text-muted-foreground leading-relaxed">
             {recoveryDescription}
           </p>
+          {isRich && recoveryPreviewItems && recoveryPreviewItems.length > 0 && (
+            <PreviewList items={recoveryPreviewItems} />
+          )}
           <Button asChild variant="outline" className="relative w-full mt-auto">
             <Link to={recoveryHref}>
-              Zobacz checklistę
+              Zobacz pełną checklistę
               <ArrowRight className="w-4 h-4 ml-1 transition-transform group-hover:translate-x-0.5" />
             </Link>
           </Button>
