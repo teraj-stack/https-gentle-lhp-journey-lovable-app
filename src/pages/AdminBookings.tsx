@@ -401,7 +401,7 @@ const AdminBookings = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {bookings.map((b) => {
+                  {filteredBookings.map((b) => {
                     const rem = reminderMap[b.id] ?? { "24h": { status: "none", sentAt: null }, "2h": { status: "none", sentAt: null } };
                     const statusInfo = STATUS_BADGE[b.status] ?? STATUS_BADGE.pending;
                     return (
@@ -480,10 +480,12 @@ const AdminBookings = () => {
                       </TableRow>
                     );
                   })}
-                  {bookings.length === 0 && (
+                  {filteredBookings.length === 0 && (
                     <TableRow>
                       <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
-                        Brak rezerwacji w ciągu ostatnich 30 dni.
+                        {bookings.length === 0
+                          ? "Brak rezerwacji w wybranym zakresie dat i statusie."
+                          : "Brak rezerwacji pasujących do wybranej lokalizacji."}
                       </TableCell>
                     </TableRow>
                   )}
