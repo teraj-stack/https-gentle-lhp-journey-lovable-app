@@ -571,6 +571,7 @@ const AdminBookings = () => {
                     <TableHead>Status</TableHead>
                     <TableHead className="hidden lg:table-cell">Historia</TableHead>
                     <TableHead>Reminder</TableHead>
+                    <TableHead className="hidden xl:table-cell text-center">Maile</TableHead>
                     <TableHead className="text-right">Akcje</TableHead>
                   </TableRow>
                 </TableHeader>
