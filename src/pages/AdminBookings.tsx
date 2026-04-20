@@ -354,6 +354,7 @@ const AdminBookings = () => {
                     <TableHead>Pacjent</TableHead>
                     <TableHead className="hidden md:table-cell">Lokalizacja</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead className="hidden lg:table-cell">Zmiana statusu</TableHead>
                     <TableHead>Reminder</TableHead>
                     <TableHead className="text-right">Akcje</TableHead>
                   </TableRow>
