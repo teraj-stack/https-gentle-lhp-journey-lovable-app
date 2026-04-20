@@ -148,6 +148,47 @@ const AdminBookings = () => {
     };
   }, [navigate]);
 
+  // Realtime: subskrypcja na zmiany w `bookings` (INSERT/UPDATE/DELETE)
+  // Każda zmiana → invalidate cache → useQuery automatycznie refetchuje (z aktualnymi filtrami).
+  // Dodatkowo soft-toast dla nowych rezerwacji żeby admin to zauważył.
+  const [realtimeReady, setRealtimeReady] = useState(false);
+  useEffect(() => {
+    if (authLoading || !session) return;
+    const channel = supabase
+      .channel("admin-bookings-realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "bookings" },
+        (payload) => {
+          queryClient.invalidateQueries({ queryKey: ["admin-bookings"] });
+          if (payload.eventType === "INSERT") {
+            const row = payload.new as { patient_name?: string; appointment_date?: string; appointment_time?: string };
+            toast.success("Nowa rezerwacja", {
+              description: `${row.patient_name ?? "Pacjent"} — ${row.appointment_date ?? ""} ${row.appointment_time ?? ""}`,
+            });
+          } else if (payload.eventType === "UPDATE") {
+            const oldRow = payload.old as { status?: string } | null;
+            const newRow = payload.new as { status?: string; patient_name?: string } | null;
+            if (oldRow?.status && newRow?.status && oldRow.status !== newRow.status) {
+              toast.message("Status zaktualizowany", {
+                description: `${newRow.patient_name ?? "Pacjent"}: ${oldRow.status} → ${newRow.status}`,
+              });
+              // Status się zmienił — odśwież też historię tego bookingu
+              queryClient.invalidateQueries({ queryKey: ["booking-status-history"] });
+              queryClient.invalidateQueries({ queryKey: ["admin-bookings-action-tokens"] });
+            }
+          }
+        },
+      )
+      .subscribe((status) => {
+        setRealtimeReady(status === "SUBSCRIBED");
+      });
+    return () => {
+      supabase.removeChannel(channel);
+      setRealtimeReady(false);
+    };
+  }, [authLoading, session, queryClient]);
+
   // Date range from filters (preset → from/to). Cap floor at -30d to avoid huge scans.
   const dateRange = useMemo(() => resolveDateRange(filters), [filters]);
   const queryFrom = useMemo(() => {
@@ -349,6 +390,13 @@ const AdminBookings = () => {
           </div>
           <div className="flex items-center gap-3">
             <span className="text-sm text-muted-foreground hidden sm:inline">{session.user.email}</span>
+            <span
+              className="hidden sm:inline-flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-muted-foreground"
+              title={realtimeReady ? "Realtime aktywny — zmiany pojawiają się automatycznie" : "Realtime nieaktywny — odśwież ręcznie"}
+            >
+              <span className={`w-1.5 h-1.5 rounded-full ${realtimeReady ? "bg-emerald-500 animate-pulse" : "bg-muted-foreground/40"}`} aria-hidden />
+              {realtimeReady ? "Live" : "Offline"}
+            </span>
             <Button variant="ghost" size="sm" onClick={() => refetchBookings()}>
               <RefreshCw className="w-4 h-4 mr-1" /> Odśwież
             </Button>
