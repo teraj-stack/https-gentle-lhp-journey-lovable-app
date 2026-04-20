@@ -381,6 +381,13 @@ const AdminBookings = () => {
                         <TableCell>
                           <span className={`text-xs px-2 py-1 rounded-full ${statusInfo.className}`}>{statusInfo.label}</span>
                         </TableCell>
+                        <TableCell className="hidden lg:table-cell">
+                          <StatusChangeCell
+                            changedAt={b.status_changed_at}
+                            changedBy={b.status_changed_by}
+                            tokens={tokensMap[b.id] ?? []}
+                          />
+                        </TableCell>
                         <TableCell>
                           <div className="flex flex-col gap-1.5">
                             <ReminderBadge variant="24h" state={rem["24h"]} />
