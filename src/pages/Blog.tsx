@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Calendar, ArrowRight, Sparkles, X } from "lucide-react";
 import SeoHead from "@/components/shared/SeoHead";
 import Breadcrumbs from "@/components/layout/Breadcrumbs";
+import { BREADCRUMBS_MAP } from "@/lib/breadcrumbsMap";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import NewBadge, { isNew } from "@/components/blog/NewBadge";
@@ -98,7 +99,7 @@ const Blog = () => {
 
       <section className="pt-32 pb-16 md:pt-40 md:pb-24">
         <div className="max-w-4xl mx-auto px-4 md:px-8">
-          <Breadcrumbs items={[{ label: "Blog" }]} className="mb-6" />
+          <Breadcrumbs items={BREADCRUMBS_MAP["/blog"]} className="mb-6" />
           <h1 className="text-4xl md:text-5xl font-bold font-serif text-foreground mb-4">
             Blog
           </h1>

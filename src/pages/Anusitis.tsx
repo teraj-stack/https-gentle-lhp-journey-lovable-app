@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import Breadcrumbs from "@/components/layout/Breadcrumbs";
+import { BREADCRUMBS_MAP } from "@/lib/breadcrumbsMap";
 import { ArrowRight, CheckCircle2, AlertTriangle, Pill, Shield } from "lucide-react";
 import { StaggeredListItem } from "@/components/shared/StaggeredList";
 import ParallaxSection from "@/components/ui/parallax-section";
@@ -99,7 +100,7 @@ const Anusitis = () => (
     </section>
 
     <div className="max-w-4xl mx-auto px-4 md:px-8 py-16 space-y-20">
-      <Breadcrumbs items={[{ label: "Zabieg" }, { label: "Proktologia", href: "/leczenie/proktologia" }, { label: "Zapalenie odbytu" }]} className="mb-4" />
+      <Breadcrumbs items={BREADCRUMBS_MAP["/leczenie/anusitis"]} className="mb-4" />
       {/* Co to jest */}
       <motion.section {...fadeUp}>
         <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-6 font-serif">

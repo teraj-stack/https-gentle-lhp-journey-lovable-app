@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import Breadcrumbs from "@/components/layout/Breadcrumbs";
+import { BREADCRUMBS_MAP } from "@/lib/breadcrumbsMap";
 import WspolpracaHero from "@/components/wspolpraca/WspolpracaHero";
 import WspolpracaPillars from "@/components/wspolpraca/WspolpracaPillars";
 import EBMComparisonChart from "@/components/wspolpraca/EBMComparisonChart";
@@ -106,7 +107,7 @@ const Wspolpraca = () => (
     {/* EBM */}
     <section className="py-20 md:py-28">
       <div className="max-w-5xl mx-auto px-4 md:px-8">
-        <Breadcrumbs items={[{ label: "Współpraca" }]} className="mb-10" />
+        <Breadcrumbs items={BREADCRUMBS_MAP["/wspolpraca"]} className="mb-10" />
         <motion.div {...fadeUp} className="max-w-3xl mx-auto text-center mb-14">
           <p className="text-sm font-sans uppercase tracking-[0.15em] text-primary mb-4">Evidence-Based Medicine</p>
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-6">

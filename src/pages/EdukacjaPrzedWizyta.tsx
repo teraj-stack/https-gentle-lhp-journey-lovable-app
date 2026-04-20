@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { motion } from "framer-motion";
 import ParallaxSection from "@/components/ui/parallax-section";
 import Breadcrumbs from "@/components/layout/Breadcrumbs";
+import { BREADCRUMBS_MAP } from "@/lib/breadcrumbsMap";
 import SeoHead from "@/components/shared/SeoHead";
 import FaqSchema from "@/components/shared/FaqSchema";
 import { Button } from "@/components/ui/button";
@@ -210,11 +211,7 @@ const EdukacjaPrzedWizyta = () => {
 
     <div className="max-w-4xl mx-auto px-4 py-16 space-y-20">
       <Breadcrumbs
-        items={[
-          { label: "Wiedza" },
-          { label: "Dla Pacjenta", href: "/dla-pacjenta" },
-          { label: "Świadomy pacjent" },
-        ]}
+        items={BREADCRUMBS_MAP["/dla-pacjenta/edukacja"]}
         className="mb-4"
       />
 

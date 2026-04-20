@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import Breadcrumbs from "@/components/layout/Breadcrumbs";
+import { BREADCRUMBS_MAP } from "@/lib/breadcrumbsMap";
 import SeoHead from "@/components/shared/SeoHead";
 import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 import { Button } from "@/components/ui/button";
@@ -66,7 +67,7 @@ const Cennik = () => (
       description="Cennik konsultacji i zabiegów proktologicznych oraz flebologicznych w CML."
       path="/cennik"
     />
-    <Breadcrumbs items={[{ label: "Cennik" }]} />
+    <Breadcrumbs items={BREADCRUMBS_MAP["/cennik"]} />
 
     {/* Hero */}
     <section className="py-16 md:py-24 bg-gradient-to-b from-accent/30 to-background">

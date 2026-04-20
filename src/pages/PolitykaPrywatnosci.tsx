@@ -1,4 +1,5 @@
 import Breadcrumbs from "@/components/layout/Breadcrumbs";
+import { BREADCRUMBS_MAP } from "@/lib/breadcrumbsMap";
 import SeoHead from "@/components/shared/SeoHead";
 
 const PolitykaPrywatnosci = () => (
@@ -9,7 +10,7 @@ const PolitykaPrywatnosci = () => (
       path="/polityka-prywatnosci"
     />
     <div className="max-w-4xl mx-auto px-4 md:px-8 py-12">
-      <Breadcrumbs items={[{ label: "Polityka prywatności" }]} />
+      <Breadcrumbs items={BREADCRUMBS_MAP["/polityka-prywatnosci"]} />
 
       <h1 className="text-3xl md:text-4xl font-bold text-foreground mt-8 mb-10">
         Polityka prywatności

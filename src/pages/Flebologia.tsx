@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import Breadcrumbs from "@/components/layout/Breadcrumbs";
+import { BREADCRUMBS_MAP } from "@/lib/breadcrumbsMap";
 import SeoHead from "@/components/shared/SeoHead";
 import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 import { ArrowRight, Zap, Droplets, Scissors, Sparkles, Sun } from "lucide-react";
@@ -66,7 +67,7 @@ const Flebologia = () => {
       <section className="relative overflow-hidden py-20 md:py-28">
         <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-transparent to-transparent" />
         <div className="container mx-auto px-4 relative z-10">
-          <Breadcrumbs items={[{ label: "Zabieg" }, { label: "Flebologia" }]} className="mb-8" />
+          <Breadcrumbs items={BREADCRUMBS_MAP["/leczenie/flebologia"]} className="mb-8" />
           <motion.div
             initial={{ opacity: 0, y: 32 }}
             animate={{ opacity: 1, y: 0 }}

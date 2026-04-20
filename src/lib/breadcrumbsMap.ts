@@ -50,10 +50,10 @@ export const BREADCRUMBS_MAP: Record<string, BreadcrumbItem[]> = {
 
   // Zabieg › Flebologia
   "/leczenie/evlt": [ZABIEG, FLEBOLOGIA, { label: "Żylaki – EVLT" }],
-  "/leczenie/skleroterapia": [ZABIEG, FLEBOLOGIA, { label: "Skleroterapia" }],
+  "/leczenie/skleroterapia": [ZABIEG, FLEBOLOGIA, { label: "Skleroterapia żylaków" }],
   "/leczenie/mikroflebektomia": [ZABIEG, FLEBOLOGIA, { label: "Mikroflebektomia piankowa" }],
   "/leczenie/clacs": [ZABIEG, FLEBOLOGIA, { label: "Pajączki – CLaCS" }],
-  "/leczenie/fototerapia": [ZABIEG, FLEBOLOGIA, { label: "Fototerapia LED" }],
+  "/leczenie/fototerapia": [ZABIEG, FLEBOLOGIA, { label: "Fototerapia LED (PBM)" }],
 
   // Zabieg › Ginekomastia
   "/leczenie/ginekomastia-gruczolowa": [ZABIEG, GINEKOMASTIA_HUB, { label: "Gruczołowa" }],

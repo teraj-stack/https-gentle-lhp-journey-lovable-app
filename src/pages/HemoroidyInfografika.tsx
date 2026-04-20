@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import Breadcrumbs from "@/components/layout/Breadcrumbs";
+import { BREADCRUMBS_MAP } from "@/lib/breadcrumbsMap";
 import ComparisonCharts from "@/components/hemoroidy/ComparisonCharts";
 import ReturnToWorkChart from "@/components/hemoroidy/ReturnToWorkChart";
 import SatisfactionChart from "@/components/hemoroidy/SatisfactionChart";
@@ -29,11 +30,7 @@ const HemoroidyInfografika = () => (
     />
 
     <div className="min-h-screen">
-      <Breadcrumbs items={[
-        { label: "Wiedza" },
-        { label: "Dla Pacjenta", href: "/dla-pacjenta" },
-        { label: "Hemoroidy – infografika" },
-      ]} />
+      <Breadcrumbs items={BREADCRUMBS_MAP["/dla-pacjenta/hemoroidy-infografika"]} />
 
       {/* HERO */}
       <motion.section {...sectionAnim} className="py-16 md:py-24">

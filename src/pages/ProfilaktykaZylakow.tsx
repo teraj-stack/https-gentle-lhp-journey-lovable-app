@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import Breadcrumbs from "@/components/layout/Breadcrumbs";
+import { BREADCRUMBS_MAP } from "@/lib/breadcrumbsMap";
 import SeoHead from "@/components/shared/SeoHead";
 import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 import FaqSchema from "@/components/shared/FaqSchema";
@@ -187,11 +188,7 @@ const ProfilaktykaZylakow = () => {
         <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-transparent to-transparent" />
         <div className="container mx-auto px-4 relative z-10">
           <Breadcrumbs
-            items={[
-              { label: "Wiedza" },
-              { label: "Dla Pacjenta", href: "/dla-pacjenta" },
-              { label: "Profilaktyka żylaków" },
-            ]}
+            items={BREADCRUMBS_MAP["/dla-pacjenta/profilaktyka-zylakow"]}
             className="mb-8"
           />
           <motion.div

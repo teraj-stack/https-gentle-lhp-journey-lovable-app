@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import Breadcrumbs from "@/components/layout/Breadcrumbs";
+import { BREADCRUMBS_MAP } from "@/lib/breadcrumbsMap";
 import SeoHead from "@/components/shared/SeoHead";
 import RecoveryBoostBanner from "@/components/shared/RecoveryBoostBanner";
 import TestimonialsSection from "@/components/shared/TestimonialsSection";
@@ -122,11 +123,7 @@ const ZaleceniaPoGinekomastii = () => {
       <section className="relative bg-gradient-to-b from-background via-accent/10 to-background pt-28 pb-16 overflow-hidden">
         <div className="container mx-auto px-4 max-w-4xl">
           <Breadcrumbs
-            items={[
-              { label: "Zabieg" },
-              { label: "Ginekomastia", href: "/leczenie/ginekomastia" },
-              { label: "Zalecenia po zabiegu" },
-            ]}
+            items={BREADCRUMBS_MAP["/dla-pacjenta/zalecenia-po-ginekomastii"]}
           />
           <motion.div {...fadeUp} className="mt-8 text-center">
             <span className="inline-block px-4 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">

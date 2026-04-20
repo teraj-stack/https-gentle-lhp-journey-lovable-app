@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
 import Breadcrumbs from "@/components/layout/Breadcrumbs";
+import { BREADCRUMBS_MAP } from "@/lib/breadcrumbsMap";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -175,7 +176,7 @@ const Kontakt = () => {
       </section>
 
       <div className="max-w-6xl mx-auto px-4 py-16 space-y-24">
-        <Breadcrumbs items={[{ label: "Kontakt" }]} className="mb-4" />
+        <Breadcrumbs items={BREADCRUMBS_MAP["/kontakt"]} className="mb-4" />
         {/* Lokalizacje */}
         <motion.section {...fadeUp}>
           <h2 className="section-title mb-10 text-center">Nasze lokalizacje</h2>
