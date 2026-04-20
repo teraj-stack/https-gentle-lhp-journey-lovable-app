@@ -7,6 +7,7 @@ import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -40,6 +41,7 @@ type Booking = {
   location: string;
   status: string;
   created_at: string;
+  reminder_opt_out: boolean;
 };
 
 type LogRow = {
@@ -190,6 +192,24 @@ const AdminBookings = () => {
     },
   });
 
+  const toggleOptOut = useMutation({
+    mutationFn: async ({ id, value }: { id: string; value: boolean }) => {
+      const { error } = await supabase
+        .from("bookings")
+        .update({ reminder_opt_out: value })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: (_data, vars) => {
+      queryClient.invalidateQueries({ queryKey: ["admin-bookings"] });
+      toast.success(vars.value ? "Reminder wyłączony" : "Reminder włączony");
+    },
+    onError: (e) => {
+      console.error(e);
+      toast.error("Nie udało się zmienić opcji");
+    },
+  });
+
   const resendReminder = useMutation({
     mutationFn: async ({ bookingId, variant }: { bookingId: string; variant: "24h" | "2h" }) => {
       const { data, error } = await supabase.functions.invoke("resend-booking-reminder", {
@@ -200,7 +220,6 @@ const AdminBookings = () => {
     },
     onSuccess: () => {
       toast.success("Reminder wysłany ponownie");
-      // Odśwież logi po krótkiej zwłoce — kolejka potrzebuje cyklu
       setTimeout(() => {
         queryClient.invalidateQueries({ queryKey: ["admin-bookings-reminders"] });
       }, 2000);
@@ -322,9 +341,18 @@ const AdminBookings = () => {
                           <span className={`text-xs px-2 py-1 rounded-full ${statusInfo.className}`}>{statusInfo.label}</span>
                         </TableCell>
                         <TableCell>
-                          <div className="flex flex-col gap-1">
+                          <div className="flex flex-col gap-1.5">
                             <ReminderBadge variant="24h" state={rem["24h"]} />
                             <ReminderBadge variant="2h" state={rem["2h"]} />
+                            <label className="flex items-center gap-2 text-[10px] text-muted-foreground cursor-pointer mt-0.5" title="Pacjent nie chce dostawać przypomnień mailowych">
+                              <Switch
+                                checked={b.reminder_opt_out}
+                                disabled={toggleOptOut.isPending}
+                                onCheckedChange={(v) => toggleOptOut.mutate({ id: b.id, value: v })}
+                                className="scale-75"
+                              />
+                              <span>opt-out</span>
+                            </label>
                           </div>
                         </TableCell>
                         <TableCell className="text-right">
@@ -352,7 +380,8 @@ const AdminBookings = () => {
                             <Button
                               variant="ghost"
                               size="icon"
-                              title="Wyślij reminder 24h ponownie"
+                              title={b.reminder_opt_out ? "Pacjent wypisany z reminderów" : "Wyślij reminder 24h ponownie"}
+                              disabled={b.reminder_opt_out}
                               onClick={() => setResendTarget({ booking: b, variant: "24h" })}
                             >
                               <Send className="w-4 h-4 text-primary" />

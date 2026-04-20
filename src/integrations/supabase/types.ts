@@ -115,6 +115,7 @@ export type Database = {
           patient_email: string
           patient_name: string
           patient_phone: string
+          reminder_opt_out: boolean
           status: string
           status_changed_at: string | null
           status_changed_by: string | null
@@ -131,6 +132,7 @@ export type Database = {
           patient_email: string
           patient_name: string
           patient_phone: string
+          reminder_opt_out?: boolean
           status?: string
           status_changed_at?: string | null
           status_changed_by?: string | null
@@ -147,6 +149,7 @@ export type Database = {
           patient_email?: string
           patient_name?: string
           patient_phone?: string
+          reminder_opt_out?: boolean
           status?: string
           status_changed_at?: string | null
           status_changed_by?: string | null

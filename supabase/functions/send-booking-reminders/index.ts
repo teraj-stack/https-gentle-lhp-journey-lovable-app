@@ -23,6 +23,7 @@ interface BookingRow {
   appointment_time: string
   location: string
   status: string
+  reminder_opt_out: boolean
 }
 
 const LOCATION_LABELS: Record<string, { match: string[]; label: string }> = {
@@ -90,9 +91,10 @@ Deno.serve(async (req) => {
   // Fetch all non-cancelled bookings for tomorrow
   const { data: bookings, error: fetchError } = await supabase
     .from('bookings')
-    .select('id, patient_name, patient_email, appointment_date, appointment_time, location, status')
+    .select('id, patient_name, patient_email, appointment_date, appointment_time, location, status, reminder_opt_out')
     .eq('appointment_date', targetDate)
     .neq('status', 'cancelled')
+    .eq('reminder_opt_out', false)
     .returns<BookingRow[]>()
 
   if (fetchError) {
