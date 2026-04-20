@@ -184,7 +184,7 @@ Deno.serve(async (req) => {
     .update({
       used_at: nowIso,
       used_by_email: confirmedByEmail,
-      used_by_ip: ip,
+      used_by_ip: auditIp,
       used_by_ua: ua,
     })
     .eq('token', token)
