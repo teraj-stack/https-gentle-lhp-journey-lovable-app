@@ -9,11 +9,11 @@ const SITE_NAME = "CML"
 // SENDER_DOMAIN is the verified sender subdomain FQDN (e.g., "notify.example.com").
 // It MUST match the subdomain delegated to Lovable's nameservers — never the root domain.
 // The email API looks up this exact domain; a mismatch causes "No email domain record found".
-const SENDER_DOMAIN = "notify.mcml.pl"
+const SENDER_DOMAIN = "notify.mcml.pro"
 // FROM_DOMAIN is the domain shown in the From: header (e.g., "example.com").
 // When display_from_root is enabled, this can be the root domain for cleaner branding,
 // even though actual sending uses the subdomain above.
-const FROM_DOMAIN = "mcml.pl"
+const FROM_DOMAIN = "mcml.pro"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -350,13 +350,15 @@ Deno.serve(async (req) => {
   // 5. Enqueue the pre-rendered email for async processing by the dispatcher.
   // The dispatcher (process-email-queue) handles sending, retries, and rate-limit backoff.
 
-  // Log pending BEFORE enqueue so we have a record even if enqueue crashes
+  // Log pending BEFORE enqueue so we have a record even if enqueue crashes.
+  // Include idempotency_key in metadata so callers (e.g. send-booking-reminders)
+  // can pre-check email_send_log for already-handled events before invoking again.
   await supabase.from('email_send_log').insert({
     message_id: messageId,
     template_name: templateName,
     recipient_email: effectiveRecipient,
     status: 'pending',
-    metadata: { caller_ip: callerIp },
+    metadata: { caller_ip: callerIp, idempotency_key: idempotencyKey },
   })
 
   const { error: enqueueError } = await supabase.rpc('enqueue_email', {

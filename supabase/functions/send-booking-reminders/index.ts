@@ -115,19 +115,41 @@ Deno.serve(async (req) => {
 
   console.log(`[send-booking-reminders] Found ${bookings.length} booking(s) for ${targetDate}`)
 
+  // Pre-check email_send_log: defense-in-depth na wypadek wielokrotnego cron run.
+  // Queue też dedupe'uje po idempotencyKey, ale to oszczędza nam invoke per booking.
+  const recipientEmails = bookings.map((b) => b.patient_email).filter(Boolean)
+  const { data: existingLogs } = await supabase
+    .from('email_send_log')
+    .select('recipient_email, status, metadata')
+    .eq('template_name', 'booking-reminder')
+    .in('recipient_email', recipientEmails)
+    .in('status', ['pending', 'sent'])
+
+  // Mapa już-obsłużonych idempotencyKey
+  const handledKeys = new Set<string>()
+  for (const row of existingLogs ?? []) {
+    const key = (row.metadata as Record<string, unknown> | null)?.idempotency_key
+    if (typeof key === 'string') handledKeys.add(key)
+  }
+
   const results = await Promise.all(
     bookings.map(async (booking) => {
       if (!booking.patient_email) {
-        return { id: booking.id, ok: false, error: 'missing patient_email' }
+        return { id: booking.id, ok: false, skipped: false, error: 'missing patient_email' }
       }
+      const idempotencyKey = `booking-reminder-${booking.id}-${booking.appointment_date}`
+
+      if (handledKeys.has(idempotencyKey)) {
+        console.log(`[send-booking-reminders] Skip ${booking.id} — already in email_send_log (${idempotencyKey})`)
+        return { id: booking.id, ok: true, skipped: true }
+      }
+
       try {
         const { error } = await supabase.functions.invoke('send-transactional-email', {
           body: {
             templateName: 'booking-reminder',
             recipientEmail: booking.patient_email,
-            // Idempotency: same key for the same booking on the same date.
-            // Even if cron runs 24× before the appointment, queue dedupes.
-            idempotencyKey: `booking-reminder-${booking.id}-${booking.appointment_date}`,
+            idempotencyKey,
             templateData: {
               patientName: booking.patient_name,
               appointmentDate: booking.appointment_date,
@@ -139,18 +161,19 @@ Deno.serve(async (req) => {
         })
         if (error) {
           console.error(`Reminder failed for ${booking.id}:`, error)
-          return { id: booking.id, ok: false, error: error.message }
+          return { id: booking.id, ok: false, skipped: false, error: error.message }
         }
-        return { id: booking.id, ok: true }
+        return { id: booking.id, ok: true, skipped: false }
       } catch (err) {
         console.error(`Reminder threw for ${booking.id}:`, err)
-        return { id: booking.id, ok: false, error: String(err) }
+        return { id: booking.id, ok: false, skipped: false, error: String(err) }
       }
     })
   )
 
-  const sent = results.filter((r) => r.ok).length
-  const failed = results.length - sent
+  const sent = results.filter((r) => r.ok && !r.skipped).length
+  const skipped = results.filter((r) => r.ok && r.skipped).length
+  const failed = results.length - sent - skipped
 
   return new Response(
     JSON.stringify({
@@ -158,6 +181,7 @@ Deno.serve(async (req) => {
       targetDate,
       processed: results.length,
       sent,
+      skipped,
       failed,
       results,
     }),
