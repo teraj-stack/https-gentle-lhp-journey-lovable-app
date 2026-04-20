@@ -10,6 +10,7 @@ import SeoHead from "@/components/shared/SeoHead";
 import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 import FaqSchema from "@/components/shared/FaqSchema";
 import RecoveryBoostBanner from "@/components/shared/RecoveryBoostBanner";
+import PreparationRecoveryCards from "@/components/shared/PreparationRecoveryCards";
 import TestimonialsSection from "@/components/shared/TestimonialsSection";
 
 const summary = [
@@ -129,6 +130,28 @@ const GinekomastiaGruczolowa = () => (
       <div className="max-w-4xl mx-auto px-4 md:px-8">
         <motion.h2 {...fadeUp} className="text-3xl md:text-4xl font-bold text-foreground mb-10 text-center">Zabieg w skrócie</motion.h2>
         <motion.div {...fadeUp}><ProcedureSummaryTable rows={summary} /></motion.div>
+
+        <div className="mt-16">
+          <PreparationRecoveryCards
+            procedureLabel="Ginekomastia gruczołowa — wycięcie gruczołu piersiowego"
+            variant="rich"
+            preparationDescription="Krótka checklista, która obniży ryzyko powikłań i skróci powrót do formy. 5 minut na przeczytanie, dni komfortu w nagrodę."
+            preparationHref="/dla-pacjenta/przygotowanie-ginekomastia-gruczolowa"
+            preparationPreviewItems={[
+              "Bez papierosów 2–4 tygodnie przed (kluczowe dla gojenia rany)",
+              "Komplet badań krwi: morfologia + krzepliwość + EKG",
+              "Wygodna koszula rozpinana z przodu na dzień zabiegu",
+            ]}
+            recoveryDescription="Kamizelka uciskowa, spokojny powrót do aktywności, sygnały alarmowe — pełny plan rekonwalescencji dzień po dniu."
+            recoveryHref="/dla-pacjenta/zalecenia-po-ginekomastii"
+            recoveryPreviewItems={[
+              "Kamizelka uciskowa nieprzerwanie przez 4–6 tygodni",
+              "Bez podnoszenia ramion powyżej barków przez 2 tygodnie",
+              "Pełna aktywność (siłownia, pływanie) po 6 tygodniach",
+            ]}
+          />
+        </div>
+
         <RecoveryBoostBanner />
 
         <TestimonialsSection />

@@ -10,6 +10,7 @@ import SeoHead from "@/components/shared/SeoHead";
 import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 import FaqSchema from "@/components/shared/FaqSchema";
 import RecoveryBoostBanner from "@/components/shared/RecoveryBoostBanner";
+import PreparationRecoveryCards from "@/components/shared/PreparationRecoveryCards";
 import TestimonialsSection from "@/components/shared/TestimonialsSection";
 
 const summary = [
@@ -129,6 +130,28 @@ const GinekomastiaMieszana = () => (
       <div className="max-w-4xl mx-auto px-4 md:px-8">
         <motion.h2 {...fadeUp} className="text-3xl md:text-4xl font-bold text-foreground mb-10 text-center">Zabieg w skrócie</motion.h2>
         <motion.div {...fadeUp}><ProcedureSummaryTable rows={summary} /></motion.div>
+
+        <div className="mt-16">
+          <PreparationRecoveryCards
+            procedureLabel="Ginekomastia mieszana — Vaser HD + wycięcie gruczołu"
+            variant="rich"
+            preparationDescription="Mieszany zabieg = podwójna staranność przygotowania: liposukcja + nacięcie chirurgiczne. Te kroki zoptymalizują gojenie obu komponentów."
+            preparationHref="/dla-pacjenta/przygotowanie-ginekomastia-mieszana"
+            preparationPreviewItems={[
+              "Komplet badań: morfologia, krzepliwość, EKG, grupa krwi",
+              "Bez papierosów 2–4 tygodnie (gojenie rany + obkurczanie skóry)",
+              "Stabilna waga + nawodnienie 2,5–3 l dziennie",
+            ]}
+            recoveryDescription="Kamizelka uciskowa, pielęgnacja rany po nacięciu, sygnały alarmowe — kompletny plan rekonwalescencji dzień po dniu."
+            recoveryHref="/dla-pacjenta/zalecenia-po-ginekomastii"
+            recoveryPreviewItems={[
+              "Kamizelka uciskowa 24/7 przez 4–6 tygodni",
+              "Powrót do pracy po 5–10 dniach",
+              "Pełna aktywność fizyczna po 6–8 tygodniach",
+            ]}
+          />
+        </div>
+
         <RecoveryBoostBanner />
 
         <TestimonialsSection />

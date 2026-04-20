@@ -10,6 +10,7 @@ import SeoHead from "@/components/shared/SeoHead";
 import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 import FaqSchema from "@/components/shared/FaqSchema";
 import RecoveryBoostBanner from "@/components/shared/RecoveryBoostBanner";
+import PreparationRecoveryCards from "@/components/shared/PreparationRecoveryCards";
 import TestimonialsSection from "@/components/shared/TestimonialsSection";
 
 const summary = [
@@ -235,6 +236,28 @@ const Ginekomastia = () => (
         <motion.div {...fadeUp}>
           <ProcedureSummaryTable rows={summary} />
          </motion.div>
+
+         <div className="mt-16">
+           <PreparationRecoveryCards
+             procedureLabel="Ginekomastia — diagnostyka i leczenie"
+             variant="rich"
+             preparationDescription="Niezależnie od wariantu (gruczołowa, tłuszczowa, mieszana) — przygotowanie wygląda podobnie. Te kroki obniżą ryzyko powikłań i przyspieszą powrót do formy."
+             preparationHref="/dla-pacjenta/przygotowanie-ginekomastii"
+             preparationPreviewItems={[
+               "Bez papierosów 2–4 tygodnie przed zabiegiem",
+               "Lekkie ubranie rozpinane z przodu na dzień zabiegu",
+               "Komplet badań krwi i ewentualne EKG (mężczyźni 40+)",
+             ]}
+             recoveryDescription="Kamizelka uciskowa, spokojny powrót do aktywności, plan dzień po dniu — to samo dla wszystkich wariantów ginekomastii."
+             recoveryHref="/dla-pacjenta/zalecenia-po-ginekomastii"
+             recoveryPreviewItems={[
+               "Kamizelka uciskowa nieprzerwanie przez 4–6 tygodni",
+               "Powrót do pracy po 3–7 dniach",
+               "Pełna aktywność fizyczna po 6 tygodniach",
+             ]}
+           />
+         </div>
+
          <RecoveryBoostBanner />
 
          <TestimonialsSection />

@@ -10,6 +10,7 @@ import SeoHead from "@/components/shared/SeoHead";
 import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 import FaqSchema from "@/components/shared/FaqSchema";
 import RecoveryBoostBanner from "@/components/shared/RecoveryBoostBanner";
+import PreparationRecoveryCards from "@/components/shared/PreparationRecoveryCards";
 import TestimonialsSection from "@/components/shared/TestimonialsSection";
 
 const summary = [
@@ -129,6 +130,28 @@ const GinekomastiaTluszczowa = () => (
       <div className="max-w-4xl mx-auto px-4 md:px-8">
         <motion.h2 {...fadeUp} className="text-3xl md:text-4xl font-bold text-foreground mb-10 text-center">Zabieg w skrócie</motion.h2>
         <motion.div {...fadeUp}><ProcedureSummaryTable rows={summary} /></motion.div>
+
+        <div className="mt-16">
+          <PreparationRecoveryCards
+            procedureLabel="Ginekomastia tłuszczowa — Vaser Lipo HD"
+            variant="rich"
+            preparationDescription="Aby Vaser HD precyzyjnie wymodelował klatkę piersiową — kluczowe są stabilna waga, dobre nawodnienie i czysta skóra. Krótka checklista przed zabiegiem."
+            preparationHref="/dla-pacjenta/przygotowanie-ginekomastia-tluszczowa"
+            preparationPreviewItems={[
+              "Stabilna waga przez kilka tygodni przed zabiegiem",
+              "Bez papierosów 2–4 tygodnie (kluczowe dla obkurczania skóry)",
+              "Nawodnienie 2,5–3 l wody dziennie",
+            ]}
+            recoveryDescription="Kamizelka uciskowa, masaże limfatyczne, stopniowy powrót do aktywności — plan rekonwalescencji po Vaser Lipo HD."
+            recoveryHref="/dla-pacjenta/zalecenia-po-ginekomastii"
+            recoveryPreviewItems={[
+              "Kamizelka uciskowa 24/7 przez 3–4 tygodnie",
+              "Powrót do pracy biurowej po 2–5 dniach",
+              "Pełna aktywność fizyczna po 4 tygodniach",
+            ]}
+          />
+        </div>
+
         <RecoveryBoostBanner />
 
         <TestimonialsSection />
