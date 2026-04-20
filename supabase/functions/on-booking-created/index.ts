@@ -223,6 +223,7 @@ Deno.serve(async (req) => {
           location: booking.location,
           message: booking.message ?? undefined,
         },
+        metadata: { booking_id: booking.id, recipient_role: 'patient' },
       },
     })
     sendResults[`patient:${booking.patient_email}`] = error
@@ -292,6 +293,7 @@ Deno.serve(async (req) => {
               cancelUrl: urls.cancel,
               needsContactUrl: urls.needs_contact,
             },
+            metadata: { booking_id: booking.id, recipient_role: 'staff' },
           },
         })
         sendResults[`staff:${recipient}`] = error

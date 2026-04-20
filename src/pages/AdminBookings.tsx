@@ -31,6 +31,7 @@ import {
   History,
   PhoneCall,
   MailX,
+  Mail,
 } from "lucide-react";
 import { toast } from "sonner";
 import SeoHead from "@/components/shared/SeoHead";
@@ -84,6 +85,16 @@ type ReminderState = {
 type BookingReminders = {
   "24h": ReminderState;
   "2h": ReminderState;
+};
+
+type EmailBreakdown = Record<string, { sent: number; pending: number; failed: number; total: number }>;
+
+type BookingEmailCounts = {
+  total: number;
+  sent: number;
+  pending: number;
+  failed: number;
+  breakdown: EmailBreakdown;
 };
 
 const STATUS_BADGE: Record<string, { label: string; className: string }> = {
@@ -289,6 +300,119 @@ const AdminBookings = () => {
     },
   });
 
+  // Suma maili per booking — łączny count z email_send_log (dedup po message_id),
+  // rozbity per template_name. Liczone z dwóch źródeł:
+  //   1) metadata->>booking_id (nowe maile od deploy 2026-04-20)
+  //   2) idempotency_key matching pattern dla booking.id (dla starszych logów)
+  const { data: emailCountMap = {} } = useQuery({
+    queryKey: ["admin-bookings-email-counts", bookings.map((b) => b.id).join(",")],
+    enabled: bookings.length > 0,
+    queryFn: async (): Promise<Record<string, BookingEmailCounts>> => {
+      const ids = bookings.map((b) => b.id);
+      const sinceIso = new Date(Date.now() - 180 * 24 * 60 * 60 * 1000).toISOString();
+      const [byMeta, byTemplate] = await Promise.all([
+        supabase
+          .from("email_send_log")
+          .select("message_id, status, created_at, template_name, metadata, recipient_email")
+          .in("metadata->>booking_id", ids)
+          .gte("created_at", sinceIso),
+        // Fallback dla starych logów: szukamy po template_name + idempotency_key zawierającym booking.id
+        supabase
+          .from("email_send_log")
+          .select("message_id, status, created_at, template_name, metadata, recipient_email")
+          .gte("created_at", sinceIso)
+          .in("template_name", [
+            "booking-confirmation",
+            "booking-notification",
+            "booking-reminder",
+            "booking-reminder-2h",
+            "booking-status-update",
+            "booking-no-show-check",
+          ]),
+      ]);
+      if (byMeta.error) throw byMeta.error;
+      if (byTemplate.error) throw byTemplate.error;
+
+      type LogEntry = {
+        message_id: string | null;
+        status: string;
+        created_at: string;
+        template_name: string;
+        metadata: Record<string, unknown> | null;
+        recipient_email: string | null;
+      };
+
+      // Merge & dedupe (same row may appear in both queries)
+      const seen = new Set<string>();
+      const allRows: LogEntry[] = [];
+      for (const row of [...(byMeta.data ?? []), ...(byTemplate.data ?? [])] as LogEntry[]) {
+        const key = `${row.message_id ?? "?"}|${row.status}|${row.created_at}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        allRows.push(row);
+      }
+
+      // Group rows per booking_id (via metadata or idempotency_key pattern)
+      const byBooking: Record<string, LogEntry[]> = {};
+      for (const id of ids) byBooking[id] = [];
+      for (const row of allRows) {
+        const meta = row.metadata as Record<string, unknown> | null;
+        const metaBookingId = meta?.booking_id;
+        const idemKey = meta?.idempotency_key;
+        let matchedId: string | null = null;
+        if (typeof metaBookingId === "string" && byBooking[metaBookingId]) {
+          matchedId = metaBookingId;
+        } else if (typeof idemKey === "string") {
+          for (const id of ids) {
+            if (idemKey.includes(id)) {
+              matchedId = id;
+              break;
+            }
+          }
+        }
+        if (matchedId) byBooking[matchedId].push(row);
+      }
+
+      // Per booking: dedup po message_id (latest status), agregacja per template
+      const result: Record<string, BookingEmailCounts> = {};
+      for (const id of ids) {
+        const rows = byBooking[id];
+        rows.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        const latestPerMsg = new Map<string, LogEntry>();
+        const noMsgRows: LogEntry[] = [];
+        for (const r of rows) {
+          if (r.message_id) {
+            if (!latestPerMsg.has(r.message_id)) latestPerMsg.set(r.message_id, r);
+          } else {
+            noMsgRows.push(r);
+          }
+        }
+        const unique = [...latestPerMsg.values(), ...noMsgRows];
+        const breakdown: EmailBreakdown = {};
+        let total = 0, sent = 0, pending = 0, failed = 0;
+        for (const r of unique) {
+          if (!breakdown[r.template_name]) {
+            breakdown[r.template_name] = { sent: 0, pending: 0, failed: 0, total: 0 };
+          }
+          breakdown[r.template_name].total += 1;
+          total += 1;
+          if (r.status === "sent") {
+            breakdown[r.template_name].sent += 1;
+            sent += 1;
+          } else if (r.status === "pending") {
+            breakdown[r.template_name].pending += 1;
+            pending += 1;
+          } else if (["dlq", "failed", "bounced", "complained", "suppressed"].includes(r.status)) {
+            breakdown[r.template_name].failed += 1;
+            failed += 1;
+          }
+        }
+        result[id] = { total, sent, pending, failed, breakdown };
+      }
+      return result;
+    },
+  });
+
   const updateStatus = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
       const { error } = await supabase
@@ -447,6 +571,7 @@ const AdminBookings = () => {
                     <TableHead>Status</TableHead>
                     <TableHead className="hidden lg:table-cell">Historia</TableHead>
                     <TableHead>Reminder</TableHead>
+                    <TableHead className="hidden xl:table-cell text-center">Maile</TableHead>
                     <TableHead className="text-right">Akcje</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -495,6 +620,9 @@ const AdminBookings = () => {
                             </label>
                           </div>
                         </TableCell>
+                        <TableCell className="hidden xl:table-cell text-center">
+                          <EmailCountCell counts={emailCountMap[b.id]} />
+                        </TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-1 flex-wrap">
                             {b.status === "pending" && (
@@ -533,7 +661,7 @@ const AdminBookings = () => {
                   })}
                   {filteredBookings.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                      <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
                         {bookings.length === 0
                           ? "Brak rezerwacji w wybranym zakresie dat i statusie."
                           : "Brak rezerwacji pasujących do wybranej lokalizacji."}
@@ -822,6 +950,87 @@ const TokenHistoryEntry = ({ token }: { token: ActionToken }) => {
         )}
       </div>
     </div>
+  );
+};
+
+const EMAIL_TEMPLATE_LABEL: Record<string, string> = {
+  "booking-confirmation": "Potwierdzenie dla pacjenta",
+  "booking-notification": "Powiadomienie do recepcji",
+  "booking-reminder": "Reminder 24h",
+  "booking-reminder-2h": "Reminder 2h",
+  "booking-status-update": "Aktualizacja statusu",
+  "booking-no-show-check": "Sprawdzenie no-show",
+};
+
+const EmailCountCell = ({ counts }: { counts: BookingEmailCounts | undefined }) => {
+  if (!counts || counts.total === 0) {
+    return (
+      <span className="text-[11px] text-muted-foreground inline-flex items-center gap-1">
+        <Mail className="w-3 h-3" />0
+      </span>
+    );
+  }
+  // Color tone based on dominant state
+  const tone = counts.failed > 0
+    ? "text-destructive border-destructive/40 bg-destructive/10"
+    : counts.pending > 0
+    ? "text-amber-400 border-amber-500/40 bg-amber-500/10"
+    : "text-emerald-400 border-emerald-500/40 bg-emerald-500/10";
+  const entries = Object.entries(counts.breakdown).sort((a, b) => b[1].total - a[1].total);
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          size="sm"
+          className={`h-6 px-2 text-[11px] gap-1 font-mono ${tone}`}
+          title="Kliknij, aby zobaczyć rozbicie per szablon"
+        >
+          <Mail className="w-3 h-3" />
+          {counts.total}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-72">
+        <div className="space-y-2">
+          <div>
+            <p className="text-xs font-semibold text-foreground">Maile wysłane dla tej rezerwacji</p>
+            <p className="text-[10px] text-muted-foreground">
+              {counts.total} unikalnych · {counts.sent} dostarczonych
+              {counts.pending > 0 && ` · ${counts.pending} w kolejce`}
+              {counts.failed > 0 && ` · ${counts.failed} błędów`}
+            </p>
+          </div>
+          <ul className="space-y-1.5 border-t border-border pt-2">
+            {entries.map(([tpl, b]) => (
+              <li key={tpl} className="text-[11px] flex items-center gap-2">
+                <span className="flex-1 text-foreground truncate" title={tpl}>
+                  {EMAIL_TEMPLATE_LABEL[tpl] ?? tpl}
+                </span>
+                <span className="font-mono text-muted-foreground">{b.total}</span>
+                {b.sent > 0 && (
+                  <span className="text-[10px] text-emerald-400 font-mono" title="dostarczone">
+                    ✓{b.sent}
+                  </span>
+                )}
+                {b.pending > 0 && (
+                  <span className="text-[10px] text-amber-400 font-mono" title="w kolejce">
+                    ⧗{b.pending}
+                  </span>
+                )}
+                {b.failed > 0 && (
+                  <span className="text-[10px] text-destructive font-mono" title="błąd / odrzucony">
+                    ✗{b.failed}
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
+          <p className="text-[10px] text-muted-foreground italic border-t border-border pt-1.5">
+            Liczone z email_send_log (180 dni). Dedup po message_id — jeden mail = jeden wpis.
+          </p>
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 };
 

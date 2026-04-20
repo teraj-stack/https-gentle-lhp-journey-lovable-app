@@ -107,6 +107,7 @@ Deno.serve(async (req) => {
   let idempotencyKey: string
   let messageId: string
   let templateData: Record<string, any> = {}
+  let extraMetadata: Record<string, any> = {}
   try {
     const body = await req.json()
     templateName = body.templateName || body.template_name
@@ -115,6 +116,11 @@ Deno.serve(async (req) => {
     idempotencyKey = body.idempotencyKey || body.idempotency_key || messageId
     if (body.templateData && typeof body.templateData === 'object') {
       templateData = body.templateData
+    }
+    // Optional caller-provided metadata (e.g. booking_id) — merged with internal
+    // fields (caller_ip, idempotency_key) when writing to email_send_log.
+    if (body.metadata && typeof body.metadata === 'object' && !Array.isArray(body.metadata)) {
+      extraMetadata = body.metadata
     }
   } catch {
     return new Response(
@@ -358,7 +364,7 @@ Deno.serve(async (req) => {
     template_name: templateName,
     recipient_email: effectiveRecipient,
     status: 'pending',
-    metadata: { caller_ip: callerIp, idempotency_key: idempotencyKey },
+    metadata: { ...extraMetadata, caller_ip: callerIp, idempotency_key: idempotencyKey },
   })
 
   const { error: enqueueError } = await supabase.rpc('enqueue_email', {

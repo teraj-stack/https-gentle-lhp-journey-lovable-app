@@ -264,6 +264,7 @@ Deno.serve(async (req) => {
             locationLabel,
             status: newStatus,
           },
+          metadata: { booking_id: updatedBooking.id, status_after: newStatus, action },
         },
       })
       patientEmailResult = emailError ? { ok: false, error: emailError.message } : { ok: true }
