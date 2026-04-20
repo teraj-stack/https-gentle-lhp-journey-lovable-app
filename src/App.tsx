@@ -50,6 +50,7 @@ const AdminBookings = lazy(() => import("@/pages/AdminBookings"));
 const AdminNotificationRecipients = lazy(() => import("@/pages/AdminNotificationRecipients"));
 
 const Unsubscribe = lazy(() => import("@/pages/Unsubscribe"));
+const ReminderOptOut = lazy(() => import("@/pages/ReminderOptOut"));
 const BookingAction = lazy(() => import("@/pages/BookingAction"));
 const HemoroidyInfografika = lazy(() => import("@/pages/HemoroidyInfografika"));
 const FaldyOdbytu = lazy(() => import("@/pages/FaldyOdbytu"));
@@ -145,6 +146,7 @@ const App = () => (
             <Route path="/admin/notification-recipients" element={<AdminNotificationRecipients />} />
             
             <Route path="/unsubscribe" element={<Unsubscribe />} />
+            <Route path="/reminder-opt-out" element={<ReminderOptOut />} />
             <Route path="/booking-action" element={<BookingAction />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
