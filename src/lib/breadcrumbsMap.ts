@@ -82,6 +82,10 @@ export const BREADCRUMBS_MAP: Record<string, BreadcrumbItem[]> = {
   "/dla-pacjenta/przygotowanie-skleroterapia": [WIEDZA, DLA_PACJENTA, { label: "Przygotowanie do skleroterapii" }],
   "/dla-pacjenta/przygotowanie-mikroflebektomia": [WIEDZA, DLA_PACJENTA, { label: "Przygotowanie do mikroflebektomii" }],
   "/dla-pacjenta/przygotowanie-plastyka": [WIEDZA, DLA_PACJENTA, { label: "Przygotowanie do plastyki odbytu" }],
+  "/dla-pacjenta/przygotowanie-ginekomastii": [WIEDZA, DLA_PACJENTA, { label: "Przygotowanie do ginekomastii" }],
+  "/dla-pacjenta/przygotowanie-ginekomastia-gruczolowa": [WIEDZA, DLA_PACJENTA, { label: "Przygotowanie do ginekomastii gruczołowej" }],
+  "/dla-pacjenta/przygotowanie-ginekomastia-tluszczowa": [WIEDZA, DLA_PACJENTA, { label: "Przygotowanie do ginekomastii tłuszczowej" }],
+  "/dla-pacjenta/przygotowanie-ginekomastia-mieszana": [WIEDZA, DLA_PACJENTA, { label: "Przygotowanie do ginekomastii mieszanej" }],
 
   // Wiedza › Materiały
   "/dla-pacjenta/ebook-pajaczki": [WIEDZA, DLA_PACJENTA, { label: "E-book: Pajączki" }],
