@@ -32,6 +32,8 @@ export type LocationFilter = "all" | "wilanow" | "fimedica" | "siedlce" | "rzesz
 
 export type DatePresetFilter = "today" | "week" | "all" | "custom";
 
+export type ReminderOptOutFilter = "all" | "active" | "optedOut";
+
 export interface BookingFilters {
   status: StatusFilter;
   location: LocationFilter;
@@ -40,6 +42,7 @@ export interface BookingFilters {
   customFrom?: string;
   /** YYYY-MM-DD */
   customTo?: string;
+  reminderOptOut: ReminderOptOutFilter;
 }
 
 // ---------------- Constants ----------------
