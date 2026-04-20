@@ -300,7 +300,120 @@ const AdminBookings = () => {
     },
   });
 
-  const updateStatus = useMutation({
+  // Suma maili per booking — łączny count z email_send_log (dedup po message_id),
+  // rozbity per template_name. Liczone z dwóch źródeł:
+  //   1) metadata->>booking_id (nowe maile od deploy 2026-04-20)
+  //   2) idempotency_key matching pattern dla booking.id (dla starszych logów)
+  const { data: emailCountMap = {} } = useQuery({
+    queryKey: ["admin-bookings-email-counts", bookings.map((b) => b.id).join(",")],
+    enabled: bookings.length > 0,
+    queryFn: async (): Promise<Record<string, BookingEmailCounts>> => {
+      const ids = bookings.map((b) => b.id);
+      const sinceIso = new Date(Date.now() - 180 * 24 * 60 * 60 * 1000).toISOString();
+      const [byMeta, byTemplate] = await Promise.all([
+        supabase
+          .from("email_send_log")
+          .select("message_id, status, created_at, template_name, metadata, recipient_email")
+          .in("metadata->>booking_id", ids)
+          .gte("created_at", sinceIso),
+        // Fallback dla starych logów: szukamy po template_name + idempotency_key zawierającym booking.id
+        supabase
+          .from("email_send_log")
+          .select("message_id, status, created_at, template_name, metadata, recipient_email")
+          .gte("created_at", sinceIso)
+          .in("template_name", [
+            "booking-confirmation",
+            "booking-notification",
+            "booking-reminder",
+            "booking-reminder-2h",
+            "booking-status-update",
+            "booking-no-show-check",
+          ]),
+      ]);
+      if (byMeta.error) throw byMeta.error;
+      if (byTemplate.error) throw byTemplate.error;
+
+      type LogEntry = {
+        message_id: string | null;
+        status: string;
+        created_at: string;
+        template_name: string;
+        metadata: Record<string, unknown> | null;
+        recipient_email: string | null;
+      };
+
+      // Merge & dedupe (same row may appear in both queries)
+      const seen = new Set<string>();
+      const allRows: LogEntry[] = [];
+      for (const row of [...(byMeta.data ?? []), ...(byTemplate.data ?? [])] as LogEntry[]) {
+        const key = `${row.message_id ?? "?"}|${row.status}|${row.created_at}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        allRows.push(row);
+      }
+
+      // Group rows per booking_id (via metadata or idempotency_key pattern)
+      const byBooking: Record<string, LogEntry[]> = {};
+      for (const id of ids) byBooking[id] = [];
+      for (const row of allRows) {
+        const meta = row.metadata as Record<string, unknown> | null;
+        const metaBookingId = meta?.booking_id;
+        const idemKey = meta?.idempotency_key;
+        let matchedId: string | null = null;
+        if (typeof metaBookingId === "string" && byBooking[metaBookingId]) {
+          matchedId = metaBookingId;
+        } else if (typeof idemKey === "string") {
+          for (const id of ids) {
+            if (idemKey.includes(id)) {
+              matchedId = id;
+              break;
+            }
+          }
+        }
+        if (matchedId) byBooking[matchedId].push(row);
+      }
+
+      // Per booking: dedup po message_id (latest status), agregacja per template
+      const result: Record<string, BookingEmailCounts> = {};
+      for (const id of ids) {
+        const rows = byBooking[id];
+        rows.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        const latestPerMsg = new Map<string, LogEntry>();
+        const noMsgRows: LogEntry[] = [];
+        for (const r of rows) {
+          if (r.message_id) {
+            if (!latestPerMsg.has(r.message_id)) latestPerMsg.set(r.message_id, r);
+          } else {
+            noMsgRows.push(r);
+          }
+        }
+        const unique = [...latestPerMsg.values(), ...noMsgRows];
+        const breakdown: EmailBreakdown = {};
+        let total = 0, sent = 0, pending = 0, failed = 0;
+        for (const r of unique) {
+          if (!breakdown[r.template_name]) {
+            breakdown[r.template_name] = { sent: 0, pending: 0, failed: 0, total: 0 };
+          }
+          breakdown[r.template_name].total += 1;
+          total += 1;
+          if (r.status === "sent") {
+            breakdown[r.template_name].sent += 1;
+            sent += 1;
+          } else if (r.status === "pending") {
+            breakdown[r.template_name].pending += 1;
+            pending += 1;
+          } else if (["dlq", "failed", "bounced", "complained", "suppressed"].includes(r.status)) {
+            breakdown[r.template_name].failed += 1;
+            failed += 1;
+          }
+        }
+        result[id] = { total, sent, pending, failed, breakdown };
+      }
+      return result;
+    },
+  });
+
+
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
       const { error } = await supabase
         .from("bookings")
