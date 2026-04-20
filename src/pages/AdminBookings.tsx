@@ -87,6 +87,16 @@ type BookingReminders = {
   "2h": ReminderState;
 };
 
+type EmailBreakdown = Record<string, { sent: number; pending: number; failed: number; total: number }>;
+
+type BookingEmailCounts = {
+  total: number;
+  sent: number;
+  pending: number;
+  failed: number;
+  breakdown: EmailBreakdown;
+};
+
 const STATUS_BADGE: Record<string, { label: string; className: string }> = {
   pending: { label: "Oczekująca", className: "bg-muted text-muted-foreground" },
   confirmed: { label: "Potwierdzona", className: "bg-green-500/20 text-green-400" },
