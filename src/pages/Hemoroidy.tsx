@@ -334,7 +334,7 @@ const Hemoroidy = () => {
 
       {/* SEARCH QUERIES */}
       <section>
-        <h2 className="section-title mb-3 text-center">{"\ud83d\udd0d"} D{"\u00f3\u0142"} Lejka Decyzyjnego</h2>
+        <h2 className="section-title mb-3 text-center">{"\ud83d\udd0d"} Obawy pacjenta doprowadzaj{"\u0105"} do sytuacji, kiedy objawy choroby hemoroidalnej znacz{"\u0105"}co wp{"\u0142"}ywaj{"\u0105"} na codzienne funkcjonowanie</h2>
         <p className="section-subtitle mb-10 text-center max-w-3xl mx-auto">
           Osoba o krok od sto{"\u0142"}u operacyjnego {"\u2014"} jej zapytania s{"\u0105"} medyczne, precyzyjne i nacechowane strachem
         </p>
