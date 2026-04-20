@@ -228,7 +228,7 @@ const AdminNotificationRecipients = () => {
     },
     onError: (e) => {
       console.error(e);
-      toast.error(`Nie udało się zapisać: ${e instanceof Error ? e.message : "błąd"}`);
+      toast.error(humanizeDbError(e, "Nie udało się zapisać"));
     },
   });
 
@@ -263,7 +263,7 @@ const AdminNotificationRecipients = () => {
     },
     onError: (e) => {
       console.error(e);
-      toast.error(`Nie udało się dodać: ${e instanceof Error ? e.message : "błąd"}`);
+      toast.error(humanizeDbError(e, "Nie udało się dodać"));
     },
   });
 
@@ -799,6 +799,29 @@ const AdminNotificationRecipients = () => {
     </>
   );
 };
+
+function humanizeDbError(err: unknown, prefix: string): string {
+  // PostgrestError ma pole `code` — mapujemy znane constraint violations na PL.
+  const e = err as { code?: string; message?: string } | null;
+  const code = e?.code;
+  const msg = e?.message ?? String(err);
+
+  if (code === "23505") {
+    // unique_violation — uniq_notification_recipients_role_email_match / _global
+    if (msg.includes("uniq_notification_recipients_role_email")) {
+      return "Taki odbiorca już istnieje (ta sama rola, email i alias lokalizacji). Edytuj istniejący wpis zamiast tworzyć duplikat.";
+    }
+    return "Duplikat — wpis o tych danych już istnieje.";
+  }
+  if (code === "23514") {
+    // check_violation — notification_recipients_email_format
+    if (msg.includes("notification_recipients_email_format")) {
+      return "Nieprawidłowy format adresu email — wymagany wzorzec nazwa@domena.tld.";
+    }
+    return "Dane nie spełniają reguł walidacji bazy danych.";
+  }
+  return `${prefix}: ${msg}`;
+}
 
 function dedupePatterns(values: string[]): string[] {
   const seen = new Set<string>();
