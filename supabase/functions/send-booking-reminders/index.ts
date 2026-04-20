@@ -181,6 +181,7 @@ Deno.serve(async (req) => {
       targetDate,
       processed: results.length,
       sent,
+      skipped,
       failed,
       results,
     }),
