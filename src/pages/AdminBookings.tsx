@@ -508,4 +508,116 @@ const ReminderBadge = ({ variant, state }: { variant: "24h" | "2h"; state: Remin
   );
 };
 
+const ACTION_META: Record<ActionToken["action"], { label: string; icon: typeof CheckCircle2; className: string }> = {
+  confirm: { label: "Potwierdź", icon: CheckCircle2, className: "text-green-400" },
+  cancel: { label: "Odwołaj", icon: XCircle, className: "text-destructive" },
+  needs_contact: { label: "Wymaga kontaktu", icon: PhoneCall, className: "text-amber-400" },
+};
+
+const formatDateTime = (iso: string | null) => {
+  if (!iso) return "—";
+  try { return new Date(iso).toLocaleString("pl-PL"); } catch { return iso; }
+};
+
+const StatusChangeCell = ({
+  changedAt,
+  changedBy,
+  tokens,
+}: {
+  changedAt: string | null;
+  changedBy: string | null;
+  tokens: ActionToken[];
+}) => {
+  // Real activity = tylko wpisy gdzie used_by_ua nie jest auto-invalidated (czyli klik użytkownika lub explicit POST)
+  const realActions = tokens.filter(
+    (t) => t.used_at && t.used_by_ua !== "auto-invalidated:sibling-action-used",
+  );
+  const totalIssued = tokens.length;
+  const expiredUnused = tokens.filter(
+    (t) => !t.used_at && new Date(t.expires_at).getTime() < Date.now(),
+  ).length;
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      {changedAt ? (
+        <div className="text-xs">
+          <div className="text-foreground">{formatDateTime(changedAt)}</div>
+          <div className="text-muted-foreground truncate max-w-[180px]" title={changedBy ?? "—"}>
+            {changedBy ?? "—"}
+          </div>
+        </div>
+      ) : (
+        <div className="text-xs text-muted-foreground">brak zmian</div>
+      )}
+      {totalIssued > 0 && (
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px] gap-1 w-fit">
+              <History className="w-3 h-3" />
+              Historia ({realActions.length}/{totalIssued})
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent align="start" className="w-80 max-h-96 overflow-y-auto">
+            <div className="space-y-3">
+              <div>
+                <p className="text-xs font-semibold text-foreground mb-1">Akcje recepcji z maila</p>
+                <p className="text-[10px] text-muted-foreground">
+                  {totalIssued} tokenów wystawionych · {realActions.length} kliknięć ·{" "}
+                  {expiredUnused > 0 ? `${expiredUnused} wygasłych nieużytych` : "0 wygasłych"}
+                </p>
+              </div>
+              {realActions.length === 0 ? (
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <MailX className="w-3.5 h-3.5" />
+                  <span>Nikt nie kliknął w link z maila — status zmieniony ręcznie lub brak zmian.</span>
+                </div>
+              ) : (
+                <ul className="space-y-2">
+                  {realActions.map((t) => {
+                    const meta = ACTION_META[t.action];
+                    const Icon = meta.icon;
+                    return (
+                      <li key={t.id} className="border border-border rounded-md p-2 space-y-1">
+                        <div className="flex items-center gap-1.5 text-xs">
+                          <Icon className={`w-3.5 h-3.5 ${meta.className}`} />
+                          <span className="font-semibold text-foreground">{meta.label}</span>
+                          <span className="text-muted-foreground ml-auto">{formatDateTime(t.used_at)}</span>
+                        </div>
+                        <div className="text-[10px] text-muted-foreground space-y-0.5">
+                          <div>
+                            <span className="font-semibold">Kto:</span>{" "}
+                            {t.used_by_email ?? <em>nie podał maila</em>}
+                          </div>
+                          <div>
+                            <span className="font-semibold">Wysłany do:</span> {t.recipient_email}
+                          </div>
+                          {t.used_by_ip && (
+                            <div className="font-mono">
+                              <span className="font-semibold not-italic">IP:</span> {t.used_by_ip}
+                            </div>
+                          )}
+                          {t.used_by_ua && (
+                            <div className="truncate" title={t.used_by_ua}>
+                              <span className="font-semibold">UA:</span> {t.used_by_ua}
+                            </div>
+                          )}
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+              {tokens.some((t) => t.used_by_ua === "auto-invalidated:sibling-action-used") && (
+                <p className="text-[10px] text-muted-foreground italic border-t border-border pt-2">
+                  Pozostałe linki z tego maila zostały automatycznie unieważnione po pierwszej akcji.
+                </p>
+              )}
+            </div>
+          </PopoverContent>
+        </Popover>
+      )}
+    </div>
+  );
+};
+
 export default AdminBookings;
