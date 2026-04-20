@@ -42,7 +42,6 @@ import AdminBookingsFilters, {
   resolveDateRange,
   type BookingFilters,
 } from "@/components/admin/AdminBookingsFilters";
-import BookingStatusHistoryPopover from "@/components/admin/BookingStatusHistoryPopover";
 
 type Booking = {
   id: string;
@@ -424,10 +423,11 @@ const AdminBookings = () => {
                           <span className={`text-xs px-2 py-1 rounded-full ${statusInfo.className}`}>{statusInfo.label}</span>
                         </TableCell>
                         <TableCell className="hidden lg:table-cell">
-                          <BookingStatusHistoryPopover
+                          <StatusChangeCell
                             bookingId={b.id}
-                            lastChangedAt={b.status_changed_at}
-                            lastChangedBy={b.status_changed_by}
+                            changedAt={b.status_changed_at}
+                            changedBy={b.status_changed_by}
+                            tokens={tokensMap[b.id] ?? []}
                           />
                         </TableCell>
                         <TableCell>
