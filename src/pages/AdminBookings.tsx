@@ -31,6 +31,7 @@ import {
   History,
   PhoneCall,
   MailX,
+  Mail,
 } from "lucide-react";
 import { toast } from "sonner";
 import SeoHead from "@/components/shared/SeoHead";
