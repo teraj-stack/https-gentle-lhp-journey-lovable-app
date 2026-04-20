@@ -413,7 +413,7 @@ const AdminBookings = () => {
     },
   });
 
-
+  const updateStatus = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
       const { error } = await supabase
         .from("bookings")
