@@ -40,6 +40,7 @@ type Booking = {
   location: string;
   status: string;
   created_at: string;
+  reminder_opt_out: boolean;
 };
 
 type LogRow = {
