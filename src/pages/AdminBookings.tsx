@@ -148,7 +148,13 @@ const AdminBookings = () => {
     };
   }, [navigate]);
 
-  // Pobierz wszystkie rezerwacje (najnowsze najpierw, ale tylko te z przyszłości lub <30 dni wstecz)
+  // Date range from filters (preset → from/to). Cap floor at -30d to avoid huge scans.
+  const dateRange = useMemo(() => resolveDateRange(filters), [filters]);
+  const queryFrom = useMemo(() => {
+    const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    return dateRange.from && dateRange.from > cutoff ? dateRange.from : cutoff;
+  }, [dateRange.from]);
+
   const {
     data: bookings = [],
     isLoading: bookingsLoading,
@@ -156,20 +162,29 @@ const AdminBookings = () => {
     error,
     refetch: refetchBookings,
   } = useQuery({
-    queryKey: ["admin-bookings"],
+    queryKey: ["admin-bookings", filters.status, queryFrom, dateRange.to ?? null],
     queryFn: async (): Promise<Booking[]> => {
-      const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-      const { data, error } = await supabase
+      let q = supabase
         .from("bookings")
         .select("*")
-        .gte("appointment_date", cutoff)
+        .gte("appointment_date", queryFrom)
         .order("appointment_date", { ascending: true })
         .order("appointment_time", { ascending: true });
+      if (dateRange.to) q = q.lte("appointment_date", dateRange.to);
+      if (filters.status !== "all") q = q.eq("status", filters.status);
+      const { data, error } = await q;
       if (error) throw error;
       return (data ?? []) as Booking[];
     },
     enabled: !authLoading && !!session,
   });
+
+  // Location filter applied client-side (location is free-text; uses substring match
+  // matching the same patterns as the cron edge function).
+  const filteredBookings = useMemo(
+    () => bookings.filter((b) => matchesLocation(b.location, filters.location)),
+    [bookings, filters.location],
+  );
 
   // Pobierz logi reminderów (jednym query) i mapuj per booking
   const { data: reminderMap = {} } = useQuery({
