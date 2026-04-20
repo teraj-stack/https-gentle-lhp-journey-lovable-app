@@ -148,6 +148,47 @@ const AdminBookings = () => {
     };
   }, [navigate]);
 
+  // Realtime: subskrypcja na zmiany w `bookings` (INSERT/UPDATE/DELETE)
+  // Każda zmiana → invalidate cache → useQuery automatycznie refetchuje (z aktualnymi filtrami).
+  // Dodatkowo soft-toast dla nowych rezerwacji żeby admin to zauważył.
+  const [realtimeReady, setRealtimeReady] = useState(false);
+  useEffect(() => {
+    if (authLoading || !session) return;
+    const channel = supabase
+      .channel("admin-bookings-realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "bookings" },
+        (payload) => {
+          queryClient.invalidateQueries({ queryKey: ["admin-bookings"] });
+          if (payload.eventType === "INSERT") {
+            const row = payload.new as { patient_name?: string; appointment_date?: string; appointment_time?: string };
+            toast.success("Nowa rezerwacja", {
+              description: `${row.patient_name ?? "Pacjent"} — ${row.appointment_date ?? ""} ${row.appointment_time ?? ""}`,
+            });
+          } else if (payload.eventType === "UPDATE") {
+            const oldRow = payload.old as { status?: string } | null;
+            const newRow = payload.new as { status?: string; patient_name?: string } | null;
+            if (oldRow?.status && newRow?.status && oldRow.status !== newRow.status) {
+              toast.message("Status zaktualizowany", {
+                description: `${newRow.patient_name ?? "Pacjent"}: ${oldRow.status} → ${newRow.status}`,
+              });
+              // Status się zmienił — odśwież też historię tego bookingu
+              queryClient.invalidateQueries({ queryKey: ["booking-status-history"] });
+              queryClient.invalidateQueries({ queryKey: ["admin-bookings-action-tokens"] });
+            }
+          }
+        },
+      )
+      .subscribe((status) => {
+        setRealtimeReady(status === "SUBSCRIBED");
+      });
+    return () => {
+      supabase.removeChannel(channel);
+      setRealtimeReady(false);
+    };
+  }, [authLoading, session, queryClient]);
+
   // Date range from filters (preset → from/to). Cap floor at -30d to avoid huge scans.
   const dateRange = useMemo(() => resolveDateRange(filters), [filters]);
   const queryFrom = useMemo(() => {
