@@ -380,7 +380,8 @@ const AdminBookings = () => {
                             <Button
                               variant="ghost"
                               size="icon"
-                              title="Wyślij reminder 24h ponownie"
+                              title={b.reminder_opt_out ? "Pacjent wypisany z reminderów" : "Wyślij reminder 24h ponownie"}
+                              disabled={b.reminder_opt_out}
                               onClick={() => setResendTarget({ booking: b, variant: "24h" })}
                             >
                               <Send className="w-4 h-4 text-primary" />
