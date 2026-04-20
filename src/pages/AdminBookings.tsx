@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -34,6 +34,14 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import SeoHead from "@/components/shared/SeoHead";
+import AdminBookingsFilters, {
+  DEFAULT_FILTERS,
+  filtersFromSearchParams,
+  filtersToSearchParams,
+  matchesLocation,
+  resolveDateRange,
+  type BookingFilters,
+} from "@/components/admin/AdminBookingsFilters";
 
 type Booking = {
   id: string;
