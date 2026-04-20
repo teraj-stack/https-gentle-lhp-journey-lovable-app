@@ -38,6 +38,10 @@ const PrzygotowanieClacs = lazy(() => import("@/pages/PrzygotowanieClacs"));
 const PrzygotowanieSkleroterapia = lazy(() => import("@/pages/PrzygotowanieSkleroterapia"));
 const PrzygotowanieMikroflebektomia = lazy(() => import("@/pages/PrzygotowanieMikroflebektomia"));
 const PrzygotowaniePlastyka = lazy(() => import("@/pages/PrzygotowaniePlastyka"));
+const PrzygotowanieGinekomastii = lazy(() => import("@/pages/PrzygotowanieGinekomastii"));
+const PrzygotowanieGinekomastiiGruczolowa = lazy(() => import("@/pages/PrzygotowanieGinekomastiiGruczolowa"));
+const PrzygotowanieGinekomastiiTluszczowa = lazy(() => import("@/pages/PrzygotowanieGinekomastiiTluszczowa"));
+const PrzygotowanieGinekomastiiMieszana = lazy(() => import("@/pages/PrzygotowanieGinekomastiiMieszana"));
 const PolitykaPrywatnosci = lazy(() => import("@/pages/PolitykaPrywatnosci"));
 const Regulamin = lazy(() => import("@/pages/Regulamin"));
 const Cennik = lazy(() => import("@/pages/Cennik"));
@@ -116,6 +120,10 @@ const App = () => (
               <Route path="/dla-pacjenta/przygotowanie-skleroterapia" element={<PrzygotowanieSkleroterapia />} />
               <Route path="/dla-pacjenta/przygotowanie-mikroflebektomia" element={<PrzygotowanieMikroflebektomia />} />
               <Route path="/dla-pacjenta/przygotowanie-plastyka" element={<PrzygotowaniePlastyka />} />
+              <Route path="/dla-pacjenta/przygotowanie-ginekomastii" element={<PrzygotowanieGinekomastii />} />
+              <Route path="/dla-pacjenta/przygotowanie-ginekomastia-gruczolowa" element={<PrzygotowanieGinekomastiiGruczolowa />} />
+              <Route path="/dla-pacjenta/przygotowanie-ginekomastia-tluszczowa" element={<PrzygotowanieGinekomastiiTluszczowa />} />
+              <Route path="/dla-pacjenta/przygotowanie-ginekomastia-mieszana" element={<PrzygotowanieGinekomastiiMieszana />} />
               <Route path="/dla-pacjenta/zalecenia-po-evlt" element={<ZaleceniaPoEVLT />} />
               <Route path="/dla-pacjenta/zalecenia-po-lhp" element={<ZaleceniaPoLHP />} />
               <Route path="/dla-pacjenta/zalecenia-po-clacs" element={<ZaleceniaPoClacs />} />
