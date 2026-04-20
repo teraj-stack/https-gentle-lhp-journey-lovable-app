@@ -953,4 +953,85 @@ const TokenHistoryEntry = ({ token }: { token: ActionToken }) => {
   );
 };
 
+const EMAIL_TEMPLATE_LABEL: Record<string, string> = {
+  "booking-confirmation": "Potwierdzenie dla pacjenta",
+  "booking-notification": "Powiadomienie do recepcji",
+  "booking-reminder": "Reminder 24h",
+  "booking-reminder-2h": "Reminder 2h",
+  "booking-status-update": "Aktualizacja statusu",
+  "booking-no-show-check": "Sprawdzenie no-show",
+};
+
+const EmailCountCell = ({ counts }: { counts: BookingEmailCounts | undefined }) => {
+  if (!counts || counts.total === 0) {
+    return (
+      <span className="text-[11px] text-muted-foreground inline-flex items-center gap-1">
+        <Mail className="w-3 h-3" />0
+      </span>
+    );
+  }
+  // Color tone based on dominant state
+  const tone = counts.failed > 0
+    ? "text-destructive border-destructive/40 bg-destructive/10"
+    : counts.pending > 0
+    ? "text-amber-400 border-amber-500/40 bg-amber-500/10"
+    : "text-emerald-400 border-emerald-500/40 bg-emerald-500/10";
+  const entries = Object.entries(counts.breakdown).sort((a, b) => b[1].total - a[1].total);
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          size="sm"
+          className={`h-6 px-2 text-[11px] gap-1 font-mono ${tone}`}
+          title="Kliknij, aby zobaczyć rozbicie per szablon"
+        >
+          <Mail className="w-3 h-3" />
+          {counts.total}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-72">
+        <div className="space-y-2">
+          <div>
+            <p className="text-xs font-semibold text-foreground">Maile wysłane dla tej rezerwacji</p>
+            <p className="text-[10px] text-muted-foreground">
+              {counts.total} unikalnych · {counts.sent} dostarczonych
+              {counts.pending > 0 && ` · ${counts.pending} w kolejce`}
+              {counts.failed > 0 && ` · ${counts.failed} błędów`}
+            </p>
+          </div>
+          <ul className="space-y-1.5 border-t border-border pt-2">
+            {entries.map(([tpl, b]) => (
+              <li key={tpl} className="text-[11px] flex items-center gap-2">
+                <span className="flex-1 text-foreground truncate" title={tpl}>
+                  {EMAIL_TEMPLATE_LABEL[tpl] ?? tpl}
+                </span>
+                <span className="font-mono text-muted-foreground">{b.total}</span>
+                {b.sent > 0 && (
+                  <span className="text-[10px] text-emerald-400 font-mono" title="dostarczone">
+                    ✓{b.sent}
+                  </span>
+                )}
+                {b.pending > 0 && (
+                  <span className="text-[10px] text-amber-400 font-mono" title="w kolejce">
+                    ⧗{b.pending}
+                  </span>
+                )}
+                {b.failed > 0 && (
+                  <span className="text-[10px] text-destructive font-mono" title="błąd / odrzucony">
+                    ✗{b.failed}
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
+          <p className="text-[10px] text-muted-foreground italic border-t border-border pt-1.5">
+            Liczone z email_send_log (180 dni). Dedup po message_id — jeden mail = jeden wpis.
+          </p>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+};
+
 export default AdminBookings;
