@@ -7,6 +7,7 @@ import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -191,6 +192,24 @@ const AdminBookings = () => {
     },
   });
 
+  const toggleOptOut = useMutation({
+    mutationFn: async ({ id, value }: { id: string; value: boolean }) => {
+      const { error } = await supabase
+        .from("bookings")
+        .update({ reminder_opt_out: value })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: (_data, vars) => {
+      queryClient.invalidateQueries({ queryKey: ["admin-bookings"] });
+      toast.success(vars.value ? "Reminder wyłączony" : "Reminder włączony");
+    },
+    onError: (e) => {
+      console.error(e);
+      toast.error("Nie udało się zmienić opcji");
+    },
+  });
+
   const resendReminder = useMutation({
     mutationFn: async ({ bookingId, variant }: { bookingId: string; variant: "24h" | "2h" }) => {
       const { data, error } = await supabase.functions.invoke("resend-booking-reminder", {
@@ -201,7 +220,6 @@ const AdminBookings = () => {
     },
     onSuccess: () => {
       toast.success("Reminder wysłany ponownie");
-      // Odśwież logi po krótkiej zwłoce — kolejka potrzebuje cyklu
       setTimeout(() => {
         queryClient.invalidateQueries({ queryKey: ["admin-bookings-reminders"] });
       }, 2000);
