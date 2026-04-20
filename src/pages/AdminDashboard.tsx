@@ -162,6 +162,9 @@ const AdminDashboard = () => {
             <Button variant="ghost" size="sm" onClick={() => navigate("/admin/bookings")}>
               Rezerwacje
             </Button>
+            <Button variant="ghost" size="sm" onClick={() => navigate("/admin/notification-recipients")}>
+              Odbiorcy
+            </Button>
             <span className="text-sm text-muted-foreground hidden sm:inline">{session.user.email}</span>
             <Button variant="ghost" size="sm" onClick={handleLogout}>
               <LogOut className="w-4 h-4 mr-1" /> Wyloguj
