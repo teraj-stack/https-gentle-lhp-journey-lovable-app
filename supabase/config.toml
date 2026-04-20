@@ -19,3 +19,5 @@ project_id = "jowtjcyevactqmhqrytz"
     verify_jwt = false
   [functions.send-booking-reminders]
     verify_jwt = false
+  [functions.handle-reminder-opt-out]
+    verify_jwt = false
