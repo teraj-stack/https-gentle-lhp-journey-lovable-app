@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import ParallaxSection from "@/components/ui/parallax-section";
 import { Link } from "react-router-dom";
 import Breadcrumbs from "@/components/layout/Breadcrumbs";
+import { BREADCRUMBS_MAP } from "@/lib/breadcrumbsMap";
 import SeoHead from "@/components/shared/SeoHead";
 import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 import { Button } from "@/components/ui/button";
@@ -164,11 +165,7 @@ const Fototerapia = () => (
     </ParallaxSection>
 
     <Breadcrumbs
-      items={[
-        { label: "Zabieg" },
-        { label: "Flebologia", href: "/leczenie/flebologia" },
-        { label: "Fototerapia LED (PBM)" },
-      ]}
+      items={BREADCRUMBS_MAP["/leczenie/fototerapia"]}
     />
 
     {/* Intro */}
