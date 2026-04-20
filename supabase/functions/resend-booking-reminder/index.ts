@@ -78,7 +78,7 @@ Deno.serve(async (req) => {
 
   const { data: booking, error: bookingError } = await supabase
     .from('bookings')
-    .select('id, patient_name, patient_email, appointment_date, appointment_time, location, status')
+    .select('id, patient_name, patient_email, appointment_date, appointment_time, location, status, reminder_opt_out')
     .eq('id', bookingId)
     .maybeSingle()
 
@@ -88,6 +88,7 @@ Deno.serve(async (req) => {
   }
   if (!booking) return json(404, { error: 'booking_not_found' })
   if (!booking.patient_email) return json(400, { error: 'missing_patient_email' })
+  if (booking.reminder_opt_out) return json(409, { error: 'reminder_opt_out_active' })
 
   const templateName = variant === '2h' ? 'booking-reminder-2h' : 'booking-reminder'
   const ts = Date.now()
