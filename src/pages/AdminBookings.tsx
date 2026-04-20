@@ -359,7 +359,7 @@ const AdminBookings = () => {
         </header>
 
         <main className="max-w-7xl mx-auto px-4 py-8 md:px-8">
-          <div className="flex items-center gap-6 mb-6">
+          <div className="flex items-center gap-6 mb-4">
             <div>
               <p className="text-xs uppercase tracking-wider text-muted-foreground">Razem</p>
               <p className="text-2xl font-bold text-foreground">{totalCount}</p>
@@ -369,6 +369,12 @@ const AdminBookings = () => {
               <p className="text-2xl font-bold text-amber-400">{pendingCount}</p>
             </div>
           </div>
+
+          <AdminBookingsFilters
+            filters={filters}
+            onChange={setFilters}
+            resultCount={filteredBookings.length}
+          />
 
           {bookingsLoading ? (
             <div className="space-y-3">
