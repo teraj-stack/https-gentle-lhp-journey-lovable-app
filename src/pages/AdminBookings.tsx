@@ -203,7 +203,7 @@ const AdminBookings = () => {
     error,
     refetch: refetchBookings,
   } = useQuery({
-    queryKey: ["admin-bookings", filters.status, queryFrom, dateRange.to ?? null],
+    queryKey: ["admin-bookings", filters.status, queryFrom, dateRange.to ?? null, filters.reminderOptOut],
     queryFn: async (): Promise<Booking[]> => {
       let q = supabase
         .from("bookings")
@@ -213,6 +213,8 @@ const AdminBookings = () => {
         .order("appointment_time", { ascending: true });
       if (dateRange.to) q = q.lte("appointment_date", dateRange.to);
       if (filters.status !== "all") q = q.eq("status", filters.status);
+      if (filters.reminderOptOut === "active") q = q.eq("reminder_opt_out", false);
+      else if (filters.reminderOptOut === "optedOut") q = q.eq("reminder_opt_out", true);
       const { data, error } = await q;
       if (error) throw error;
       return (data ?? []) as Booking[];
