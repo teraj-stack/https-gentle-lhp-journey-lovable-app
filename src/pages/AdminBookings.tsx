@@ -115,11 +115,20 @@ function reduceLogStatus(rows: LogRow[]): ReminderState {
 const AdminBookings = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [session, setSession] = useState<Session | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const { isAdmin, loading: adminLoading } = useIsAdmin();
   const [resendTarget, setResendTarget] = useState<{ booking: Booking; variant: "24h" | "2h" } | null>(null);
 
+  // ---- Filters: source of truth = URL query params ----
+  const filters: BookingFilters = useMemo(
+    () => filtersFromSearchParams(searchParams),
+    [searchParams],
+  );
+  const setFilters = (next: BookingFilters) => {
+    setSearchParams(filtersToSearchParams(next), { replace: true });
+  };
   useEffect(() => {
     let isMounted = true;
     const apply = (next: Session | null) => {
