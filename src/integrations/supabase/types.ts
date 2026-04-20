@@ -103,6 +103,50 @@ export type Database = {
           },
         ]
       }
+      booking_reminder_opt_out_tokens: {
+        Row: {
+          booking_id: string
+          created_at: string
+          expires_at: string
+          id: string
+          patient_email: string
+          token: string
+          used_at: string | null
+          used_by_ip: string | null
+          used_by_ua: string | null
+        }
+        Insert: {
+          booking_id: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          patient_email: string
+          token: string
+          used_at?: string | null
+          used_by_ip?: string | null
+          used_by_ua?: string | null
+        }
+        Update: {
+          booking_id?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          patient_email?: string
+          token?: string
+          used_at?: string | null
+          used_by_ip?: string | null
+          used_by_ua?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_reminder_opt_out_tokens_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       booking_status_history: {
         Row: {
           booking_id: string
