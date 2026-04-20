@@ -29,8 +29,69 @@ const json = (status: number, payload: Record<string, unknown>) =>
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   })
 
+// ============================================================
+// In-memory rate limiter per IP (fixed-window, 10 req / 60 s).
+// Ad-hoc — backend nie ma jeszcze KV/Redis dla globalnego limitu.
+// Działa per isolate Deno Deploy: bot trafiający w wiele isolate'ów
+// obejdzie limit proporcjonalnie. Akceptowalne jako warstwa obrony
+// dla tokenów o 256-bit entropii (64 hex znaków).
+// ============================================================
+const RATE_LIMIT_MAX = 10
+const RATE_LIMIT_WINDOW_MS = 60_000
+const rateLimitBuckets = new Map<string, { count: number; resetAt: number }>()
+
+function getClientIp(req: Request): string {
+  const xff = req.headers.get('x-forwarded-for')
+  if (xff) return xff.split(',')[0]?.trim() || 'unknown'
+  return req.headers.get('cf-connecting-ip') ?? req.headers.get('x-real-ip') ?? 'unknown'
+}
+
+function checkRateLimit(ip: string): { allowed: boolean; retryAfterSec: number; remaining: number } {
+  const now = Date.now()
+  const bucket = rateLimitBuckets.get(ip)
+
+  // Lazy cleanup wygasłych bucketów (co ~100 wpisów) — żeby Map nie rosła w nieskończoność.
+  if (rateLimitBuckets.size > 100) {
+    for (const [key, value] of rateLimitBuckets) {
+      if (value.resetAt < now) rateLimitBuckets.delete(key)
+    }
+  }
+
+  if (!bucket || bucket.resetAt < now) {
+    rateLimitBuckets.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS })
+    return { allowed: true, retryAfterSec: 0, remaining: RATE_LIMIT_MAX - 1 }
+  }
+
+  if (bucket.count >= RATE_LIMIT_MAX) {
+    return { allowed: false, retryAfterSec: Math.ceil((bucket.resetAt - now) / 1000), remaining: 0 }
+  }
+
+  bucket.count += 1
+  return { allowed: true, retryAfterSec: 0, remaining: RATE_LIMIT_MAX - bucket.count }
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders })
+
+  // Rate limit dla GET i POST (OPTIONS przepuszczamy dla CORS preflight).
+  const ip = getClientIp(req)
+  const rl = checkRateLimit(ip)
+  if (!rl.allowed) {
+    console.warn(`Rate limit exceeded for IP ${ip} on update-booking-status`)
+    return new Response(
+      JSON.stringify({ error: 'rate_limited', retryAfterSec: rl.retryAfterSec }),
+      {
+        status: 429,
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json',
+          'Retry-After': String(rl.retryAfterSec),
+          'X-RateLimit-Limit': String(RATE_LIMIT_MAX),
+          'X-RateLimit-Remaining': '0',
+        },
+      },
+    )
+  }
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL')
   const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
