@@ -308,8 +308,11 @@ const AdminBookings = () => {
     navigate("/admin/login", { replace: true });
   };
 
-  const totalCount = bookings.length;
-  const pendingCount = useMemo(() => bookings.filter((b) => b.status === "pending").length, [bookings]);
+  const totalCount = filteredBookings.length;
+  const pendingCount = useMemo(
+    () => filteredBookings.filter((b) => b.status === "pending").length,
+    [filteredBookings],
+  );
 
   if (authLoading || adminLoading) {
     return (
