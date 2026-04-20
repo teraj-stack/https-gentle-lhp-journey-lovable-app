@@ -1,13 +1,18 @@
-// Scheduled Edge Function — invoked hourly by pg_cron.
-// Scans bookings for "tomorrow" (Europe/Warsaw) and sends booking-reminder emails.
+// Scheduled Edge Function — generic booking reminder dispatcher.
 //
-// Idempotency: idempotencyKey = `booking-reminder-${bookingId}-${appointmentDate}`
-// → guarantees each patient receives exactly ONE reminder per booking,
-//   even if the cron runs multiple times within the 24h window.
+// Replaces the previous separate `send-booking-reminders` (24h) and
+// `send-booking-reminders-2h` functions. Behaviour is selected via the
+// `window` body param: "24h" (tomorrow's bookings) or "2h" (today, in a
+// 90–150 min window from now).
 //
-// Schedule: every hour at minute 0.
+// Schedules (configured via pg_cron):
+//   - hourly  → POST { "window": "24h" }
+//   - /30 min → POST { "window": "2h" }
+//
+// Idempotency: keys differ per window — see WINDOW_CONFIG below.
+// Pre-checks email_send_log to skip already-pending/sent reminders.
 
-import { createClient } from 'npm:@supabase/supabase-js@2'
+import { createClient, SupabaseClient } from 'npm:@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -25,6 +30,10 @@ interface BookingRow {
   status: string
   reminder_opt_out: boolean
 }
+
+type WindowKey = '24h' | '2h'
+
+// ---------- Location label resolution (shared) ----------
 
 const LOCATION_LABELS: Record<string, { match: string[]; label: string }> = {
   wilanow: {
@@ -54,18 +63,168 @@ function resolveLocationLabel(location?: string): string {
   return location
 }
 
-// Compute "tomorrow" in Europe/Warsaw timezone as YYYY-MM-DD.
-// Using Intl with sv-SE locale gives ISO-like format.
-function tomorrowInWarsaw(): string {
-  const now = new Date()
-  const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000)
+// ---------- Time helpers (Europe/Warsaw) ----------
+
+function dateInWarsaw(offsetDays = 0): string {
+  const d = new Date(Date.now() + offsetDays * 24 * 60 * 60 * 1000)
   return new Intl.DateTimeFormat('sv-SE', {
     timeZone: 'Europe/Warsaw',
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
-  }).format(tomorrow)
+  }).format(d)
 }
+
+function timeInWarsaw(offsetMinutes: number): string {
+  const future = new Date(Date.now() + offsetMinutes * 60 * 1000)
+  return new Intl.DateTimeFormat('sv-SE', {
+    timeZone: 'Europe/Warsaw',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).format(future)
+}
+
+function normalizeTime(t: string): string {
+  return t?.slice(0, 5) ?? ''
+}
+
+// ---------- Per-window config ----------
+
+interface WindowConfig {
+  templateName: string
+  /** Date to scan in Europe/Warsaw (YYYY-MM-DD). */
+  targetDate: () => string
+  /** Optional time-window filter applied client-side after fetch. */
+  timeWindow?: () => { start: string; end: string }
+  /** Idempotency key for a given booking. */
+  idempotencyKey: (b: BookingRow) => string
+  /** Build template payload sent to send-transactional-email. */
+  buildTemplateData: (b: BookingRow) => Record<string, unknown>
+}
+
+const WINDOW_CONFIG: Record<WindowKey, WindowConfig> = {
+  '24h': {
+    templateName: 'booking-reminder',
+    targetDate: () => dateInWarsaw(1), // tomorrow
+    idempotencyKey: (b) => `booking-reminder-${b.id}-${b.appointment_date}`,
+    buildTemplateData: (b) => ({
+      patientName: b.patient_name,
+      appointmentDate: b.appointment_date,
+      appointmentTime: b.appointment_time,
+      location: b.location,
+      locationLabel: resolveLocationLabel(b.location),
+    }),
+  },
+  '2h': {
+    templateName: 'booking-reminder-2h',
+    targetDate: () => dateInWarsaw(0), // today
+    timeWindow: () => ({ start: timeInWarsaw(90), end: timeInWarsaw(150) }),
+    idempotencyKey: (b) =>
+      `booking-reminder-2h-${b.id}-${b.appointment_date}T${normalizeTime(b.appointment_time)}`,
+    buildTemplateData: (b) => ({
+      patientName: b.patient_name,
+      appointmentTime: normalizeTime(b.appointment_time),
+      locationLabel: resolveLocationLabel(b.location),
+    }),
+  },
+}
+
+// ---------- Core dispatcher ----------
+
+async function fetchEligibleBookings(
+  supabase: SupabaseClient,
+  cfg: WindowConfig,
+): Promise<{ bookings: BookingRow[]; targetDate: string; timeWindow?: { start: string; end: string } }> {
+  const targetDate = cfg.targetDate()
+  const timeWindow = cfg.timeWindow?.()
+
+  const { data, error } = await supabase
+    .from('bookings')
+    .select(
+      'id, patient_name, patient_email, appointment_date, appointment_time, location, status, reminder_opt_out',
+    )
+    .eq('appointment_date', targetDate)
+    .neq('status', 'cancelled')
+    .eq('reminder_opt_out', false)
+    .returns<BookingRow[]>()
+
+  if (error) throw error
+
+  let bookings = data ?? []
+  if (timeWindow) {
+    bookings = bookings.filter((b) => {
+      const t = normalizeTime(b.appointment_time)
+      return t >= timeWindow.start && t <= timeWindow.end
+    })
+  }
+  return { bookings, targetDate, timeWindow }
+}
+
+async function preloadHandledKeys(
+  supabase: SupabaseClient,
+  templateName: string,
+  bookings: BookingRow[],
+): Promise<Set<string>> {
+  const handled = new Set<string>()
+  const recipients = bookings.map((b) => b.patient_email).filter(Boolean)
+  if (recipients.length === 0) return handled
+
+  const { data, error } = await supabase
+    .from('email_send_log')
+    .select('metadata')
+    .eq('template_name', templateName)
+    .in('recipient_email', recipients)
+    .in('status', ['pending', 'sent'])
+
+  if (error) {
+    console.warn(`[reminders] Idempotency preload failed for ${templateName}:`, error.message)
+    return handled // fail-open
+  }
+  for (const row of data ?? []) {
+    const key = (row.metadata as Record<string, unknown> | null)?.idempotency_key
+    if (typeof key === 'string') handled.add(key)
+  }
+  return handled
+}
+
+async function dispatchOne(
+  supabase: SupabaseClient,
+  cfg: WindowConfig,
+  booking: BookingRow,
+  handledKeys: Set<string>,
+) {
+  if (!booking.patient_email) {
+    return { id: booking.id, ok: false, skipped: false, error: 'missing patient_email' }
+  }
+  const idempotencyKey = cfg.idempotencyKey(booking)
+
+  if (handledKeys.has(idempotencyKey)) {
+    console.log(`[reminders] Skip ${booking.id} — already handled (${idempotencyKey})`)
+    return { id: booking.id, ok: true, skipped: true, reason: 'already_sent' as const }
+  }
+
+  try {
+    const { error } = await supabase.functions.invoke('send-transactional-email', {
+      body: {
+        templateName: cfg.templateName,
+        recipientEmail: booking.patient_email,
+        idempotencyKey,
+        templateData: cfg.buildTemplateData(booking),
+      },
+    })
+    if (error) {
+      console.error(`[reminders] ${cfg.templateName} failed for ${booking.id}:`, error)
+      return { id: booking.id, ok: false, skipped: false, error: error.message }
+    }
+    return { id: booking.id, ok: true, skipped: false }
+  } catch (err) {
+    console.error(`[reminders] ${cfg.templateName} threw for ${booking.id}:`, err)
+    return { id: booking.id, ok: false, skipped: false, error: String(err) }
+  }
+}
+
+// ---------- HTTP entrypoint ----------
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -74,101 +233,76 @@ Deno.serve(async (req) => {
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL')
   const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
-
   if (!supabaseUrl || !supabaseServiceKey) {
     console.error('Missing required environment variables')
     return new Response(
       JSON.stringify({ error: 'Server configuration error' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     )
   }
 
+  // Parse body — default to "24h" for backward-compat with older cron calls.
+  let windowKey: WindowKey = '24h'
+  try {
+    const body = await req.json().catch(() => ({}))
+    const raw = body?.window
+    if (raw === '24h' || raw === '2h') windowKey = raw
+    else if (raw !== undefined) {
+      return new Response(
+        JSON.stringify({ error: `Invalid window: ${raw}. Use "24h" or "2h".` }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      )
+    }
+  } catch {
+    // no body → default
+  }
+
+  const cfg = WINDOW_CONFIG[windowKey]
   const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-  const targetDate = tomorrowInWarsaw()
-  console.log(`[send-booking-reminders] Scanning bookings for ${targetDate}`)
-
-  // Fetch all non-cancelled bookings for tomorrow
-  const { data: bookings, error: fetchError } = await supabase
-    .from('bookings')
-    .select('id, patient_name, patient_email, appointment_date, appointment_time, location, status, reminder_opt_out')
-    .eq('appointment_date', targetDate)
-    .neq('status', 'cancelled')
-    .eq('reminder_opt_out', false)
-    .returns<BookingRow[]>()
-
-  if (fetchError) {
-    console.error('Failed to fetch bookings:', fetchError)
+  let bookings: BookingRow[]
+  let targetDate: string
+  let timeWindow: { start: string; end: string } | undefined
+  try {
+    const fetched = await fetchEligibleBookings(supabase, cfg)
+    bookings = fetched.bookings
+    targetDate = fetched.targetDate
+    timeWindow = fetched.timeWindow
+  } catch (err) {
+    console.error(`[reminders/${windowKey}] fetch failed:`, err)
     return new Response(
-      JSON.stringify({ error: 'Failed to fetch bookings', details: fetchError.message }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ error: 'Failed to fetch bookings', details: String(err) }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     )
   }
 
-  if (!bookings || bookings.length === 0) {
-    console.log('[send-booking-reminders] No bookings for tomorrow.')
+  console.log(
+    `[reminders/${windowKey}] target=${targetDate}` +
+      (timeWindow ? ` window=${timeWindow.start}..${timeWindow.end}` : '') +
+      ` candidates=${bookings.length}`,
+  )
+
+  if (bookings.length === 0) {
     return new Response(
-      JSON.stringify({ ok: true, targetDate, processed: 0, results: [] }),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({
+        ok: true,
+        window: windowKey,
+        targetDate,
+        ...(timeWindow ? { windowStart: timeWindow.start, windowEnd: timeWindow.end } : {}),
+        processed: 0,
+        sent: 0,
+        skipped: 0,
+        failed: 0,
+        results: [],
+      }),
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     )
   }
 
-  console.log(`[send-booking-reminders] Found ${bookings.length} booking(s) for ${targetDate}`)
-
-  // Pre-check email_send_log: defense-in-depth na wypadek wielokrotnego cron run.
-  // Queue też dedupe'uje po idempotencyKey, ale to oszczędza nam invoke per booking.
-  const recipientEmails = bookings.map((b) => b.patient_email).filter(Boolean)
-  const { data: existingLogs } = await supabase
-    .from('email_send_log')
-    .select('recipient_email, status, metadata')
-    .eq('template_name', 'booking-reminder')
-    .in('recipient_email', recipientEmails)
-    .in('status', ['pending', 'sent'])
-
-  // Mapa już-obsłużonych idempotencyKey
-  const handledKeys = new Set<string>()
-  for (const row of existingLogs ?? []) {
-    const key = (row.metadata as Record<string, unknown> | null)?.idempotency_key
-    if (typeof key === 'string') handledKeys.add(key)
-  }
+  const handledKeys = await preloadHandledKeys(supabase, cfg.templateName, bookings)
 
   const results = await Promise.all(
-    bookings.map(async (booking) => {
-      if (!booking.patient_email) {
-        return { id: booking.id, ok: false, skipped: false, error: 'missing patient_email' }
-      }
-      const idempotencyKey = `booking-reminder-${booking.id}-${booking.appointment_date}`
-
-      if (handledKeys.has(idempotencyKey)) {
-        console.log(`[send-booking-reminders] Skip ${booking.id} — already in email_send_log (${idempotencyKey})`)
-        return { id: booking.id, ok: true, skipped: true }
-      }
-
-      try {
-        const { error } = await supabase.functions.invoke('send-transactional-email', {
-          body: {
-            templateName: 'booking-reminder',
-            recipientEmail: booking.patient_email,
-            idempotencyKey,
-            templateData: {
-              patientName: booking.patient_name,
-              appointmentDate: booking.appointment_date,
-              appointmentTime: booking.appointment_time,
-              location: booking.location,
-              locationLabel: resolveLocationLabel(booking.location),
-            },
-          },
-        })
-        if (error) {
-          console.error(`Reminder failed for ${booking.id}:`, error)
-          return { id: booking.id, ok: false, skipped: false, error: error.message }
-        }
-        return { id: booking.id, ok: true, skipped: false }
-      } catch (err) {
-        console.error(`Reminder threw for ${booking.id}:`, err)
-        return { id: booking.id, ok: false, skipped: false, error: String(err) }
-      }
-    })
+    bookings.map((b) => dispatchOne(supabase, cfg, b, handledKeys)),
   )
 
   const sent = results.filter((r) => r.ok && !r.skipped).length
@@ -178,7 +312,9 @@ Deno.serve(async (req) => {
   return new Response(
     JSON.stringify({
       ok: failed === 0,
+      window: windowKey,
       targetDate,
+      ...(timeWindow ? { windowStart: timeWindow.start, windowEnd: timeWindow.end } : {}),
       processed: results.length,
       sent,
       skipped,
@@ -188,6 +324,6 @@ Deno.serve(async (req) => {
     {
       status: failed === 0 ? 200 : 207,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    }
+    },
   )
 })
