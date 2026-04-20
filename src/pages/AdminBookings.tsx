@@ -390,6 +390,13 @@ const AdminBookings = () => {
           </div>
           <div className="flex items-center gap-3">
             <span className="text-sm text-muted-foreground hidden sm:inline">{session.user.email}</span>
+            <span
+              className="hidden sm:inline-flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-muted-foreground"
+              title={realtimeReady ? "Realtime aktywny — zmiany pojawiają się automatycznie" : "Realtime nieaktywny — odśwież ręcznie"}
+            >
+              <span className={`w-1.5 h-1.5 rounded-full ${realtimeReady ? "bg-emerald-500 animate-pulse" : "bg-muted-foreground/40"}`} aria-hidden />
+              {realtimeReady ? "Live" : "Offline"}
+            </span>
             <Button variant="ghost" size="sm" onClick={() => refetchBookings()}>
               <RefreshCw className="w-4 h-4 mr-1" /> Odśwież
             </Button>
