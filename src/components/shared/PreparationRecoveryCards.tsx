@@ -45,17 +45,25 @@ const PreparationRecoveryCards = ({
 
       <div className="grid md:grid-cols-2 gap-5">
         {/* Przed zabiegiem */}
-        <article className="glass-card rounded-2xl p-6 md:p-7 flex flex-col gap-4 border border-primary/20 hover:border-primary/40 transition-colors">
-          <div className="flex items-center gap-3">
-            <div className="flex-shrink-0 w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center">
+        <article className="group relative overflow-hidden glass-card rounded-2xl p-6 md:p-7 flex flex-col gap-4 border border-primary/20 hover:border-primary/50 hover:shadow-[0_20px_50px_-25px_hsl(var(--primary)/0.45)] transition-all duration-500">
+          <div
+            className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+            style={{
+              background:
+                "radial-gradient(ellipse at top right, hsl(var(--primary) / 0.12) 0%, transparent 60%)",
+            }}
+            aria-hidden
+          />
+          <div className="relative flex items-center gap-3">
+            <div className="flex-shrink-0 w-11 h-11 rounded-xl bg-primary/10 group-hover:bg-primary/15 flex items-center justify-center transition-colors">
               <ClipboardCheck className="w-5 h-5 text-primary" />
             </div>
-            <h3 className="text-lg font-semibold text-foreground">Przed zabiegiem</h3>
+            <h3 className="text-lg font-semibold text-primary tracking-wide">Przed zabiegiem</h3>
           </div>
-          <p className="text-sm text-muted-foreground leading-relaxed flex-1">
+          <p className="relative text-sm text-muted-foreground leading-relaxed flex-1">
             {preparationDescription}
           </p>
-          <Button asChild variant="outline" className="w-full mt-auto group">
+          <Button asChild variant="outline" className="relative w-full mt-auto">
             <Link to={preparationHref}>
               Zobacz checklistę
               <ArrowRight className="w-4 h-4 ml-1 transition-transform group-hover:translate-x-0.5" />
@@ -64,17 +72,25 @@ const PreparationRecoveryCards = ({
         </article>
 
         {/* Po zabiegu */}
-        <article className="glass-card rounded-2xl p-6 md:p-7 flex flex-col gap-4 border border-primary/20 hover:border-primary/40 transition-colors">
-          <div className="flex items-center gap-3">
-            <div className="flex-shrink-0 w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center">
+        <article className="group relative overflow-hidden glass-card rounded-2xl p-6 md:p-7 flex flex-col gap-4 border border-primary/20 hover:border-primary/50 hover:shadow-[0_20px_50px_-25px_hsl(var(--primary)/0.45)] transition-all duration-500">
+          <div
+            className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+            style={{
+              background:
+                "radial-gradient(ellipse at top left, hsl(var(--primary) / 0.12) 0%, transparent 60%)",
+            }}
+            aria-hidden
+          />
+          <div className="relative flex items-center gap-3">
+            <div className="flex-shrink-0 w-11 h-11 rounded-xl bg-primary/10 group-hover:bg-primary/15 flex items-center justify-center transition-colors">
               <HeartPulse className="w-5 h-5 text-primary" />
             </div>
-            <h3 className="text-lg font-semibold text-foreground">Po zabiegu</h3>
+            <h3 className="text-lg font-semibold text-primary tracking-wide">Po zabiegu</h3>
           </div>
-          <p className="text-sm text-muted-foreground leading-relaxed flex-1">
+          <p className="relative text-sm text-muted-foreground leading-relaxed flex-1">
             {recoveryDescription}
           </p>
-          <Button asChild variant="outline" className="w-full mt-auto group">
+          <Button asChild variant="outline" className="relative w-full mt-auto">
             <Link to={recoveryHref}>
               Zobacz checklistę
               <ArrowRight className="w-4 h-4 ml-1 transition-transform group-hover:translate-x-0.5" />
