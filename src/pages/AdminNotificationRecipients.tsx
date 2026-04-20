@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type KeyboardEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { Session } from "@supabase/supabase-js";
@@ -77,11 +77,59 @@ function stripDiacritics(input: string): string {
   return input.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 }
 
+function normalizePattern(raw: string): string {
+  return raw.trim().toLowerCase();
+}
+
+// Dla podglądu na liście — łączymy nową kolumnę location_match_patterns
+// z legacy location_match (deduplikacja po lowercase).
+function effectivePatterns(r: Recipient): string[] {
+  const out = new Set<string>();
+  if (Array.isArray(r.location_match_patterns)) {
+    for (const p of r.location_match_patterns) {
+      if (typeof p === "string" && p.trim().length > 0) {
+        out.add(p.trim());
+      }
+    }
+  }
+  if (r.location_match && r.location_match.trim().length > 0) {
+    out.add(r.location_match.trim());
+  }
+  return Array.from(out);
+}
+
 type EditState = {
   email: string;
-  location_match: string;
+  patterns: string[];
+  patternDraft: string;
   location_label: string;
   notes: string;
+};
+
+const EMPTY_EDIT: EditState = {
+  email: "",
+  patterns: [],
+  patternDraft: "",
+  location_label: "",
+  notes: "",
+};
+
+type NewRecipientState = {
+  email: string;
+  role: RecipientRole;
+  patterns: string[];
+  patternDraft: string;
+  location_label: string;
+  notes: string;
+};
+
+const EMPTY_NEW: NewRecipientState = {
+  email: "",
+  role: "reception",
+  patterns: [],
+  patternDraft: "",
+  location_label: "",
+  notes: "",
 };
 
 const AdminNotificationRecipients = () => {
@@ -93,27 +141,10 @@ const AdminNotificationRecipients = () => {
 
   const [filterRole, setFilterRole] = useState<RecipientRole | "all">("all");
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editState, setEditState] = useState<EditState>({
-    email: "",
-    location_match: "",
-    location_label: "",
-    notes: "",
-  });
+  const [editState, setEditState] = useState<EditState>(EMPTY_EDIT);
   const [deleteCandidate, setDeleteCandidate] = useState<Recipient | null>(null);
   const [addOpen, setAddOpen] = useState(false);
-  const [newRecipient, setNewRecipient] = useState<{
-    email: string;
-    role: RecipientRole;
-    location_match: string;
-    location_label: string;
-    notes: string;
-  }>({
-    email: "",
-    role: "reception",
-    location_match: "",
-    location_label: "",
-    notes: "",
-  });
+  const [newRecipient, setNewRecipient] = useState<NewRecipientState>(EMPTY_NEW);
 
   useEffect(() => {
     let isMounted = true;
@@ -207,10 +238,17 @@ const AdminNotificationRecipients = () => {
       if (!email || !email.includes("@")) {
         throw new Error("Podaj prawidłowy adres email");
       }
+      const patterns = dedupePatterns([
+        ...newRecipient.patterns,
+        ...(newRecipient.patternDraft.trim() ? [newRecipient.patternDraft] : []),
+      ]);
+      // Trzymamy kompatybilność: location_match = pierwszy alias (legacy konsumenci),
+      // location_match_patterns = pełna lista.
       const { error } = await supabase.from("notification_recipients").insert({
         email,
         role: newRecipient.role,
-        location_match: newRecipient.location_match.trim() || null,
+        location_match: patterns[0] ?? null,
+        location_match_patterns: patterns,
         location_label: newRecipient.location_label.trim() || null,
         notes: newRecipient.notes.trim() || null,
         enabled: true,
@@ -221,13 +259,7 @@ const AdminNotificationRecipients = () => {
       queryClient.invalidateQueries({ queryKey: ["admin-notification-recipients"] });
       toast.success("Dodano odbiorcę");
       setAddOpen(false);
-      setNewRecipient({
-        email: "",
-        role: "reception",
-        location_match: "",
-        location_label: "",
-        notes: "",
-      });
+      setNewRecipient(EMPTY_NEW);
     },
     onError: (e) => {
       console.error(e);
@@ -258,7 +290,8 @@ const AdminNotificationRecipients = () => {
     setEditingId(r.id);
     setEditState({
       email: r.email,
-      location_match: r.location_match ?? "",
+      patterns: effectivePatterns(r),
+      patternDraft: "",
       location_label: r.location_label ?? "",
       notes: r.notes ?? "",
     });
@@ -266,6 +299,7 @@ const AdminNotificationRecipients = () => {
 
   const cancelEdit = () => {
     setEditingId(null);
+    setEditState(EMPTY_EDIT);
   };
 
   const saveEdit = (id: string) => {
@@ -274,16 +308,22 @@ const AdminNotificationRecipients = () => {
       toast.error("Podaj prawidłowy adres email");
       return;
     }
+    const patterns = dedupePatterns([
+      ...editState.patterns,
+      ...(editState.patternDraft.trim() ? [editState.patternDraft] : []),
+    ]);
     updateMutation.mutate({
       id,
       patch: {
         email,
-        location_match: editState.location_match.trim() || null,
+        location_match: patterns[0] ?? null,
+        location_match_patterns: patterns,
         location_label: editState.location_label.trim() || null,
         notes: editState.notes.trim() || null,
       },
     });
     setEditingId(null);
+    setEditState(EMPTY_EDIT);
   };
 
   const toggleEnabled = (r: Recipient, value: boolean) => {
@@ -324,10 +364,6 @@ const AdminNotificationRecipients = () => {
       </div>
     );
   }
-
-  const locationMatchHasDiacritics =
-    newRecipient.location_match &&
-    stripDiacritics(newRecipient.location_match) !== newRecipient.location_match;
 
   return (
     <>
@@ -395,16 +431,20 @@ const AdminNotificationRecipients = () => {
             </Button>
           </div>
 
-          <div className="rounded-lg border border-border bg-card/40 px-4 py-3 text-xs text-muted-foreground">
-            <strong className="text-foreground">Wskazówka:</strong>{" "}
-            <code className="px-1 py-0.5 bg-muted rounded text-[11px]">location_match</code>{" "}
-            to fragment porównywany z polem <code className="px-1 py-0.5 bg-muted rounded text-[11px]">bookings.location</code>{" "}
-            (po normalizacji diakrytyków, lowercase, <em>includes</em>). Używaj formy ASCII, np.{" "}
-            <code className="px-1 py-0.5 bg-muted rounded text-[11px]">wilanow</code>,{" "}
-            <code className="px-1 py-0.5 bg-muted rounded text-[11px]">rzeszow</code>,{" "}
-            <code className="px-1 py-0.5 bg-muted rounded text-[11px]">fimedica</code>,{" "}
-            <code className="px-1 py-0.5 bg-muted rounded text-[11px]">siedlce</code>. Pozostaw puste dla globalnych
-            odbiorców (HQ / lekarz) — będą otrzymywać każdą rezerwację.
+          <div className="rounded-lg border border-border bg-card/40 px-4 py-3 text-xs text-muted-foreground space-y-1.5">
+            <p>
+              <strong className="text-foreground">Aliasy lokalizacji</strong> —
+              rezerwacja trafia do recepcji, jeśli pole{" "}
+              <code className="px-1 py-0.5 bg-muted rounded text-[11px]">bookings.location</code>{" "}
+              <em>zawiera</em> dowolny z aliasów (po normalizacji diakrytyków, lowercase).
+            </p>
+            <p>
+              Jeden wpis może mieć wiele wariantów, np.{" "}
+              <code className="px-1 py-0.5 bg-muted rounded text-[11px]">wilanow</code>,{" "}
+              <code className="px-1 py-0.5 bg-muted rounded text-[11px]">branickiego</code>,{" "}
+              <code className="px-1 py-0.5 bg-muted rounded text-[11px]">warszawa-wilanow</code>{" "}
+              — wszystkie wskażą tę samą recepcję. Brak aliasów = wpis globalny (HQ / lekarz dostają każdą rezerwację).
+            </p>
           </div>
 
           {isLoading ? (
@@ -430,7 +470,7 @@ const AdminNotificationRecipients = () => {
                   <TableRow>
                     <TableHead className="min-w-[180px]">Email</TableHead>
                     <TableHead>Rola</TableHead>
-                    <TableHead className="min-w-[140px]">location_match</TableHead>
+                    <TableHead className="min-w-[220px]">Aliasy lokalizacji</TableHead>
                     <TableHead className="min-w-[160px]">Etykieta lokalizacji</TableHead>
                     <TableHead className="min-w-[140px]">Notatki</TableHead>
                     <TableHead className="text-center">Aktywny</TableHead>
@@ -440,9 +480,7 @@ const AdminNotificationRecipients = () => {
                 <TableBody>
                   {filtered.map((r) => {
                     const isEditing = editingId === r.id;
-                    const matchHasDiacritics =
-                      r.location_match &&
-                      stripDiacritics(r.location_match) !== r.location_match;
+                    const patterns = effectivePatterns(r);
                     return (
                       <TableRow key={r.id}>
                         <TableCell className="font-medium">
@@ -465,28 +503,35 @@ const AdminNotificationRecipients = () => {
                         </TableCell>
                         <TableCell>
                           {isEditing ? (
-                            <Input
-                              value={editState.location_match}
-                              onChange={(e) =>
-                                setEditState((s) => ({
-                                  ...s,
-                                  location_match: e.target.value,
-                                }))
+                            <PatternEditor
+                              patterns={editState.patterns}
+                              draft={editState.patternDraft}
+                              onPatternsChange={(next) =>
+                                setEditState((s) => ({ ...s, patterns: next }))
                               }
-                              placeholder="np. wilanow"
-                              className="h-8 text-sm"
+                              onDraftChange={(v) =>
+                                setEditState((s) => ({ ...s, patternDraft: v }))
+                              }
                             />
-                          ) : r.location_match ? (
-                            <div className="flex items-center gap-1">
-                              <code className="text-xs px-1.5 py-0.5 bg-muted rounded">
-                                {r.location_match}
-                              </code>
-                              {matchHasDiacritics && (
-                                <AlertTriangle
-                                  className="w-3.5 h-3.5 text-amber-400"
-                                  aria-label="Zawiera diakrytyki — użyj ASCII"
-                                />
-                              )}
+                          ) : patterns.length > 0 ? (
+                            <div className="flex flex-wrap gap-1">
+                              {patterns.map((p) => {
+                                const hasDiacritics = stripDiacritics(p) !== p;
+                                return (
+                                  <span
+                                    key={p}
+                                    className="inline-flex items-center gap-1 text-xs px-1.5 py-0.5 bg-muted rounded font-mono"
+                                  >
+                                    {p}
+                                    {hasDiacritics && (
+                                      <AlertTriangle
+                                        className="w-3 h-3 text-amber-400"
+                                        aria-label="Zawiera diakrytyki — działa, ale lepiej użyć ASCII"
+                                      />
+                                    )}
+                                  </span>
+                                );
+                              })}
                             </div>
                           ) : (
                             <span className="text-xs text-muted-foreground italic">
@@ -604,13 +649,19 @@ const AdminNotificationRecipients = () => {
       </div>
 
       {/* Dodaj odbiorcę */}
-      <Dialog open={addOpen} onOpenChange={setAddOpen}>
+      <Dialog
+        open={addOpen}
+        onOpenChange={(open) => {
+          setAddOpen(open);
+          if (!open) setNewRecipient(EMPTY_NEW);
+        }}
+      >
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Nowy odbiorca powiadomień</DialogTitle>
             <DialogDescription>
-              Recepcja otrzyma kopie rezerwacji dopasowane przez{" "}
-              <code className="text-xs">location_match</code>. HQ i lekarz dostają wszystkie.
+              Recepcja otrzyma kopie rezerwacji dopasowane przez aliasy lokalizacji. HQ
+              i lekarz dostają wszystkie.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
@@ -647,30 +698,27 @@ const AdminNotificationRecipients = () => {
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="new-match">
-                location_match{" "}
+              <Label>
+                Aliasy lokalizacji{" "}
                 <span className="text-xs text-muted-foreground font-normal">
-                  (puste = globalny)
+                  (puste = wpis globalny)
                 </span>
               </Label>
-              <Input
-                id="new-match"
-                value={newRecipient.location_match}
-                onChange={(e) =>
-                  setNewRecipient((s) => ({ ...s, location_match: e.target.value }))
+              <PatternEditor
+                patterns={newRecipient.patterns}
+                draft={newRecipient.patternDraft}
+                onPatternsChange={(next) =>
+                  setNewRecipient((s) => ({ ...s, patterns: next }))
                 }
-                placeholder="wilanow"
+                onDraftChange={(v) =>
+                  setNewRecipient((s) => ({ ...s, patternDraft: v }))
+                }
+                placeholder="wilanow, branickiego, ..."
               />
-              {locationMatchHasDiacritics && (
-                <p className="text-xs text-amber-400 flex items-start gap-1">
-                  <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-                  Użyj formy ASCII (
-                  <code className="px-1 bg-muted rounded">
-                    {stripDiacritics(newRecipient.location_match).toLowerCase()}
-                  </code>
-                  ) — kod normalizuje diakrytyki przed dopasowaniem.
-                </p>
-              )}
+              <p className="text-[11px] text-muted-foreground">
+                Enter / przecinek dodaje alias. Diakrytyki są normalizowane przed
+                porównaniem — preferuj formę ASCII.
+              </p>
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="new-label">Etykieta lokalizacji</Label>
@@ -696,7 +744,13 @@ const AdminNotificationRecipients = () => {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setAddOpen(false)}>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setAddOpen(false);
+                setNewRecipient(EMPTY_NEW);
+              }}
+            >
               Anuluj
             </Button>
             <Button
@@ -745,5 +799,94 @@ const AdminNotificationRecipients = () => {
     </>
   );
 };
+
+function dedupePatterns(values: string[]): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const v of values) {
+    const norm = normalizePattern(v);
+    if (!norm) continue;
+    const key = stripDiacritics(norm);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(norm);
+  }
+  return out;
+}
+
+interface PatternEditorProps {
+  patterns: string[];
+  draft: string;
+  onPatternsChange: (next: string[]) => void;
+  onDraftChange: (value: string) => void;
+  placeholder?: string;
+}
+
+function PatternEditor({
+  patterns,
+  draft,
+  onPatternsChange,
+  onDraftChange,
+  placeholder = "dodaj alias…",
+}: PatternEditorProps) {
+  const commit = (raw: string) => {
+    const cleaned = normalizePattern(raw);
+    if (!cleaned) return;
+    onPatternsChange(dedupePatterns([...patterns, cleaned]));
+    onDraftChange("");
+  };
+
+  const handleKey = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" || e.key === ",") {
+      e.preventDefault();
+      commit(draft);
+    } else if (e.key === "Backspace" && draft === "" && patterns.length > 0) {
+      e.preventDefault();
+      onPatternsChange(patterns.slice(0, -1));
+    }
+  };
+
+  const removeAt = (index: number) => {
+    onPatternsChange(patterns.filter((_, i) => i !== index));
+  };
+
+  return (
+    <div className="flex flex-wrap items-center gap-1.5 min-h-9 px-2 py-1.5 rounded-md border border-input bg-background">
+      {patterns.map((p, i) => {
+        const hasDiacritics = stripDiacritics(p) !== p;
+        return (
+          <span
+            key={`${p}-${i}`}
+            className="inline-flex items-center gap-1 text-xs px-1.5 py-0.5 bg-muted rounded font-mono"
+          >
+            {p}
+            {hasDiacritics && (
+              <AlertTriangle
+                className="w-3 h-3 text-amber-400"
+                aria-label="Zawiera diakrytyki — działa, ale preferuj ASCII"
+              />
+            )}
+            <button
+              type="button"
+              onClick={() => removeAt(i)}
+              className="text-muted-foreground hover:text-destructive focus:outline-none"
+              aria-label={`Usuń alias ${p}`}
+            >
+              <X className="w-3 h-3" />
+            </button>
+          </span>
+        );
+      })}
+      <input
+        value={draft}
+        onChange={(e) => onDraftChange(e.target.value)}
+        onKeyDown={handleKey}
+        onBlur={() => draft.trim() && commit(draft)}
+        placeholder={patterns.length === 0 ? placeholder : ""}
+        className="flex-1 min-w-[80px] bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+      />
+    </div>
+  );
+}
 
 export default AdminNotificationRecipients;

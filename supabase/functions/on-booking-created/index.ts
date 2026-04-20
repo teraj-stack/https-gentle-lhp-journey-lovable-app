@@ -60,6 +60,7 @@ interface NotificationRecipientRow {
   email: string
   role: 'reception' | 'hq' | 'doctor'
   location_match: string | null
+  location_match_patterns: string[] | null
   location_label: string | null
   enabled: boolean
 }
@@ -70,20 +71,47 @@ function stripDiacritics(input: string): string {
   return input.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
 }
 
+// Collect all alias patterns for a recipient: prefer the new array column
+// `location_match_patterns`, fall back to legacy single `location_match`.
+// Returns normalized (lowercase, ASCII-only, trimmed, non-empty) strings.
+function collectPatterns(row: NotificationRecipientRow): string[] {
+  const raw: string[] = []
+  if (Array.isArray(row.location_match_patterns)) {
+    for (const p of row.location_match_patterns) {
+      if (typeof p === 'string') raw.push(p)
+    }
+  }
+  if (row.location_match && typeof row.location_match === 'string') {
+    raw.push(row.location_match)
+  }
+  const out = new Set<string>()
+  for (const p of raw) {
+    const norm = stripDiacritics(p.toLowerCase()).trim()
+    if (norm.length > 0) out.add(norm)
+  }
+  return Array.from(out)
+}
+
 function resolveLocation(
   location: string | undefined,
   recipients: NotificationRecipientRow[],
-): { email: string | null; label: string } {
-  if (!location) return { email: null, label: '—' }
+): { email: string | null; label: string; matchedPattern: string | null } {
+  if (!location) return { email: null, label: '—', matchedPattern: null }
   const norm = stripDiacritics(location.toLowerCase())
   for (const row of recipients) {
     if (row.role !== 'reception' || !row.enabled) continue
-    const match = stripDiacritics((row.location_match ?? '').toLowerCase().trim())
-    if (match.length > 0 && norm.includes(match)) {
-      return { email: row.email, label: row.location_label ?? location }
+    const patterns = collectPatterns(row)
+    for (const pattern of patterns) {
+      if (norm.includes(pattern)) {
+        return {
+          email: row.email,
+          label: row.location_label ?? location,
+          matchedPattern: pattern,
+        }
+      }
     }
   }
-  return { email: null, label: location }
+  return { email: null, label: location, matchedPattern: null }
 }
 
 // Build a URL-safe random token. crypto.randomUUID + extra entropy = 32+ chars.
@@ -148,7 +176,7 @@ Deno.serve(async (req) => {
   // Load active notification recipients from DB (managed via /admin).
   const { data: recipientsData, error: recipientsError } = await supabase
     .from('notification_recipients')
-    .select('email, role, location_match, location_label, enabled')
+    .select('email, role, location_match, location_match_patterns, location_label, enabled')
     .eq('enabled', true)
 
   if (recipientsError) {
@@ -161,7 +189,7 @@ Deno.serve(async (req) => {
 
   const recipients = (recipientsData ?? []) as NotificationRecipientRow[]
 
-  const { email: receptionEmail, label: locationLabel } = resolveLocation(booking.location, recipients)
+  const { email: receptionEmail, label: locationLabel, matchedPattern } = resolveLocation(booking.location, recipients)
 
   const globalEmails = recipients
     .filter((r) => (r.role === 'hq' || r.role === 'doctor') && r.enabled)
@@ -285,6 +313,7 @@ Deno.serve(async (req) => {
       bookingId: booking.id,
       receptionEmail,
       locationLabel,
+      matchedPattern,
       globalRecipients: globalEmails,
       tokensIssued: tokenRows.length,
       results: sendResults,

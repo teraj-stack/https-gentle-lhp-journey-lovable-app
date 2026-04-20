@@ -252,6 +252,7 @@ export type Database = {
           id: string
           location_label: string | null
           location_match: string | null
+          location_match_patterns: string[]
           notes: string | null
           role: Database["public"]["Enums"]["notification_recipient_role"]
           updated_at: string
@@ -263,6 +264,7 @@ export type Database = {
           id?: string
           location_label?: string | null
           location_match?: string | null
+          location_match_patterns?: string[]
           notes?: string | null
           role: Database["public"]["Enums"]["notification_recipient_role"]
           updated_at?: string
@@ -274,6 +276,7 @@ export type Database = {
           id?: string
           location_label?: string | null
           location_match?: string | null
+          location_match_patterns?: string[]
           notes?: string | null
           role?: Database["public"]["Enums"]["notification_recipient_role"]
           updated_at?: string
