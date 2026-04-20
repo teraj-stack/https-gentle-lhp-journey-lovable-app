@@ -8,6 +8,7 @@ import SeoHead from "@/components/shared/SeoHead";
 import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 
 import RecoveryBoostBanner from "@/components/shared/RecoveryBoostBanner";
+import PreparationRecoveryCards from "@/components/shared/PreparationRecoveryCards";
 import TestimonialsSection from "@/components/shared/TestimonialsSection";
 import MikroflebektomiaFAQ from "@/components/mikroflebektomia/MikroflebektomiaFAQ";
 
@@ -197,6 +198,14 @@ const Mikroflebektomia = () => (
       <ProcedureSummaryTable rows={summary} fadeUp={fadeUp} />
 
       
+
+      <PreparationRecoveryCards
+        procedureLabel="Mikroflebektomia piankowa"
+        preparationDescription="Leki, nawodnienie, brak golenia nóg i pończocha uciskowa II klasy w gotowości. Wszystko, czego potrzebujesz przed mikronakłuciami."
+        preparationHref="/dla-pacjenta/przygotowanie-mikroflebektomia"
+        recoveryDescription="Kompresjoterapia, codzienne spacery, pielęgnacja mikronakłuć — droga do szybkiego powrotu bez żylaków."
+        recoveryHref="/dla-pacjenta/zalecenia-po-mikroflebektomii"
+      />
 
       <RecoveryBoostBanner />
 

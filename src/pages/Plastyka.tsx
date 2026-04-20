@@ -11,6 +11,7 @@ import SeoHead from "@/components/shared/SeoHead";
 import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 
 import RecoveryBoostBanner from "@/components/shared/RecoveryBoostBanner";
+import PreparationRecoveryCards from "@/components/shared/PreparationRecoveryCards";
 import TestimonialsSection from "@/components/shared/TestimonialsSection";
 
 const plastykaSummary = [
@@ -209,6 +210,14 @@ const Plastyka = () => (
       <ProcedureSummaryTable rows={plastykaSummary} fadeUp={fadeUp} />
 
       
+
+      <PreparationRecoveryCards
+        procedureLabel="Plastyka okolicy odbytu — laserowo, bez szwów"
+        preparationDescription="Leki, miękki stolec, higiena i wygodne ubranie. Krótka checklista przed laserową plastyką okolicy odbytu."
+        preparationHref="/dla-pacjenta/przygotowanie-plastyka"
+        recoveryDescription="Pierwsze dni po plastyce, pielęgnacja okolicy odbytu, kontrole gojenia i powrót do aktywności."
+        recoveryHref="/dla-pacjenta/zalecenia-po-plastyce"
+      />
 
       <RecoveryBoostBanner />
 
