@@ -563,15 +563,44 @@ const formatDateTime = (iso: string | null) => {
   try { return new Date(iso).toLocaleString("pl-PL"); } catch { return iso; }
 };
 
+interface StatusHistoryRow {
+  id: string;
+  old_status: string | null;
+  new_status: string;
+  changed_at: string;
+  changed_by: string | null;
+  source: string;
+  note: string | null;
+}
+
+const STATUS_HISTORY_LABEL: Record<string, string> = {
+  pending: "Oczekująca",
+  confirmed: "Potwierdzona",
+  cancelled: "Odwołana",
+  needs_contact: "Wymaga kontaktu",
+  completed: "Zakończona",
+};
+
+const STATUS_HISTORY_TONE: Record<string, string> = {
+  pending: "bg-amber-500/10 text-amber-400 border-amber-500/30",
+  confirmed: "bg-emerald-500/10 text-emerald-400 border-emerald-500/30",
+  cancelled: "bg-red-500/10 text-red-400 border-red-500/30",
+  needs_contact: "bg-sky-500/10 text-sky-400 border-sky-500/30",
+  completed: "bg-muted text-muted-foreground border-border",
+};
+
 const StatusChangeCell = ({
+  bookingId,
   changedAt,
   changedBy,
   tokens,
 }: {
+  bookingId: string;
   changedAt: string | null;
   changedBy: string | null;
   tokens: ActionToken[];
 }) => {
+  const [open, setOpen] = useState(false);
   // Real activity = tylko wpisy gdzie used_by_ua nie jest auto-invalidated (czyli klik użytkownika lub explicit POST)
   const realActions = tokens.filter(
     (t) => t.used_at && t.used_by_ua !== "auto-invalidated:sibling-action-used",
@@ -580,6 +609,34 @@ const StatusChangeCell = ({
   const expiredUnused = tokens.filter(
     (t) => !t.used_at && new Date(t.expires_at).getTime() < Date.now(),
   ).length;
+
+  // Pobierz historię zmian statusu tylko gdy popover otwarty (lazy)
+  const { data: history = [], isLoading: historyLoading } = useQuery({
+    queryKey: ["booking-status-history", bookingId],
+    enabled: open,
+    queryFn: async (): Promise<StatusHistoryRow[]> => {
+      const { data, error } = await supabase
+        .from("booking_status_history")
+        .select("id, old_status, new_status, changed_at, changed_by, source, note")
+        .eq("booking_id", bookingId)
+        .order("changed_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as StatusHistoryRow[];
+    },
+    staleTime: 30_000,
+  });
+
+  // Zunifikowany timeline (status changes + token clicks), sortowane malejąco po dacie
+  const timeline = useMemo(() => {
+    type Item =
+      | { kind: "status"; at: string; row: StatusHistoryRow }
+      | { kind: "token"; at: string; token: ActionToken };
+    const statusItems: Item[] = history.map((h) => ({ kind: "status", at: h.changed_at, row: h }));
+    const tokenItems: Item[] = realActions.map((t) => ({ kind: "token", at: t.used_at as string, token: t }));
+    return [...statusItems, ...tokenItems].sort(
+      (a, b) => new Date(b.at).getTime() - new Date(a.at).getTime(),
+    );
+  }, [history, realActions]);
 
   return (
     <div className="flex flex-col gap-1.5">
@@ -593,73 +650,127 @@ const StatusChangeCell = ({
       ) : (
         <div className="text-xs text-muted-foreground">brak zmian</div>
       )}
-      {totalIssued > 0 && (
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px] gap-1 w-fit">
-              <History className="w-3 h-3" />
-              Historia ({realActions.length}/{totalIssued})
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent align="start" className="w-80 max-h-96 overflow-y-auto">
-            <div className="space-y-3">
-              <div>
-                <p className="text-xs font-semibold text-foreground mb-1">Akcje recepcji z maila</p>
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px] gap-1 w-fit">
+            <History className="w-3 h-3" />
+            Historia{totalIssued > 0 && ` (${realActions.length}/${totalIssued})`}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent align="start" className="w-96 max-h-[480px] overflow-y-auto">
+          <div className="space-y-3">
+            <div>
+              <p className="text-xs font-semibold text-foreground mb-1">Pełna historia rezerwacji</p>
+              {totalIssued > 0 && (
                 <p className="text-[10px] text-muted-foreground">
                   {totalIssued} tokenów wystawionych · {realActions.length} kliknięć ·{" "}
                   {expiredUnused > 0 ? `${expiredUnused} wygasłych nieużytych` : "0 wygasłych"}
                 </p>
-              </div>
-              {realActions.length === 0 ? (
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <MailX className="w-3.5 h-3.5" />
-                  <span>Nikt nie kliknął w link z maila — status zmieniony ręcznie lub brak zmian.</span>
-                </div>
-              ) : (
-                <ul className="space-y-2">
-                  {realActions.map((t) => {
-                    const meta = ACTION_META[t.action];
-                    const Icon = meta.icon;
-                    return (
-                      <li key={t.id} className="border border-border rounded-md p-2 space-y-1">
-                        <div className="flex items-center gap-1.5 text-xs">
-                          <Icon className={`w-3.5 h-3.5 ${meta.className}`} />
-                          <span className="font-semibold text-foreground">{meta.label}</span>
-                          <span className="text-muted-foreground ml-auto">{formatDateTime(t.used_at)}</span>
-                        </div>
-                        <div className="text-[10px] text-muted-foreground space-y-0.5">
-                          <div>
-                            <span className="font-semibold">Kto:</span>{" "}
-                            {t.used_by_email ?? <em>nie podał maila</em>}
-                          </div>
-                          <div>
-                            <span className="font-semibold">Wysłany do:</span> {t.recipient_email}
-                          </div>
-                          {t.used_by_ip && (
-                            <div className="font-mono">
-                              <span className="font-semibold not-italic">IP:</span> {t.used_by_ip}
-                            </div>
-                          )}
-                          {t.used_by_ua && (
-                            <div className="truncate" title={t.used_by_ua}>
-                              <span className="font-semibold">UA:</span> {t.used_by_ua}
-                            </div>
-                          )}
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-              {tokens.some((t) => t.used_by_ua === "auto-invalidated:sibling-action-used") && (
-                <p className="text-[10px] text-muted-foreground italic border-t border-border pt-2">
-                  Pozostałe linki z tego maila zostały automatycznie unieważnione po pierwszej akcji.
-                </p>
               )}
             </div>
-          </PopoverContent>
-        </Popover>
-      )}
+
+            {historyLoading && (
+              <p className="text-[11px] text-muted-foreground">Ładowanie historii…</p>
+            )}
+
+            {!historyLoading && timeline.length === 0 && (
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <MailX className="w-3.5 h-3.5" />
+                <span>Brak zarejestrowanych zdarzeń.</span>
+              </div>
+            )}
+
+            {timeline.length > 0 && (
+              <ol className="relative border-l border-border/60 ml-1.5 space-y-3">
+                {timeline.map((item, idx) => (
+                  <li key={`${item.kind}-${idx}-${item.at}`} className="pl-3 relative">
+                    <span
+                      className={`absolute -left-[5px] top-1.5 w-2.5 h-2.5 rounded-full border-2 border-background ${
+                        item.kind === "status" ? "bg-primary" : "bg-sky-500"
+                      }`}
+                      aria-hidden
+                    />
+                    {item.kind === "status" ? (
+                      <StatusHistoryEntry row={item.row} />
+                    ) : (
+                      <TokenHistoryEntry token={item.token} />
+                    )}
+                  </li>
+                ))}
+              </ol>
+            )}
+
+            {tokens.some((t) => t.used_by_ua === "auto-invalidated:sibling-action-used") && (
+              <p className="text-[10px] text-muted-foreground italic border-t border-border pt-2">
+                Pozostałe linki z tego maila zostały automatycznie unieważnione po pierwszej akcji.
+              </p>
+            )}
+          </div>
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
+};
+
+const StatusHistoryEntry = ({ row }: { row: StatusHistoryRow }) => {
+  const oldLabel = row.old_status ? STATUS_HISTORY_LABEL[row.old_status] ?? row.old_status : null;
+  const newLabel = STATUS_HISTORY_LABEL[row.new_status] ?? row.new_status;
+  const sourceLabel =
+    row.source === "admin" ? "admin" : row.source === "patient_link" ? "link z maila" : "system";
+  return (
+    <div className="space-y-1">
+      <div className="flex items-center gap-1.5 flex-wrap text-[10px]">
+        {oldLabel && (
+          <>
+            <span className={`px-1.5 py-0.5 rounded border ${STATUS_HISTORY_TONE[row.old_status ?? ""] ?? ""}`}>
+              {oldLabel}
+            </span>
+            <span className="text-muted-foreground">→</span>
+          </>
+        )}
+        <span className={`px-1.5 py-0.5 rounded border ${STATUS_HISTORY_TONE[row.new_status] ?? ""}`}>
+          {newLabel}
+        </span>
+      </div>
+      <div className="text-[10px] text-muted-foreground">
+        <span className="font-semibold">{sourceLabel}</span>
+        {row.changed_by && <span> · {row.changed_by}</span>}
+        <span> · {formatDateTime(row.changed_at)}</span>
+      </div>
+      {row.note && <p className="text-[10px] text-muted-foreground italic">{row.note}</p>}
+    </div>
+  );
+};
+
+const TokenHistoryEntry = ({ token }: { token: ActionToken }) => {
+  const meta = ACTION_META[token.action];
+  const Icon = meta.icon;
+  return (
+    <div className="space-y-0.5">
+      <div className="flex items-center gap-1.5 text-xs">
+        <Icon className={`w-3.5 h-3.5 ${meta.className}`} />
+        <span className="font-semibold text-foreground">{meta.label}</span>
+        <span className="text-muted-foreground ml-auto text-[10px]">{formatDateTime(token.used_at)}</span>
+      </div>
+      <div className="text-[10px] text-muted-foreground space-y-0.5">
+        <div>
+          <span className="font-semibold">Kto:</span>{" "}
+          {token.used_by_email ?? <em>nie podał maila</em>}
+        </div>
+        <div>
+          <span className="font-semibold">Wysłany do:</span> {token.recipient_email}
+        </div>
+        {token.used_by_ip && (
+          <div className="font-mono">
+            <span className="font-semibold not-italic">IP:</span> {token.used_by_ip}
+          </div>
+        )}
+        {token.used_by_ua && (
+          <div className="truncate" title={token.used_by_ua}>
+            <span className="font-semibold">UA:</span> {token.used_by_ua}
+          </div>
+        )}
+      </div>
     </div>
   );
 };
