@@ -31,7 +31,7 @@ const PreparationRecoveryCards = ({
   procedureLabel,
 }: PreparationRecoveryCardsProps) => {
   return (
-    <motion.section {...cardAnim} aria-labelledby="prep-recovery-heading">
+    <motion.section {...cardAnim} id="przygotowanie-zalecenia" aria-labelledby="prep-recovery-heading" className="scroll-mt-24">
       <h2 id="prep-recovery-heading" className="section-title mb-3 text-center">
         Przygotowanie i zalecenia
       </h2>
