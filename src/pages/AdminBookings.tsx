@@ -341,9 +341,18 @@ const AdminBookings = () => {
                           <span className={`text-xs px-2 py-1 rounded-full ${statusInfo.className}`}>{statusInfo.label}</span>
                         </TableCell>
                         <TableCell>
-                          <div className="flex flex-col gap-1">
+                          <div className="flex flex-col gap-1.5">
                             <ReminderBadge variant="24h" state={rem["24h"]} />
                             <ReminderBadge variant="2h" state={rem["2h"]} />
+                            <label className="flex items-center gap-2 text-[10px] text-muted-foreground cursor-pointer mt-0.5" title="Pacjent nie chce dostawać przypomnień mailowych">
+                              <Switch
+                                checked={b.reminder_opt_out}
+                                disabled={toggleOptOut.isPending}
+                                onCheckedChange={(v) => toggleOptOut.mutate({ id: b.id, value: v })}
+                                className="scale-75"
+                              />
+                              <span>opt-out</span>
+                            </label>
                           </div>
                         </TableCell>
                         <TableCell className="text-right">
