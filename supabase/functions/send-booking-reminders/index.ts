@@ -188,11 +188,47 @@ async function preloadHandledKeys(
   return handled
 }
 
+async function ensureOptOutToken(
+  supabase: SupabaseClient,
+  booking: BookingRow,
+  siteUrl: string,
+): Promise<string | null> {
+  // Re-use an unused, non-expired token if one exists for this booking.
+  const { data: existing } = await supabase
+    .from('booking_reminder_opt_out_tokens')
+    .select('token, used_at, expires_at')
+    .eq('booking_id', booking.id)
+    .is('used_at', null)
+    .gt('expires_at', new Date().toISOString())
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (existing?.token) {
+    return `${siteUrl}/reminder-opt-out?token=${encodeURIComponent(existing.token)}`
+  }
+
+  const token = crypto.randomUUID().replace(/-/g, '') + crypto.randomUUID().replace(/-/g, '')
+  const { error } = await supabase
+    .from('booking_reminder_opt_out_tokens')
+    .insert({
+      booking_id: booking.id,
+      patient_email: booking.patient_email,
+      token,
+    })
+  if (error) {
+    console.warn(`[reminders] Failed to create opt-out token for ${booking.id}:`, error.message)
+    return null // fail-open: send reminder without opt-out link
+  }
+  return `${siteUrl}/reminder-opt-out?token=${encodeURIComponent(token)}`
+}
+
 async function dispatchOne(
   supabase: SupabaseClient,
   cfg: WindowConfig,
   booking: BookingRow,
   handledKeys: Set<string>,
+  siteUrl: string,
 ) {
   if (!booking.patient_email) {
     return { id: booking.id, ok: false, skipped: false, error: 'missing patient_email' }
@@ -204,13 +240,19 @@ async function dispatchOne(
     return { id: booking.id, ok: true, skipped: true, reason: 'already_sent' as const }
   }
 
+  const reminderOptOutUrl = await ensureOptOutToken(supabase, booking, siteUrl)
+
   try {
+    const templateData = {
+      ...cfg.buildTemplateData(booking),
+      ...(reminderOptOutUrl ? { reminderOptOutUrl } : {}),
+    }
     const { error } = await supabase.functions.invoke('send-transactional-email', {
       body: {
         templateName: cfg.templateName,
         recipientEmail: booking.patient_email,
         idempotencyKey,
-        templateData: cfg.buildTemplateData(booking),
+        templateData,
       },
     })
     if (error) {
