@@ -64,15 +64,21 @@ interface NotificationRecipientRow {
   enabled: boolean
 }
 
+// Strip Polish/Latin diacritics so location_match in DB can stay ASCII
+// (e.g. "wilanow" matches "Wilanów", "rzeszow" matches "Rzeszów").
+function stripDiacritics(input: string): string {
+  return input.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+}
+
 function resolveLocation(
   location: string | undefined,
   recipients: NotificationRecipientRow[],
 ): { email: string | null; label: string } {
   if (!location) return { email: null, label: '—' }
-  const norm = location.toLowerCase()
+  const norm = stripDiacritics(location.toLowerCase())
   for (const row of recipients) {
     if (row.role !== 'reception' || !row.enabled) continue
-    const match = (row.location_match ?? '').toLowerCase().trim()
+    const match = stripDiacritics((row.location_match ?? '').toLowerCase().trim())
     if (match.length > 0 && norm.includes(match)) {
       return { email: row.email, label: row.location_label ?? location }
     }
