@@ -92,6 +92,12 @@ const DATE_PRESET_OPTIONS: Array<{ value: DatePresetFilter; label: string }> = [
   { value: "custom", label: "Zakres niestandardowy…" },
 ];
 
+const REMINDER_OPT_OUT_OPTIONS: Array<{ value: ReminderOptOutFilter; label: string }> = [
+  { value: "all", label: "Wszyscy pacjenci" },
+  { value: "active", label: "Tylko aktywne reminder’y" },
+  { value: "optedOut", label: "Tylko wypisani z reminderów" },
+];
+
 // ---------------- Helpers (exported for use in AdminBookings) ----------------
 
 /** YYYY-MM-DD in local timezone (matches DB `date` column comparisons). */
@@ -145,6 +151,7 @@ export const DEFAULT_FILTERS: BookingFilters = {
   status: "all",
   location: "all",
   datePreset: "today",
+  reminderOptOut: "all",
 };
 
 export function filtersFromSearchParams(params: URLSearchParams): BookingFilters {
@@ -153,6 +160,7 @@ export function filtersFromSearchParams(params: URLSearchParams): BookingFilters
   const datePreset = params.get("datePreset") as DatePresetFilter | null;
   const from = params.get("from") ?? undefined;
   const to = params.get("to") ?? undefined;
+  const reminderOptOut = params.get("reminderOptOut") as ReminderOptOutFilter | null;
 
   const validStatus = STATUS_OPTIONS.some((o) => o.value === status)
     ? (status as StatusFilter)
@@ -165,6 +173,9 @@ export function filtersFromSearchParams(params: URLSearchParams): BookingFilters
     : from || to
       ? "custom"
       : DEFAULT_FILTERS.datePreset;
+  const validReminderOptOut = REMINDER_OPT_OUT_OPTIONS.some((o) => o.value === reminderOptOut)
+    ? (reminderOptOut as ReminderOptOutFilter)
+    : DEFAULT_FILTERS.reminderOptOut;
 
   return {
     status: validStatus,
@@ -172,6 +183,7 @@ export function filtersFromSearchParams(params: URLSearchParams): BookingFilters
     datePreset: validPreset,
     customFrom: from,
     customTo: to,
+    reminderOptOut: validReminderOptOut,
   };
 }
 
@@ -183,6 +195,9 @@ export function filtersToSearchParams(filters: BookingFilters): URLSearchParams 
   if (filters.datePreset === "custom") {
     if (filters.customFrom) params.set("from", filters.customFrom);
     if (filters.customTo) params.set("to", filters.customTo);
+  }
+  if (filters.reminderOptOut !== DEFAULT_FILTERS.reminderOptOut) {
+    params.set("reminderOptOut", filters.reminderOptOut);
   }
   return params;
 }
@@ -202,6 +217,7 @@ const AdminBookingsFilters = ({ filters, onChange, resultCount }: Props) => {
       filters.status !== DEFAULT_FILTERS.status ||
       filters.location !== DEFAULT_FILTERS.location ||
       filters.datePreset !== DEFAULT_FILTERS.datePreset ||
+      filters.reminderOptOut !== DEFAULT_FILTERS.reminderOptOut ||
       filters.customFrom ||
       filters.customTo,
     [filters],
@@ -209,6 +225,8 @@ const AdminBookingsFilters = ({ filters, onChange, resultCount }: Props) => {
 
   const handleStatus = (value: StatusFilter) => onChange({ ...filters, status: value });
   const handleLocation = (value: LocationFilter) => onChange({ ...filters, location: value });
+  const handleReminderOptOut = (value: ReminderOptOutFilter) =>
+    onChange({ ...filters, reminderOptOut: value });
   const handlePreset = (value: DatePresetFilter) => {
     if (value === "custom") {
       onChange({
@@ -305,6 +323,24 @@ const AdminBookingsFilters = ({ filters, onChange, resultCount }: Props) => {
           </FilterField>
         </>
       )}
+
+      <FilterField label="Reminder">
+        <Select
+          value={filters.reminderOptOut}
+          onValueChange={(v) => handleReminderOptOut(v as ReminderOptOutFilter)}
+        >
+          <SelectTrigger className="w-[230px] h-9">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {REMINDER_OPT_OUT_OPTIONS.map((o) => (
+              <SelectItem key={o.value} value={o.value}>
+                {o.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </FilterField>
 
       <div className="flex items-center gap-2 ml-auto">
         {typeof resultCount === "number" && (
