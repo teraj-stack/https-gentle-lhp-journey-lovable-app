@@ -620,6 +620,9 @@ const AdminBookings = () => {
                             </label>
                           </div>
                         </TableCell>
+                        <TableCell className="hidden xl:table-cell text-center">
+                          <EmailCountCell counts={emailCountMap[b.id]} />
+                        </TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-1 flex-wrap">
                             {b.status === "pending" && (
@@ -658,7 +661,7 @@ const AdminBookings = () => {
                   })}
                   {filteredBookings.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                      <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
                         {bookings.length === 0
                           ? "Brak rezerwacji w wybranym zakresie dat i statusie."
                           : "Brak rezerwacji pasujących do wybranej lokalizacji."}
