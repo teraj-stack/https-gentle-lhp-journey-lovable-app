@@ -228,7 +228,7 @@ const AdminNotificationRecipients = () => {
     },
     onError: (e) => {
       console.error(e);
-      toast.error(`Nie udało się zapisać: ${e instanceof Error ? e.message : "błąd"}`);
+      toast.error(humanizeDbError(e, "Nie udało się zapisać"));
     },
   });
 
@@ -263,7 +263,7 @@ const AdminNotificationRecipients = () => {
     },
     onError: (e) => {
       console.error(e);
-      toast.error(`Nie udało się dodać: ${e instanceof Error ? e.message : "błąd"}`);
+      toast.error(humanizeDbError(e, "Nie udało się dodać"));
     },
   });
 
