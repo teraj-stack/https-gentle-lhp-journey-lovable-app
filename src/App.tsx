@@ -32,6 +32,12 @@ const ProfilaktykaZylakow = lazy(() => import("@/pages/ProfilaktykaZylakow"));
 const EdukacjaPrzedWizyta = lazy(() => import("@/pages/EdukacjaPrzedWizyta"));
 const PrzygotowanieEVLT = lazy(() => import("@/pages/PrzygotowanieEVLT"));
 const PrzygotowanieLHP = lazy(() => import("@/pages/PrzygotowanieLHP"));
+const PrzygotowanieFilac = lazy(() => import("@/pages/PrzygotowanieFilac"));
+const PrzygotowanieSilac = lazy(() => import("@/pages/PrzygotowanieSilac"));
+const PrzygotowanieClacs = lazy(() => import("@/pages/PrzygotowanieClacs"));
+const PrzygotowanieSkleroterapia = lazy(() => import("@/pages/PrzygotowanieSkleroterapia"));
+const PrzygotowanieMikroflebektomia = lazy(() => import("@/pages/PrzygotowanieMikroflebektomia"));
+const PrzygotowaniePlastyka = lazy(() => import("@/pages/PrzygotowaniePlastyka"));
 const PolitykaPrywatnosci = lazy(() => import("@/pages/PolitykaPrywatnosci"));
 const Regulamin = lazy(() => import("@/pages/Regulamin"));
 const Cennik = lazy(() => import("@/pages/Cennik"));
@@ -102,6 +108,12 @@ const App = () => (
               <Route path="/dla-pacjenta/edukacja" element={<EdukacjaPrzedWizyta />} />
               <Route path="/dla-pacjenta/przygotowanie-evlt" element={<PrzygotowanieEVLT />} />
               <Route path="/dla-pacjenta/przygotowanie-lhp" element={<PrzygotowanieLHP />} />
+              <Route path="/dla-pacjenta/przygotowanie-filac" element={<PrzygotowanieFilac />} />
+              <Route path="/dla-pacjenta/przygotowanie-silac" element={<PrzygotowanieSilac />} />
+              <Route path="/dla-pacjenta/przygotowanie-clacs" element={<PrzygotowanieClacs />} />
+              <Route path="/dla-pacjenta/przygotowanie-skleroterapia" element={<PrzygotowanieSkleroterapia />} />
+              <Route path="/dla-pacjenta/przygotowanie-mikroflebektomia" element={<PrzygotowanieMikroflebektomia />} />
+              <Route path="/dla-pacjenta/przygotowanie-plastyka" element={<PrzygotowaniePlastyka />} />
               <Route path="/dla-pacjenta/zalecenia-po-evlt" element={<ZaleceniaPoEVLT />} />
               <Route path="/dla-pacjenta/zalecenia-po-lhp" element={<ZaleceniaPoLHP />} />
               <Route path="/dla-pacjenta/zalecenia-po-clacs" element={<ZaleceniaPoClacs />} />
