@@ -76,6 +76,12 @@ export const BREADCRUMBS_MAP: Record<string, BreadcrumbItem[]> = {
   // Wiedza › Przed wizytą
   "/dla-pacjenta/przygotowanie-lhp": [WIEDZA, DLA_PACJENTA, { label: "Przygotowanie do LHP" }],
   "/dla-pacjenta/przygotowanie-evlt": [WIEDZA, DLA_PACJENTA, { label: "Przygotowanie do EVLT" }],
+  "/dla-pacjenta/przygotowanie-filac": [WIEDZA, DLA_PACJENTA, { label: "Przygotowanie do FiLaC" }],
+  "/dla-pacjenta/przygotowanie-silac": [WIEDZA, DLA_PACJENTA, { label: "Przygotowanie do SiLaC" }],
+  "/dla-pacjenta/przygotowanie-clacs": [WIEDZA, DLA_PACJENTA, { label: "Przygotowanie do CLaCS" }],
+  "/dla-pacjenta/przygotowanie-skleroterapia": [WIEDZA, DLA_PACJENTA, { label: "Przygotowanie do skleroterapii" }],
+  "/dla-pacjenta/przygotowanie-mikroflebektomia": [WIEDZA, DLA_PACJENTA, { label: "Przygotowanie do mikroflebektomii" }],
+  "/dla-pacjenta/przygotowanie-plastyka": [WIEDZA, DLA_PACJENTA, { label: "Przygotowanie do plastyki odbytu" }],
 
   // Wiedza › Materiały
   "/dla-pacjenta/ebook-pajaczki": [WIEDZA, DLA_PACJENTA, { label: "E-book: Pajączki" }],

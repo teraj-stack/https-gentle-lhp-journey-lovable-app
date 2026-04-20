@@ -16,6 +16,7 @@ import SeoHead from "@/components/shared/SeoHead";
 import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 import TestimonialsSection from "@/components/shared/TestimonialsSection";
 import RecoveryBoostBanner from "@/components/shared/RecoveryBoostBanner";
+import PreparationRecoveryCards from "@/components/shared/PreparationRecoveryCards";
 
 
 const filacSummary = [
@@ -72,6 +73,14 @@ const FiLaC = () => (
       <FiLaCRecovery fadeUp={fadeUp} />
       <FiLaCFAQ fadeUp={fadeUp} />
       <ProcedureSummaryTable rows={filacSummary} fadeUp={fadeUp} />
+
+      <PreparationRecoveryCards
+        procedureLabel="FiLaC — laserowe zamknięcie przetoki"
+        preparationDescription="Leki, dieta z błonnikiem, miękki stolec i higiena okolicy. Kilka kroków, które zwiększają skuteczność i komfort zabiegu."
+        preparationHref="/dla-pacjenta/przygotowanie-filac"
+        recoveryDescription="Pielęgnacja po FiLaC, pierwsze stolce, kontrole gojenia i powrót do aktywności — bez stresu, ze wsparciem zespołu."
+        recoveryHref="/dla-pacjenta/zalecenia-po-filac"
+      />
 
       <RecoveryBoostBanner />
 

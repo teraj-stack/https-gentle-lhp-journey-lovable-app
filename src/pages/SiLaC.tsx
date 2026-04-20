@@ -15,6 +15,7 @@ import SeoHead from "@/components/shared/SeoHead";
 import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 import TestimonialsSection from "@/components/shared/TestimonialsSection";
 import RecoveryBoostBanner from "@/components/shared/RecoveryBoostBanner";
+import PreparationRecoveryCards from "@/components/shared/PreparationRecoveryCards";
 
 
 const silacSummary = [
@@ -70,6 +71,14 @@ const SiLaC = () => (
       <SiLaCRecovery fadeUp={fadeUp} />
       <SiLaCFAQ fadeUp={fadeUp} />
       <ProcedureSummaryTable rows={silacSummary} fadeUp={fadeUp} />
+
+      <PreparationRecoveryCards
+        procedureLabel="SiLaC — laserowe zamknięcie torbieli pilonidalnej"
+        preparationDescription="Minimalistyczne przygotowanie: nawodnienie, czysta okolica zatoki, luźne ubranie. Zabieg trwa ok. 30 minut."
+        preparationHref="/dla-pacjenta/przygotowanie-silac"
+        recoveryDescription="Codzienna pielęgnacja zatoki, kontrole gojenia i powrót do aktywności po laserowym SiLaC."
+        recoveryHref="/dla-pacjenta/zalecenia-po-silac"
+      />
 
       <RecoveryBoostBanner />
 

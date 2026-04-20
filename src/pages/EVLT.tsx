@@ -13,6 +13,7 @@ import MedicalProcedureSchema from "@/components/shared/MedicalProcedureSchema";
 import SeoHead from "@/components/shared/SeoHead";
 import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 import RecoveryBoostBanner from "@/components/shared/RecoveryBoostBanner";
+import PreparationRecoveryCards from "@/components/shared/PreparationRecoveryCards";
 import TestimonialsSection from "@/components/shared/TestimonialsSection";
 
 const evltSummary = [
@@ -190,6 +191,14 @@ const EVLT = () => (
 
       <EVLTFAQ fadeUp={fadeUp} />
       <ProcedureSummaryTable rows={evltSummary} fadeUp={fadeUp} />
+
+      <PreparationRecoveryCards
+        procedureLabel="EVLT — laserowe zamknięcie żył"
+        preparationDescription="Nawodnienie, odpowiednie ubranie, zakaz golenia i kremów na nogach. Krótka lista, która ułatwi pracę lasera i Twoje samopoczucie."
+        preparationHref="/dla-pacjenta/przygotowanie-evlt"
+        recoveryDescription="Pończocha uciskowa, spacery, kontrole USG — dokładny plan rekonwalescencji po EVLT, dzień po dniu."
+        recoveryHref="/dla-pacjenta/zalecenia-po-evlt"
+      />
 
       <RecoveryBoostBanner />
 

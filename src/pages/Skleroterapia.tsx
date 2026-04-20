@@ -10,6 +10,7 @@ import SeoHead from "@/components/shared/SeoHead";
 import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 
 import RecoveryBoostBanner from "@/components/shared/RecoveryBoostBanner";
+import PreparationRecoveryCards from "@/components/shared/PreparationRecoveryCards";
 import TestimonialsSection from "@/components/shared/TestimonialsSection";
 
 const skleroterapiaSummary = [
@@ -244,6 +245,14 @@ const Skleroterapia = () => {
       <ProcedureSummaryTable rows={skleroterapiaSummary} fadeUp={fadeUp} />
 
       
+
+      <PreparationRecoveryCards
+        procedureLabel="Skleroterapia żył"
+        preparationDescription="Leki, nawodnienie, ochrona przed słońcem i pończocha uciskowa. Krótkie przygotowanie, duża skuteczność."
+        preparationHref="/dla-pacjenta/przygotowanie-skleroterapia"
+        recoveryDescription="Kompresjoterapia, aktywność, ochrona przed słońcem — co robić tuż po skleroterapii i w kolejnych tygodniach."
+        recoveryHref="/dla-pacjenta/zalecenia-po-skleroterapii"
+      />
 
       <RecoveryBoostBanner />
 

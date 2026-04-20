@@ -16,6 +16,7 @@ import SeoHead from "@/components/shared/SeoHead";
 import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 import TestimonialsSection from "@/components/shared/TestimonialsSection";
 import RecoveryBoostBanner from "@/components/shared/RecoveryBoostBanner";
+import PreparationRecoveryCards from "@/components/shared/PreparationRecoveryCards";
 
 const lhpSummary = [
   { label: "Przygotowanie", value: "Badanie proktologiczne (anoskopia), ocena stopnia zaawansowania choroby" },
@@ -128,6 +129,14 @@ const LHP = () => {
         <LHPFAQ fadeUp={sectionAnim} />
 
         <ProcedureSummaryTable rows={lhpSummary} fadeUp={sectionAnim} />
+
+        <PreparationRecoveryCards
+          procedureLabel="LHP — laserowe leczenie hemoroidów"
+          preparationDescription="Krótka checklista: leki, dieta z błonnikiem, miękki stolec i wygodne ubranie. 5 minut na przeczytanie, dużo komfortu w dniu zabiegu."
+          preparationHref="/dla-pacjenta/przygotowanie-lhp"
+          recoveryDescription="Pierwsze dni po LHP, pielęgnacja, „zestaw ratunkowy” na pierwszy stolec i powrót do aktywności bez stresu."
+          recoveryHref="/dla-pacjenta/zalecenia-po-lhp"
+        />
 
         <RecoveryBoostBanner />
 

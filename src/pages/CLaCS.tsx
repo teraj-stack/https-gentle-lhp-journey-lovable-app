@@ -11,6 +11,7 @@ import SeoHead from "@/components/shared/SeoHead";
 import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 
 import RecoveryBoostBanner from "@/components/shared/RecoveryBoostBanner";
+import PreparationRecoveryCards from "@/components/shared/PreparationRecoveryCards";
 import TestimonialsSection from "@/components/shared/TestimonialsSection";
 
 const clacsSummary = [
@@ -262,6 +263,14 @@ const CLaCS = () => (
       </motion.section>
 
       
+
+      <PreparationRecoveryCards
+        procedureLabel="CLaCS — hybrydowe usuwanie pajączków"
+        preparationDescription="Bez opalania, bez samoopalaczy, bez balsamów na nogach. Krótka lista zasad, które gwarantują czyste efekty fototermolizy."
+        preparationHref="/dla-pacjenta/przygotowanie-clacs"
+        recoveryDescription="Ochrona przed słońcem, pończocha uciskowa, kontrole — co robić w pierwszych 6 tygodniach po CLaCS."
+        recoveryHref="/dla-pacjenta/zalecenia-po-clacs"
+      />
 
       <RecoveryBoostBanner />
 
