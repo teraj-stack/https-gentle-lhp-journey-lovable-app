@@ -46,6 +46,20 @@ type Booking = {
   status: string;
   created_at: string;
   reminder_opt_out: boolean;
+  status_changed_at: string | null;
+  status_changed_by: string | null;
+};
+
+type ActionToken = {
+  id: string;
+  action: "confirm" | "cancel" | "needs_contact";
+  recipient_email: string;
+  used_at: string | null;
+  used_by_email: string | null;
+  used_by_ua: string | null;
+  used_by_ip: string | null;
+  expires_at: string;
+  created_at: string;
 };
 
 type LogRow = {
