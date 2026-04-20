@@ -192,6 +192,28 @@ const AdminBookings = () => {
     },
   });
 
+  // Historia tokenów akcji per rezerwacja (kto kliknął "Potwierdź/Odwołaj/Wymaga kontaktu")
+  const { data: tokensMap = {} } = useQuery({
+    queryKey: ["admin-bookings-action-tokens", bookings.map((b) => b.id).join(",")],
+    enabled: bookings.length > 0,
+    queryFn: async (): Promise<Record<string, ActionToken[]>> => {
+      const ids = bookings.map((b) => b.id);
+      const { data, error } = await supabase
+        .from("booking_action_tokens")
+        .select("id, action, recipient_email, used_at, used_by_email, used_by_ua, used_by_ip, expires_at, created_at, booking_id")
+        .in("booking_id", ids)
+        .order("used_at", { ascending: false, nullsFirst: false });
+      if (error) throw error;
+      const map: Record<string, ActionToken[]> = {};
+      for (const row of (data ?? []) as Array<ActionToken & { booking_id: string }>) {
+        if (!map[row.booking_id]) map[row.booking_id] = [];
+        const { booking_id: _bid, ...rest } = row;
+        map[row.booking_id].push(rest);
+      }
+      return map;
+    },
+  });
+
   const updateStatus = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
       const { error } = await supabase
