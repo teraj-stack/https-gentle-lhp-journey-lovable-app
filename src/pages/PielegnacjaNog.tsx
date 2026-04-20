@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { motion } from "framer-motion";
 import Breadcrumbs from "@/components/layout/Breadcrumbs";
+import { BREADCRUMBS_MAP } from "@/lib/breadcrumbsMap";
 import SeoHead from "@/components/shared/SeoHead";
 import {
   Clock, Droplets, Sun, ThermometerSnowflake, ShieldAlert,
@@ -175,7 +176,7 @@ const PielegnacjaNog = () => {
     </section>
 
     <div className="max-w-4xl mx-auto px-4 pb-20 space-y-20">
-      <Breadcrumbs items={[{ label: "Wiedza" }, { label: "Dla Pacjenta", href: "/dla-pacjenta" }, { label: "Pielęgnacja nóg" }]} className="mb-4" />
+      <Breadcrumbs items={BREADCRUMBS_MAP["/dla-pacjenta/pielegnacja-nog"]} className="mb-4" />
 
       {/* Kluczowa zasada */}
       <motion.section {...fadeUp} className="glass-card rounded-2xl p-8 md:p-10 border-l-4 border-primary">

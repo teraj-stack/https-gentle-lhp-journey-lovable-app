@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import Breadcrumbs from "@/components/layout/Breadcrumbs";
+import { BREADCRUMBS_MAP } from "@/lib/breadcrumbsMap";
 import { CheckCircle2, Clock, Shield, Sparkles, AlertTriangle, Heart } from "lucide-react";
 import ParallaxSection from "@/components/ui/parallax-section";
 import ProcedureSummaryTable from "@/components/shared/ProcedureSummaryTable";
@@ -131,10 +132,7 @@ const Ginekomastia = () => (
       </div>
     </ParallaxSection>
 
-    <Breadcrumbs items={[
-      { label: "Zabieg" },
-      { label: "Ginekomastia" },
-    ]} />
+    <Breadcrumbs items={BREADCRUMBS_MAP["/leczenie/ginekomastia"]} />
 
     {/* Co to jest */}
     <section className="py-16 md:py-24">

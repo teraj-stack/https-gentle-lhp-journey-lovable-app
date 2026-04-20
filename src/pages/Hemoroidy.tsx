@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import ParallaxSection from "@/components/ui/parallax-section";
 import Breadcrumbs from "@/components/layout/Breadcrumbs";
+import { BREADCRUMBS_MAP } from "@/lib/breadcrumbsMap";
 import { Button } from "@/components/ui/button";
 import SeoHead from "@/components/shared/SeoHead";
 import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
@@ -164,7 +165,7 @@ const Hemoroidy = () => {
     </ParallaxSection>
 
     <div className="max-w-5xl mx-auto px-4 py-16 space-y-24">
-      <Breadcrumbs items={[{ label: "Wiedza" }, { label: "Dla Pacjenta", href: "/dla-pacjenta" }, { label: "Hemoroidy od A do Z" }]} className="mb-4" />
+      <Breadcrumbs items={BREADCRUMBS_MAP["/dla-pacjenta/hemoroidy"]} className="mb-4" />
 
       {/* CHAPTER 1 */}
       <section>

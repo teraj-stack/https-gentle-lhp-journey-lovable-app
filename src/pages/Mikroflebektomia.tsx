@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import ParallaxSection from "@/components/ui/parallax-section";
 import Breadcrumbs from "@/components/layout/Breadcrumbs";
+import { BREADCRUMBS_MAP } from "@/lib/breadcrumbsMap";
 import { Button } from "@/components/ui/button";
 import ProcedureSummaryTable from "@/components/shared/ProcedureSummaryTable";
 import MedicalProcedureSchema from "@/components/shared/MedicalProcedureSchema";
@@ -98,7 +99,7 @@ const Mikroflebektomia = () => (
     </ParallaxSection>
 
     <div className="max-w-5xl mx-auto px-4 py-16 space-y-24">
-      <Breadcrumbs items={[{ label: "Zabieg" }, { label: "Flebologia", href: "/leczenie/flebologia" }, { label: "Mikroflebektomia piankowa" }]} className="mb-4" />
+      <Breadcrumbs items={BREADCRUMBS_MAP["/leczenie/mikroflebektomia"]} className="mb-4" />
 
       {/* Intro */}
       <motion.section {...fadeUp}>

@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import ParallaxSection from "@/components/ui/parallax-section";
 import { Link } from "react-router-dom";
 import Breadcrumbs from "@/components/layout/Breadcrumbs";
+import { BREADCRUMBS_MAP } from "@/lib/breadcrumbsMap";
 import { Button } from "@/components/ui/button";
 import { BookOpen, ArrowRight } from "lucide-react";
 import CLaCSFAQ from "@/components/clacs/CLaCSFAQ";
@@ -112,7 +113,7 @@ const CLaCS = () => (
     </ParallaxSection>
 
     <div className="max-w-5xl mx-auto px-4 py-16 space-y-24">
-      <Breadcrumbs items={[{ label: "Zabieg" }, { label: "Flebologia", href: "/leczenie/flebologia" }, { label: "Pajączki – CLaCS" }]} className="mb-4" />
+      <Breadcrumbs items={BREADCRUMBS_MAP["/leczenie/clacs"]} className="mb-4" />
       {/* Jak działa CLaCS */}
       <motion.section {...fadeUp}>
         <h2 className="section-title mb-3 text-center">Jak działa CLaCS?</h2>

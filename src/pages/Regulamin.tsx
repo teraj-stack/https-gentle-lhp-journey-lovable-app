@@ -1,4 +1,5 @@
 import Breadcrumbs from "@/components/layout/Breadcrumbs";
+import { BREADCRUMBS_MAP } from "@/lib/breadcrumbsMap";
 import SeoHead from "@/components/shared/SeoHead";
 
 const Regulamin = () => (
@@ -9,7 +10,7 @@ const Regulamin = () => (
       path="/regulamin"
     />
     <div className="max-w-4xl mx-auto px-4 md:px-8 py-12">
-      <Breadcrumbs items={[{ label: "Regulamin" }]} />
+      <Breadcrumbs items={BREADCRUMBS_MAP["/regulamin"]} />
 
       <h1 className="text-3xl md:text-4xl font-bold text-foreground mt-8 mb-10">
         Regulamin

@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import ParallaxSection from "@/components/ui/parallax-section";
 import Breadcrumbs from "@/components/layout/Breadcrumbs";
+import { BREADCRUMBS_MAP } from "@/lib/breadcrumbsMap";
 import SeoHead from "@/components/shared/SeoHead";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
@@ -169,7 +170,7 @@ const ProktologFAQ = () => (
     </ParallaxSection>
 
     <div className="max-w-3xl mx-auto px-4 py-16 space-y-16">
-      <Breadcrumbs items={[{ label: "Wiedza" }, { label: "Dla Pacjenta", href: "/dla-pacjenta" }, { label: "Lekarz odpowiada" }]} className="mb-4" />
+      <Breadcrumbs items={BREADCRUMBS_MAP["/dla-pacjenta/proktolog-faq"]} className="mb-4" />
 
       {/* Key highlights */}
       <motion.div {...fadeUp} className="grid sm:grid-cols-3 gap-4">
