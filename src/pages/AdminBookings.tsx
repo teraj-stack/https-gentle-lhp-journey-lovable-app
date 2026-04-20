@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -34,6 +34,14 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import SeoHead from "@/components/shared/SeoHead";
+import AdminBookingsFilters, {
+  DEFAULT_FILTERS,
+  filtersFromSearchParams,
+  filtersToSearchParams,
+  matchesLocation,
+  resolveDateRange,
+  type BookingFilters,
+} from "@/components/admin/AdminBookingsFilters";
 
 type Booking = {
   id: string;
@@ -107,11 +115,20 @@ function reduceLogStatus(rows: LogRow[]): ReminderState {
 const AdminBookings = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [session, setSession] = useState<Session | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const { isAdmin, loading: adminLoading } = useIsAdmin();
   const [resendTarget, setResendTarget] = useState<{ booking: Booking; variant: "24h" | "2h" } | null>(null);
 
+  // ---- Filters: source of truth = URL query params ----
+  const filters: BookingFilters = useMemo(
+    () => filtersFromSearchParams(searchParams),
+    [searchParams],
+  );
+  const setFilters = (next: BookingFilters) => {
+    setSearchParams(filtersToSearchParams(next), { replace: true });
+  };
   useEffect(() => {
     let isMounted = true;
     const apply = (next: Session | null) => {
@@ -131,7 +148,13 @@ const AdminBookings = () => {
     };
   }, [navigate]);
 
-  // Pobierz wszystkie rezerwacje (najnowsze najpierw, ale tylko te z przyszłości lub <30 dni wstecz)
+  // Date range from filters (preset → from/to). Cap floor at -30d to avoid huge scans.
+  const dateRange = useMemo(() => resolveDateRange(filters), [filters]);
+  const queryFrom = useMemo(() => {
+    const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    return dateRange.from && dateRange.from > cutoff ? dateRange.from : cutoff;
+  }, [dateRange.from]);
+
   const {
     data: bookings = [],
     isLoading: bookingsLoading,
@@ -139,20 +162,29 @@ const AdminBookings = () => {
     error,
     refetch: refetchBookings,
   } = useQuery({
-    queryKey: ["admin-bookings"],
+    queryKey: ["admin-bookings", filters.status, queryFrom, dateRange.to ?? null],
     queryFn: async (): Promise<Booking[]> => {
-      const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-      const { data, error } = await supabase
+      let q = supabase
         .from("bookings")
         .select("*")
-        .gte("appointment_date", cutoff)
+        .gte("appointment_date", queryFrom)
         .order("appointment_date", { ascending: true })
         .order("appointment_time", { ascending: true });
+      if (dateRange.to) q = q.lte("appointment_date", dateRange.to);
+      if (filters.status !== "all") q = q.eq("status", filters.status);
+      const { data, error } = await q;
       if (error) throw error;
       return (data ?? []) as Booking[];
     },
     enabled: !authLoading && !!session,
   });
+
+  // Location filter applied client-side (location is free-text; uses substring match
+  // matching the same patterns as the cron edge function).
+  const filteredBookings = useMemo(
+    () => bookings.filter((b) => matchesLocation(b.location, filters.location)),
+    [bookings, filters.location],
+  );
 
   // Pobierz logi reminderów (jednym query) i mapuj per booking
   const { data: reminderMap = {} } = useQuery({
@@ -276,8 +308,11 @@ const AdminBookings = () => {
     navigate("/admin/login", { replace: true });
   };
 
-  const totalCount = bookings.length;
-  const pendingCount = useMemo(() => bookings.filter((b) => b.status === "pending").length, [bookings]);
+  const totalCount = filteredBookings.length;
+  const pendingCount = useMemo(
+    () => filteredBookings.filter((b) => b.status === "pending").length,
+    [filteredBookings],
+  );
 
   if (authLoading || adminLoading) {
     return (
@@ -324,7 +359,7 @@ const AdminBookings = () => {
         </header>
 
         <main className="max-w-7xl mx-auto px-4 py-8 md:px-8">
-          <div className="flex items-center gap-6 mb-6">
+          <div className="flex items-center gap-6 mb-4">
             <div>
               <p className="text-xs uppercase tracking-wider text-muted-foreground">Razem</p>
               <p className="text-2xl font-bold text-foreground">{totalCount}</p>
@@ -334,6 +369,12 @@ const AdminBookings = () => {
               <p className="text-2xl font-bold text-amber-400">{pendingCount}</p>
             </div>
           </div>
+
+          <AdminBookingsFilters
+            filters={filters}
+            onChange={setFilters}
+            resultCount={filteredBookings.length}
+          />
 
           {bookingsLoading ? (
             <div className="space-y-3">
@@ -360,7 +401,7 @@ const AdminBookings = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {bookings.map((b) => {
+                  {filteredBookings.map((b) => {
                     const rem = reminderMap[b.id] ?? { "24h": { status: "none", sentAt: null }, "2h": { status: "none", sentAt: null } };
                     const statusInfo = STATUS_BADGE[b.status] ?? STATUS_BADGE.pending;
                     return (
@@ -439,10 +480,12 @@ const AdminBookings = () => {
                       </TableRow>
                     );
                   })}
-                  {bookings.length === 0 && (
+                  {filteredBookings.length === 0 && (
                     <TableRow>
                       <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
-                        Brak rezerwacji w ciągu ostatnich 30 dni.
+                        {bookings.length === 0
+                          ? "Brak rezerwacji w wybranym zakresie dat i statusie."
+                          : "Brak rezerwacji pasujących do wybranej lokalizacji."}
                       </TableCell>
                     </TableRow>
                   )}
