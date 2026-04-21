@@ -874,13 +874,15 @@ const AdminSystemHealth = () => {
                           <TableBody>
                             {filteredRetrySources.map((s) => {
                               const isDeno = /^Deno\//i.test(s.ua);
-                              return (
+                              const rowKey = `${s.ip}::${s.ua}`;
+                              const isHighlighted = highlightedRowKey === rowKey;
+                              const row = (
                                 <TableRow
-                                  key={`${s.ip}::${s.ua}`}
-                                  data-retry-row-key={`${s.ip}::${s.ua}`}
+                                  key={rowKey}
+                                  data-retry-row-key={rowKey}
                                   className={
-                                    highlightedRowKey === `${s.ip}::${s.ua}`
-                                      ? "bg-primary/15 ring-2 ring-primary/40 transition-colors"
+                                    isHighlighted
+                                      ? "bg-primary/15 ring-2 ring-primary/40 transition-colors cursor-help"
                                       : "transition-colors"
                                   }
                                 >
@@ -911,6 +913,35 @@ const AdminSystemHealth = () => {
                                     </Button>
                                   </TableCell>
                                 </TableRow>
+                              );
+                              if (!isHighlighted) return row;
+                              // Tooltip aktywny tylko dla wiersza podświetlonego po "Pokaż w tabeli" —
+                                // szybki podgląd IP/UA/daty bez konieczności otwierania modala.
+                              return (
+                                <UITooltip key={rowKey} delayDuration={150}>
+                                  <TooltipTrigger asChild>{row}</TooltipTrigger>
+                                  <TooltipContent side="top" align="start" className="max-w-md">
+                                    <div className="space-y-1 text-xs">
+                                      <div>
+                                        <span className="text-muted-foreground">IP: </span>
+                                        <span className="font-mono">{s.ip}</span>
+                                      </div>
+                                      <div>
+                                        <span className="text-muted-foreground">User-Agent: </span>
+                                        <span className="font-mono break-all">{s.ua}</span>
+                                      </div>
+                                      <div>
+                                        <span className="text-muted-foreground">Ostatni rekord: </span>
+                                        <span className="font-mono">
+                                          {new Date(s.last).toLocaleString("pl-PL", {
+                                            dateStyle: "short",
+                                            timeStyle: "medium",
+                                          })}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </TooltipContent>
+                                </UITooltip>
                               );
                             })}
                           </TableBody>
