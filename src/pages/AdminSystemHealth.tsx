@@ -874,7 +874,15 @@ const AdminSystemHealth = () => {
                             {filteredRetrySources.map((s) => {
                               const isDeno = /^Deno\//i.test(s.ua);
                               return (
-                                <TableRow key={`${s.ip}::${s.ua}`}>
+                                <TableRow
+                                  key={`${s.ip}::${s.ua}`}
+                                  data-retry-row-key={`${s.ip}::${s.ua}`}
+                                  className={
+                                    highlightedRowKey === `${s.ip}::${s.ua}`
+                                      ? "bg-primary/15 ring-2 ring-primary/40 transition-colors"
+                                      : "transition-colors"
+                                  }
+                                >
                                   <TableCell className="font-mono text-xs">{s.ip}</TableCell>
                                   <TableCell className="font-mono text-xs">
                                     {isDeno ? (
