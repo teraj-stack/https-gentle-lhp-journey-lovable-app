@@ -199,6 +199,7 @@ export type FailureReason =
   | 'already_used'
   | 'unauthorized'
   | 'invalid_payload'
+  | 'rate_limit_failopen'
 
 export interface LogFailureParams {
   endpoint: string
