@@ -155,15 +155,33 @@ const AdminSystemHealth = () => {
   // Kierunek ostatniego skoku — używany do pokazania ikony ▼/▲ przy badge "Następne".
   // null = jeszcze nie wykonano skoku w tej sesji modala. Reset z inspectJumpIndex.
   const [lastJumpDirection, setLastJumpDirection] = useState<"forward" | "backward" | null>(null);
-  // Czy lista podglądu dopasowań jest rozwinięta. Domyślnie zwinięta — żeby modal nie rósł.
-  const [inspectListOpen, setInspectListOpen] = useState(false);
+  // Czy lista podglądu dopasowań jest rozwinięta. Trzymane w localStorage — preferencja
+  // widokowa per cała sesja (nie per IP/UA), żeby po zamknięciu modala i ponownym otwarciu
+  // (nawet dla innego źródła) zachować ulubiony układ użytkownika. Lazy init — sync z LS.
+  const [inspectListOpen, setInspectListOpen] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem("admin-sys-health.inspect-list-open") === "1";
+  });
   // Query wyszukiwania w "Podgląd dopasowań" — filtruje po IP/UA (case-insensitive substring).
-  // Reset przy zmianie źródła (zob. effect przy inspectSource).
+  // NIE persystowane (specyficzne dla bieżącej sesji eksploracji).
   const [inspectListQuery, setInspectListQuery] = useState("");
   // Sortowanie mini-listy "Podgląd dopasowań": "default" (kolejność z buildMatchKeys = exact
   // + related), "count-desc" (najwięcej retry'ów na górze — typowy use-case "co naprawić"),
-  // "ip-asc" (alfabetycznie po IP).
-  const [inspectListSort, setInspectListSort] = useState<"default" | "count-desc" | "ip-asc">("default");
+  // "ip-asc" (alfabetycznie po IP). Persystowane w LS — to preferencja widokowa.
+  const [inspectListSort, setInspectListSort] = useState<"default" | "count-desc" | "ip-asc">(() => {
+    if (typeof window === "undefined") return "default";
+    const v = window.localStorage.getItem("admin-sys-health.inspect-list-sort");
+    return v === "count-desc" || v === "ip-asc" ? v : "default";
+  });
+  // Sync preferencji widokowych do localStorage przy każdej zmianie.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem("admin-sys-health.inspect-list-open", inspectListOpen ? "1" : "0");
+  }, [inspectListOpen]);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem("admin-sys-health.inspect-list-sort", inspectListSort);
+  }, [inspectListSort]);
   // Per-source pamięć kursora — żeby po zamknięciu i ponownym otwarciu modala
   // dla tego samego IP+UA+scope, kursor i kierunek wskazywały to samo dopasowanie
   // co poprzednio. Klucz: `${ip}::${ua}::${scope}`. In-memory (Map w refie) — nie potrzeba
