@@ -160,6 +160,10 @@ const AdminSystemHealth = () => {
   // Query wyszukiwania w "Podgląd dopasowań" — filtruje po IP/UA (case-insensitive substring).
   // Reset przy zmianie źródła (zob. effect przy inspectSource).
   const [inspectListQuery, setInspectListQuery] = useState("");
+  // Sortowanie mini-listy "Podgląd dopasowań": "default" (kolejność z buildMatchKeys = exact
+  // + related), "count-desc" (najwięcej retry'ów na górze — typowy use-case "co naprawić"),
+  // "ip-asc" (alfabetycznie po IP).
+  const [inspectListSort, setInspectListSort] = useState<"default" | "count-desc" | "ip-asc">("default");
   // Per-source pamięć kursora — żeby po zamknięciu i ponownym otwarciu modala
   // dla tego samego IP+UA+scope, kursor i kierunek wskazywały to samo dopasowanie
   // co poprzednio. Klucz: `${ip}::${ua}::${scope}`. In-memory (Map w refie) — nie potrzeba
