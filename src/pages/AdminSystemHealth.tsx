@@ -345,6 +345,12 @@ const AdminSystemHealth = () => {
     };
   }, []);
 
+  // Reset kursora skoku gdy zmienia się źródło inspekcji lub scope —
+  // żeby przycisk "Skocz do następnego" zawsze startował od pierwszego dopasowania.
+  useEffect(() => {
+    setInspectJumpIndex(0);
+  }, [inspectSource, highlightScope]);
+
 
   // Skrót klawiszowy w modalu inspekcji: Ctrl/Cmd+K zawsze, Enter tylko gdy fokus nie jest
   // w polu tekstowym (żeby nie kolidować z wpisywaniem w polu wyszukiwania).
