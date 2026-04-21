@@ -1017,7 +1017,73 @@ const AdminSystemHealth = () => {
           </CardContent>
         </Card>
       </div>
-    </>
+
+      {/* Modal inspekcji surowych rekordów dla wybranego IP+UA. */}
+      <Dialog open={!!inspectSource} onOpenChange={(open) => !open && setInspectSource(null)}>
+        <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="h-5 w-5 text-primary" />
+              Surowe rekordy retry'ów
+            </DialogTitle>
+            <DialogDescription asChild>
+              <div className="text-xs space-y-1">
+                {inspectSource && (
+                  <>
+                    <div>
+                      Endpoint <code>on-booking-created</code> · IP{" "}
+                      <code className="font-mono">{inspectSource.ip}</code>
+                    </div>
+                    <div>
+                      UA <code className="font-mono break-all">{inspectSource.ua}</code>
+                    </div>
+                    <div>
+                      Pokazuję <strong>{inspectRecords.length}</strong> z możliwych 50 najnowszych (window 24h).
+                    </div>
+                  </>
+                )}
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+          {inspectRecords.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-8 text-center">
+              Brak rekordów dla tej kombinacji w ostatnich 24h.
+            </p>
+          ) : (
+            <ScrollArea className="flex-1 -mx-6 px-6 max-h-[60vh]">
+              <div className="space-y-2 py-2">
+                {inspectRecords.map((r) => {
+                  const retryAfter =
+                    typeof r.metadata?.retryAfterSec === "number"
+                      ? (r.metadata.retryAfterSec as number)
+                      : null;
+                  return (
+                    <div key={r.id} className="rounded-md border border-border bg-muted/30 p-3 text-xs space-y-1.5">
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <span className="text-muted-foreground">
+                          {new Date(r.created_at).toLocaleString("pl-PL", { dateStyle: "short", timeStyle: "medium" })}
+                        </span>
+                        <span className="text-[11px] text-muted-foreground">
+                          {formatDistanceToNow(new Date(r.created_at), { addSuffix: true, locale: pl })}
+                        </span>
+                      </div>
+                      {retryAfter !== null && (
+                        <Badge variant="outline" className="text-[10px]">
+                          retry-after: {retryAfter}s
+                        </Badge>
+                      )}
+                      <pre className="font-mono text-[11px] bg-background border border-border rounded p-2 overflow-x-auto whitespace-pre-wrap break-all">
+{JSON.stringify(r.metadata ?? {}, null, 2)}
+                      </pre>
+                    </div>
+                  );
+                })}
+              </div>
+            </ScrollArea>
+          )}
+        </DialogContent>
+      </Dialog>
+    >
   );
 };
 
