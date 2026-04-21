@@ -3,12 +3,21 @@
 // bookings.reminder_opt_out=true for the booking owning the token.
 
 import { createClient } from 'npm:@supabase/supabase-js@2'
+import {
+  checkRateLimit,
+  getClientIp,
+  ipForLog,
+  logTokenFailure,
+  rateLimitedResponse,
+} from '../_shared/rate-limit.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers':
     'authorization, x-client-info, apikey, content-type',
 }
+
+const ENDPOINT = 'handle-reminder-opt-out'
 
 function jsonResponse(data: Record<string, unknown>, status = 200): Response {
   return new Response(JSON.stringify(data), {
@@ -30,6 +39,25 @@ Deno.serve(async (req) => {
   const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
   if (!supabaseUrl || !supabaseServiceKey) {
     return jsonResponse({ error: 'Server configuration error' }, 500)
+  }
+
+  const supabase = createClient(supabaseUrl, supabaseServiceKey)
+  const ip = getClientIp(req)
+  const userAgent = req.headers.get('user-agent')
+  const ipLog = ipForLog(ip)
+
+  // Rate limit (best-effort) + log denials.
+  const rl = checkRateLimit(ENDPOINT, ip)
+  if (!rl.allowed) {
+    console.warn(`Rate limit exceeded for IP ${ip} on ${ENDPOINT}`)
+    logTokenFailure(supabase, {
+      endpoint: ENDPOINT,
+      reason: 'rate_limited',
+      ip: ipLog,
+      userAgent,
+      metadata: { retryAfterSec: rl.retryAfterSec, method: req.method },
+    })
+    return rateLimitedResponse(rl, corsHeaders)
   }
 
   const url = new URL(req.url)
@@ -59,8 +87,6 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: 'Token is required' }, 400)
   }
 
-  const supabase = createClient(supabaseUrl, supabaseServiceKey)
-
   const { data: tokenRecord, error: lookupError } = await supabase
     .from('booking_reminder_opt_out_tokens')
     .select('*')
@@ -68,14 +94,35 @@ Deno.serve(async (req) => {
     .maybeSingle()
 
   if (lookupError || !tokenRecord) {
+    logTokenFailure(supabase, {
+      endpoint: ENDPOINT,
+      reason: 'invalid_token',
+      ip: ipLog,
+      userAgent,
+      metadata: { method: req.method, tokenPreview: token.slice(0, 8) },
+    })
     return jsonResponse({ error: 'Invalid or expired token' }, 404)
   }
 
   if (new Date(tokenRecord.expires_at).getTime() < Date.now()) {
+    logTokenFailure(supabase, {
+      endpoint: ENDPOINT,
+      reason: 'expired',
+      ip: ipLog,
+      userAgent,
+      metadata: { method: req.method, expiresAt: tokenRecord.expires_at },
+    })
     return jsonResponse({ valid: false, reason: 'expired' }, 200)
   }
 
   if (tokenRecord.used_at) {
+    logTokenFailure(supabase, {
+      endpoint: ENDPOINT,
+      reason: 'already_used',
+      ip: ipLog,
+      userAgent,
+      metadata: { method: req.method, usedAt: tokenRecord.used_at },
+    })
     return jsonResponse({ valid: false, reason: 'already_opted_out' })
   }
 
@@ -88,17 +135,13 @@ Deno.serve(async (req) => {
   }
 
   // POST: process opt-out
-  const ip =
-    req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ??
-    req.headers.get('cf-connecting-ip') ??
-    null
   const ua = req.headers.get('user-agent') ?? null
 
   const { data: updated, error: updateError } = await supabase
     .from('booking_reminder_opt_out_tokens')
     .update({
       used_at: new Date().toISOString(),
-      used_by_ip: ip,
+      used_by_ip: ipLog,
       used_by_ua: ua,
     })
     .eq('token', token)
@@ -115,6 +158,13 @@ Deno.serve(async (req) => {
   }
 
   if (!updated) {
+    logTokenFailure(supabase, {
+      endpoint: ENDPOINT,
+      reason: 'already_used',
+      ip: ipLog,
+      userAgent,
+      metadata: { method: 'POST', raceCondition: true },
+    })
     return jsonResponse({ success: false, reason: 'already_opted_out' })
   }
 

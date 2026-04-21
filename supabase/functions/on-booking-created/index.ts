@@ -16,12 +16,25 @@
 // reception can change booking status with a single click.
 
 import { createClient } from 'npm:@supabase/supabase-js@2'
+import {
+  checkRateLimit,
+  getClientIp,
+  ipForLog,
+  logTokenFailure,
+  rateLimitedResponse,
+} from '../_shared/rate-limit.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers':
     'authorization, x-client-info, apikey, content-type',
 }
+
+const ENDPOINT = 'on-booking-created'
+// Webhook handler — legitimate traffic = 1 req per booking insert.
+// Higher ceiling than token endpoints because Supabase webhook delivery
+// can retry, and HQ may bulk-import bookings. Mostly here to log abuse.
+const WEBHOOK_LIMIT = { max: 60, windowMs: 60_000 }
 
 interface BookingRecord {
   id: string
@@ -131,6 +144,33 @@ Deno.serve(async (req) => {
       JSON.stringify({ error: 'Method not allowed' }),
       { status: 405, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
+  }
+
+  const ip = getClientIp(req)
+  const userAgent = req.headers.get('user-agent')
+  const ipLog = ipForLog(ip)
+
+  const earlySupabaseUrl = Deno.env.get('SUPABASE_URL')
+  const earlySupabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+  // Audit-only client for rate-limit logging; main client is built below.
+  const auditClient = earlySupabaseUrl && earlySupabaseKey
+    ? createClient(earlySupabaseUrl, earlySupabaseKey)
+    : null
+
+  // Rate limit (best-effort) + log denials.
+  const rl = checkRateLimit(ENDPOINT, ip, WEBHOOK_LIMIT)
+  if (!rl.allowed) {
+    console.warn(`Rate limit exceeded for IP ${ip} on ${ENDPOINT}`)
+    if (auditClient) {
+      logTokenFailure(auditClient, {
+        endpoint: ENDPOINT,
+        reason: 'rate_limited',
+        ip: ipLog,
+        userAgent,
+        metadata: { retryAfterSec: rl.retryAfterSec, method: req.method },
+      })
+    }
+    return rateLimitedResponse(rl, corsHeaders)
   }
 
   let payload: WebhookPayload

@@ -8,6 +8,13 @@
 // Token jest jednorazowy (oznaczany jako użyty po POST) i ważny 7 dni od wygenerowania.
 
 import { createClient } from 'npm:@supabase/supabase-js@2'
+import {
+  checkRateLimit,
+  getClientIp,
+  ipForLog,
+  logTokenFailure,
+  rateLimitedResponse,
+} from '../_shared/rate-limit.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -23,81 +30,20 @@ const ACTION_TO_STATUS: Record<BookingAction, 'confirmed' | 'cancelled' | 'needs
   needs_contact: 'needs_contact',
 }
 
+const ENDPOINT = 'update-booking-status'
+
 const json = (status: number, payload: Record<string, unknown>) =>
   new Response(JSON.stringify(payload), {
     status,
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   })
 
-// ============================================================
-// In-memory rate limiter per IP (fixed-window, 10 req / 60 s).
-// Ad-hoc — backend nie ma jeszcze KV/Redis dla globalnego limitu.
-// Działa per isolate Deno Deploy: bot trafiający w wiele isolate'ów
-// obejdzie limit proporcjonalnie. Akceptowalne jako warstwa obrony
-// dla tokenów o 256-bit entropii (64 hex znaków).
-// ============================================================
-const RATE_LIMIT_MAX = 10
-const RATE_LIMIT_WINDOW_MS = 60_000
-const rateLimitBuckets = new Map<string, { count: number; resetAt: number }>()
-
-function getClientIp(req: Request): string {
-  const xff = req.headers.get('x-forwarded-for')
-  if (xff) return xff.split(',')[0]?.trim() || 'unknown'
-  return req.headers.get('cf-connecting-ip') ?? req.headers.get('x-real-ip') ?? 'unknown'
-}
-
-function checkRateLimit(ip: string): { allowed: boolean; retryAfterSec: number; remaining: number } {
-  const now = Date.now()
-  const bucket = rateLimitBuckets.get(ip)
-
-  // Lazy cleanup wygasłych bucketów (co ~100 wpisów) — żeby Map nie rosła w nieskończoność.
-  if (rateLimitBuckets.size > 100) {
-    for (const [key, value] of rateLimitBuckets) {
-      if (value.resetAt < now) rateLimitBuckets.delete(key)
-    }
-  }
-
-  if (!bucket || bucket.resetAt < now) {
-    rateLimitBuckets.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS })
-    return { allowed: true, retryAfterSec: 0, remaining: RATE_LIMIT_MAX - 1 }
-  }
-
-  if (bucket.count >= RATE_LIMIT_MAX) {
-    return { allowed: false, retryAfterSec: Math.ceil((bucket.resetAt - now) / 1000), remaining: 0 }
-  }
-
-  bucket.count += 1
-  return { allowed: true, retryAfterSec: 0, remaining: RATE_LIMIT_MAX - bucket.count }
-}
-
-// Fire-and-forget log do tabeli token_validation_failures.
-// Wykorzystuje EdgeRuntime.waitUntil żeby nie blokować response (jeśli dostępne),
-// w przeciwnym wypadku po prostu nie czekamy na rezultat.
-function logFailure(
-  supabase: ReturnType<typeof createClient>,
-  payload: { endpoint: string; reason: 'invalid_token' | 'rate_limited' | 'expired' | 'already_used'; ip: string | null; userAgent: string | null; metadata?: Record<string, unknown> },
-) {
-  const promise = supabase.from('token_validation_failures').insert({
-    endpoint: payload.endpoint,
-    reason: payload.reason,
-    ip: payload.ip,
-    user_agent: payload.userAgent,
-    metadata: payload.metadata ?? null,
-  }).then(({ error }) => {
-    if (error) console.error('Failed to log token_validation_failure:', error.message)
-  })
-  // @ts-ignore - EdgeRuntime jest dostępne w Supabase Edge Runtime
-  if (typeof EdgeRuntime !== 'undefined' && typeof EdgeRuntime.waitUntil === 'function') {
-    // @ts-ignore
-    EdgeRuntime.waitUntil(promise)
-  }
-}
-
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders })
 
   const ip = getClientIp(req)
   const userAgent = req.headers.get('user-agent')
+  const ipLog = ipForLog(ip)
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL')
   const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
@@ -106,33 +52,19 @@ Deno.serve(async (req) => {
   }
 
   const supabase = createClient(supabaseUrl, supabaseServiceKey)
-  const ipForLog = ip === 'unknown' ? null : ip
-  const ENDPOINT = 'update-booking-status'
 
-  // Rate limit dla GET i POST (OPTIONS przepuszczamy dla CORS preflight).
-  const rl = checkRateLimit(ip)
+  // Rate limit (best-effort) + log denials.
+  const rl = checkRateLimit(ENDPOINT, ip)
   if (!rl.allowed) {
     console.warn(`Rate limit exceeded for IP ${ip} on ${ENDPOINT}`)
-    logFailure(supabase, {
+    logTokenFailure(supabase, {
       endpoint: ENDPOINT,
       reason: 'rate_limited',
-      ip: ipForLog,
+      ip: ipLog,
       userAgent,
       metadata: { retryAfterSec: rl.retryAfterSec, method: req.method },
     })
-    return new Response(
-      JSON.stringify({ error: 'rate_limited', retryAfterSec: rl.retryAfterSec }),
-      {
-        status: 429,
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'application/json',
-          'Retry-After': String(rl.retryAfterSec),
-          'X-RateLimit-Limit': String(RATE_LIMIT_MAX),
-          'X-RateLimit-Remaining': '0',
-        },
-      },
-    )
+    return rateLimitedResponse(rl, corsHeaders)
   }
 
   // ============================================================
@@ -154,7 +86,7 @@ Deno.serve(async (req) => {
       return json(500, { error: 'Internal error' })
     }
     if (!tokenRow) {
-      logFailure(supabase, { endpoint: ENDPOINT, reason: 'invalid_token', ip: ipForLog, userAgent, metadata: { method: 'GET', tokenPreview: token.slice(0, 8) } })
+      logTokenFailure(supabase, { endpoint: ENDPOINT, reason: 'invalid_token', ip: ipLog, userAgent, metadata: { method: 'GET', tokenPreview: token.slice(0, 8) } })
       return json(404, { valid: false, reason: 'not_found' })
     }
 
@@ -209,8 +141,6 @@ Deno.serve(async (req) => {
   if (!token) return json(400, { error: 'Missing token' })
 
   const confirmedByEmail = (body.confirmedByEmail ?? '').trim().toLowerCase() || null
-  // `ip` already computed above for rate limiting; reuse here for audit trail.
-  const auditIp = ip === 'unknown' ? null : ip
   const ua = req.headers.get('user-agent') ?? null
 
   // 1) Atomowy token consume — UPDATE z warunkiem used_at IS NULL gwarantuje single-use
@@ -221,7 +151,7 @@ Deno.serve(async (req) => {
     .update({
       used_at: nowIso,
       used_by_email: confirmedByEmail,
-      used_by_ip: auditIp,
+      used_by_ip: ipLog,
       used_by_ua: ua,
     })
     .eq('token', token)
@@ -242,14 +172,14 @@ Deno.serve(async (req) => {
       .eq('token', token)
       .maybeSingle()
     if (!row) {
-      logFailure(supabase, { endpoint: ENDPOINT, reason: 'invalid_token', ip: ipForLog, userAgent, metadata: { method: 'POST', tokenPreview: token.slice(0, 8) } })
+      logTokenFailure(supabase, { endpoint: ENDPOINT, reason: 'invalid_token', ip: ipLog, userAgent, metadata: { method: 'POST', tokenPreview: token.slice(0, 8) } })
       return json(404, { error: 'invalid_token' })
     }
     if (row.used_at) {
-      logFailure(supabase, { endpoint: ENDPOINT, reason: 'already_used', ip: ipForLog, userAgent, metadata: { method: 'POST', usedAt: row.used_at } })
+      logTokenFailure(supabase, { endpoint: ENDPOINT, reason: 'already_used', ip: ipLog, userAgent, metadata: { method: 'POST', usedAt: row.used_at } })
       return json(409, { error: 'already_used' })
     }
-    logFailure(supabase, { endpoint: ENDPOINT, reason: 'expired', ip: ipForLog, userAgent, metadata: { method: 'POST', expiresAt: row.expires_at } })
+    logTokenFailure(supabase, { endpoint: ENDPOINT, reason: 'expired', ip: ipLog, userAgent, metadata: { method: 'POST', expiresAt: row.expires_at } })
     return json(410, { error: 'expired' })
   }
 
@@ -327,7 +257,7 @@ Deno.serve(async (req) => {
     .update({
       used_at: nowIso,
       used_by_email: confirmedByEmail,
-      used_by_ip: auditIp,
+      used_by_ip: ipLog,
       used_by_ua: 'auto-invalidated:sibling-action-used',
     })
     .eq('booking_id', claimed.booking_id)

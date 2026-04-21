@@ -1,10 +1,19 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
+import {
+  checkRateLimit,
+  getClientIp,
+  ipForLog,
+  logTokenFailure,
+  rateLimitedResponse,
+} from '../_shared/rate-limit.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers':
     'authorization, x-client-info, apikey, content-type',
 }
+
+const ENDPOINT = 'handle-email-unsubscribe'
 
 function jsonResponse(data: Record<string, unknown>, status = 200): Response {
   return new Response(JSON.stringify(data), {
@@ -28,6 +37,25 @@ Deno.serve(async (req) => {
 
   if (!supabaseUrl || !supabaseServiceKey) {
     return jsonResponse({ error: 'Server configuration error' }, 500)
+  }
+
+  const supabase = createClient(supabaseUrl, supabaseServiceKey)
+  const ip = getClientIp(req)
+  const userAgent = req.headers.get('user-agent')
+  const ipLog = ipForLog(ip)
+
+  // Rate limit (best-effort) + log denials.
+  const rl = checkRateLimit(ENDPOINT, ip)
+  if (!rl.allowed) {
+    console.warn(`Rate limit exceeded for IP ${ip} on ${ENDPOINT}`)
+    logTokenFailure(supabase, {
+      endpoint: ENDPOINT,
+      reason: 'rate_limited',
+      ip: ipLog,
+      userAgent,
+      metadata: { retryAfterSec: rl.retryAfterSec, method: req.method },
+    })
+    return rateLimitedResponse(rl, corsHeaders)
   }
 
   // Extract token from query params (GET) or body (POST)
@@ -67,8 +95,6 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: 'Token is required' }, 400)
   }
 
-  const supabase = createClient(supabaseUrl, supabaseServiceKey)
-
   // Look up the token
   const { data: tokenRecord, error: lookupError } = await supabase
     .from('email_unsubscribe_tokens')
@@ -77,10 +103,24 @@ Deno.serve(async (req) => {
     .maybeSingle()
 
   if (lookupError || !tokenRecord) {
+    logTokenFailure(supabase, {
+      endpoint: ENDPOINT,
+      reason: 'invalid_token',
+      ip: ipLog,
+      userAgent,
+      metadata: { method: req.method, tokenPreview: token.slice(0, 8) },
+    })
     return jsonResponse({ error: 'Invalid or expired token' }, 404)
   }
 
   if (tokenRecord.used_at) {
+    logTokenFailure(supabase, {
+      endpoint: ENDPOINT,
+      reason: 'already_used',
+      ip: ipLog,
+      userAgent,
+      metadata: { method: req.method, usedAt: tokenRecord.used_at },
+    })
     return jsonResponse({ valid: false, reason: 'already_unsubscribed' })
   }
 
@@ -105,6 +145,13 @@ Deno.serve(async (req) => {
   }
 
   if (!updated) {
+    logTokenFailure(supabase, {
+      endpoint: ENDPOINT,
+      reason: 'already_used',
+      ip: ipLog,
+      userAgent,
+      metadata: { method: 'POST', raceCondition: true },
+    })
     return jsonResponse({ success: false, reason: 'already_unsubscribed' })
   }
 
