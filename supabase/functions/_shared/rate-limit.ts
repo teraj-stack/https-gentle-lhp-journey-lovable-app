@@ -8,13 +8,9 @@
 //                            atomic UPSERT, GLOBAL across isolates.
 //                            Preferred for all new endpoints.
 //
-// Active consumers (DB-backed):
-//   - handle-email-unsubscribe   (10/60s)
-//   - handle-reminder-opt-out    (10/60s)
-//   - verify-turnstile           (30/60s)
-//   - preview-transactional-email (10/60s)
-//   - on-booking-created         (60/60s)  ← DB webhook; Supabase retries
-//                                            on 429 with backoff, harmless.
+// Active consumers (DB-backed) — limits centralized in RATE_LIMITS below.
+// Each consumer simply calls `checkRateLimitDb(supabase, ENDPOINT, ip)`
+// and the config is auto-resolved.
 //
 // update-booking-status — RL intentionally removed (token alone is the
 // security boundary: 256-bit + single-use + 7d expiry). See its file.
