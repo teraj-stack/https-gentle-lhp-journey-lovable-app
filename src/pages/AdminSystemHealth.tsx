@@ -86,6 +86,9 @@ const AdminSystemHealth = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const { isAdmin, loading: adminLoading } = useIsAdmin();
+  const [retryFilterIp, setRetryFilterIp] = useState("");
+  const [retryFilterUa, setRetryFilterUa] = useState("");
+  const [retryDenoOnly, setRetryDenoOnly] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
