@@ -392,6 +392,36 @@ export type Database = {
         }
         Relationships: []
       }
+      token_validation_failures: {
+        Row: {
+          created_at: string
+          endpoint: string
+          id: string
+          ip: string | null
+          metadata: Json | null
+          reason: string
+          user_agent: string | null
+        }
+        Insert: {
+          created_at?: string
+          endpoint: string
+          id?: string
+          ip?: string | null
+          metadata?: Json | null
+          reason: string
+          user_agent?: string | null
+        }
+        Update: {
+          created_at?: string
+          endpoint?: string
+          id?: string
+          ip?: string | null
+          metadata?: Json | null
+          reason?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
@@ -412,10 +442,25 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      recent_token_abuse_ips: {
+        Row: {
+          already_used_count: number | null
+          endpoints: string[] | null
+          expired_count: number | null
+          failure_count: number | null
+          first_seen: string | null
+          invalid_token_count: number | null
+          ip: string | null
+          last_seen: string | null
+          last_user_agent: string | null
+          rate_limited_count: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       cleanup_old_bookings: { Args: never; Returns: undefined }
+      cleanup_old_token_failures: { Args: never; Returns: undefined }
       delete_email: {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
