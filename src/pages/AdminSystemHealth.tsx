@@ -142,6 +142,22 @@ const AdminSystemHealth = () => {
   // Ref-flag: true gdy zamknięcie modala wywołujemy programowo z revealRowInTable,
   // żeby onOpenChange nie odpalił drugi raz auto-reveal (unikamy podwójnego toastu).
   const suppressCloseRevealRef = useRef(false);
+  // Preferencja użytkownika: czy zamknięcie modala / klik "Pokaż w tabeli" ma przewijać
+  // i podświetlać wiersz w tabeli. Trzymane w localStorage żeby przeżyło reload.
+  const AUTO_REVEAL_LS_KEY = "admin-system-health.auto-reveal-row";
+  const [autoRevealEnabled, setAutoRevealEnabled] = useState<boolean>(() => {
+    if (typeof window === "undefined") return true;
+    const v = window.localStorage.getItem(AUTO_REVEAL_LS_KEY);
+    // Domyślnie ON — wartość zapisujemy tylko gdy admin świadomie wyłączy.
+    return v === null ? true : v === "1";
+  });
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(AUTO_REVEAL_LS_KEY, autoRevealEnabled ? "1" : "0");
+    } catch {
+      // localStorage może być zablokowany (private mode) — ignorujemy.
+    }
+  }, [autoRevealEnabled]);
 
   // Auto-fade highlightu wiersza po 10s — wystarczająco długo, żeby admin zdążył zauważyć
   // wyróżnienie po zamknięciu modala, ale nie zostawia trwałego kolorowego rzędu.
@@ -176,6 +192,15 @@ const AdminSystemHealth = () => {
   // Zamyka modal i przewija/podświetla wiersz w tabeli źródeł dla wskazanej kombinacji IP+UA.
   // Czeka jeden frame, żeby DOM zdążył odmontować dialog i przywrócić scroll body.
   const revealRowInTable = (ip: string, ua: string) => {
+    // Jeśli admin wyłączył auto-reveal w preferencjach — tylko zamknij modal, bez
+    // czyszczenia filtrów, scrolla, podświetlenia i toastów. To jest "kill switch".
+    if (!autoRevealEnabled) {
+      suppressCloseRevealRef.current = true;
+      setInspectSource(null);
+      setInspectQuery("");
+      setInspectSort("desc");
+      return;
+    }
     const key = `${ip}::${ua}`;
     // Zapamiętaj pozycję scrolla SPRZED auto-przewinięcia, żeby toast "Cofnij" mógł
     // przywrócić użytkownika dokładnie tam, gdzie był.
@@ -938,6 +963,28 @@ const AdminSystemHealth = () => {
                         <Webhook className="h-3.5 w-3.5 mr-1.5" />
                         Tylko webhook DB (Deno/*)
                       </Toggle>
+                      <Toggle
+                        size="sm"
+                        pressed={autoRevealEnabled}
+                        onPressedChange={(v) => {
+                          setAutoRevealEnabled(v);
+                          toast.success(
+                            v
+                              ? "Auto-przewijanie i podświetlenie włączone"
+                              : "Auto-przewijanie i podświetlenie wyłączone",
+                          );
+                        }}
+                        aria-label="Auto-przewijanie i podświetlenie wiersza po zamknięciu modala"
+                        title={
+                          autoRevealEnabled
+                            ? "Po zamknięciu modala wiersz zostanie automatycznie przewinięty i podświetlony. Kliknij, aby wyłączyć."
+                            : "Auto-reveal wyłączony — zamknięcie modala nie będzie przewijać ani podświetlać wiersza. Kliknij, aby włączyć."
+                        }
+                        className="h-8 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+                      >
+                        <Locate className="h-3.5 w-3.5 mr-1.5" />
+                        Auto-reveal {autoRevealEnabled ? "ON" : "OFF"}
+                      </Toggle>
                       {retryFiltersActive && (
                         <Button
                           variant="ghost"
@@ -1373,13 +1420,24 @@ const AdminSystemHealth = () => {
                       Pokazuję <strong>{inspectFilteredRecords.length}</strong> z {inspectRecords.length} (max 50 najnowszych, window 24h).
                     </div>
                     {inspectSourceIndex >= 0 && (
-                      <div className="mt-2 flex items-start gap-1.5 rounded-md border border-primary/30 bg-primary/5 px-2 py-1.5 text-primary">
-                        <Info className="h-3.5 w-3.5 shrink-0 mt-0.5" />
-                        <span>
-                          Po zamknięciu modala wiersz zostanie automatycznie przewinięty
-                          i podświetlony w tabeli źródeł na ~10 s.
-                        </span>
-                      </div>
+                      autoRevealEnabled ? (
+                        <div className="mt-2 flex items-start gap-1.5 rounded-md border border-primary/30 bg-primary/5 px-2 py-1.5 text-primary">
+                          <Info className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+                          <span>
+                            Po zamknięciu modala wiersz zostanie automatycznie przewinięty
+                            i podświetlony w tabeli źródeł na ~10 s.
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="mt-2 flex items-start gap-1.5 rounded-md border border-muted-foreground/30 bg-muted/40 px-2 py-1.5 text-muted-foreground">
+                          <Info className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+                          <span>
+                            Auto-przewijanie i podświetlenie jest <strong>wyłączone</strong>{" "}
+                            w ustawieniach (toggle „Auto-reveal” w pasku filtrów).
+                            Zamknięcie modala tylko go zamknie.
+                          </span>
+                        </div>
+                      )
                     )}
                   </>
                 )}
