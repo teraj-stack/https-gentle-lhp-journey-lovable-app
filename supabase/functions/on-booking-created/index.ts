@@ -163,7 +163,7 @@ Deno.serve(async (req) => {
 
   // DB-backed rate limit (cross-isolate, atomic) + log denials.
   // Fail-open: RPC failure → request proceeds (warning logged).
-  const rl = await checkRateLimitDb(supabase, ENDPOINT, ip, WEBHOOK_LIMIT)
+  const rl = await checkRateLimitDb(supabase, ENDPOINT, ip)
   if (!rl.allowed) {
     console.warn(`Rate limit exceeded for IP ${ip} on ${ENDPOINT}`)
     logTokenFailure(supabase, {
