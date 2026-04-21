@@ -147,6 +147,10 @@ const AdminSystemHealth = () => {
   // keys: pełna lista ip::ua do iteracji (exact na pozycji 0, potem related w kolejności sortowania).
   // index: aktualnie wskazana pozycja (przy 0 = exact). Null = navigator zamknięty.
   const [matchNavigator, setMatchNavigator] = useState<{ keys: string[]; index: number } | null>(null);
+  // Kursor skoku do następnego dopasowania — używany przez przycisk "Skocz do następnego"
+  // w modalu. Inkrementowany przy każdym kliknięciu, modulo liczba dopasowań.
+  // Reset do 0 przy zmianie inspectSource / highlightScope.
+  const [inspectJumpIndex, setInspectJumpIndex] = useState(0);
   // Timer auto-hide nawigatora po 30s bezczynności.
   const navigatorHideTimerRef = useRef<number | null>(null);
   // Preferencja użytkownika: czy zamknięcie modala / klik "Pokaż w tabeli" ma przewijać
@@ -340,6 +344,12 @@ const AdminSystemHealth = () => {
       }
     };
   }, []);
+
+  // Reset kursora skoku gdy zmienia się źródło inspekcji lub scope —
+  // żeby przycisk "Skocz do następnego" zawsze startował od pierwszego dopasowania.
+  useEffect(() => {
+    setInspectJumpIndex(0);
+  }, [inspectSource, highlightScope]);
 
 
   // Skrót klawiszowy w modalu inspekcji: Ctrl/Cmd+K zawsze, Enter tylko gdy fokus nie jest
@@ -1665,6 +1675,45 @@ const AdminSystemHealth = () => {
                     Pokaż kolejne dopasowania ({relatedMatchCount})
                   </Button>
                 )}
+                {/* Przycisk "Skocz do następnego" — modal POZOSTAJE OTWARTY, klik tylko
+                    przewija tabelę pod modalem do kolejnego podświetlonego wiersza
+                    (cyklicznie po exact + related). Działa też gdy auto-reveal OFF —
+                    bazuje wyłącznie na inspectSource + highlightScope. */}
+                {(() => {
+                  if (!inspectSource) return null;
+                  const jumpKeys = buildMatchKeys(inspectSource, highlightScope);
+                  if (jumpKeys.length <= 1) return null; // exact only — nie ma czego skakać
+                  const total = jumpKeys.length;
+                  const currentDisplay = (inspectJumpIndex % total) + 1;
+                  return (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 gap-1.5 border-primary/40 text-primary hover:bg-primary/10"
+                      onClick={() => {
+                        const idx = inspectJumpIndex % total;
+                        const key = jumpKeys[idx];
+                        const el = document.querySelector<HTMLElement>(
+                          `[data-retry-row-key="${CSS.escape(key)}"]`,
+                        );
+                        if (el) {
+                          el.scrollIntoView({ behavior: "smooth", block: "center" });
+                          // Krótki "puls" ringa na wierszu — żeby było widać dokąd skoczyliśmy
+                          // pod modalem (modal nie zasłania całej tabeli).
+                          el.classList.add("ring-2", "ring-primary", "bg-primary/20");
+                          window.setTimeout(() => {
+                            el.classList.remove("ring-2", "ring-primary", "bg-primary/20");
+                          }, 1500);
+                        }
+                        setInspectJumpIndex((i) => i + 1);
+                      }}
+                      title={`Przewiń tabelę pod modalem do następnego podświetlonego wiersza (${currentDisplay}/${total}). Modal pozostaje otwarty.`}
+                    >
+                      <ChevronRight className="h-3.5 w-3.5" />
+                      Skocz do następnego ({currentDisplay}/{total})
+                    </Button>
+                  );
+                })()}
               <Button
                 variant="outline"
                 size="sm"
