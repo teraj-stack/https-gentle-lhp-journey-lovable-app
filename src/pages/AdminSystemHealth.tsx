@@ -84,6 +84,44 @@ const REASON_VARIANT: Record<string, "default" | "secondary" | "destructive" | "
   invalid_payload: "outline",
 };
 
+// Pola podświetlane w widoku metadanych — szybciej rzuca się w oczy
+// przy analizie ataku/pętli (retry-after, podgląd tokenu, metoda HTTP).
+const HIGHLIGHTED_METADATA_KEYS = new Set(["retryAfterSec", "tokenPreview", "method"]);
+
+const MetadataView = ({ data }: { data: Record<string, unknown> }) => {
+  const entries = Object.entries(data);
+  if (entries.length === 0) {
+    return <span className="text-muted-foreground italic">{"{}"}</span>;
+  }
+  return (
+    <div className="space-y-0.5">
+      {entries.map(([key, value]) => {
+        const isHighlighted = HIGHLIGHTED_METADATA_KEYS.has(key);
+        const rendered =
+          typeof value === "string" ? `"${value}"` : JSON.stringify(value, null, 2);
+        return (
+          <div
+            key={key}
+            className={
+              isHighlighted
+                ? "rounded bg-primary/15 border border-primary/30 px-1.5 py-0.5 -mx-0.5"
+                : "px-1.5 py-0.5"
+            }
+          >
+            <span className={isHighlighted ? "text-primary font-semibold" : "text-muted-foreground"}>
+              {key}
+            </span>
+            <span className="text-muted-foreground">: </span>
+            <span className={isHighlighted ? "text-foreground font-semibold" : "text-foreground/90"}>
+              {rendered}
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
 const AdminSystemHealth = () => {
   const navigate = useNavigate();
   const [session, setSession] = useState<Session | null>(null);
@@ -1107,9 +1145,9 @@ const AdminSystemHealth = () => {
                           retry-after: {retryAfter}s
                         </Badge>
                       )}
-                      <pre className="font-mono text-[11px] bg-background border border-border rounded p-2 overflow-x-auto whitespace-pre-wrap break-all">
-{JSON.stringify(r.metadata ?? {}, null, 2)}
-                      </pre>
+                      <div className="font-mono text-[11px] bg-background border border-border rounded p-2 overflow-x-auto">
+                        <MetadataView data={r.metadata ?? {}} />
+                      </div>
                     </div>
                   );
                 })}
