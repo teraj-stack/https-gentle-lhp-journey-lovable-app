@@ -613,6 +613,29 @@ const AdminSystemHealth = () => {
     return set;
   }, [highlightedSource, highlightScope, webhookRetryStats.sources]);
 
+  // Buduje pełną listę kluczy ip::ua do nawigacji "Pokaż kolejne dopasowania":
+  // [0] = exact (wiersz źródłowy z modala), [1..N] = related (max MAX_RELATED_HIGHLIGHTS),
+  // w naturalnej kolejności sortowania źródeł (desc by count).
+  const buildMatchKeys = (
+    source: { ip: string; ua: string },
+    scope: HighlightScope,
+  ): string[] => {
+    const keys = [`${source.ip}::${source.ua}`];
+    if (scope === "exact") return keys;
+    let added = 0;
+    for (const s of webhookRetryStats.sources) {
+      if (added >= MAX_RELATED_HIGHLIGHTS) break;
+      const isExact = s.ip === source.ip && s.ua === source.ua;
+      if (isExact) continue;
+      const matches = scope === "same-ip" ? s.ip === source.ip : s.ua === source.ua;
+      if (matches) {
+        keys.push(`${s.ip}::${s.ua}`);
+        added++;
+      }
+    }
+    return keys;
+  };
+
   // Rekordy filtrowane do modala inspekcji (wybrane IP + UA, max 50 ostatnich).
   const inspectRecords = useMemo(() => {
     if (!inspectSource) return [];
