@@ -529,6 +529,95 @@ const AdminSystemHealth = () => {
                   {" "}— pozostałe to ruch zewnętrzny / boty.
                 </p>
 
+                {/* Karta podsumowania: koncentracja źródeł + retry-after.
+                    Wysoki topIpShare (>70%) = pojedynczy abuser / pętla.
+                    Wysoki avgRetryAfter = klient odbija się o pełne okno
+                    rate-limitu (60s), czyli realnie czeka maksymalnie długo. */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                  <div
+                    className={
+                      webhookRetryStats.topIpShare >= 70 && webhookRetryStats.last24h > 0
+                        ? "rounded-lg border-2 border-destructive/60 p-4 bg-destructive/5"
+                        : "rounded-lg border border-border p-4 bg-card/40"
+                    }
+                  >
+                    <div className="flex items-center gap-2 mb-2">
+                      <Ban
+                        className={
+                          webhookRetryStats.topIpShare >= 70 && webhookRetryStats.last24h > 0
+                            ? "h-4 w-4 text-destructive"
+                            : "h-4 w-4 text-muted-foreground"
+                        }
+                      />
+                      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                        Koncentracja źródeł
+                      </p>
+                    </div>
+                    {webhookRetryStats.last24h === 0 ? (
+                      <p className="text-sm text-muted-foreground">Brak danych w 24h.</p>
+                    ) : (
+                      <>
+                        <p
+                          className={
+                            webhookRetryStats.topIpShare >= 70
+                              ? "text-3xl font-bold text-destructive"
+                              : "text-3xl font-bold text-foreground"
+                          }
+                        >
+                          {webhookRetryStats.topIpShare.toFixed(1)}%
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          retry'ów z jednego IP{" "}
+                          <code className="font-mono text-[11px] bg-muted px-1 py-0.5 rounded">
+                            {webhookRetryStats.topIp ?? "—"}
+                          </code>{" "}
+                          (<strong>{webhookRetryStats.topIpCount}</strong> / {webhookRetryStats.last24h})
+                        </p>
+                        <p className="text-[11px] text-muted-foreground mt-2">
+                          Unikalne IP w 24h: <strong>{webhookRetryStats.uniqueIps}</strong>
+                          {webhookRetryStats.topIpShare >= 70 && (
+                            <span className="text-destructive ml-2">⚠ Wysoka koncentracja — sprawdź źródło.</span>
+                          )}
+                        </p>
+                      </>
+                    )}
+                  </div>
+
+                  <div className="rounded-lg border border-border p-4 bg-card/40">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Repeat className="h-4 w-4 text-muted-foreground" />
+                      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                        Retry-after (z metadanych)
+                      </p>
+                    </div>
+                    {webhookRetryStats.retryAfterSampleCount === 0 ? (
+                      <p className="text-sm text-muted-foreground">Brak metadanych retry-after.</p>
+                    ) : (
+                      <>
+                        <p className="text-3xl font-bold text-foreground">
+                          {webhookRetryStats.avgRetryAfter.toFixed(1)}
+                          <span className="text-sm font-normal text-muted-foreground ml-1">s średnio</span>
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Maksymalny: <strong>{webhookRetryStats.maxRetryAfter}s</strong>{" "}
+                          (próbka: {webhookRetryStats.retryAfterSampleCount} / {webhookRetryStats.last24h})
+                        </p>
+                        <p className="text-[11px] text-muted-foreground mt-2">
+                          {webhookRetryStats.avgRetryAfter >= 45 ? (
+                            <span className="text-destructive">
+                              ⚠ Klienci czekają prawie pełne okno (60s) — limit jest stale wysycony.
+                            </span>
+                          ) : webhookRetryStats.avgRetryAfter >= 20 ? (
+                            <>Średnie obciążenie — okno rate-limitu często aktywne.</>
+                          ) : (
+                            <>Niski czas czekania — pojedyncze odrzucenia.</>
+                          )}
+                        </p>
+                      </>
+                    )}
+                  </div>
+                </div>
+
                 {/* Trend retry'ów per godzina, ostatnie 24h.
                     Stacked area: Deno/* (wewnętrzny webhook) vs pozostałe. */}
                 <div className="rounded-lg border border-border p-3 mb-4 bg-card/40">
