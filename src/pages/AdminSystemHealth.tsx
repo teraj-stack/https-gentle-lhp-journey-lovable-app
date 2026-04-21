@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { ArrowLeft, ShieldAlert, Activity, AlertTriangle, RefreshCw, Ban, Webhook, Repeat, Filter, X, Eye, Download, ArrowDownWideNarrow, ArrowUpWideNarrow } from "lucide-react";
+import { ArrowLeft, ShieldAlert, Activity, AlertTriangle, RefreshCw, Ban, Webhook, Repeat, Filter, X, Eye, Download, ArrowDownWideNarrow, ArrowUpWideNarrow, Locate } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Toggle } from "@/components/ui/toggle";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -136,6 +136,37 @@ const AdminSystemHealth = () => {
   const [inspectQuery, setInspectQuery] = useState("");
   // Kierunek sortowania w modalu: desc = najnowsze pierwsze (domyślnie).
   const [inspectSort, setInspectSort] = useState<"desc" | "asc">("desc");
+  // Klucz aktualnie podświetlonego wiersza w tabeli źródeł (po "Pokaż w tabeli" z modala).
+  const [highlightedRowKey, setHighlightedRowKey] = useState<string | null>(null);
+
+  // Auto-fade highlightu wiersza po 3s — żeby nie zostawiać trwałego kolorowego rzędu.
+  useEffect(() => {
+    if (!highlightedRowKey) return;
+    const t = window.setTimeout(() => setHighlightedRowKey(null), 3000);
+    return () => window.clearTimeout(t);
+  }, [highlightedRowKey]);
+
+  // Zamyka modal i przewija/podświetla wiersz w tabeli źródeł dla wskazanej kombinacji IP+UA.
+  // Czeka jeden frame, żeby DOM zdążył odmontować dialog i przywrócić scroll body.
+  const revealRowInTable = (ip: string, ua: string) => {
+    const key = `${ip}::${ua}`;
+    // Wyczyść filtry, jeśli przez nie wiersz jest poza listą — inaczej scroll trafi w pustkę.
+    if (retryFilterIp.trim()) setRetryFilterIp("");
+    if (retryFilterUa.trim()) setRetryFilterUa("");
+    if (retryDenoOnly && !/^Deno\//i.test(ua)) setRetryDenoOnly(false);
+    setInspectSource(null);
+    setInspectQuery("");
+    setInspectSort("desc");
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const el = document.querySelector<HTMLElement>(`[data-retry-row-key="${CSS.escape(key)}"]`);
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "center" });
+          setHighlightedRowKey(key);
+        }
+      });
+    });
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -843,7 +874,15 @@ const AdminSystemHealth = () => {
                             {filteredRetrySources.map((s) => {
                               const isDeno = /^Deno\//i.test(s.ua);
                               return (
-                                <TableRow key={`${s.ip}::${s.ua}`}>
+                                <TableRow
+                                  key={`${s.ip}::${s.ua}`}
+                                  data-retry-row-key={`${s.ip}::${s.ua}`}
+                                  className={
+                                    highlightedRowKey === `${s.ip}::${s.ua}`
+                                      ? "bg-primary/15 ring-2 ring-primary/40 transition-colors"
+                                      : "transition-colors"
+                                  }
+                                >
                                   <TableCell className="font-mono text-xs">{s.ip}</TableCell>
                                   <TableCell className="font-mono text-xs">
                                     {isDeno ? (
@@ -1096,6 +1135,20 @@ const AdminSystemHealth = () => {
                 <Eye className="h-5 w-5 text-primary" />
                 Surowe rekordy retry'ów
               </DialogTitle>
+              <div className="flex items-center gap-2 shrink-0">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 gap-1.5"
+                  onClick={() => {
+                    if (!inspectSource) return;
+                    revealRowInTable(inspectSource.ip, inspectSource.ua);
+                  }}
+                  title="Zamknij modal i przewiń do wiersza w tabeli źródeł"
+                >
+                  <Locate className="h-3.5 w-3.5" />
+                  Pokaż w tabeli
+                </Button>
               <Button
                 variant="outline"
                 size="sm"
@@ -1131,6 +1184,7 @@ const AdminSystemHealth = () => {
                 <Download className="h-3.5 w-3.5" />
                 Eksportuj
               </Button>
+              </div>
             </div>
             <DialogDescription asChild>
               <div className="text-xs space-y-1">
