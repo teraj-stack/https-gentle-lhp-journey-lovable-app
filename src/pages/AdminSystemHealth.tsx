@@ -1635,6 +1635,26 @@ const AdminSystemHealth = () => {
                     Zamknij i przejdź do wiersza ({inspectSourceIndex + 1} z {webhookRetryStats.sources.length})
                   </Badge>
                 )}
+                {/* Licznik "następnego" dopasowania — pokazuje który wiersz zostanie
+                    podświetlony przy najbliższym kliknięciu "Skocz do następnego".
+                    Widoczny tylko gdy mamy >1 dopasowanie (czyli jest po czym skakać). */}
+                {(() => {
+                  if (!inspectSource) return null;
+                  const jumpKeys = buildMatchKeys(inspectSource, highlightScope);
+                  if (jumpKeys.length <= 1) return null;
+                  const total = jumpKeys.length;
+                  const nextDisplay = (inspectJumpIndex % total) + 1;
+                  return (
+                    <Badge
+                      variant="outline"
+                      className="border-primary/40 text-primary text-[11px] font-normal gap-1"
+                      title={`Następny skok podświetli dopasowanie ${nextDisplay} z ${total} (cyklicznie)`}
+                    >
+                      <ChevronRight className="h-3 w-3" />
+                      Następne: {nextDisplay} z {total}
+                    </Badge>
+                  );
+                })()}
               </DialogTitle>
               <div className="flex items-center gap-2 shrink-0">
                 <Button
