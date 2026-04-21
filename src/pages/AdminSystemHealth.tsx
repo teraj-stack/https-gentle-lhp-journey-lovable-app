@@ -1372,6 +1372,15 @@ const AdminSystemHealth = () => {
                     <div>
                       Pokazuję <strong>{inspectFilteredRecords.length}</strong> z {inspectRecords.length} (max 50 najnowszych, window 24h).
                     </div>
+                    {inspectSourceIndex >= 0 && (
+                      <div className="mt-2 flex items-start gap-1.5 rounded-md border border-primary/30 bg-primary/5 px-2 py-1.5 text-primary">
+                        <Info className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+                        <span>
+                          Po zamknięciu modala wiersz zostanie automatycznie przewinięty
+                          i podświetlony w tabeli źródeł na ~10 s.
+                        </span>
+                      </div>
+                    )}
                   </>
                 )}
               </div>
