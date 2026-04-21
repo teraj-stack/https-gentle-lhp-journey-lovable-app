@@ -185,6 +185,7 @@ const AdminSystemHealth = () => {
     if (willClearIp) setRetryFilterIp("");
     if (willClearUa) setRetryFilterUa("");
     if (willClearDeno) setRetryDenoOnly(false);
+    suppressCloseRevealRef.current = true;
     setInspectSource(null);
     setInspectQuery("");
     setInspectSort("desc");
