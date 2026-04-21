@@ -154,6 +154,13 @@ const AdminSystemHealth = () => {
   // Kierunek ostatniego skoku — używany do pokazania ikony ▼/▲ przy badge "Następne".
   // null = jeszcze nie wykonano skoku w tej sesji modala. Reset z inspectJumpIndex.
   const [lastJumpDirection, setLastJumpDirection] = useState<"forward" | "backward" | null>(null);
+  // Per-source pamięć kursora — żeby po zamknięciu i ponownym otwarciu modala
+  // dla tego samego IP+UA+scope, kursor i kierunek wskazywały to samo dopasowanie
+  // co poprzednio. Klucz: `${ip}::${ua}::${scope}`. In-memory (Map w refie) — nie potrzeba
+  // localStorage, bo dane retry się odświeżają i indeksy mogą się zdezaktualizować po reloadzie.
+  const jumpStateMemoryRef = useRef<Map<string, { index: number; direction: "forward" | "backward" | null }>>(
+    new Map(),
+  );
   // Timer auto-hide nawigatora po 30s bezczynności.
   const navigatorHideTimerRef = useRef<number | null>(null);
   // Preferencja użytkownika: czy zamknięcie modala / klik "Pokaż w tabeli" ma przewijać
@@ -348,11 +355,32 @@ const AdminSystemHealth = () => {
     };
   }, []);
 
-  // Reset kursora skoku gdy zmienia się źródło inspekcji lub scope —
-  // żeby przycisk "Skocz do następnego" zawsze startował od pierwszego dopasowania.
+  // Restore kursora przy zmianie źródła inspekcji lub scope:
+  // - jeśli mamy zapamiętany stan dla `${ip}::${ua}::${scope}` → przywróć indeks i kierunek
+  //   (po reopen modala dla tego samego źródła zobaczymy to samo dopasowanie co poprzednio)
+  // - jeśli nie → reset do 0 (świeża sesja dla nowego źródła)
+  // Walidujemy tylko że indeks mieści się w aktualnej liczbie dopasowań — jeśli dane
+  // retry się odświeżyły i indeks wypadł poza zakres, fallback do 0.
   useEffect(() => {
-    setInspectJumpIndex(0);
-    setLastJumpDirection(null);
+    if (!inspectSource) {
+      setInspectJumpIndex(0);
+      setLastJumpDirection(null);
+      return;
+    }
+    const memoryKey = `${inspectSource.ip}::${inspectSource.ua}::${highlightScope}`;
+    const remembered = jumpStateMemoryRef.current.get(memoryKey);
+    if (remembered) {
+      const total = buildMatchKeys(inspectSource, highlightScope).length;
+      const safeIndex = total > 0 ? remembered.index % total : 0;
+      setInspectJumpIndex(safeIndex);
+      setLastJumpDirection(remembered.direction);
+    } else {
+      setInspectJumpIndex(0);
+      setLastJumpDirection(null);
+    }
+    // buildMatchKeys zależy od webhookRetryStats.sources, ale to OK — chcemy walidować
+    // przy każdej zmianie source/scope, niezależnie od refresh danych.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [inspectSource, highlightScope]);
 
 
@@ -365,7 +393,8 @@ const AdminSystemHealth = () => {
     if (jumpKeys.length <= 1) return; // exact only — nic do skakania
     const total = jumpKeys.length;
     // Zapisz kierunek skoku dla wskaźnika ▼/▲ przy badge "Następne".
-    setLastJumpDirection(offset >= 0 ? "forward" : "backward");
+    const newDirection: "forward" | "backward" = offset >= 0 ? "forward" : "backward";
+    setLastJumpDirection(newDirection);
     setInspectJumpIndex((prev) => {
       const idx = ((prev + offset) % total + total) % total;
       const key = jumpKeys[idx];
@@ -378,11 +407,11 @@ const AdminSystemHealth = () => {
         el.classList.add("animate-jump-pulse");
         window.setTimeout(() => el.classList.remove("animate-jump-pulse"), 1800);
       }
-      // Kursor wskazuje "następne" dopasowanie po tym skoku — przesuwamy o +1 dla offset>=0,
-      // i o 0 dla offset<0 (idziemy wstecz, więc badge "Następne: X" powinien wskazywać tam,
-      // gdzie właśnie skoczyliśmy + 1, czyli idx+1; dla forward: idx też+1, bo prev wskazywał
-      // "do podświetlenia teraz", a po skoku przesuwamy o jedną pozycję dalej).
-      return (idx + 1) % total;
+      const nextIndex = (idx + 1) % total;
+      // Persist do mapy — żeby reopen modala dla tego samego (ip, ua, scope) wrócił tu.
+      const memoryKey = `${inspectSource.ip}::${inspectSource.ua}::${highlightScope}`;
+      jumpStateMemoryRef.current.set(memoryKey, { index: nextIndex, direction: newDirection });
+      return nextIndex;
     });
   };
 
