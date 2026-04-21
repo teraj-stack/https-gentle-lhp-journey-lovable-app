@@ -167,10 +167,18 @@ const AdminSystemHealth = () => {
     toast.success("Przywrócono poprzednie filtry");
   };
 
+  // Przewija stronę do zadanej pozycji Y z natywnym smooth scrollem.
+  const scrollToY = (y: number) => {
+    window.scrollTo({ top: y, left: 0, behavior: "smooth" });
+  };
+
   // Zamyka modal i przewija/podświetla wiersz w tabeli źródeł dla wskazanej kombinacji IP+UA.
   // Czeka jeden frame, żeby DOM zdążył odmontować dialog i przywrócić scroll body.
   const revealRowInTable = (ip: string, ua: string) => {
     const key = `${ip}::${ua}`;
+    // Zapamiętaj pozycję scrolla SPRZED auto-przewinięcia, żeby toast "Cofnij" mógł
+    // przywrócić użytkownika dokładnie tam, gdzie był.
+    const previousScrollY = window.scrollY;
     // Zapisz snapshot tylko, jeśli jakiś filtr faktycznie zostanie wyczyszczony — inaczej
     // nie ma czego przywracać i nie zaśmiecamy UI toastem.
     const willClearIp = retryFilterIp.trim() !== "";
@@ -192,9 +200,11 @@ const AdminSystemHealth = () => {
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         const el = document.querySelector<HTMLElement>(`[data-retry-row-key="${CSS.escape(key)}"]`);
+        let didScroll = false;
         if (el) {
           el.scrollIntoView({ behavior: "smooth", block: "center" });
           setHighlightedRowKey(key);
+          didScroll = true;
         }
         if (snapshot) {
           // Toast z akcją "Przywróć filtry" — czas życia 8s, żeby admin zdążył kliknąć.
@@ -203,6 +213,22 @@ const AdminSystemHealth = () => {
             action: {
               label: "Przywróć filtry",
               onClick: () => restoreFiltersSnapshot(snapshot),
+            },
+            duration: 8000,
+          });
+        }
+        // Drugi, niezależny toast z akcją "Cofnij" — pojawia się tylko jeśli faktycznie
+        // przewinęliśmy stronę (różnica >40 px), żeby nie zaśmiecać UI gdy wiersz był już
+        // widoczny w viewporcie.
+        if (didScroll && Math.abs(window.scrollY - previousScrollY) > 40) {
+          toast("Przewinięto do wiersza", {
+            description: "Możesz wrócić do poprzedniego miejsca na stronie.",
+            action: {
+              label: "Cofnij",
+              onClick: () => {
+                scrollToY(previousScrollY);
+                toast.success("Przywrócono poprzednią pozycję");
+              },
             },
             duration: 8000,
           });
