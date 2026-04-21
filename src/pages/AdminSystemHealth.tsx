@@ -1041,15 +1041,28 @@ const AdminSystemHealth = () => {
                             {filteredRetrySources.map((s) => {
                               const isDeno = /^Deno\//i.test(s.ua);
                               const rowKey = `${s.ip}::${s.ua}`;
-                              const isHighlighted = highlightedRowKey === rowKey;
+                              // Dwa poziomy podświetlenia:
+                              //  - exact (IP+UA): mocny — ring + bg primary/15 (wiersz źródłowy z modala)
+                              //  - same-IP: delikatny — samo bg primary/5 (pokrewne wiersze z tego samego adresu)
+                              const isExactHighlight =
+                                !!highlightedSource &&
+                                highlightedSource.ip === s.ip &&
+                                highlightedSource.ua === s.ua;
+                              const isSameIpHighlight =
+                                !!highlightedSource &&
+                                !isExactHighlight &&
+                                highlightedSource.ip === s.ip;
+                              const isHighlighted = isExactHighlight || isSameIpHighlight;
                               const row = (
                                 <TableRow
                                   key={rowKey}
                                   data-retry-row-key={rowKey}
                                   className={
-                                    isHighlighted
+                                    isExactHighlight
                                       ? "bg-primary/15 ring-2 ring-primary/40 transition-colors cursor-help"
-                                      : "transition-colors"
+                                      : isSameIpHighlight
+                                        ? "bg-primary/5 transition-colors cursor-help"
+                                        : "transition-colors"
                                   }
                                 >
                                   <TableCell className="font-mono text-xs">{s.ip}</TableCell>
