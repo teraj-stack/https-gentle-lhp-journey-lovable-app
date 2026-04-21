@@ -1066,7 +1066,10 @@ const AdminSystemHealth = () => {
                                 !!highlightedSource &&
                                 highlightedSource.ip === s.ip &&
                                 highlightedSource.ua === s.ua;
+                              // Same-IP highlight aktywny tylko gdy admin wybrał scope "same-ip"
+                              // w ustawieniach. Dla "exact" pozostawiamy tylko mocny match.
                               const isSameIpHighlight =
+                                highlightScope === "same-ip" &&
                                 !!highlightedSource &&
                                 !isExactHighlight &&
                                 highlightedSource.ip === s.ip;
