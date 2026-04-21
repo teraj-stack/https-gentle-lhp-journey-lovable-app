@@ -425,6 +425,16 @@ const AdminSystemHealth = () => {
 
   const retryFiltersActive = retryDenoOnly || retryFilterIp.trim() !== "" || retryFilterUa.trim() !== "";
 
+  // Pozycja inspectSource w pełnej (posortowanej) liście źródeł — używana do podpisu
+  // "1 z N" w nagłówku modala. -1 oznacza brak dopasowania (np. dane się odświeżyły
+  // i kombinacja IP+UA wypadła z 24h okna).
+  const inspectSourceIndex = useMemo(() => {
+    if (!inspectSource) return -1;
+    return webhookRetryStats.sources.findIndex(
+      (s) => s.ip === inspectSource.ip && s.ua === inspectSource.ua,
+    );
+  }, [inspectSource, webhookRetryStats.sources]);
+
   // Rekordy filtrowane do modala inspekcji (wybrane IP + UA, max 50 ostatnich).
   const inspectRecords = useMemo(() => {
     if (!inspectSource) return [];
