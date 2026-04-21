@@ -153,6 +153,64 @@ const AdminSystemHealth = () => {
     refetchInterval: 30_000,
   });
 
+  // Retry webhooka DB → 429 dla on-booking-created.
+  // Sygnał = wpisy reason='rate_limited' z UA "Deno/*" (Supabase webhook
+  // delivery używa Deno fetch). Każdy taki wpis to próba ponowienia, którą
+  // Supabase wykonuje z exponential backoff. Pokazujemy 3 okna (1h/6h/24h)
+  // + breakdown per IP/UA, żeby od razu widzieć czy to jednorazowy spike,
+  // czy stały szum (sygnał do podniesienia limitu lub zbadania pętli).
+  type WebhookRetryRow = {
+    id: string;
+    ip: string | null;
+    user_agent: string | null;
+    metadata: Record<string, unknown> | null;
+    created_at: string;
+  };
+  const { data: webhookRetries = [], isLoading: retriesLoading, dataUpdatedAt: retriesUpdated } = useQuery({
+    queryKey: ["admin-booking-webhook-retries-24h"],
+    queryFn: async () => {
+      const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      const { data, error } = await supabase
+        .from("token_validation_failures" as never)
+        .select("id, ip, user_agent, metadata, created_at")
+        .eq("endpoint", "on-booking-created")
+        .eq("reason", "rate_limited")
+        .gte("created_at", since)
+        .order("created_at", { ascending: false })
+        .limit(1000);
+      if (error) throw error;
+      return (data ?? []) as unknown as WebhookRetryRow[];
+    },
+    enabled,
+    refetchInterval: 60_000,
+  });
+
+  const webhookRetryStats = useMemo(() => {
+    const now = Date.now();
+    const buckets = { last1h: 0, last6h: 0, last24h: webhookRetries.length };
+    const perSource = new Map<string, { ip: string; ua: string; count: number; last: string; maxRetryAfter: number }>();
+    let denoOnly = 0;
+    for (const r of webhookRetries) {
+      const ageMs = now - new Date(r.created_at).getTime();
+      if (ageMs <= 60 * 60 * 1000) buckets.last1h += 1;
+      if (ageMs <= 6 * 60 * 60 * 1000) buckets.last6h += 1;
+      const ua = r.user_agent ?? "—";
+      const isDeno = /^Deno\//i.test(ua);
+      if (isDeno) denoOnly += 1;
+      const key = `${r.ip ?? "—"}::${ua}`;
+      const retryAfter = typeof r.metadata?.retryAfterSec === "number" ? (r.metadata.retryAfterSec as number) : 0;
+      const existing = perSource.get(key);
+      if (existing) {
+        existing.count += 1;
+        if (retryAfter > existing.maxRetryAfter) existing.maxRetryAfter = retryAfter;
+      } else {
+        perSource.set(key, { ip: r.ip ?? "—", ua, count: 1, last: r.created_at, maxRetryAfter: retryAfter });
+      }
+    }
+    const sources = Array.from(perSource.values()).sort((a, b) => b.count - a.count).slice(0, 8);
+    return { ...buckets, denoOnly, sources };
+  }, [webhookRetries]);
+
   // Toast tylko przy WEJŚCIU w stan przekroczenia (nie przy każdym refetchu).
   const wasOverThreshold = useMemo(() => ({ value: false }), []);
   useEffect(() => {
