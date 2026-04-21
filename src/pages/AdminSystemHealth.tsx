@@ -1564,6 +1564,21 @@ const AdminSystemHealth = () => {
                           <span>
                             Po zamknięciu modala wiersz zostanie automatycznie przewinięty
                             i podświetlony w tabeli źródeł na ~10 s.
+                            {highlightScope !== "exact" && (
+                              <>
+                                {" "}Znaleziono <strong>{relatedMatchCount}</strong>{" "}
+                                {relatedMatchCount === 1 ? "pokrewny wiersz" : "pokrewnych wierszy"} z{" "}
+                                {highlightScope === "same-ip" ? "tym samym IP" : "tym samym User-Agent"}
+                                {relatedMatchCount > MAX_RELATED_HIGHLIGHTS ? (
+                                  <>
+                                    {" "}— podświetlimy <strong>pierwszych {MAX_RELATED_HIGHLIGHTS}</strong>{" "}
+                                    (limit ochronny).
+                                  </>
+                                ) : (
+                                  <>.</>
+                                )}
+                              </>
+                            )}
                           </span>
                         </div>
                       ) : (
