@@ -1723,9 +1723,18 @@ const AdminSystemHealth = () => {
                       <Badge
                         variant="outline"
                         className="border-primary/40 text-primary text-[11px] font-normal gap-1"
-                        title={`Następny skok podświetli dopasowanie ${nextDisplay} z ${total} (cyklicznie)`}
+                        title={`Następny skok podświetli dopasowanie ${nextDisplay} z ${total} (cyklicznie). Kierunek: ${
+                          lastJumpDirection === "backward" ? "wstecz (ostatnio użyto ↑/K)" : "w przód (ostatnio użyto ↓/J lub przed pierwszym skokiem)"
+                        }`}
                       >
-                        <ChevronRight className="h-3 w-3" />
+                        {/* Ikona kierunku zależna od ostatniego skoku:
+                            ▼ ChevronDown — w przód (default lub po ↓/J/Skocz do następnego)
+                            ▲ ChevronUp   — wstecz (po ↑/K) */}
+                        {lastJumpDirection === "backward" ? (
+                          <ChevronUp className="h-3 w-3" />
+                        ) : (
+                          <ChevronDown className="h-3 w-3" />
+                        )}
                         Następne: {nextDisplay} z {total}
                       </Badge>
                     </>
