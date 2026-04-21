@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { ArrowLeft, ShieldAlert, Activity, AlertTriangle, RefreshCw, Ban, Webhook, Repeat, Filter, X, Eye, Download } from "lucide-react";
+import { ArrowLeft, ShieldAlert, Activity, AlertTriangle, RefreshCw, Ban, Webhook, Repeat, Filter, X, Eye, Download, ArrowDownWideNarrow, ArrowUpWideNarrow } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Toggle } from "@/components/ui/toggle";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -134,6 +134,8 @@ const AdminSystemHealth = () => {
   const [inspectSource, setInspectSource] = useState<{ ip: string; ua: string } | null>(null);
   // Filtr tekstowy w modalu — szuka substringa w JSON metadata (case-insensitive).
   const [inspectQuery, setInspectQuery] = useState("");
+  // Kierunek sortowania w modalu: desc = najnowsze pierwsze (domyślnie).
+  const [inspectSort, setInspectSort] = useState<"desc" | "asc">("desc");
 
   useEffect(() => {
     let isMounted = true;
@@ -337,18 +339,23 @@ const AdminSystemHealth = () => {
       .slice(0, 50);
   }, [inspectSource, webhookRetries]);
 
-  // Wynik wyszukiwania w modalu — substring w stringified metadata (case-insensitive).
+  // Wynik wyszukiwania w modalu — substring w stringified metadata (case-insensitive),
+  // z sortowaniem po created_at (desc=najnowsze, asc=najstarsze).
   const inspectFilteredRecords = useMemo(() => {
     const q = inspectQuery.trim().toLowerCase();
-    if (!q) return inspectRecords;
-    return inspectRecords.filter((r) => {
-      try {
-        return JSON.stringify(r.metadata ?? {}).toLowerCase().includes(q);
-      } catch {
-        return false;
-      }
-    });
-  }, [inspectRecords, inspectQuery]);
+    const filtered = q
+      ? inspectRecords.filter((r) => {
+          try {
+            return JSON.stringify(r.metadata ?? {}).toLowerCase().includes(q);
+          } catch {
+            return false;
+          }
+        })
+      : inspectRecords;
+    // inspectRecords już przychodzi w kolejności DESC z query, więc dla "desc" zostawiamy,
+    // a dla "asc" tworzymy odwróconą kopię (nie mutujemy oryginału).
+    return inspectSort === "asc" ? [...filtered].reverse() : filtered;
+  }, [inspectRecords, inspectQuery, inspectSort]);
 
   // Trend retry'ów per godzina, ostatnie 24h. Dwie serie: deno (wewnętrzny
   // webhook DB) i other (ruch zewnętrzny / boty). Każdy bucket = pełna
@@ -1078,6 +1085,7 @@ const AdminSystemHealth = () => {
           if (!open) {
             setInspectSource(null);
             setInspectQuery("");
+            setInspectSort("desc");
           }
         }}
       >
@@ -1149,24 +1157,45 @@ const AdminSystemHealth = () => {
             </p>
           ) : (
             <>
-              <div className="relative shrink-0">
-                <Filter className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
-                <Input
-                  value={inspectQuery}
-                  onChange={(e) => setInspectQuery(e.target.value)}
-                  placeholder="Filtruj po metadata (np. tokenPreview, method, fragment ID)…"
-                  className="h-8 pl-8 pr-8 text-xs"
-                />
-                {inspectQuery && (
-                  <button
-                    type="button"
-                    onClick={() => setInspectQuery("")}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                    aria-label="Wyczyść filtr"
-                  >
-                    <X className="h-3.5 w-3.5" />
-                  </button>
-                )}
+              <div className="flex items-center gap-2 shrink-0">
+                <div className="relative flex-1">
+                  <Filter className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+                  <Input
+                    value={inspectQuery}
+                    onChange={(e) => setInspectQuery(e.target.value)}
+                    placeholder="Filtruj po metadata (np. tokenPreview, method, fragment ID)…"
+                    className="h-8 pl-8 pr-8 text-xs"
+                  />
+                  {inspectQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setInspectQuery("")}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      aria-label="Wyczyść filtr"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 gap-1.5 shrink-0 text-xs"
+                  onClick={() => setInspectSort((s) => (s === "desc" ? "asc" : "desc"))}
+                  title={inspectSort === "desc" ? "Pokaż najstarsze pierwsze" : "Pokaż najnowsze pierwsze"}
+                >
+                  {inspectSort === "desc" ? (
+                    <>
+                      <ArrowDownWideNarrow className="h-3.5 w-3.5" />
+                      Najnowsze
+                    </>
+                  ) : (
+                    <>
+                      <ArrowUpWideNarrow className="h-3.5 w-3.5" />
+                      Najstarsze
+                    </>
+                  )}
+                </Button>
               </div>
               {inspectFilteredRecords.length === 0 ? (
                 <p className="text-sm text-muted-foreground py-8 text-center">
