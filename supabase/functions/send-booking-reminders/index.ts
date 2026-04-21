@@ -1,14 +1,18 @@
 // Scheduled Edge Function — generic booking reminder dispatcher.
 //
-// Replaces the previous separate `send-booking-reminders` (24h) and
-// `send-booking-reminders-2h` functions. Behaviour is selected via the
-// `window` body param: "24h" (tomorrow's bookings) or "2h" (today, in a
-// 90–150 min window from now).
+// DST-safe: filters bookings by precomputed `next_reminder_24h_at` /
+// `next_reminder_2h_at` columns (TIMESTAMPTZ, computed in Europe/Warsaw
+// by the `compute_booking_reminder_schedule` trigger). pg_cron runs in UTC
+// but the schedule column already stores the correct UTC instant for
+// "24h before appointment" and "2h before appointment" in Warsaw local
+// time — automatically correct across spring/autumn DST transitions.
 //
 // Schedules (configured via pg_cron):
-//   - hourly  → POST { "window": "24h" }
-//   - /30 min → POST { "window": "2h" }
+//   - 0 19-22 * * *   → POST { "window": "24h" }  (covers 22:00 Warsaw winter+summer with buffer)
+//   - */30 * * * *    → POST { "window": "2h" }
 //
+// Catch-up: each window has a backwards lookback (4h for 24h, 1h for 2h)
+// so a missed cron tick does not cause a missed reminder.
 // Idempotency: keys differ per window — see WINDOW_CONFIG below.
 // Pre-checks email_send_log to skip already-pending/sent reminders.
 
@@ -29,6 +33,8 @@ interface BookingRow {
   location: string
   status: string
   reminder_opt_out: boolean
+  next_reminder_24h_at?: string | null
+  next_reminder_2h_at?: string | null
 }
 
 type WindowKey = '24h' | '2h'
@@ -63,27 +69,7 @@ function resolveLocationLabel(location?: string): string {
   return location
 }
 
-// ---------- Time helpers (Europe/Warsaw) ----------
-
-function dateInWarsaw(offsetDays = 0): string {
-  const d = new Date(Date.now() + offsetDays * 24 * 60 * 60 * 1000)
-  return new Intl.DateTimeFormat('sv-SE', {
-    timeZone: 'Europe/Warsaw',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).format(d)
-}
-
-function timeInWarsaw(offsetMinutes: number): string {
-  const future = new Date(Date.now() + offsetMinutes * 60 * 1000)
-  return new Intl.DateTimeFormat('sv-SE', {
-    timeZone: 'Europe/Warsaw',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  }).format(future)
-}
+// ---------- Time helpers ----------
 
 function normalizeTime(t: string): string {
   return t?.slice(0, 5) ?? ''
@@ -93,10 +79,10 @@ function normalizeTime(t: string): string {
 
 interface WindowConfig {
   templateName: string
-  /** Date to scan in Europe/Warsaw (YYYY-MM-DD). */
-  targetDate: () => string
-  /** Optional time-window filter applied client-side after fetch. */
-  timeWindow?: () => { start: string; end: string }
+  /** Column on bookings storing the precomputed (DST-safe) trigger time. */
+  scheduleColumn: 'next_reminder_24h_at' | 'next_reminder_2h_at'
+  /** How far back from now() we still consider a reminder eligible (catch-up window). */
+  catchUpInterval: string
   /** Idempotency key for a given booking. */
   idempotencyKey: (b: BookingRow) => string
   /** Build template payload sent to send-transactional-email. */
@@ -106,7 +92,10 @@ interface WindowConfig {
 const WINDOW_CONFIG: Record<WindowKey, WindowConfig> = {
   '24h': {
     templateName: 'booking-reminder',
-    targetDate: () => dateInWarsaw(1), // tomorrow
+    scheduleColumn: 'next_reminder_24h_at',
+    // Cron runs hourly between 19-22 UTC (covers 22:00 Warsaw winter+summer).
+    // 4h catch-up tolerates one missed cron tick or a delayed boot.
+    catchUpInterval: '4 hours',
     idempotencyKey: (b) => `booking-reminder-${b.id}-${b.appointment_date}`,
     buildTemplateData: (b) => ({
       patientName: b.patient_name,
@@ -118,8 +107,9 @@ const WINDOW_CONFIG: Record<WindowKey, WindowConfig> = {
   },
   '2h': {
     templateName: 'booking-reminder-2h',
-    targetDate: () => dateInWarsaw(0), // today
-    timeWindow: () => ({ start: timeInWarsaw(90), end: timeInWarsaw(150) }),
+    scheduleColumn: 'next_reminder_2h_at',
+    // Cron runs every 30 min — 1h catch-up handles one missed tick.
+    catchUpInterval: '1 hour',
     idempotencyKey: (b) =>
       `booking-reminder-2h-${b.id}-${b.appointment_date}T${normalizeTime(b.appointment_time)}`,
     buildTemplateData: (b) => ({
@@ -135,30 +125,33 @@ const WINDOW_CONFIG: Record<WindowKey, WindowConfig> = {
 async function fetchEligibleBookings(
   supabase: SupabaseClient,
   cfg: WindowConfig,
-): Promise<{ bookings: BookingRow[]; targetDate: string; timeWindow?: { start: string; end: string } }> {
-  const targetDate = cfg.targetDate()
-  const timeWindow = cfg.timeWindow?.()
+): Promise<{ bookings: BookingRow[]; windowStart: string; windowEnd: string }> {
+  // Window: [now() - catchUpInterval, now()] on the schedule column.
+  // Postgres computes both bounds — TZ-agnostic, DST-safe.
+  const nowIso = new Date().toISOString()
+  const windowStart = new Date(Date.now() - parseIntervalMs(cfg.catchUpInterval)).toISOString()
 
   const { data, error } = await supabase
     .from('bookings')
     .select(
-      'id, patient_name, patient_email, appointment_date, appointment_time, location, status, reminder_opt_out',
+      'id, patient_name, patient_email, appointment_date, appointment_time, location, status, reminder_opt_out, next_reminder_24h_at, next_reminder_2h_at',
     )
-    .eq('appointment_date', targetDate)
     .neq('status', 'cancelled')
     .eq('reminder_opt_out', false)
+    .gte(cfg.scheduleColumn, windowStart)
+    .lte(cfg.scheduleColumn, nowIso)
     .returns<BookingRow[]>()
 
   if (error) throw error
+  return { bookings: data ?? [], windowStart, windowEnd: nowIso }
+}
 
-  let bookings = data ?? []
-  if (timeWindow) {
-    bookings = bookings.filter((b) => {
-      const t = normalizeTime(b.appointment_time)
-      return t >= timeWindow.start && t <= timeWindow.end
-    })
-  }
-  return { bookings, targetDate, timeWindow }
+function parseIntervalMs(interval: string): number {
+  const m = /^(\d+)\s*(hour|hours|minute|minutes)$/.exec(interval.trim())
+  if (!m) throw new Error(`Unsupported interval: ${interval}`)
+  const value = Number(m[1])
+  const unit = m[2]
+  return unit.startsWith('hour') ? value * 3600 * 1000 : value * 60 * 1000
 }
 
 async function preloadHandledKeys(
@@ -304,13 +297,13 @@ Deno.serve(async (req) => {
   const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
   let bookings: BookingRow[]
-  let targetDate: string
-  let timeWindow: { start: string; end: string } | undefined
+  let windowStart: string
+  let windowEnd: string
   try {
     const fetched = await fetchEligibleBookings(supabase, cfg)
     bookings = fetched.bookings
-    targetDate = fetched.targetDate
-    timeWindow = fetched.timeWindow
+    windowStart = fetched.windowStart
+    windowEnd = fetched.windowEnd
   } catch (err) {
     console.error(`[reminders/${windowKey}] fetch failed:`, err)
     return new Response(
@@ -320,9 +313,7 @@ Deno.serve(async (req) => {
   }
 
   console.log(
-    `[reminders/${windowKey}] target=${targetDate}` +
-      (timeWindow ? ` window=${timeWindow.start}..${timeWindow.end}` : '') +
-      ` candidates=${bookings.length}`,
+    `[reminders/${windowKey}] column=${cfg.scheduleColumn} window=${windowStart}..${windowEnd} candidates=${bookings.length}`,
   )
 
   if (bookings.length === 0) {
@@ -330,8 +321,9 @@ Deno.serve(async (req) => {
       JSON.stringify({
         ok: true,
         window: windowKey,
-        targetDate,
-        ...(timeWindow ? { windowStart: timeWindow.start, windowEnd: timeWindow.end } : {}),
+        scheduleColumn: cfg.scheduleColumn,
+        windowStart,
+        windowEnd,
         processed: 0,
         sent: 0,
         skipped: 0,
@@ -357,8 +349,9 @@ Deno.serve(async (req) => {
     JSON.stringify({
       ok: failed === 0,
       window: windowKey,
-      targetDate,
-      ...(timeWindow ? { windowStart: timeWindow.start, windowEnd: timeWindow.end } : {}),
+      scheduleColumn: cfg.scheduleColumn,
+      windowStart,
+      windowEnd,
       processed: results.length,
       sent,
       skipped,
