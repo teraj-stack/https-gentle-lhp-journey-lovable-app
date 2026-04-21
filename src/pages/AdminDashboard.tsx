@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Pencil, Trash2, LogOut, Eye, EyeOff, ShieldAlert } from "lucide-react";
+import { Plus, Pencil, Trash2, LogOut, Eye, EyeOff, ShieldAlert, Activity } from "lucide-react";
 import { toast } from "sonner";
 import SeoHead from "@/components/shared/SeoHead";
 
@@ -163,6 +163,11 @@ const AdminDashboard = () => {
               Rezerwacje
             </Button>
             <Button variant="ghost" size="sm" onClick={() => navigate("/admin/notification-recipients")}>
+              Powiadomienia
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => navigate("/admin/system-health")}>
+              <Activity className="h-4 w-4 mr-2" /> System Health
+            </Button>
               Odbiorcy
             </Button>
             <span className="text-sm text-muted-foreground hidden sm:inline">{session.user.email}</span>

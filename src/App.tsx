@@ -52,6 +52,7 @@ const AdminDashboard = lazy(() => import("@/pages/AdminDashboard"));
 const AdminPostEditor = lazy(() => import("@/pages/AdminPostEditor"));
 const AdminBookings = lazy(() => import("@/pages/AdminBookings"));
 const AdminNotificationRecipients = lazy(() => import("@/pages/AdminNotificationRecipients"));
+const AdminSystemHealth = lazy(() => import("@/pages/AdminSystemHealth"));
 
 const Unsubscribe = lazy(() => import("@/pages/Unsubscribe"));
 const ReminderOptOut = lazy(() => import("@/pages/ReminderOptOut"));
@@ -152,6 +153,7 @@ const App = () => (
             <Route path="/admin/post/:id" element={<AdminPostEditor />} />
             <Route path="/admin/bookings" element={<AdminBookings />} />
             <Route path="/admin/notification-recipients" element={<AdminNotificationRecipients />} />
+            <Route path="/admin/system-health" element={<AdminSystemHealth />} />
             
             <Route path="/unsubscribe" element={<Unsubscribe />} />
             <Route path="/reminder-opt-out" element={<ReminderOptOut />} />
