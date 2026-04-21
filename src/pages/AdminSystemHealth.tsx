@@ -154,6 +154,13 @@ const AdminSystemHealth = () => {
   // Kierunek ostatniego skoku — używany do pokazania ikony ▼/▲ przy badge "Następne".
   // null = jeszcze nie wykonano skoku w tej sesji modala. Reset z inspectJumpIndex.
   const [lastJumpDirection, setLastJumpDirection] = useState<"forward" | "backward" | null>(null);
+  // Per-source pamięć kursora — żeby po zamknięciu i ponownym otwarciu modala
+  // dla tego samego IP+UA+scope, kursor i kierunek wskazywały to samo dopasowanie
+  // co poprzednio. Klucz: `${ip}::${ua}::${scope}`. In-memory (Map w refie) — nie potrzeba
+  // localStorage, bo dane retry się odświeżają i indeksy mogą się zdezaktualizować po reloadzie.
+  const jumpStateMemoryRef = useRef<Map<string, { index: number; direction: "forward" | "backward" | null }>>(
+    new Map(),
+  );
   // Timer auto-hide nawigatora po 30s bezczynności.
   const navigatorHideTimerRef = useRef<number | null>(null);
   // Preferencja użytkownika: czy zamknięcie modala / klik "Pokaż w tabeli" ma przewijać
