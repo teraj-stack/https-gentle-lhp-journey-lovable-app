@@ -1,6 +1,6 @@
 ---
 name: shared-rate-limiter
-description: Wspólny helper supabase/functions/_shared/rate-limit.ts używany przez wszystkie publiczne edge functions do rate-limitu (best-effort) i logowania failure'ów do token_validation_failures
+description: Wspólny helper supabase/functions/_shared/rate-limit.ts używany przez publiczne edge functions do rate-limitu (best-effort) i logowania failure'ów do token_validation_failures
 type: feature
 ---
 
@@ -11,14 +11,14 @@ Plik: `supabase/functions/_shared/rate-limit.ts`
 ## Eksportowane API
 - `getClientIp(req)` — wyciąga IP z `x-forwarded-for` / `cf-connecting-ip` / `x-real-ip`, fallback `'unknown'`.
 - `ipForLog(ip)` — konwersja `'unknown'` → `null` dla insertów do DB.
-- `checkRateLimit(endpoint, ip, config?)` — fixed-window per `(endpoint, ip)`. Default: 10 req / 60s. Zwraca `{ allowed, retryAfterSec, remaining, limit }`.
+- `checkRateLimit(endpoint, ip, config?)` — fixed-window per `(endpoint, ip)`. Default: 10 req / 60s.
 - `rateLimitedResponse(rl, corsHeaders)` — gotowy 429 z `Retry-After` + `X-RateLimit-*`.
 - `logTokenFailure(supabase, { endpoint, reason, ip, userAgent, metadata })` — fire-and-forget insert do `token_validation_failures` przez `EdgeRuntime.waitUntil`. Reasons: `invalid_token` | `rate_limited` | `expired` | `already_used` | `unauthorized` | `invalid_payload`.
 
 ## Endpointy używające helpera
-| Endpoint | Limit | Logowane reasons |
+| Endpoint | Rate limit | Logowane reasons |
 |---|---|---|
-| `update-booking-status` | 10/60s | invalid_token, rate_limited, expired, already_used |
+| `update-booking-status` | **USUNIĘTY (2026-04-21)** — tylko `logTokenFailure` | invalid_token, expired, already_used |
 | `handle-email-unsubscribe` | 10/60s | invalid_token, rate_limited, already_used |
 | `handle-reminder-opt-out` | 10/60s | invalid_token, rate_limited, expired, already_used |
 | `verify-turnstile` | 30/60s | invalid_token, rate_limited, invalid_payload |
@@ -29,6 +29,9 @@ Plik: `supabase/functions/_shared/rate-limit.ts`
 **Rate-limit jest BEST-EFFORT.** Supabase Edge Functions fan-out na wiele isolate'ów Deno, każdy ma własną in-memory Mapę. Burst N requestów rozproszony na K isolate'ów efektywnie podnosi limit Kx. Potwierdzone E2E: 30 sequential requests → 30x404, 0x429.
 
 Wartość helpera leży w **ujednoliconym audit logu** (token_validation_failures) widocznym w `/admin/system-health`, NIE w faktycznym blokowaniu. Prawdziwy global rate-limit wymaga Postgres-backed bucket (separate concern).
+
+## update-booking-status: rate-limit usunięty
+Endpoint chroniony **wyłącznie** przez własności tokena: 256-bit entropy (`gen_random_bytes(32)`), single-use (atomowy `UPDATE ... WHERE used_at IS NULL`), 7-day expiry, sibling-token invalidation po użyciu. Logger `logTokenFailure` zostaje dla audit trail (invalid_token / expired / already_used).
 
 ## Próg alertu w admin UI
 Widok `recent_token_abuse_ips`: ≥10 failures w 10 min per IP → highlight w `/admin/system-health`.
