@@ -467,6 +467,10 @@ const AdminSystemHealth = () => {
         return;
       }
       if (inEditable) return;
+      // Jeśli fokus jest wewnątrz listy "Podgląd dopasowań", pozwól lokalnemu handlerowi
+      // (roving tabindex) przejąć ↑/↓ — globalny skok nie powinien interferować z nawigacją
+      // po elementach listy. Enter na buttonie listy = natywny click = skok do tego wiersza.
+      if (target?.closest('[data-list-nav="true"]')) return;
       const isNext = e.key === "ArrowDown" || e.key.toLowerCase() === "j";
       const isPrev = e.key === "ArrowUp" || e.key.toLowerCase() === "k";
       if (isNext || isPrev) {
