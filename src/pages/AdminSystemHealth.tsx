@@ -196,12 +196,16 @@ const AdminSystemHealth = () => {
     const buckets = { last1h: 0, last6h: 0, last24h: webhookRetries.length };
     const perSource = new Map<string, { ip: string; ua: string; count: number; last: string; maxRetryAfter: number }>();
     let denoOnly = 0;
+    let denoLast1h = 0;
     for (const r of webhookRetries) {
       const ageMs = now - new Date(r.created_at).getTime();
-      if (ageMs <= 60 * 60 * 1000) buckets.last1h += 1;
-      if (ageMs <= 6 * 60 * 60 * 1000) buckets.last6h += 1;
       const ua = r.user_agent ?? "—";
       const isDeno = /^Deno\//i.test(ua);
+      if (ageMs <= 60 * 60 * 1000) {
+        buckets.last1h += 1;
+        if (isDeno) denoLast1h += 1;
+      }
+      if (ageMs <= 6 * 60 * 60 * 1000) buckets.last6h += 1;
       if (isDeno) denoOnly += 1;
       const key = `${r.ip ?? "—"}::${ua}`;
       const retryAfter = typeof r.metadata?.retryAfterSec === "number" ? (r.metadata.retryAfterSec as number) : 0;
@@ -214,7 +218,7 @@ const AdminSystemHealth = () => {
       }
     }
     const sources = Array.from(perSource.values()).sort((a, b) => b.count - a.count).slice(0, 8);
-    return { ...buckets, denoOnly, sources };
+    return { ...buckets, denoOnly, denoLast1h, sources };
   }, [webhookRetries]);
 
   // Toast tylko przy WEJŚCIU w stan przekroczenia (nie przy każdym refetchu).
@@ -230,6 +234,23 @@ const AdminSystemHealth = () => {
       wasOverThreshold.value = false;
     }
   }, [bookingWebhookDenied, wasOverThreshold]);
+
+  // Toast dla retry'ów Deno/* (wewnętrzny webhook DB) w 1h — edge-triggered.
+  const wasOverDenoRetryThreshold = useMemo(() => ({ value: false }), []);
+  useEffect(() => {
+    if (
+      webhookRetryStats.denoLast1h >= BOOKING_WEBHOOK_DENO_RETRY_1H_THRESHOLD &&
+      !wasOverDenoRetryThreshold.value
+    ) {
+      wasOverDenoRetryThreshold.value = true;
+      toast.error("Retry webhooka DB: pętla lub spike!", {
+        description: `${webhookRetryStats.denoLast1h} retry'ów Deno/* w ostatniej 1h dla on-booking-created (próg: ${BOOKING_WEBHOOK_DENO_RETRY_1H_THRESHOLD}). Sprawdź konfigurację webhooka DB i logi.`,
+        duration: 12_000,
+      });
+    } else if (webhookRetryStats.denoLast1h < BOOKING_WEBHOOK_DENO_RETRY_1H_THRESHOLD) {
+      wasOverDenoRetryThreshold.value = false;
+    }
+  }, [webhookRetryStats.denoLast1h, wasOverDenoRetryThreshold]);
 
   const stats = useMemo(() => {
     const total = recentFailures.length;
