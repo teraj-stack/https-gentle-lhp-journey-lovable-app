@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { ArrowLeft, ShieldAlert, Activity, AlertTriangle, RefreshCw, Ban, Webhook, Repeat, Filter, X, Eye } from "lucide-react";
+import { ArrowLeft, ShieldAlert, Activity, AlertTriangle, RefreshCw, Ban, Webhook, Repeat, Filter, X, Eye, Download } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Toggle } from "@/components/ui/toggle";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -1022,10 +1022,45 @@ const AdminSystemHealth = () => {
       <Dialog open={!!inspectSource} onOpenChange={(open) => !open && setInspectSource(null)}>
         <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Eye className="h-5 w-5 text-primary" />
-              Surowe rekordy retry'ów
-            </DialogTitle>
+            <div className="flex items-start justify-between gap-3">
+              <DialogTitle className="flex items-center gap-2">
+                <Eye className="h-5 w-5 text-primary" />
+                Surowe rekordy retry'ów
+              </DialogTitle>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 gap-1.5 shrink-0"
+                disabled={inspectRecords.length === 0}
+                onClick={() => {
+                  if (!inspectSource || inspectRecords.length === 0) return;
+                  // Eksport tylko aktualnie wyświetlanych rekordów (po filtrach IP+UA, max 50).
+                  const payload = {
+                    exportedAt: new Date().toISOString(),
+                    endpoint: "on-booking-created",
+                    source: { ip: inspectSource.ip, userAgent: inspectSource.ua },
+                    count: inspectRecords.length,
+                    records: inspectRecords,
+                  };
+                  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+                  const url = URL.createObjectURL(blob);
+                  const safeIp = inspectSource.ip.replace(/[^a-z0-9.-]/gi, "_");
+                  const ts = new Date().toISOString().replace(/[:.]/g, "-");
+                  const a = document.createElement("a");
+                  a.href = url;
+                  a.download = `retry-records_${safeIp}_${ts}.json`;
+                  document.body.appendChild(a);
+                  a.click();
+                  document.body.removeChild(a);
+                  URL.revokeObjectURL(url);
+                  toast.success(`Wyeksportowano ${inspectRecords.length} rekordów`);
+                }}
+                title="Pobierz aktualnie wyświetlane rekordy jako JSON"
+              >
+                <Download className="h-3.5 w-3.5" />
+                Eksportuj
+              </Button>
+            </div>
             <DialogDescription asChild>
               <div className="text-xs space-y-1">
                 {inspectSource && (
