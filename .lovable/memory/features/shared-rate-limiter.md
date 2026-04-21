@@ -39,5 +39,6 @@ Atomowy UPSERT na `rate_limit_buckets` przez RPC `check_and_increment_rate_limit
 | `on-booking-created` | in-memory | 60/60s | rate_limited (DB webhook może retry) |
 | `update-booking-status` | **brak RL** | — | invalid_token, expired, already_used (token 256-bit single-use 7d to jedyna obrona) |
 
-## Próg alertu w admin UI
-Widok `recent_token_abuse_ips`: ≥10 failures w 10 min per IP → highlight w `/admin/system-health`.
+## Widoki w admin UI (`/admin/system-health`)
+- **Podejrzane IP** — z view `recent_token_abuse_ips`: ≥10 failures w 10 min per IP (z `token_validation_failures`).
+- **Top rate-limited IP** — z RPC `get_top_rate_limited_ips(p_limit)` agregującego `rate_limit_buckets` (IP × endpoint przekraczające limit). Pokazuje aktywne nadużycia w czasie rzeczywistym, niezależnie od `token_validation_failures`. Limity per endpoint hardcoded w RPC — przy zmianie limitu w edge function trzeba zaktualizować też CTE `limits` w `get_top_rate_limited_ips`.
