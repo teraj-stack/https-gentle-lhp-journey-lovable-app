@@ -21,6 +21,12 @@ import { toast } from "sonner";
 // w normalnym ruchu to outbound IP Supabase z webhookiem na INSERT).
 const BOOKING_WEBHOOK_DENIED_THRESHOLD = 50;
 
+// Próg alarmu dla retry'ów wewnętrznego webhooka DB (UA Deno/*) w oknie 1h.
+// Supabase webhook po 429 retry-uje z exponential backoff, więc 30 retry'ów
+// Deno/* w 1h to silny sygnał pętli (UPDATE → INSERT loop) lub spike'a
+// importu, który zalał shared rate limit.
+const BOOKING_WEBHOOK_DENO_RETRY_1H_THRESHOLD = 30;
+
 type AbuseRow = {
   ip: string;
   failure_count: number;
@@ -190,12 +196,16 @@ const AdminSystemHealth = () => {
     const buckets = { last1h: 0, last6h: 0, last24h: webhookRetries.length };
     const perSource = new Map<string, { ip: string; ua: string; count: number; last: string; maxRetryAfter: number }>();
     let denoOnly = 0;
+    let denoLast1h = 0;
     for (const r of webhookRetries) {
       const ageMs = now - new Date(r.created_at).getTime();
-      if (ageMs <= 60 * 60 * 1000) buckets.last1h += 1;
-      if (ageMs <= 6 * 60 * 60 * 1000) buckets.last6h += 1;
       const ua = r.user_agent ?? "—";
       const isDeno = /^Deno\//i.test(ua);
+      if (ageMs <= 60 * 60 * 1000) {
+        buckets.last1h += 1;
+        if (isDeno) denoLast1h += 1;
+      }
+      if (ageMs <= 6 * 60 * 60 * 1000) buckets.last6h += 1;
       if (isDeno) denoOnly += 1;
       const key = `${r.ip ?? "—"}::${ua}`;
       const retryAfter = typeof r.metadata?.retryAfterSec === "number" ? (r.metadata.retryAfterSec as number) : 0;
@@ -208,7 +218,7 @@ const AdminSystemHealth = () => {
       }
     }
     const sources = Array.from(perSource.values()).sort((a, b) => b.count - a.count).slice(0, 8);
-    return { ...buckets, denoOnly, sources };
+    return { ...buckets, denoOnly, denoLast1h, sources };
   }, [webhookRetries]);
 
   // Toast tylko przy WEJŚCIU w stan przekroczenia (nie przy każdym refetchu).
@@ -224,6 +234,23 @@ const AdminSystemHealth = () => {
       wasOverThreshold.value = false;
     }
   }, [bookingWebhookDenied, wasOverThreshold]);
+
+  // Toast dla retry'ów Deno/* (wewnętrzny webhook DB) w 1h — edge-triggered.
+  const wasOverDenoRetryThreshold = useMemo(() => ({ value: false }), []);
+  useEffect(() => {
+    if (
+      webhookRetryStats.denoLast1h >= BOOKING_WEBHOOK_DENO_RETRY_1H_THRESHOLD &&
+      !wasOverDenoRetryThreshold.value
+    ) {
+      wasOverDenoRetryThreshold.value = true;
+      toast.error("Retry webhooka DB: pętla lub spike!", {
+        description: `${webhookRetryStats.denoLast1h} retry'ów Deno/* w ostatniej 1h dla on-booking-created (próg: ${BOOKING_WEBHOOK_DENO_RETRY_1H_THRESHOLD}). Sprawdź konfigurację webhooka DB i logi.`,
+        duration: 12_000,
+      });
+    } else if (webhookRetryStats.denoLast1h < BOOKING_WEBHOOK_DENO_RETRY_1H_THRESHOLD) {
+      wasOverDenoRetryThreshold.value = false;
+    }
+  }, [webhookRetryStats.denoLast1h, wasOverDenoRetryThreshold]);
 
   const stats = useMemo(() => {
     const total = recentFailures.length;
@@ -360,9 +387,31 @@ const AdminSystemHealth = () => {
             ) : (
               <>
                 <div className="grid grid-cols-3 gap-3 mb-4">
-                  <div className="rounded-lg border border-border p-3">
-                    <p className="text-xs text-muted-foreground">Ostatnia 1h</p>
-                    <p className="text-2xl font-bold">{webhookRetryStats.last1h}</p>
+                  <div
+                    className={
+                      webhookRetryStats.denoLast1h >= BOOKING_WEBHOOK_DENO_RETRY_1H_THRESHOLD
+                        ? "rounded-lg border-2 border-destructive p-3 ring-2 ring-destructive/30 animate-pulse"
+                        : "rounded-lg border border-border p-3"
+                    }
+                  >
+                    <p className="text-xs text-muted-foreground flex items-center gap-1">
+                      Ostatnia 1h
+                      {webhookRetryStats.denoLast1h >= BOOKING_WEBHOOK_DENO_RETRY_1H_THRESHOLD && (
+                        <Badge variant="destructive" className="ml-1 text-[10px] py-0 h-4">ALERT</Badge>
+                      )}
+                    </p>
+                    <p
+                      className={
+                        webhookRetryStats.denoLast1h >= BOOKING_WEBHOOK_DENO_RETRY_1H_THRESHOLD
+                          ? "text-2xl font-bold text-destructive"
+                          : "text-2xl font-bold"
+                      }
+                    >
+                      {webhookRetryStats.last1h}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">
+                      Deno/*: <strong>{webhookRetryStats.denoLast1h}</strong> / próg {BOOKING_WEBHOOK_DENO_RETRY_1H_THRESHOLD}
+                    </p>
                   </div>
                   <div className="rounded-lg border border-border p-3">
                     <p className="text-xs text-muted-foreground">Ostatnie 6h</p>
