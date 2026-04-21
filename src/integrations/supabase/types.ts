@@ -374,6 +374,27 @@ export type Database = {
         }
         Relationships: []
       }
+      rate_limit_buckets: {
+        Row: {
+          count: number
+          endpoint: string
+          ip: string
+          window_start: string
+        }
+        Insert: {
+          count?: number
+          endpoint: string
+          ip: string
+          window_start: string
+        }
+        Update: {
+          count?: number
+          endpoint?: string
+          ip?: string
+          window_start?: string
+        }
+        Relationships: []
+      }
       suppressed_emails: {
         Row: {
           created_at: string
@@ -465,8 +486,23 @@ export type Database = {
       }
     }
     Functions: {
+      check_and_increment_rate_limit: {
+        Args: {
+          p_endpoint: string
+          p_ip: string
+          p_max: number
+          p_window_sec: number
+        }
+        Returns: {
+          allowed: boolean
+          current_count: number
+          remaining: number
+          retry_after_sec: number
+        }[]
+      }
       cleanup_old_bookings: { Args: never; Returns: undefined }
       cleanup_old_token_failures: { Args: never; Returns: undefined }
+      cleanup_rate_limit_buckets: { Args: never; Returns: undefined }
       delete_email: {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
