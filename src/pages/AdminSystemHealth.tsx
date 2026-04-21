@@ -1679,24 +1679,50 @@ const AdminSystemHealth = () => {
                     Zamknij i przejdź do wiersza ({inspectSourceIndex + 1} z {webhookRetryStats.sources.length})
                   </Badge>
                 )}
-                {/* Licznik "następnego" dopasowania — pokazuje który wiersz zostanie
-                    podświetlony przy najbliższym kliknięciu "Skocz do następnego".
-                    Widoczny tylko gdy mamy >1 dopasowanie (czyli jest po czym skakać). */}
+                {/* Liczniki dopasowań — pokazują (1) który wiersz jest aktualnie podświetlony
+                    (ostatni skok) oraz (2) który zostanie podświetlony przy najbliższym kliknięciu.
+                    Widoczne tylko gdy mamy >1 dopasowanie (czyli jest po czym skakać). */}
                 {(() => {
                   if (!inspectSource) return null;
                   const jumpKeys = buildMatchKeys(inspectSource, highlightScope);
                   if (jumpKeys.length <= 1) return null;
                   const total = jumpKeys.length;
                   const nextDisplay = (inspectJumpIndex % total) + 1;
+                  // "Aktualnie" = ostatni skok = pozycja PRZED kursorem.
+                  // Przed pierwszym skokiem (inspectJumpIndex === 0) nic nie jest podświetlone.
+                  // Po pierwszym skoku kursor = 1, więc "aktualnie" = 1 (bo (0-1+total)%total+1 = total,
+                  // co jest złe). Trzymamy dlatego osobny stan: przed pierwszym skokiem = null.
+                  const hasJumped = inspectJumpIndex > 0 || inspectJumpIndex < 0;
+                  const currentDisplay = hasJumped
+                    ? ((inspectJumpIndex - 1) % total + total) % total + 1
+                    : null;
                   return (
-                    <Badge
-                      variant="outline"
-                      className="border-primary/40 text-primary text-[11px] font-normal gap-1"
-                      title={`Następny skok podświetli dopasowanie ${nextDisplay} z ${total} (cyklicznie)`}
-                    >
-                      <ChevronRight className="h-3 w-3" />
-                      Następne: {nextDisplay} z {total}
-                    </Badge>
+                    <>
+                      <Badge
+                        variant="outline"
+                        className={`text-[11px] font-normal gap-1 ${
+                          currentDisplay !== null
+                            ? "border-primary bg-primary/10 text-primary"
+                            : "border-muted-foreground/30 text-muted-foreground"
+                        }`}
+                        title={
+                          currentDisplay !== null
+                            ? `Aktualnie podświetlone: dopasowanie ${currentDisplay} z ${total}`
+                            : "Jeszcze nie wykonano skoku — kliknij 'Skocz do następnego' lub naciśnij ↓"
+                        }
+                      >
+                        <Locate className="h-3 w-3" />
+                        Aktualnie: {currentDisplay !== null ? `${currentDisplay} z ${total}` : "—"}
+                      </Badge>
+                      <Badge
+                        variant="outline"
+                        className="border-primary/40 text-primary text-[11px] font-normal gap-1"
+                        title={`Następny skok podświetli dopasowanie ${nextDisplay} z ${total} (cyklicznie)`}
+                      >
+                        <ChevronRight className="h-3 w-3" />
+                        Następne: {nextDisplay} z {total}
+                      </Badge>
+                    </>
                   );
                 })()}
               </DialogTitle>
