@@ -490,6 +490,88 @@ const AdminSystemHealth = () => {
                   {" "}— pozostałe to ruch zewnętrzny / boty.
                 </p>
 
+                {/* Trend retry'ów per godzina, ostatnie 24h.
+                    Stacked area: Deno/* (wewnętrzny webhook) vs pozostałe. */}
+                <div className="rounded-lg border border-border p-3 mb-4 bg-card/40">
+                  <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                      Trend retry'ów (24h, per godzina)
+                    </p>
+                    <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
+                      <span className="flex items-center gap-1.5">
+                        <span className="inline-block h-2.5 w-2.5 rounded-sm bg-destructive" />
+                        Deno/* (webhook DB)
+                      </span>
+                      <span className="flex items-center gap-1.5">
+                        <span className="inline-block h-2.5 w-2.5 rounded-sm bg-primary" />
+                        Pozostałe
+                      </span>
+                    </div>
+                  </div>
+                  {retryTrendHasData ? (
+                    <ResponsiveContainer width="100%" height={140}>
+                      <AreaChart data={retryTrend} margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>
+                        <defs>
+                          <linearGradient id="retryDeno" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="hsl(var(--destructive))" stopOpacity={0.55} />
+                            <stop offset="95%" stopColor="hsl(var(--destructive))" stopOpacity={0.05} />
+                          </linearGradient>
+                          <linearGradient id="retryOther" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.55} />
+                            <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0.05} />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                        <XAxis
+                          dataKey="label"
+                          tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+                          interval={3}
+                          axisLine={false}
+                          tickLine={false}
+                        />
+                        <YAxis
+                          allowDecimals={false}
+                          tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+                          axisLine={false}
+                          tickLine={false}
+                          width={28}
+                        />
+                        <Tooltip
+                          contentStyle={{
+                            background: "hsl(var(--popover))",
+                            border: "1px solid hsl(var(--border))",
+                            borderRadius: 6,
+                            fontSize: 12,
+                          }}
+                          labelStyle={{ color: "hsl(var(--foreground))", fontWeight: 600 }}
+                          formatter={(v: number, name) => [v, name === "deno" ? "Deno/*" : "Pozostałe"]}
+                          labelFormatter={(l) => `Godz. ${l}`}
+                        />
+                        <Area
+                          type="monotone"
+                          dataKey="deno"
+                          stackId="1"
+                          stroke="hsl(var(--destructive))"
+                          fill="url(#retryDeno)"
+                          strokeWidth={1.5}
+                        />
+                        <Area
+                          type="monotone"
+                          dataKey="other"
+                          stackId="1"
+                          stroke="hsl(var(--primary))"
+                          fill="url(#retryOther)"
+                          strokeWidth={1.5}
+                        />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="flex items-center justify-center h-[140px] text-xs text-muted-foreground">
+                      ✓ Brak retry'ów w ostatnich 24h — wykres pusty.
+                    </div>
+                  )}
+                </div>
+
                 {webhookRetryStats.sources.length === 0 ? (
                   <p className="text-muted-foreground py-2 text-sm">
                     ✓ Brak retry'ów w ostatnich 24h.
