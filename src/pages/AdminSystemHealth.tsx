@@ -1202,6 +1202,57 @@ const AdminSystemHealth = () => {
                       </span>
                     </div>
 
+                    {/* Pasek nawigatora dopasowań — pojawia się po kliknięciu "Pokaż kolejne dopasowania"
+                        w modalu. Auto-hide po 30s bezczynności. */}
+                    {matchNavigator && matchNavigator.keys.length > 1 && (
+                      <div className="mb-3 flex items-center gap-2 rounded-md border border-primary/40 bg-primary/5 px-3 py-2 text-sm">
+                        <Locate className="h-4 w-4 text-primary shrink-0" />
+                        <span className="text-primary font-medium">
+                          Dopasowanie {matchNavigator.index + 1} z {matchNavigator.keys.length}
+                        </span>
+                        <span className="text-xs text-muted-foreground hidden sm:inline">
+                          {matchNavigator.index === 0 ? "(wiersz źródłowy)" : "(pokrewny)"}
+                        </span>
+                        <div className="ml-auto flex items-center gap-1">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-7 px-2"
+                            onClick={() => goToNavigatorOffset(-1)}
+                            title="Poprzednie dopasowanie (cyklicznie)"
+                          >
+                            <ChevronLeft className="h-3.5 w-3.5" />
+                            <span className="hidden sm:inline ml-1">Poprzednie</span>
+                          </Button>
+                          <Button
+                            variant="default"
+                            size="sm"
+                            className="h-7 px-2"
+                            onClick={() => goToNavigatorOffset(1)}
+                            title="Następne dopasowanie (cyklicznie)"
+                          >
+                            <span className="hidden sm:inline mr-1">Następne</span>
+                            <ChevronRight className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 w-7 p-0"
+                            onClick={() => {
+                              setMatchNavigator(null);
+                              if (navigatorHideTimerRef.current !== null) {
+                                window.clearTimeout(navigatorHideTimerRef.current);
+                                navigatorHideTimerRef.current = null;
+                              }
+                            }}
+                            title="Zamknij nawigator"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+
                     {filteredRetrySources.length === 0 ? (
                       <p className="text-muted-foreground py-4 text-sm text-center">
                         Brak wyników dla aktywnych filtrów.
