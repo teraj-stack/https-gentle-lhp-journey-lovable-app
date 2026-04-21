@@ -36,7 +36,7 @@ Atomowy UPSERT na `rate_limit_buckets` przez RPC `check_and_increment_rate_limit
 | `handle-reminder-opt-out` | **DB** | 10/60s | invalid_token, rate_limited, expired, already_used |
 | `verify-turnstile` | **DB** | 30/60s | invalid_token, rate_limited, invalid_payload |
 | `preview-transactional-email` | **DB** | 10/60s | rate_limited, unauthorized |
-| `on-booking-created` | in-memory | 60/60s | rate_limited (DB webhook może retry) |
+| `on-booking-created` | **DB** | 60/60s | rate_limited (DB webhook ma exponential backoff retry) |
 | `update-booking-status` | **brak RL** | — | invalid_token, expired, already_used (token 256-bit single-use 7d to jedyna obrona) |
 
 ## Widoki w admin UI (`/admin/system-health`)
