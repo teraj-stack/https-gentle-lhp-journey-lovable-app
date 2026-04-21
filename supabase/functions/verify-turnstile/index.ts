@@ -15,9 +15,9 @@ const corsHeaders = {
 const VERIFY_URL = "https://challenges.cloudflare.com/turnstile/v0/siteverify";
 const ENDPOINT = "verify-turnstile";
 
+// Limit centralized in _shared/rate-limit.ts → RATE_LIMITS["verify-turnstile"].
 // Turnstile is a captcha — bots that get this far already passed CF.
 // We rate-limit anyway to stop replay/abuse of stolen tokens at scale.
-const TURNSTILE_LIMIT = { max: 30, windowMs: 60_000 };
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -38,8 +38,8 @@ Deno.serve(async (req) => {
   // DB-backed rate limit (cross-isolate, atomic) + log denials.
   // Fail-open if supabase client missing — verification must still work.
   const rl = supabase
-    ? await checkRateLimitDb(supabase, ENDPOINT, ip, TURNSTILE_LIMIT)
-    : { allowed: true, retryAfterSec: 0, remaining: TURNSTILE_LIMIT.max, limit: TURNSTILE_LIMIT.max };
+    ? await checkRateLimitDb(supabase, ENDPOINT, ip)
+    : { allowed: true, retryAfterSec: 0, remaining: 30, limit: 30 };
   if (!rl.allowed) {
     console.warn(`Rate limit exceeded for IP ${ip} on ${ENDPOINT}`);
     if (supabase) {
