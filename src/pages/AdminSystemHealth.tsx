@@ -136,6 +136,8 @@ const AdminSystemHealth = () => {
   const [inspectQuery, setInspectQuery] = useState("");
   // Kierunek sortowania w modalu: desc = najnowsze pierwsze (domyślnie).
   const [inspectSort, setInspectSort] = useState<"desc" | "asc">("desc");
+  // Klucz aktualnie podświetlonego wiersza w tabeli źródeł (po "Pokaż w tabeli" z modala).
+  const [highlightedRowKey, setHighlightedRowKey] = useState<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;
