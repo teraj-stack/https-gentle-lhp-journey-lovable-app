@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { format } from "date-fns";
 import { pl } from "date-fns/locale";
-import { CalendarIcon, X } from "lucide-react";
+import { CalendarIcon, X, Moon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -43,6 +43,11 @@ export interface BookingFilters {
   /** YYYY-MM-DD */
   customTo?: string;
   reminderOptOut: ReminderOptOutFilter;
+  /**
+   * Closeout shortcut: dziś po godz. 18:00, status=pending.
+   * Recepcja używa do zamknięcia dnia (completed/no-show) przed mailem 22:00.
+   */
+  closeout: boolean;
 }
 
 // ---------------- Constants ----------------
@@ -152,6 +157,7 @@ export const DEFAULT_FILTERS: BookingFilters = {
   location: "all",
   datePreset: "today",
   reminderOptOut: "all",
+  closeout: false,
 };
 
 export function filtersFromSearchParams(params: URLSearchParams): BookingFilters {
@@ -161,6 +167,22 @@ export function filtersFromSearchParams(params: URLSearchParams): BookingFilters
   const from = params.get("from") ?? undefined;
   const to = params.get("to") ?? undefined;
   const reminderOptOut = params.get("reminderOptOut") as ReminderOptOutFilter | null;
+  const closeout = params.get("closeout") === "1";
+
+  // Closeout wymusza status=pending + datePreset=today (override URL).
+  if (closeout) {
+    return {
+      status: "pending",
+      location: LOCATION_OPTIONS.some((o) => o.value === location)
+        ? (location as LocationFilter)
+        : DEFAULT_FILTERS.location,
+      datePreset: "today",
+      reminderOptOut: REMINDER_OPT_OUT_OPTIONS.some((o) => o.value === reminderOptOut)
+        ? (reminderOptOut as ReminderOptOutFilter)
+        : DEFAULT_FILTERS.reminderOptOut,
+      closeout: true,
+    };
+  }
 
   const validStatus = STATUS_OPTIONS.some((o) => o.value === status)
     ? (status as StatusFilter)
@@ -184,11 +206,20 @@ export function filtersFromSearchParams(params: URLSearchParams): BookingFilters
     customFrom: from,
     customTo: to,
     reminderOptOut: validReminderOptOut,
+    closeout: false,
   };
 }
 
 export function filtersToSearchParams(filters: BookingFilters): URLSearchParams {
   const params = new URLSearchParams();
+  if (filters.closeout) {
+    params.set("closeout", "1");
+    if (filters.location !== DEFAULT_FILTERS.location) params.set("location", filters.location);
+    if (filters.reminderOptOut !== DEFAULT_FILTERS.reminderOptOut) {
+      params.set("reminderOptOut", filters.reminderOptOut);
+    }
+    return params;
+  }
   if (filters.status !== DEFAULT_FILTERS.status) params.set("status", filters.status);
   if (filters.location !== DEFAULT_FILTERS.location) params.set("location", filters.location);
   if (filters.datePreset !== DEFAULT_FILTERS.datePreset) params.set("datePreset", filters.datePreset);
@@ -219,9 +250,24 @@ const AdminBookingsFilters = ({ filters, onChange, resultCount }: Props) => {
       filters.datePreset !== DEFAULT_FILTERS.datePreset ||
       filters.reminderOptOut !== DEFAULT_FILTERS.reminderOptOut ||
       filters.customFrom ||
-      filters.customTo,
+      filters.customTo ||
+      filters.closeout,
     [filters],
   );
+
+  const toggleCloseout = () => {
+    if (filters.closeout) {
+      onChange({ ...DEFAULT_FILTERS, location: filters.location });
+    } else {
+      onChange({
+        ...DEFAULT_FILTERS,
+        location: filters.location,
+        status: "pending",
+        datePreset: "today",
+        closeout: true,
+      });
+    }
+  };
 
   const handleStatus = (value: StatusFilter) => onChange({ ...filters, status: value });
   const handleLocation = (value: LocationFilter) => onChange({ ...filters, location: value });
@@ -259,6 +305,24 @@ const AdminBookingsFilters = ({ filters, onChange, resultCount }: Props) => {
       aria-label="Filtry rezerwacji"
       className="rounded-lg border border-border bg-card/50 px-4 py-3 mb-4 flex flex-wrap items-end gap-3"
     >
+      <FilterField label="Skrót">
+        <Button
+          type="button"
+          variant={filters.closeout ? "default" : "outline"}
+          size="sm"
+          className={cn(
+            "h-9 gap-2",
+            filters.closeout && "bg-primary text-primary-foreground hover:bg-primary/90",
+          )}
+          onClick={toggleCloseout}
+          aria-pressed={filters.closeout}
+          title="Dziś po 18:00, status oczekująca — do zamknięcia przed mailem 22:00"
+        >
+          <Moon className="w-3.5 h-3.5" />
+          Po‑wizytowe
+        </Button>
+      </FilterField>
+
       <FilterField label="Status">
         <Select value={filters.status} onValueChange={(v) => handleStatus(v as StatusFilter)}>
           <SelectTrigger className="w-[200px] h-9">

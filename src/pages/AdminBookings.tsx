@@ -235,9 +235,18 @@ const AdminBookings = () => {
 
   // Location filter applied client-side (location is free-text; uses substring match
   // matching the same patterns as the cron edge function).
+  // Closeout: dziś po 18:00 (Warsaw) — appointment_time >= "18:00".
   const filteredBookings = useMemo(
-    () => bookings.filter((b) => matchesLocation(b.location, filters.location)),
-    [bookings, filters.location],
+    () =>
+      bookings.filter((b) => {
+        if (!matchesLocation(b.location, filters.location)) return false;
+        if (filters.closeout) {
+          const t = (b.appointment_time ?? "").slice(0, 5);
+          if (t < "18:00") return false;
+        }
+        return true;
+      }),
+    [bookings, filters.location, filters.closeout],
   );
 
   // Pobierz logi reminderów (jednym query) i mapuj per booking
