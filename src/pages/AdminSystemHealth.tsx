@@ -201,8 +201,15 @@ const AdminSystemHealth = () => {
     const now = Date.now();
     const buckets = { last1h: 0, last6h: 0, last24h: webhookRetries.length };
     const perSource = new Map<string, { ip: string; ua: string; count: number; last: string; maxRetryAfter: number }>();
+    const perIp = new Map<string, number>();
     let denoOnly = 0;
     let denoLast1h = 0;
+    // Statystyki retry-after z metadanych. Liczymy tylko wpisy z dodatnią
+    // wartością — 0/null oznacza brak retry_after w odpowiedzi (np. fail-open
+    // lub stary log bez metadanych).
+    let retryAfterSum = 0;
+    let retryAfterMax = 0;
+    let retryAfterCount = 0;
     for (const r of webhookRetries) {
       const ageMs = now - new Date(r.created_at).getTime();
       const ua = r.user_agent ?? "—";
@@ -213,18 +220,50 @@ const AdminSystemHealth = () => {
       }
       if (ageMs <= 6 * 60 * 60 * 1000) buckets.last6h += 1;
       if (isDeno) denoOnly += 1;
-      const key = `${r.ip ?? "—"}::${ua}`;
+      const ipKey = r.ip ?? "—";
+      perIp.set(ipKey, (perIp.get(ipKey) ?? 0) + 1);
+      const key = `${ipKey}::${ua}`;
       const retryAfter = typeof r.metadata?.retryAfterSec === "number" ? (r.metadata.retryAfterSec as number) : 0;
+      if (retryAfter > 0) {
+        retryAfterSum += retryAfter;
+        retryAfterCount += 1;
+        if (retryAfter > retryAfterMax) retryAfterMax = retryAfter;
+      }
       const existing = perSource.get(key);
       if (existing) {
         existing.count += 1;
         if (retryAfter > existing.maxRetryAfter) existing.maxRetryAfter = retryAfter;
       } else {
-        perSource.set(key, { ip: r.ip ?? "—", ua, count: 1, last: r.created_at, maxRetryAfter: retryAfter });
+        perSource.set(key, { ip: ipKey, ua, count: 1, last: r.created_at, maxRetryAfter: retryAfter });
       }
     }
     const sources = Array.from(perSource.values()).sort((a, b) => b.count - a.count);
-    return { ...buckets, denoOnly, denoLast1h, sources };
+    // Top IP po liczbie retry'ów (niezależnie od UA — łapie też przypadek,
+    // gdy ten sam IP używa różnych UA).
+    let topIp: string | null = null;
+    let topIpCount = 0;
+    for (const [ip, count] of perIp.entries()) {
+      if (count > topIpCount) {
+        topIp = ip;
+        topIpCount = count;
+      }
+    }
+    const topIpShare = buckets.last24h > 0 ? (topIpCount / buckets.last24h) * 100 : 0;
+    const uniqueIps = perIp.size;
+    const avgRetryAfter = retryAfterCount > 0 ? retryAfterSum / retryAfterCount : 0;
+    return {
+      ...buckets,
+      denoOnly,
+      denoLast1h,
+      sources,
+      topIp,
+      topIpCount,
+      topIpShare,
+      uniqueIps,
+      avgRetryAfter,
+      maxRetryAfter: retryAfterMax,
+      retryAfterSampleCount: retryAfterCount,
+    };
   }, [webhookRetries]);
 
   // Filtrowanie tabeli retry'ów po IP / UA + przełącznik "tylko Deno/*".
@@ -489,6 +528,95 @@ const AdminSystemHealth = () => {
                   <Badge variant="secondary">{webhookRetryStats.denoOnly} / {webhookRetryStats.last24h}</Badge>
                   {" "}— pozostałe to ruch zewnętrzny / boty.
                 </p>
+
+                {/* Karta podsumowania: koncentracja źródeł + retry-after.
+                    Wysoki topIpShare (>70%) = pojedynczy abuser / pętla.
+                    Wysoki avgRetryAfter = klient odbija się o pełne okno
+                    rate-limitu (60s), czyli realnie czeka maksymalnie długo. */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                  <div
+                    className={
+                      webhookRetryStats.topIpShare >= 70 && webhookRetryStats.last24h > 0
+                        ? "rounded-lg border-2 border-destructive/60 p-4 bg-destructive/5"
+                        : "rounded-lg border border-border p-4 bg-card/40"
+                    }
+                  >
+                    <div className="flex items-center gap-2 mb-2">
+                      <Ban
+                        className={
+                          webhookRetryStats.topIpShare >= 70 && webhookRetryStats.last24h > 0
+                            ? "h-4 w-4 text-destructive"
+                            : "h-4 w-4 text-muted-foreground"
+                        }
+                      />
+                      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                        Koncentracja źródeł
+                      </p>
+                    </div>
+                    {webhookRetryStats.last24h === 0 ? (
+                      <p className="text-sm text-muted-foreground">Brak danych w 24h.</p>
+                    ) : (
+                      <>
+                        <p
+                          className={
+                            webhookRetryStats.topIpShare >= 70
+                              ? "text-3xl font-bold text-destructive"
+                              : "text-3xl font-bold text-foreground"
+                          }
+                        >
+                          {webhookRetryStats.topIpShare.toFixed(1)}%
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          retry'ów z jednego IP{" "}
+                          <code className="font-mono text-[11px] bg-muted px-1 py-0.5 rounded">
+                            {webhookRetryStats.topIp ?? "—"}
+                          </code>{" "}
+                          (<strong>{webhookRetryStats.topIpCount}</strong> / {webhookRetryStats.last24h})
+                        </p>
+                        <p className="text-[11px] text-muted-foreground mt-2">
+                          Unikalne IP w 24h: <strong>{webhookRetryStats.uniqueIps}</strong>
+                          {webhookRetryStats.topIpShare >= 70 && (
+                            <span className="text-destructive ml-2">⚠ Wysoka koncentracja — sprawdź źródło.</span>
+                          )}
+                        </p>
+                      </>
+                    )}
+                  </div>
+
+                  <div className="rounded-lg border border-border p-4 bg-card/40">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Repeat className="h-4 w-4 text-muted-foreground" />
+                      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                        Retry-after (z metadanych)
+                      </p>
+                    </div>
+                    {webhookRetryStats.retryAfterSampleCount === 0 ? (
+                      <p className="text-sm text-muted-foreground">Brak metadanych retry-after.</p>
+                    ) : (
+                      <>
+                        <p className="text-3xl font-bold text-foreground">
+                          {webhookRetryStats.avgRetryAfter.toFixed(1)}
+                          <span className="text-sm font-normal text-muted-foreground ml-1">s średnio</span>
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Maksymalny: <strong>{webhookRetryStats.maxRetryAfter}s</strong>{" "}
+                          (próbka: {webhookRetryStats.retryAfterSampleCount} / {webhookRetryStats.last24h})
+                        </p>
+                        <p className="text-[11px] text-muted-foreground mt-2">
+                          {webhookRetryStats.avgRetryAfter >= 45 ? (
+                            <span className="text-destructive">
+                              ⚠ Klienci czekają prawie pełne okno (60s) — limit jest stale wysycony.
+                            </span>
+                          ) : webhookRetryStats.avgRetryAfter >= 20 ? (
+                            <>Średnie obciążenie — okno rate-limitu często aktywne.</>
+                          ) : (
+                            <>Niski czas czekania — pojedyncze odrzucenia.</>
+                          )}
+                        </p>
+                      </>
+                    )}
+                  </div>
+                </div>
 
                 {/* Trend retry'ów per godzina, ostatnie 24h.
                     Stacked area: Deno/* (wewnętrzny webhook) vs pozostałe. */}
