@@ -160,6 +160,24 @@ const AdminSystemHealth = () => {
     }
   }, [autoRevealEnabled]);
 
+  // Preferencja: zakres podświetlenia po reveal.
+  //  - "exact"  → tylko wiersz z dokładnym IP+UA (jeden, mocny)
+  //  - "same-ip" → wiersz źródłowy mocno + wszystkie pozostałe z tym samym IP delikatnie (default)
+  const HIGHLIGHT_SCOPE_LS_KEY = "admin-system-health.highlight-scope";
+  type HighlightScope = "exact" | "same-ip";
+  const [highlightScope, setHighlightScope] = useState<HighlightScope>(() => {
+    if (typeof window === "undefined") return "same-ip";
+    const v = window.localStorage.getItem(HIGHLIGHT_SCOPE_LS_KEY);
+    return v === "exact" ? "exact" : "same-ip";
+  });
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(HIGHLIGHT_SCOPE_LS_KEY, highlightScope);
+    } catch {
+      // ignoruj w private mode
+    }
+  }, [highlightScope]);
+
   // Auto-fade highlightu wiersza po 10s — wystarczająco długo, żeby admin zdążył zauważyć
   // wyróżnienie po zamknięciu modala, ale nie zostawia trwałego kolorowego rzędu.
   useEffect(() => {
@@ -988,6 +1006,32 @@ const AdminSystemHealth = () => {
                         <Locate className="h-3.5 w-3.5 mr-1.5" />
                         Auto-reveal {autoRevealEnabled ? "ON" : "OFF"}
                       </Toggle>
+                      {/* Toggle zakresu podświetlenia: pressed = same-ip (szeroko), unpressed = exact (tylko jeden).
+                          Aktywny tylko gdy auto-reveal włączony — inaczej i tak nic nie podświetlamy. */}
+                      <Toggle
+                        size="sm"
+                        pressed={highlightScope === "same-ip"}
+                        onPressedChange={(v) => {
+                          const scope: HighlightScope = v ? "same-ip" : "exact";
+                          setHighlightScope(scope);
+                          toast.success(
+                            scope === "same-ip"
+                              ? "Podświetlam wszystkie wiersze z tym samym IP"
+                              : "Podświetlam tylko jeden — dokładny match IP+UA",
+                          );
+                        }}
+                        disabled={!autoRevealEnabled}
+                        aria-label="Zakres podświetlenia: tylko exact match vs wszystkie wiersze z tego samego IP"
+                        title={
+                          highlightScope === "same-ip"
+                            ? "Po reveal podświetlany jest wiersz źródłowy mocno + wszystkie inne wiersze z tym samym IP delikatnie. Kliknij, aby zawęzić tylko do exact match."
+                            : "Po reveal podświetlany jest tylko jeden wiersz (dokładny IP+UA). Kliknij, aby rozszerzyć na wszystkie wiersze z tym samym IP."
+                        }
+                        className="h-8 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+                      >
+                        <Locate className="h-3.5 w-3.5 mr-1.5" />
+                        Highlight: {highlightScope === "same-ip" ? "wszystkie z IP" : "tylko exact"}
+                      </Toggle>
                       {retryFiltersActive && (
                         <Button
                           variant="ghost"
@@ -1048,7 +1092,10 @@ const AdminSystemHealth = () => {
                                 !!highlightedSource &&
                                 highlightedSource.ip === s.ip &&
                                 highlightedSource.ua === s.ua;
+                              // Same-IP highlight aktywny tylko gdy admin wybrał scope "same-ip"
+                              // w ustawieniach. Dla "exact" pozostawiamy tylko mocny match.
                               const isSameIpHighlight =
+                                highlightScope === "same-ip" &&
                                 !!highlightedSource &&
                                 !isExactHighlight &&
                                 highlightedSource.ip === s.ip;
