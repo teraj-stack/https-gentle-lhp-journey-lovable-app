@@ -511,6 +511,17 @@ export type Database = {
         Args: { payload: Json; queue_name: string }
         Returns: number
       }
+      get_top_rate_limited_ips: {
+        Args: { p_limit?: number }
+        Returns: {
+          denied: number
+          endpoint: string
+          hits: number
+          ip: string
+          last_window: string
+          windows: number
+        }[]
+      }
       has_role: {
         Args: { _role: Database["public"]["Enums"]["app_role"] }
         Returns: boolean
