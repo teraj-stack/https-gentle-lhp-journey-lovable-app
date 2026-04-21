@@ -1705,7 +1705,9 @@ const AdminSystemHealth = () => {
                             el.classList.remove("ring-2", "ring-primary", "bg-primary/20");
                           }, 1500);
                         }
-                        setInspectJumpIndex((i) => i + 1);
+                        // Cykliczne przewijanie: po ostatnim wracamy do pierwszego (modulo total).
+                        // Trzymamy kursor znormalizowany w [0, total), żeby nie rósł w nieskończoność.
+                        setInspectJumpIndex((i) => (i + 1) % total);
                       }}
                       title={`Przewiń tabelę pod modalem do następnego podświetlonego wiersza (${currentDisplay}/${total}). Modal pozostaje otwarty.`}
                     >
