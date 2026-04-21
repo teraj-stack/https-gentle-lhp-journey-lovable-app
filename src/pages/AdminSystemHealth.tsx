@@ -127,6 +127,40 @@ const AdminSystemHealth = () => {
     refetchInterval: 30_000,
   });
 
+  // 15-minutowy licznik odrzuceń webhooka on-booking-created.
+  // Liczymy wpisy reason=rate_limited z ostatnich 15 min — to bezpośredni
+  // sygnał, że ktoś (lub pętla DB-webhook) bombarduje endpoint.
+  const { data: bookingWebhookDenied = 0, dataUpdatedAt: webhookUpdated } = useQuery({
+    queryKey: ["admin-booking-webhook-denied-15m"],
+    queryFn: async () => {
+      const since = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+      const { count, error } = await supabase
+        .from("token_validation_failures" as never)
+        .select("id", { count: "exact", head: true })
+        .eq("endpoint", "on-booking-created")
+        .eq("reason", "rate_limited")
+        .gte("created_at", since);
+      if (error) throw error;
+      return count ?? 0;
+    },
+    enabled,
+    refetchInterval: 30_000,
+  });
+
+  // Toast tylko przy WEJŚCIU w stan przekroczenia (nie przy każdym refetchu).
+  const wasOverThreshold = useMemo(() => ({ value: false }), []);
+  useEffect(() => {
+    if (bookingWebhookDenied >= BOOKING_WEBHOOK_DENIED_THRESHOLD && !wasOverThreshold.value) {
+      wasOverThreshold.value = true;
+      toast.error("Webhook on-booking-created: nadużycie!", {
+        description: `${bookingWebhookDenied} odrzuceń w ostatnich 15 min (próg: ${BOOKING_WEBHOOK_DENIED_THRESHOLD}).`,
+        duration: 10_000,
+      });
+    } else if (bookingWebhookDenied < BOOKING_WEBHOOK_DENIED_THRESHOLD) {
+      wasOverThreshold.value = false;
+    }
+  }, [bookingWebhookDenied, wasOverThreshold]);
+
   const stats = useMemo(() => {
     const total = recentFailures.length;
     const last24h = recentFailures.filter(
