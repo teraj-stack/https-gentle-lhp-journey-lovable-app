@@ -139,6 +139,35 @@ const AdminSystemHealth = () => {
   // Klucz aktualnie podświetlonego wiersza w tabeli źródeł (po "Pokaż w tabeli" z modala).
   const [highlightedRowKey, setHighlightedRowKey] = useState<string | null>(null);
 
+  // Auto-fade highlightu wiersza po 3s — żeby nie zostawiać trwałego kolorowego rzędu.
+  useEffect(() => {
+    if (!highlightedRowKey) return;
+    const t = window.setTimeout(() => setHighlightedRowKey(null), 3000);
+    return () => window.clearTimeout(t);
+  }, [highlightedRowKey]);
+
+  // Zamyka modal i przewija/podświetla wiersz w tabeli źródeł dla wskazanej kombinacji IP+UA.
+  // Czeka jeden frame, żeby DOM zdążył odmontować dialog i przywrócić scroll body.
+  const revealRowInTable = (ip: string, ua: string) => {
+    const key = `${ip}::${ua}`;
+    // Wyczyść filtry, jeśli przez nie wiersz jest poza listą — inaczej scroll trafi w pustkę.
+    if (retryFilterIp.trim()) setRetryFilterIp("");
+    if (retryFilterUa.trim()) setRetryFilterUa("");
+    if (retryDenoOnly && !/^Deno\//i.test(ua)) setRetryDenoOnly(false);
+    setInspectSource(null);
+    setInspectQuery("");
+    setInspectSort("desc");
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const el = document.querySelector<HTMLElement>(`[data-retry-row-key="${CSS.escape(key)}"]`);
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "center" });
+          setHighlightedRowKey(key);
+        }
+      });
+    });
+  };
+
   useEffect(() => {
     let isMounted = true;
     const apply = (s: Session | null) => {
