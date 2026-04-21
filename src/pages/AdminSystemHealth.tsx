@@ -58,6 +58,9 @@ const REASON_LABELS: Record<string, string> = {
   rate_limited: "Rate-limit (429)",
   expired: "Token wygasł",
   already_used: "Token już użyty",
+  rate_limit_failopen: "RL fail-open (DB error)",
+  unauthorized: "Brak autoryzacji",
+  invalid_payload: "Nieprawidłowy payload",
 };
 
 const REASON_VARIANT: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
@@ -65,6 +68,9 @@ const REASON_VARIANT: Record<string, "default" | "secondary" | "destructive" | "
   rate_limited: "destructive",
   expired: "secondary",
   already_used: "outline",
+  rate_limit_failopen: "destructive",
+  unauthorized: "secondary",
+  invalid_payload: "outline",
 };
 
 const AdminSystemHealth = () => {

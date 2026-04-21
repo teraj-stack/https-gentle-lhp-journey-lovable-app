@@ -129,6 +129,40 @@ export async function checkRateLimitDb(
   ip: string,
   config: RateLimitConfig = DEFAULT_RATE_LIMIT,
 ): Promise<RateLimitResult> {
+  const failOpen = (mode: 'rpc_error' | 'empty_result' | 'exception', detail: string) => {
+    // Strukturalna linia logu: jednolinijkowy JSON, łatwy do filtrowania
+    // w Supabase analytics_query (event_message LIKE '%[rate-limit][fail-open]%').
+    const logLine = JSON.stringify({
+      tag: '[rate-limit][fail-open]',
+      endpoint,
+      ip,
+      mode,
+      detail,
+      limit: config.max,
+      windowMs: config.windowMs,
+      ts: new Date().toISOString(),
+    })
+    console.error(logLine)
+
+    // Audytowy wpis w token_validation_failures, żeby /admin/system-health
+    // mógł zliczyć fail-openy obok rate_limited / invalid_token.
+    // Fire-and-forget — nie blokujemy ścieżki requestu.
+    logTokenFailure(supabase, {
+      endpoint,
+      reason: 'rate_limit_failopen',
+      ip: ip === 'unknown' ? null : ip,
+      userAgent: null,
+      metadata: { mode, detail, limit: config.max, windowMs: config.windowMs },
+    })
+
+    return {
+      allowed: true,
+      retryAfterSec: 0,
+      remaining: config.max,
+      limit: config.max,
+    }
+  }
+
   try {
     const { data, error } = await supabase.rpc(
       'check_and_increment_rate_limit',
@@ -140,26 +174,12 @@ export async function checkRateLimitDb(
       },
     )
     if (error) {
-      console.warn(
-        '[rate-limit] DB rate-limit RPC failed, failing open:',
-        error.message,
-      )
-      return {
-        allowed: true,
-        retryAfterSec: 0,
-        remaining: config.max,
-        limit: config.max,
-      }
+      return failOpen('rpc_error', error.message)
     }
     // RPC returns a SETOF (one row); supabase-js gives back an array.
     const row = Array.isArray(data) ? data[0] : data
     if (!row) {
-      return {
-        allowed: true,
-        retryAfterSec: 0,
-        remaining: config.max,
-        limit: config.max,
-      }
+      return failOpen('empty_result', 'RPC returned no rows')
     }
     return {
       allowed: !!row.allowed,
@@ -168,16 +188,7 @@ export async function checkRateLimitDb(
       limit: config.max,
     }
   } catch (err) {
-    console.warn(
-      '[rate-limit] DB rate-limit threw, failing open:',
-      err instanceof Error ? err.message : String(err),
-    )
-    return {
-      allowed: true,
-      retryAfterSec: 0,
-      remaining: config.max,
-      limit: config.max,
-    }
+    return failOpen('exception', err instanceof Error ? err.message : String(err))
   }
 }
 
@@ -188,6 +199,7 @@ export type FailureReason =
   | 'already_used'
   | 'unauthorized'
   | 'invalid_payload'
+  | 'rate_limit_failopen'
 
 export interface LogFailureParams {
   endpoint: string
