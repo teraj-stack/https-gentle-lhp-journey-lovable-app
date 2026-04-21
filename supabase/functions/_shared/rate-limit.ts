@@ -259,7 +259,7 @@ export function logTokenFailure(
 
   // EdgeRuntime is injected globally by Supabase Edge Runtime; absent under
   // plain `deno test`. Cast through globalThis to silence type-checker.
-  const edgeRuntime = (globalThis as { EdgeRuntime?: { waitUntil?: (p: Promise<unknown>) => void } }).EdgeRuntime
+  const edgeRuntime = (globalThis as { EdgeRuntime?: { waitUntil?: (p: PromiseLike<unknown>) => void } }).EdgeRuntime
   if (edgeRuntime?.waitUntil) {
     edgeRuntime.waitUntil(promise)
   }
