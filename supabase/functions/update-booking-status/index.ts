@@ -72,19 +72,8 @@ Deno.serve(async (req) => {
 
   const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-  // Rate limit (best-effort) + log denials.
-  const rl = checkRateLimit(ENDPOINT, ip)
-  if (!rl.allowed) {
-    console.warn(`Rate limit exceeded for IP ${ip} on ${ENDPOINT}`)
-    logTokenFailure(supabase, {
-      endpoint: ENDPOINT,
-      reason: 'rate_limited',
-      ip: ipLog,
-      userAgent,
-      metadata: { retryAfterSec: rl.retryAfterSec, method: req.method },
-    })
-    return rateLimitedResponse(rl, corsHeaders)
-  }
+  // Rate-limit usunięty — patrz komentarz na górze pliku.
+  // Token sam w sobie (256-bit + single-use + 7d) jest jedyną warstwą obrony.
 
   // ============================================================
   // GET — walidacja tokena (preview na stronie /booking-action)
