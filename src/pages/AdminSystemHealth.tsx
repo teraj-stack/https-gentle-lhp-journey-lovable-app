@@ -143,6 +143,12 @@ const AdminSystemHealth = () => {
   // Ref-flag: true gdy zamknięcie modala wywołujemy programowo z revealRowInTable,
   // żeby onOpenChange nie odpalił drugi raz auto-reveal (unikamy podwójnego toastu).
   const suppressCloseRevealRef = useRef(false);
+  // Nawigator dopasowań nad tabelą — uruchamiany przyciskiem "Pokaż kolejne dopasowania" w modalu.
+  // keys: pełna lista ip::ua do iteracji (exact na pozycji 0, potem related w kolejności sortowania).
+  // index: aktualnie wskazana pozycja (przy 0 = exact). Null = navigator zamknięty.
+  const [matchNavigator, setMatchNavigator] = useState<{ keys: string[]; index: number } | null>(null);
+  // Timer auto-hide nawigatora po 30s bezczynności.
+  const navigatorHideTimerRef = useRef<number | null>(null);
   // Preferencja użytkownika: czy zamknięcie modala / klik "Pokaż w tabeli" ma przewijać
   // i podświetlać wiersz w tabeli. Trzymane w localStorage żeby przeżyło reload.
   const AUTO_REVEAL_LS_KEY = "admin-system-health.auto-reveal-row";
