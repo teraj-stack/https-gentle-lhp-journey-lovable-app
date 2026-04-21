@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { ArrowLeft, ShieldAlert, Activity, AlertTriangle, RefreshCw, Ban, Webhook, Repeat, Filter, X, Eye, Download, ArrowDownWideNarrow, ArrowUpWideNarrow, Locate, Info, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, ShieldAlert, Activity, AlertTriangle, RefreshCw, Ban, Webhook, Repeat, Filter, X, Eye, Download, ArrowDownWideNarrow, ArrowUpWideNarrow, Locate, Info, ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Toggle } from "@/components/ui/toggle";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -151,6 +151,9 @@ const AdminSystemHealth = () => {
   // w modalu. Inkrementowany przy każdym kliknięciu, modulo liczba dopasowań.
   // Reset do 0 przy zmianie inspectSource / highlightScope.
   const [inspectJumpIndex, setInspectJumpIndex] = useState(0);
+  // Kierunek ostatniego skoku — używany do pokazania ikony ▼/▲ przy badge "Następne".
+  // null = jeszcze nie wykonano skoku w tej sesji modala. Reset z inspectJumpIndex.
+  const [lastJumpDirection, setLastJumpDirection] = useState<"forward" | "backward" | null>(null);
   // Timer auto-hide nawigatora po 30s bezczynności.
   const navigatorHideTimerRef = useRef<number | null>(null);
   // Preferencja użytkownika: czy zamknięcie modala / klik "Pokaż w tabeli" ma przewijać
@@ -349,6 +352,7 @@ const AdminSystemHealth = () => {
   // żeby przycisk "Skocz do następnego" zawsze startował od pierwszego dopasowania.
   useEffect(() => {
     setInspectJumpIndex(0);
+    setLastJumpDirection(null);
   }, [inspectSource, highlightScope]);
 
 
@@ -360,6 +364,8 @@ const AdminSystemHealth = () => {
     const jumpKeys = buildMatchKeys(inspectSource, highlightScope);
     if (jumpKeys.length <= 1) return; // exact only — nic do skakania
     const total = jumpKeys.length;
+    // Zapisz kierunek skoku dla wskaźnika ▼/▲ przy badge "Następne".
+    setLastJumpDirection(offset >= 0 ? "forward" : "backward");
     setInspectJumpIndex((prev) => {
       const idx = ((prev + offset) % total + total) % total;
       const key = jumpKeys[idx];
@@ -1717,9 +1723,18 @@ const AdminSystemHealth = () => {
                       <Badge
                         variant="outline"
                         className="border-primary/40 text-primary text-[11px] font-normal gap-1"
-                        title={`Następny skok podświetli dopasowanie ${nextDisplay} z ${total} (cyklicznie)`}
+                        title={`Następny skok podświetli dopasowanie ${nextDisplay} z ${total} (cyklicznie). Kierunek: ${
+                          lastJumpDirection === "backward" ? "wstecz (ostatnio użyto ↑/K)" : "w przód (ostatnio użyto ↓/J lub przed pierwszym skokiem)"
+                        }`}
                       >
-                        <ChevronRight className="h-3 w-3" />
+                        {/* Ikona kierunku zależna od ostatniego skoku:
+                            ▼ ChevronDown — w przód (default lub po ↓/J/Skocz do następnego)
+                            ▲ ChevronUp   — wstecz (po ↑/K) */}
+                        {lastJumpDirection === "backward" ? (
+                          <ChevronUp className="h-3 w-3" />
+                        ) : (
+                          <ChevronDown className="h-3 w-3" />
+                        )}
                         Następne: {nextDisplay} z {total}
                       </Badge>
                     </>
