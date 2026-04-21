@@ -12,11 +12,13 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { ArrowLeft, ShieldAlert, Mail, AlertTriangle, RefreshCw, ChevronLeft, ChevronRight, Calendar as CalendarIcon } from "lucide-react";
+import { ArrowLeft, ShieldAlert, Mail, AlertTriangle, RefreshCw, ChevronLeft, ChevronRight, Calendar as CalendarIcon, RotateCw } from "lucide-react";
 import SeoHead from "@/components/shared/SeoHead";
 import { format, subDays, subHours } from "date-fns";
 import { pl } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { toast } from "@/hooks/use-toast";
+import { useState as useStateLocal } from "react";
 
 type EmailRow = {
   id: string;
@@ -210,9 +212,12 @@ const AdminEmailDashboard = () => {
               <Mail className="w-5 h-5" /> Email Dashboard
             </h1>
           </div>
-          <Button variant="ghost" size="sm" onClick={() => refetch()} disabled={isFetching}>
-            <RefreshCw className={cn("w-4 h-4 mr-1", isFetching && "animate-spin")} /> Odśwież
-          </Button>
+          <div className="flex items-center gap-2">
+            <RetryDlqButton onComplete={() => refetch()} />
+            <Button variant="ghost" size="sm" onClick={() => refetch()} disabled={isFetching}>
+              <RefreshCw className={cn("w-4 h-4 mr-1", isFetching && "animate-spin")} /> Odśwież
+            </Button>
+          </div>
         </header>
 
         <main className="max-w-7xl mx-auto px-4 py-6 md:px-8 space-y-6">
