@@ -1200,10 +1200,13 @@ const AdminSystemHealth = () => {
                     if (!inspectSource) return;
                     revealRowInTable(inspectSource.ip, inspectSource.ua);
                   }}
-                  title="Zamknij modal i przewiń do wiersza w tabeli źródeł"
+                  title="Zamknij modal i przewiń do wiersza w tabeli źródeł (Enter lub Ctrl+K)"
                 >
                   <Locate className="h-3.5 w-3.5" />
                   Pokaż w tabeli
+                  <kbd className="ml-1 hidden sm:inline-flex items-center gap-0.5 rounded border border-border/60 bg-muted/60 px-1 py-0 text-[10px] font-mono text-muted-foreground">
+                    ⏎
+                  </kbd>
                 </Button>
               <Button
                 variant="outline"
