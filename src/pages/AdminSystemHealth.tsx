@@ -192,6 +192,15 @@ const AdminSystemHealth = () => {
   // Zamyka modal i przewija/podświetla wiersz w tabeli źródeł dla wskazanej kombinacji IP+UA.
   // Czeka jeden frame, żeby DOM zdążył odmontować dialog i przywrócić scroll body.
   const revealRowInTable = (ip: string, ua: string) => {
+    // Jeśli admin wyłączył auto-reveal w preferencjach — tylko zamknij modal, bez
+    // czyszczenia filtrów, scrolla, podświetlenia i toastów. To jest "kill switch".
+    if (!autoRevealEnabled) {
+      suppressCloseRevealRef.current = true;
+      setInspectSource(null);
+      setInspectQuery("");
+      setInspectSort("desc");
+      return;
+    }
     const key = `${ip}::${ua}`;
     // Zapamiętaj pozycję scrolla SPRZED auto-przewinięcia, żeby toast "Cofnij" mógł
     // przywrócić użytkownika dokładnie tam, gdzie był.
