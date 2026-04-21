@@ -197,6 +197,8 @@ export type Database = {
           id: string
           location: string
           message: string | null
+          next_reminder_24h_at: string | null
+          next_reminder_2h_at: string | null
           patient_email: string
           patient_name: string
           patient_phone: string
@@ -214,6 +216,8 @@ export type Database = {
           id?: string
           location: string
           message?: string | null
+          next_reminder_24h_at?: string | null
+          next_reminder_2h_at?: string | null
           patient_email: string
           patient_name: string
           patient_phone: string
@@ -231,6 +235,8 @@ export type Database = {
           id?: string
           location?: string
           message?: string | null
+          next_reminder_24h_at?: string | null
+          next_reminder_2h_at?: string | null
           patient_email?: string
           patient_name?: string
           patient_phone?: string
