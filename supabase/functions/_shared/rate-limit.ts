@@ -1,25 +1,25 @@
 // ============================================================
 // Shared rate-limiter + token failure logger.
-// Used by public edge functions:
-//   - update-booking-status
-//   - handle-email-unsubscribe
-//   - handle-reminder-opt-out
-//   - verify-turnstile
-//   - on-booking-created
-//   - preview-transactional-email
 //
-// IMPORTANT: This rate-limiter is BEST-EFFORT.
-// Supabase Edge Functions fan out across multiple Deno isolates.
-// Each isolate keeps its own in-memory Map → a burst of N requests
-// distributed across K isolates effectively raises the limit Kx.
-// We keep it because:
-//   1) Slows down naive single-isolate brute-forcers.
-//   2) Drives the unified `token_validation_failures` audit log so admins
-//      can detect abuse via /admin/system-health (≥10 failures / 10 min).
+// Two rate-limit implementations live here:
+//   1) checkRateLimit()    — in-memory, per-isolate, BEST-EFFORT.
+//                            Kept only for legacy callers; do not use.
+//   2) checkRateLimitDb()  — DB-backed (rate_limit_buckets + RPC),
+//                            atomic UPSERT, GLOBAL across isolates.
+//                            Preferred for all new endpoints.
 //
-// True global rate-limiting requires a Postgres-backed bucket
-// (separate concern, not implemented here).
+// Active consumers (DB-backed):
+//   - handle-email-unsubscribe   (10/60s)
+//   - handle-reminder-opt-out    (10/60s)
+//   - verify-turnstile           (30/60s)
+//   - preview-transactional-email (10/60s)
+//
+// update-booking-status — RL intentionally removed (token alone is the
+// security boundary: 256-bit + single-use + 7d expiry). See its file.
+//
+// on-booking-created — still uses the in-memory limiter (60/60s, low risk).
 // ============================================================
+
 
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2'
 
