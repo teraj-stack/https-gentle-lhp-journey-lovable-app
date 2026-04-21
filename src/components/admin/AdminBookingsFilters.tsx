@@ -305,6 +305,24 @@ const AdminBookingsFilters = ({ filters, onChange, resultCount }: Props) => {
       aria-label="Filtry rezerwacji"
       className="rounded-lg border border-border bg-card/50 px-4 py-3 mb-4 flex flex-wrap items-end gap-3"
     >
+      <FilterField label="Skrót">
+        <Button
+          type="button"
+          variant={filters.closeout ? "default" : "outline"}
+          size="sm"
+          className={cn(
+            "h-9 gap-2",
+            filters.closeout && "bg-primary text-primary-foreground hover:bg-primary/90",
+          )}
+          onClick={toggleCloseout}
+          aria-pressed={filters.closeout}
+          title="Dziś po 18:00, status oczekująca — do zamknięcia przed mailem 22:00"
+        >
+          <Moon className="w-3.5 h-3.5" />
+          Po‑wizytowe
+        </Button>
+      </FilterField>
+
       <FilterField label="Status">
         <Select value={filters.status} onValueChange={(v) => handleStatus(v as StatusFilter)}>
           <SelectTrigger className="w-[200px] h-9">
