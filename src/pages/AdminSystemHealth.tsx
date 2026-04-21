@@ -292,6 +292,56 @@ const AdminSystemHealth = () => {
     });
   };
 
+  // Resetuje timer auto-hide (30s) — wywoływany przy każdej interakcji z navigatorem.
+  const bumpNavigatorTimer = () => {
+    if (navigatorHideTimerRef.current !== null) {
+      window.clearTimeout(navigatorHideTimerRef.current);
+    }
+    navigatorHideTimerRef.current = window.setTimeout(() => {
+      setMatchNavigator(null);
+      navigatorHideTimerRef.current = null;
+    }, 30_000);
+  };
+
+  // Scrolluje do wiersza wskazanego przez index w keys.
+  const scrollToNavigatorIndex = (idx: number, keys: string[]) => {
+    const key = keys[idx];
+    if (!key) return;
+    const el = document.querySelector<HTMLElement>(`[data-retry-row-key="${CSS.escape(key)}"]`);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  };
+
+  // Otwiera nawigator dopasowań. keys[0] musi być exact (zostanie scrollowany pierwszy
+  // przez revealRowInTable, nie przez navigator).
+  const openMatchNavigator = (keys: string[]) => {
+    if (keys.length <= 1) return; // brak pokrewnych — nic do nawigacji
+    setMatchNavigator({ keys, index: 0 });
+    bumpNavigatorTimer();
+  };
+
+  const goToNavigatorOffset = (offset: number) => {
+    setMatchNavigator((nav) => {
+      if (!nav) return nav;
+      const len = nav.keys.length;
+      const nextIdx = ((nav.index + offset) % len + len) % len;
+      queueMicrotask(() => scrollToNavigatorIndex(nextIdx, nav.keys));
+      return { ...nav, index: nextIdx };
+    });
+    bumpNavigatorTimer();
+  };
+
+  // Cleanup timera przy unmount.
+  useEffect(() => {
+    return () => {
+      if (navigatorHideTimerRef.current !== null) {
+        window.clearTimeout(navigatorHideTimerRef.current);
+      }
+    };
+  }, []);
+
+
   // Skrót klawiszowy w modalu inspekcji: Ctrl/Cmd+K zawsze, Enter tylko gdy fokus nie jest
   // w polu tekstowym (żeby nie kolidować z wpisywaniem w polu wyszukiwania).
   useEffect(() => {
