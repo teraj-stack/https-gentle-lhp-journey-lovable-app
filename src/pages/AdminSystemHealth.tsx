@@ -142,6 +142,22 @@ const AdminSystemHealth = () => {
   // Ref-flag: true gdy zamknięcie modala wywołujemy programowo z revealRowInTable,
   // żeby onOpenChange nie odpalił drugi raz auto-reveal (unikamy podwójnego toastu).
   const suppressCloseRevealRef = useRef(false);
+  // Preferencja użytkownika: czy zamknięcie modala / klik "Pokaż w tabeli" ma przewijać
+  // i podświetlać wiersz w tabeli. Trzymane w localStorage żeby przeżyło reload.
+  const AUTO_REVEAL_LS_KEY = "admin-system-health.auto-reveal-row";
+  const [autoRevealEnabled, setAutoRevealEnabled] = useState<boolean>(() => {
+    if (typeof window === "undefined") return true;
+    const v = window.localStorage.getItem(AUTO_REVEAL_LS_KEY);
+    // Domyślnie ON — wartość zapisujemy tylko gdy admin świadomie wyłączy.
+    return v === null ? true : v === "1";
+  });
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(AUTO_REVEAL_LS_KEY, autoRevealEnabled ? "1" : "0");
+    } catch {
+      // localStorage może być zablokowany (private mode) — ignorujemy.
+    }
+  }, [autoRevealEnabled]);
 
   // Auto-fade highlightu wiersza po 10s — wystarczająco długo, żeby admin zdążył zauważyć
   // wyróżnienie po zamknięciu modala, ale nie zostawia trwałego kolorowego rzędu.
