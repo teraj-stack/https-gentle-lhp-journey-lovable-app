@@ -153,7 +153,9 @@ export async function checkRateLimitDb(
   supabase: SupabaseClient,
   endpoint: string,
   ip: string,
-  config: RateLimitConfig = DEFAULT_RATE_LIMIT,
+  // If omitted, resolved from RATE_LIMITS registry above. Pass an explicit
+  // config only for ad-hoc / testing scenarios.
+  config: RateLimitConfig = getRateLimitConfig(endpoint),
 ): Promise<RateLimitResult> {
   const failOpen = (mode: 'rpc_error' | 'empty_result' | 'exception', detail: string) => {
     // Strukturalna linia logu: jednolinijkowy JSON, łatwy do filtrowania
