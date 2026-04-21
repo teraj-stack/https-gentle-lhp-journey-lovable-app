@@ -201,8 +201,15 @@ const AdminSystemHealth = () => {
     const now = Date.now();
     const buckets = { last1h: 0, last6h: 0, last24h: webhookRetries.length };
     const perSource = new Map<string, { ip: string; ua: string; count: number; last: string; maxRetryAfter: number }>();
+    const perIp = new Map<string, number>();
     let denoOnly = 0;
     let denoLast1h = 0;
+    // Statystyki retry-after z metadanych. Liczymy tylko wpisy z dodatnią
+    // wartością — 0/null oznacza brak retry_after w odpowiedzi (np. fail-open
+    // lub stary log bez metadanych).
+    let retryAfterSum = 0;
+    let retryAfterMax = 0;
+    let retryAfterCount = 0;
     for (const r of webhookRetries) {
       const ageMs = now - new Date(r.created_at).getTime();
       const ua = r.user_agent ?? "—";
@@ -213,18 +220,50 @@ const AdminSystemHealth = () => {
       }
       if (ageMs <= 6 * 60 * 60 * 1000) buckets.last6h += 1;
       if (isDeno) denoOnly += 1;
-      const key = `${r.ip ?? "—"}::${ua}`;
+      const ipKey = r.ip ?? "—";
+      perIp.set(ipKey, (perIp.get(ipKey) ?? 0) + 1);
+      const key = `${ipKey}::${ua}`;
       const retryAfter = typeof r.metadata?.retryAfterSec === "number" ? (r.metadata.retryAfterSec as number) : 0;
+      if (retryAfter > 0) {
+        retryAfterSum += retryAfter;
+        retryAfterCount += 1;
+        if (retryAfter > retryAfterMax) retryAfterMax = retryAfter;
+      }
       const existing = perSource.get(key);
       if (existing) {
         existing.count += 1;
         if (retryAfter > existing.maxRetryAfter) existing.maxRetryAfter = retryAfter;
       } else {
-        perSource.set(key, { ip: r.ip ?? "—", ua, count: 1, last: r.created_at, maxRetryAfter: retryAfter });
+        perSource.set(key, { ip: ipKey, ua, count: 1, last: r.created_at, maxRetryAfter: retryAfter });
       }
     }
     const sources = Array.from(perSource.values()).sort((a, b) => b.count - a.count);
-    return { ...buckets, denoOnly, denoLast1h, sources };
+    // Top IP po liczbie retry'ów (niezależnie od UA — łapie też przypadek,
+    // gdy ten sam IP używa różnych UA).
+    let topIp: string | null = null;
+    let topIpCount = 0;
+    for (const [ip, count] of perIp.entries()) {
+      if (count > topIpCount) {
+        topIp = ip;
+        topIpCount = count;
+      }
+    }
+    const topIpShare = buckets.last24h > 0 ? (topIpCount / buckets.last24h) * 100 : 0;
+    const uniqueIps = perIp.size;
+    const avgRetryAfter = retryAfterCount > 0 ? retryAfterSum / retryAfterCount : 0;
+    return {
+      ...buckets,
+      denoOnly,
+      denoLast1h,
+      sources,
+      topIp,
+      topIpCount,
+      topIpShare,
+      uniqueIps,
+      avgRetryAfter,
+      maxRetryAfter: retryAfterMax,
+      retryAfterSampleCount: retryAfterCount,
+    };
   }, [webhookRetries]);
 
   // Filtrowanie tabeli retry'ów po IP / UA + przełącznik "tylko Deno/*".
