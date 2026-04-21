@@ -1092,7 +1092,7 @@ const AdminSystemHealth = () => {
                 variant="outline"
                 size="sm"
                 className="h-8 gap-1.5 shrink-0"
-                disabled={inspectRecords.length === 0}
+                
                 onClick={() => {
                   if (!inspectSource || inspectFilteredRecords.length === 0) return;
                   // Eksport tylko aktualnie wyświetlanych rekordów (po filtrach IP+UA + tekst).
