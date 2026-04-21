@@ -1248,9 +1248,19 @@ const AdminSystemHealth = () => {
         <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col">
           <DialogHeader>
             <div className="flex items-start justify-between gap-3">
-              <DialogTitle className="flex items-center gap-2">
+              <DialogTitle className="flex items-center gap-2 flex-wrap">
                 <Eye className="h-5 w-5 text-primary" />
                 Surowe rekordy retry'ów
+                {inspectSourceIndex >= 0 && (
+                  <Badge
+                    variant="outline"
+                    className="border-primary/40 text-primary text-[11px] font-normal gap-1"
+                    title="Pozycja tego źródła w posortowanej liście — kliknięcie 'Pokaż w tabeli' zamknie modal i przewinie do tego wiersza"
+                  >
+                    <Locate className="h-3 w-3" />
+                    Zamknij i przejdź do wiersza ({inspectSourceIndex + 1} z {webhookRetryStats.sources.length})
+                  </Badge>
+                )}
               </DialogTitle>
               <div className="flex items-center gap-2 shrink-0">
                 <Button
