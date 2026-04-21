@@ -36,6 +36,32 @@ export const DEFAULT_RATE_LIMIT: RateLimitConfig = {
   windowMs: 60_000,
 }
 
+// ============================================================
+// SINGLE SOURCE OF TRUTH for per-endpoint rate limits.
+//
+// Any change here must be mirrored in the SQL function
+// public.get_top_rate_limited_ips (CTE `limits`). The admin
+// dashboard uses that CTE to compute "denied" counts.
+//
+// Add new endpoints here BEFORE wiring them up in the function code,
+// then bump the SQL CTE in a migration.
+// ============================================================
+export const RATE_LIMITS = {
+  'handle-email-unsubscribe':    { max: 10, windowMs: 60_000 },
+  'handle-reminder-opt-out':     { max: 10, windowMs: 60_000 },
+  'preview-transactional-email': { max: 10, windowMs: 60_000 },
+  'verify-turnstile':            { max: 30, windowMs: 60_000 },
+  'on-booking-created':          { max: 60, windowMs: 60_000 },
+} as const satisfies Record<string, RateLimitConfig>
+
+export type RateLimitedEndpoint = keyof typeof RATE_LIMITS
+
+// Resolve config by endpoint name. Falls back to DEFAULT_RATE_LIMIT
+// for unknown endpoints (defensive — should not happen at runtime).
+export function getRateLimitConfig(endpoint: string): RateLimitConfig {
+  return (RATE_LIMITS as Record<string, RateLimitConfig>)[endpoint] ?? DEFAULT_RATE_LIMIT
+}
+
 interface Bucket {
   count: number
   resetAt: number
