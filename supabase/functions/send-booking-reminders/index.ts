@@ -29,6 +29,8 @@ interface BookingRow {
   location: string
   status: string
   reminder_opt_out: boolean
+  next_reminder_24h_at?: string | null
+  next_reminder_2h_at?: string | null
 }
 
 type WindowKey = '24h' | '2h'
