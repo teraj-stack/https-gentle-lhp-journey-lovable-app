@@ -776,6 +776,7 @@ const AdminSystemHealth = () => {
                               <TableHead>Liczba retry</TableHead>
                               <TableHead>Max retry-after (s)</TableHead>
                               <TableHead>Ostatni</TableHead>
+                              <TableHead className="w-[80px] text-right">Akcje</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
@@ -796,6 +797,18 @@ const AdminSystemHealth = () => {
                                   <TableCell className="text-xs">{s.maxRetryAfter || "—"}</TableCell>
                                   <TableCell className="text-xs text-muted-foreground">
                                     {formatDistanceToNow(new Date(s.last), { addSuffix: true, locale: pl })}
+                                  </TableCell>
+                                  <TableCell className="text-right">
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-7 px-2"
+                                      onClick={() => setInspectSource({ ip: s.ip, ua: s.ua })}
+                                      title="Pokaż surowe rekordy z metadata"
+                                    >
+                                      <Eye className="h-3.5 w-3.5 mr-1" />
+                                      <span className="text-xs">Szczegóły</span>
+                                    </Button>
                                   </TableCell>
                                 </TableRow>
                               );
