@@ -1820,19 +1820,33 @@ const AdminSystemHealth = () => {
                   const total = jumpKeys.length;
                   const currentDisplay = (inspectJumpIndex % total) + 1;
                   return (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-8 gap-1.5 border-primary/40 text-primary hover:bg-primary/10"
-                      onClick={() => performJumpToMatch(1)}
-                      title={`Przewiń tabelę pod modalem do następnego podświetlonego wiersza (${currentDisplay}/${total}). Modal pozostaje otwarty. Skróty: ↓ / J = następne, ↑ / K = poprzednie.`}
-                    >
-                      <ChevronRight className="h-3.5 w-3.5" />
-                      Skocz do następnego ({currentDisplay}/{total})
-                      <kbd className="ml-1 hidden sm:inline-flex items-center gap-0.5 rounded border border-border/60 bg-muted/60 px-1 py-0 text-[10px] font-mono text-muted-foreground">
-                        ↓
-                      </kbd>
-                    </Button>
+                    <div className="flex items-center gap-1">
+                      {/* Przycisk "Poprzednie" — symetryczny do "Skocz do następnego",
+                          żeby nawigacja klawiszami (↑/K) miała wizualny odpowiednik w UI. */}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 w-8 p-0 border-primary/40 text-primary hover:bg-primary/10"
+                        onClick={() => performJumpToMatch(-1)}
+                        title={`Poprzednie podświetlone dopasowanie (cyklicznie). Skrót: ↑ lub K.`}
+                        aria-label="Poprzednie dopasowanie"
+                      >
+                        <ChevronUp className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 gap-1.5 border-primary/40 text-primary hover:bg-primary/10"
+                        onClick={() => performJumpToMatch(1)}
+                        title={`Przewiń tabelę pod modalem do następnego podświetlonego wiersza (${currentDisplay}/${total}). Modal pozostaje otwarty. Skróty: ↓ / J = następne, ↑ / K = poprzednie.`}
+                      >
+                        <ChevronDown className="h-3.5 w-3.5" />
+                        Skocz do następnego ({currentDisplay}/{total})
+                        <kbd className="ml-1 hidden sm:inline-flex items-center gap-0.5 rounded border border-border/60 bg-muted/60 px-1 py-0 text-[10px] font-mono text-muted-foreground">
+                          ↓
+                        </kbd>
+                      </Button>
+                    </div>
                   );
                 })()}
               <Button
