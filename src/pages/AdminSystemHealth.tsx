@@ -1643,6 +1643,28 @@ const AdminSystemHealth = () => {
                     ⏎
                   </kbd>
                 </Button>
+                {/* Przycisk "Pokaż kolejne dopasowania" — tylko gdy są pokrewne wiersze
+                    do nawigacji (auto-reveal włączony, scope != exact, related > 0). */}
+                {autoRevealEnabled && relatedMatchCount > 0 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 gap-1.5 border-primary/40 text-primary hover:bg-primary/10"
+                    onClick={() => {
+                      if (!inspectSource) return;
+                      const keys = buildMatchKeys(inspectSource, highlightScope);
+                      // Najpierw standardowy reveal exact (zamknie modal, scrolluje, podświetla),
+                      // a potem otwiera nawigator do iteracji po pokrewnych przyciskami ◀ ▶.
+                      revealRowInTable(inspectSource.ip, inspectSource.ua);
+                      // Drugi rAF, żeby navigator pojawił się po DOM-update revealu.
+                      requestAnimationFrame(() => requestAnimationFrame(() => openMatchNavigator(keys)));
+                    }}
+                    title={`Zamknij modal i włącz nawigator po ${relatedMatchCount} pokrewnych dopasowaniach`}
+                  >
+                    <ChevronRight className="h-3.5 w-3.5" />
+                    Pokaż kolejne dopasowania ({relatedMatchCount})
+                  </Button>
+                )}
               <Button
                 variant="outline"
                 size="sm"
