@@ -1085,6 +1085,7 @@ const AdminSystemHealth = () => {
           if (!open) {
             setInspectSource(null);
             setInspectQuery("");
+            setInspectSort("desc");
           }
         }}
       >
