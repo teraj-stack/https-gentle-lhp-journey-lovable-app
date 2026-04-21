@@ -364,6 +364,8 @@ const AdminSystemHealth = () => {
     const jumpKeys = buildMatchKeys(inspectSource, highlightScope);
     if (jumpKeys.length <= 1) return; // exact only — nic do skakania
     const total = jumpKeys.length;
+    // Zapisz kierunek skoku dla wskaźnika ▼/▲ przy badge "Następne".
+    setLastJumpDirection(offset >= 0 ? "forward" : "backward");
     setInspectJumpIndex((prev) => {
       const idx = ((prev + offset) % total + total) % total;
       const key = jumpKeys[idx];
