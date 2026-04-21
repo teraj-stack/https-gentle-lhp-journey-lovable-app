@@ -250,9 +250,24 @@ const AdminBookingsFilters = ({ filters, onChange, resultCount }: Props) => {
       filters.datePreset !== DEFAULT_FILTERS.datePreset ||
       filters.reminderOptOut !== DEFAULT_FILTERS.reminderOptOut ||
       filters.customFrom ||
-      filters.customTo,
+      filters.customTo ||
+      filters.closeout,
     [filters],
   );
+
+  const toggleCloseout = () => {
+    if (filters.closeout) {
+      onChange({ ...DEFAULT_FILTERS, location: filters.location });
+    } else {
+      onChange({
+        ...DEFAULT_FILTERS,
+        location: filters.location,
+        status: "pending",
+        datePreset: "today",
+        closeout: true,
+      });
+    }
+  };
 
   const handleStatus = (value: StatusFilter) => onChange({ ...filters, status: value });
   const handleLocation = (value: LocationFilter) => onChange({ ...filters, location: value });
