@@ -8,13 +8,9 @@
 //                            atomic UPSERT, GLOBAL across isolates.
 //                            Preferred for all new endpoints.
 //
-// Active consumers (DB-backed):
-//   - handle-email-unsubscribe   (10/60s)
-//   - handle-reminder-opt-out    (10/60s)
-//   - verify-turnstile           (30/60s)
-//   - preview-transactional-email (10/60s)
-//   - on-booking-created         (60/60s)  ← DB webhook; Supabase retries
-//                                            on 429 with backoff, harmless.
+// Active consumers (DB-backed) — limits centralized in RATE_LIMITS below.
+// Each consumer simply calls `checkRateLimitDb(supabase, ENDPOINT, ip)`
+// and the config is auto-resolved.
 //
 // update-booking-status — RL intentionally removed (token alone is the
 // security boundary: 256-bit + single-use + 7d expiry). See its file.
@@ -34,6 +30,32 @@ export interface RateLimitConfig {
 export const DEFAULT_RATE_LIMIT: RateLimitConfig = {
   max: 10,
   windowMs: 60_000,
+}
+
+// ============================================================
+// SINGLE SOURCE OF TRUTH for per-endpoint rate limits.
+//
+// Any change here must be mirrored in the SQL function
+// public.get_top_rate_limited_ips (CTE `limits`). The admin
+// dashboard uses that CTE to compute "denied" counts.
+//
+// Add new endpoints here BEFORE wiring them up in the function code,
+// then bump the SQL CTE in a migration.
+// ============================================================
+export const RATE_LIMITS = {
+  'handle-email-unsubscribe':    { max: 10, windowMs: 60_000 },
+  'handle-reminder-opt-out':     { max: 10, windowMs: 60_000 },
+  'preview-transactional-email': { max: 10, windowMs: 60_000 },
+  'verify-turnstile':            { max: 30, windowMs: 60_000 },
+  'on-booking-created':          { max: 60, windowMs: 60_000 },
+} as const satisfies Record<string, RateLimitConfig>
+
+export type RateLimitedEndpoint = keyof typeof RATE_LIMITS
+
+// Resolve config by endpoint name. Falls back to DEFAULT_RATE_LIMIT
+// for unknown endpoints (defensive — should not happen at runtime).
+export function getRateLimitConfig(endpoint: string): RateLimitConfig {
+  return (RATE_LIMITS as Record<string, RateLimitConfig>)[endpoint] ?? DEFAULT_RATE_LIMIT
 }
 
 interface Bucket {
@@ -127,7 +149,9 @@ export async function checkRateLimitDb(
   supabase: SupabaseClient,
   endpoint: string,
   ip: string,
-  config: RateLimitConfig = DEFAULT_RATE_LIMIT,
+  // If omitted, resolved from RATE_LIMITS registry above. Pass an explicit
+  // config only for ad-hoc / testing scenarios.
+  config: RateLimitConfig = getRateLimitConfig(endpoint),
 ): Promise<RateLimitResult> {
   const failOpen = (mode: 'rpc_error' | 'empty_result' | 'exception', detail: string) => {
     // Strukturalna linia logu: jednolinijkowy JSON, łatwy do filtrowania
@@ -233,14 +257,11 @@ export function logTokenFailure(
       }
     })
 
-  // @ts-ignore - EdgeRuntime is available in Supabase Edge Runtime
-  if (
-    typeof EdgeRuntime !== 'undefined' &&
-    // @ts-ignore
-    typeof EdgeRuntime.waitUntil === 'function'
-  ) {
-    // @ts-ignore
-    EdgeRuntime.waitUntil(promise)
+  // EdgeRuntime is injected globally by Supabase Edge Runtime; absent under
+  // plain `deno test`. Cast through globalThis to silence type-checker.
+  const edgeRuntime = (globalThis as { EdgeRuntime?: { waitUntil?: (p: PromiseLike<unknown>) => void } }).EdgeRuntime
+  if (edgeRuntime?.waitUntil) {
+    edgeRuntime.waitUntil(promise)
   }
 }
 
