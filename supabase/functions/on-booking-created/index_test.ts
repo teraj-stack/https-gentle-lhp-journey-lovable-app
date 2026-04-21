@@ -123,4 +123,5 @@ Deno.test({
     buckets![0].count >= TOTAL_REQUESTS - 5,
     `expected bucket count >= ${TOTAL_REQUESTS - 5}, got ${buckets![0].count}`
   )
+  },
 })
