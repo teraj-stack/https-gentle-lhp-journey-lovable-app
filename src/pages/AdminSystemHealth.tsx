@@ -1101,6 +1101,17 @@ const AdminSystemHealth = () => {
                                   <TooltipTrigger asChild>{row}</TooltipTrigger>
                                   <TooltipContent side="top" align="start" className="max-w-md">
                                     <div className="space-y-1 text-xs">
+                                      <div className="flex items-center gap-1.5 mb-1">
+                                        {isExactHighlight ? (
+                                          <Badge variant="default" className="text-[10px] py-0 h-4">
+                                            Wiersz źródłowy (z modala)
+                                          </Badge>
+                                        ) : (
+                                          <Badge variant="outline" className="text-[10px] py-0 h-4 border-primary/40 text-primary">
+                                            Ten sam IP
+                                          </Badge>
+                                        )}
+                                      </div>
                                       <div>
                                         <span className="text-muted-foreground">IP: </span>
                                         <span className="font-mono">{s.ip}</span>
