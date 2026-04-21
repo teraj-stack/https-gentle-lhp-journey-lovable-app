@@ -1008,32 +1008,46 @@ const AdminSystemHealth = () => {
                         <Locate className="h-3.5 w-3.5 mr-1.5" />
                         Auto-reveal {autoRevealEnabled ? "ON" : "OFF"}
                       </Toggle>
-                      {/* Toggle zakresu podświetlenia: pressed = same-ip (szeroko), unpressed = exact (tylko jeden).
-                          Aktywny tylko gdy auto-reveal włączony — inaczej i tak nic nie podświetlamy. */}
-                      <Toggle
+                      {/* Cykliczny przycisk zakresu podświetlenia: exact → same-ip → same-ua → exact…
+                          Disabled gdy auto-reveal off, bo i tak nic nie podświetlamy. */}
+                      <Button
+                        variant="outline"
                         size="sm"
-                        pressed={highlightScope === "same-ip"}
-                        onPressedChange={(v) => {
-                          const scope: HighlightScope = v ? "same-ip" : "exact";
-                          setHighlightScope(scope);
+                        disabled={!autoRevealEnabled}
+                        onClick={() => {
+                          const next: HighlightScope =
+                            highlightScope === "exact"
+                              ? "same-ip"
+                              : highlightScope === "same-ip"
+                                ? "same-ua"
+                                : "exact";
+                          setHighlightScope(next);
                           toast.success(
-                            scope === "same-ip"
-                              ? "Podświetlam wszystkie wiersze z tym samym IP"
-                              : "Podświetlam tylko jeden — dokładny match IP+UA",
+                            next === "exact"
+                              ? "Podświetlam tylko jeden — dokładny match IP+UA"
+                              : next === "same-ip"
+                                ? "Podświetlam wszystkie wiersze z tym samym IP"
+                                : "Podświetlam wszystkie wiersze z tym samym User-Agent",
                           );
                         }}
-                        disabled={!autoRevealEnabled}
-                        aria-label="Zakres podświetlenia: tylko exact match vs wszystkie wiersze z tego samego IP"
+                        aria-label="Zakres podświetlenia po reveal"
                         title={
-                          highlightScope === "same-ip"
-                            ? "Po reveal podświetlany jest wiersz źródłowy mocno + wszystkie inne wiersze z tym samym IP delikatnie. Kliknij, aby zawęzić tylko do exact match."
-                            : "Po reveal podświetlany jest tylko jeden wiersz (dokładny IP+UA). Kliknij, aby rozszerzyć na wszystkie wiersze z tym samym IP."
+                          highlightScope === "exact"
+                            ? "Aktualnie: tylko exact match (1 wiersz). Kliknij, aby rozszerzyć na same-IP."
+                            : highlightScope === "same-ip"
+                              ? "Aktualnie: same-IP (wszystkie wiersze z tym samym IP). Kliknij, aby przełączyć na same-UA."
+                              : "Aktualnie: same-UA (wszystkie wiersze z tym samym User-Agent). Kliknij, aby wrócić do exact."
                         }
-                        className="h-8 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+                        className="h-8 gap-1.5"
                       >
-                        <Locate className="h-3.5 w-3.5 mr-1.5" />
-                        Highlight: {highlightScope === "same-ip" ? "wszystkie z IP" : "tylko exact"}
-                      </Toggle>
+                        <Locate className="h-3.5 w-3.5" />
+                        Highlight:{" "}
+                        {highlightScope === "exact"
+                          ? "tylko exact"
+                          : highlightScope === "same-ip"
+                            ? "wszystkie z IP"
+                            : "wszystkie z UA"}
+                      </Button>
                       {retryFiltersActive && (
                         <Button
                           variant="ghost"
