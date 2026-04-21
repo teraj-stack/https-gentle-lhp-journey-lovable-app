@@ -352,6 +352,7 @@ const AdminSystemHealth = () => {
   // żeby przycisk "Skocz do następnego" zawsze startował od pierwszego dopasowania.
   useEffect(() => {
     setInspectJumpIndex(0);
+    setLastJumpDirection(null);
   }, [inspectSource, highlightScope]);
 
 
