@@ -963,6 +963,28 @@ const AdminSystemHealth = () => {
                         <Webhook className="h-3.5 w-3.5 mr-1.5" />
                         Tylko webhook DB (Deno/*)
                       </Toggle>
+                      <Toggle
+                        size="sm"
+                        pressed={autoRevealEnabled}
+                        onPressedChange={(v) => {
+                          setAutoRevealEnabled(v);
+                          toast.success(
+                            v
+                              ? "Auto-przewijanie i podświetlenie włączone"
+                              : "Auto-przewijanie i podświetlenie wyłączone",
+                          );
+                        }}
+                        aria-label="Auto-przewijanie i podświetlenie wiersza po zamknięciu modala"
+                        title={
+                          autoRevealEnabled
+                            ? "Po zamknięciu modala wiersz zostanie automatycznie przewinięty i podświetlony. Kliknij, aby wyłączyć."
+                            : "Auto-reveal wyłączony — zamknięcie modala nie będzie przewijać ani podświetlać wiersza. Kliknij, aby włączyć."
+                        }
+                        className="h-8 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+                      >
+                        <Locate className="h-3.5 w-3.5 mr-1.5" />
+                        Auto-reveal {autoRevealEnabled ? "ON" : "OFF"}
+                      </Toggle>
                       {retryFiltersActive && (
                         <Button
                           variant="ghost"
