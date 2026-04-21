@@ -134,6 +134,8 @@ const AdminSystemHealth = () => {
   const [inspectSource, setInspectSource] = useState<{ ip: string; ua: string } | null>(null);
   // Filtr tekstowy w modalu — szuka substringa w JSON metadata (case-insensitive).
   const [inspectQuery, setInspectQuery] = useState("");
+  // Kierunek sortowania w modalu: desc = najnowsze pierwsze (domyślnie).
+  const [inspectSort, setInspectSort] = useState<"desc" | "asc">("desc");
 
   useEffect(() => {
     let isMounted = true;
