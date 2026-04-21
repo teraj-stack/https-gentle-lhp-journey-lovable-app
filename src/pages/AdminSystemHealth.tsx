@@ -1978,60 +1978,105 @@ const AdminSystemHealth = () => {
                   </Button>
                 </CollapsibleTrigger>
                 <CollapsibleContent>
-                  <div className="mt-2 max-h-48 overflow-y-auto rounded-md border border-border/60 bg-muted/30 divide-y divide-border/40">
-                    {jumpKeys.map((key, i) => {
-                      const [ip, ua] = key.split("::");
-                      // Lookup count z webhookRetryStats.sources (deterministycznie po ip+ua).
-                      const sourceMeta = webhookRetryStats.sources.find(
-                        (s) => s.ip === ip && s.ua === ua,
-                      );
-                      const isExact = i === 0;
-                      // "next" cursor wskazuje który wiersz zostanie podświetlony następnym
-                      // skokiem — wyróżnij go w liście (żeby user widział, gdzie "stoi").
-                      const isNextCursor = i === inspectJumpIndex % total;
-                      return (
-                        <button
-                          key={key}
-                          type="button"
-                          onClick={() => {
-                            // Skok do konkretnego indeksu (offset = różnica od aktualnego kursora).
-                            const offset = i - (inspectJumpIndex % total);
-                            performJumpToMatch(offset);
-                          }}
-                          className={`w-full flex items-center gap-2 px-3 py-1.5 text-left text-xs transition-colors hover:bg-primary/10 ${
-                            isNextCursor ? "bg-primary/15" : ""
-                          }`}
-                          title={`Skocz do dopasowania ${i + 1} z ${total}${isExact ? " (wiersz źródłowy)" : ""}`}
-                        >
-                          <span
-                            className={`shrink-0 inline-flex items-center justify-center w-6 h-6 rounded text-[10px] font-mono font-semibold ${
-                              isExact
-                                ? "bg-primary text-primary-foreground"
-                                : "bg-muted text-muted-foreground"
-                            }`}
-                          >
-                            {i + 1}
-                          </span>
-                          <span className="flex-1 truncate font-mono text-foreground">{ip}</span>
-                          <span className="shrink-0 text-muted-foreground hidden sm:inline truncate max-w-[180px]">
-                            {ua === "—" ? "—" : ua.split(" ")[0]}
-                          </span>
-                          {sourceMeta && (
-                            <Badge
-                              variant="outline"
-                              className="shrink-0 text-[10px] font-normal h-5 px-1.5 border-border/60"
-                              title={`${sourceMeta.count} retry'ów`}
-                            >
-                              {sourceMeta.count}
-                            </Badge>
-                          )}
-                          {isNextCursor && (
-                            <ChevronRight className="h-3 w-3 text-primary shrink-0" />
-                          )}
-                        </button>
-                      );
-                    })}
+                  {/* Pole wyszukiwania w liście dopasowań — szybkie znajdowanie konkretnego
+                      IP/UA bez przewijania. Filtr działa case-insensitive po IP i UA. */}
+                  <div className="mt-2 relative">
+                    <Filter className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+                    <Input
+                      value={inspectListQuery}
+                      onChange={(e) => setInspectListQuery(e.target.value)}
+                      placeholder="Szukaj po IP lub User-Agent…"
+                      className="h-8 pl-8 pr-8 text-xs"
+                    />
+                    {inspectListQuery && (
+                      <button
+                        type="button"
+                        onClick={() => setInspectListQuery("")}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        aria-label="Wyczyść wyszukiwanie"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    )}
                   </div>
+                  {(() => {
+                    const q = inspectListQuery.trim().toLowerCase();
+                    // Zachowujemy oryginalny indeks (i) — żeby skok do wiersza był spójny
+                    // z buildMatchKeys (kursor `inspectJumpIndex` operuje na pełnej liście).
+                    const filtered = jumpKeys
+                      .map((key, i) => ({ key, i }))
+                      .filter(({ key }) => {
+                        if (!q) return true;
+                        const [ip, ua] = key.split("::");
+                        return (
+                          ip.toLowerCase().includes(q) ||
+                          ua.toLowerCase().includes(q)
+                        );
+                      });
+                    if (filtered.length === 0) {
+                      return (
+                        <div className="mt-2 rounded-md border border-border/60 bg-muted/30 px-3 py-4 text-center text-xs text-muted-foreground">
+                          Brak dopasowań dla „{inspectListQuery}”.
+                        </div>
+                      );
+                    }
+                    return (
+                      <div className="mt-2 max-h-48 overflow-y-auto rounded-md border border-border/60 bg-muted/30 divide-y divide-border/40">
+                        {filtered.map(({ key, i }) => {
+                          const [ip, ua] = key.split("::");
+                          // Lookup count z webhookRetryStats.sources (deterministycznie po ip+ua).
+                          const sourceMeta = webhookRetryStats.sources.find(
+                            (s) => s.ip === ip && s.ua === ua,
+                          );
+                          const isExact = i === 0;
+                          // "next" cursor wskazuje który wiersz zostanie podświetlony następnym
+                          // skokiem — wyróżnij go w liście (żeby user widział, gdzie "stoi").
+                          const isNextCursor = i === inspectJumpIndex % total;
+                          return (
+                            <button
+                              key={key}
+                              type="button"
+                              onClick={() => {
+                                // Skok do konkretnego indeksu (offset = różnica od aktualnego kursora).
+                                const offset = i - (inspectJumpIndex % total);
+                                performJumpToMatch(offset);
+                              }}
+                              className={`w-full flex items-center gap-2 px-3 py-1.5 text-left text-xs transition-colors hover:bg-primary/10 ${
+                                isNextCursor ? "bg-primary/15" : ""
+                              }`}
+                              title={`Skocz do dopasowania ${i + 1} z ${total}${isExact ? " (wiersz źródłowy)" : ""}`}
+                            >
+                              <span
+                                className={`shrink-0 inline-flex items-center justify-center w-6 h-6 rounded text-[10px] font-mono font-semibold ${
+                                  isExact
+                                    ? "bg-primary text-primary-foreground"
+                                    : "bg-muted text-muted-foreground"
+                                }`}
+                              >
+                                {i + 1}
+                              </span>
+                              <span className="flex-1 truncate font-mono text-foreground">{ip}</span>
+                              <span className="shrink-0 text-muted-foreground hidden sm:inline truncate max-w-[180px]">
+                                {ua === "—" ? "—" : ua.split(" ")[0]}
+                              </span>
+                              {sourceMeta && (
+                                <Badge
+                                  variant="outline"
+                                  className="shrink-0 text-[10px] font-normal h-5 px-1.5 border-border/60"
+                                  title={`${sourceMeta.count} retry'ów`}
+                                >
+                                  {sourceMeta.count}
+                                </Badge>
+                              )}
+                              {isNextCursor && (
+                                <ChevronRight className="h-3 w-3 text-primary shrink-0" />
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    );
+                  })()}
                 </CollapsibleContent>
               </Collapsible>
             );
