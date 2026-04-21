@@ -16,12 +16,25 @@
 // reception can change booking status with a single click.
 
 import { createClient } from 'npm:@supabase/supabase-js@2'
+import {
+  checkRateLimit,
+  getClientIp,
+  ipForLog,
+  logTokenFailure,
+  rateLimitedResponse,
+} from '../_shared/rate-limit.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers':
     'authorization, x-client-info, apikey, content-type',
 }
+
+const ENDPOINT = 'on-booking-created'
+// Webhook handler — legitimate traffic = 1 req per booking insert.
+// Higher ceiling than token endpoints because Supabase webhook delivery
+// can retry, and HQ may bulk-import bookings. Mostly here to log abuse.
+const WEBHOOK_LIMIT = { max: 60, windowMs: 60_000 }
 
 interface BookingRecord {
   id: string
