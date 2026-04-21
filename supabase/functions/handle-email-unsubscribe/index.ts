@@ -1,6 +1,6 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import {
-  checkRateLimit,
+  checkRateLimitDb,
   getClientIp,
   ipForLog,
   logTokenFailure,
@@ -44,8 +44,8 @@ Deno.serve(async (req) => {
   const userAgent = req.headers.get('user-agent')
   const ipLog = ipForLog(ip)
 
-  // Rate limit (best-effort) + log denials.
-  const rl = checkRateLimit(ENDPOINT, ip)
+  // DB-backed rate limit (cross-isolate, atomic) + log denials.
+  const rl = await checkRateLimitDb(supabase, ENDPOINT, ip)
   if (!rl.allowed) {
     console.warn(`Rate limit exceeded for IP ${ip} on ${ENDPOINT}`)
     logTokenFailure(supabase, {

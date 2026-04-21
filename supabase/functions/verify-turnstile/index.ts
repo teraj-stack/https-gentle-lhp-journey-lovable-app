@@ -1,6 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import {
-  checkRateLimit,
+  checkRateLimitDb,
   getClientIp,
   ipForLog,
   logTokenFailure,
@@ -35,8 +35,11 @@ Deno.serve(async (req) => {
     ? createClient(supabaseUrl, supabaseServiceKey)
     : null;
 
-  // Rate limit (best-effort) + log denials.
-  const rl = checkRateLimit(ENDPOINT, ip, TURNSTILE_LIMIT);
+  // DB-backed rate limit (cross-isolate, atomic) + log denials.
+  // Fail-open if supabase client missing — verification must still work.
+  const rl = supabase
+    ? await checkRateLimitDb(supabase, ENDPOINT, ip, TURNSTILE_LIMIT)
+    : { allowed: true, retryAfterSec: 0, remaining: TURNSTILE_LIMIT.max, limit: TURNSTILE_LIMIT.max };
   if (!rl.allowed) {
     console.warn(`Rate limit exceeded for IP ${ip} on ${ENDPOINT}`);
     if (supabase) {

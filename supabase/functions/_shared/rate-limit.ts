@@ -1,25 +1,25 @@
 // ============================================================
 // Shared rate-limiter + token failure logger.
-// Used by public edge functions:
-//   - update-booking-status
-//   - handle-email-unsubscribe
-//   - handle-reminder-opt-out
-//   - verify-turnstile
-//   - on-booking-created
-//   - preview-transactional-email
 //
-// IMPORTANT: This rate-limiter is BEST-EFFORT.
-// Supabase Edge Functions fan out across multiple Deno isolates.
-// Each isolate keeps its own in-memory Map → a burst of N requests
-// distributed across K isolates effectively raises the limit Kx.
-// We keep it because:
-//   1) Slows down naive single-isolate brute-forcers.
-//   2) Drives the unified `token_validation_failures` audit log so admins
-//      can detect abuse via /admin/system-health (≥10 failures / 10 min).
+// Two rate-limit implementations live here:
+//   1) checkRateLimit()    — in-memory, per-isolate, BEST-EFFORT.
+//                            Kept only for legacy callers; do not use.
+//   2) checkRateLimitDb()  — DB-backed (rate_limit_buckets + RPC),
+//                            atomic UPSERT, GLOBAL across isolates.
+//                            Preferred for all new endpoints.
 //
-// True global rate-limiting requires a Postgres-backed bucket
-// (separate concern, not implemented here).
+// Active consumers (DB-backed):
+//   - handle-email-unsubscribe   (10/60s)
+//   - handle-reminder-opt-out    (10/60s)
+//   - verify-turnstile           (30/60s)
+//   - preview-transactional-email (10/60s)
+//
+// update-booking-status — RL intentionally removed (token alone is the
+// security boundary: 256-bit + single-use + 7d expiry). See its file.
+//
+// on-booking-created — still uses the in-memory limiter (60/60s, low risk).
 // ============================================================
+
 
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2'
 
@@ -108,6 +108,73 @@ export function checkRateLimit(
     retryAfterSec: 0,
     remaining: config.max - bucket.count,
     limit: config.max,
+  }
+}
+
+// ============================================================
+// DB-backed rate limiter (cross-isolate, atomic).
+// Uses Postgres function check_and_increment_rate_limit which performs an
+// atomic UPSERT on the rate_limit_buckets table. Unlike checkRateLimit()
+// above, this gives one shared counter across ALL Deno isolates.
+//
+// Fail-open: if the DB call throws/errors, we allow the request and log
+// a warning. RL is defense-in-depth, not the primary security boundary.
+// ============================================================
+export async function checkRateLimitDb(
+  supabase: SupabaseClient,
+  endpoint: string,
+  ip: string,
+  config: RateLimitConfig = DEFAULT_RATE_LIMIT,
+): Promise<RateLimitResult> {
+  try {
+    const { data, error } = await supabase.rpc(
+      'check_and_increment_rate_limit',
+      {
+        p_endpoint: endpoint,
+        p_ip: ip,
+        p_max: config.max,
+        p_window_sec: Math.ceil(config.windowMs / 1000),
+      },
+    )
+    if (error) {
+      console.warn(
+        '[rate-limit] DB rate-limit RPC failed, failing open:',
+        error.message,
+      )
+      return {
+        allowed: true,
+        retryAfterSec: 0,
+        remaining: config.max,
+        limit: config.max,
+      }
+    }
+    // RPC returns a SETOF (one row); supabase-js gives back an array.
+    const row = Array.isArray(data) ? data[0] : data
+    if (!row) {
+      return {
+        allowed: true,
+        retryAfterSec: 0,
+        remaining: config.max,
+        limit: config.max,
+      }
+    }
+    return {
+      allowed: !!row.allowed,
+      retryAfterSec: row.retry_after_sec ?? 0,
+      remaining: row.remaining ?? 0,
+      limit: config.max,
+    }
+  } catch (err) {
+    console.warn(
+      '[rate-limit] DB rate-limit threw, failing open:',
+      err instanceof Error ? err.message : String(err),
+    )
+    return {
+      allowed: true,
+      retryAfterSec: 0,
+      remaining: config.max,
+      limit: config.max,
+    }
   }
 }
 
