@@ -1072,7 +1072,15 @@ const AdminSystemHealth = () => {
       </div>
 
       {/* Modal inspekcji surowych rekordów dla wybranego IP+UA. */}
-      <Dialog open={!!inspectSource} onOpenChange={(open) => !open && setInspectSource(null)}>
+      <Dialog
+        open={!!inspectSource}
+        onOpenChange={(open) => {
+          if (!open) {
+            setInspectSource(null);
+            setInspectQuery("");
+          }
+        }}
+      >
         <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col">
           <DialogHeader>
             <div className="flex items-start justify-between gap-3">
