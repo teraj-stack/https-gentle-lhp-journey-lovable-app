@@ -169,6 +169,30 @@ const AdminSystemHealth = () => {
     });
   };
 
+  // Skrót klawiszowy w modalu inspekcji: Ctrl/Cmd+K zawsze, Enter tylko gdy fokus nie jest
+  // w polu tekstowym (żeby nie kolidować z wpisywaniem w polu wyszukiwania).
+  useEffect(() => {
+    if (!inspectSource) return;
+    const handler = (e: KeyboardEvent) => {
+      const isCmdK = (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k";
+      const target = e.target as HTMLElement | null;
+      const inEditable =
+        !!target &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.isContentEditable);
+      const isPlainEnter = e.key === "Enter" && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey && !inEditable;
+      if (isCmdK || isPlainEnter) {
+        e.preventDefault();
+        revealRowInTable(inspectSource.ip, inspectSource.ua);
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+    // revealRowInTable jest stabilna w obrębie renderu — zależymy tylko od inspectSource.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [inspectSource]);
+
   useEffect(() => {
     let isMounted = true;
     const apply = (s: Session | null) => {
@@ -1176,10 +1200,13 @@ const AdminSystemHealth = () => {
                     if (!inspectSource) return;
                     revealRowInTable(inspectSource.ip, inspectSource.ua);
                   }}
-                  title="Zamknij modal i przewiń do wiersza w tabeli źródeł"
+                  title="Zamknij modal i przewiń do wiersza w tabeli źródeł (Enter lub Ctrl+K)"
                 >
                   <Locate className="h-3.5 w-3.5" />
                   Pokaż w tabeli
+                  <kbd className="ml-1 hidden sm:inline-flex items-center gap-0.5 rounded border border-border/60 bg-muted/60 px-1 py-0 text-[10px] font-mono text-muted-foreground">
+                    ⏎
+                  </kbd>
                 </Button>
               <Button
                 variant="outline"
