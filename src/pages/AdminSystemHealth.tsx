@@ -160,6 +160,10 @@ const AdminSystemHealth = () => {
   // Query wyszukiwania w "Podgląd dopasowań" — filtruje po IP/UA (case-insensitive substring).
   // Reset przy zmianie źródła (zob. effect przy inspectSource).
   const [inspectListQuery, setInspectListQuery] = useState("");
+  // Sortowanie mini-listy "Podgląd dopasowań": "default" (kolejność z buildMatchKeys = exact
+  // + related), "count-desc" (najwięcej retry'ów na górze — typowy use-case "co naprawić"),
+  // "ip-asc" (alfabetycznie po IP).
+  const [inspectListSort, setInspectListSort] = useState<"default" | "count-desc" | "ip-asc">("default");
   // Per-source pamięć kursora — żeby po zamknięciu i ponownym otwarciu modala
   // dla tego samego IP+UA+scope, kursor i kierunek wskazywały to samo dopasowanie
   // co poprzednio. Klucz: `${ip}::${ua}::${scope}`. In-memory (Map w refie) — nie potrzeba
@@ -1978,29 +1982,49 @@ const AdminSystemHealth = () => {
                   </Button>
                 </CollapsibleTrigger>
                 <CollapsibleContent>
-                  {/* Pole wyszukiwania w liście dopasowań — szybkie znajdowanie konkretnego
-                      IP/UA bez przewijania. Filtr działa case-insensitive po IP i UA. */}
-                  <div className="mt-2 relative">
-                    <Filter className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
-                    <Input
-                      value={inspectListQuery}
-                      onChange={(e) => setInspectListQuery(e.target.value)}
-                      placeholder="Szukaj po IP lub User-Agent…"
-                      className="h-8 pl-8 pr-8 text-xs"
-                    />
-                    {inspectListQuery && (
-                      <button
-                        type="button"
-                        onClick={() => setInspectListQuery("")}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                        aria-label="Wyczyść wyszukiwanie"
-                      >
-                        <X className="h-3.5 w-3.5" />
-                      </button>
-                    )}
+                  {/* Pole wyszukiwania + sortowanie listy dopasowań — szybkie znajdowanie
+                      konkretnego IP/UA i priorytetyzacja po liczbie retry'ów. */}
+                  <div className="mt-2 flex items-center gap-2">
+                    <div className="relative flex-1">
+                      <Filter className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+                      <Input
+                        value={inspectListQuery}
+                        onChange={(e) => setInspectListQuery(e.target.value)}
+                        placeholder="Szukaj po IP lub User-Agent…"
+                        className="h-8 pl-8 pr-8 text-xs"
+                      />
+                      {inspectListQuery && (
+                        <button
+                          type="button"
+                          onClick={() => setInspectListQuery("")}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                          aria-label="Wyczyść wyszukiwanie"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      )}
+                    </div>
+                    {/* Natywny <select> zamiast shadcn Select — minimalna zależność, spójny
+                        z resztą stylu (h-8, text-xs, semantic tokens). */}
+                    <select
+                      value={inspectListSort}
+                      onChange={(e) =>
+                        setInspectListSort(e.target.value as "default" | "count-desc" | "ip-asc")
+                      }
+                      className="h-8 shrink-0 rounded-md border border-input bg-background px-2 text-xs text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      title="Sortuj listę dopasowań"
+                      aria-label="Sortuj listę dopasowań"
+                    >
+                      <option value="default">Domyślnie</option>
+                      <option value="count-desc">Najwięcej retry'ów</option>
+                      <option value="ip-asc">IP (A→Z)</option>
+                    </select>
                   </div>
                   {(() => {
                     const q = inspectListQuery.trim().toLowerCase();
+                    // Helper: count retry'ów dla pary ip+ua (0 jeśli brak w sources).
+                    const getCount = (ip: string, ua: string) =>
+                      webhookRetryStats.sources.find((s) => s.ip === ip && s.ua === ua)?.count ?? 0;
                     // Zachowujemy oryginalny indeks (i) — żeby skok do wiersza był spójny
                     // z buildMatchKeys (kursor `inspectJumpIndex` operuje na pełnej liście).
                     const filtered = jumpKeys
@@ -2013,6 +2037,22 @@ const AdminSystemHealth = () => {
                           ua.toLowerCase().includes(q)
                         );
                       });
+                    // Sortowanie po wybranym kryterium. "default" = pomijamy sort (kolejność
+                    // z buildMatchKeys: exact pierwszy, potem related). Tworzymy kopię, żeby
+                    // nie mutować referencji z .filter() (defensywnie — V8 i tak by sobie poradził).
+                    if (inspectListSort === "count-desc") {
+                      filtered.sort((a, b) => {
+                        const [ipA, uaA] = a.key.split("::");
+                        const [ipB, uaB] = b.key.split("::");
+                        return getCount(ipB, uaB) - getCount(ipA, uaA);
+                      });
+                    } else if (inspectListSort === "ip-asc") {
+                      filtered.sort((a, b) => {
+                        const ipA = a.key.split("::")[0];
+                        const ipB = b.key.split("::")[0];
+                        return ipA.localeCompare(ipB);
+                      });
+                    }
                     if (filtered.length === 0) {
                       return (
                         <div className="mt-2 rounded-md border border-border/60 bg-muted/30 px-3 py-4 text-center text-xs text-muted-foreground">
