@@ -222,9 +222,28 @@ const AdminSystemHealth = () => {
         perSource.set(key, { ip: r.ip ?? "—", ua, count: 1, last: r.created_at, maxRetryAfter: retryAfter });
       }
     }
-    const sources = Array.from(perSource.values()).sort((a, b) => b.count - a.count).slice(0, 8);
+    const sources = Array.from(perSource.values()).sort((a, b) => b.count - a.count);
     return { ...buckets, denoOnly, denoLast1h, sources };
   }, [webhookRetries]);
+
+  // Filtrowanie tabeli retry'ów po IP / UA + przełącznik "tylko Deno/*".
+  // Filtrujemy po stronie klienta — w 24h oknie mamy max ~1000 wpisów, a po
+  // agregacji (perSource) zwykle <50 wierszy, więc nie ma sensu round-tripować
+  // do bazy. Limit prezentacji: 50 wierszy (nawet bez filtra).
+  const filteredRetrySources = useMemo(() => {
+    const ipQ = retryFilterIp.trim().toLowerCase();
+    const uaQ = retryFilterUa.trim().toLowerCase();
+    return webhookRetryStats.sources
+      .filter((s) => {
+        if (retryDenoOnly && !/^Deno\//i.test(s.ua)) return false;
+        if (ipQ && !s.ip.toLowerCase().includes(ipQ)) return false;
+        if (uaQ && !s.ua.toLowerCase().includes(uaQ)) return false;
+        return true;
+      })
+      .slice(0, 50);
+  }, [webhookRetryStats.sources, retryFilterIp, retryFilterUa, retryDenoOnly]);
+
+  const retryFiltersActive = retryDenoOnly || retryFilterIp.trim() !== "" || retryFilterUa.trim() !== "";
 
   // Toast tylko przy WEJŚCIU w stan przekroczenia (nie przy każdym refetchu).
   const wasOverThreshold = useMemo(() => ({ value: false }), []);
