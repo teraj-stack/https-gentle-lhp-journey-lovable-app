@@ -37,6 +37,15 @@ type FailureRow = {
   created_at: string;
 };
 
+type RateLimitedIp = {
+  endpoint: string;
+  ip: string;
+  denied: number;
+  hits: number;
+  windows: number;
+  last_window: string;
+};
+
 const REASON_LABELS: Record<string, string> = {
   invalid_token: "Nieprawidłowy token",
   rate_limited: "Rate-limit (429)",
