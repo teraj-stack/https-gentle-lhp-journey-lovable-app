@@ -9,9 +9,11 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { ArrowLeft, ShieldAlert, Activity, AlertTriangle, RefreshCw, Ban, Webhook, Repeat, Filter, X } from "lucide-react";
+import { ArrowLeft, ShieldAlert, Activity, AlertTriangle, RefreshCw, Ban, Webhook, Repeat, Filter, X, Eye } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Toggle } from "@/components/ui/toggle";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import SeoHead from "@/components/shared/SeoHead";
 import { formatDistanceToNow } from "date-fns";
@@ -90,6 +92,8 @@ const AdminSystemHealth = () => {
   const [retryFilterIp, setRetryFilterIp] = useState("");
   const [retryFilterUa, setRetryFilterUa] = useState("");
   const [retryDenoOnly, setRetryDenoOnly] = useState(false);
+  // Modal inspekcji konkretnej kombinacji IP+UA. null = zamknięty.
+  const [inspectSource, setInspectSource] = useState<{ ip: string; ua: string } | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -284,6 +288,14 @@ const AdminSystemHealth = () => {
   }, [webhookRetryStats.sources, retryFilterIp, retryFilterUa, retryDenoOnly]);
 
   const retryFiltersActive = retryDenoOnly || retryFilterIp.trim() !== "" || retryFilterUa.trim() !== "";
+
+  // Rekordy filtrowane do modala inspekcji (wybrane IP + UA, max 50 ostatnich).
+  const inspectRecords = useMemo(() => {
+    if (!inspectSource) return [];
+    return webhookRetries
+      .filter((r) => (r.ip ?? "—") === inspectSource.ip && (r.user_agent ?? "—") === inspectSource.ua)
+      .slice(0, 50);
+  }, [inspectSource, webhookRetries]);
 
   // Trend retry'ów per godzina, ostatnie 24h. Dwie serie: deno (wewnętrzny
   // webhook DB) i other (ruch zewnętrzny / boty). Każdy bucket = pełna
@@ -764,6 +776,7 @@ const AdminSystemHealth = () => {
                               <TableHead>Liczba retry</TableHead>
                               <TableHead>Max retry-after (s)</TableHead>
                               <TableHead>Ostatni</TableHead>
+                              <TableHead className="w-[80px] text-right">Akcje</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
@@ -784,6 +797,18 @@ const AdminSystemHealth = () => {
                                   <TableCell className="text-xs">{s.maxRetryAfter || "—"}</TableCell>
                                   <TableCell className="text-xs text-muted-foreground">
                                     {formatDistanceToNow(new Date(s.last), { addSuffix: true, locale: pl })}
+                                  </TableCell>
+                                  <TableCell className="text-right">
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-7 px-2"
+                                      onClick={() => setInspectSource({ ip: s.ip, ua: s.ua })}
+                                      title="Pokaż surowe rekordy z metadata"
+                                    >
+                                      <Eye className="h-3.5 w-3.5 mr-1" />
+                                      <span className="text-xs">Szczegóły</span>
+                                    </Button>
                                   </TableCell>
                                 </TableRow>
                               );
@@ -992,6 +1017,72 @@ const AdminSystemHealth = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Modal inspekcji surowych rekordów dla wybranego IP+UA. */}
+      <Dialog open={!!inspectSource} onOpenChange={(open) => !open && setInspectSource(null)}>
+        <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="h-5 w-5 text-primary" />
+              Surowe rekordy retry'ów
+            </DialogTitle>
+            <DialogDescription asChild>
+              <div className="text-xs space-y-1">
+                {inspectSource && (
+                  <>
+                    <div>
+                      Endpoint <code>on-booking-created</code> · IP{" "}
+                      <code className="font-mono">{inspectSource.ip}</code>
+                    </div>
+                    <div>
+                      UA <code className="font-mono break-all">{inspectSource.ua}</code>
+                    </div>
+                    <div>
+                      Pokazuję <strong>{inspectRecords.length}</strong> z możliwych 50 najnowszych (window 24h).
+                    </div>
+                  </>
+                )}
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+          {inspectRecords.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-8 text-center">
+              Brak rekordów dla tej kombinacji w ostatnich 24h.
+            </p>
+          ) : (
+            <ScrollArea className="flex-1 -mx-6 px-6 max-h-[60vh]">
+              <div className="space-y-2 py-2">
+                {inspectRecords.map((r) => {
+                  const retryAfter =
+                    typeof r.metadata?.retryAfterSec === "number"
+                      ? (r.metadata.retryAfterSec as number)
+                      : null;
+                  return (
+                    <div key={r.id} className="rounded-md border border-border bg-muted/30 p-3 text-xs space-y-1.5">
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <span className="text-muted-foreground">
+                          {new Date(r.created_at).toLocaleString("pl-PL", { dateStyle: "short", timeStyle: "medium" })}
+                        </span>
+                        <span className="text-[11px] text-muted-foreground">
+                          {formatDistanceToNow(new Date(r.created_at), { addSuffix: true, locale: pl })}
+                        </span>
+                      </div>
+                      {retryAfter !== null && (
+                        <Badge variant="outline" className="text-[10px]">
+                          retry-after: {retryAfter}s
+                        </Badge>
+                      )}
+                      <pre className="font-mono text-[11px] bg-background border border-border rounded p-2 overflow-x-auto whitespace-pre-wrap break-all">
+{JSON.stringify(r.metadata ?? {}, null, 2)}
+                      </pre>
+                    </div>
+                  );
+                })}
+              </div>
+            </ScrollArea>
+          )}
+        </DialogContent>
+      </Dialog>
     </>
   );
 };
