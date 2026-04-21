@@ -426,7 +426,7 @@ const AdminSystemHealth = () => {
           </CardContent>
         </Card>
 
-
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
           <Card>
             <CardHeader className="pb-2">
               <CardDescription>Wpisy w bazie (ostatnie 100)</CardDescription>
