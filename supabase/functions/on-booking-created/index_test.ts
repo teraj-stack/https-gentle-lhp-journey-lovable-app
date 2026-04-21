@@ -56,8 +56,9 @@ Deno.test('on-booking-created — DB rate-limit triggers 429 after LIMIT request
   const url = `${SUPABASE_URL}/functions/v1/${ENDPOINT}`
   const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY)
 
-  // Zapamiętaj okno startowe (z marginesem), żeby później znaleźć właściwy bucket.
-  const windowStartIso = new Date(Date.now() - 5_000).toISOString()
+  // Cofamy się o 90s — bucket window_start jest zaokrąglony do początku minuty,
+  // więc nasz burst może trafić w bucket startujący do ~60s wcześniej.
+  const windowStartIso = new Date(Date.now() - 90_000).toISOString()
 
   // Równoległy burst
   const responses = await Promise.all(
