@@ -9,10 +9,17 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { ArrowLeft, ShieldAlert, Activity, AlertTriangle, RefreshCw, Ban } from "lucide-react";
+import { ArrowLeft, ShieldAlert, Activity, AlertTriangle, RefreshCw, Ban, Webhook } from "lucide-react";
 import SeoHead from "@/components/shared/SeoHead";
 import { formatDistanceToNow } from "date-fns";
 import { pl } from "date-fns/locale";
+import { toast } from "sonner";
+
+// Próg alarmu dla webhooka on-booking-created — przekroczenie sygnalizuje
+// pętlę webhooków DB lub atak floodowy. 60/60s to limit per IP, więc 50
+// odrzuceń w 15 min oznacza wyraźny zewnętrzny abuse (jedyny "klient"
+// w normalnym ruchu to outbound IP Supabase z webhookiem na INSERT).
+const BOOKING_WEBHOOK_DENIED_THRESHOLD = 50;
 
 type AbuseRow = {
   ip: string;
