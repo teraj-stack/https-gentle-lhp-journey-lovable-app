@@ -151,6 +151,9 @@ const AdminSystemHealth = () => {
   // w modalu. Inkrementowany przy każdym kliknięciu, modulo liczba dopasowań.
   // Reset do 0 przy zmianie inspectSource / highlightScope.
   const [inspectJumpIndex, setInspectJumpIndex] = useState(0);
+  // Kierunek ostatniego skoku — używany do pokazania ikony ▼/▲ przy badge "Następne".
+  // null = jeszcze nie wykonano skoku w tej sesji modala. Reset z inspectJumpIndex.
+  const [lastJumpDirection, setLastJumpDirection] = useState<"forward" | "backward" | null>(null);
   // Timer auto-hide nawigatora po 30s bezczynności.
   const navigatorHideTimerRef = useRef<number | null>(null);
   // Preferencja użytkownika: czy zamknięcie modala / klik "Pokaż w tabeli" ma przewijać
