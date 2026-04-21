@@ -9,12 +9,31 @@
 
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import {
-  checkRateLimit,
   getClientIp,
   ipForLog,
   logTokenFailure,
-  rateLimitedResponse,
 } from '../_shared/rate-limit.ts'
+
+// ============================================================
+// RATE LIMITING — INTENTIONALLY REMOVED (2026-04-21)
+// ============================================================
+// Wcześniej używaliśmy in-memory rate limit (10 req / 60s per IP).
+// Usunięte ponieważ:
+//   1) Supabase Edge Functions fan-out na N isolate'ów Deno — każdy ma własną
+//      Mapę. Burst rozproszony na K isolate'ów efektywnie podnosi limit Kx.
+//      E2E potwierdzone: 30 sequential requests → 30x404, 0x429.
+//   2) Komplikuje kod bez realnej ochrony.
+//
+// Jedyną warstwą obrony tego endpointu jest walidacja tokena:
+//   - 256-bit entropy (gen_random_bytes(32) → base64url) — niemożliwe do zgadnięcia
+//   - single-use (atomowy UPDATE ... WHERE used_at IS NULL)
+//   - 7-day expiry (WHERE expires_at > now())
+//   - sibling-token invalidation po pierwszym użyciu
+//
+// Audit log (logTokenFailure → token_validation_failures) zostaje — admin
+// widzi nadużycia w /admin/system-health (próg ≥10 fail/10min per IP).
+// Globalny rate-limit wymaga Postgres-backed bucket (osobny temat).
+// ============================================================
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -53,19 +72,8 @@ Deno.serve(async (req) => {
 
   const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-  // Rate limit (best-effort) + log denials.
-  const rl = checkRateLimit(ENDPOINT, ip)
-  if (!rl.allowed) {
-    console.warn(`Rate limit exceeded for IP ${ip} on ${ENDPOINT}`)
-    logTokenFailure(supabase, {
-      endpoint: ENDPOINT,
-      reason: 'rate_limited',
-      ip: ipLog,
-      userAgent,
-      metadata: { retryAfterSec: rl.retryAfterSec, method: req.method },
-    })
-    return rateLimitedResponse(rl, corsHeaders)
-  }
+  // Rate-limit usunięty — patrz komentarz na górze pliku.
+  // Token sam w sobie (256-bit + single-use + 7d) jest jedyną warstwą obrony.
 
   // ============================================================
   // GET — walidacja tokena (preview na stronie /booking-action)
