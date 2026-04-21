@@ -137,8 +137,9 @@ const AdminSystemHealth = () => {
   const [inspectQuery, setInspectQuery] = useState("");
   // Kierunek sortowania w modalu: desc = najnowsze pierwsze (domyślnie).
   const [inspectSort, setInspectSort] = useState<"desc" | "asc">("desc");
-  // Klucz aktualnie podświetlonego wiersza w tabeli źródeł (po "Pokaż w tabeli" z modala).
-  const [highlightedRowKey, setHighlightedRowKey] = useState<string | null>(null);
+  // Aktualnie podświetlone źródło — dokładny wiersz (`ip+ua`) wyróżniamy mocno (ring + bg primary/15),
+  // a wszystkie inne wiersze z tym samym IP dyskretnie (samo bg primary/5). Null = brak highlightu.
+  const [highlightedSource, setHighlightedSource] = useState<{ ip: string; ua: string } | null>(null);
   // Ref-flag: true gdy zamknięcie modala wywołujemy programowo z revealRowInTable,
   // żeby onOpenChange nie odpalił drugi raz auto-reveal (unikamy podwójnego toastu).
   const suppressCloseRevealRef = useRef(false);
@@ -162,10 +163,10 @@ const AdminSystemHealth = () => {
   // Auto-fade highlightu wiersza po 10s — wystarczająco długo, żeby admin zdążył zauważyć
   // wyróżnienie po zamknięciu modala, ale nie zostawia trwałego kolorowego rzędu.
   useEffect(() => {
-    if (!highlightedRowKey) return;
-    const t = window.setTimeout(() => setHighlightedRowKey(null), 10000);
+    if (!highlightedSource) return;
+    const t = window.setTimeout(() => setHighlightedSource(null), 10000);
     return () => window.clearTimeout(t);
-  }, [highlightedRowKey]);
+  }, [highlightedSource]);
 
   // Snapshot filtrów tabeli źródeł sprzed wywołania "Pokaż w tabeli" — używany do przywrócenia
   // poprzednich ustawień filtrowania, jeśli reveal je wyczyścił. null = brak aktywnego snapshotu.
@@ -229,7 +230,9 @@ const AdminSystemHealth = () => {
         let didScroll = false;
         if (el) {
           el.scrollIntoView({ behavior: "smooth", block: "center" });
-          setHighlightedRowKey(key);
+          // Zapamiętaj exact source — render porównuje s.ip+s.ua dla mocnego highlightu,
+          // a samo IP dla delikatnego highlightu pokrewnych wierszy z tego samego adresu.
+          setHighlightedSource({ ip, ua });
           didScroll = true;
         }
         if (snapshot) {
@@ -1038,15 +1041,28 @@ const AdminSystemHealth = () => {
                             {filteredRetrySources.map((s) => {
                               const isDeno = /^Deno\//i.test(s.ua);
                               const rowKey = `${s.ip}::${s.ua}`;
-                              const isHighlighted = highlightedRowKey === rowKey;
+                              // Dwa poziomy podświetlenia:
+                              //  - exact (IP+UA): mocny — ring + bg primary/15 (wiersz źródłowy z modala)
+                              //  - same-IP: delikatny — samo bg primary/5 (pokrewne wiersze z tego samego adresu)
+                              const isExactHighlight =
+                                !!highlightedSource &&
+                                highlightedSource.ip === s.ip &&
+                                highlightedSource.ua === s.ua;
+                              const isSameIpHighlight =
+                                !!highlightedSource &&
+                                !isExactHighlight &&
+                                highlightedSource.ip === s.ip;
+                              const isHighlighted = isExactHighlight || isSameIpHighlight;
                               const row = (
                                 <TableRow
                                   key={rowKey}
                                   data-retry-row-key={rowKey}
                                   className={
-                                    isHighlighted
+                                    isExactHighlight
                                       ? "bg-primary/15 ring-2 ring-primary/40 transition-colors cursor-help"
-                                      : "transition-colors"
+                                      : isSameIpHighlight
+                                        ? "bg-primary/5 transition-colors cursor-help"
+                                        : "transition-colors"
                                   }
                                 >
                                   <TableCell className="font-mono text-xs">{s.ip}</TableCell>
@@ -1085,6 +1101,17 @@ const AdminSystemHealth = () => {
                                   <TooltipTrigger asChild>{row}</TooltipTrigger>
                                   <TooltipContent side="top" align="start" className="max-w-md">
                                     <div className="space-y-1 text-xs">
+                                      <div className="flex items-center gap-1.5 mb-1">
+                                        {isExactHighlight ? (
+                                          <Badge variant="default" className="text-[10px] py-0 h-4">
+                                            Wiersz źródłowy (z modala)
+                                          </Badge>
+                                        ) : (
+                                          <Badge variant="outline" className="text-[10px] py-0 h-4 border-primary/40 text-primary">
+                                            Ten sam IP
+                                          </Badge>
+                                        )}
+                                      </div>
                                       <div>
                                         <span className="text-muted-foreground">IP: </span>
                                         <span className="font-mono">{s.ip}</span>
