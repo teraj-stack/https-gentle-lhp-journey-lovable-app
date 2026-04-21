@@ -1243,6 +1243,17 @@ const AdminSystemHealth = () => {
         open={!!inspectSource}
         onOpenChange={(open) => {
           if (!open) {
+            // Auto-reveal przy zamknięciu (X / Esc / klik w tło): jeśli mamy aktywne
+            // źródło, traktujemy zamknięcie jak "Pokaż w tabeli" — przewijamy do wiersza
+            // i podświetlamy. Flaga suppress chroni przed podwójnym wywołaniem,
+            // gdy revealRowInTable samo wyzerowało inspectSource.
+            const src = inspectSource;
+            if (suppressCloseRevealRef.current) {
+              suppressCloseRevealRef.current = false;
+            } else if (src) {
+              revealRowInTable(src.ip, src.ua);
+              return;
+            }
             setInspectSource(null);
             setInspectQuery("");
             setInspectSort("desc");
