@@ -139,6 +139,9 @@ const AdminSystemHealth = () => {
   const [inspectSort, setInspectSort] = useState<"desc" | "asc">("desc");
   // Klucz aktualnie podświetlonego wiersza w tabeli źródeł (po "Pokaż w tabeli" z modala).
   const [highlightedRowKey, setHighlightedRowKey] = useState<string | null>(null);
+  // Ref-flag: true gdy zamknięcie modala wywołujemy programowo z revealRowInTable,
+  // żeby onOpenChange nie odpalił drugi raz auto-reveal (unikamy podwójnego toastu).
+  const suppressCloseRevealRef = useRef(false);
 
   // Auto-fade highlightu wiersza po 3s — żeby nie zostawiać trwałego kolorowego rzędu.
   useEffect(() => {
