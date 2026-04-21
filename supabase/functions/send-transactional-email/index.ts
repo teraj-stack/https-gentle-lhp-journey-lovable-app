@@ -364,7 +364,14 @@ Deno.serve(async (req) => {
     template_name: templateName,
     recipient_email: effectiveRecipient,
     status: 'pending',
-    metadata: { ...extraMetadata, caller_ip: callerIp, idempotency_key: idempotencyKey },
+    metadata: {
+      ...extraMetadata,
+      caller_ip: callerIp,
+      idempotency_key: idempotencyKey,
+      // Store template_data so retry-dlq-emails can re-render the email 1:1.
+      // Kept inside metadata to avoid schema migration; small payload (~few KB).
+      template_data: templateData,
+    },
   })
 
   const { error: enqueueError } = await supabase.rpc('enqueue_email', {

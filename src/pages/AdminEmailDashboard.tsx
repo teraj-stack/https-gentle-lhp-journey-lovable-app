@@ -12,11 +12,12 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { ArrowLeft, ShieldAlert, Mail, AlertTriangle, RefreshCw, ChevronLeft, ChevronRight, Calendar as CalendarIcon } from "lucide-react";
+import { ArrowLeft, ShieldAlert, Mail, AlertTriangle, RefreshCw, ChevronLeft, ChevronRight, Calendar as CalendarIcon, RotateCw } from "lucide-react";
 import SeoHead from "@/components/shared/SeoHead";
 import { format, subDays, subHours } from "date-fns";
 import { pl } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { toast } from "@/hooks/use-toast";
 
 type EmailRow = {
   id: string;
@@ -210,9 +211,12 @@ const AdminEmailDashboard = () => {
               <Mail className="w-5 h-5" /> Email Dashboard
             </h1>
           </div>
-          <Button variant="ghost" size="sm" onClick={() => refetch()} disabled={isFetching}>
-            <RefreshCw className={cn("w-4 h-4 mr-1", isFetching && "animate-spin")} /> Odśwież
-          </Button>
+          <div className="flex items-center gap-2">
+            <RetryDlqButton onComplete={() => refetch()} />
+            <Button variant="ghost" size="sm" onClick={() => refetch()} disabled={isFetching}>
+              <RefreshCw className={cn("w-4 h-4 mr-1", isFetching && "animate-spin")} /> Odśwież
+            </Button>
+          </div>
         </header>
 
         <main className="max-w-7xl mx-auto px-4 py-6 md:px-8 space-y-6">
@@ -426,6 +430,53 @@ function StatCard({ label, value, variant = "default" }: { label: string; value:
         <p className={cn("text-2xl font-bold mt-1", colorClass)}>{value}</p>
       </CardContent>
     </Card>
+  );
+}
+
+function RetryDlqButton({ onComplete }: { onComplete: () => void }) {
+  const [loading, setLoading] = useState(false);
+
+  const handleRetry = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("retry-dlq-emails", {
+        body: { triggered_by: "manual_admin" },
+      });
+      if (error) throw error;
+      const summary = data as {
+        candidates_found: number;
+        retried_succeeded: number;
+        retried_failed: number;
+        skipped_non_retryable: number;
+        skipped_already_retried: number;
+      };
+      if (summary.candidates_found === 0) {
+        toast({
+          title: "Brak kandydatów do retry",
+          description: `Pominięto ${summary.skipped_non_retryable} non-retryable + ${summary.skipped_already_retried} już ponowionych.`,
+        });
+      } else {
+        toast({
+          title: `Retry: ${summary.retried_succeeded}/${summary.candidates_found}`,
+          description: `Sukces: ${summary.retried_succeeded}, błędy: ${summary.retried_failed}.`,
+        });
+      }
+      onComplete();
+    } catch (e) {
+      toast({
+        title: "Błąd retry",
+        description: e instanceof Error ? e.message : "Nieznany błąd",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Button variant="outline" size="sm" onClick={handleRetry} disabled={loading}>
+      <RotateCw className={cn("w-4 h-4 mr-1", loading && "animate-spin")} /> Retry DLQ
+    </Button>
   );
 }
 
