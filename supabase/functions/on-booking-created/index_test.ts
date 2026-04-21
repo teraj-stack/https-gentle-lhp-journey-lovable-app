@@ -56,8 +56,8 @@ Deno.test('on-booking-created — DB rate-limit triggers 429 after LIMIT request
   const url = `${SUPABASE_URL}/functions/v1/${ENDPOINT}`
   const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY)
 
-  // Czysty stan dla tego IP w aktualnym oknie
-  await admin.from('rate_limit_buckets').delete().eq('endpoint', ENDPOINT).eq('ip', TEST_IP)
+  // Zapamiętaj okno startowe (z marginesem), żeby później znaleźć właściwy bucket.
+  const windowStartIso = new Date(Date.now() - 5_000).toISOString()
 
   // Równoległy burst
   const responses = await Promise.all(
@@ -70,7 +70,6 @@ Deno.test('on-booking-created — DB rate-limit triggers 429 after LIMIT request
           // ale platforma wymaga apikey w nagłówku.
           'apikey': ANON_KEY,
           'Authorization': `Bearer ${ANON_KEY}`,
-          'x-forwarded-for': TEST_IP,
         },
         body: JSON.stringify(buildPayload()),
       }).then(async (r) => {
@@ -83,33 +82,32 @@ Deno.test('on-booking-created — DB rate-limit triggers 429 after LIMIT request
   const ok = responses.filter((s) => s === 200).length
   const rateLimited = responses.filter((s) => s === 429).length
 
-  console.log(`[rate-limit-test] IP=${TEST_IP} 200=${ok} 429=${rateLimited} other=${TOTAL_REQUESTS - ok - rateLimited}`)
+  console.log(`[rate-limit-test] 200=${ok} 429=${rateLimited} other=${TOTAL_REQUESTS - ok - rateLimited}`)
 
-  // Co najmniej (TOTAL - LIMIT) powinno dostać 429. Dajemy mały margines
-  // bo równoległe wywołania mogą trafić w skraj okna fixed-window.
+  // Asercje na warstwie HTTP — to jest właściwy kontrakt rate-limitu.
   assert(
     rateLimited >= TOTAL_REQUESTS - LIMIT - 5,
     `expected at least ${TOTAL_REQUESTS - LIMIT - 5} 429s, got ${rateLimited}`
   )
   assert(ok > 0, `expected some 200 responses, got 0`)
 
-  // Bucket w DB powinien mieć count >= TOTAL_REQUESTS (atomic UPSERT).
+  // Bucket w DB powinien istnieć z count >= TOTAL_REQUESTS. Filtrujemy
+  // po endpointcie + window_start z naszego przebiegu — Supabase Functions
+  // runtime nadpisuje x-forwarded-for swoim outbound IP, więc nie filtrujemy
+  // po IP testera.
   const { data: buckets, error } = await admin
     .from('rate_limit_buckets')
     .select('endpoint, ip, count, window_start')
     .eq('endpoint', ENDPOINT)
-    .eq('ip', TEST_IP)
-    .order('window_start', { ascending: false })
+    .gte('window_start', windowStartIso)
+    .order('count', { ascending: false })
     .limit(1)
 
   assertEquals(error, null)
-  assert(buckets && buckets.length === 1, 'expected one bucket row')
-  console.log(`[rate-limit-test] bucket count=${buckets[0].count}`)
+  assert(buckets && buckets.length >= 1, 'expected at least one bucket row in current window')
+  console.log(`[rate-limit-test] bucket ip=${buckets![0].ip} count=${buckets![0].count}`)
   assert(
-    buckets[0].count >= TOTAL_REQUESTS,
-    `expected bucket count >= ${TOTAL_REQUESTS}, got ${buckets[0].count}`
+    buckets![0].count >= TOTAL_REQUESTS,
+    `expected bucket count >= ${TOTAL_REQUESTS}, got ${buckets![0].count}`
   )
-
-  // Cleanup
-  await admin.from('rate_limit_buckets').delete().eq('endpoint', ENDPOINT).eq('ip', TEST_IP)
 })
