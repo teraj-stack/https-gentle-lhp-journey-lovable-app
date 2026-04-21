@@ -1943,6 +1943,97 @@ const AdminSystemHealth = () => {
               </div>
             </DialogDescription>
           </DialogHeader>
+
+          {/* Podgląd dopasowań — rozwijana mini-lista wszystkich podświetlonych wierszy
+              (exact + related, max MAX_RELATED_HIGHLIGHTS+1). Każdy element jest klikalny
+              i wykonuje skok do tego konkretnego wiersza (z animate-jump-pulse).
+              Widoczna tylko gdy jest >1 dopasowanie do wyboru. */}
+          {(() => {
+            if (!inspectSource) return null;
+            const jumpKeys = buildMatchKeys(inspectSource, highlightScope);
+            if (jumpKeys.length <= 1) return null;
+            const total = jumpKeys.length;
+            const currentDisplay = (inspectJumpIndex % total) + 1;
+            return (
+              <Collapsible open={inspectListOpen} onOpenChange={setInspectListOpen}>
+                <CollapsibleTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 w-full gap-2 justify-start border-primary/30 text-primary hover:bg-primary/10"
+                    title="Pokaż/ukryj listę wszystkich podświetlonych dopasowań — kliknij dowolne, by skoczyć do niego"
+                  >
+                    {inspectListOpen ? (
+                      <ChevronUp className="h-3.5 w-3.5" />
+                    ) : (
+                      <ChevronDown className="h-3.5 w-3.5" />
+                    )}
+                    Podgląd dopasowań ({total})
+                    <span className="ml-auto text-xs text-muted-foreground font-normal">
+                      Następne: {currentDisplay}
+                    </span>
+                  </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <div className="mt-2 max-h-48 overflow-y-auto rounded-md border border-border/60 bg-muted/30 divide-y divide-border/40">
+                    {jumpKeys.map((key, i) => {
+                      const [ip, ua] = key.split("::");
+                      // Lookup count z webhookRetryStats.sources (deterministycznie po ip+ua).
+                      const sourceMeta = webhookRetryStats.sources.find(
+                        (s) => s.ip === ip && s.ua === ua,
+                      );
+                      const isExact = i === 0;
+                      // "next" cursor wskazuje który wiersz zostanie podświetlony następnym
+                      // skokiem — wyróżnij go w liście (żeby user widział, gdzie "stoi").
+                      const isNextCursor = i === inspectJumpIndex % total;
+                      return (
+                        <button
+                          key={key}
+                          type="button"
+                          onClick={() => {
+                            // Skok do konkretnego indeksu (offset = różnica od aktualnego kursora).
+                            const offset = i - (inspectJumpIndex % total);
+                            performJumpToMatch(offset);
+                          }}
+                          className={`w-full flex items-center gap-2 px-3 py-1.5 text-left text-xs transition-colors hover:bg-primary/10 ${
+                            isNextCursor ? "bg-primary/15" : ""
+                          }`}
+                          title={`Skocz do dopasowania ${i + 1} z ${total}${isExact ? " (wiersz źródłowy)" : ""}`}
+                        >
+                          <span
+                            className={`shrink-0 inline-flex items-center justify-center w-6 h-6 rounded text-[10px] font-mono font-semibold ${
+                              isExact
+                                ? "bg-primary text-primary-foreground"
+                                : "bg-muted text-muted-foreground"
+                            }`}
+                          >
+                            {i + 1}
+                          </span>
+                          <span className="flex-1 truncate font-mono text-foreground">{ip}</span>
+                          <span className="shrink-0 text-muted-foreground hidden sm:inline truncate max-w-[180px]">
+                            {ua === "—" ? "—" : ua.split(" ")[0]}
+                          </span>
+                          {sourceMeta && (
+                            <Badge
+                              variant="outline"
+                              className="shrink-0 text-[10px] font-normal h-5 px-1.5 border-border/60"
+                              title={`${sourceMeta.count} retry'ów`}
+                            >
+                              {sourceMeta.count}
+                            </Badge>
+                          )}
+                          {isNextCursor && (
+                            <ChevronRight className="h-3 w-3 text-primary shrink-0" />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
+            );
+          })()}
+
           {inspectRecords.length === 0 ? (
             <p className="text-sm text-muted-foreground py-8 text-center">
               Brak rekordów dla tej kombinacji w ostatnich 24h.
