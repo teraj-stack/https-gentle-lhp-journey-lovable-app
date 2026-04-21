@@ -1239,16 +1239,23 @@ const AdminSystemHealth = () => {
                                 isInRelatedSet && highlightScope === "same-ua";
                               const isRelatedHighlight = isInRelatedSet;
                               const isHighlighted = isExactHighlight || isRelatedHighlight;
+                              // Czy navigator dopasowań aktualnie wskazuje ten wiersz —
+                              // dodajemy mocniejszy ring (primary, nie primary/40), żeby admin
+                              // od razu widział "gdzie jestem" w sekwencji ◀ Następne ▶.
+                              const isNavigatorActive =
+                                !!matchNavigator && matchNavigator.keys[matchNavigator.index] === rowKey;
                               const row = (
                                 <TableRow
                                   key={rowKey}
                                   data-retry-row-key={rowKey}
                                   className={
-                                    isExactHighlight
-                                      ? "bg-primary/15 ring-2 ring-primary/40 transition-colors cursor-help"
-                                      : isRelatedHighlight
-                                        ? "bg-primary/5 transition-colors cursor-help"
-                                        : "transition-colors"
+                                    isNavigatorActive
+                                      ? "bg-primary/20 ring-2 ring-primary transition-colors cursor-help"
+                                      : isExactHighlight
+                                        ? "bg-primary/15 ring-2 ring-primary/40 transition-colors cursor-help"
+                                        : isRelatedHighlight
+                                          ? "bg-primary/5 transition-colors cursor-help"
+                                          : "transition-colors"
                                   }
                                 >
                                   <TableCell className="font-mono text-xs">{s.ip}</TableCell>
