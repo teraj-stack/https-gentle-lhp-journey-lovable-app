@@ -1675,6 +1675,45 @@ const AdminSystemHealth = () => {
                     Pokaż kolejne dopasowania ({relatedMatchCount})
                   </Button>
                 )}
+                {/* Przycisk "Skocz do następnego" — modal POZOSTAJE OTWARTY, klik tylko
+                    przewija tabelę pod modalem do kolejnego podświetlonego wiersza
+                    (cyklicznie po exact + related). Działa też gdy auto-reveal OFF —
+                    bazuje wyłącznie na inspectSource + highlightScope. */}
+                {(() => {
+                  if (!inspectSource) return null;
+                  const jumpKeys = buildMatchKeys(inspectSource, highlightScope);
+                  if (jumpKeys.length <= 1) return null; // exact only — nie ma czego skakać
+                  const total = jumpKeys.length;
+                  const currentDisplay = (inspectJumpIndex % total) + 1;
+                  return (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 gap-1.5 border-primary/40 text-primary hover:bg-primary/10"
+                      onClick={() => {
+                        const idx = inspectJumpIndex % total;
+                        const key = jumpKeys[idx];
+                        const el = document.querySelector<HTMLElement>(
+                          `[data-retry-row-key="${CSS.escape(key)}"]`,
+                        );
+                        if (el) {
+                          el.scrollIntoView({ behavior: "smooth", block: "center" });
+                          // Krótki "puls" ringa na wierszu — żeby było widać dokąd skoczyliśmy
+                          // pod modalem (modal nie zasłania całej tabeli).
+                          el.classList.add("ring-2", "ring-primary", "bg-primary/20");
+                          window.setTimeout(() => {
+                            el.classList.remove("ring-2", "ring-primary", "bg-primary/20");
+                          }, 1500);
+                        }
+                        setInspectJumpIndex((i) => i + 1);
+                      }}
+                      title={`Przewiń tabelę pod modalem do następnego podświetlonego wiersza (${currentDisplay}/${total}). Modal pozostaje otwarty.`}
+                    >
+                      <ChevronRight className="h-3.5 w-3.5" />
+                      Skocz do następnego ({currentDisplay}/{total})
+                    </Button>
+                  );
+                })()}
               <Button
                 variant="outline"
                 size="sm"
