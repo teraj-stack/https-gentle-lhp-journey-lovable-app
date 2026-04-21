@@ -17,7 +17,7 @@
 
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import {
-  checkRateLimit,
+  checkRateLimitDb,
   getClientIp,
   ipForLog,
   logTokenFailure,
@@ -33,7 +33,9 @@ const corsHeaders = {
 const ENDPOINT = 'on-booking-created'
 // Webhook handler — legitimate traffic = 1 req per booking insert.
 // Higher ceiling than token endpoints because Supabase webhook delivery
-// can retry, and HQ may bulk-import bookings. Mostly here to log abuse.
+// can retry, and HQ may bulk-import bookings. DB-backed limiter (global,
+// cross-isolate) — Supabase webhooks have exponential backoff retry, so
+// an occasional 429 is harmless and we gain real flood protection.
 const WEBHOOK_LIMIT = { max: 60, windowMs: 60_000 }
 
 interface BookingRecord {
