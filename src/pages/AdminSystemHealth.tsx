@@ -137,8 +137,9 @@ const AdminSystemHealth = () => {
   const [inspectQuery, setInspectQuery] = useState("");
   // Kierunek sortowania w modalu: desc = najnowsze pierwsze (domyślnie).
   const [inspectSort, setInspectSort] = useState<"desc" | "asc">("desc");
-  // Klucz aktualnie podświetlonego wiersza w tabeli źródeł (po "Pokaż w tabeli" z modala).
-  const [highlightedRowKey, setHighlightedRowKey] = useState<string | null>(null);
+  // Aktualnie podświetlone źródło — dokładny wiersz (`ip+ua`) wyróżniamy mocno (ring + bg primary/15),
+  // a wszystkie inne wiersze z tym samym IP dyskretnie (samo bg primary/5). Null = brak highlightu.
+  const [highlightedSource, setHighlightedSource] = useState<{ ip: string; ua: string } | null>(null);
   // Ref-flag: true gdy zamknięcie modala wywołujemy programowo z revealRowInTable,
   // żeby onOpenChange nie odpalił drugi raz auto-reveal (unikamy podwójnego toastu).
   const suppressCloseRevealRef = useRef(false);
