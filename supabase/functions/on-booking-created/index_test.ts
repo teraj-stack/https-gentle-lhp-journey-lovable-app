@@ -56,6 +56,10 @@ Deno.test('on-booking-created — DB rate-limit triggers 429 after LIMIT request
   const url = `${SUPABASE_URL}/functions/v1/${ENDPOINT}`
   const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY)
 
+  // Wyczyść WSZYSTKIE buckety dla tego endpointu, żeby start był deterministyczny.
+  // (W środowisku dev nie ma realnego ruchu webhookowego współbieżnie z testem.)
+  await admin.from('rate_limit_buckets').delete().eq('endpoint', ENDPOINT)
+
   // Cofamy się o 90s — bucket window_start jest zaokrąglony do początku minuty,
   // więc nasz burst może trafić w bucket startujący do ~60s wcześniej.
   const windowStartIso = new Date(Date.now() - 90_000).toISOString()
