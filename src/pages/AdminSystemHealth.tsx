@@ -245,6 +245,43 @@ const AdminSystemHealth = () => {
 
   const retryFiltersActive = retryDenoOnly || retryFilterIp.trim() !== "" || retryFilterUa.trim() !== "";
 
+  // Trend retry'ów per godzina, ostatnie 24h. Dwie serie: deno (wewnętrzny
+  // webhook DB) i other (ruch zewnętrzny / boty). Każdy bucket = pełna
+  // godzina kalendarzowa (lokalna), wstecz od "teraz". Dzięki stałej liczbie
+  // 24 punktów wykres jest stabilny niezależnie od wolumenu danych.
+  const retryTrend = useMemo(() => {
+    const now = new Date();
+    const hourMs = 60 * 60 * 1000;
+    // Bucket startuje na pełnej godzinie. Tworzymy 24 backety: [now-23h, …, now].
+    const startHour = new Date(now);
+    startHour.setMinutes(0, 0, 0);
+    const buckets: { ts: number; label: string; deno: number; other: number }[] = [];
+    for (let i = 23; i >= 0; i--) {
+      const ts = startHour.getTime() - i * hourMs;
+      const d = new Date(ts);
+      buckets.push({
+        ts,
+        label: `${String(d.getHours()).padStart(2, "0")}:00`,
+        deno: 0,
+        other: 0,
+      });
+    }
+    for (const r of webhookRetries) {
+      const t = new Date(r.created_at).getTime();
+      const idx = Math.floor((t - buckets[0].ts) / hourMs);
+      if (idx < 0 || idx >= buckets.length) continue;
+      const ua = r.user_agent ?? "";
+      if (/^Deno\//i.test(ua)) buckets[idx].deno += 1;
+      else buckets[idx].other += 1;
+    }
+    return buckets;
+  }, [webhookRetries]);
+
+  const retryTrendHasData = useMemo(
+    () => retryTrend.some((b) => b.deno > 0 || b.other > 0),
+    [retryTrend],
+  );
+
   // Toast tylko przy WEJŚCIU w stan przekroczenia (nie przy każdym refetchu).
   const wasOverThreshold = useMemo(() => ({ value: false }), []);
   useEffect(() => {
