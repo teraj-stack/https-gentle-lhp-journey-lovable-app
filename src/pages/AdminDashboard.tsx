@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Pencil, Trash2, LogOut, Eye, EyeOff, ShieldAlert, Activity } from "lucide-react";
+import { Plus, Pencil, Trash2, LogOut, Eye, EyeOff, ShieldAlert, Activity, Mail } from "lucide-react";
 import { toast } from "sonner";
 import SeoHead from "@/components/shared/SeoHead";
 
@@ -167,6 +167,9 @@ const AdminDashboard = () => {
             </Button>
             <Button variant="ghost" size="sm" onClick={() => navigate("/admin/system-health")}>
               <Activity className="h-4 w-4 mr-2" /> System Health
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => navigate("/admin/email-dashboard")}>
+              <Mail className="h-4 w-4 mr-2" /> Emaile
             </Button>
             <span className="text-sm text-muted-foreground hidden sm:inline">{session.user.email}</span>
             <Button variant="ghost" size="sm" onClick={handleLogout}>
