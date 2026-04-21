@@ -1136,7 +1136,7 @@ const AdminSystemHealth = () => {
                       UA <code className="font-mono break-all">{inspectSource.ua}</code>
                     </div>
                     <div>
-                      Pokazuję <strong>{inspectRecords.length}</strong> z możliwych 50 najnowszych (window 24h).
+                      Pokazuję <strong>{inspectFilteredRecords.length}</strong> z {inspectRecords.length} (max 50 najnowszych, window 24h).
                     </div>
                   </>
                 )}
