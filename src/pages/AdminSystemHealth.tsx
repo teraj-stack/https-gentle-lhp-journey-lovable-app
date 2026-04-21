@@ -161,14 +161,16 @@ const AdminSystemHealth = () => {
   }, [autoRevealEnabled]);
 
   // Preferencja: zakres podświetlenia po reveal.
-  //  - "exact"  → tylko wiersz z dokładnym IP+UA (jeden, mocny)
+  //  - "exact"   → tylko wiersz z dokładnym IP+UA (jeden, mocny)
   //  - "same-ip" → wiersz źródłowy mocno + wszystkie pozostałe z tym samym IP delikatnie (default)
+  //  - "same-ua" → wiersz źródłowy mocno + wszystkie pozostałe z tym samym UA delikatnie
   const HIGHLIGHT_SCOPE_LS_KEY = "admin-system-health.highlight-scope";
-  type HighlightScope = "exact" | "same-ip";
+  type HighlightScope = "exact" | "same-ip" | "same-ua";
   const [highlightScope, setHighlightScope] = useState<HighlightScope>(() => {
     if (typeof window === "undefined") return "same-ip";
     const v = window.localStorage.getItem(HIGHLIGHT_SCOPE_LS_KEY);
-    return v === "exact" ? "exact" : "same-ip";
+    if (v === "exact" || v === "same-ip" || v === "same-ua") return v;
+    return "same-ip";
   });
   useEffect(() => {
     try {
