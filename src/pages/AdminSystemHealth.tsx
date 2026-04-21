@@ -169,6 +169,30 @@ const AdminSystemHealth = () => {
     });
   };
 
+  // Skrót klawiszowy w modalu inspekcji: Ctrl/Cmd+K zawsze, Enter tylko gdy fokus nie jest
+  // w polu tekstowym (żeby nie kolidować z wpisywaniem w polu wyszukiwania).
+  useEffect(() => {
+    if (!inspectSource) return;
+    const handler = (e: KeyboardEvent) => {
+      const isCmdK = (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k";
+      const target = e.target as HTMLElement | null;
+      const inEditable =
+        !!target &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.isContentEditable);
+      const isPlainEnter = e.key === "Enter" && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey && !inEditable;
+      if (isCmdK || isPlainEnter) {
+        e.preventDefault();
+        revealRowInTable(inspectSource.ip, inspectSource.ua);
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+    // revealRowInTable jest stabilna w obrębie renderu — zależymy tylko od inspectSource.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [inspectSource]);
+
   useEffect(() => {
     let isMounted = true;
     const apply = (s: Session | null) => {
