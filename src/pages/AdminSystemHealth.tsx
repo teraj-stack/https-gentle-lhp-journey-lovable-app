@@ -1146,24 +1146,19 @@ const AdminSystemHealth = () => {
                               const rowKey = `${s.ip}::${s.ua}`;
                               // Dwa poziomy podświetlenia:
                               //  - exact (IP+UA): mocny — ring + bg primary/15 (wiersz źródłowy z modala)
-                              //  - same-IP / same-UA: delikatny — samo bg primary/5 (pokrewne wiersze)
+                              //  - related (same-IP / same-UA): delikatny — bg primary/5, ograniczone przez
+                              //    relatedHighlightKeys (max MAX_RELATED_HIGHLIGHTS pierwszych w sortowaniu).
                               const isExactHighlight =
                                 !!highlightedSource &&
                                 highlightedSource.ip === s.ip &&
                                 highlightedSource.ua === s.ua;
-                              // Same-IP highlight aktywny tylko gdy admin wybrał scope "same-ip".
+                              const isInRelatedSet = !isExactHighlight && relatedHighlightKeys.has(rowKey);
+                              // Flagi pomocnicze tylko do wyboru właściwego badge w tooltipie.
                               const isSameIpHighlight =
-                                highlightScope === "same-ip" &&
-                                !!highlightedSource &&
-                                !isExactHighlight &&
-                                highlightedSource.ip === s.ip;
-                              // Same-UA highlight aktywny tylko gdy admin wybrał scope "same-ua".
+                                isInRelatedSet && highlightScope === "same-ip";
                               const isSameUaHighlight =
-                                highlightScope === "same-ua" &&
-                                !!highlightedSource &&
-                                !isExactHighlight &&
-                                highlightedSource.ua === s.ua;
-                              const isRelatedHighlight = isSameIpHighlight || isSameUaHighlight;
+                                isInRelatedSet && highlightScope === "same-ua";
+                              const isRelatedHighlight = isInRelatedSet;
                               const isHighlighted = isExactHighlight || isRelatedHighlight;
                               const row = (
                                 <TableRow
