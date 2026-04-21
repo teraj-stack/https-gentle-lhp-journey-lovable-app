@@ -17,7 +17,7 @@
 
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import {
-  checkRateLimit,
+  checkRateLimitDb,
   getClientIp,
   ipForLog,
   logTokenFailure,
@@ -33,7 +33,9 @@ const corsHeaders = {
 const ENDPOINT = 'on-booking-created'
 // Webhook handler — legitimate traffic = 1 req per booking insert.
 // Higher ceiling than token endpoints because Supabase webhook delivery
-// can retry, and HQ may bulk-import bookings. Mostly here to log abuse.
+// can retry, and HQ may bulk-import bookings. DB-backed limiter (global,
+// cross-isolate) — Supabase webhooks have exponential backoff retry, so
+// an occasional 429 is harmless and we gain real flood protection.
 const WEBHOOK_LIMIT = { max: 60, windowMs: 60_000 }
 
 interface BookingRecord {
@@ -152,24 +154,28 @@ Deno.serve(async (req) => {
 
   const earlySupabaseUrl = Deno.env.get('SUPABASE_URL')
   const earlySupabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
-  // Audit-only client for rate-limit logging; main client is built below.
-  const auditClient = earlySupabaseUrl && earlySupabaseKey
-    ? createClient(earlySupabaseUrl, earlySupabaseKey)
-    : null
+  if (!earlySupabaseUrl || !earlySupabaseKey) {
+    console.error('Missing required environment variables')
+    return new Response(
+      JSON.stringify({ error: 'Server configuration error' }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
+  }
+  // Single client used for rate-limit RPC, audit log, and main logic below.
+  const supabase = createClient(earlySupabaseUrl, earlySupabaseKey)
 
-  // Rate limit (best-effort) + log denials.
-  const rl = checkRateLimit(ENDPOINT, ip, WEBHOOK_LIMIT)
+  // DB-backed rate limit (cross-isolate, atomic) + log denials.
+  // Fail-open: RPC failure → request proceeds (warning logged).
+  const rl = await checkRateLimitDb(supabase, ENDPOINT, ip, WEBHOOK_LIMIT)
   if (!rl.allowed) {
     console.warn(`Rate limit exceeded for IP ${ip} on ${ENDPOINT}`)
-    if (auditClient) {
-      logTokenFailure(auditClient, {
-        endpoint: ENDPOINT,
-        reason: 'rate_limited',
-        ip: ipLog,
-        userAgent,
-        metadata: { retryAfterSec: rl.retryAfterSec, method: req.method },
-      })
-    }
+    logTokenFailure(supabase, {
+      endpoint: ENDPOINT,
+      reason: 'rate_limited',
+      ip: ipLog,
+      userAgent,
+      metadata: { retryAfterSec: rl.retryAfterSec, method: req.method },
+    })
     return rateLimitedResponse(rl, corsHeaders)
   }
 
@@ -200,18 +206,7 @@ Deno.serve(async (req) => {
     )
   }
 
-  const supabaseUrl = Deno.env.get('SUPABASE_URL')
-  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
-
-  if (!supabaseUrl || !supabaseServiceKey) {
-    console.error('Missing required environment variables')
-    return new Response(
-      JSON.stringify({ error: 'Server configuration error' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
-  }
-
-  const supabase = createClient(supabaseUrl, supabaseServiceKey)
+  // (supabase client + env check already done above for rate-limit RPC)
 
   // Load active notification recipients from DB (managed via /admin).
   const { data: recipientsData, error: recipientsError } = await supabase
