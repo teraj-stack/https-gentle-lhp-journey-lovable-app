@@ -1718,12 +1718,17 @@ const AdminSystemHealth = () => {
                         );
                         if (el) {
                           el.scrollIntoView({ behavior: "smooth", block: "center" });
-                          // Krótki "puls" ringa na wierszu — żeby było widać dokąd skoczyliśmy
-                          // pod modalem (modal nie zasłania całej tabeli).
-                          el.classList.add("ring-2", "ring-primary", "bg-primary/20");
+                          // Wyraźny puls (ring + bg) na wierszu, do którego skoczyliśmy —
+                          // 3 cykle × 600ms (1.8s). Klasa zdefiniowana w tailwind.config.ts
+                          // używa semantic tokena --primary (HSL). Re-trigger przez
+                          // remove → reflow → add, żeby kolejne kliknięcia też pulsowały.
+                          el.classList.remove("animate-jump-pulse");
+                          // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+                          void el.offsetWidth; // wymuszenie reflow
+                          el.classList.add("animate-jump-pulse");
                           window.setTimeout(() => {
-                            el.classList.remove("ring-2", "ring-primary", "bg-primary/20");
-                          }, 1500);
+                            el.classList.remove("animate-jump-pulse");
+                          }, 1800);
                         }
                         // Cykliczne przewijanie: po ostatnim wracamy do pierwszego (modulo total).
                         // Trzymamy kursor znormalizowany w [0, total), żeby nie rósł w nieskończoność.

@@ -88,10 +88,24 @@ export default {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
+        // Puls dla wiersza, do którego wykonano skok w nawigatorze dopasowań.
+        // Pulsuje box-shadow (ring efekt) + tło — używa semantic tokena --primary (HSL).
+        // 3 pełne cykle × ~600ms = ~1.8s całkowitego czasu trwania.
+        "jump-pulse": {
+          "0%, 100%": {
+            boxShadow: "0 0 0 0 hsl(var(--primary) / 0)",
+            backgroundColor: "hsl(var(--primary) / 0.05)",
+          },
+          "50%": {
+            boxShadow: "0 0 0 4px hsl(var(--primary) / 0.6)",
+            backgroundColor: "hsl(var(--primary) / 0.25)",
+          },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "jump-pulse": "jump-pulse 0.6s ease-in-out 3",
       },
     },
   },
