@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import type { Session } from "@supabase/supabase-js";
@@ -139,6 +139,9 @@ const AdminSystemHealth = () => {
   const [inspectSort, setInspectSort] = useState<"desc" | "asc">("desc");
   // Klucz aktualnie podświetlonego wiersza w tabeli źródeł (po "Pokaż w tabeli" z modala).
   const [highlightedRowKey, setHighlightedRowKey] = useState<string | null>(null);
+  // Ref-flag: true gdy zamknięcie modala wywołujemy programowo z revealRowInTable,
+  // żeby onOpenChange nie odpalił drugi raz auto-reveal (unikamy podwójnego toastu).
+  const suppressCloseRevealRef = useRef(false);
 
   // Auto-fade highlightu wiersza po 3s — żeby nie zostawiać trwałego kolorowego rzędu.
   useEffect(() => {
@@ -182,6 +185,7 @@ const AdminSystemHealth = () => {
     if (willClearIp) setRetryFilterIp("");
     if (willClearUa) setRetryFilterUa("");
     if (willClearDeno) setRetryDenoOnly(false);
+    suppressCloseRevealRef.current = true;
     setInspectSource(null);
     setInspectQuery("");
     setInspectSort("desc");
@@ -1239,6 +1243,17 @@ const AdminSystemHealth = () => {
         open={!!inspectSource}
         onOpenChange={(open) => {
           if (!open) {
+            // Auto-reveal przy zamknięciu (X / Esc / klik w tło): jeśli mamy aktywne
+            // źródło, traktujemy zamknięcie jak "Pokaż w tabeli" — przewijamy do wiersza
+            // i podświetlamy. Flaga suppress chroni przed podwójnym wywołaniem,
+            // gdy revealRowInTable samo wyzerowało inspectSource.
+            const src = inspectSource;
+            if (suppressCloseRevealRef.current) {
+              suppressCloseRevealRef.current = false;
+            } else if (src) {
+              revealRowInTable(src.ip, src.ua);
+              return;
+            }
             setInspectSource(null);
             setInspectQuery("");
             setInspectSort("desc");
