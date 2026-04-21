@@ -132,6 +132,8 @@ const AdminSystemHealth = () => {
   const [retryDenoOnly, setRetryDenoOnly] = useState(false);
   // Modal inspekcji konkretnej kombinacji IP+UA. null = zamknięty.
   const [inspectSource, setInspectSource] = useState<{ ip: string; ua: string } | null>(null);
+  // Filtr tekstowy w modalu — szuka substringa w JSON metadata (case-insensitive).
+  const [inspectQuery, setInspectQuery] = useState("");
 
   useEffect(() => {
     let isMounted = true;
@@ -334,6 +336,19 @@ const AdminSystemHealth = () => {
       .filter((r) => (r.ip ?? "—") === inspectSource.ip && (r.user_agent ?? "—") === inspectSource.ua)
       .slice(0, 50);
   }, [inspectSource, webhookRetries]);
+
+  // Wynik wyszukiwania w modalu — substring w stringified metadata (case-insensitive).
+  const inspectFilteredRecords = useMemo(() => {
+    const q = inspectQuery.trim().toLowerCase();
+    if (!q) return inspectRecords;
+    return inspectRecords.filter((r) => {
+      try {
+        return JSON.stringify(r.metadata ?? {}).toLowerCase().includes(q);
+      } catch {
+        return false;
+      }
+    });
+  }, [inspectRecords, inspectQuery]);
 
   // Trend retry'ów per godzina, ostatnie 24h. Dwie serie: deno (wewnętrzny
   // webhook DB) i other (ruch zewnętrzny / boty). Każdy bucket = pełna
@@ -1057,7 +1072,15 @@ const AdminSystemHealth = () => {
       </div>
 
       {/* Modal inspekcji surowych rekordów dla wybranego IP+UA. */}
-      <Dialog open={!!inspectSource} onOpenChange={(open) => !open && setInspectSource(null)}>
+      <Dialog
+        open={!!inspectSource}
+        onOpenChange={(open) => {
+          if (!open) {
+            setInspectSource(null);
+            setInspectQuery("");
+          }
+        }}
+      >
         <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col">
           <DialogHeader>
             <div className="flex items-start justify-between gap-3">
@@ -1069,16 +1092,17 @@ const AdminSystemHealth = () => {
                 variant="outline"
                 size="sm"
                 className="h-8 gap-1.5 shrink-0"
-                disabled={inspectRecords.length === 0}
+                
                 onClick={() => {
-                  if (!inspectSource || inspectRecords.length === 0) return;
-                  // Eksport tylko aktualnie wyświetlanych rekordów (po filtrach IP+UA, max 50).
+                  if (!inspectSource || inspectFilteredRecords.length === 0) return;
+                  // Eksport tylko aktualnie wyświetlanych rekordów (po filtrach IP+UA + tekst).
                   const payload = {
                     exportedAt: new Date().toISOString(),
                     endpoint: "on-booking-created",
                     source: { ip: inspectSource.ip, userAgent: inspectSource.ua },
-                    count: inspectRecords.length,
-                    records: inspectRecords,
+                    query: inspectQuery.trim() || null,
+                    count: inspectFilteredRecords.length,
+                    records: inspectFilteredRecords,
                   };
                   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
                   const url = URL.createObjectURL(blob);
@@ -1091,8 +1115,9 @@ const AdminSystemHealth = () => {
                   a.click();
                   document.body.removeChild(a);
                   URL.revokeObjectURL(url);
-                  toast.success(`Wyeksportowano ${inspectRecords.length} rekordów`);
+                  toast.success(`Wyeksportowano ${inspectFilteredRecords.length} rekordów`);
                 }}
+                disabled={inspectFilteredRecords.length === 0}
                 title="Pobierz aktualnie wyświetlane rekordy jako JSON"
               >
                 <Download className="h-3.5 w-3.5" />
@@ -1111,7 +1136,7 @@ const AdminSystemHealth = () => {
                       UA <code className="font-mono break-all">{inspectSource.ua}</code>
                     </div>
                     <div>
-                      Pokazuję <strong>{inspectRecords.length}</strong> z możliwych 50 najnowszych (window 24h).
+                      Pokazuję <strong>{inspectFilteredRecords.length}</strong> z {inspectRecords.length} (max 50 najnowszych, window 24h).
                     </div>
                   </>
                 )}
@@ -1123,36 +1148,63 @@ const AdminSystemHealth = () => {
               Brak rekordów dla tej kombinacji w ostatnich 24h.
             </p>
           ) : (
-            <ScrollArea className="flex-1 -mx-6 px-6 max-h-[60vh]">
-              <div className="space-y-2 py-2">
-                {inspectRecords.map((r) => {
-                  const retryAfter =
-                    typeof r.metadata?.retryAfterSec === "number"
-                      ? (r.metadata.retryAfterSec as number)
-                      : null;
-                  return (
-                    <div key={r.id} className="rounded-md border border-border bg-muted/30 p-3 text-xs space-y-1.5">
-                      <div className="flex items-center justify-between gap-2 flex-wrap">
-                        <span className="text-muted-foreground">
-                          {new Date(r.created_at).toLocaleString("pl-PL", { dateStyle: "short", timeStyle: "medium" })}
-                        </span>
-                        <span className="text-[11px] text-muted-foreground">
-                          {formatDistanceToNow(new Date(r.created_at), { addSuffix: true, locale: pl })}
-                        </span>
-                      </div>
-                      {retryAfter !== null && (
-                        <Badge variant="outline" className="text-[10px]">
-                          retry-after: {retryAfter}s
-                        </Badge>
-                      )}
-                      <div className="font-mono text-[11px] bg-background border border-border rounded p-2 overflow-x-auto">
-                        <MetadataView data={r.metadata ?? {}} />
-                      </div>
-                    </div>
-                  );
-                })}
+            <>
+              <div className="relative shrink-0">
+                <Filter className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+                <Input
+                  value={inspectQuery}
+                  onChange={(e) => setInspectQuery(e.target.value)}
+                  placeholder="Filtruj po metadata (np. tokenPreview, method, fragment ID)…"
+                  className="h-8 pl-8 pr-8 text-xs"
+                />
+                {inspectQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setInspectQuery("")}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    aria-label="Wyczyść filtr"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                )}
               </div>
-            </ScrollArea>
+              {inspectFilteredRecords.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-8 text-center">
+                  Brak rekordów pasujących do „{inspectQuery}”.
+                </p>
+              ) : (
+                <ScrollArea className="flex-1 -mx-6 px-6 max-h-[55vh]">
+                  <div className="space-y-2 py-2">
+                    {inspectFilteredRecords.map((r) => {
+                      const retryAfter =
+                        typeof r.metadata?.retryAfterSec === "number"
+                          ? (r.metadata.retryAfterSec as number)
+                          : null;
+                      return (
+                        <div key={r.id} className="rounded-md border border-border bg-muted/30 p-3 text-xs space-y-1.5">
+                          <div className="flex items-center justify-between gap-2 flex-wrap">
+                            <span className="text-muted-foreground">
+                              {new Date(r.created_at).toLocaleString("pl-PL", { dateStyle: "short", timeStyle: "medium" })}
+                            </span>
+                            <span className="text-[11px] text-muted-foreground">
+                              {formatDistanceToNow(new Date(r.created_at), { addSuffix: true, locale: pl })}
+                            </span>
+                          </div>
+                          {retryAfter !== null && (
+                            <Badge variant="outline" className="text-[10px]">
+                              retry-after: {retryAfter}s
+                            </Badge>
+                          )}
+                          <div className="font-mono text-[11px] bg-background border border-border rounded p-2 overflow-x-auto">
+                            <MetadataView data={r.metadata ?? {}} />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </ScrollArea>
+              )}
+            </>
           )}
         </DialogContent>
       </Dialog>
