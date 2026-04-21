@@ -230,7 +230,9 @@ const AdminSystemHealth = () => {
         let didScroll = false;
         if (el) {
           el.scrollIntoView({ behavior: "smooth", block: "center" });
-          setHighlightedRowKey(key);
+          // Zapamiętaj exact source — render porównuje s.ip+s.ua dla mocnego highlightu,
+          // a samo IP dla delikatnego highlightu pokrewnych wierszy z tego samego adresu.
+          setHighlightedSource({ ip, ua });
           didScroll = true;
         }
         if (snapshot) {
