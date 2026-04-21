@@ -153,7 +153,10 @@ Deno.serve(async (req) => {
       console.error('Token lookup failed:', tokenError)
       return json(500, { error: 'Internal error' })
     }
-    if (!tokenRow) return json(404, { valid: false, reason: 'not_found' })
+    if (!tokenRow) {
+      logFailure(supabase, { endpoint: ENDPOINT, reason: 'invalid_token', ip: ipForLog, userAgent, metadata: { method: 'GET', tokenPreview: token.slice(0, 8) } })
+      return json(404, { valid: false, reason: 'not_found' })
+    }
 
     const expired = new Date(tokenRow.expires_at).getTime() < Date.now()
     const used = !!tokenRow.used_at
