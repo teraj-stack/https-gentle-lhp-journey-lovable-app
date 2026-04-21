@@ -1161,9 +1161,13 @@ const AdminSystemHealth = () => {
                                           <Badge variant="default" className="text-[10px] py-0 h-4">
                                             Wiersz źródłowy (z modala)
                                           </Badge>
-                                        ) : (
+                                        ) : isSameIpHighlight ? (
                                           <Badge variant="outline" className="text-[10px] py-0 h-4 border-primary/40 text-primary">
                                             Ten sam IP
+                                          </Badge>
+                                        ) : (
+                                          <Badge variant="outline" className="text-[10px] py-0 h-4 border-primary/40 text-primary">
+                                            Ten sam User-Agent
                                           </Badge>
                                         )}
                                       </div>
