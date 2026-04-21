@@ -163,10 +163,10 @@ const AdminSystemHealth = () => {
   // Auto-fade highlightu wiersza po 10s — wystarczająco długo, żeby admin zdążył zauważyć
   // wyróżnienie po zamknięciu modala, ale nie zostawia trwałego kolorowego rzędu.
   useEffect(() => {
-    if (!highlightedRowKey) return;
-    const t = window.setTimeout(() => setHighlightedRowKey(null), 10000);
+    if (!highlightedSource) return;
+    const t = window.setTimeout(() => setHighlightedSource(null), 10000);
     return () => window.clearTimeout(t);
-  }, [highlightedRowKey]);
+  }, [highlightedSource]);
 
   // Snapshot filtrów tabeli źródeł sprzed wywołania "Pokaż w tabeli" — używany do przywrócenia
   // poprzednich ustawień filtrowania, jeśli reveal je wyczyścił. null = brak aktywnego snapshotu.
