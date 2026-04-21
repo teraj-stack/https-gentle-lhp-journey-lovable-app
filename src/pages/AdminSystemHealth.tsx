@@ -147,6 +147,10 @@ const AdminSystemHealth = () => {
   // keys: pełna lista ip::ua do iteracji (exact na pozycji 0, potem related w kolejności sortowania).
   // index: aktualnie wskazana pozycja (przy 0 = exact). Null = navigator zamknięty.
   const [matchNavigator, setMatchNavigator] = useState<{ keys: string[]; index: number } | null>(null);
+  // Kursor skoku do następnego dopasowania — używany przez przycisk "Skocz do następnego"
+  // w modalu. Inkrementowany przy każdym kliknięciu, modulo liczba dopasowań.
+  // Reset do 0 przy zmianie inspectSource / highlightScope.
+  const [inspectJumpIndex, setInspectJumpIndex] = useState(0);
   // Timer auto-hide nawigatora po 30s bezczynności.
   const navigatorHideTimerRef = useRef<number | null>(null);
   // Preferencja użytkownika: czy zamknięcie modala / klik "Pokaż w tabeli" ma przewijać
