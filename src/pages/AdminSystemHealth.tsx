@@ -339,18 +339,23 @@ const AdminSystemHealth = () => {
       .slice(0, 50);
   }, [inspectSource, webhookRetries]);
 
-  // Wynik wyszukiwania w modalu — substring w stringified metadata (case-insensitive).
+  // Wynik wyszukiwania w modalu — substring w stringified metadata (case-insensitive),
+  // z sortowaniem po created_at (desc=najnowsze, asc=najstarsze).
   const inspectFilteredRecords = useMemo(() => {
     const q = inspectQuery.trim().toLowerCase();
-    if (!q) return inspectRecords;
-    return inspectRecords.filter((r) => {
-      try {
-        return JSON.stringify(r.metadata ?? {}).toLowerCase().includes(q);
-      } catch {
-        return false;
-      }
-    });
-  }, [inspectRecords, inspectQuery]);
+    const filtered = q
+      ? inspectRecords.filter((r) => {
+          try {
+            return JSON.stringify(r.metadata ?? {}).toLowerCase().includes(q);
+          } catch {
+            return false;
+          }
+        })
+      : inspectRecords;
+    // inspectRecords już przychodzi w kolejności DESC z query, więc dla "desc" zostawiamy,
+    // a dla "asc" tworzymy odwróconą kopię (nie mutujemy oryginału).
+    return inspectSort === "asc" ? [...filtered].reverse() : filtered;
+  }, [inspectRecords, inspectQuery, inspectSort]);
 
   // Trend retry'ów per godzina, ostatnie 24h. Dwie serie: deno (wewnętrzny
   // webhook DB) i other (ruch zewnętrzny / boty). Każdy bucket = pełna
