@@ -1135,6 +1135,20 @@ const AdminSystemHealth = () => {
                 <Eye className="h-5 w-5 text-primary" />
                 Surowe rekordy retry'ów
               </DialogTitle>
+              <div className="flex items-center gap-2 shrink-0">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 gap-1.5"
+                  onClick={() => {
+                    if (!inspectSource) return;
+                    revealRowInTable(inspectSource.ip, inspectSource.ua);
+                  }}
+                  title="Zamknij modal i przewiń do wiersza w tabeli źródeł"
+                >
+                  <Locate className="h-3.5 w-3.5" />
+                  Pokaż w tabeli
+                </Button>
               <Button
                 variant="outline"
                 size="sm"
