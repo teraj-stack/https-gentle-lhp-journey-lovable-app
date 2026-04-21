@@ -352,29 +352,73 @@ const AdminSystemHealth = () => {
   }, [inspectSource, highlightScope]);
 
 
-  // Skrót klawiszowy w modalu inspekcji: Ctrl/Cmd+K zawsze, Enter tylko gdy fokus nie jest
-  // w polu tekstowym (żeby nie kolidować z wpisywaniem w polu wyszukiwania).
+  // Wykonuje skok do podświetlonego wiersza o offset (+1 = następne, -1 = poprzednie)
+  // względem aktualnego inspectJumpIndex. Cyklicznie modulo total. Aplikuje animate-jump-pulse
+  // na trafiony wiersz. Używane przez przycisk w modalu ORAZ skróty klawiszowe (↓/↑/J/K).
+  const performJumpToMatch = (offset: number) => {
+    if (!inspectSource) return;
+    const jumpKeys = buildMatchKeys(inspectSource, highlightScope);
+    if (jumpKeys.length <= 1) return; // exact only — nic do skakania
+    const total = jumpKeys.length;
+    setInspectJumpIndex((prev) => {
+      const idx = ((prev + offset) % total + total) % total;
+      const key = jumpKeys[idx];
+      const el = document.querySelector<HTMLElement>(`[data-retry-row-key="${CSS.escape(key)}"]`);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        el.classList.remove("animate-jump-pulse");
+        // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+        void el.offsetWidth;
+        el.classList.add("animate-jump-pulse");
+        window.setTimeout(() => el.classList.remove("animate-jump-pulse"), 1800);
+      }
+      // Kursor wskazuje "następne" dopasowanie po tym skoku — przesuwamy o +1 dla offset>=0,
+      // i o 0 dla offset<0 (idziemy wstecz, więc badge "Następne: X" powinien wskazywać tam,
+      // gdzie właśnie skoczyliśmy + 1, czyli idx+1; dla forward: idx też+1, bo prev wskazywał
+      // "do podświetlenia teraz", a po skoku przesuwamy o jedną pozycję dalej).
+      return (idx + 1) % total;
+    });
+  };
+
+  // Skróty klawiszowe w modalu inspekcji:
+  // - Ctrl/Cmd+K  → "Pokaż w tabeli" (zamyka modal i scrolluje do wiersza)
+  // - Enter       → "Pokaż w tabeli" (gdy fokus nie jest w polu tekstowym)
+  // - ↓ / J       → następne dopasowanie (skok bez zamykania modala)
+  // - ↑ / K       → poprzednie dopasowanie (skok bez zamykania modala)
+  // Strzałki/J/K działają tylko gdy fokus NIE jest w polu tekstowym, żeby nie kolidować
+  // z nawigacją kursorem w inpucie wyszukiwania.
   useEffect(() => {
     if (!inspectSource) return;
     const handler = (e: KeyboardEvent) => {
-      const isCmdK = (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k";
       const target = e.target as HTMLElement | null;
       const inEditable =
         !!target &&
         (target.tagName === "INPUT" ||
           target.tagName === "TEXTAREA" ||
           target.isContentEditable);
+      const isCmdK = (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k";
       const isPlainEnter = e.key === "Enter" && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey && !inEditable;
       if (isCmdK || isPlainEnter) {
         e.preventDefault();
         revealRowInTable(inspectSource.ip, inspectSource.ua);
+        return;
+      }
+      if (inEditable) return;
+      const isNext = e.key === "ArrowDown" || e.key.toLowerCase() === "j";
+      const isPrev = e.key === "ArrowUp" || e.key.toLowerCase() === "k";
+      if (isNext || isPrev) {
+        // Tylko gdy są dopasowania do skakania (jumpKeys.length > 1) — sprawdzamy lazy
+        // wewnątrz performJumpToMatch i tam też no-op.
+        e.preventDefault();
+        performJumpToMatch(isNext ? 1 : -1);
       }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-    // revealRowInTable jest stabilna w obrębie renderu — zależymy tylko od inspectSource.
+    // revealRowInTable / performJumpToMatch są stabilne w obrębie renderu —
+    // zależymy tylko od inspectSource + highlightScope (drugi użyty w buildMatchKeys).
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [inspectSource]);
+  }, [inspectSource, highlightScope]);
 
   useEffect(() => {
     let isMounted = true;
@@ -1710,34 +1754,14 @@ const AdminSystemHealth = () => {
                       variant="outline"
                       size="sm"
                       className="h-8 gap-1.5 border-primary/40 text-primary hover:bg-primary/10"
-                      onClick={() => {
-                        const idx = inspectJumpIndex % total;
-                        const key = jumpKeys[idx];
-                        const el = document.querySelector<HTMLElement>(
-                          `[data-retry-row-key="${CSS.escape(key)}"]`,
-                        );
-                        if (el) {
-                          el.scrollIntoView({ behavior: "smooth", block: "center" });
-                          // Wyraźny puls (ring + bg) na wierszu, do którego skoczyliśmy —
-                          // 3 cykle × 600ms (1.8s). Klasa zdefiniowana w tailwind.config.ts
-                          // używa semantic tokena --primary (HSL). Re-trigger przez
-                          // remove → reflow → add, żeby kolejne kliknięcia też pulsowały.
-                          el.classList.remove("animate-jump-pulse");
-                          // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-                          void el.offsetWidth; // wymuszenie reflow
-                          el.classList.add("animate-jump-pulse");
-                          window.setTimeout(() => {
-                            el.classList.remove("animate-jump-pulse");
-                          }, 1800);
-                        }
-                        // Cykliczne przewijanie: po ostatnim wracamy do pierwszego (modulo total).
-                        // Trzymamy kursor znormalizowany w [0, total), żeby nie rósł w nieskończoność.
-                        setInspectJumpIndex((i) => (i + 1) % total);
-                      }}
-                      title={`Przewiń tabelę pod modalem do następnego podświetlonego wiersza (${currentDisplay}/${total}). Modal pozostaje otwarty.`}
+                      onClick={() => performJumpToMatch(1)}
+                      title={`Przewiń tabelę pod modalem do następnego podświetlonego wiersza (${currentDisplay}/${total}). Modal pozostaje otwarty. Skróty: ↓ / J = następne, ↑ / K = poprzednie.`}
                     >
                       <ChevronRight className="h-3.5 w-3.5" />
                       Skocz do następnego ({currentDisplay}/{total})
+                      <kbd className="ml-1 hidden sm:inline-flex items-center gap-0.5 rounded border border-border/60 bg-muted/60 px-1 py-0 text-[10px] font-mono text-muted-foreground">
+                        ↓
+                      </kbd>
                     </Button>
                   );
                 })()}
