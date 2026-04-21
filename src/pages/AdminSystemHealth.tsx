@@ -906,9 +906,22 @@ const AdminSystemHealth = () => {
                             setRetryFilterIp("");
                             setRetryFilterUa("");
                             setRetryDenoOnly(false);
+                            setFiltersSnapshot(null);
                           }}
                         >
                           <X className="h-3.5 w-3.5 mr-1" /> Wyczyść
+                        </Button>
+                      )}
+                      {filtersSnapshot && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-8 gap-1.5 border-primary/40 text-primary hover:bg-primary/10"
+                          onClick={() => restoreFiltersSnapshot(filtersSnapshot)}
+                          title="Przywróć filtry sprzed kliknięcia 'Pokaż w tabeli'"
+                        >
+                          <RefreshCw className="h-3.5 w-3.5" />
+                          Przywróć filtry
                         </Button>
                       )}
                       <span className="text-xs text-muted-foreground ml-auto">
