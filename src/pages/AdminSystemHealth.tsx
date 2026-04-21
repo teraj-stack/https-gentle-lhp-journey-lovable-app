@@ -1089,19 +1089,25 @@ const AdminSystemHealth = () => {
                               const rowKey = `${s.ip}::${s.ua}`;
                               // Dwa poziomy podświetlenia:
                               //  - exact (IP+UA): mocny — ring + bg primary/15 (wiersz źródłowy z modala)
-                              //  - same-IP: delikatny — samo bg primary/5 (pokrewne wiersze z tego samego adresu)
+                              //  - same-IP / same-UA: delikatny — samo bg primary/5 (pokrewne wiersze)
                               const isExactHighlight =
                                 !!highlightedSource &&
                                 highlightedSource.ip === s.ip &&
                                 highlightedSource.ua === s.ua;
-                              // Same-IP highlight aktywny tylko gdy admin wybrał scope "same-ip"
-                              // w ustawieniach. Dla "exact" pozostawiamy tylko mocny match.
+                              // Same-IP highlight aktywny tylko gdy admin wybrał scope "same-ip".
                               const isSameIpHighlight =
                                 highlightScope === "same-ip" &&
                                 !!highlightedSource &&
                                 !isExactHighlight &&
                                 highlightedSource.ip === s.ip;
-                              const isHighlighted = isExactHighlight || isSameIpHighlight;
+                              // Same-UA highlight aktywny tylko gdy admin wybrał scope "same-ua".
+                              const isSameUaHighlight =
+                                highlightScope === "same-ua" &&
+                                !!highlightedSource &&
+                                !isExactHighlight &&
+                                highlightedSource.ua === s.ua;
+                              const isRelatedHighlight = isSameIpHighlight || isSameUaHighlight;
+                              const isHighlighted = isExactHighlight || isRelatedHighlight;
                               const row = (
                                 <TableRow
                                   key={rowKey}
@@ -1109,7 +1115,7 @@ const AdminSystemHealth = () => {
                                   className={
                                     isExactHighlight
                                       ? "bg-primary/15 ring-2 ring-primary/40 transition-colors cursor-help"
-                                      : isSameIpHighlight
+                                      : isRelatedHighlight
                                         ? "bg-primary/5 transition-colors cursor-help"
                                         : "transition-colors"
                                   }
