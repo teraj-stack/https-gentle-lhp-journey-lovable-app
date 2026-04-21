@@ -1107,9 +1107,9 @@ const AdminSystemHealth = () => {
                           retry-after: {retryAfter}s
                         </Badge>
                       )}
-                      <pre className="font-mono text-[11px] bg-background border border-border rounded p-2 overflow-x-auto whitespace-pre-wrap break-all">
-{JSON.stringify(r.metadata ?? {}, null, 2)}
-                      </pre>
+                      <div className="font-mono text-[11px] bg-background border border-border rounded p-2 overflow-x-auto">
+                        <MetadataView data={r.metadata ?? {}} />
+                      </div>
                     </div>
                   );
                 })}
