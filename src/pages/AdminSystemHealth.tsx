@@ -2042,6 +2042,27 @@ const AdminSystemHealth = () => {
                       <option value="ip-asc">IP (A→Z)</option>
                     </select>
                   </div>
+                  {/* Legenda — wyjaśnia co oznaczają badge'e numeryczne w liście:
+                      złoty/primary = wiersz źródłowy (exact, indeks 0 z buildMatchKeys),
+                      szary/muted = dopasowania powiązane (related, ten sam IP lub UA). */}
+                  <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-muted-foreground">
+                    <span className="inline-flex items-center gap-1.5">
+                      <span className="inline-flex items-center justify-center w-4 h-4 rounded bg-primary text-primary-foreground text-[9px] font-mono font-semibold">
+                        1
+                      </span>
+                      Wiersz źródłowy (exact)
+                    </span>
+                    <span className="inline-flex items-center gap-1.5">
+                      <span className="inline-flex items-center justify-center w-4 h-4 rounded bg-muted text-muted-foreground text-[9px] font-mono font-semibold">
+                        n
+                      </span>
+                      Powiązane (related)
+                    </span>
+                    <span className="inline-flex items-center gap-1.5">
+                      <ChevronRight className="h-3 w-3 text-primary" />
+                      Aktualny kursor
+                    </span>
+                  </div>
                   {(() => {
                     const q = inspectListQuery.trim().toLowerCase();
                     // Helper: count retry'ów dla pary ip+ua (0 jeśli brak w sources).
