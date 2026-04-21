@@ -387,9 +387,31 @@ const AdminSystemHealth = () => {
             ) : (
               <>
                 <div className="grid grid-cols-3 gap-3 mb-4">
-                  <div className="rounded-lg border border-border p-3">
-                    <p className="text-xs text-muted-foreground">Ostatnia 1h</p>
-                    <p className="text-2xl font-bold">{webhookRetryStats.last1h}</p>
+                  <div
+                    className={
+                      webhookRetryStats.denoLast1h >= BOOKING_WEBHOOK_DENO_RETRY_1H_THRESHOLD
+                        ? "rounded-lg border-2 border-destructive p-3 ring-2 ring-destructive/30 animate-pulse"
+                        : "rounded-lg border border-border p-3"
+                    }
+                  >
+                    <p className="text-xs text-muted-foreground flex items-center gap-1">
+                      Ostatnia 1h
+                      {webhookRetryStats.denoLast1h >= BOOKING_WEBHOOK_DENO_RETRY_1H_THRESHOLD && (
+                        <Badge variant="destructive" className="ml-1 text-[10px] py-0 h-4">ALERT</Badge>
+                      )}
+                    </p>
+                    <p
+                      className={
+                        webhookRetryStats.denoLast1h >= BOOKING_WEBHOOK_DENO_RETRY_1H_THRESHOLD
+                          ? "text-2xl font-bold text-destructive"
+                          : "text-2xl font-bold"
+                      }
+                    >
+                      {webhookRetryStats.last1h}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">
+                      Deno/*: <strong>{webhookRetryStats.denoLast1h}</strong> / próg {BOOKING_WEBHOOK_DENO_RETRY_1H_THRESHOLD}
+                    </p>
                   </div>
                   <div className="rounded-lg border border-border p-3">
                     <p className="text-xs text-muted-foreground">Ostatnie 6h</p>
