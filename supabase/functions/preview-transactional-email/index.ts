@@ -3,7 +3,7 @@ import { renderAsync } from 'npm:@react-email/components@0.0.22'
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { TEMPLATES } from '../_shared/transactional-email-templates/registry.ts'
 import {
-  checkRateLimit,
+  checkRateLimitDb,
   getClientIp,
   ipForLog,
   logTokenFailure,
@@ -36,8 +36,11 @@ Deno.serve(async (req) => {
     ? createClient(supabaseUrl, supabaseServiceKey)
     : null
 
-  // Rate limit (best-effort) + log denials.
-  const rl = checkRateLimit(ENDPOINT, ip)
+  // DB-backed rate limit (cross-isolate, atomic) + log denials.
+  // Fail-open if supabase client missing.
+  const rl = supabase
+    ? await checkRateLimitDb(supabase, ENDPOINT, ip)
+    : { allowed: true, retryAfterSec: 0, remaining: 10, limit: 10 }
   if (!rl.allowed) {
     console.warn(`Rate limit exceeded for IP ${ip} on ${ENDPOINT}`)
     if (supabase) {
