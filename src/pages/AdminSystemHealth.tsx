@@ -514,6 +514,49 @@ const AdminSystemHealth = () => {
     );
   }, [inspectSource, webhookRetryStats.sources]);
 
+  // Limit pokrewnych wierszy podświetlanych w tabeli (oprócz exact matchu) — chroni
+  // przed tym, że dla popularnego UA (np. Deno/*) cała tabela by się "zalała" highlightem.
+  const MAX_RELATED_HIGHLIGHTS = 50;
+
+  // Liczba pokrewnych wierszy (bez exact) pasujących do bieżącego inspectSource
+  // wg aktualnie wybranego scope. Używane w modalu (komunikat + ostrzeżenie o limicie)
+  // i w toaście po reveal.
+  const relatedMatchCount = useMemo(() => {
+    if (!inspectSource) return 0;
+    if (highlightScope === "exact") return 0;
+    return webhookRetryStats.sources.filter((s) => {
+      const isExact = s.ip === inspectSource.ip && s.ua === inspectSource.ua;
+      if (isExact) return false;
+      if (highlightScope === "same-ip") return s.ip === inspectSource.ip;
+      if (highlightScope === "same-ua") return s.ua === inspectSource.ua;
+      return false;
+    }).length;
+  }, [inspectSource, highlightScope, webhookRetryStats.sources]);
+
+  // Set kluczy `ip::ua` pokrewnych wierszy do podświetlenia (bez exact). Liczony na
+  // podstawie `highlightedSource` (NIE inspectSource — modal może być już zamknięty),
+  // ograniczony do MAX_RELATED_HIGHLIGHTS żeby nie zalać UI dla popularnych UA.
+  // Wybieramy pierwsze N w naturalnej kolejności webhookRetryStats.sources (sort desc by count).
+  const relatedHighlightKeys = useMemo(() => {
+    const set = new Set<string>();
+    if (!highlightedSource || highlightScope === "exact") return set;
+    let added = 0;
+    for (const s of webhookRetryStats.sources) {
+      if (added >= MAX_RELATED_HIGHLIGHTS) break;
+      const isExact = s.ip === highlightedSource.ip && s.ua === highlightedSource.ua;
+      if (isExact) continue;
+      const matches =
+        highlightScope === "same-ip"
+          ? s.ip === highlightedSource.ip
+          : s.ua === highlightedSource.ua;
+      if (matches) {
+        set.add(`${s.ip}::${s.ua}`);
+        added++;
+      }
+    }
+    return set;
+  }, [highlightedSource, highlightScope, webhookRetryStats.sources]);
+
   // Rekordy filtrowane do modala inspekcji (wybrane IP + UA, max 50 ostatnich).
   const inspectRecords = useMemo(() => {
     if (!inspectSource) return [];
@@ -1103,24 +1146,19 @@ const AdminSystemHealth = () => {
                               const rowKey = `${s.ip}::${s.ua}`;
                               // Dwa poziomy podświetlenia:
                               //  - exact (IP+UA): mocny — ring + bg primary/15 (wiersz źródłowy z modala)
-                              //  - same-IP / same-UA: delikatny — samo bg primary/5 (pokrewne wiersze)
+                              //  - related (same-IP / same-UA): delikatny — bg primary/5, ograniczone przez
+                              //    relatedHighlightKeys (max MAX_RELATED_HIGHLIGHTS pierwszych w sortowaniu).
                               const isExactHighlight =
                                 !!highlightedSource &&
                                 highlightedSource.ip === s.ip &&
                                 highlightedSource.ua === s.ua;
-                              // Same-IP highlight aktywny tylko gdy admin wybrał scope "same-ip".
+                              const isInRelatedSet = !isExactHighlight && relatedHighlightKeys.has(rowKey);
+                              // Flagi pomocnicze tylko do wyboru właściwego badge w tooltipie.
                               const isSameIpHighlight =
-                                highlightScope === "same-ip" &&
-                                !!highlightedSource &&
-                                !isExactHighlight &&
-                                highlightedSource.ip === s.ip;
-                              // Same-UA highlight aktywny tylko gdy admin wybrał scope "same-ua".
+                                isInRelatedSet && highlightScope === "same-ip";
                               const isSameUaHighlight =
-                                highlightScope === "same-ua" &&
-                                !!highlightedSource &&
-                                !isExactHighlight &&
-                                highlightedSource.ua === s.ua;
-                              const isRelatedHighlight = isSameIpHighlight || isSameUaHighlight;
+                                isInRelatedSet && highlightScope === "same-ua";
+                              const isRelatedHighlight = isInRelatedSet;
                               const isHighlighted = isExactHighlight || isRelatedHighlight;
                               const row = (
                                 <TableRow
@@ -1526,6 +1564,21 @@ const AdminSystemHealth = () => {
                           <span>
                             Po zamknięciu modala wiersz zostanie automatycznie przewinięty
                             i podświetlony w tabeli źródeł na ~10 s.
+                            {highlightScope !== "exact" && (
+                              <>
+                                {" "}Znaleziono <strong>{relatedMatchCount}</strong>{" "}
+                                {relatedMatchCount === 1 ? "pokrewny wiersz" : "pokrewnych wierszy"} z{" "}
+                                {highlightScope === "same-ip" ? "tym samym IP" : "tym samym User-Agent"}
+                                {relatedMatchCount > MAX_RELATED_HIGHLIGHTS ? (
+                                  <>
+                                    {" "}— podświetlimy <strong>pierwszych {MAX_RELATED_HIGHLIGHTS}</strong>{" "}
+                                    (limit ochronny).
+                                  </>
+                                ) : (
+                                  <>.</>
+                                )}
+                              </>
+                            )}
                           </span>
                         </div>
                       ) : (
