@@ -1,14 +1,18 @@
 // Scheduled Edge Function — generic booking reminder dispatcher.
 //
-// Replaces the previous separate `send-booking-reminders` (24h) and
-// `send-booking-reminders-2h` functions. Behaviour is selected via the
-// `window` body param: "24h" (tomorrow's bookings) or "2h" (today, in a
-// 90–150 min window from now).
+// DST-safe: filters bookings by precomputed `next_reminder_24h_at` /
+// `next_reminder_2h_at` columns (TIMESTAMPTZ, computed in Europe/Warsaw
+// by the `compute_booking_reminder_schedule` trigger). pg_cron runs in UTC
+// but the schedule column already stores the correct UTC instant for
+// "24h before appointment" and "2h before appointment" in Warsaw local
+// time — automatically correct across spring/autumn DST transitions.
 //
 // Schedules (configured via pg_cron):
-//   - hourly  → POST { "window": "24h" }
-//   - /30 min → POST { "window": "2h" }
+//   - 0 19-22 * * *   → POST { "window": "24h" }  (covers 22:00 Warsaw winter+summer with buffer)
+//   - */30 * * * *    → POST { "window": "2h" }
 //
+// Catch-up: each window has a backwards lookback (4h for 24h, 1h for 2h)
+// so a missed cron tick does not cause a missed reminder.
 // Idempotency: keys differ per window — see WINDOW_CONFIG below.
 // Pre-checks email_send_log to skip already-pending/sent reminders.
 
