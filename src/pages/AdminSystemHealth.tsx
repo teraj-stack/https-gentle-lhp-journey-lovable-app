@@ -9,10 +9,17 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { ArrowLeft, ShieldAlert, Activity, AlertTriangle, RefreshCw, Ban } from "lucide-react";
+import { ArrowLeft, ShieldAlert, Activity, AlertTriangle, RefreshCw, Ban, Webhook } from "lucide-react";
 import SeoHead from "@/components/shared/SeoHead";
 import { formatDistanceToNow } from "date-fns";
 import { pl } from "date-fns/locale";
+import { toast } from "sonner";
+
+// Próg alarmu dla webhooka on-booking-created — przekroczenie sygnalizuje
+// pętlę webhooków DB lub atak floodowy. 60/60s to limit per IP, więc 50
+// odrzuceń w 15 min oznacza wyraźny zewnętrzny abuse (jedyny "klient"
+// w normalnym ruchu to outbound IP Supabase z webhookiem na INSERT).
+const BOOKING_WEBHOOK_DENIED_THRESHOLD = 50;
 
 type AbuseRow = {
   ip: string;
@@ -120,6 +127,40 @@ const AdminSystemHealth = () => {
     refetchInterval: 30_000,
   });
 
+  // 15-minutowy licznik odrzuceń webhooka on-booking-created.
+  // Liczymy wpisy reason=rate_limited z ostatnich 15 min — to bezpośredni
+  // sygnał, że ktoś (lub pętla DB-webhook) bombarduje endpoint.
+  const { data: bookingWebhookDenied = 0, dataUpdatedAt: webhookUpdated } = useQuery({
+    queryKey: ["admin-booking-webhook-denied-15m"],
+    queryFn: async () => {
+      const since = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+      const { count, error } = await supabase
+        .from("token_validation_failures" as never)
+        .select("id", { count: "exact", head: true })
+        .eq("endpoint", "on-booking-created")
+        .eq("reason", "rate_limited")
+        .gte("created_at", since);
+      if (error) throw error;
+      return count ?? 0;
+    },
+    enabled,
+    refetchInterval: 30_000,
+  });
+
+  // Toast tylko przy WEJŚCIU w stan przekroczenia (nie przy każdym refetchu).
+  const wasOverThreshold = useMemo(() => ({ value: false }), []);
+  useEffect(() => {
+    if (bookingWebhookDenied >= BOOKING_WEBHOOK_DENIED_THRESHOLD && !wasOverThreshold.value) {
+      wasOverThreshold.value = true;
+      toast.error("Webhook on-booking-created: nadużycie!", {
+        description: `${bookingWebhookDenied} odrzuceń w ostatnich 15 min (próg: ${BOOKING_WEBHOOK_DENIED_THRESHOLD}).`,
+        duration: 10_000,
+      });
+    } else if (bookingWebhookDenied < BOOKING_WEBHOOK_DENIED_THRESHOLD) {
+      wasOverThreshold.value = false;
+    }
+  }, [bookingWebhookDenied, wasOverThreshold]);
+
   const stats = useMemo(() => {
     const total = recentFailures.length;
     const last24h = recentFailures.filter(
@@ -170,7 +211,69 @@ const AdminSystemHealth = () => {
           </Button>
         </div>
 
-        {/* Stats cards */}
+        {/* BOOKING WEBHOOK ALERT — przyciągająca uwagę kafelka u góry, pulsująca przy przekroczeniu progu. */}
+        <Card
+          className={
+            bookingWebhookDenied >= BOOKING_WEBHOOK_DENIED_THRESHOLD
+              ? "mb-8 border-destructive ring-2 ring-destructive/40 animate-pulse"
+              : "mb-8 border-border"
+          }
+        >
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Webhook
+                className={
+                  bookingWebhookDenied >= BOOKING_WEBHOOK_DENIED_THRESHOLD
+                    ? "h-5 w-5 text-destructive"
+                    : "h-5 w-5 text-primary"
+                }
+              />
+              Webhook on-booking-created — odrzucenia 15 min
+              {bookingWebhookDenied >= BOOKING_WEBHOOK_DENIED_THRESHOLD && (
+                <Badge variant="destructive" className="ml-2">ALERT</Badge>
+              )}
+            </CardTitle>
+            <CardDescription>
+              Liczba wpisów <code className="text-xs">reason=rate_limited</code> dla endpointu{" "}
+              <code className="text-xs">on-booking-created</code> z ostatnich 15 minut. Próg alarmu:{" "}
+              <strong>{BOOKING_WEBHOOK_DENIED_THRESHOLD}</strong>. Auto-refresh 30s. Aktualizacja:{" "}
+              {webhookUpdated ? formatDistanceToNow(new Date(webhookUpdated), { addSuffix: true, locale: pl }) : "—"}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-baseline gap-3">
+              <span
+                className={
+                  bookingWebhookDenied >= BOOKING_WEBHOOK_DENIED_THRESHOLD
+                    ? "text-5xl font-bold text-destructive"
+                    : "text-5xl font-bold text-foreground"
+                }
+              >
+                {bookingWebhookDenied}
+              </span>
+              <span className="text-muted-foreground text-sm">odrzuceń / 15 min</span>
+            </div>
+            {bookingWebhookDenied >= BOOKING_WEBHOOK_DENIED_THRESHOLD ? (
+              <Alert variant="destructive" className="mt-4">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle>Możliwa pętla webhooków lub flood</AlertTitle>
+                <AlertDescription>
+                  Próg <strong>{BOOKING_WEBHOOK_DENIED_THRESHOLD}/15min</strong> przekroczony. Sprawdź:
+                  <ol className="list-decimal pl-5 mt-2 space-y-1 text-sm">
+                    <li>Logi <code>on-booking-created</code> — czy lecą prawdziwe insertowane bookingi?</li>
+                    <li>Tabela <code>bookings</code> — czy nie ma masowego importu?</li>
+                    <li>Konfiguracja webhooka DB — czy nie jest zapętlona (UPDATE → INSERT)?</li>
+                  </ol>
+                </AlertDescription>
+              </Alert>
+            ) : (
+              <p className="text-sm text-muted-foreground mt-3">
+                ✓ W normie — webhook DB zazwyczaj generuje 1 request na booking.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
           <Card>
             <CardHeader className="pb-2">
