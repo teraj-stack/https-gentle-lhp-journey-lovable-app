@@ -143,10 +143,11 @@ const AdminSystemHealth = () => {
   // żeby onOpenChange nie odpalił drugi raz auto-reveal (unikamy podwójnego toastu).
   const suppressCloseRevealRef = useRef(false);
 
-  // Auto-fade highlightu wiersza po 3s — żeby nie zostawiać trwałego kolorowego rzędu.
+  // Auto-fade highlightu wiersza po 10s — wystarczająco długo, żeby admin zdążył zauważyć
+  // wyróżnienie po zamknięciu modala, ale nie zostawia trwałego kolorowego rzędu.
   useEffect(() => {
     if (!highlightedRowKey) return;
-    const t = window.setTimeout(() => setHighlightedRowKey(null), 3000);
+    const t = window.setTimeout(() => setHighlightedRowKey(null), 10000);
     return () => window.clearTimeout(t);
   }, [highlightedRowKey]);
 
