@@ -457,42 +457,94 @@ const AdminSystemHealth = () => {
                     ✓ Brak retry'ów w ostatnich 24h.
                   </p>
                 ) : (
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>IP</TableHead>
-                          <TableHead>User-Agent</TableHead>
-                          <TableHead>Liczba retry</TableHead>
-                          <TableHead>Max retry-after (s)</TableHead>
-                          <TableHead>Ostatni</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {webhookRetryStats.sources.map((s) => {
-                          const isDeno = /^Deno\//i.test(s.ua);
-                          return (
-                            <TableRow key={`${s.ip}::${s.ua}`}>
-                              <TableCell className="font-mono text-xs">{s.ip}</TableCell>
-                              <TableCell className="font-mono text-xs">
-                                {isDeno ? (
-                                  <Badge variant="secondary" className="mr-2">webhook DB</Badge>
-                                ) : null}
-                                {s.ua}
-                              </TableCell>
-                              <TableCell>
-                                <Badge variant={s.count >= 50 ? "destructive" : "outline"}>{s.count}</Badge>
-                              </TableCell>
-                              <TableCell className="text-xs">{s.maxRetryAfter || "—"}</TableCell>
-                              <TableCell className="text-xs text-muted-foreground">
-                                {formatDistanceToNow(new Date(s.last), { addSuffix: true, locale: pl })}
-                              </TableCell>
+                  <>
+                    {/* Filtry tabeli retry'ów */}
+                    <div className="flex flex-wrap items-center gap-2 mb-3 p-3 rounded-lg border border-border bg-muted/30">
+                      <Filter className="h-4 w-4 text-muted-foreground shrink-0" />
+                      <Input
+                        placeholder="Filtr IP (substring)…"
+                        value={retryFilterIp}
+                        onChange={(e) => setRetryFilterIp(e.target.value)}
+                        className="h-8 w-full sm:w-44 font-mono text-xs"
+                      />
+                      <Input
+                        placeholder="Filtr User-Agent (substring)…"
+                        value={retryFilterUa}
+                        onChange={(e) => setRetryFilterUa(e.target.value)}
+                        className="h-8 w-full sm:w-64 font-mono text-xs"
+                      />
+                      <Toggle
+                        size="sm"
+                        pressed={retryDenoOnly}
+                        onPressedChange={setRetryDenoOnly}
+                        aria-label="Pokaż tylko webhook DB (Deno/*)"
+                        className="h-8 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+                      >
+                        <Webhook className="h-3.5 w-3.5 mr-1.5" />
+                        Tylko webhook DB (Deno/*)
+                      </Toggle>
+                      {retryFiltersActive && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8"
+                          onClick={() => {
+                            setRetryFilterIp("");
+                            setRetryFilterUa("");
+                            setRetryDenoOnly(false);
+                          }}
+                        >
+                          <X className="h-3.5 w-3.5 mr-1" /> Wyczyść
+                        </Button>
+                      )}
+                      <span className="text-xs text-muted-foreground ml-auto">
+                        {filteredRetrySources.length} / {webhookRetryStats.sources.length} źródeł
+                      </span>
+                    </div>
+
+                    {filteredRetrySources.length === 0 ? (
+                      <p className="text-muted-foreground py-4 text-sm text-center">
+                        Brak wyników dla aktywnych filtrów.
+                      </p>
+                    ) : (
+                      <div className="overflow-x-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>IP</TableHead>
+                              <TableHead>User-Agent</TableHead>
+                              <TableHead>Liczba retry</TableHead>
+                              <TableHead>Max retry-after (s)</TableHead>
+                              <TableHead>Ostatni</TableHead>
                             </TableRow>
-                          );
-                        })}
-                      </TableBody>
-                    </Table>
-                  </div>
+                          </TableHeader>
+                          <TableBody>
+                            {filteredRetrySources.map((s) => {
+                              const isDeno = /^Deno\//i.test(s.ua);
+                              return (
+                                <TableRow key={`${s.ip}::${s.ua}`}>
+                                  <TableCell className="font-mono text-xs">{s.ip}</TableCell>
+                                  <TableCell className="font-mono text-xs">
+                                    {isDeno ? (
+                                      <Badge variant="secondary" className="mr-2">webhook DB</Badge>
+                                    ) : null}
+                                    {s.ua}
+                                  </TableCell>
+                                  <TableCell>
+                                    <Badge variant={s.count >= 50 ? "destructive" : "outline"}>{s.count}</Badge>
+                                  </TableCell>
+                                  <TableCell className="text-xs">{s.maxRetryAfter || "—"}</TableCell>
+                                  <TableCell className="text-xs text-muted-foreground">
+                                    {formatDistanceToNow(new Date(s.last), { addSuffix: true, locale: pl })}
+                                  </TableCell>
+                                </TableRow>
+                              );
+                            })}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    )}
+                  </>
                 )}
               </>
             )}
