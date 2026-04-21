@@ -241,8 +241,15 @@ Deno.serve(async (req) => {
       .select('used_at, expires_at')
       .eq('token', token)
       .maybeSingle()
-    if (!row) return json(404, { error: 'invalid_token' })
-    if (row.used_at) return json(409, { error: 'already_used' })
+    if (!row) {
+      logFailure(supabase, { endpoint: ENDPOINT, reason: 'invalid_token', ip: ipForLog, userAgent, metadata: { method: 'POST', tokenPreview: token.slice(0, 8) } })
+      return json(404, { error: 'invalid_token' })
+    }
+    if (row.used_at) {
+      logFailure(supabase, { endpoint: ENDPOINT, reason: 'already_used', ip: ipForLog, userAgent, metadata: { method: 'POST', usedAt: row.used_at } })
+      return json(409, { error: 'already_used' })
+    }
+    logFailure(supabase, { endpoint: ENDPOINT, reason: 'expired', ip: ipForLog, userAgent, metadata: { method: 'POST', expiresAt: row.expires_at } })
     return json(410, { error: 'expired' })
   }
 
