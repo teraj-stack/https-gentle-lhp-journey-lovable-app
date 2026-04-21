@@ -21,6 +21,12 @@ import { toast } from "sonner";
 // w normalnym ruchu to outbound IP Supabase z webhookiem na INSERT).
 const BOOKING_WEBHOOK_DENIED_THRESHOLD = 50;
 
+// Próg alarmu dla retry'ów wewnętrznego webhooka DB (UA Deno/*) w oknie 1h.
+// Supabase webhook po 429 retry-uje z exponential backoff, więc 30 retry'ów
+// Deno/* w 1h to silny sygnał pętli (UPDATE → INSERT loop) lub spike'a
+// importu, który zalał shared rate limit.
+const BOOKING_WEBHOOK_DENO_RETRY_1H_THRESHOLD = 30;
+
 type AbuseRow = {
   ip: string;
   failure_count: number;
