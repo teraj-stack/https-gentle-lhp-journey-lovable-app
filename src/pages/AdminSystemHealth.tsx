@@ -157,6 +157,9 @@ const AdminSystemHealth = () => {
   const [lastJumpDirection, setLastJumpDirection] = useState<"forward" | "backward" | null>(null);
   // Czy lista podglądu dopasowań jest rozwinięta. Domyślnie zwinięta — żeby modal nie rósł.
   const [inspectListOpen, setInspectListOpen] = useState(false);
+  // Query wyszukiwania w "Podgląd dopasowań" — filtruje po IP/UA (case-insensitive substring).
+  // Reset przy zmianie źródła (zob. effect przy inspectSource).
+  const [inspectListQuery, setInspectListQuery] = useState("");
   // Per-source pamięć kursora — żeby po zamknięciu i ponownym otwarciu modala
   // dla tego samego IP+UA+scope, kursor i kierunek wskazywały to samo dopasowanie
   // co poprzednio. Klucz: `${ip}::${ua}::${scope}`. In-memory (Map w refie) — nie potrzeba
