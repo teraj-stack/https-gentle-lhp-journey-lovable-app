@@ -155,6 +155,8 @@ const AdminSystemHealth = () => {
   // Kierunek ostatniego skoku — używany do pokazania ikony ▼/▲ przy badge "Następne".
   // null = jeszcze nie wykonano skoku w tej sesji modala. Reset z inspectJumpIndex.
   const [lastJumpDirection, setLastJumpDirection] = useState<"forward" | "backward" | null>(null);
+  // Czy lista podglądu dopasowań jest rozwinięta. Domyślnie zwinięta — żeby modal nie rósł.
+  const [inspectListOpen, setInspectListOpen] = useState(false);
   // Per-source pamięć kursora — żeby po zamknięciu i ponownym otwarciu modala
   // dla tego samego IP+UA+scope, kursor i kierunek wskazywały to samo dopasowanie
   // co poprzednio. Klucz: `${ip}::${ua}::${scope}`. In-memory (Map w refie) — nie potrzeba
