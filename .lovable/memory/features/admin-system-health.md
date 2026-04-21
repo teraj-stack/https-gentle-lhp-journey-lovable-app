@@ -1,0 +1,17 @@
+---
+name: Admin System Health & Token Abuse Detection
+description: Strona /admin/system-health z monitoringiem podejrzanych prób użycia tokenów (404 invalid + 429 rate-limit + 410 expired + 409 already_used) — alert dla IP ≥10 prób / 10 min
+type: feature
+---
+
+Tabela `token_validation_failures` (RLS: service_role insert, admin SELECT) loguje wszystkie nieudane próby użycia tokena na endpoincie `update-booking-status`. Kolumny: `endpoint`, `reason` (CHECK: invalid_token | rate_limited | expired | already_used), `ip`, `user_agent`, `metadata` (jsonb, np. `tokenPreview`, `method`, `retryAfterSec`).
+
+Edge function `update-booking-status` używa `EdgeRuntime.waitUntil()` (fire-and-forget) żeby nie blokować response — logowanie nie wpływa na latencję.
+
+View `recent_token_abuse_ips` (security_invoker = on) agreguje IP z ≥10 nieudanymi próbami w ostatnich 10 min — to próg detekcji brute-force pokazywany w alercie na `/admin/system-health`.
+
+Cleanup: funkcja `cleanup_old_token_failures()` usuwa wpisy >30 dni (do podpięcia pod cron).
+
+UI: `src/pages/AdminSystemHealth.tsx` — 3 karty stats (total/24h/unique IPs) + tabela podejrzanych IP (auto-refresh 30s) + ostatnie 100 nieudanych prób z kolorowymi badge'ami per `reason`. Link z `AdminDashboard` (przycisk "System Health" z ikoną Activity).
+
+Znana ograniczenia: rate_limited count w praktyce zawsze = 0, bo in-memory rate limiter w edge function jest per-isolate i Supabase fan-out praktycznie go obchodzi (zweryfikowane: 30/30 → 404). Realny sygnał alarmowy daje `invalid_token_count` (próby brute-force fake tokenami).
