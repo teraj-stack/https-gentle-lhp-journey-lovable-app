@@ -164,7 +164,7 @@ const AdminSystemHealth = () => {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => { refetchAbuse(); refetchFailures(); }}
+            onClick={() => { refetchAbuse(); refetchFailures(); refetchRateLimited(); }}
           >
             <RefreshCw className="h-4 w-4 mr-2" /> Odśwież
           </Button>
@@ -246,6 +246,62 @@ const AdminSystemHealth = () => {
                         </TableCell>
                         <TableCell className="max-w-xs truncate text-xs text-muted-foreground" title={row.last_user_agent ?? ""}>
                           {row.last_user_agent ?? "—"}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* TOP RATE-LIMITED IPs */}
+        <Card className="mb-8 border-destructive/40">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Ban className="h-5 w-5 text-destructive" />
+              Top rate-limited IP (aktywne nadużycia)
+            </CardTitle>
+            <CardDescription>
+              Agregat z <code className="text-xs">rate_limit_buckets</code> — IP × endpoint, których count w jakimkolwiek oknie przekroczył limit.
+              "Denied" = liczba odrzuconych requestów (count − limit). Niezależne od <code className="text-xs">token_validation_failures</code>.
+              Auto-refresh 30s. Aktualizacja:{" "}
+              {rateLimitedUpdated ? formatDistanceToNow(new Date(rateLimitedUpdated), { addSuffix: true, locale: pl }) : "—"}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {rateLimitedLoading ? (
+              <p className="text-muted-foreground">Ładowanie…</p>
+            ) : rateLimitedIps.length === 0 ? (
+              <p className="text-muted-foreground py-4">
+                ✓ Żadne IP nie przekracza obecnie limitu rate-limit.
+              </p>
+            ) : (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>IP</TableHead>
+                      <TableHead>Endpoint</TableHead>
+                      <TableHead>Denied</TableHead>
+                      <TableHead>Hits (total)</TableHead>
+                      <TableHead>Okien</TableHead>
+                      <TableHead>Ostatnie okno</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {rateLimitedIps.map((row) => (
+                      <TableRow key={`${row.endpoint}::${row.ip}`}>
+                        <TableCell className="font-mono text-sm">{row.ip}</TableCell>
+                        <TableCell className="font-mono text-xs">{row.endpoint}</TableCell>
+                        <TableCell>
+                          <Badge variant="destructive">{row.denied}</Badge>
+                        </TableCell>
+                        <TableCell>{row.hits}</TableCell>
+                        <TableCell>{row.windows}</TableCell>
+                        <TableCell className="text-xs text-muted-foreground">
+                          {formatDistanceToNow(new Date(row.last_window), { addSuffix: true, locale: pl })}
                         </TableCell>
                       </TableRow>
                     ))}
