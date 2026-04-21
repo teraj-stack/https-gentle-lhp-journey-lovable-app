@@ -13,11 +13,14 @@
 //   - handle-reminder-opt-out    (10/60s)
 //   - verify-turnstile           (30/60s)
 //   - preview-transactional-email (10/60s)
+//   - on-booking-created         (60/60s)  ← DB webhook; Supabase retries
+//                                            on 429 with backoff, harmless.
 //
 // update-booking-status — RL intentionally removed (token alone is the
 // security boundary: 256-bit + single-use + 7d expiry). See its file.
 //
-// on-booking-created — still uses the in-memory limiter (60/60s, low risk).
+// No remaining in-memory consumers — checkRateLimit() kept for legacy
+// only and may be removed in a future cleanup.
 // ============================================================
 
 
