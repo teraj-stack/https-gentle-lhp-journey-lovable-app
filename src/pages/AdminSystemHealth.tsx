@@ -1157,24 +1157,45 @@ const AdminSystemHealth = () => {
             </p>
           ) : (
             <>
-              <div className="relative shrink-0">
-                <Filter className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
-                <Input
-                  value={inspectQuery}
-                  onChange={(e) => setInspectQuery(e.target.value)}
-                  placeholder="Filtruj po metadata (np. tokenPreview, method, fragment ID)…"
-                  className="h-8 pl-8 pr-8 text-xs"
-                />
-                {inspectQuery && (
-                  <button
-                    type="button"
-                    onClick={() => setInspectQuery("")}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                    aria-label="Wyczyść filtr"
-                  >
-                    <X className="h-3.5 w-3.5" />
-                  </button>
-                )}
+              <div className="flex items-center gap-2 shrink-0">
+                <div className="relative flex-1">
+                  <Filter className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+                  <Input
+                    value={inspectQuery}
+                    onChange={(e) => setInspectQuery(e.target.value)}
+                    placeholder="Filtruj po metadata (np. tokenPreview, method, fragment ID)…"
+                    className="h-8 pl-8 pr-8 text-xs"
+                  />
+                  {inspectQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setInspectQuery("")}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      aria-label="Wyczyść filtr"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 gap-1.5 shrink-0 text-xs"
+                  onClick={() => setInspectSort((s) => (s === "desc" ? "asc" : "desc"))}
+                  title={inspectSort === "desc" ? "Pokaż najstarsze pierwsze" : "Pokaż najnowsze pierwsze"}
+                >
+                  {inspectSort === "desc" ? (
+                    <>
+                      <ArrowDownWideNarrow className="h-3.5 w-3.5" />
+                      Najnowsze
+                    </>
+                  ) : (
+                    <>
+                      <ArrowUpWideNarrow className="h-3.5 w-3.5" />
+                      Najstarsze
+                    </>
+                  )}
+                </Button>
               </div>
               {inspectFilteredRecords.length === 0 ? (
                 <p className="text-sm text-muted-foreground py-8 text-center">
