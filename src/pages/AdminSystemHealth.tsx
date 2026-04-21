@@ -514,6 +514,25 @@ const AdminSystemHealth = () => {
     );
   }, [inspectSource, webhookRetryStats.sources]);
 
+  // Limit pokrewnych wierszy podświetlanych w tabeli (oprócz exact matchu) — chroni
+  // przed tym, że dla popularnego UA (np. Deno/*) cała tabela by się "zalała" highlightem.
+  const MAX_RELATED_HIGHLIGHTS = 50;
+
+  // Liczba pokrewnych wierszy (bez exact) pasujących do bieżącego inspectSource
+  // wg aktualnie wybranego scope. Używane w modalu (komunikat + ostrzeżenie o limicie)
+  // i w toaście po reveal.
+  const relatedMatchCount = useMemo(() => {
+    if (!inspectSource) return 0;
+    if (highlightScope === "exact") return 0;
+    return webhookRetryStats.sources.filter((s) => {
+      const isExact = s.ip === inspectSource.ip && s.ua === inspectSource.ua;
+      if (isExact) return false;
+      if (highlightScope === "same-ip") return s.ip === inspectSource.ip;
+      if (highlightScope === "same-ua") return s.ua === inspectSource.ua;
+      return false;
+    }).length;
+  }, [inspectSource, highlightScope, webhookRetryStats.sources]);
+
   // Rekordy filtrowane do modala inspekcji (wybrane IP + UA, max 50 ostatnich).
   const inspectRecords = useMemo(() => {
     if (!inspectSource) return [];
