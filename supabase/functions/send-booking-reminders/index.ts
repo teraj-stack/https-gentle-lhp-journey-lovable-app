@@ -293,13 +293,13 @@ Deno.serve(async (req) => {
   const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
   let bookings: BookingRow[]
-  let targetDate: string
-  let timeWindow: { start: string; end: string } | undefined
+  let windowStart: string
+  let windowEnd: string
   try {
     const fetched = await fetchEligibleBookings(supabase, cfg)
     bookings = fetched.bookings
-    targetDate = fetched.targetDate
-    timeWindow = fetched.timeWindow
+    windowStart = fetched.windowStart
+    windowEnd = fetched.windowEnd
   } catch (err) {
     console.error(`[reminders/${windowKey}] fetch failed:`, err)
     return new Response(
@@ -309,9 +309,7 @@ Deno.serve(async (req) => {
   }
 
   console.log(
-    `[reminders/${windowKey}] target=${targetDate}` +
-      (timeWindow ? ` window=${timeWindow.start}..${timeWindow.end}` : '') +
-      ` candidates=${bookings.length}`,
+    `[reminders/${windowKey}] column=${cfg.scheduleColumn} window=${windowStart}..${windowEnd} candidates=${bookings.length}`,
   )
 
   if (bookings.length === 0) {
@@ -319,8 +317,9 @@ Deno.serve(async (req) => {
       JSON.stringify({
         ok: true,
         window: windowKey,
-        targetDate,
-        ...(timeWindow ? { windowStart: timeWindow.start, windowEnd: timeWindow.end } : {}),
+        scheduleColumn: cfg.scheduleColumn,
+        windowStart,
+        windowEnd,
         processed: 0,
         sent: 0,
         skipped: 0,
@@ -346,8 +345,9 @@ Deno.serve(async (req) => {
     JSON.stringify({
       ok: failed === 0,
       window: windowKey,
-      targetDate,
-      ...(timeWindow ? { windowStart: timeWindow.start, windowEnd: timeWindow.end } : {}),
+      scheduleColumn: cfg.scheduleColumn,
+      windowStart,
+      windowEnd,
       processed: results.length,
       sent,
       skipped,
