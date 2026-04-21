@@ -1094,14 +1094,15 @@ const AdminSystemHealth = () => {
                 className="h-8 gap-1.5 shrink-0"
                 disabled={inspectRecords.length === 0}
                 onClick={() => {
-                  if (!inspectSource || inspectRecords.length === 0) return;
-                  // Eksport tylko aktualnie wyświetlanych rekordów (po filtrach IP+UA, max 50).
+                  if (!inspectSource || inspectFilteredRecords.length === 0) return;
+                  // Eksport tylko aktualnie wyświetlanych rekordów (po filtrach IP+UA + tekst).
                   const payload = {
                     exportedAt: new Date().toISOString(),
                     endpoint: "on-booking-created",
                     source: { ip: inspectSource.ip, userAgent: inspectSource.ua },
-                    count: inspectRecords.length,
-                    records: inspectRecords,
+                    query: inspectQuery.trim() || null,
+                    count: inspectFilteredRecords.length,
+                    records: inspectFilteredRecords,
                   };
                   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
                   const url = URL.createObjectURL(blob);
@@ -1114,8 +1115,9 @@ const AdminSystemHealth = () => {
                   a.click();
                   document.body.removeChild(a);
                   URL.revokeObjectURL(url);
-                  toast.success(`Wyeksportowano ${inspectRecords.length} rekordów`);
+                  toast.success(`Wyeksportowano ${inspectFilteredRecords.length} rekordów`);
                 }}
+                disabled={inspectFilteredRecords.length === 0}
                 title="Pobierz aktualnie wyświetlane rekordy jako JSON"
               >
                 <Download className="h-3.5 w-3.5" />
