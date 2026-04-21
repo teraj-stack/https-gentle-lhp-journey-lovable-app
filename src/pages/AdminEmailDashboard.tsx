@@ -18,7 +18,6 @@ import { format, subDays, subHours } from "date-fns";
 import { pl } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
-import { useState as useStateLocal } from "react";
 
 type EmailRow = {
   id: string;
@@ -431,6 +430,53 @@ function StatCard({ label, value, variant = "default" }: { label: string; value:
         <p className={cn("text-2xl font-bold mt-1", colorClass)}>{value}</p>
       </CardContent>
     </Card>
+  );
+}
+
+function RetryDlqButton({ onComplete }: { onComplete: () => void }) {
+  const [loading, setLoading] = useState(false);
+
+  const handleRetry = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("retry-dlq-emails", {
+        body: { triggered_by: "manual_admin" },
+      });
+      if (error) throw error;
+      const summary = data as {
+        candidates_found: number;
+        retried_succeeded: number;
+        retried_failed: number;
+        skipped_non_retryable: number;
+        skipped_already_retried: number;
+      };
+      if (summary.candidates_found === 0) {
+        toast({
+          title: "Brak kandydatów do retry",
+          description: `Pominięto ${summary.skipped_non_retryable} non-retryable + ${summary.skipped_already_retried} już ponowionych.`,
+        });
+      } else {
+        toast({
+          title: `Retry: ${summary.retried_succeeded}/${summary.candidates_found}`,
+          description: `Sukces: ${summary.retried_succeeded}, błędy: ${summary.retried_failed}.`,
+        });
+      }
+      onComplete();
+    } catch (e) {
+      toast({
+        title: "Błąd retry",
+        description: e instanceof Error ? e.message : "Nieznany błąd",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Button variant="outline" size="sm" onClick={handleRetry} disabled={loading}>
+      <RotateCw className={cn("w-4 h-4 mr-1", loading && "animate-spin")} /> Retry DLQ
+    </Button>
   );
 }
 
