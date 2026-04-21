@@ -160,6 +160,24 @@ const AdminSystemHealth = () => {
     }
   }, [autoRevealEnabled]);
 
+  // Preferencja: zakres podświetlenia po reveal.
+  //  - "exact"  → tylko wiersz z dokładnym IP+UA (jeden, mocny)
+  //  - "same-ip" → wiersz źródłowy mocno + wszystkie pozostałe z tym samym IP delikatnie (default)
+  const HIGHLIGHT_SCOPE_LS_KEY = "admin-system-health.highlight-scope";
+  type HighlightScope = "exact" | "same-ip";
+  const [highlightScope, setHighlightScope] = useState<HighlightScope>(() => {
+    if (typeof window === "undefined") return "same-ip";
+    const v = window.localStorage.getItem(HIGHLIGHT_SCOPE_LS_KEY);
+    return v === "exact" ? "exact" : "same-ip";
+  });
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(HIGHLIGHT_SCOPE_LS_KEY, highlightScope);
+    } catch {
+      // ignoruj w private mode
+    }
+  }, [highlightScope]);
+
   // Auto-fade highlightu wiersza po 10s — wystarczająco długo, żeby admin zdążył zauważyć
   // wyróżnienie po zamknięciu modala, ale nie zostawia trwałego kolorowego rzędu.
   useEffect(() => {
