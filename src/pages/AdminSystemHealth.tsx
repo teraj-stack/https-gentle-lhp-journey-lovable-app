@@ -533,6 +533,30 @@ const AdminSystemHealth = () => {
     }).length;
   }, [inspectSource, highlightScope, webhookRetryStats.sources]);
 
+  // Set kluczy `ip::ua` pokrewnych wierszy do podświetlenia (bez exact). Liczony na
+  // podstawie `highlightedSource` (NIE inspectSource — modal może być już zamknięty),
+  // ograniczony do MAX_RELATED_HIGHLIGHTS żeby nie zalać UI dla popularnych UA.
+  // Wybieramy pierwsze N w naturalnej kolejności webhookRetryStats.sources (sort desc by count).
+  const relatedHighlightKeys = useMemo(() => {
+    const set = new Set<string>();
+    if (!highlightedSource || highlightScope === "exact") return set;
+    let added = 0;
+    for (const s of webhookRetryStats.sources) {
+      if (added >= MAX_RELATED_HIGHLIGHTS) break;
+      const isExact = s.ip === highlightedSource.ip && s.ua === highlightedSource.ua;
+      if (isExact) continue;
+      const matches =
+        highlightScope === "same-ip"
+          ? s.ip === highlightedSource.ip
+          : s.ua === highlightedSource.ua;
+      if (matches) {
+        set.add(`${s.ip}::${s.ua}`);
+        added++;
+      }
+    }
+    return set;
+  }, [highlightedSource, highlightScope, webhookRetryStats.sources]);
+
   // Rekordy filtrowane do modala inspekcji (wybrane IP + UA, max 50 ostatnich).
   const inspectRecords = useMemo(() => {
     if (!inspectSource) return [];
