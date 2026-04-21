@@ -23,9 +23,10 @@ const ENDPOINT = 'on-booking-created'
 const LIMIT = 60 // musi pasować do WEBHOOK_LIMIT.max w index.ts
 const TOTAL_REQUESTS = 80 // 20 powyżej limitu
 
-// Unikalne IP per przebieg testu, aby nie kolidować z innymi przebiegami
-// w tym samym oknie 60s (fixed-window).
-const TEST_IP = `203.0.113.${Math.floor(Math.random() * 200) + 10}`
+// UWAGA: Supabase Functions runtime nadpisuje x-forwarded-for własnym
+// IP wychodzącym (klient testowy nie może go sfałszować). Dlatego nie
+// filtrujemy bucketu po IP testera — szukamy bucketu o count >= TOTAL_REQUESTS
+// w aktualnym oknie czasowym dla naszego endpointu.
 
 function buildPayload() {
   return {
