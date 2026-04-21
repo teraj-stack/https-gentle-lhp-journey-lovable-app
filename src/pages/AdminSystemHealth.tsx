@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { ArrowLeft, ShieldAlert, Activity, AlertTriangle, RefreshCw, Ban, Webhook, Repeat, Filter, X, Eye, Download, ArrowDownWideNarrow, ArrowUpWideNarrow, Locate, Info } from "lucide-react";
+import { ArrowLeft, ShieldAlert, Activity, AlertTriangle, RefreshCw, Ban, Webhook, Repeat, Filter, X, Eye, Download, ArrowDownWideNarrow, ArrowUpWideNarrow, Locate, Info, ChevronLeft, ChevronRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Toggle } from "@/components/ui/toggle";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -143,6 +143,12 @@ const AdminSystemHealth = () => {
   // Ref-flag: true gdy zamknięcie modala wywołujemy programowo z revealRowInTable,
   // żeby onOpenChange nie odpalił drugi raz auto-reveal (unikamy podwójnego toastu).
   const suppressCloseRevealRef = useRef(false);
+  // Nawigator dopasowań nad tabelą — uruchamiany przyciskiem "Pokaż kolejne dopasowania" w modalu.
+  // keys: pełna lista ip::ua do iteracji (exact na pozycji 0, potem related w kolejności sortowania).
+  // index: aktualnie wskazana pozycja (przy 0 = exact). Null = navigator zamknięty.
+  const [matchNavigator, setMatchNavigator] = useState<{ keys: string[]; index: number } | null>(null);
+  // Timer auto-hide nawigatora po 30s bezczynności.
+  const navigatorHideTimerRef = useRef<number | null>(null);
   // Preferencja użytkownika: czy zamknięcie modala / klik "Pokaż w tabeli" ma przewijać
   // i podświetlać wiersz w tabeli. Trzymane w localStorage żeby przeżyło reload.
   const AUTO_REVEAL_LS_KEY = "admin-system-health.auto-reveal-row";
@@ -285,6 +291,56 @@ const AdminSystemHealth = () => {
       });
     });
   };
+
+  // Resetuje timer auto-hide (30s) — wywoływany przy każdej interakcji z navigatorem.
+  const bumpNavigatorTimer = () => {
+    if (navigatorHideTimerRef.current !== null) {
+      window.clearTimeout(navigatorHideTimerRef.current);
+    }
+    navigatorHideTimerRef.current = window.setTimeout(() => {
+      setMatchNavigator(null);
+      navigatorHideTimerRef.current = null;
+    }, 30_000);
+  };
+
+  // Scrolluje do wiersza wskazanego przez index w keys.
+  const scrollToNavigatorIndex = (idx: number, keys: string[]) => {
+    const key = keys[idx];
+    if (!key) return;
+    const el = document.querySelector<HTMLElement>(`[data-retry-row-key="${CSS.escape(key)}"]`);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  };
+
+  // Otwiera nawigator dopasowań. keys[0] musi być exact (zostanie scrollowany pierwszy
+  // przez revealRowInTable, nie przez navigator).
+  const openMatchNavigator = (keys: string[]) => {
+    if (keys.length <= 1) return; // brak pokrewnych — nic do nawigacji
+    setMatchNavigator({ keys, index: 0 });
+    bumpNavigatorTimer();
+  };
+
+  const goToNavigatorOffset = (offset: number) => {
+    setMatchNavigator((nav) => {
+      if (!nav) return nav;
+      const len = nav.keys.length;
+      const nextIdx = ((nav.index + offset) % len + len) % len;
+      queueMicrotask(() => scrollToNavigatorIndex(nextIdx, nav.keys));
+      return { ...nav, index: nextIdx };
+    });
+    bumpNavigatorTimer();
+  };
+
+  // Cleanup timera przy unmount.
+  useEffect(() => {
+    return () => {
+      if (navigatorHideTimerRef.current !== null) {
+        window.clearTimeout(navigatorHideTimerRef.current);
+      }
+    };
+  }, []);
+
 
   // Skrót klawiszowy w modalu inspekcji: Ctrl/Cmd+K zawsze, Enter tylko gdy fokus nie jest
   // w polu tekstowym (żeby nie kolidować z wpisywaniem w polu wyszukiwania).
@@ -556,6 +612,29 @@ const AdminSystemHealth = () => {
     }
     return set;
   }, [highlightedSource, highlightScope, webhookRetryStats.sources]);
+
+  // Buduje pełną listę kluczy ip::ua do nawigacji "Pokaż kolejne dopasowania":
+  // [0] = exact (wiersz źródłowy z modala), [1..N] = related (max MAX_RELATED_HIGHLIGHTS),
+  // w naturalnej kolejności sortowania źródeł (desc by count).
+  const buildMatchKeys = (
+    source: { ip: string; ua: string },
+    scope: HighlightScope,
+  ): string[] => {
+    const keys = [`${source.ip}::${source.ua}`];
+    if (scope === "exact") return keys;
+    let added = 0;
+    for (const s of webhookRetryStats.sources) {
+      if (added >= MAX_RELATED_HIGHLIGHTS) break;
+      const isExact = s.ip === source.ip && s.ua === source.ua;
+      if (isExact) continue;
+      const matches = scope === "same-ip" ? s.ip === source.ip : s.ua === source.ua;
+      if (matches) {
+        keys.push(`${s.ip}::${s.ua}`);
+        added++;
+      }
+    }
+    return keys;
+  };
 
   // Rekordy filtrowane do modala inspekcji (wybrane IP + UA, max 50 ostatnich).
   const inspectRecords = useMemo(() => {
@@ -1123,6 +1202,57 @@ const AdminSystemHealth = () => {
                       </span>
                     </div>
 
+                    {/* Pasek nawigatora dopasowań — pojawia się po kliknięciu "Pokaż kolejne dopasowania"
+                        w modalu. Auto-hide po 30s bezczynności. */}
+                    {matchNavigator && matchNavigator.keys.length > 1 && (
+                      <div className="mb-3 flex items-center gap-2 rounded-md border border-primary/40 bg-primary/5 px-3 py-2 text-sm">
+                        <Locate className="h-4 w-4 text-primary shrink-0" />
+                        <span className="text-primary font-medium">
+                          Dopasowanie {matchNavigator.index + 1} z {matchNavigator.keys.length}
+                        </span>
+                        <span className="text-xs text-muted-foreground hidden sm:inline">
+                          {matchNavigator.index === 0 ? "(wiersz źródłowy)" : "(pokrewny)"}
+                        </span>
+                        <div className="ml-auto flex items-center gap-1">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-7 px-2"
+                            onClick={() => goToNavigatorOffset(-1)}
+                            title="Poprzednie dopasowanie (cyklicznie)"
+                          >
+                            <ChevronLeft className="h-3.5 w-3.5" />
+                            <span className="hidden sm:inline ml-1">Poprzednie</span>
+                          </Button>
+                          <Button
+                            variant="default"
+                            size="sm"
+                            className="h-7 px-2"
+                            onClick={() => goToNavigatorOffset(1)}
+                            title="Następne dopasowanie (cyklicznie)"
+                          >
+                            <span className="hidden sm:inline mr-1">Następne</span>
+                            <ChevronRight className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 w-7 p-0"
+                            onClick={() => {
+                              setMatchNavigator(null);
+                              if (navigatorHideTimerRef.current !== null) {
+                                window.clearTimeout(navigatorHideTimerRef.current);
+                                navigatorHideTimerRef.current = null;
+                              }
+                            }}
+                            title="Zamknij nawigator"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+
                     {filteredRetrySources.length === 0 ? (
                       <p className="text-muted-foreground py-4 text-sm text-center">
                         Brak wyników dla aktywnych filtrów.
@@ -1160,16 +1290,23 @@ const AdminSystemHealth = () => {
                                 isInRelatedSet && highlightScope === "same-ua";
                               const isRelatedHighlight = isInRelatedSet;
                               const isHighlighted = isExactHighlight || isRelatedHighlight;
+                              // Czy navigator dopasowań aktualnie wskazuje ten wiersz —
+                              // dodajemy mocniejszy ring (primary, nie primary/40), żeby admin
+                              // od razu widział "gdzie jestem" w sekwencji ◀ Następne ▶.
+                              const isNavigatorActive =
+                                !!matchNavigator && matchNavigator.keys[matchNavigator.index] === rowKey;
                               const row = (
                                 <TableRow
                                   key={rowKey}
                                   data-retry-row-key={rowKey}
                                   className={
-                                    isExactHighlight
-                                      ? "bg-primary/15 ring-2 ring-primary/40 transition-colors cursor-help"
-                                      : isRelatedHighlight
-                                        ? "bg-primary/5 transition-colors cursor-help"
-                                        : "transition-colors"
+                                    isNavigatorActive
+                                      ? "bg-primary/20 ring-2 ring-primary transition-colors cursor-help"
+                                      : isExactHighlight
+                                        ? "bg-primary/15 ring-2 ring-primary/40 transition-colors cursor-help"
+                                        : isRelatedHighlight
+                                          ? "bg-primary/5 transition-colors cursor-help"
+                                          : "transition-colors"
                                   }
                                 >
                                   <TableCell className="font-mono text-xs">{s.ip}</TableCell>
@@ -1506,6 +1643,28 @@ const AdminSystemHealth = () => {
                     ⏎
                   </kbd>
                 </Button>
+                {/* Przycisk "Pokaż kolejne dopasowania" — tylko gdy są pokrewne wiersze
+                    do nawigacji (auto-reveal włączony, scope != exact, related > 0). */}
+                {autoRevealEnabled && relatedMatchCount > 0 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 gap-1.5 border-primary/40 text-primary hover:bg-primary/10"
+                    onClick={() => {
+                      if (!inspectSource) return;
+                      const keys = buildMatchKeys(inspectSource, highlightScope);
+                      // Najpierw standardowy reveal exact (zamknie modal, scrolluje, podświetla),
+                      // a potem otwiera nawigator do iteracji po pokrewnych przyciskami ◀ ▶.
+                      revealRowInTable(inspectSource.ip, inspectSource.ua);
+                      // Drugi rAF, żeby navigator pojawił się po DOM-update revealu.
+                      requestAnimationFrame(() => requestAnimationFrame(() => openMatchNavigator(keys)));
+                    }}
+                    title={`Zamknij modal i włącz nawigator po ${relatedMatchCount} pokrewnych dopasowaniach`}
+                  >
+                    <ChevronRight className="h-3.5 w-3.5" />
+                    Pokaż kolejne dopasowania ({relatedMatchCount})
+                  </Button>
+                )}
               <Button
                 variant="outline"
                 size="sm"
