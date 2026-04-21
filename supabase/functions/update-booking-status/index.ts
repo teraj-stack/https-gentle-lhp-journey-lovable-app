@@ -70,14 +70,56 @@ function checkRateLimit(ip: string): { allowed: boolean; retryAfterSec: number; 
   return { allowed: true, retryAfterSec: 0, remaining: RATE_LIMIT_MAX - bucket.count }
 }
 
+// Fire-and-forget log do tabeli token_validation_failures.
+// Wykorzystuje EdgeRuntime.waitUntil żeby nie blokować response (jeśli dostępne),
+// w przeciwnym wypadku po prostu nie czekamy na rezultat.
+function logFailure(
+  supabase: ReturnType<typeof createClient>,
+  payload: { endpoint: string; reason: 'invalid_token' | 'rate_limited' | 'expired' | 'already_used'; ip: string | null; userAgent: string | null; metadata?: Record<string, unknown> },
+) {
+  const promise = supabase.from('token_validation_failures').insert({
+    endpoint: payload.endpoint,
+    reason: payload.reason,
+    ip: payload.ip,
+    user_agent: payload.userAgent,
+    metadata: payload.metadata ?? null,
+  }).then(({ error }) => {
+    if (error) console.error('Failed to log token_validation_failure:', error.message)
+  })
+  // @ts-ignore - EdgeRuntime jest dostępne w Supabase Edge Runtime
+  if (typeof EdgeRuntime !== 'undefined' && typeof EdgeRuntime.waitUntil === 'function') {
+    // @ts-ignore
+    EdgeRuntime.waitUntil(promise)
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders })
 
-  // Rate limit dla GET i POST (OPTIONS przepuszczamy dla CORS preflight).
   const ip = getClientIp(req)
+  const userAgent = req.headers.get('user-agent')
+
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')
+  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+  if (!supabaseUrl || !supabaseServiceKey) {
+    return json(500, { error: 'Server configuration error' })
+  }
+
+  const supabase = createClient(supabaseUrl, supabaseServiceKey)
+  const ipForLog = ip === 'unknown' ? null : ip
+  const ENDPOINT = 'update-booking-status'
+
+  // Rate limit dla GET i POST (OPTIONS przepuszczamy dla CORS preflight).
   const rl = checkRateLimit(ip)
   if (!rl.allowed) {
-    console.warn(`Rate limit exceeded for IP ${ip} on update-booking-status`)
+    console.warn(`Rate limit exceeded for IP ${ip} on ${ENDPOINT}`)
+    logFailure(supabase, {
+      endpoint: ENDPOINT,
+      reason: 'rate_limited',
+      ip: ipForLog,
+      userAgent,
+      metadata: { retryAfterSec: rl.retryAfterSec, method: req.method },
+    })
     return new Response(
       JSON.stringify({ error: 'rate_limited', retryAfterSec: rl.retryAfterSec }),
       {
@@ -92,14 +134,6 @@ Deno.serve(async (req) => {
       },
     )
   }
-
-  const supabaseUrl = Deno.env.get('SUPABASE_URL')
-  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
-  if (!supabaseUrl || !supabaseServiceKey) {
-    return json(500, { error: 'Server configuration error' })
-  }
-
-  const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
   // ============================================================
   // GET — walidacja tokena (preview na stronie /booking-action)
@@ -119,7 +153,10 @@ Deno.serve(async (req) => {
       console.error('Token lookup failed:', tokenError)
       return json(500, { error: 'Internal error' })
     }
-    if (!tokenRow) return json(404, { valid: false, reason: 'not_found' })
+    if (!tokenRow) {
+      logFailure(supabase, { endpoint: ENDPOINT, reason: 'invalid_token', ip: ipForLog, userAgent, metadata: { method: 'GET', tokenPreview: token.slice(0, 8) } })
+      return json(404, { valid: false, reason: 'not_found' })
+    }
 
     const expired = new Date(tokenRow.expires_at).getTime() < Date.now()
     const used = !!tokenRow.used_at
@@ -204,8 +241,15 @@ Deno.serve(async (req) => {
       .select('used_at, expires_at')
       .eq('token', token)
       .maybeSingle()
-    if (!row) return json(404, { error: 'invalid_token' })
-    if (row.used_at) return json(409, { error: 'already_used' })
+    if (!row) {
+      logFailure(supabase, { endpoint: ENDPOINT, reason: 'invalid_token', ip: ipForLog, userAgent, metadata: { method: 'POST', tokenPreview: token.slice(0, 8) } })
+      return json(404, { error: 'invalid_token' })
+    }
+    if (row.used_at) {
+      logFailure(supabase, { endpoint: ENDPOINT, reason: 'already_used', ip: ipForLog, userAgent, metadata: { method: 'POST', usedAt: row.used_at } })
+      return json(409, { error: 'already_used' })
+    }
+    logFailure(supabase, { endpoint: ENDPOINT, reason: 'expired', ip: ipForLog, userAgent, metadata: { method: 'POST', expiresAt: row.expires_at } })
     return json(410, { error: 'expired' })
   }
 
