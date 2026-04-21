@@ -2083,8 +2083,34 @@ const AdminSystemHealth = () => {
                       );
                     }
                     return (
-                      <div className="mt-2 max-h-48 overflow-y-auto rounded-md border border-border/60 bg-muted/30 divide-y divide-border/40">
-                        {filtered.map(({ key, i }) => {
+                      <div
+                        data-list-nav="true"
+                        className="mt-2 max-h-48 overflow-y-auto rounded-md border border-border/60 bg-muted/30 divide-y divide-border/40"
+                        onKeyDown={(e) => {
+                          // Roving navigation strzałkami — przesuwa fokus po przyciskach
+                          // wewnątrz listy. Enter / Space już są natywnie obsłużone przez
+                          // <button> (wywołują onClick → performJumpToMatch).
+                          if (e.key !== "ArrowDown" && e.key !== "ArrowUp" && e.key !== "Home" && e.key !== "End") return;
+                          const container = e.currentTarget;
+                          const items = Array.from(
+                            container.querySelectorAll<HTMLButtonElement>('button[data-list-item="true"]'),
+                          );
+                          if (items.length === 0) return;
+                          const activeIdx = items.findIndex((b) => b === document.activeElement);
+                          let nextIdx = activeIdx;
+                          if (e.key === "ArrowDown") nextIdx = activeIdx < 0 ? 0 : Math.min(items.length - 1, activeIdx + 1);
+                          else if (e.key === "ArrowUp") nextIdx = activeIdx < 0 ? 0 : Math.max(0, activeIdx - 1);
+                          else if (e.key === "Home") nextIdx = 0;
+                          else if (e.key === "End") nextIdx = items.length - 1;
+                          if (nextIdx !== activeIdx) {
+                            e.preventDefault();
+                            items[nextIdx]?.focus();
+                            // Plynne wyrównanie fokusowanego elementu w widoku scrollowalnym.
+                            items[nextIdx]?.scrollIntoView({ block: "nearest" });
+                          }
+                        }}
+                      >
+                        {filtered.map(({ key, i }, listIdx) => {
                           const [ip, ua] = key.split("::");
                           // Lookup count z webhookRetryStats.sources (deterministycznie po ip+ua).
                           const sourceMeta = webhookRetryStats.sources.find(
@@ -2094,19 +2120,25 @@ const AdminSystemHealth = () => {
                           // "next" cursor wskazuje który wiersz zostanie podświetlony następnym
                           // skokiem — wyróżnij go w liście (żeby user widział, gdzie "stoi").
                           const isNextCursor = i === inspectJumpIndex % total;
+                          // Roving tabindex: tylko jeden element w liście jest "tabbable".
+                          // Preferujemy isNextCursor (jeśli widoczny po filtrze), inaczej pierwszy.
+                          const hasCursorInList = filtered.some((f) => f.i === inspectJumpIndex % total);
+                          const isRovingActive = hasCursorInList ? isNextCursor : listIdx === 0;
                           return (
                             <button
                               key={key}
                               type="button"
+                              data-list-item="true"
+                              tabIndex={isRovingActive ? 0 : -1}
                               onClick={() => {
                                 // Skok do konkretnego indeksu (offset = różnica od aktualnego kursora).
                                 const offset = i - (inspectJumpIndex % total);
                                 performJumpToMatch(offset);
                               }}
-                              className={`w-full flex items-center gap-2 px-3 py-1.5 text-left text-xs transition-colors hover:bg-primary/10 ${
+                              className={`w-full flex items-center gap-2 px-3 py-1.5 text-left text-xs transition-colors hover:bg-primary/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-inset ${
                                 isNextCursor ? "bg-primary/15" : ""
                               }`}
-                              title={`Skocz do dopasowania ${i + 1} z ${total}${isExact ? " (wiersz źródłowy)" : ""}`}
+                              title={`Skocz do dopasowania ${i + 1} z ${total}${isExact ? " (wiersz źródłowy)" : ""} — Enter`}
                             >
                               <span
                                 className={`shrink-0 inline-flex items-center justify-center w-6 h-6 rounded text-[10px] font-mono font-semibold ${
