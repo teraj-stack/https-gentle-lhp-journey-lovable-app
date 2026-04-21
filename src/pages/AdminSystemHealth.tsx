@@ -132,6 +132,8 @@ const AdminSystemHealth = () => {
   const [retryDenoOnly, setRetryDenoOnly] = useState(false);
   // Modal inspekcji konkretnej kombinacji IP+UA. null = zamknięty.
   const [inspectSource, setInspectSource] = useState<{ ip: string; ua: string } | null>(null);
+  // Filtr tekstowy w modalu — szuka substringa w JSON metadata (case-insensitive).
+  const [inspectQuery, setInspectQuery] = useState("");
 
   useEffect(() => {
     let isMounted = true;
