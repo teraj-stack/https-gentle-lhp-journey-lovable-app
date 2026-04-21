@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { ArrowLeft, ShieldAlert, Activity, AlertTriangle, RefreshCw, Ban, Webhook, Repeat, Filter, X, Eye, Download, ArrowDownWideNarrow, ArrowUpWideNarrow, Locate } from "lucide-react";
+import { ArrowLeft, ShieldAlert, Activity, AlertTriangle, RefreshCw, Ban, Webhook, Repeat, Filter, X, Eye, Download, ArrowDownWideNarrow, ArrowUpWideNarrow, Locate, Info } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Toggle } from "@/components/ui/toggle";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -1372,6 +1372,15 @@ const AdminSystemHealth = () => {
                     <div>
                       Pokazuję <strong>{inspectFilteredRecords.length}</strong> z {inspectRecords.length} (max 50 najnowszych, window 24h).
                     </div>
+                    {inspectSourceIndex >= 0 && (
+                      <div className="mt-2 flex items-start gap-1.5 rounded-md border border-primary/30 bg-primary/5 px-2 py-1.5 text-primary">
+                        <Info className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+                        <span>
+                          Po zamknięciu modala wiersz zostanie automatycznie przewinięty
+                          i podświetlony w tabeli źródeł na ~10 s.
+                        </span>
+                      </div>
+                    )}
                   </>
                 )}
               </div>
