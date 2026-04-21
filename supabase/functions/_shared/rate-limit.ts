@@ -257,14 +257,11 @@ export function logTokenFailure(
       }
     })
 
-  // @ts-ignore - EdgeRuntime is available in Supabase Edge Runtime
-  if (
-    typeof EdgeRuntime !== 'undefined' &&
-    // @ts-ignore
-    typeof EdgeRuntime.waitUntil === 'function'
-  ) {
-    // @ts-ignore
-    EdgeRuntime.waitUntil(promise)
+  // EdgeRuntime is injected globally by Supabase Edge Runtime; absent under
+  // plain `deno test`. Cast through globalThis to silence type-checker.
+  const edgeRuntime = (globalThis as { EdgeRuntime?: { waitUntil?: (p: Promise<unknown>) => void } }).EdgeRuntime
+  if (edgeRuntime?.waitUntil) {
+    edgeRuntime.waitUntil(promise)
   }
 }
 
