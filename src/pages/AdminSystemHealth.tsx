@@ -9,7 +9,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { ArrowLeft, ShieldAlert, Activity, AlertTriangle, RefreshCw, Ban, Webhook, Repeat } from "lucide-react";
+import { ArrowLeft, ShieldAlert, Activity, AlertTriangle, RefreshCw, Ban, Webhook, Repeat, Filter, X } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Toggle } from "@/components/ui/toggle";
 import SeoHead from "@/components/shared/SeoHead";
 import { formatDistanceToNow } from "date-fns";
 import { pl } from "date-fns/locale";
@@ -84,6 +86,9 @@ const AdminSystemHealth = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const { isAdmin, loading: adminLoading } = useIsAdmin();
+  const [retryFilterIp, setRetryFilterIp] = useState("");
+  const [retryFilterUa, setRetryFilterUa] = useState("");
+  const [retryDenoOnly, setRetryDenoOnly] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -217,9 +222,28 @@ const AdminSystemHealth = () => {
         perSource.set(key, { ip: r.ip ?? "—", ua, count: 1, last: r.created_at, maxRetryAfter: retryAfter });
       }
     }
-    const sources = Array.from(perSource.values()).sort((a, b) => b.count - a.count).slice(0, 8);
+    const sources = Array.from(perSource.values()).sort((a, b) => b.count - a.count);
     return { ...buckets, denoOnly, denoLast1h, sources };
   }, [webhookRetries]);
+
+  // Filtrowanie tabeli retry'ów po IP / UA + przełącznik "tylko Deno/*".
+  // Filtrujemy po stronie klienta — w 24h oknie mamy max ~1000 wpisów, a po
+  // agregacji (perSource) zwykle <50 wierszy, więc nie ma sensu round-tripować
+  // do bazy. Limit prezentacji: 50 wierszy (nawet bez filtra).
+  const filteredRetrySources = useMemo(() => {
+    const ipQ = retryFilterIp.trim().toLowerCase();
+    const uaQ = retryFilterUa.trim().toLowerCase();
+    return webhookRetryStats.sources
+      .filter((s) => {
+        if (retryDenoOnly && !/^Deno\//i.test(s.ua)) return false;
+        if (ipQ && !s.ip.toLowerCase().includes(ipQ)) return false;
+        if (uaQ && !s.ua.toLowerCase().includes(uaQ)) return false;
+        return true;
+      })
+      .slice(0, 50);
+  }, [webhookRetryStats.sources, retryFilterIp, retryFilterUa, retryDenoOnly]);
+
+  const retryFiltersActive = retryDenoOnly || retryFilterIp.trim() !== "" || retryFilterUa.trim() !== "";
 
   // Toast tylko przy WEJŚCIU w stan przekroczenia (nie przy każdym refetchu).
   const wasOverThreshold = useMemo(() => ({ value: false }), []);
@@ -433,42 +457,94 @@ const AdminSystemHealth = () => {
                     ✓ Brak retry'ów w ostatnich 24h.
                   </p>
                 ) : (
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>IP</TableHead>
-                          <TableHead>User-Agent</TableHead>
-                          <TableHead>Liczba retry</TableHead>
-                          <TableHead>Max retry-after (s)</TableHead>
-                          <TableHead>Ostatni</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {webhookRetryStats.sources.map((s) => {
-                          const isDeno = /^Deno\//i.test(s.ua);
-                          return (
-                            <TableRow key={`${s.ip}::${s.ua}`}>
-                              <TableCell className="font-mono text-xs">{s.ip}</TableCell>
-                              <TableCell className="font-mono text-xs">
-                                {isDeno ? (
-                                  <Badge variant="secondary" className="mr-2">webhook DB</Badge>
-                                ) : null}
-                                {s.ua}
-                              </TableCell>
-                              <TableCell>
-                                <Badge variant={s.count >= 50 ? "destructive" : "outline"}>{s.count}</Badge>
-                              </TableCell>
-                              <TableCell className="text-xs">{s.maxRetryAfter || "—"}</TableCell>
-                              <TableCell className="text-xs text-muted-foreground">
-                                {formatDistanceToNow(new Date(s.last), { addSuffix: true, locale: pl })}
-                              </TableCell>
+                  <>
+                    {/* Filtry tabeli retry'ów */}
+                    <div className="flex flex-wrap items-center gap-2 mb-3 p-3 rounded-lg border border-border bg-muted/30">
+                      <Filter className="h-4 w-4 text-muted-foreground shrink-0" />
+                      <Input
+                        placeholder="Filtr IP (substring)…"
+                        value={retryFilterIp}
+                        onChange={(e) => setRetryFilterIp(e.target.value)}
+                        className="h-8 w-full sm:w-44 font-mono text-xs"
+                      />
+                      <Input
+                        placeholder="Filtr User-Agent (substring)…"
+                        value={retryFilterUa}
+                        onChange={(e) => setRetryFilterUa(e.target.value)}
+                        className="h-8 w-full sm:w-64 font-mono text-xs"
+                      />
+                      <Toggle
+                        size="sm"
+                        pressed={retryDenoOnly}
+                        onPressedChange={setRetryDenoOnly}
+                        aria-label="Pokaż tylko webhook DB (Deno/*)"
+                        className="h-8 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+                      >
+                        <Webhook className="h-3.5 w-3.5 mr-1.5" />
+                        Tylko webhook DB (Deno/*)
+                      </Toggle>
+                      {retryFiltersActive && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8"
+                          onClick={() => {
+                            setRetryFilterIp("");
+                            setRetryFilterUa("");
+                            setRetryDenoOnly(false);
+                          }}
+                        >
+                          <X className="h-3.5 w-3.5 mr-1" /> Wyczyść
+                        </Button>
+                      )}
+                      <span className="text-xs text-muted-foreground ml-auto">
+                        {filteredRetrySources.length} / {webhookRetryStats.sources.length} źródeł
+                      </span>
+                    </div>
+
+                    {filteredRetrySources.length === 0 ? (
+                      <p className="text-muted-foreground py-4 text-sm text-center">
+                        Brak wyników dla aktywnych filtrów.
+                      </p>
+                    ) : (
+                      <div className="overflow-x-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>IP</TableHead>
+                              <TableHead>User-Agent</TableHead>
+                              <TableHead>Liczba retry</TableHead>
+                              <TableHead>Max retry-after (s)</TableHead>
+                              <TableHead>Ostatni</TableHead>
                             </TableRow>
-                          );
-                        })}
-                      </TableBody>
-                    </Table>
-                  </div>
+                          </TableHeader>
+                          <TableBody>
+                            {filteredRetrySources.map((s) => {
+                              const isDeno = /^Deno\//i.test(s.ua);
+                              return (
+                                <TableRow key={`${s.ip}::${s.ua}`}>
+                                  <TableCell className="font-mono text-xs">{s.ip}</TableCell>
+                                  <TableCell className="font-mono text-xs">
+                                    {isDeno ? (
+                                      <Badge variant="secondary" className="mr-2">webhook DB</Badge>
+                                    ) : null}
+                                    {s.ua}
+                                  </TableCell>
+                                  <TableCell>
+                                    <Badge variant={s.count >= 50 ? "destructive" : "outline"}>{s.count}</Badge>
+                                  </TableCell>
+                                  <TableCell className="text-xs">{s.maxRetryAfter || "—"}</TableCell>
+                                  <TableCell className="text-xs text-muted-foreground">
+                                    {formatDistanceToNow(new Date(s.last), { addSuffix: true, locale: pl })}
+                                  </TableCell>
+                                </TableRow>
+                              );
+                            })}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    )}
+                  </>
                 )}
               </>
             )}
