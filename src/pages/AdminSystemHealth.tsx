@@ -338,7 +338,95 @@ const AdminSystemHealth = () => {
           </CardContent>
         </Card>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        {/* BOOKING WEBHOOK RETRIES — historia retry'ów Supabase webhooka DB.
+            Supabase delivery retry-uje 429 z exponential backoff; każdy taki
+            retry ląduje tu jako reason='rate_limited' z UA "Deno/...". */}
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Repeat className="h-5 w-5 text-primary" />
+              Retry webhooka DB → 429 (on-booking-created)
+            </CardTitle>
+            <CardDescription>
+              Liczba odrzuceń webhooka Supabase (UA <code className="text-xs">Deno/*</code>) w oknach 1h / 6h / 24h.
+              Każdy wpis to próba ponowienia, którą Supabase wykonuje z exponential backoff po otrzymaniu HTTP 429.
+              Ostatnia aktualizacja:{" "}
+              {retriesUpdated ? formatDistanceToNow(new Date(retriesUpdated), { addSuffix: true, locale: pl }) : "—"}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {retriesLoading ? (
+              <p className="text-muted-foreground">Ładowanie…</p>
+            ) : (
+              <>
+                <div className="grid grid-cols-3 gap-3 mb-4">
+                  <div className="rounded-lg border border-border p-3">
+                    <p className="text-xs text-muted-foreground">Ostatnia 1h</p>
+                    <p className="text-2xl font-bold">{webhookRetryStats.last1h}</p>
+                  </div>
+                  <div className="rounded-lg border border-border p-3">
+                    <p className="text-xs text-muted-foreground">Ostatnie 6h</p>
+                    <p className="text-2xl font-bold">{webhookRetryStats.last6h}</p>
+                  </div>
+                  <div className="rounded-lg border border-border p-3">
+                    <p className="text-xs text-muted-foreground">Ostatnie 24h</p>
+                    <p className="text-2xl font-bold">{webhookRetryStats.last24h}</p>
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Z czego z UA <code>Deno/*</code> (wewnętrzny webhook):{" "}
+                  <Badge variant="secondary">{webhookRetryStats.denoOnly} / {webhookRetryStats.last24h}</Badge>
+                  {" "}— pozostałe to ruch zewnętrzny / boty.
+                </p>
+
+                {webhookRetryStats.sources.length === 0 ? (
+                  <p className="text-muted-foreground py-2 text-sm">
+                    ✓ Brak retry'ów w ostatnich 24h.
+                  </p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>IP</TableHead>
+                          <TableHead>User-Agent</TableHead>
+                          <TableHead>Liczba retry</TableHead>
+                          <TableHead>Max retry-after (s)</TableHead>
+                          <TableHead>Ostatni</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {webhookRetryStats.sources.map((s) => {
+                          const isDeno = /^Deno\//i.test(s.ua);
+                          return (
+                            <TableRow key={`${s.ip}::${s.ua}`}>
+                              <TableCell className="font-mono text-xs">{s.ip}</TableCell>
+                              <TableCell className="font-mono text-xs">
+                                {isDeno ? (
+                                  <Badge variant="secondary" className="mr-2">webhook DB</Badge>
+                                ) : null}
+                                {s.ua}
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant={s.count >= 50 ? "destructive" : "outline"}>{s.count}</Badge>
+                              </TableCell>
+                              <TableCell className="text-xs">{s.maxRetryAfter || "—"}</TableCell>
+                              <TableCell className="text-xs text-muted-foreground">
+                                {formatDistanceToNow(new Date(s.last), { addSuffix: true, locale: pl })}
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </>
+            )}
+          </CardContent>
+        </Card>
+
+
           <Card>
             <CardHeader className="pb-2">
               <CardDescription>Wpisy w bazie (ostatnie 100)</CardDescription>
