@@ -146,6 +146,33 @@ Deno.serve(async (req) => {
     )
   }
 
+  const ip = getClientIp(req)
+  const userAgent = req.headers.get('user-agent')
+  const ipLog = ipForLog(ip)
+
+  const earlySupabaseUrl = Deno.env.get('SUPABASE_URL')
+  const earlySupabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+  // Audit-only client for rate-limit logging; main client is built below.
+  const auditClient = earlySupabaseUrl && earlySupabaseKey
+    ? createClient(earlySupabaseUrl, earlySupabaseKey)
+    : null
+
+  // Rate limit (best-effort) + log denials.
+  const rl = checkRateLimit(ENDPOINT, ip, WEBHOOK_LIMIT)
+  if (!rl.allowed) {
+    console.warn(`Rate limit exceeded for IP ${ip} on ${ENDPOINT}`)
+    if (auditClient) {
+      logTokenFailure(auditClient, {
+        endpoint: ENDPOINT,
+        reason: 'rate_limited',
+        ip: ipLog,
+        userAgent,
+        metadata: { retryAfterSec: rl.retryAfterSec, method: req.method },
+      })
+    }
+    return rateLimitedResponse(rl, corsHeaders)
+  }
+
   let payload: WebhookPayload
   try {
     payload = await req.json()
