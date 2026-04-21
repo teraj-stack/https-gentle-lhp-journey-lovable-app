@@ -147,14 +147,41 @@ const AdminSystemHealth = () => {
     return () => window.clearTimeout(t);
   }, [highlightedRowKey]);
 
+  // Snapshot filtrów tabeli źródeł sprzed wywołania "Pokaż w tabeli" — używany do przywrócenia
+  // poprzednich ustawień filtrowania, jeśli reveal je wyczyścił. null = brak aktywnego snapshotu.
+  const [filtersSnapshot, setFiltersSnapshot] = useState<{
+    ip: string;
+    ua: string;
+    denoOnly: boolean;
+  } | null>(null);
+
+  // Przywraca filtry z ostatniego snapshotu (i zamyka toasta przez to samo id, jeśli aktywny).
+  const restoreFiltersSnapshot = (snap: { ip: string; ua: string; denoOnly: boolean }) => {
+    setRetryFilterIp(snap.ip);
+    setRetryFilterUa(snap.ua);
+    setRetryDenoOnly(snap.denoOnly);
+    setFiltersSnapshot(null);
+    toast.success("Przywrócono poprzednie filtry");
+  };
+
   // Zamyka modal i przewija/podświetla wiersz w tabeli źródeł dla wskazanej kombinacji IP+UA.
   // Czeka jeden frame, żeby DOM zdążył odmontować dialog i przywrócić scroll body.
   const revealRowInTable = (ip: string, ua: string) => {
     const key = `${ip}::${ua}`;
+    // Zapisz snapshot tylko, jeśli jakiś filtr faktycznie zostanie wyczyszczony — inaczej
+    // nie ma czego przywracać i nie zaśmiecamy UI toastem.
+    const willClearIp = retryFilterIp.trim() !== "";
+    const willClearUa = retryFilterUa.trim() !== "";
+    const willClearDeno = retryDenoOnly && !/^Deno\//i.test(ua);
+    const hadFilters = willClearIp || willClearUa || willClearDeno;
+    const snapshot = hadFilters
+      ? { ip: retryFilterIp, ua: retryFilterUa, denoOnly: retryDenoOnly }
+      : null;
+    if (snapshot) setFiltersSnapshot(snapshot);
     // Wyczyść filtry, jeśli przez nie wiersz jest poza listą — inaczej scroll trafi w pustkę.
-    if (retryFilterIp.trim()) setRetryFilterIp("");
-    if (retryFilterUa.trim()) setRetryFilterUa("");
-    if (retryDenoOnly && !/^Deno\//i.test(ua)) setRetryDenoOnly(false);
+    if (willClearIp) setRetryFilterIp("");
+    if (willClearUa) setRetryFilterUa("");
+    if (willClearDeno) setRetryDenoOnly(false);
     setInspectSource(null);
     setInspectQuery("");
     setInspectSort("desc");
@@ -164,6 +191,17 @@ const AdminSystemHealth = () => {
         if (el) {
           el.scrollIntoView({ behavior: "smooth", block: "center" });
           setHighlightedRowKey(key);
+        }
+        if (snapshot) {
+          // Toast z akcją "Przywróć filtry" — czas życia 8s, żeby admin zdążył kliknąć.
+          toast("Wyczyszczono filtry, żeby pokazać wiersz", {
+            description: "Możesz przywrócić poprzednie ustawienia jednym kliknięciem.",
+            action: {
+              label: "Przywróć filtry",
+              onClick: () => restoreFiltersSnapshot(snapshot),
+            },
+            duration: 8000,
+          });
         }
       });
     });
@@ -868,9 +906,22 @@ const AdminSystemHealth = () => {
                             setRetryFilterIp("");
                             setRetryFilterUa("");
                             setRetryDenoOnly(false);
+                            setFiltersSnapshot(null);
                           }}
                         >
                           <X className="h-3.5 w-3.5 mr-1" /> Wyczyść
+                        </Button>
+                      )}
+                      {filtersSnapshot && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-8 gap-1.5 border-primary/40 text-primary hover:bg-primary/10"
+                          onClick={() => restoreFiltersSnapshot(filtersSnapshot)}
+                          title="Przywróć filtry sprzed kliknięcia 'Pokaż w tabeli'"
+                        >
+                          <RefreshCw className="h-3.5 w-3.5" />
+                          Przywróć filtry
                         </Button>
                       )}
                       <span className="text-xs text-muted-foreground ml-auto">
