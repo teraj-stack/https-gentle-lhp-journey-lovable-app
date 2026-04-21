@@ -15,13 +15,16 @@ import 'https://deno.land/std@0.224.0/dotenv/load.ts'
 import { assert, assertEquals } from 'https://deno.land/std@0.224.0/assert/mod.ts'
 import { createClient } from 'npm:@supabase/supabase-js@2'
 
+import { RATE_LIMITS } from '../_shared/rate-limit.ts'
+
 const SUPABASE_URL = Deno.env.get('VITE_SUPABASE_URL')!
 const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const ANON_KEY = Deno.env.get('VITE_SUPABASE_PUBLISHABLE_KEY')!
 
 const ENDPOINT = 'on-booking-created'
-const LIMIT = 60 // musi pasować do WEBHOOK_LIMIT.max w index.ts
-const TOTAL_REQUESTS = 80 // 20 powyżej limitu
+// Single source of truth — pulled from shared registry, never hardcoded.
+const LIMIT = RATE_LIMITS[ENDPOINT].max
+const TOTAL_REQUESTS = LIMIT + 20 // 20 powyżej limitu
 
 // UWAGA: Supabase Functions runtime nadpisuje x-forwarded-for własnym
 // IP wychodzącym (klient testowy nie może go sfałszować). Dlatego nie
