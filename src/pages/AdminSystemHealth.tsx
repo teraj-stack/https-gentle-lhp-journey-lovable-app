@@ -109,6 +109,17 @@ const AdminSystemHealth = () => {
     refetchInterval: 30_000,
   });
 
+  const { data: rateLimitedIps = [], isLoading: rateLimitedLoading, refetch: refetchRateLimited, dataUpdatedAt: rateLimitedUpdated } = useQuery({
+    queryKey: ["admin-rate-limited-ips"],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("get_top_rate_limited_ips" as never, { p_limit: 10 } as never);
+      if (error) throw error;
+      return (data ?? []) as unknown as RateLimitedIp[];
+    },
+    enabled,
+    refetchInterval: 30_000,
+  });
+
   const stats = useMemo(() => {
     const total = recentFailures.length;
     const last24h = recentFailures.filter(
