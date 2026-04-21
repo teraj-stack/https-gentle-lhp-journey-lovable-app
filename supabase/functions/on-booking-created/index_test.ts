@@ -48,7 +48,12 @@ function buildPayload() {
   }
 }
 
-Deno.test('on-booking-created — DB rate-limit triggers 429 after LIMIT requests/minute from same IP', async () => {
+Deno.test({
+  name: 'on-booking-created — DB rate-limit triggers 429 after LIMIT requests/minute from same IP',
+  // supabase-js trzyma heartbeat na realtime channel — nieistotne dla naszego testu.
+  sanitizeOps: false,
+  sanitizeResources: false,
+  fn: async () => {
   if (!SUPABASE_URL || !SERVICE_ROLE_KEY || !ANON_KEY) {
     throw new Error('Missing VITE_SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY / VITE_SUPABASE_PUBLISHABLE_KEY')
   }
