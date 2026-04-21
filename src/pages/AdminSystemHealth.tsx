@@ -1754,34 +1754,14 @@ const AdminSystemHealth = () => {
                       variant="outline"
                       size="sm"
                       className="h-8 gap-1.5 border-primary/40 text-primary hover:bg-primary/10"
-                      onClick={() => {
-                        const idx = inspectJumpIndex % total;
-                        const key = jumpKeys[idx];
-                        const el = document.querySelector<HTMLElement>(
-                          `[data-retry-row-key="${CSS.escape(key)}"]`,
-                        );
-                        if (el) {
-                          el.scrollIntoView({ behavior: "smooth", block: "center" });
-                          // Wyraźny puls (ring + bg) na wierszu, do którego skoczyliśmy —
-                          // 3 cykle × 600ms (1.8s). Klasa zdefiniowana w tailwind.config.ts
-                          // używa semantic tokena --primary (HSL). Re-trigger przez
-                          // remove → reflow → add, żeby kolejne kliknięcia też pulsowały.
-                          el.classList.remove("animate-jump-pulse");
-                          // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-                          void el.offsetWidth; // wymuszenie reflow
-                          el.classList.add("animate-jump-pulse");
-                          window.setTimeout(() => {
-                            el.classList.remove("animate-jump-pulse");
-                          }, 1800);
-                        }
-                        // Cykliczne przewijanie: po ostatnim wracamy do pierwszego (modulo total).
-                        // Trzymamy kursor znormalizowany w [0, total), żeby nie rósł w nieskończoność.
-                        setInspectJumpIndex((i) => (i + 1) % total);
-                      }}
-                      title={`Przewiń tabelę pod modalem do następnego podświetlonego wiersza (${currentDisplay}/${total}). Modal pozostaje otwarty.`}
+                      onClick={() => performJumpToMatch(1)}
+                      title={`Przewiń tabelę pod modalem do następnego podświetlonego wiersza (${currentDisplay}/${total}). Modal pozostaje otwarty. Skróty: ↓ / J = następne, ↑ / K = poprzednie.`}
                     >
                       <ChevronRight className="h-3.5 w-3.5" />
                       Skocz do następnego ({currentDisplay}/{total})
+                      <kbd className="ml-1 hidden sm:inline-flex items-center gap-0.5 rounded border border-border/60 bg-muted/60 px-1 py-0 text-[10px] font-mono text-muted-foreground">
+                        ↓
+                      </kbd>
                     </Button>
                   );
                 })()}
