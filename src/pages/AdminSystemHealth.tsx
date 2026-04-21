@@ -289,6 +289,14 @@ const AdminSystemHealth = () => {
 
   const retryFiltersActive = retryDenoOnly || retryFilterIp.trim() !== "" || retryFilterUa.trim() !== "";
 
+  // Rekordy filtrowane do modala inspekcji (wybrane IP + UA, max 50 ostatnich).
+  const inspectRecords = useMemo(() => {
+    if (!inspectSource) return [];
+    return webhookRetries
+      .filter((r) => (r.ip ?? "—") === inspectSource.ip && (r.user_agent ?? "—") === inspectSource.ua)
+      .slice(0, 50);
+  }, [inspectSource, webhookRetries]);
+
   // Trend retry'ów per godzina, ostatnie 24h. Dwie serie: deno (wewnętrzny
   // webhook DB) i other (ruch zewnętrzny / boty). Każdy bucket = pełna
   // godzina kalendarzowa (lokalna), wstecz od "teraz". Dzięki stałej liczbie
