@@ -1083,7 +1083,7 @@ const AdminSystemHealth = () => {
           )}
         </DialogContent>
       </Dialog>
-    >
+    </>
   );
 };
 
