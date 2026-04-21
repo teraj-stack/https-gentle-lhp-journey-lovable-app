@@ -92,6 +92,8 @@ const AdminSystemHealth = () => {
   const [retryFilterIp, setRetryFilterIp] = useState("");
   const [retryFilterUa, setRetryFilterUa] = useState("");
   const [retryDenoOnly, setRetryDenoOnly] = useState(false);
+  // Modal inspekcji konkretnej kombinacji IP+UA. null = zamknięty.
+  const [inspectSource, setInspectSource] = useState<{ ip: string; ua: string } | null>(null);
 
   useEffect(() => {
     let isMounted = true;
