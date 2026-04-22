@@ -70,7 +70,6 @@ const AdminScrollTest = () => {
     const el = rowsRef.current.get(idx);
     if (!el) return;
     const rect = el.getBoundingClientRect();
-    const headerH = getHeaderH();
     const safeAreaTop = headerH + 16;
     const safeAreaBottom = window.innerHeight - 24;
     let status: SafeAreaSnapshot["status"] = "ok";
@@ -90,7 +89,6 @@ const AdminScrollTest = () => {
     const el = rowsRef.current.get(idx);
     if (!el) return;
     const rect = el.getBoundingClientRect();
-    const headerH = getHeaderH();
     const cssVarRaw = getComputedStyle(document.documentElement)
       .getPropertyValue("--header-height")
       .trim() || "(brak)";
