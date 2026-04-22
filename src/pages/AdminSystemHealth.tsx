@@ -324,7 +324,7 @@ const AdminSystemHealth = () => {
   }, [focusPrefs]);
   // Inline style dla aktywnego wiersza (isNavigatorActive) — ring + halo wyliczone
   // z preferencji. Memo, bo używane wielokrotnie w mapie wierszy.
-  const activeRowStyle = useMemo<React.CSSProperties>(() => {
+  const activeRowStyle = useMemo<CSSProperties>(() => {
     const ring = highContrastFocus ? focusPrefs.ringWidthPx + 2 : focusPrefs.ringWidthPx;
     const glow = focusPrefs.glowIntensity / 100; // 0..1
     return {
