@@ -1549,6 +1549,26 @@ const AdminSystemHealth = () => {
                             })}
                           </TableBody>
                         </Table>
+                        {/* Legenda numerów porządkowych w kolumnie IP — spójna z licznikiem
+                            "X/Y" w nawigatorze dopasowań i w modalu "Podgląd dopasowań".
+                            Index 0 z buildMatchKeys = wiersz źródłowy (exact, badge primary),
+                            kolejne = related (badge muted). */}
+                        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 px-1 text-[11px] text-muted-foreground">
+                          <span className="font-medium text-foreground/80">Numery dopasowań:</span>
+                          <span className="inline-flex items-center gap-1.5">
+                            <span className="inline-flex items-center justify-center min-w-5 h-5 px-1 rounded text-[10px] font-mono font-semibold bg-primary text-primary-foreground">
+                              1
+                            </span>
+                            <span><strong className="text-foreground/90">exact</strong> — wiersz źródłowy</span>
+                          </span>
+                          <span className="inline-flex items-center gap-1.5">
+                            <span className="inline-flex items-center justify-center min-w-5 h-5 px-1 rounded text-[10px] font-mono font-semibold bg-muted text-muted-foreground">
+                              2..n
+                            </span>
+                            <span><strong className="text-foreground/90">related</strong> — ten sam IP / User-Agent</span>
+                          </span>
+                          <span className="hidden md:inline opacity-70">Spójne z licznikiem „X/Y” w „Podgląd dopasowań”.</span>
+                        </div>
                       </div>
                     )}
                   </>
