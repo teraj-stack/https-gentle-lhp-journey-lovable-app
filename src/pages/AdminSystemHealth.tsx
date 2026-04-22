@@ -2025,10 +2025,11 @@ const AdminSystemHealth = () => {
                               </Button>
                             </div>
                             <FocusDemo
-                              prefs={focusPrefs}
-                              highContrast={highContrastFocus}
+                              prefs={focusPrefsByVariant[editingVariant]}
+                              highContrast={editingVariant === "hc"}
                               active={focusDemoActive}
                             />
+
                             {!focusDemoActive && (
                               <p className="text-[10px] text-muted-foreground/70 leading-snug">
                                 Po włączeniu wiersze cyklicznie zagrają pulse → afterglow z aktualnymi
