@@ -535,6 +535,27 @@ const AdminSystemHealth = () => {
       });
     }
   };
+  // Kopia shareable URL TYLKO dla aktualnie edytowanego wariantu — przydatne gdy admin
+  // chce udostępnić styl konkretnego motywu (np. tylko HC dla użytkownika a11y) bez
+  // nadpisywania pozostałych wariantów u odbiorcy. Replikujemy edytowane prefs do
+  // wszystkich 3 slotów schematu — odbiorca po imporcie dostaje jednolity styl,
+  // który może potem zróżnicować ręcznie.
+  const handleCopyFocusPrefsLinkVariant = async () => {
+    try {
+      const single = focusPrefsByVariant[editingVariant];
+      const replicated = { light: single, dark: single, hc: single };
+      const url = buildFocusPrefsShareUrl(replicated, window.location.href);
+      await navigator.clipboard.writeText(url);
+      const label = editingVariant === "hc" ? "High Contrast" : editingVariant === "light" ? "Light" : "Dark";
+      toast.success(`Skopiowano link (${label})`, {
+        description: "Link zawiera ustawienia tylko z edytowanego wariantu.",
+      });
+    } catch (err) {
+      toast.error("Nie udało się skopiować linka", {
+        description: err instanceof Error ? err.message : "Brak dostępu do clipboardu",
+      });
+    }
+  };
   // Import z pliku .json — czytamy przez FileReader, sanityzujemy, ustawiamy stan.
   // Akceptuje v2 (per-variant), v1 (single, replikowany) i legacy plain.
   const handleImportFocusPrefs = (file: File) => {
@@ -2170,6 +2191,19 @@ const AdminSystemHealth = () => {
                                 Import
                               </Button>
                             </div>
+                            {/* Drugi rząd: link tylko dla aktualnie edytowanego wariantu.
+                                Przydatne gdy admin chce udostępnić tylko jeden styl (np. HC dla a11y),
+                                bez nadpisywania pozostałych 2 wariantów u odbiorcy. */}
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-8 w-full text-xs gap-1"
+                              onClick={handleCopyFocusPrefsLinkVariant}
+                              title={`Skopiuj link tylko z ustawieniami wariantu ${editingVariant}`}
+                            >
+                              <Link2 className="h-3 w-3" />
+                              Kopiuj link ({editingVariant === "hc" ? "High Contrast" : editingVariant === "light" ? "Light" : "Dark"})
+                            </Button>
                             <input
                               ref={importFileInputRef}
                               type="file"
