@@ -2354,30 +2354,42 @@ const AdminSystemHealth = () => {
                                   </span>
                                 )}
                               </div>
-                              <Button
-                                variant={focusDemoActive ? "secondary" : "outline"}
-                                size="sm"
-                                className="h-7 px-2 text-xs gap-1"
-                                onClick={() => setFocusDemoActive((v) => !v)}
-                                aria-pressed={focusDemoActive}
-                                title={
-                                  focusDemoActive
-                                    ? "Zatrzymaj cykliczny podgląd"
-                                    : "Uruchom cykliczny podgląd efektu na sztucznych wierszach"
-                                }
-                              >
-                                {focusDemoActive ? (
-                                  <>
-                                    <Pause className="h-3 w-3" />
-                                    Stop
-                                  </>
-                                ) : (
-                                  <>
-                                    <Play className="h-3 w-3" />
-                                    Start
-                                  </>
-                                )}
-                              </Button>
+                              <div className="flex items-center gap-1">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-7 px-2 text-xs gap-1"
+                                  onClick={() => setFocusPlaygroundOpen(true)}
+                                  title={`Otwórz podgląd na 4 sample komponentach (button/input/link/card) z prefs ${editingVariant} — bez zapisu`}
+                                >
+                                  <FlaskConical className="h-3 w-3" />
+                                  Testuj na stronie
+                                </Button>
+                                <Button
+                                  variant={focusDemoActive ? "secondary" : "outline"}
+                                  size="sm"
+                                  className="h-7 px-2 text-xs gap-1"
+                                  onClick={() => setFocusDemoActive((v) => !v)}
+                                  aria-pressed={focusDemoActive}
+                                  title={
+                                    focusDemoActive
+                                      ? "Zatrzymaj cykliczny podgląd"
+                                      : "Uruchom cykliczny podgląd efektu na sztucznych wierszach"
+                                  }
+                                >
+                                  {focusDemoActive ? (
+                                    <>
+                                      <Pause className="h-3 w-3" />
+                                      Stop
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Play className="h-3 w-3" />
+                                      Start
+                                    </>
+                                  )}
+                                </Button>
+                              </div>
                             </div>
                             {/* Compare mode toggle — pojawia się TYLKO gdy edytujemy inny variant
                                 niż aktywny w motywie (inaczej obie kolumny byłyby identyczne).
