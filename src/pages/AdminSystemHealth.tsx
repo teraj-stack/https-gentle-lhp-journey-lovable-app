@@ -749,6 +749,17 @@ const AdminSystemHealth = () => {
   // URL (rebuildujemy on-open na bazie aktualnego state'u — to jest oczekiwane
   // i spójne z „Kopiuj link" które też używa aktualnych prefs).
   const [showLinkOpen, setShowLinkOpen] = useState(false);
+  // Modal „Skopiuj ręcznie" — fallback gdy `navigator.clipboard.writeText` failuje
+  // (brak HTTPS, brak permission, sandboxed iframe, starsza przeglądarka). Zawiera
+  // textarea z pre-selected tekstem + instrukcją skrótu Ctrl/Cmd+C — admin kopiuje
+  // ręcznie, nie tracąc danych. `text` = co kopiujemy, `label` = przyjazna etykieta
+  // do nagłówka modala (np. "link wariantu Light"), `reason` = dlaczego clipboard
+  // nie zadziałał (do pokazania w opisie żeby admin wiedział co naprawić następnym razem).
+  const [manualCopyDialog, setManualCopyDialog] = useState<{
+    text: string;
+    label: string;
+    reason: string;
+  } | null>(null);
   // Variant do EDYCJI w popoverze — domyślnie ten sam co aktywny, ale admin może
   // ręcznie wybrać inny żeby ustawić styl „z góry" zanim przełączy motyw.
   // null = follow active variant (default).
