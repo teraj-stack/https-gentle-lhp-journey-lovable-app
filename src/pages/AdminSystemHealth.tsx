@@ -477,13 +477,42 @@ const AdminSystemHealth = () => {
   // ręcznie wybrać inny żeby ustawić styl „z góry" zanim przełączy motyw.
   // null = follow active variant (default).
   const [editingVariantOverride, setEditingVariantOverride] = useState<ThemeVariant | null>(null);
+  // Autosave do localStorage z debounce 400ms — gdy admin ciągnie slider, NIE
+  // zapisujemy 50 razy/s (każdy onValueChange triggeruje setState). Zamiast tego
+  // czekamy aż przestanie ruszać przez 400ms i robimy 1 zapis. UI dostaje status
+  // ("Zapisuję…" / "Zapisano ✓") żeby było wiadomo że nie trzeba klikać save.
+  // Initial render NIE pokazuje statusu (didMountRef) — bo to nie jest "user edit",
+  // tylko hydration z localStorage.
+  type SaveStatus = "idle" | "pending" | "saved";
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
+  const didMountFocusPrefsRef = useRef(false);
+  const savedTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
-    try {
-      window.localStorage.setItem(FOCUS_PREFS_LS_KEY, JSON.stringify(focusPrefsByVariant));
-    } catch {
-      // ignoruj w private mode
+    // Pierwszy effect po mount = hydration z initial state, nie user edit.
+    if (!didMountFocusPrefsRef.current) {
+      didMountFocusPrefsRef.current = true;
+      return;
     }
+    setSaveStatus("pending");
+    const debounceId = setTimeout(() => {
+      try {
+        window.localStorage.setItem(FOCUS_PREFS_LS_KEY, JSON.stringify(focusPrefsByVariant));
+        setSaveStatus("saved");
+        // „Zapisano ✓" widoczne 1.5s, potem znika żeby nie rozpraszało.
+        if (savedTimeoutRef.current) clearTimeout(savedTimeoutRef.current);
+        savedTimeoutRef.current = setTimeout(() => setSaveStatus("idle"), 1500);
+      } catch {
+        // ignoruj w private mode — UI po prostu zostanie w "pending" i znika po unmount.
+        setSaveStatus("idle");
+      }
+    }, 400);
+    return () => clearTimeout(debounceId);
   }, [focusPrefsByVariant]);
+  useEffect(() => {
+    return () => {
+      if (savedTimeoutRef.current) clearTimeout(savedTimeoutRef.current);
+    };
+  }, []);
   // Po zaaplikowaniu prefs z URL fragmentu (initial state) — wyczyść hash, żeby
   // odświeżenie strony nie nadpisało lokalnych zmian usera. Toast informuje użytkownika.
   useEffect(() => {
