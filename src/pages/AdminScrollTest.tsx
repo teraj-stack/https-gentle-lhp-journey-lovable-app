@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
+import { useHeaderHeight } from "@/hooks/useHeaderHeight";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -48,6 +49,10 @@ interface DebugEntry {
 
 const AdminScrollTest = () => {
   const { isAdmin, loading: isLoading } = useIsAdmin();
+  // Reactive subscription do --header-height — re-render gdy header zmienia wysokość
+  // (responsive breakpoint, mega-menu open, mobile menu, orientation change).
+  // Dzięki temu safe-area overlay i offsety w `updateSnapshot` zawsze są trafne.
+  const headerH = useHeaderHeight(80);
   const [activeIdx, setActiveIdx] = useState(0);
   const [showSafeArea, setShowSafeArea] = useState(true);
   const [showDebug, setShowDebug] = useState(false);
@@ -60,13 +65,6 @@ const AdminScrollTest = () => {
     () => Array.from({ length: ROW_COUNT }, (_, i) => ({ id: i, label: `Wiersz #${i + 1}` })),
     []
   );
-
-  const getHeaderH = () => {
-    const cssVar = getComputedStyle(document.documentElement)
-      .getPropertyValue("--header-height")
-      .trim();
-    return cssVar ? parseFloat(cssVar) : 80;
-  };
 
   const updateSnapshot = (idx: number) => {
     const el = rowsRef.current.get(idx);
