@@ -1458,24 +1458,17 @@ const AdminSystemHealth = () => {
                                 isInRelatedSet && highlightScope === "same-ua";
                               const isRelatedHighlight = isInRelatedSet;
                               const isHighlighted = isExactHighlight || isRelatedHighlight;
-                              // Czy navigator dopasowań aktualnie wskazuje ten wiersz —
-                              // dodajemy mocniejszy ring (primary, nie primary/40), żeby admin
-                              // od razu widział "gdzie jestem" w sekwencji ◀ Następne ▶.
-                              const isNavigatorActive =
-                                !!matchNavigator && matchNavigator.keys[matchNavigator.index] === rowKey;
-                              // Numer porządkowy w sekwencji nawigatora dopasowań (1-based) —
-                              // index 0 z buildMatchKeys = wiersz źródłowy (exact), reszta = related.
-                              // Renderujemy jako mały badge w komórce IP, żeby spójnie pasował
-                              // do licznika "Następne: X/Y" w modalu i mini-listy "Podgląd dopasowań".
-                              // null gdy wiersz nie jest częścią sekwencji nawigatora (np. nawigator
-                              // nieaktywny lub wiersz tylko delikatnie podświetlony, ale poza
-                              // matchNavigator.keys — choć w praktyce buildMatchKeys i nawigator
-                              // używają tego samego źródła).
-                              const navIdx = matchNavigator
-                                ? matchNavigator.keys.indexOf(rowKey)
-                                : -1;
+                              // Czy ten wiersz jest aktualnym kursorem nawigacji (Enter/J/K,
+                              // navigator bar lub „Skocz do następnego"). Używa unified
+                              // activeCursorKey wyliczonego raz dla całego mapowania.
+                              const isNavigatorActive = activeCursorKey === rowKey;
+                              // Numer porządkowy w sekwencji dopasowań (1-based) — index 0 = exact,
+                              // reszta = related. ordinalKeys to navigatorKeys (gdy aktywny) albo modalKeys
+                              // (gdy modal otwarty bez navigator bar) — dzięki temu badge'e w tabeli
+                              // są widoczne w obu trybach.
+                              const navIdx = ordinalKeys ? ordinalKeys.indexOf(rowKey) : -1;
                               const navOrdinal = navIdx >= 0 ? navIdx + 1 : null;
-                              const navTotal = matchNavigator?.keys.length ?? 0;
+                              const navTotal = ordinalTotal;
                               const row = (
                                 <TableRow
                                   key={rowKey}
