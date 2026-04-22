@@ -1095,7 +1095,8 @@ const AdminSystemHealth = () => {
       // z resztą UI. Użytkownik widzi 2 toasty (sukces + custom) — to akceptowalne
       // bo niosą tę samą informację, a custom dodatkowo eksponuje szczegóły opisu
       // bez ryzyka ucięcia przez SR.
-      const title = `Skopiowano link (${label})`;
+      // (title/desc/label pochodzą z `buildVariantCopyToastContent` powyżej —
+      // single source of truth, nie buduj tu nic ad-hoc.)
 
       // Kanał #1 — wizualne potwierdzenie sukcesu (natywny styl sonnera).
       toast.success(title, {
