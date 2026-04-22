@@ -3069,6 +3069,11 @@ const AdminSystemHealth = () => {
                               Link zawiera prefs w hashu URL — bezpieczne (nie trafia do logów serwera),
                               kompaktowe (~40 znaków), działa po wklejeniu w pasku adresu.
                             </p>
+                            {/* Inspektor live regionu — DEV only. Pokazuje kolejność i ucięcia
+                                ogłoszeń SR (success + custom toast) bez czytnika ekranu.
+                                Pomocny przy QA na mobile (375px), gdzie tekst toasta może
+                                wystawać poza viewport. */}
+                            {import.meta.env.DEV && <FocusToastLiveRegionInspector />}
                           </div>
                         </PopoverContent>
                       </Popover>
