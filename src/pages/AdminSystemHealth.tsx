@@ -824,7 +824,7 @@ const AdminSystemHealth = () => {
     if (allSame) {
       const single = fromHash.light;
       toast.success("✓ Zaaplikowano styl focusu z linka", {
-        description: `Wariantowy link: ring ${single.ringWidthPx}px · glow ${single.glowIntensity}% · afterglow ${single.afterglowMs}ms (zreplikowane do wszystkich 3 trybów)`,
+        description: `Wariantowy link: ${formatFocusPrefsSummary(single)} (zreplikowane do wszystkich 3 trybów)`,
       });
       return;
     }
