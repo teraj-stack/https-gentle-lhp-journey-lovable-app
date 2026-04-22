@@ -918,6 +918,9 @@ const AdminSystemHealth = () => {
       });
     }
   };
+  // Import z pliku .json — czytamy przez FileReader, sanityzujemy, ustawiamy stan.
+  // Akceptuje v2 (per-variant), v1 (single, replikowany) i legacy plain.
+  const handleImportFocusPrefs = (file: File) => {
     const reader = new FileReader();
     reader.onload = () => {
       try {
