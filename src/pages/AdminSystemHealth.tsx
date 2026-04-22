@@ -1954,8 +1954,33 @@ const AdminSystemHealth = () => {
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-80 p-4 space-y-4" align="start">
-                          <div className="flex items-center justify-between">
-                            <div className="text-sm font-semibold">Styl focusu po skoku</div>
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <div className="text-sm font-semibold">Styl focusu po skoku</div>
+                              {/* Wskaźnik autosave — pojawia się tylko gdy zmiana jest w toku
+                                  lub świeżo zapisana. „idle" = nic nie pokazujemy, żeby nie
+                                  rozpraszać gdy admin tylko przegląda popover. */}
+                              {saveStatus === "pending" && (
+                                <span
+                                  className="text-[10px] text-muted-foreground flex items-center gap-1"
+                                  aria-live="polite"
+                                  title="Autozapis: czekam na zatrzymanie suwaka (debounce 400ms)"
+                                >
+                                  <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/60 animate-pulse" />
+                                  Zapisuję…
+                                </span>
+                              )}
+                              {saveStatus === "saved" && (
+                                <span
+                                  className="text-[10px] text-primary flex items-center gap-1"
+                                  aria-live="polite"
+                                  title="Zapisano w localStorage tej przeglądarki"
+                                >
+                                  <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+                                  Zapisano ✓
+                                </span>
+                              )}
+                            </div>
                             <Button
                               variant="ghost"
                               size="sm"
