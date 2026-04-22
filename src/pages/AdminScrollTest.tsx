@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ArrowLeft, ChevronLeft, ChevronRight, Eye, EyeOff } from "lucide-react";
-import { Header } from "@/components/layout/Header";
+import Header from "@/components/layout/Header";
 import { computeRowScrollTarget } from "@/lib/scrollHelpers";
 import { cn } from "@/lib/utils";
 
@@ -29,7 +29,7 @@ interface SafeAreaSnapshot {
 }
 
 const AdminScrollTest = () => {
-  const { isAdmin, isLoading } = useIsAdmin();
+  const { isAdmin, loading: isLoading } = useIsAdmin();
   const [activeIdx, setActiveIdx] = useState(0);
   const [showSafeArea, setShowSafeArea] = useState(true);
   const [snapshot, setSnapshot] = useState<SafeAreaSnapshot | null>(null);
@@ -168,17 +168,17 @@ const AdminScrollTest = () => {
         {showSafeArea && snapshot && (
           <>
             <div
-              className="fixed left-0 right-0 z-40 pointer-events-none border-y-2 border-dashed border-emerald-500/60 bg-emerald-500/5"
+              className="fixed left-0 right-0 z-40 pointer-events-none border-y-2 border-dashed border-primary/60 bg-primary/5"
               style={{
                 top: `${snapshot.safeAreaTop}px`,
                 height: `${snapshot.safeAreaBottom - snapshot.safeAreaTop}px`,
               }}
               aria-hidden="true"
             >
-              <span className="absolute top-1 left-2 text-[10px] uppercase tracking-wider text-emerald-700 dark:text-emerald-400 font-mono bg-background/80 px-1 rounded">
+              <span className="absolute top-1 left-2 text-[10px] uppercase tracking-wider text-primary font-mono bg-background/80 px-1 rounded">
                 safe-area top {Math.round(snapshot.safeAreaTop)}px
               </span>
-              <span className="absolute bottom-1 right-2 text-[10px] uppercase tracking-wider text-emerald-700 dark:text-emerald-400 font-mono bg-background/80 px-1 rounded">
+              <span className="absolute bottom-1 right-2 text-[10px] uppercase tracking-wider text-primary font-mono bg-background/80 px-1 rounded">
                 safe-area bottom {Math.round(snapshot.safeAreaBottom)}px
               </span>
             </div>
