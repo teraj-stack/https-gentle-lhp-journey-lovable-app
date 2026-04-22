@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { ArrowLeft, ChevronLeft, ChevronRight, Eye, EyeOff } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight, Eye, EyeOff, Bug, Trash2 } from "lucide-react";
 import Header from "@/components/layout/Header";
 import { computeRowScrollTarget } from "@/lib/scrollHelpers";
 import { cn } from "@/lib/utils";
@@ -28,10 +28,30 @@ interface SafeAreaSnapshot {
   status: "ok" | "hidden-top" | "hidden-bottom";
 }
 
+interface DebugEntry {
+  ts: number; // performance.now() chwili skoku
+  fromIdx: number;
+  toIdx: number;
+  trigger: "next" | "prev" | "quick" | "key-j" | "key-k";
+  headerH: number;
+  cssVarRaw: string; // surowa wartość --header-height (np. "80px")
+  rectTopBefore: number;
+  rowHeight: number;
+  scrollYBefore: number;
+  viewportHeight: number;
+  targetY: number | null; // null = wiersz już widoczny, force=false (u nas force=true → zawsze number)
+  offset: number; // delta scrollY: targetY - scrollYBefore
+  behavior: "smooth" | "auto";
+  reason: "default" | "reduced-motion" | "rapid-repeat";
+  msSinceLast: number; // ms od poprzedniego skoku (do diagnozy rapid-repeat)
+}
+
 const AdminScrollTest = () => {
   const { isAdmin, loading: isLoading } = useIsAdmin();
   const [activeIdx, setActiveIdx] = useState(0);
   const [showSafeArea, setShowSafeArea] = useState(true);
+  const [showDebug, setShowDebug] = useState(false);
+  const [debugLog, setDebugLog] = useState<DebugEntry[]>([]);
   const [snapshot, setSnapshot] = useState<SafeAreaSnapshot | null>(null);
   const lastScrollAtRef = useRef(0);
   const rowsRef = useRef<Map<number, HTMLDivElement>>(new Map());
