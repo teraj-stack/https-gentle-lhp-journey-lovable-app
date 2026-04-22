@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { ArrowLeft, ShieldAlert, Activity, AlertTriangle, RefreshCw, Ban, Webhook, Repeat, Filter, X, Eye, Download, ArrowDownWideNarrow, ArrowUpWideNarrow, Locate, Info, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Settings2, RotateCcw, FileDown, FileUp, Link2 } from "lucide-react";
+import { ArrowLeft, ShieldAlert, Activity, AlertTriangle, RefreshCw, Ban, Webhook, Repeat, Filter, X, Eye, Download, ArrowDownWideNarrow, ArrowUpWideNarrow, Locate, Info, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Settings2, RotateCcw, FileDown, FileUp, Link2, Play, Pause } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Toggle } from "@/components/ui/toggle";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -22,7 +22,7 @@ import { Label } from "@/components/ui/label";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import SeoHead from "@/components/shared/SeoHead";
 import { computeRowScrollTarget } from "@/lib/scrollHelpers";
-import { applyPulseSequence } from "@/lib/pulseAnimation";
+import { applyPulseSequence, type PulsePrefs } from "@/lib/pulseAnimation";
 import {
   exportFocusPrefsToJson,
   importFocusPrefsFromJson,
@@ -197,6 +197,100 @@ const JumpLabel = ({
     </div>
   );
 };
+
+// Mini-tryb testowy w popoverze „Styl focusu" — 3 sztuczne wiersze, na które
+// cyklicznie aplikujemy `applyPulseSequence` z aktualnymi `prefs` (przekazanymi z parenta).
+// Każda iteracja przeskakuje na kolejny wiersz (round-robin), pełen cykl trwa
+// `pulseDuration + cooldown` żeby admin zobaczył całą sekwencję pulse→afterglow→cleanup
+// zanim demo skoczy dalej. Dzięki temu zmiana sliderów daje natychmiastowy podgląd
+// efektu BEZ konieczności scrollowania do tabeli i klikania Next/Prev.
+const FocusDemo = ({
+  prefs,
+  highContrast,
+  active,
+}: {
+  prefs: PulsePrefs;
+  highContrast: boolean;
+  active: boolean;
+}) => {
+  const rowsRef = useRef<(HTMLDivElement | null)[]>([null, null, null]);
+  // Per-component WeakMap timerów dla applyPulseSequence — izolacja od głównej tabeli.
+  const timersRef = useRef<WeakMap<HTMLElement, number>>(new WeakMap());
+  // Tick licznik zwiększany przez interval; z niego liczymy aktywny indeks (mod 3).
+  const [tick, setTick] = useState(0);
+  // Każda iteracja: 1700ms pulse + afterglowMs + 500ms cooldown na "wybrzmienie" + krótka pauza.
+  // Domyślne 2400ms afterglow → cykl ~4.6s na wiersz, 3 wiersze → ~14s pełnego loopu.
+  const cycleDuration = 1700 + prefs.afterglowMs + 500;
+
+  useEffect(() => {
+    if (!active) return;
+    // Pierwsze odpalenie od razu, potem co `cycleDuration` ms.
+    const startEl = rowsRef.current[0];
+    if (startEl) {
+      applyPulseSequence(startEl, prefs, timersRef.current, { highContrast });
+    }
+    setTick(1);
+    const id = window.setInterval(() => {
+      setTick((t) => {
+        const next = t + 1;
+        const el = rowsRef.current[next % 3];
+        if (el) {
+          applyPulseSequence(el, prefs, timersRef.current, { highContrast });
+        }
+        return next;
+      });
+    }, cycleDuration);
+    return () => {
+      window.clearInterval(id);
+      // Cleanup wszystkich klas/CSS vars na sztucznych wierszach przy zatrzymaniu demo.
+      rowsRef.current.forEach((el) => {
+        if (!el) return;
+        el.classList.remove("animate-jump-pulse", "animate-jump-afterglow", "jump-hc");
+        el.style.removeProperty("--jump-ring-w");
+        el.style.removeProperty("--jump-glow-blur");
+        el.style.removeProperty("--jump-glow-spread");
+        el.style.removeProperty("--jump-glow-opacity");
+        el.style.removeProperty("--jump-afterglow-duration");
+      });
+    };
+    // Zmiana prefs (slider) restartuje interwał z nową długością cyklu — dzięki temu
+    // user widzi DOKŁADNIE ten czas afterglow który ustawił, a nie poprzedni.
+  }, [active, cycleDuration, prefs, highContrast]);
+
+  const activeIdx = active ? tick % 3 : -1;
+
+  return (
+    <div className="space-y-1.5" aria-label="Podgląd stylu focusu">
+      {[0, 1, 2].map((i) => {
+        const isActive = i === activeIdx;
+        return (
+          <div
+            key={i}
+            ref={(el) => { rowsRef.current[i] = el; }}
+            className={`px-2.5 py-1.5 rounded text-[11px] font-mono border bg-card ${
+              isActive ? "border-primary/40" : "border-border/50 text-muted-foreground/70"
+            }`}
+            // Symulujemy aktywny "navigator row" — gdy tick wskazuje ten indeks, dajemy
+            // ten sam inline box-shadow jak w głównej tabeli (z aktualnych prefs).
+            style={
+              isActive
+                ? {
+                    boxShadow: highContrast
+                      ? `inset 0 0 0 ${prefs.ringWidthPx + 2}px hsl(var(--primary)), inset 0 0 0 ${prefs.ringWidthPx + 4}px hsl(var(--foreground) / 0.7), 0 0 ${Math.round(20 + (prefs.glowIntensity / 100) * 20)}px ${Math.round((prefs.glowIntensity / 100) * 6)}px hsl(var(--primary) / ${(0.4 + (prefs.glowIntensity / 100) * 0.5).toFixed(2)})`
+                      : `inset 0 0 0 ${prefs.ringWidthPx}px hsl(var(--primary)), 0 0 ${Math.round(16 + (prefs.glowIntensity / 100) * 14)}px ${Math.round((prefs.glowIntensity / 100) * 4)}px hsl(var(--primary) / ${(0.25 + (prefs.glowIntensity / 100) * 0.45).toFixed(2)})`,
+                  }
+                : undefined
+            }
+          >
+            <span className="opacity-60">row #{i + 1}</span>{" "}
+            <span>192.168.{10 + i}.{42 + i * 7}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
 
 const AdminSystemHealth = () => {
   const navigate = useNavigate();
@@ -379,6 +473,9 @@ const AdminSystemHealth = () => {
   });
   // Hidden input ref dla Import — programowy klik z przycisku otwiera natywny picker.
   const importFileInputRef = useRef<HTMLInputElement | null>(null);
+  // Tryb testowy w popoverze — cyklicznie pulsuje sztuczne wiersze, żeby admin
+  // od razu zobaczył efekt po zmianie sliderów (bez chodzenia do tabeli).
+  const [focusDemoActive, setFocusDemoActive] = useState(false);
   useEffect(() => {
     try {
       window.localStorage.setItem(FOCUS_PREFS_LS_KEY, JSON.stringify(focusPrefs));
@@ -1795,6 +1892,59 @@ const AdminSystemHealth = () => {
                             Preferencje zapisywane w przeglądarce — nie musisz ich ustawiać przy
                             każdej sesji. Zmiany działają od razu, sprawdź na kolejnym Next/Prev.
                           </p>
+
+                          {/* Tryb testowy: cykliczny podgląd pulse→afterglow na 3 sztucznych
+                              wierszach. Pozwala zobaczyć efekt zmiany sliderów BEZ scrollowania
+                              do tabeli. Toggle Play/Pause — domyślnie OFF (nie zaśmieca popovera). */}
+                          <div className="rounded-md border border-border/60 bg-muted/30 p-2.5 space-y-2">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-xs font-medium">Tryb testowy</span>
+                                {focusDemoActive && (
+                                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-primary/15 text-primary text-[9px] font-mono uppercase tracking-wide">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                                    Live
+                                  </span>
+                                )}
+                              </div>
+                              <Button
+                                variant={focusDemoActive ? "secondary" : "outline"}
+                                size="sm"
+                                className="h-7 px-2 text-xs gap-1"
+                                onClick={() => setFocusDemoActive((v) => !v)}
+                                aria-pressed={focusDemoActive}
+                                title={
+                                  focusDemoActive
+                                    ? "Zatrzymaj cykliczny podgląd"
+                                    : "Uruchom cykliczny podgląd efektu na sztucznych wierszach"
+                                }
+                              >
+                                {focusDemoActive ? (
+                                  <>
+                                    <Pause className="h-3 w-3" />
+                                    Stop
+                                  </>
+                                ) : (
+                                  <>
+                                    <Play className="h-3 w-3" />
+                                    Start
+                                  </>
+                                )}
+                              </Button>
+                            </div>
+                            <FocusDemo
+                              prefs={focusPrefs}
+                              highContrast={highContrastFocus}
+                              active={focusDemoActive}
+                            />
+                            {!focusDemoActive && (
+                              <p className="text-[10px] text-muted-foreground/70 leading-snug">
+                                Po włączeniu wiersze cyklicznie zagrają pulse → afterglow z aktualnymi
+                                ustawieniami. Zmiana slidera zastosuje się od razu w kolejnym cyklu.
+                              </p>
+                            )}
+                          </div>
+
 
                           <div className="space-y-2">
                             <div className="flex items-center justify-between">
