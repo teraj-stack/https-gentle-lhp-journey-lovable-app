@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useMemo, type CSSProperties } from "react";
+import { FocusToastLiveRegionInspector } from "@/components/admin/FocusToastLiveRegionInspector";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import type { Session } from "@supabase/supabase-js";
