@@ -135,6 +135,62 @@ const MetadataView = ({ data }: { data: Record<string, unknown> }) => {
   );
 };
 
+// Pływająca etykieta „X/Y" przyklejona do prawej krawędzi aktywnego wiersza
+// po skoku Next/Prev/Enter/J/K. position: fixed + rAF do śledzenia rect (scroll/resize).
+// Auto-fade-out w ostatnich 400ms żywotności.
+const JumpLabel = ({
+  el,
+  ordinal,
+  total,
+  expiresAt,
+}: {
+  el: HTMLElement;
+  ordinal: number;
+  total: number;
+  expiresAt: number;
+}) => {
+  const [pos, setPos] = useState<{ top: number; left: number; visible: boolean; opacity: number }>(
+    () => ({ top: 0, left: 0, visible: false, opacity: 0 }),
+  );
+  useEffect(() => {
+    let raf = 0;
+    const tick = () => {
+      const rect = el.getBoundingClientRect();
+      const vh = window.innerHeight;
+      const vw = window.innerWidth;
+      const visible = rect.bottom > 0 && rect.top < vh && rect.right > 0 && rect.left < vw;
+      const remaining = expiresAt - performance.now();
+      const opacity = remaining > 400 ? 1 : Math.max(0, remaining / 400);
+      const top = Math.max(8, Math.min(vh - 32, rect.top + rect.height / 2 - 14));
+      const left = Math.min(vw - 12, rect.right + 8);
+      setPos({ top, left, visible, opacity });
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [el, expiresAt]);
+  if (!pos.visible || pos.opacity <= 0) return null;
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      style={{
+        position: "fixed",
+        top: pos.top,
+        left: pos.left,
+        opacity: pos.opacity,
+        pointerEvents: "none",
+        zIndex: 60,
+        transition: "opacity 120ms ease-out",
+      }}
+      className="px-2 py-1 rounded-md bg-primary text-primary-foreground text-xs font-mono font-semibold shadow-[0_4px_14px_-2px_hsl(var(--primary)/0.55)] ring-1 ring-primary-foreground/20 whitespace-nowrap"
+    >
+      <span className="opacity-80 mr-1">▸</span>
+      {ordinal}/{total}
+    </div>
+  );
+};
+
 const AdminSystemHealth = () => {
   const navigate = useNavigate();
   const [session, setSession] = useState<Session | null>(null);
@@ -345,6 +401,19 @@ const AdminSystemHealth = () => {
     return () => window.clearTimeout(t);
   }, [highlightedSource]);
 
+  // Pływająca etykieta „X/Y" pojawiająca się tuż obok aktywnego wiersza zaraz po skoku.
+  // Pokazuje aktualny indeks i sumę dopasowań, żeby user od razu widział „gdzie jestem"
+  // bez szukania badge'a w komórce. Ustawiana przez pulseRow(label={...}), automatycznie
+  // znika po `pulseLabelDuration` (1700ms pulse + afterglowMs + 200ms zapasu).
+  // `el` przechowywany żeby JumpLabel mógł śledzić rect przez rAF (scroll/resize).
+  const [jumpLabel, setJumpLabel] = useState<{
+    el: HTMLElement;
+    ordinal: number;
+    total: number;
+    expiresAt: number;
+  } | null>(null);
+  const jumpLabelTimerRef = useRef<number | null>(null);
+
   // Snapshot filtrów tabeli źródeł sprzed wywołania "Pokaż w tabeli" — używany do przywrócenia
   // poprzednich ustawień filtrowania, jeśli reveal je wyczyścił. null = brak aktywnego snapshotu.
   const [filtersSnapshot, setFiltersSnapshot] = useState<{
@@ -426,7 +495,10 @@ const AdminSystemHealth = () => {
   // żeby a11y/keyboard users dostali screen-reader announcement i mogli kontynuować nawigację
   // klawiszem (np. Tab z wiersza do kolejnych przycisków). Domyślnie false — focus podczas
   // skoków w modalu ukradłby klawiaturę z dialogu.
-  const pulseRow = (el: HTMLElement, opts: { focus?: boolean } = {}) => {
+  const pulseRow = (
+    el: HTMLElement,
+    opts: { focus?: boolean; label?: { ordinal: number; total: number } } = {},
+  ) => {
     const prefersReducedMotion =
       typeof window.matchMedia === "function" &&
       window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -502,6 +574,24 @@ const AdminSystemHealth = () => {
       }, 1700 + focusPrefsRef.current.afterglowMs + 100);
       pulseTimersRef.current.set(el, cleanupTimer);
     }
+    // Pływająca etykieta „X/Y" obok wiersza — pokazujemy zawsze gdy podany label,
+    // niezależnie od prefers-reduced-motion (etykieta to informacja, nie animacja).
+    if (opts.label) {
+      const totalDuration = 1700 + focusPrefsRef.current.afterglowMs + 200;
+      setJumpLabel({
+        el,
+        ordinal: opts.label.ordinal,
+        total: opts.label.total,
+        expiresAt: performance.now() + totalDuration,
+      });
+      if (jumpLabelTimerRef.current !== null) {
+        window.clearTimeout(jumpLabelTimerRef.current);
+      }
+      jumpLabelTimerRef.current = window.setTimeout(() => {
+        setJumpLabel(null);
+        jumpLabelTimerRef.current = null;
+      }, totalDuration);
+    }
     if (opts.focus) {
       // preventScroll: nasz scrollRowIntoView już wycentrował wiersz — focus nie powinien
       // tego cofać natywnym skokiem do brzegu viewportu.
@@ -555,7 +645,15 @@ const AdminSystemHealth = () => {
           scrollRowIntoView(el);
           // Pulse + focus po zamknięciu modala — modal już odmontowany, więc focus
           // na wierszu jest bezpieczny i pomaga screen-readerowi ogłosić docelowy wiersz.
-          pulseRow(el, { focus: true });
+          // Etykieta „X/Y": reveal trafia w exact (idx 0), więc ordinal=1; total
+          // wyznaczamy z buildMatchKeys (uwzględnia bieżący highlightScope).
+          {
+            const totalKeys = buildMatchKeys({ ip, ua }, highlightScope).length;
+            pulseRow(el, {
+              focus: true,
+              label: { ordinal: 1, total: Math.max(totalKeys, 1) },
+            });
+          }
           // Zapamiętaj exact source — render porównuje s.ip+s.ua dla mocnego highlightu,
           // a samo IP dla delikatnego highlightu pokrewnych wierszy z tego samego adresu.
           setHighlightedSource({ ip, ua });
@@ -621,7 +719,10 @@ const AdminSystemHealth = () => {
       scrollRowIntoView(el, true);
       // focus=true: nawigator bar = modal zamknięty → bezpiecznie kradniemy fokus,
       // żeby a11y/screen-reader ogłosił nowy wiersz i Tab kontynuował z tabeli.
-      pulseRow(el, { focus: true });
+      pulseRow(el, {
+        focus: true,
+        label: { ordinal: idx + 1, total: keys.length },
+      });
     };
     requestAnimationFrame(() => tryScroll(0));
   };
@@ -703,7 +804,7 @@ const AdminSystemHealth = () => {
       const el = document.querySelector<HTMLElement>(`[data-retry-row-key="${CSS.escape(key)}"]`);
       if (el) {
         scrollRowIntoView(el, true);
-        pulseRow(el);
+        pulseRow(el, { label: { ordinal: idx + 1, total } });
       }
       const nextIndex = (idx + 1) % total;
       // Persist do mapy — żeby reopen modala dla tego samego (ip, ua, scope) wrócił tu.
@@ -743,7 +844,7 @@ const AdminSystemHealth = () => {
       const el = document.querySelector<HTMLElement>(`[data-retry-row-key="${CSS.escape(key)}"]`);
       if (el) {
         scrollRowIntoView(el, true);
-        pulseRow(el);
+        pulseRow(el, { label: { ordinal: idx + 1, total } });
       }
       // Persist tak samo jak performJumpToMatch — kolejny J pójdzie do idx+1.
       const nextIndex = (idx + 1) % total;
@@ -751,7 +852,7 @@ const AdminSystemHealth = () => {
       jumpStateMemoryRef.current.set(memoryKey, { index: nextIndex, direction: newDirection });
       return nextIndex;
     });
-  };
+};
 
 
   // Skróty klawiszowe w modalu inspekcji:
@@ -3102,6 +3203,14 @@ const AdminSystemHealth = () => {
           )}
         </DialogContent>
       </Dialog>
+      {jumpLabel && (
+        <JumpLabel
+          el={jumpLabel.el}
+          ordinal={jumpLabel.ordinal}
+          total={jumpLabel.total}
+          expiresAt={jumpLabel.expiresAt}
+        />
+      )}
     </>
   );
 };
