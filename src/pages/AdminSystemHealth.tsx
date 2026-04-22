@@ -3203,6 +3203,14 @@ const AdminSystemHealth = () => {
           )}
         </DialogContent>
       </Dialog>
+      {jumpLabel && (
+        <JumpLabel
+          el={jumpLabel.el}
+          ordinal={jumpLabel.ordinal}
+          total={jumpLabel.total}
+          expiresAt={jumpLabel.expiresAt}
+        />
+      )}
     </>
   );
 };
