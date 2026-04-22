@@ -2095,24 +2095,63 @@ const AdminSystemHealth = () => {
                         Pozycja, do której skoczy następny ↓ / J / klik „Pokaż kolejne dopasowania”.
                       </TooltipContent>
                     </UITooltip>
-                    {/* Chip skrótów — wizualny separator + bogaty tooltip z pełną listą bindingów.
-                        Trzymamy zwięzłe „↑/↓ • Enter” w treści chipa, szczegóły w tooltipie. */}
-                    <UITooltip delayDuration={150}>
-                      <TooltipTrigger asChild>
-                        <span className="ml-auto inline-flex items-center gap-1 cursor-help rounded border border-border/60 bg-muted/40 px-1.5 py-0.5 font-mono text-[10px]">
-                          ⌨ ↑/↓ • Enter
-                        </span>
-                      </TooltipTrigger>
-                      <TooltipContent side="top" align="end" className="text-xs max-w-xs">
-                        <div className="font-semibold mb-1">Skróty w liście</div>
-                        <ul className="space-y-0.5">
-                          <li><kbd className="font-mono">↑</kbd> / <kbd className="font-mono">↓</kbd> — przełącz wybór wiersza</li>
-                          <li><kbd className="font-mono">Home</kbd> / <kbd className="font-mono">End</kbd> — pierwszy / ostatni</li>
-                          <li><kbd className="font-mono">Enter</kbd> / <kbd className="font-mono">Space</kbd> — skok do wiersza</li>
-                          <li className="pt-1 text-muted-foreground">Globalnie (poza listą): <kbd className="font-mono">J</kbd>/<kbd className="font-mono">K</kbd> = następne / poprzednie</li>
-                        </ul>
-                      </TooltipContent>
-                    </UITooltip>
+                    {/* Prawa strona legendy: segmented control "Zakres" (exact / same-ip / same-ua)
+                        + chip ze skrótami klawiszowymi. Reużywamy istniejący setHighlightScope —
+                        dokładnie ten sam stan co przycisk w nagłówku modala (źródło prawdy w LS).
+                        Zmiana scope automatycznie odświeża listę dopasowań (buildMatchKeys w useMemo
+                        dependsuje na highlightScope), więc UI sam się przerenderuje. */}
+                    <div className="ml-auto flex items-center gap-1.5">
+                      <span className="text-[10px] text-muted-foreground hidden sm:inline">Zakres:</span>
+                      <div role="radiogroup" aria-label="Zakres podświetlenia" className="inline-flex rounded border border-border/60 overflow-hidden">
+                        {(["exact", "same-ip", "same-ua"] as const).map((scope) => {
+                          const labels: Record<typeof scope, { short: string; full: string }> = {
+                            "exact": { short: "Exact", full: "Tylko dokładny IP+UA" },
+                            "same-ip": { short: "Same IP", full: "Wszystkie wpisy z tym samym IP" },
+                            "same-ua": { short: "Same UA", full: "Wszystkie wpisy z tym samym UA" },
+                          };
+                          const isActive = highlightScope === scope;
+                          return (
+                            <UITooltip key={scope} delayDuration={150}>
+                              <TooltipTrigger asChild>
+                                <button
+                                  type="button"
+                                  role="radio"
+                                  aria-checked={isActive}
+                                  onClick={() => setHighlightScope(scope)}
+                                  className={`px-2 py-0.5 text-[10px] font-medium transition-colors ${
+                                    isActive
+                                      ? "bg-primary text-primary-foreground"
+                                      : "bg-muted/40 text-muted-foreground hover:bg-muted/70"
+                                  }`}
+                                >
+                                  {labels[scope].short}
+                                </button>
+                              </TooltipTrigger>
+                              <TooltipContent side="top" className="text-xs">
+                                {labels[scope].full}
+                              </TooltipContent>
+                            </UITooltip>
+                          );
+                        })}
+                      </div>
+                      {/* Chip skrótów — wizualny separator + bogaty tooltip z pełną listą bindingów. */}
+                      <UITooltip delayDuration={150}>
+                        <TooltipTrigger asChild>
+                          <span className="inline-flex items-center gap-1 cursor-help rounded border border-border/60 bg-muted/40 px-1.5 py-0.5 font-mono text-[10px]">
+                            ⌨ ↑/↓ • Enter
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" align="end" className="text-xs max-w-xs">
+                          <div className="font-semibold mb-1">Skróty w liście</div>
+                          <ul className="space-y-0.5">
+                            <li><kbd className="font-mono">↑</kbd> / <kbd className="font-mono">↓</kbd> — przełącz wybór wiersza</li>
+                            <li><kbd className="font-mono">Home</kbd> / <kbd className="font-mono">End</kbd> — pierwszy / ostatni</li>
+                            <li><kbd className="font-mono">Enter</kbd> / <kbd className="font-mono">Space</kbd> — skok do wiersza</li>
+                            <li className="pt-1 text-muted-foreground">Globalnie (poza listą): <kbd className="font-mono">J</kbd>/<kbd className="font-mono">K</kbd> = następne / poprzednie</li>
+                          </ul>
+                        </TooltipContent>
+                      </UITooltip>
+                    </div>
                   </div>
                   {(() => {
                     const q = inspectListQuery.trim().toLowerCase();
