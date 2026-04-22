@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { ArrowLeft, ShieldAlert, Activity, AlertTriangle, RefreshCw, Ban, Webhook, Repeat, Filter, X, Eye, Download, ArrowDownWideNarrow, ArrowUpWideNarrow, Locate, Info, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Settings2, RotateCcw, FileDown, FileUp, Link2, Play, Pause, FlaskConical } from "lucide-react";
+import { ArrowLeft, ShieldAlert, Activity, AlertTriangle, RefreshCw, Ban, Webhook, Repeat, Filter, X, Eye, Download, ArrowDownWideNarrow, ArrowUpWideNarrow, Locate, Info, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Settings2, RotateCcw, FileDown, FileUp, Link2, Play, Pause, FlaskConical, ClipboardPaste } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Toggle } from "@/components/ui/toggle";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -32,6 +32,7 @@ import {
   importFocusPrefsFromJson,
   buildFocusPrefsShareUrl,
   extractFocusPrefsFromHash,
+  decodeFocusPrefsFromFragment,
   sanitizeFocusPrefsByVariant,
   getDefaultFocusPrefsByVariant,
 } from "@/lib/focusPrefsSerialization";
@@ -867,6 +868,52 @@ const AdminSystemHealth = () => {
       });
     } catch (err) {
       toast.error("Nie udało się skopiować linka", {
+        description: err instanceof Error ? err.message : "Brak dostępu do clipboardu",
+      });
+    }
+  };
+  // Wklej link ze schowka i zaaplikuj TYLKO do aktualnie edytowanego wariantu.
+  // Akceptuje pełny URL z `#focus-prefs=...` ALBO sam fragment (sam encoded base64url),
+  // żeby admin mógł skopiować dowolny format. Z dekodowanego obiektu (3 warianty)
+  // bierzemy TYLKO `editingVariant` — pozostałe 2 sloty pozostają bez zmian.
+  // Powód: parny przeciwwaga do „Kopiuj link (variant)" — admin udostępnia wariant,
+  // odbiorca wkleja i nadpisuje TYLKO ten jeden styl, nie tracąc swojego light/dark.
+  const handlePasteFocusPrefsLinkVariant = async () => {
+    const label = formatFocusVariantLabel(editingVariant);
+    try {
+      const text = (await navigator.clipboard.readText()).trim();
+      if (!text) {
+        toast.error("Schowek jest pusty", {
+          description: "Skopiuj najpierw link z preferencjami.",
+        });
+        return;
+      }
+      // Spróbuj 3 formaty wejścia kolejno:
+      //  1) pełny URL z hashem (`https://…#focus-prefs=…`)
+      //  2) sam hash (`#focus-prefs=…`)
+      //  3) goły fragment base64url (np. po skopiowaniu z URL ręcznie)
+      let decoded: FocusPrefsByVariant | null = null;
+      const hashIdx = text.indexOf("#");
+      if (hashIdx !== -1) {
+        decoded = extractFocusPrefsFromHash(text.slice(hashIdx));
+      } else if (text.startsWith("focus-prefs=")) {
+        decoded = decodeFocusPrefsFromFragment(text.slice("focus-prefs=".length));
+      } else {
+        decoded = decodeFocusPrefsFromFragment(text);
+      }
+      if (!decoded) {
+        toast.error("Nieprawidłowy link", {
+          description: "Schowek nie zawiera poprawnego linku z preferencjami stylu focusu.",
+        });
+        return;
+      }
+      const incoming = decoded[editingVariant];
+      setFocusPrefsByVariant((prev) => ({ ...prev, [editingVariant]: incoming }));
+      toast.success(`Zaaplikowano wariant ${label}`, {
+        description: `ring ${incoming.ringWidthPx}px · glow ${incoming.glowIntensity}% · afterglow ${incoming.afterglowMs}ms`,
+      });
+    } catch (err) {
+      toast.error("Nie udało się odczytać schowka", {
         description: err instanceof Error ? err.message : "Brak dostępu do clipboardu",
       });
     }
@@ -2676,17 +2723,31 @@ const AdminSystemHealth = () => {
                             </div>
                             {/* Drugi rząd: link tylko dla aktualnie edytowanego wariantu.
                                 Przydatne gdy admin chce udostępnić tylko jeden styl (np. HC dla a11y),
-                                bez nadpisywania pozostałych 2 wariantów u odbiorcy. */}
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="h-8 w-full text-xs gap-1"
-                              onClick={handleCopyFocusPrefsLinkVariant}
-                              title={`Skopiuj link tylko z ustawieniami wariantu ${formatFocusVariantLabel(editingVariant)}`}
-                            >
-                              <Link2 className="h-3 w-3" />
-                              Kopiuj link ({formatFocusVariantLabel(editingVariant)})
-                            </Button>
+                                bez nadpisywania pozostałych 2 wariantów u odbiorcy.
+                                „Wklej link i zastosuj" — przeciwwaga: odbiorca aktualizuje TYLKO
+                                ten wariant, pozostałe 2 sloty zostają bez zmian. */}
+                            <div className="flex items-center gap-1.5">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-8 flex-1 text-xs gap-1"
+                                onClick={handleCopyFocusPrefsLinkVariant}
+                                title={`Skopiuj link tylko z ustawieniami wariantu ${formatFocusVariantLabel(editingVariant)}`}
+                              >
+                                <Link2 className="h-3 w-3" />
+                                Kopiuj link ({formatFocusVariantLabel(editingVariant)})
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-8 flex-1 text-xs gap-1"
+                                onClick={handlePasteFocusPrefsLinkVariant}
+                                title={`Wklej link ze schowka i zastosuj TYLKO do wariantu ${formatFocusVariantLabel(editingVariant)} (pozostałe warianty bez zmian)`}
+                              >
+                                <ClipboardPaste className="h-3 w-3" />
+                                Wklej i zastosuj ({formatFocusVariantLabel(editingVariant)})
+                              </Button>
+                            </div>
                             <input
                               ref={importFileInputRef}
                               type="file"
