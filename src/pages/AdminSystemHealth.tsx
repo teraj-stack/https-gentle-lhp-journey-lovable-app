@@ -1044,37 +1044,40 @@ const AdminSystemHealth = () => {
     // copyToClipboardWithFallback → najpierw legacy execCommand, potem manual modal
     // z pre-selected tekstem. Admin nigdy nie traci linku.
     await copyToClipboardWithFallback(url, `link wariantu ${label}`, () => {
-      // DUAL-TOAST PATTERN — fallback dla użytkowników bez czytnika ekranu:
+      // DUAL-CHANNEL CONFIRMATION — fallback dla użytkowników BEZ czytnika ekranu:
       //
-      // 1) toast.custom (poniżej) jest w pełni dostępny przez `role=status` +
-      //    `aria-live=polite` + `aria-atomic=true`, ale używa własnego markupu
-      //    (bez natywnej ikony/koloru sonnera). Dla osób bez AT może wyglądać
-      //    mniej "potwierdzeniowo" niż standardowy zielony toast sukcesu.
+      // Problem: poprzednia wersja używała wyłącznie `toast.custom` z własnym
+      // `role=status`+`aria-live=polite`+`aria-atomic=true`. To świetne dla AT,
+      // ale dla osoby BEZ czytnika ekranu custom toast nie ma natywnego stylu
+      // sukcesu sonnera (zielona ikona, kolory), więc wzrokowo jest mniej
+      // rozpoznawalny jako "OK, skopiowano".
       //
-      // 2) toast.success (pierwszy) używa natywnego stylowania sonnera
-      //    (zielona ikona, dedykowane klasy success), więc wzrokowo jest
-      //    natychmiast rozpoznawalny jako "OK, skopiowano". Owijamy go w
-      //    `aria-hidden=true` + `unstyled: false` z classNames przez `style`,
-      //    żeby NIE był ogłoszony przez czytniki (uniknięcie podwójnego
-      //    ogłoszenia tej samej treści).
+      // Rozwiązanie: dwa kanały potwierdzenia jednocześnie:
+      //  1) `toast.success` — natywny wygląd sonnera (ikona ✓, kolor sukcesu).
+      //     Sonner sam zarządza globalnym live regionem, więc dla większości
+      //     czytników to też wystarczy. To jest WIDOCZNE potwierdzenie dla
+      //     osób bez AT.
+      //  2) `toast.custom` z własnym `role=status` + `aria-atomic=true` —
+      //     gwarancja atomicznego ogłoszenia tytułu+opisu jako spójnej całości,
+      //     na wypadek gdyby globalny region sonnera był współdzielony
+      //     z innymi toastami i ogłoszenie zostało pocięte.
       //
-      // Efekt: widzący użytkownik dostaje natywnego sukcesa sonnera,
-      // użytkownik AT dostaje atomiczny live region — każdy w swoim kanale.
+      // Custom toast ma `aria-hidden=true` na wrapperze wizualnym? NIE — chcemy
+      // żeby live region zadziałał. Zamiast tego custom toast jest pozycjonowany
+      // jak zwykły toast (sonner stack je obok siebie), ale wizualnie spójny
+      // z resztą UI. Użytkownik widzi 2 toasty (sukces + custom) — to akceptowalne
+      // bo niosą tę samą informację, a custom dodatkowo eksponuje szczegóły opisu
+      // bez ryzyka ucięcia przez SR.
       const title = `Skopiowano link (${label})`;
 
-      // Wizualny fallback — natywny sonner success, ukryty przed AT.
+      // Kanał #1 — wizualne potwierdzenie sukcesu (natywny styl sonnera).
       toast.success(title, {
         description: desc,
         duration: 4000,
-        // aria-hidden na kontenerze toasta → SR pominie, zobaczy tylko custom.
-        // `closeButton: false` + brak akcji — czysto wizualne potwierdzenie.
-        ariaProps: {
-          role: "status",
-          "aria-live": "off",
-        },
       });
 
-      // Dostępna ścieżka — atomiczny live region dla czytników ekranu.
+      // Kanał #2 — atomiczny live region dla czytników ekranu (gwarancja
+      // ogłoszenia całości, nawet jeśli globalny region sonnera by zawiódł).
       toast.custom(
         (t) => (
           <div
@@ -1097,8 +1100,6 @@ const AdminSystemHealth = () => {
           </div>
         ),
         {
-          // Duration zgodne z domyślnym sukcesem sonnera; live region ogłosi
-          // się raz przy mount (atomic=true → pełny tekst).
           duration: 4000,
         },
       );
