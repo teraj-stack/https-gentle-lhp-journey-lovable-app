@@ -915,8 +915,102 @@ const AdminSystemHealth = () => {
       });
     }
   };
-  // Kopia shareable URL — link niesie wszystkie 3 warianty (compact base64url ~60 znaków).
-  const handleCopyFocusPrefsLink = async () => {
+  /**
+   * Wspólny helper kopiowania do schowka z 2-stopniowym fallbackiem:
+   *
+   *  1. **Modern API** — `navigator.clipboard.writeText` (HTTPS, focused window, permission ok).
+   *     ~95% przypadków: Chrome/FF/Safari na produkcji.
+   *  2. **Legacy fallback** — `document.execCommand('copy')` na ukrytej `<textarea>`.
+   *     Działa też w sandboxed iframe i HTTP w starszych przeglądarkach. Deprecated
+   *     ale wciąż obsługiwane wszędzie. Próbujemy gdy modern API rzuci (`NotAllowed`,
+   *     `SecurityError`, brak `clipboard` w `navigator`).
+   *  3. **Manual fallback** — gdy oba zawiodą, otwiera modal `manualCopyDialog`
+   *     z pre-selected textarea + instrukcją Ctrl/Cmd+C. Admin nie traci danych,
+   *     dostaje też diagnozę dlaczego clipboard nie zadziałał.
+   *
+   * Toasty:
+   *  - **success** → woła `onSuccess` (przekazany przez wywołującego, np. własny
+   *    formatter z opisem prefs).
+   *  - **fallback success** → toast.success z dopiskiem „(legacy)" — admin wie że
+   *    przeglądarka ma issue z clipboardem ale akcja się udała.
+   *  - **manual fallback** → toast.error + otwarcie modala. Komunikat jasno mówi
+   *    co zrobić (3 kroki: zaznacz, Ctrl+C, gotowe).
+   *
+   * Helper jest pure-async — nie zależy od reactowych closure'ów innych niż
+   * `setManualCopyDialog`, więc można go wywołać z dowolnego event handlera.
+   */
+  const copyToClipboardWithFallback = async (
+    text: string,
+    label: string,
+    onSuccess: () => void,
+  ): Promise<void> => {
+    // KROK 1: modern API
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+        onSuccess();
+        return;
+      }
+    } catch {
+      // przejdź do fallback
+    }
+    // KROK 2: legacy execCommand — schowek, jednorazowy textarea, sytuacja awaryjna
+    try {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      // Ukryj poza viewportem ale zachowaj selectability (display:none zabija selection).
+      ta.style.position = "fixed";
+      ta.style.top = "-9999px";
+      ta.style.left = "-9999px";
+      ta.setAttribute("readonly", "");
+      document.body.appendChild(ta);
+      ta.select();
+      ta.setSelectionRange(0, text.length);
+      const ok = document.execCommand("copy");
+      document.body.removeChild(ta);
+      if (ok) {
+        onSuccess();
+        toast.info("Użyto trybu awaryjnego kopiowania", {
+          description: (
+            <span
+              role="status"
+              aria-live="polite"
+              className="block whitespace-normal break-words leading-snug"
+            >
+              Twoja przeglądarka ma ograniczony dostęp do schowka — kopia się udała przez tryb legacy.
+            </span>
+          ),
+          duration: 4000,
+        });
+        return;
+      }
+    } catch {
+      // przejdź do manual fallback
+    }
+    // KROK 3: manual — pokaż modal z tekstem do skopiowania ręcznie
+    // Diagnoza powodu — najczęstsze przyczyny w kolejności prawdopodobieństwa:
+    const reason = !window.isSecureContext
+      ? "Strona nie jest na HTTPS (przeglądarki blokują clipboard na HTTP poza localhost)."
+      : !navigator.clipboard
+        ? "Twoja przeglądarka nie obsługuje Clipboard API (bardzo stara wersja lub iframe bez uprawnień)."
+        : document.hasFocus() === false
+          ? "Okno przeglądarki nie ma focusu (kliknij stronę i spróbuj ponownie)."
+          : "Brak uprawnień do schowka (sprawdź ikonę kłódki w pasku adresu i zezwól na clipboard).";
+    setManualCopyDialog({ text, label, reason });
+    toast.error("Nie udało się skopiować automatycznie", {
+      description: (
+        <span
+          role="alert"
+          aria-live="assertive"
+          aria-atomic="true"
+          className="block whitespace-normal break-words leading-snug"
+        >
+          {`Otwórz okno „Skopiuj ręcznie" i naciśnij Ctrl+C (Cmd+C na Mac). Powód: ${reason}`}
+        </span>
+      ),
+      duration: 8000,
+    });
+  };
     try {
       const url = buildFocusPrefsShareUrl(focusPrefsByVariant, window.location.href);
       await navigator.clipboard.writeText(url);
