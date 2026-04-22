@@ -1638,7 +1638,7 @@ const AdminSystemHealth = () => {
                                   tabIndex={-1}
                                   className={
                                     isNavigatorActive
-                                      ? "bg-primary/20 ring-2 ring-primary transition-colors cursor-help focus:outline-none"
+                                      ? "bg-primary/20 ring-2 ring-primary ring-offset-2 ring-offset-background shadow-[0_0_20px_-4px_hsl(var(--primary)/0.55)] transition-all cursor-help focus:outline-none"
                                       : isExactHighlight
                                         ? "bg-primary/15 ring-2 ring-primary/40 transition-colors cursor-help focus:outline-none"
                                         : isRelatedHighlight
