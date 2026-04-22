@@ -32,6 +32,7 @@ import {
   importFocusPrefsFromJson,
   buildFocusPrefsShareUrl,
   extractFocusPrefsFromHash,
+  decodeFocusPrefsFromFragment,
   sanitizeFocusPrefsByVariant,
   getDefaultFocusPrefsByVariant,
 } from "@/lib/focusPrefsSerialization";
