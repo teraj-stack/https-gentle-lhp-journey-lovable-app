@@ -2858,22 +2858,34 @@ const AdminSystemHealth = () => {
                               <Button
                                 variant="outline"
                                 size="sm"
-                                className="h-8 flex-1 text-xs gap-1"
+                                className="h-8 flex-1 text-xs gap-1 min-w-0"
                                 onClick={handleCopyFocusPrefsLinkVariant}
                                 title={`Skopiuj link tylko z ustawieniami wariantu ${formatFocusVariantLabel(editingVariant)}`}
                               >
-                                <Link2 className="h-3 w-3" />
-                                Kopiuj link ({formatFocusVariantLabel(editingVariant)})
+                                <Link2 className="h-3 w-3 flex-shrink-0" />
+                                <span className="truncate">Kopiuj link ({formatFocusVariantLabel(editingVariant)})</span>
+                              </Button>
+                              {/* „Pokaż link" — modal z dokładnym URL fragment, który zostałby skopiowany.
+                                  Icon-only żeby nie rozpychać rzędu; aria-label dla SR. */}
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-8 w-8 p-0 flex-shrink-0"
+                                onClick={() => setShowLinkOpen(true)}
+                                title={`Pokaż dokładny URL fragment dla wariantu ${formatFocusVariantLabel(editingVariant)} (bez kopiowania)`}
+                                aria-label={`Pokaż link dla wariantu ${formatFocusVariantLabel(editingVariant)}`}
+                              >
+                                <Eye className="h-3 w-3" />
                               </Button>
                               <Button
                                 variant="outline"
                                 size="sm"
-                                className="h-8 flex-1 text-xs gap-1"
+                                className="h-8 flex-1 text-xs gap-1 min-w-0"
                                 onClick={handlePasteFocusPrefsLinkVariant}
                                 title={`Wklej link ze schowka i zastosuj TYLKO do wariantu ${formatFocusVariantLabel(editingVariant)} (pozostałe warianty bez zmian)`}
                               >
-                                <ClipboardPaste className="h-3 w-3" />
-                                Wklej i zastosuj ({formatFocusVariantLabel(editingVariant)})
+                                <ClipboardPaste className="h-3 w-3 flex-shrink-0" />
+                                <span className="truncate">Wklej i zastosuj ({formatFocusVariantLabel(editingVariant)})</span>
                               </Button>
                             </div>
                             <input
