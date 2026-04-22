@@ -27,6 +27,7 @@ import {
   type FocusPrefs,
   type FocusPrefsByVariant,
   type ThemeVariant,
+  THEME_VARIANTS,
   exportFocusPrefsToJson,
   importFocusPrefsFromJson,
   buildFocusPrefsShareUrl,
