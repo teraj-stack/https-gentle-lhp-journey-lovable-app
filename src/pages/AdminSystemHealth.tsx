@@ -439,7 +439,10 @@ const AdminSystemHealth = () => {
   // żeby a11y/keyboard users dostali screen-reader announcement i mogli kontynuować nawigację
   // klawiszem (np. Tab z wiersza do kolejnych przycisków). Domyślnie false — focus podczas
   // skoków w modalu ukradłby klawiaturę z dialogu.
-  const pulseRow = (el: HTMLElement, opts: { focus?: boolean } = {}) => {
+  const pulseRow = (
+    el: HTMLElement,
+    opts: { focus?: boolean; label?: { ordinal: number; total: number } } = {},
+  ) => {
     const prefersReducedMotion =
       typeof window.matchMedia === "function" &&
       window.matchMedia("(prefers-reduced-motion: reduce)").matches;
