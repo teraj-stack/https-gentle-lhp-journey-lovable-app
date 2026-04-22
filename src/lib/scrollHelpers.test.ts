@@ -264,10 +264,9 @@ describe("computeRowScrollTarget — macierz różnych wysokości headera (bufer
       headerHeight: headerH,
       force: true,
     });
-    // safeAreaTop=96, safeAreaHeight=720, desired=96+(720-10)/2=96+355=451
-    // newRectTop po scrollu = 1000 - (target - 0) = 1000 - target
+    // safeAreaTop=96, safeAreaHeight=800-96-24=680, desired=96+(680-10)/2=96+335=431
     const newRectTop = 1000 - (target ?? 0);
-    expect(newRectTop).toBe(451);
+    expect(newRectTop).toBe(431);
     // KEY ASSERTION: newRectTop > headerH + 16 (bufer respektowany)
     expect(newRectTop).toBeGreaterThanOrEqual(headerH + 16);
   });
