@@ -88,46 +88,78 @@ const AdminScrollTest = () => {
     });
   };
 
-  const scrollToRow = (idx: number) => {
+  const scrollToRow = (idx: number, trigger: DebugEntry["trigger"], fromIdx: number) => {
     const el = rowsRef.current.get(idx);
     if (!el) return;
     const rect = el.getBoundingClientRect();
     const headerH = getHeaderH();
+    const cssVarRaw = getComputedStyle(document.documentElement)
+      .getPropertyValue("--header-height")
+      .trim() || "(brak)";
+    const scrollYBefore = window.scrollY;
+    const viewportHeight = window.innerHeight;
     const targetY = computeRowScrollTarget({
       rectTop: rect.top,
       rowHeight: rect.height,
-      scrollY: window.scrollY,
-      viewportHeight: window.innerHeight,
+      scrollY: scrollYBefore,
+      viewportHeight,
       headerHeight: headerH,
       force: true,
     });
-    if (targetY === null) {
-      // już widoczny, ale wymusiliśmy force=true → computeRowScrollTarget zawsze zwróci number
-      return;
-    }
     const now = performance.now();
+    const msSinceLast = lastScrollAtRef.current === 0 ? Infinity : now - lastScrollAtRef.current;
     const prefersReducedMotion =
       typeof window.matchMedia === "function" &&
       window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const rapidRepeat = now - lastScrollAtRef.current < 250;
+    const rapidRepeat = msSinceLast < 250;
     const behavior: ScrollBehavior = prefersReducedMotion || rapidRepeat ? "auto" : "smooth";
+    const reason: DebugEntry["reason"] = prefersReducedMotion
+      ? "reduced-motion"
+      : rapidRepeat
+      ? "rapid-repeat"
+      : "default";
+
+    // Loguj WSZYSTKO co poszło do helpera + co z niego wyleciało — ostatnie 10 wpisów (FIFO).
+    setDebugLog((log) => [
+      {
+        ts: now,
+        fromIdx,
+        toIdx: idx,
+        trigger,
+        headerH,
+        cssVarRaw,
+        rectTopBefore: rect.top,
+        rowHeight: rect.height,
+        scrollYBefore,
+        viewportHeight,
+        targetY,
+        offset: targetY === null ? 0 : targetY - scrollYBefore,
+        behavior: behavior as "smooth" | "auto",
+        reason,
+        msSinceLast: msSinceLast === Infinity ? 0 : msSinceLast,
+      },
+      ...log,
+    ].slice(0, 10));
+
+    if (targetY === null) return; // wiersz już widoczny + force=false (u nas nigdy)
     lastScrollAtRef.current = now;
     window.scrollTo({ top: targetY, left: 0, behavior });
-    // Snapshot po zakończeniu scrolla — opóźnienie żeby smooth zdążył wylądować.
     window.setTimeout(() => updateSnapshot(idx), behavior === "smooth" ? 450 : 50);
   };
 
-  const jump = (delta: number) => {
+  const jump = (delta: number, trigger: DebugEntry["trigger"] = delta > 0 ? "next" : "prev") => {
     setActiveIdx((prev) => {
       const next = Math.max(0, Math.min(ROW_COUNT - 1, prev + delta));
-      scrollToRow(next);
+      if (next !== prev) scrollToRow(next, trigger, prev);
       return next;
     });
   };
 
   const jumpTo = (idx: number) => {
-    setActiveIdx(idx);
-    scrollToRow(idx);
+    setActiveIdx((prev) => {
+      scrollToRow(idx, "quick", prev);
+      return idx;
+    });
   };
 
   useEffect(() => {
