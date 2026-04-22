@@ -1426,6 +1426,19 @@ const AdminSystemHealth = () => {
                               // od razu widział "gdzie jestem" w sekwencji ◀ Następne ▶.
                               const isNavigatorActive =
                                 !!matchNavigator && matchNavigator.keys[matchNavigator.index] === rowKey;
+                              // Numer porządkowy w sekwencji nawigatora dopasowań (1-based) —
+                              // index 0 z buildMatchKeys = wiersz źródłowy (exact), reszta = related.
+                              // Renderujemy jako mały badge w komórce IP, żeby spójnie pasował
+                              // do licznika "Następne: X/Y" w modalu i mini-listy "Podgląd dopasowań".
+                              // null gdy wiersz nie jest częścią sekwencji nawigatora (np. nawigator
+                              // nieaktywny lub wiersz tylko delikatnie podświetlony, ale poza
+                              // matchNavigator.keys — choć w praktyce buildMatchKeys i nawigator
+                              // używają tego samego źródła).
+                              const navIdx = matchNavigator
+                                ? matchNavigator.keys.indexOf(rowKey)
+                                : -1;
+                              const navOrdinal = navIdx >= 0 ? navIdx + 1 : null;
+                              const navTotal = matchNavigator?.keys.length ?? 0;
                               const row = (
                                 <TableRow
                                   key={rowKey}
@@ -1440,7 +1453,28 @@ const AdminSystemHealth = () => {
                                           : "transition-colors"
                                   }
                                 >
-                                  <TableCell className="font-mono text-xs">{s.ip}</TableCell>
+                                  <TableCell className="font-mono text-xs">
+                                    <div className="flex items-center gap-2">
+                                      {/* Numer porządkowy dopasowania — kolory spójne z legendą:
+                                          primary (gold) = exact (1), muted = related (2..N).
+                                          Pokazujemy też w title pełny "X/Y" do ujednolicenia z
+                                          licznikiem w modalu. Aria-label dla screen-readerów. */}
+                                      {navOrdinal !== null && (
+                                        <span
+                                          className={`shrink-0 inline-flex items-center justify-center min-w-5 h-5 px-1 rounded text-[10px] font-mono font-semibold ${
+                                            navIdx === 0
+                                              ? "bg-primary text-primary-foreground"
+                                              : "bg-muted text-muted-foreground"
+                                          } ${isNavigatorActive ? "ring-2 ring-primary ring-offset-1 ring-offset-background" : ""}`}
+                                          title={`Dopasowanie ${navOrdinal}/${navTotal} ${navIdx === 0 ? "(exact — wiersz źródłowy)" : "(related)"}`}
+                                          aria-label={`Dopasowanie ${navOrdinal} z ${navTotal}`}
+                                        >
+                                          {navOrdinal}
+                                        </span>
+                                      )}
+                                      <span>{s.ip}</span>
+                                    </div>
+                                  </TableCell>
                                   <TableCell className="font-mono text-xs">
                                     {isDeno ? (
                                       <Badge variant="secondary" className="mr-2">webhook DB</Badge>
