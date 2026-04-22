@@ -447,12 +447,6 @@ const AdminSystemHealth = () => {
   // w `pulseRow` oraz na `<TableRow isNavigatorActive>` przez inline style.
   // ============================================================================
   const FOCUS_PREFS_LS_KEY = "admin-system-health.focus-style-prefs";
-  type FocusPrefs = {
-    afterglowMs: number; // 800–6000ms (default 2400)
-    ringWidthPx: number; // 1–6px (default 2; HC uses ringWidthPx + 2)
-    glowIntensity: number; // 0–100 (default 55; mapowane na opacity 0..1)
-  };
-  const FOCUS_PREFS_LS_KEY = "admin-system-health.focus-style-prefs";
   // Per-variant prefs (v2): trzymamy 3 osobne sety stylu focusu — `light`, `dark`, `hc`.
   // Aktywny variant wybierany przez `useThemeVariant(highContrastFocus)` — gdy admin
   // przełącza HC toggle albo zmienia motyw OS, automatycznie aplikuje się variant z LS.
@@ -604,130 +598,6 @@ const AdminSystemHealth = () => {
     const ring = highContrastFocus ? focusPrefs.ringWidthPx + 2 : focusPrefs.ringWidthPx;
     const glow = focusPrefs.glowIntensity / 100; // 0..1
     return {
-      boxShadow: highContrastFocus
-        ? `inset 0 0 0 ${ring}px hsl(var(--primary)), inset 0 0 0 ${ring + 2}px hsl(var(--foreground) / 0.7), 0 0 ${Math.round(20 + glow * 20)}px ${Math.round(glow * 6)}px hsl(var(--primary) / ${(0.4 + glow * 0.5).toFixed(2)})`
-        : `inset 0 0 0 ${ring}px hsl(var(--primary)), 0 0 ${Math.round(16 + glow * 14)}px ${Math.round(glow * 4)}px hsl(var(--primary) / ${(0.25 + glow * 0.45).toFixed(2)})`,
-    };
-  }, [focusPrefs, highContrastFocus]);
-
-
-    if (typeof window === "undefined") return FOCUS_PREFS_DEFAULTS;
-    // Priorytet 1: URL fragment `#focus-prefs=...` (np. po wklejeniu shared linka).
-    // Sanityzacja w extractFocusPrefsFromHash chroni przed out-of-range wartościami.
-    const fromHash = extractFocusPrefsFromHash(window.location.hash);
-    if (fromHash) return fromHash;
-    // Priorytet 2: localStorage (zapamiętane przy poprzedniej sesji).
-    try {
-      const raw = window.localStorage.getItem(FOCUS_PREFS_LS_KEY);
-      if (!raw) return FOCUS_PREFS_DEFAULTS;
-      const parsed = JSON.parse(raw) as Partial<FocusPrefs>;
-      return {
-        afterglowMs: clampNum(parsed.afterglowMs, 800, 6000, FOCUS_PREFS_DEFAULTS.afterglowMs),
-        ringWidthPx: clampNum(parsed.ringWidthPx, 1, 6, FOCUS_PREFS_DEFAULTS.ringWidthPx),
-        glowIntensity: clampNum(parsed.glowIntensity, 0, 100, FOCUS_PREFS_DEFAULTS.glowIntensity),
-      };
-    } catch {
-      return FOCUS_PREFS_DEFAULTS;
-    }
-  });
-  // Hidden input ref dla Import — programowy klik z przycisku otwiera natywny picker.
-  const importFileInputRef = useRef<HTMLInputElement | null>(null);
-  // Tryb testowy w popoverze — cyklicznie pulsuje sztuczne wiersze, żeby admin
-  // od razu zobaczył efekt po zmianie sliderów (bez chodzenia do tabeli).
-  const [focusDemoActive, setFocusDemoActive] = useState(false);
-  useEffect(() => {
-    try {
-      window.localStorage.setItem(FOCUS_PREFS_LS_KEY, JSON.stringify(focusPrefs));
-    } catch {
-      // ignoruj w private mode
-    }
-  }, [focusPrefs]);
-  // Po zaaplikowaniu prefs z URL fragmentu (initial state) — wyczyść hash, żeby
-  // odświeżenie strony nie nadpisało lokalnych zmian usera. Toast informuje użytkownika.
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const fromHash = extractFocusPrefsFromHash(window.location.hash);
-    if (!fromHash) return;
-    // Strip tylko nasz fragment — zachowaj inne klucze hasha jeśli były.
-    const clean = window.location.hash.replace(/(^#|&)focus-prefs=[^&]*/g, "").replace(/^#&/, "#");
-    const newHash = clean === "#" ? "" : clean;
-    window.history.replaceState(null, "", window.location.pathname + window.location.search + newHash);
-    toast.success("Zaaplikowano styl focusu z linka", {
-      description: "Preferencje zostały zapisane lokalnie.",
-    });
-  }, []);
-  // Eksport bieżących prefs do pliku .json — Blob + URL.createObjectURL + auto-click.
-  const handleExportFocusPrefs = () => {
-    try {
-      const json = exportFocusPrefsToJson(focusPrefs);
-      const blob = new Blob([json], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      const stamp = new Date().toISOString().slice(0, 10);
-      a.href = url;
-      a.download = `focus-prefs-${stamp}.json`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      toast.success("Wyeksportowano preferencje", { description: a.download });
-    } catch (err) {
-      toast.error("Błąd eksportu", {
-        description: err instanceof Error ? err.message : "Nieznany błąd",
-      });
-    }
-  };
-  // Kopia shareable URL (#focus-prefs=base64url) do clipboardu — najwygodniejszy
-  // sposób przenosin prefs na inne urządzenie (telefon/inny laptop).
-  const handleCopyFocusPrefsLink = async () => {
-    try {
-      const url = buildFocusPrefsShareUrl(focusPrefs, window.location.href);
-      await navigator.clipboard.writeText(url);
-      toast.success("Skopiowano link z preferencjami", {
-        description: "Wklej go na innym urządzeniu, żeby zaaplikować ten sam styl focusu.",
-      });
-    } catch (err) {
-      toast.error("Nie udało się skopiować linka", {
-        description: err instanceof Error ? err.message : "Brak dostępu do clipboardu",
-      });
-    }
-  };
-  // Import z pliku .json — czytamy przez FileReader, sanityzujemy, ustawiamy stan.
-  const handleImportFocusPrefs = (file: File) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      try {
-        const text = typeof reader.result === "string" ? reader.result : "";
-        const imported = importFocusPrefsFromJson(text);
-        setFocusPrefs(imported);
-        toast.success("Zaimportowano preferencje", {
-          description: `afterglow ${(imported.afterglowMs / 1000).toFixed(1)}s, ring ${imported.ringWidthPx}px, glow ${imported.glowIntensity}%`,
-        });
-      } catch (err) {
-        toast.error("Błąd importu", {
-          description: err instanceof Error ? err.message : "Niepoprawny plik JSON",
-        });
-      }
-    };
-    reader.onerror = () => {
-      toast.error("Nie udało się odczytać pliku");
-    };
-    reader.readAsText(file);
-  };
-  // Trzymaj najnowsze wartości w refie — pulseRow czyta je w momencie wywołania,
-  // żeby nie wymagać przebudowy callbacka po każdej zmianie slidera.
-  const focusPrefsRef = useRef<FocusPrefs>(focusPrefs);
-  useEffect(() => {
-    focusPrefsRef.current = focusPrefs;
-  }, [focusPrefs]);
-  // Inline style dla aktywnego wiersza (isNavigatorActive) — ring + halo wyliczone
-  // z preferencji. Memo, bo używane wielokrotnie w mapie wierszy.
-  const activeRowStyle = useMemo<CSSProperties>(() => {
-    const ring = highContrastFocus ? focusPrefs.ringWidthPx + 2 : focusPrefs.ringWidthPx;
-    const glow = focusPrefs.glowIntensity / 100; // 0..1
-    return {
-      // Tailwind ring używa CSS var --tw-ring-* — ustawiamy bezpośrednio outline
-      // przez box-shadow, żeby grubość była dynamiczna (Tailwind ring-N to statyczne klasy).
       boxShadow: highContrastFocus
         ? `inset 0 0 0 ${ring}px hsl(var(--primary)), inset 0 0 0 ${ring + 2}px hsl(var(--foreground) / 0.7), 0 0 ${Math.round(20 + glow * 20)}px ${Math.round(glow * 6)}px hsl(var(--primary) / ${(0.4 + glow * 0.5).toFixed(2)})`
         : `inset 0 0 0 ${ring}px hsl(var(--primary)), 0 0 ${Math.round(16 + glow * 14)}px ${Math.round(glow * 4)}px hsl(var(--primary) / ${(0.25 + glow * 0.45).toFixed(2)})`,
@@ -2038,18 +1908,81 @@ const AdminSystemHealth = () => {
                               size="sm"
                               className="h-7 px-2 text-xs gap-1"
                               onClick={() => {
-                                setFocusPrefs(FOCUS_PREFS_DEFAULTS);
-                                toast.success("Przywrócono domyślny styl focusu");
+                                const defaults = getDefaultFocusPrefsByVariant();
+                                setEditingVariantPrefs(() => defaults[editingVariant]);
+                                toast.success(`Przywrócono domyślny styl focusu (${editingVariant})`);
                               }}
-                              title="Przywróć wartości domyślne (afterglow 2400ms, ring 2px, glow 55%)"
+                              title={`Przywróć wartości domyślne dla wariantu ${editingVariant}`}
                             >
                               <RotateCcw className="h-3 w-3" />
                               Reset
                             </Button>
                           </div>
+
+                          {/* Tabs wyboru wariantu motywu do edycji — Light / Dark / High Contrast.
+                              Każdy variant ma osobny zestaw prefs (afterglow/ring/glow). Aktywny
+                              variant (oznaczony kropką ●) jest wybierany automatycznie na podstawie
+                              `useThemeVariant(highContrastFocus)` — admin może edytować INNY variant
+                              („z góry"), żeby przygotować ustawienia zanim przełączy motyw. */}
+                          <div className="space-y-1.5">
+                            <div className="flex items-center justify-between">
+                              <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                                Edytuj wariant
+                              </span>
+                              {editingVariantOverride !== null && (
+                                <button
+                                  type="button"
+                                  onClick={() => setEditingVariantOverride(null)}
+                                  className="text-[10px] text-primary hover:underline"
+                                  title="Wróć do edycji aktywnego wariantu"
+                                >
+                                  ← aktywny
+                                </button>
+                              )}
+                            </div>
+                            <div className="grid grid-cols-3 gap-1 rounded-md bg-muted/50 p-0.5">
+                              {(["light", "dark", "hc"] as const).map((v) => {
+                                const isEditing = editingVariant === v;
+                                const isActive = activeThemeVariant === v;
+                                const label = v === "hc" ? "High Contrast" : v === "light" ? "Light" : "Dark";
+                                return (
+                                  <button
+                                    key={v}
+                                    type="button"
+                                    onClick={() => setEditingVariantOverride(v === activeThemeVariant ? null : v)}
+                                    aria-pressed={isEditing}
+                                    className={`relative h-7 rounded text-[11px] font-medium transition-colors ${
+                                      isEditing
+                                        ? "bg-background text-foreground shadow-sm ring-1 ring-primary/40"
+                                        : "text-muted-foreground hover:text-foreground hover:bg-background/60"
+                                    }`}
+                                    title={
+                                      isActive
+                                        ? `${label} — aktywny teraz`
+                                        : `${label} — edytuj „z góry" (zaaplikuje się po przełączeniu motywu)`
+                                    }
+                                  >
+                                    {label}
+                                    {isActive && (
+                                      <span
+                                        className="absolute top-0.5 right-1 w-1.5 h-1.5 rounded-full bg-primary"
+                                        aria-label="Aktywny variant"
+                                      />
+                                    )}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                            <p className="text-[10px] text-muted-foreground/70 leading-snug">
+                              Edytujesz: <span className="font-mono text-foreground">{editingVariant}</span>
+                              {editingVariant !== activeThemeVariant && (
+                                <> — zmiany pojawią się po przełączeniu motywu (aktualnie aktywny: <span className="font-mono">{activeThemeVariant}</span>).</>
+                              )}
+                            </p>
+                          </div>
+
                           <p className="text-xs text-muted-foreground">
-                            Preferencje zapisywane w przeglądarce — nie musisz ich ustawiać przy
-                            każdej sesji. Zmiany działają od razu, sprawdź na kolejnym Next/Prev.
+                            Preferencje zapisywane w przeglądarce — osobny zestaw dla light / dark / HC.
                           </p>
 
                           {/* Tryb testowy: cykliczny podgląd pulse→afterglow na 3 sztucznych
@@ -2092,10 +2025,11 @@ const AdminSystemHealth = () => {
                               </Button>
                             </div>
                             <FocusDemo
-                              prefs={focusPrefs}
-                              highContrast={highContrastFocus}
+                              prefs={focusPrefsByVariant[editingVariant]}
+                              highContrast={editingVariant === "hc"}
                               active={focusDemoActive}
                             />
+
                             {!focusDemoActive && (
                               <p className="text-[10px] text-muted-foreground/70 leading-snug">
                                 Po włączeniu wiersze cyklicznie zagrają pulse → afterglow z aktualnymi
@@ -2105,88 +2039,97 @@ const AdminSystemHealth = () => {
                           </div>
 
 
-                          <div className="space-y-2">
-                            <div className="flex items-center justify-between">
-                              <Label htmlFor="afterglow-slider" className="text-xs font-medium">
-                                Czas afterglow
-                              </Label>
-                              <span className="text-xs font-mono tabular-nums text-muted-foreground">
-                                {(focusPrefs.afterglowMs / 1000).toFixed(1)}s
-                              </span>
-                            </div>
-                            <Slider
-                              id="afterglow-slider"
-                              min={800}
-                              max={6000}
-                              step={100}
-                              value={[focusPrefs.afterglowMs]}
-                              onValueChange={([v]) =>
-                                setFocusPrefs((p) => ({ ...p, afterglowMs: v }))
-                              }
-                              aria-label="Czas trwania afterglow w milisekundach"
-                            />
-                            <div className="flex justify-between text-[10px] text-muted-foreground/70 font-mono">
-                              <span>0.8s</span>
-                              <span>6.0s</span>
-                            </div>
-                          </div>
+                          {(() => {
+                            // Slider edytuje WYBRANY w tabs variant (editingVariant), nie zawsze aktywny.
+                            // Dzięki temu admin może ustawić styl „z góry" dla dark/HC bez przełączania motywu.
+                            const editedPrefs = focusPrefsByVariant[editingVariant];
+                            return (
+                              <>
+                                <div className="space-y-2">
+                                  <div className="flex items-center justify-between">
+                                    <Label htmlFor="afterglow-slider" className="text-xs font-medium">
+                                      Czas afterglow
+                                    </Label>
+                                    <span className="text-xs font-mono tabular-nums text-muted-foreground">
+                                      {(editedPrefs.afterglowMs / 1000).toFixed(1)}s
+                                    </span>
+                                  </div>
+                                  <Slider
+                                    id="afterglow-slider"
+                                    min={800}
+                                    max={6000}
+                                    step={100}
+                                    value={[editedPrefs.afterglowMs]}
+                                    onValueChange={([v]) =>
+                                      setEditingVariantPrefs((p) => ({ ...p, afterglowMs: v }))
+                                    }
+                                    aria-label={`Czas trwania afterglow w milisekundach (variant ${editingVariant})`}
+                                  />
+                                  <div className="flex justify-between text-[10px] text-muted-foreground/70 font-mono">
+                                    <span>0.8s</span>
+                                    <span>6.0s</span>
+                                  </div>
+                                </div>
 
-                          <div className="space-y-2">
-                            <div className="flex items-center justify-between">
-                              <Label htmlFor="ring-slider" className="text-xs font-medium">
-                                Grubość ringa
-                              </Label>
-                              <span className="text-xs font-mono tabular-nums text-muted-foreground">
-                                {focusPrefs.ringWidthPx}px
-                                {highContrastFocus && (
-                                  <span className="ml-1 text-primary">
-                                    (HC: {focusPrefs.ringWidthPx + 2}px)
-                                  </span>
-                                )}
-                              </span>
-                            </div>
-                            <Slider
-                              id="ring-slider"
-                              min={1}
-                              max={6}
-                              step={1}
-                              value={[focusPrefs.ringWidthPx]}
-                              onValueChange={([v]) =>
-                                setFocusPrefs((p) => ({ ...p, ringWidthPx: v }))
-                              }
-                              aria-label="Grubość ringa aktywnego wiersza w pikselach"
-                            />
-                            <div className="flex justify-between text-[10px] text-muted-foreground/70 font-mono">
-                              <span>1px</span>
-                              <span>6px</span>
-                            </div>
-                          </div>
+                                <div className="space-y-2">
+                                  <div className="flex items-center justify-between">
+                                    <Label htmlFor="ring-slider" className="text-xs font-medium">
+                                      Grubość ringa
+                                    </Label>
+                                    <span className="text-xs font-mono tabular-nums text-muted-foreground">
+                                      {editedPrefs.ringWidthPx}px
+                                      {editingVariant === "hc" && (
+                                        <span className="ml-1 text-primary">
+                                          (efektywnie: {editedPrefs.ringWidthPx + 2}px)
+                                        </span>
+                                      )}
+                                    </span>
+                                  </div>
+                                  <Slider
+                                    id="ring-slider"
+                                    min={1}
+                                    max={6}
+                                    step={1}
+                                    value={[editedPrefs.ringWidthPx]}
+                                    onValueChange={([v]) =>
+                                      setEditingVariantPrefs((p) => ({ ...p, ringWidthPx: v }))
+                                    }
+                                    aria-label={`Grubość ringa aktywnego wiersza w pikselach (variant ${editingVariant})`}
+                                  />
+                                  <div className="flex justify-between text-[10px] text-muted-foreground/70 font-mono">
+                                    <span>1px</span>
+                                    <span>6px</span>
+                                  </div>
+                                </div>
 
-                          <div className="space-y-2">
-                            <div className="flex items-center justify-between">
-                              <Label htmlFor="glow-slider" className="text-xs font-medium">
-                                Intensywność glow
-                              </Label>
-                              <span className="text-xs font-mono tabular-nums text-muted-foreground">
-                                {focusPrefs.glowIntensity}%
-                              </span>
-                            </div>
-                            <Slider
-                              id="glow-slider"
-                              min={0}
-                              max={100}
-                              step={5}
-                              value={[focusPrefs.glowIntensity]}
-                              onValueChange={([v]) =>
-                                setFocusPrefs((p) => ({ ...p, glowIntensity: v }))
-                              }
-                              aria-label="Intensywność halo / shadow glow"
-                            />
-                            <div className="flex justify-between text-[10px] text-muted-foreground/70 font-mono">
-                              <span>0% (off)</span>
-                              <span>100% (max)</span>
-                            </div>
-                          </div>
+                                <div className="space-y-2">
+                                  <div className="flex items-center justify-between">
+                                    <Label htmlFor="glow-slider" className="text-xs font-medium">
+                                      Intensywność glow
+                                    </Label>
+                                    <span className="text-xs font-mono tabular-nums text-muted-foreground">
+                                      {editedPrefs.glowIntensity}%
+                                    </span>
+                                  </div>
+                                  <Slider
+                                    id="glow-slider"
+                                    min={0}
+                                    max={100}
+                                    step={5}
+                                    value={[editedPrefs.glowIntensity]}
+                                    onValueChange={([v]) =>
+                                      setEditingVariantPrefs((p) => ({ ...p, glowIntensity: v }))
+                                    }
+                                    aria-label={`Intensywność halo / shadow glow (variant ${editingVariant})`}
+                                  />
+                                  <div className="flex justify-between text-[10px] text-muted-foreground/70 font-mono">
+                                    <span>0% (off)</span>
+                                    <span>100% (max)</span>
+                                  </div>
+                                </div>
+                              </>
+                            );
+                          })()}
 
                           {/* Sekcja eksport / import — przenoszenie prefs między urządzeniami.
                               3 ścieżki: (1) plik .json (backup/email), (2) shareable URL z #focus-prefs=base64url
