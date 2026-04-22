@@ -2038,88 +2038,97 @@ const AdminSystemHealth = () => {
                           </div>
 
 
-                          <div className="space-y-2">
-                            <div className="flex items-center justify-between">
-                              <Label htmlFor="afterglow-slider" className="text-xs font-medium">
-                                Czas afterglow
-                              </Label>
-                              <span className="text-xs font-mono tabular-nums text-muted-foreground">
-                                {(focusPrefs.afterglowMs / 1000).toFixed(1)}s
-                              </span>
-                            </div>
-                            <Slider
-                              id="afterglow-slider"
-                              min={800}
-                              max={6000}
-                              step={100}
-                              value={[focusPrefs.afterglowMs]}
-                              onValueChange={([v]) =>
-                                setFocusPrefs((p) => ({ ...p, afterglowMs: v }))
-                              }
-                              aria-label="Czas trwania afterglow w milisekundach"
-                            />
-                            <div className="flex justify-between text-[10px] text-muted-foreground/70 font-mono">
-                              <span>0.8s</span>
-                              <span>6.0s</span>
-                            </div>
-                          </div>
+                          {(() => {
+                            // Slider edytuje WYBRANY w tabs variant (editingVariant), nie zawsze aktywny.
+                            // Dzięki temu admin może ustawić styl „z góry" dla dark/HC bez przełączania motywu.
+                            const editedPrefs = focusPrefsByVariant[editingVariant];
+                            return (
+                              <>
+                                <div className="space-y-2">
+                                  <div className="flex items-center justify-between">
+                                    <Label htmlFor="afterglow-slider" className="text-xs font-medium">
+                                      Czas afterglow
+                                    </Label>
+                                    <span className="text-xs font-mono tabular-nums text-muted-foreground">
+                                      {(editedPrefs.afterglowMs / 1000).toFixed(1)}s
+                                    </span>
+                                  </div>
+                                  <Slider
+                                    id="afterglow-slider"
+                                    min={800}
+                                    max={6000}
+                                    step={100}
+                                    value={[editedPrefs.afterglowMs]}
+                                    onValueChange={([v]) =>
+                                      setEditingVariantPrefs((p) => ({ ...p, afterglowMs: v }))
+                                    }
+                                    aria-label={`Czas trwania afterglow w milisekundach (variant ${editingVariant})`}
+                                  />
+                                  <div className="flex justify-between text-[10px] text-muted-foreground/70 font-mono">
+                                    <span>0.8s</span>
+                                    <span>6.0s</span>
+                                  </div>
+                                </div>
 
-                          <div className="space-y-2">
-                            <div className="flex items-center justify-between">
-                              <Label htmlFor="ring-slider" className="text-xs font-medium">
-                                Grubość ringa
-                              </Label>
-                              <span className="text-xs font-mono tabular-nums text-muted-foreground">
-                                {focusPrefs.ringWidthPx}px
-                                {highContrastFocus && (
-                                  <span className="ml-1 text-primary">
-                                    (HC: {focusPrefs.ringWidthPx + 2}px)
-                                  </span>
-                                )}
-                              </span>
-                            </div>
-                            <Slider
-                              id="ring-slider"
-                              min={1}
-                              max={6}
-                              step={1}
-                              value={[focusPrefs.ringWidthPx]}
-                              onValueChange={([v]) =>
-                                setFocusPrefs((p) => ({ ...p, ringWidthPx: v }))
-                              }
-                              aria-label="Grubość ringa aktywnego wiersza w pikselach"
-                            />
-                            <div className="flex justify-between text-[10px] text-muted-foreground/70 font-mono">
-                              <span>1px</span>
-                              <span>6px</span>
-                            </div>
-                          </div>
+                                <div className="space-y-2">
+                                  <div className="flex items-center justify-between">
+                                    <Label htmlFor="ring-slider" className="text-xs font-medium">
+                                      Grubość ringa
+                                    </Label>
+                                    <span className="text-xs font-mono tabular-nums text-muted-foreground">
+                                      {editedPrefs.ringWidthPx}px
+                                      {editingVariant === "hc" && (
+                                        <span className="ml-1 text-primary">
+                                          (efektywnie: {editedPrefs.ringWidthPx + 2}px)
+                                        </span>
+                                      )}
+                                    </span>
+                                  </div>
+                                  <Slider
+                                    id="ring-slider"
+                                    min={1}
+                                    max={6}
+                                    step={1}
+                                    value={[editedPrefs.ringWidthPx]}
+                                    onValueChange={([v]) =>
+                                      setEditingVariantPrefs((p) => ({ ...p, ringWidthPx: v }))
+                                    }
+                                    aria-label={`Grubość ringa aktywnego wiersza w pikselach (variant ${editingVariant})`}
+                                  />
+                                  <div className="flex justify-between text-[10px] text-muted-foreground/70 font-mono">
+                                    <span>1px</span>
+                                    <span>6px</span>
+                                  </div>
+                                </div>
 
-                          <div className="space-y-2">
-                            <div className="flex items-center justify-between">
-                              <Label htmlFor="glow-slider" className="text-xs font-medium">
-                                Intensywność glow
-                              </Label>
-                              <span className="text-xs font-mono tabular-nums text-muted-foreground">
-                                {focusPrefs.glowIntensity}%
-                              </span>
-                            </div>
-                            <Slider
-                              id="glow-slider"
-                              min={0}
-                              max={100}
-                              step={5}
-                              value={[focusPrefs.glowIntensity]}
-                              onValueChange={([v]) =>
-                                setFocusPrefs((p) => ({ ...p, glowIntensity: v }))
-                              }
-                              aria-label="Intensywność halo / shadow glow"
-                            />
-                            <div className="flex justify-between text-[10px] text-muted-foreground/70 font-mono">
-                              <span>0% (off)</span>
-                              <span>100% (max)</span>
-                            </div>
-                          </div>
+                                <div className="space-y-2">
+                                  <div className="flex items-center justify-between">
+                                    <Label htmlFor="glow-slider" className="text-xs font-medium">
+                                      Intensywność glow
+                                    </Label>
+                                    <span className="text-xs font-mono tabular-nums text-muted-foreground">
+                                      {editedPrefs.glowIntensity}%
+                                    </span>
+                                  </div>
+                                  <Slider
+                                    id="glow-slider"
+                                    min={0}
+                                    max={100}
+                                    step={5}
+                                    value={[editedPrefs.glowIntensity]}
+                                    onValueChange={([v]) =>
+                                      setEditingVariantPrefs((p) => ({ ...p, glowIntensity: v }))
+                                    }
+                                    aria-label={`Intensywność halo / shadow glow (variant ${editingVariant})`}
+                                  />
+                                  <div className="flex justify-between text-[10px] text-muted-foreground/70 font-mono">
+                                    <span>0% (off)</span>
+                                    <span>100% (max)</span>
+                                  </div>
+                                </div>
+                              </>
+                            );
+                          })()}
 
                           {/* Sekcja eksport / import — przenoszenie prefs między urządzeniami.
                               3 ścieżki: (1) plik .json (backup/email), (2) shareable URL z #focus-prefs=base64url
