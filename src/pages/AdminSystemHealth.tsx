@@ -1418,7 +1418,28 @@ const AdminSystemHealth = () => {
                             </TableRow>
                           </TableHeader>
                           <TableBody>
-                            {filteredRetrySources.map((s) => {
+                            {(() => {
+                              // Unified active-cursor key dla całego mapowania wierszy.
+                              // Priorytet: matchNavigator (po "Pokaż kolejne dopasowania", modal zamknięty)
+                              // > inspectSource+inspectJumpIndex (modal otwarty, J/K/„Skocz do następnego").
+                              // Dzięki temu kolor + ring badge'a w kolumnie IP zawsze podąża za bieżącym
+                              // kursorem niezależnie od źródła nawigacji.
+                              const navigatorKeys = matchNavigator?.keys ?? null;
+                              const navigatorIndex = matchNavigator?.index ?? -1;
+                              const modalKeys = !matchNavigator && inspectSource
+                                ? buildMatchKeys(inspectSource, highlightScope)
+                                : null;
+                              const modalActiveKey = modalKeys && modalKeys.length > 0
+                                ? modalKeys[inspectJumpIndex % modalKeys.length]
+                                : null;
+                              const activeCursorKey = navigatorKeys && navigatorKeys.length > 0
+                                ? navigatorKeys[navigatorIndex] ?? null
+                                : modalActiveKey;
+                              // Numery porządkowe: navigator > modal — żeby badge'e (1..N) w kolumnie IP
+                              // były widoczne także gdy navigator bar jeszcze nie wystartował (modal open).
+                              const ordinalKeys = navigatorKeys ?? modalKeys;
+                              const ordinalTotal = ordinalKeys?.length ?? 0;
+                              return filteredRetrySources.map((s) => {
                               const isDeno = /^Deno\//i.test(s.ua);
                               const rowKey = `${s.ip}::${s.ua}`;
                               // Dwa poziomy podświetlenia:
