@@ -1878,6 +1878,64 @@ const AdminSystemHealth = () => {
                               <span>100% (max)</span>
                             </div>
                           </div>
+
+                          {/* Sekcja eksport / import — przenoszenie prefs między urządzeniami.
+                              3 ścieżki: (1) plik .json (backup/email), (2) shareable URL z #focus-prefs=base64url
+                              do clipboardu (najszybsze), (3) import z .json (np. od kolegi). */}
+                          <div className="pt-3 border-t border-border space-y-2">
+                            <div className="text-xs font-semibold text-foreground">
+                              Przenieś między urządzeniami
+                            </div>
+                            <div className="grid grid-cols-3 gap-1.5">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-8 text-xs gap-1"
+                                onClick={handleExportFocusPrefs}
+                                title="Pobierz preferencje jako plik .json (backup, e-mail)"
+                              >
+                                <FileDown className="h-3 w-3" />
+                                Plik
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-8 text-xs gap-1"
+                                onClick={handleCopyFocusPrefsLink}
+                                title="Skopiuj link z preferencjami do clipboardu — wklej na innym urządzeniu"
+                              >
+                                <Link2 className="h-3 w-3" />
+                                Link
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-8 text-xs gap-1"
+                                onClick={() => importFileInputRef.current?.click()}
+                                title="Wczytaj preferencje z pliku .json"
+                              >
+                                <FileUp className="h-3 w-3" />
+                                Import
+                              </Button>
+                            </div>
+                            <input
+                              ref={importFileInputRef}
+                              type="file"
+                              accept="application/json,.json"
+                              className="hidden"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) handleImportFocusPrefs(file);
+                                // Reset value żeby ten sam plik mógł być wybrany ponownie.
+                                e.target.value = "";
+                              }}
+                              aria-label="Wybierz plik JSON z preferencjami stylu focusu"
+                            />
+                            <p className="text-[10px] text-muted-foreground/80 leading-snug">
+                              Link zawiera prefs w hashu URL — bezpieczne (nie trafia do logów serwera),
+                              kompaktowe (~40 znaków), działa po wklejeniu w pasku adresu.
+                            </p>
+                          </div>
                         </PopoverContent>
                       </Popover>
                       {retryFiltersActive && (
