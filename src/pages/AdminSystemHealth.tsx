@@ -813,9 +813,22 @@ const AdminSystemHealth = () => {
       const cur = fromHash[v];
       const def = defaults[v];
       const changed: string[] = [];
-      if (cur.ringWidthPx !== def.ringWidthPx) changed.push(`ring ${cur.ringWidthPx}px`);
-      if (cur.glowIntensity !== def.glowIntensity) changed.push(`glow ${cur.glowIntensity}%`);
-      if (cur.afterglowMs !== def.afterglowMs) changed.push(`afterglow ${cur.afterglowMs}ms`);
+      // Spójne formatowanie z `formatFocusPrefsSummary`: ring zwija końcowe zera
+      // (`2.0`→`2`), afterglow w sekundach z 0.1s precyzją (`2400ms`→`2.4s`).
+      if (cur.ringWidthPx !== def.ringWidthPx) {
+        const ring = parseFloat(cur.ringWidthPx.toFixed(1)).toString();
+        changed.push(`ring ${ring}px`);
+      }
+      if (cur.glowIntensity !== def.glowIntensity) {
+        changed.push(`glow ${Math.round(cur.glowIntensity)}%`);
+      }
+      if (cur.afterglowMs !== def.afterglowMs) {
+        const afterglow =
+          cur.afterglowMs < 100
+            ? `${Math.round(cur.afterglowMs)}ms`
+            : `${parseFloat((cur.afterglowMs / 1000).toFixed(1)).toString()}s`;
+        changed.push(`afterglow ${afterglow}`);
+      }
       return { variant: v, label: variantLabels[v], changed };
     });
 
