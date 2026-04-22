@@ -246,6 +246,25 @@ const AdminSystemHealth = () => {
     }
   }, [highlightScope]);
 
+  // Preferencja: tryb wysokiego kontrastu obrysu aktywnego wiersza po skoku.
+  // Gdy ON, wiersz isNavigatorActive otrzymuje grubszy ring (4px), mocniejszy halo
+  // shadow i dodatkowy inset-outline w kolorze foreground — czytelne zarówno na
+  // jasnych, jak i ciemnych motywach (warstwa primary+foreground + offset background).
+  // Animacje pulse/afterglow dostają klasę -hc, która podkręca opacity i grubość ringa.
+  // Persystowane w localStorage, default OFF (większość adminów zostaje przy spokojnym).
+  const HIGH_CONTRAST_LS_KEY = "admin-system-health.high-contrast-focus";
+  const [highContrastFocus, setHighContrastFocus] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem(HIGH_CONTRAST_LS_KEY) === "1";
+  });
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(HIGH_CONTRAST_LS_KEY, highContrastFocus ? "1" : "0");
+    } catch {
+      // ignoruj w private mode
+    }
+  }, [highContrastFocus]);
+
   // Auto-fade highlightu wiersza po 10s — wystarczająco długo, żeby admin zdążył zauważyć
   // wyróżnienie po zamknięciu modala, ale nie zostawia trwałego kolorowego rzędu.
   useEffect(() => {
@@ -355,7 +374,16 @@ const AdminSystemHealth = () => {
         delete (el as HTMLElement & { __afterglowTimer?: number })
           .__afterglowTimer;
       }
-      el.classList.remove("animate-jump-pulse", "animate-jump-afterglow");
+      el.classList.remove(
+        "animate-jump-pulse",
+        "animate-jump-afterglow",
+        "jump-hc",
+      );
+      // High-contrast: dodaj marker class — animacje pulse/afterglow respektują selector
+      // `.jump-hc.animate-jump-*` w index.css i renderują grubsze ringi + jaśniejsze halo.
+      if (highContrastFocus) {
+        el.classList.add("jump-hc");
+      }
       // Force reflow — bez tego ponowne dodanie tej samej klasy nie restartuje animacji.
       // eslint-disable-next-line @typescript-eslint/no-unused-expressions
       void el.offsetWidth;
@@ -372,7 +400,11 @@ const AdminSystemHealth = () => {
         afterglowTimer;
       // Cleanup obu klas po pełnej sekwencji (1.7s + 2.4s afterglow ≈ 4.1s, +100ms zapasu).
       const cleanupTimer = window.setTimeout(() => {
-        el.classList.remove("animate-jump-pulse", "animate-jump-afterglow");
+        el.classList.remove(
+          "animate-jump-pulse",
+          "animate-jump-afterglow",
+          "jump-hc",
+        );
         pulseTimersRef.current.delete(el);
         delete (el as HTMLElement & { __afterglowTimer?: number })
           .__afterglowTimer;
@@ -1479,6 +1511,32 @@ const AdminSystemHealth = () => {
                             ? "wszystkie z IP"
                             : "wszystkie z UA"}
                       </Button>
+                      {/* Wysoki kontrast obrysu aktywnego wiersza — grubszy ring, mocniejsze
+                          halo i dodatkowy outline w kolorze foreground (czytelne na jasnym
+                          i ciemnym motywie). Wzmacnia także animacje pulse/afterglow przez
+                          klasę `.jump-hc` (patrz index.css). */}
+                      <Toggle
+                        size="sm"
+                        pressed={highContrastFocus}
+                        onPressedChange={(v) => {
+                          setHighContrastFocus(v);
+                          toast.success(
+                            v
+                              ? "Wysoki kontrast obrysu włączony"
+                              : "Wysoki kontrast obrysu wyłączony",
+                          );
+                        }}
+                        aria-label="Wysoki kontrast obrysu aktywnego wiersza po skoku"
+                        title={
+                          highContrastFocus
+                            ? "Wysoki kontrast: obrys aktywnego wiersza i animacja skoku są wzmocnione (grubszy ring + outline foreground). Kliknij, aby wrócić do trybu standardowego."
+                            : "Standardowy obrys aktywnego wiersza. Kliknij, aby włączyć tryb wysokiego kontrastu (czytelniejszy focus na jasnych i ciemnych motywach)."
+                        }
+                        className="h-8 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+                      >
+                        <Eye className="h-3.5 w-3.5 mr-1.5" />
+                        HC focus {highContrastFocus ? "ON" : "OFF"}
+                      </Toggle>
                       {retryFiltersActive && (
                         <Button
                           variant="ghost"
@@ -1638,7 +1696,9 @@ const AdminSystemHealth = () => {
                                   tabIndex={-1}
                                   className={
                                     isNavigatorActive
-                                      ? "bg-primary/20 ring-2 ring-primary ring-offset-2 ring-offset-background shadow-[0_0_20px_-4px_hsl(var(--primary)/0.55)] transition-all cursor-help focus:outline-none"
+                                      ? highContrastFocus
+                                        ? "bg-primary/30 ring-4 ring-primary ring-offset-2 ring-offset-background outline outline-2 outline-offset-[-4px] outline-foreground/70 shadow-[0_0_28px_-2px_hsl(var(--primary)/0.85)] transition-all cursor-help focus:outline-none"
+                                        : "bg-primary/20 ring-2 ring-primary ring-offset-2 ring-offset-background shadow-[0_0_20px_-4px_hsl(var(--primary)/0.55)] transition-all cursor-help focus:outline-none"
                                       : isExactHighlight
                                         ? "bg-primary/15 ring-2 ring-primary/40 transition-colors cursor-help focus:outline-none"
                                         : isRelatedHighlight

@@ -102,3 +102,50 @@
     background: hsl(var(--primary) / 0.5);
   }
 }
+
+/* High-contrast override dla animacji skoku w /admin/system-health.
+   Aktywowane przez Toggle "HC focus" — pulseRow dodaje klasę `jump-hc` na wierszu
+   przed startem animate-jump-pulse / animate-jump-afterglow. Override podkręca
+   box-shadow (grubsze ringi + jaśniejsze halo + outline foreground) i kontrast,
+   żeby focus był czytelny zarówno na jasnych, jak i ciemnych motywach. */
+@keyframes jump-pulse-hc {
+  0%, 100% {
+    box-shadow:
+      inset 0 0 0 0 hsl(var(--primary) / 0),
+      inset 0 0 0 0 hsl(var(--foreground) / 0),
+      0 0 0 0 hsl(var(--primary) / 0);
+    background-color: hsl(var(--primary) / 0.12);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow:
+      inset 0 0 0 3px hsl(var(--primary) / 1),
+      inset 0 0 0 5px hsl(var(--foreground) / 0.85),
+      0 0 0 8px hsl(var(--primary) / 0.6),
+      0 0 36px 8px hsl(var(--primary) / 0.55);
+    background-color: hsl(var(--primary) / 0.4);
+    transform: scale(1.018);
+  }
+}
+@keyframes jump-afterglow-hc {
+  0% {
+    box-shadow:
+      inset 0 0 0 3px hsl(var(--primary) / 1),
+      inset 0 0 0 5px hsl(var(--foreground) / 0.7),
+      0 0 0 4px hsl(var(--primary) / 0.55);
+    background-color: hsl(var(--primary) / 0.28);
+  }
+  100% {
+    box-shadow:
+      inset 0 0 0 1px hsl(var(--primary) / 0),
+      inset 0 0 0 1px hsl(var(--foreground) / 0),
+      0 0 0 0 hsl(var(--primary) / 0);
+    background-color: hsl(var(--primary) / 0);
+  }
+}
+.jump-hc.animate-jump-pulse {
+  animation: jump-pulse-hc 0.6s ease-in-out 3;
+}
+.jump-hc.animate-jump-afterglow {
+  animation: jump-afterglow-hc 2.4s ease-out 1 forwards;
+}
