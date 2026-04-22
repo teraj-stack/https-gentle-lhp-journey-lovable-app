@@ -788,7 +788,7 @@ const AdminSystemHealth = () => {
       const el = document.querySelector<HTMLElement>(`[data-retry-row-key="${CSS.escape(key)}"]`);
       if (el) {
         scrollRowIntoView(el, true);
-        pulseRow(el);
+        pulseRow(el, { label: { ordinal: idx + 1, total } });
       }
       // Persist tak samo jak performJumpToMatch — kolejny J pójdzie do idx+1.
       const nextIndex = (idx + 1) % total;
