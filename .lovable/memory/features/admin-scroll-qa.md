@@ -20,6 +20,10 @@ Strona `/admin/scroll-test` (`src/pages/AdminScrollTest.tsx`, admin-only przez `
 
 **Logika scroll = identyczna jak produkcyjna** w `AdminSystemHealth.scrollRowIntoView`: `force=true`, `prefers-reduced-motion` → instant, rapid-repeat (<250ms) → instant, w przeciwnym razie smooth. Snapshot statusu update'owany po `setTimeout(450ms)` dla smooth / `50ms` dla instant żeby złapać końcową pozycję po animacji.
 
-**Kiedy używać:** po każdej zmianie w `computeRowScrollTarget` lub `scrollRowIntoView`, zwłaszcza przy regresji "wiersz schowany pod headerem". Jeśli ❌ pojawi się dla GÓRA #1 lub DÓŁ #100 → helper się popsuł. Debug panel pomaga zobaczyć **dlaczego** (np. headerH=0 → CSS var nie ustawiony, lub offset=+0 → helper zwrócił obecny scrollY).
+**Reactive header height**: strona używa hooka `useHeaderHeight` (`src/hooks/useHeaderHeight.ts`) — `MutationObserver` na `documentElement.style` łapie każde `setProperty("--header-height", ...)` z `Header.tsx` (mega-menu open/close, mobile menu toggle, breakpoint change, orientation change). Snapshot bezpiecznej strefy + status badge re-liczone natychmiast (w deps `useEffect`), bez czekania na scroll/resize. Fallback: 80px gdy CSS var brak (np. przed mountem `<Header>`).
+
+**Kiedy używać:** po każdej zmianie w `computeRowScrollTarget` lub `scrollRowIntoView`, zwłaszcza przy regresji "wiersz schowany pod headerem". Jeśli ❌ pojawi się dla GÓRA #1 lub DÓŁ #100 → helper się popsuł. Debug panel pomaga zobaczyć **dlaczego** (np. headerH=0 → CSS var nie ustawiony, lub offset=+0 → helper zwrócił obecny scrollY). Manualny test reactive: otwórz mega-menu w headerze → `--header-height` rośnie → overlay safe-area i wartość w debug panelu odświeżają się natychmiast.
 
 Route: `/admin/scroll-test` (poza Layout, własny `<Header />` z `pt-[var(--header-height)]`). Brak linku z `AdminDashboard` — strona internal-tooling, bez SEO.
+
+**Hook `useHeaderHeight(fallback=80)`** — reużywalny: każdy komponent który potrzebuje reactive subscription do `--header-height` (np. floating action button który ma się chować pod sticky headerem) może użyć tego samego hooka zamiast czytać CSS var inline w handlerach.
