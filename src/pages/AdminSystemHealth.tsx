@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { ArrowLeft, ShieldAlert, Activity, AlertTriangle, RefreshCw, Ban, Webhook, Repeat, Filter, X, Eye, Download, ArrowDownWideNarrow, ArrowUpWideNarrow, Locate, Info, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Settings2, RotateCcw, FileDown, FileUp, Link2, Play, Pause, FlaskConical, ClipboardPaste, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, ShieldAlert, Activity, AlertTriangle, RefreshCw, Ban, Webhook, Repeat, Filter, X, Eye, Download, ArrowDownWideNarrow, ArrowUpWideNarrow, Locate, Info, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Settings2, RotateCcw, FileDown, FileUp, Link2, Play, Pause, FlaskConical, ClipboardPaste, CheckCircle2, XCircle, Keyboard } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Toggle } from "@/components/ui/toggle";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -1021,19 +1021,86 @@ const AdminSystemHealth = () => {
           ? "Okno przeglądarki nie ma focusu (kliknij stronę i spróbuj ponownie)."
           : "Brak uprawnień do schowka (sprawdź ikonę kłódki w pasku adresu i zezwól na clipboard).";
     setManualCopyDialog({ text, label, reason });
-    toast.error("Nie udało się skopiować automatycznie", {
-      description: (
-        <span
+    // Wykryj platformę dla poprawnego skrótu klawiszowego (Cmd na Mac, Ctrl gdzie indziej).
+    // `navigator.platform` jest deprecated, ale `userAgentData` nie wszędzie istnieje —
+    // platforma jest tu tylko do tekstu w toaście, więc fallback jest OK.
+    const isMac =
+      typeof navigator !== "undefined" &&
+      /Mac|iPhone|iPod|iPad/i.test(
+        // @ts-expect-error - userAgentData jest opcjonalne, mamy fallback na .platform
+        navigator.userAgentData?.platform || navigator.platform || "",
+      );
+    const shortcut = isMac ? "Cmd+C" : "Ctrl+C";
+    const errorTitle = "Nie udało się skopiować automatycznie";
+    // Dedykowany toast.custom dla błędu — pełna kontrola nad markupem zamiast
+    // `toast.error` z JSX w `description` (sonner opakowuje description własnym
+    // wrapperem, co rozbija `aria-atomic`). Tutaj CAŁY toast jest jednym
+    // `role=alert` + `aria-live=assertive` + `aria-atomic=true` blokiem,
+    // więc SR ogłasza tytuł + instrukcję + powód jako spójną całość.
+    //
+    // Layout (3 sekcje, czytelne wzrokowo I dla SR):
+    //  1. Tytuł błędu (semibold, ikona XCircle w destructive color)
+    //  2. INSTRUKCJA RĘCZNEGO KOPIOWANIA — wyróżniony blok z ikoną klawiatury
+    //     i konkretnym skrótem klawiszowym dla platformy użytkownika
+    //  3. Diagnoza powodu (mniejszy tekst, muted color)
+    toast.custom(
+      (t) => (
+        <div
           role="alert"
           aria-live="assertive"
           aria-atomic="true"
-          className="block whitespace-normal break-words leading-snug"
+          className="pointer-events-auto flex w-full items-start gap-3 rounded-md border border-destructive/30 bg-background p-4 text-foreground shadow-lg"
         >
-          {`Otwórz okno „Skopiuj ręcznie" i naciśnij Ctrl+C (Cmd+C na Mac). Powód: ${reason}`}
-        </span>
+          <XCircle
+            className="mt-0.5 h-4 w-4 flex-shrink-0 text-destructive"
+            aria-hidden="true"
+          />
+          <div className="flex min-w-0 flex-1 flex-col gap-2">
+            <div className="text-sm font-semibold leading-snug text-destructive">
+              {errorTitle}
+            </div>
+            {/* Wyróżniony blok instrukcji ręcznej — wizualnie odseparowany,
+                ikona klawiatury, konkretny skrót dla platformy. To MUSI być
+                jednoznaczne, bo to ostatnia deska ratunku po porażce 2 prób
+                automatycznego kopiowania. */}
+            <div className="flex items-start gap-2 rounded border border-border bg-muted/40 p-2">
+              <Keyboard className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-foreground" aria-hidden="true" />
+              <div className="min-w-0 flex-1 text-xs leading-snug">
+                <div className="font-semibold text-foreground">
+                  Skopiuj ręcznie:
+                </div>
+                <ol className="mt-1 ml-4 list-decimal space-y-0.5 text-muted-foreground">
+                  <li>Otwórz okno „Skopiuj ręcznie" (otworzyło się automatycznie).</li>
+                  <li>
+                    Tekst jest już zaznaczony — wciśnij{" "}
+                    <kbd className="inline-block rounded border border-border bg-background px-1 py-0.5 font-mono text-[10px] font-semibold text-foreground">
+                      {shortcut}
+                    </kbd>
+                    .
+                  </li>
+                  <li>Wklej tam, gdzie potrzebujesz ({label}).</li>
+                </ol>
+              </div>
+            </div>
+            <div className="whitespace-normal break-words text-xs leading-snug text-muted-foreground">
+              <span className="font-semibold text-foreground">Powód:</span> {reason}
+            </div>
+            <button
+              type="button"
+              onClick={() => toast.dismiss(t)}
+              className="self-end text-[10px] text-muted-foreground hover:text-foreground underline-offset-2 hover:underline"
+            >
+              Zamknij
+            </button>
+          </div>
+        </div>
       ),
-      duration: 8000,
-    });
+      {
+        // Dłuższy duration niż success (4s) — błąd wymaga akcji użytkownika
+        // (ręczne Ctrl+C), więc 10s daje czas na przeczytanie instrukcji.
+        duration: 10000,
+      },
+    );
   };
   // Kopia shareable URL — link niesie wszystkie 3 warianty (compact base64url ~60 znaków).
   const handleCopyFocusPrefsLink = async () => {
