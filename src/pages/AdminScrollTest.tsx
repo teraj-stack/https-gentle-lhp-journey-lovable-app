@@ -286,7 +286,7 @@ const AdminScrollTest = () => {
                   {Math.round(snapshot.safeAreaTop)} → {Math.round(snapshot.safeAreaBottom)}]
                 </span>
                 {snapshot.status === "ok" ? (
-                  <Badge className="bg-emerald-600 hover:bg-emerald-600">✅ W safe-area</Badge>
+                  <Badge className="bg-primary text-primary-foreground hover:bg-primary">✅ W safe-area</Badge>
                 ) : snapshot.status === "hidden-top" ? (
                   <Badge variant="destructive">❌ ZASŁONIĘTY przez header</Badge>
                 ) : (
