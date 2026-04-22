@@ -742,6 +742,13 @@ const AdminSystemHealth = () => {
   // (button/input/link/card) dla aktualnie edytowanego wariantu prefs.
   // Read-only: zmiany w sandboxie NIE zapisują się do LS.
   const [focusPlaygroundOpen, setFocusPlaygroundOpen] = useState(false);
+  // Modal „Pokaż link" — wyświetla pełny URL dla aktualnie edytowanego wariantu
+  // (read-only, z opcją kopiowania). Trzymamy URL w state'cie żeby snapshot był
+  // identyczny z tym co jest w schowku po kliknięciu „Kopiuj link" — gdyby admin
+  // zmienił prefs po skopiowaniu i otworzył podgląd, zobaczyłby ZAKTUALIZOWANY
+  // URL (rebuildujemy on-open na bazie aktualnego state'u — to jest oczekiwane
+  // i spójne z „Kopiuj link" które też używa aktualnych prefs).
+  const [showLinkOpen, setShowLinkOpen] = useState(false);
   // Variant do EDYCJI w popoverze — domyślnie ten sam co aktywny, ale admin może
   // ręcznie wybrać inny żeby ustawić styl „z góry" zanim przełączy motyw.
   // null = follow active variant (default).
@@ -2851,22 +2858,34 @@ const AdminSystemHealth = () => {
                               <Button
                                 variant="outline"
                                 size="sm"
-                                className="h-8 flex-1 text-xs gap-1"
+                                className="h-8 flex-1 text-xs gap-1 min-w-0"
                                 onClick={handleCopyFocusPrefsLinkVariant}
                                 title={`Skopiuj link tylko z ustawieniami wariantu ${formatFocusVariantLabel(editingVariant)}`}
                               >
-                                <Link2 className="h-3 w-3" />
-                                Kopiuj link ({formatFocusVariantLabel(editingVariant)})
+                                <Link2 className="h-3 w-3 flex-shrink-0" />
+                                <span className="truncate">Kopiuj link ({formatFocusVariantLabel(editingVariant)})</span>
+                              </Button>
+                              {/* „Pokaż link" — modal z dokładnym URL fragment, który zostałby skopiowany.
+                                  Icon-only żeby nie rozpychać rzędu; aria-label dla SR. */}
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-8 w-8 p-0 flex-shrink-0"
+                                onClick={() => setShowLinkOpen(true)}
+                                title={`Pokaż dokładny URL fragment dla wariantu ${formatFocusVariantLabel(editingVariant)} (bez kopiowania)`}
+                                aria-label={`Pokaż link dla wariantu ${formatFocusVariantLabel(editingVariant)}`}
+                              >
+                                <Eye className="h-3 w-3" />
                               </Button>
                               <Button
                                 variant="outline"
                                 size="sm"
-                                className="h-8 flex-1 text-xs gap-1"
+                                className="h-8 flex-1 text-xs gap-1 min-w-0"
                                 onClick={handlePasteFocusPrefsLinkVariant}
                                 title={`Wklej link ze schowka i zastosuj TYLKO do wariantu ${formatFocusVariantLabel(editingVariant)} (pozostałe warianty bez zmian)`}
                               >
-                                <ClipboardPaste className="h-3 w-3" />
-                                Wklej i zastosuj ({formatFocusVariantLabel(editingVariant)})
+                                <ClipboardPaste className="h-3 w-3 flex-shrink-0" />
+                                <span className="truncate">Wklej i zastosuj ({formatFocusVariantLabel(editingVariant)})</span>
                               </Button>
                             </div>
                             <input
@@ -2898,6 +2917,123 @@ const AdminSystemHealth = () => {
                         highContrast={editingVariant === "hc"}
                         variantLabel={formatFocusVariantLabel(editingVariant)}
                       />
+                      {/* „Pokaż link" modal — read-only podgląd dokładnego URL fragmentu
+                          dla aktualnie edytowanego wariantu. Buduje URL on-render z aktualnego
+                          state'u (spójnie z `handleCopyFocusPrefsLinkVariant`), więc admin
+                          może zweryfikować ZANIM skopiuje albo udostępni komuś bez clipboardu. */}
+                      {(() => {
+                        if (!showLinkOpen) return null;
+                        // Replikujemy pojedynczy variant do 3 slotów — IDENTYCZNIE jak
+                        // `handleCopyFocusPrefsLinkVariant` żeby URL pokazywany w modalu
+                        // był bit-w-bit tym, co kopiujemy do schowka.
+                        const single = focusPrefsByVariant[editingVariant];
+                        const replicated = { light: single, dark: single, hc: single };
+                        const fullUrl = buildFocusPrefsShareUrl(
+                          replicated,
+                          typeof window !== "undefined" ? window.location.href : "",
+                        );
+                        // Wyciągamy sam fragment (`#focus-prefs=...`) — admin często chce
+                        // tylko go skopiować bez całej domeny (np. do dokumentacji).
+                        const hashIdx = fullUrl.indexOf("#");
+                        const fragmentOnly = hashIdx === -1 ? "" : fullUrl.slice(hashIdx);
+                        const variantLabel = formatFocusVariantLabel(editingVariant);
+                        const handleCopyFromModal = async (text: string, kind: "URL" | "fragment") => {
+                          try {
+                            await navigator.clipboard.writeText(text);
+                            toast.success(`Skopiowano ${kind}`, {
+                              description: (
+                                <span
+                                  role="status"
+                                  aria-live="polite"
+                                  aria-atomic="true"
+                                  className="block whitespace-normal break-words leading-snug"
+                                >
+                                  {`Wariant ${variantLabel} (${text.length} znaków)`}
+                                </span>
+                              ),
+                            });
+                          } catch (err) {
+                            toast.error("Nie udało się skopiować", {
+                              description: err instanceof Error ? err.message : "Brak dostępu do clipboardu",
+                            });
+                          }
+                        };
+                        return (
+                          <Dialog open={showLinkOpen} onOpenChange={setShowLinkOpen}>
+                            <DialogContent className="max-w-2xl">
+                              <DialogHeader>
+                                <DialogTitle>Link dla wariantu {variantLabel}</DialogTitle>
+                                <DialogDescription>
+                                  Dokładny URL fragment, który zostałby skopiowany przyciskiem „Kopiuj link".
+                                  Wariant {variantLabel} jest zreplikowany do wszystkich 3 slotów (light/dark/HC) —
+                                  odbiorca po imporcie dostanie jednolity styl.
+                                </DialogDescription>
+                              </DialogHeader>
+                              <div className="space-y-4">
+                                <div className="space-y-1.5">
+                                  <div className="flex items-center justify-between">
+                                    <label
+                                      htmlFor="show-link-full-url"
+                                      className="text-xs font-semibold text-foreground"
+                                    >
+                                      Pełny URL ({fullUrl.length} znaków)
+                                    </label>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="h-7 px-2 text-xs gap-1"
+                                      onClick={() => handleCopyFromModal(fullUrl, "URL")}
+                                    >
+                                      <Link2 className="h-3 w-3" />
+                                      Kopiuj
+                                    </Button>
+                                  </div>
+                                  <textarea
+                                    id="show-link-full-url"
+                                    readOnly
+                                    value={fullUrl}
+                                    onFocus={(e) => e.currentTarget.select()}
+                                    className="w-full h-20 text-[11px] font-mono px-2 py-1.5 rounded-md border border-border bg-muted/30 text-foreground resize-none break-all"
+                                    aria-label={`Pełny URL z preferencjami wariantu ${variantLabel}`}
+                                  />
+                                </div>
+                                <div className="space-y-1.5">
+                                  <div className="flex items-center justify-between">
+                                    <label
+                                      htmlFor="show-link-fragment"
+                                      className="text-xs font-semibold text-foreground"
+                                    >
+                                      Sam fragment ({fragmentOnly.length} znaków)
+                                    </label>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="h-7 px-2 text-xs gap-1"
+                                      onClick={() => handleCopyFromModal(fragmentOnly, "fragment")}
+                                      disabled={!fragmentOnly}
+                                    >
+                                      <Link2 className="h-3 w-3" />
+                                      Kopiuj
+                                    </Button>
+                                  </div>
+                                  <textarea
+                                    id="show-link-fragment"
+                                    readOnly
+                                    value={fragmentOnly}
+                                    onFocus={(e) => e.currentTarget.select()}
+                                    className="w-full h-14 text-[11px] font-mono px-2 py-1.5 rounded-md border border-border bg-muted/30 text-foreground resize-none break-all"
+                                    aria-label={`Sam fragment hash dla wariantu ${variantLabel}`}
+                                  />
+                                </div>
+                                <div className="text-[11px] text-muted-foreground border-t border-border pt-3">
+                                  <span className="font-semibold text-foreground">Wartości w linku:</span>{" "}
+                                  {formatFocusPrefsSummary(single)}
+                                </div>
+                              </div>
+                            </DialogContent>
+                          </Dialog>
+                        );
+                      })()}
                       {retryFiltersActive && (
                         <Button
                           variant="ghost"
