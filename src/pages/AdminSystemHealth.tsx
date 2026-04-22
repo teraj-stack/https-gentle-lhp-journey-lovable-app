@@ -547,8 +547,11 @@ const AdminSystemHealth = () => {
       const url = buildFocusPrefsShareUrl(replicated, window.location.href);
       await navigator.clipboard.writeText(url);
       const label = editingVariant === "hc" ? "High Contrast" : editingVariant === "light" ? "Light" : "Dark";
+      // Krótki, konkretny opis — pokazujemy realne wartości ring/glow/afterglow,
+      // żeby admin po skopiowaniu od razu wiedział co trafiło do schowka (i mógł
+      // zweryfikować przed wysłaniem linka).
       toast.success(`Skopiowano link (${label})`, {
-        description: "Link zawiera ustawienia tylko z edytowanego wariantu.",
+        description: `Wariant ${label}: ring ${single.ringWidth}px · glow ${single.glowOpacity}% · afterglow ${single.afterglowMs}ms`,
       });
     } catch (err) {
       toast.error("Nie udało się skopiować linka", {
