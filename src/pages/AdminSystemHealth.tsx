@@ -2050,9 +2050,22 @@ const AdminSystemHealth = () => {
                         <TooltipTrigger asChild>
                           <span className="inline-flex items-center gap-1 cursor-help">
                             <span className="text-muted-foreground">Następne:</span>
-                            <span className="font-mono tabular-nums text-foreground">
-                              {currentDisplay}/{total}
-                            </span>
+                            {/* Licznik dwa-trybowy:
+                                - bez filtra: "X/Y" (Y = total wynikający z highlightScope),
+                                - z filtrem zawężającym: "P/F z Y" gdzie P = pozycja kursora w widoku
+                                  (lub "—" gdy odfiltrowany), F = filteredTotal, Y = total.
+                                Dzięki temu od razu widać, że Enter skoczy w obrębie pełnej listy,
+                                ale widoczna część jest węższa. */}
+                            {isFiltered ? (
+                              <span className="font-mono tabular-nums text-foreground">
+                                {cursorVisibleInFiltered ? cursorPosInFiltered + 1 : "—"}/{filteredTotal}{" "}
+                                <span className="text-muted-foreground">z {total}</span>
+                              </span>
+                            ) : (
+                              <span className="font-mono tabular-nums text-foreground">
+                                {currentDisplay}/{total}
+                              </span>
+                            )}
                             <span
                               className={`inline-flex items-center justify-center min-w-4 h-4 px-1 rounded text-[9px] font-mono font-semibold ${
                                 isNextExact
@@ -2071,6 +2084,13 @@ const AdminSystemHealth = () => {
                             <div className="font-semibold">
                               {currentDisplay}/{total} — {isNextExact ? "exact" : "related"}
                             </div>
+                            {isFiltered && (
+                              <div className="text-muted-foreground">
+                                Widoczne po filtrze: <span className="font-mono">{filteredTotal}</span> z{" "}
+                                <span className="font-mono">{total}</span>
+                                {!cursorVisibleInFiltered && " · bieżący kursor jest poza filtrem"}
+                              </div>
+                            )}
                             <div className="flex items-start gap-1.5">
                               <span className="inline-flex shrink-0 items-center justify-center w-3.5 h-3.5 rounded bg-primary text-primary-foreground text-[9px] font-mono font-semibold">1</span>
                               <span><strong>exact</strong> — wiersz źródłowy z modala (dokładny IP+UA).</span>
@@ -2085,6 +2105,7 @@ const AdminSystemHealth = () => {
                                 ? `wróci do wiersza źródłowego (1/${total}).`
                                 : `podświetli dopasowanie ${currentDisplay}/${total}.`}
                               {" "}<kbd className="font-mono">K</kbd> = poprzednie (cyklicznie).
+                              {isFiltered && " Skok ignoruje filtr — chodzi po pełnej liście."}
                             </div>
                           </div>
                         </TooltipContent>
