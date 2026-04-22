@@ -198,6 +198,11 @@ const AdminSystemHealth = () => {
   );
   // Timer auto-hide nawigatora po 30s bezczynności.
   const navigatorHideTimerRef = useRef<number | null>(null);
+  // Timestamp ostatniego smooth scrolla (performance.now). Używany do auto-degradacji
+  // smooth → instant gdy user spamuje J/K — kolejne smooth animacje anulują się nawzajem
+  // i wyglądają jak "lag", instant trzyma kursor synchronicznie z klawiszem.
+  // Próg 250ms ≈ szybsze niż komfortowe trzymanie klawisza (~30/s przy autorepeat).
+  const lastScrollAtRef = useRef<number>(0);
   // Preferencja użytkownika: czy zamknięcie modala / klik "Pokaż w tabeli" ma przewijać
   // i podświetlać wiersz w tabeli. Trzymane w localStorage żeby przeżyło reload.
   const AUTO_REVEAL_LS_KEY = "admin-system-health.auto-reveal-row";
