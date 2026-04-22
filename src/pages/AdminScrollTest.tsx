@@ -174,7 +174,9 @@ const AdminScrollTest = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Live snapshot na scroll/resize żeby user widział czy aktywny wiersz jest pod headerem
+  // Live snapshot na scroll/resize ORAZ na zmianę --header-height (np. mega-menu open/close,
+  // zmiana breakpointa, mobile menu toggle). `headerH` w deps → useHeaderHeight emituje nowy
+  // numer, snapshot się przelicza, overlay safe-area i status badge pozostają trafne.
   useEffect(() => {
     const onScroll = () => updateSnapshot(activeIdx);
     window.addEventListener("scroll", onScroll, { passive: true });
@@ -184,7 +186,8 @@ const AdminScrollTest = () => {
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", onScroll);
     };
-  }, [activeIdx]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeIdx, headerH]);
 
   if (isLoading) {
     return (
