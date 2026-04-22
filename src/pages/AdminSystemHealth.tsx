@@ -3129,6 +3129,94 @@ const AdminSystemHealth = () => {
                           </Dialog>
                         );
                       })()}
+                      {/* Manual copy fallback modal — otwiera się gdy `copyToClipboardWithFallback`
+                          nie może użyć ani modern Clipboard API ani legacy execCommand. Pokazuje
+                          textarea z pre-selected tekstem, instrukcję skrótu klawiszowego i diagnozę
+                          dlaczego automatyczne kopiowanie nie zadziałało. Auto-focus + auto-select
+                          przy otwarciu — admin tylko klika Ctrl/Cmd+C. */}
+                      <Dialog
+                        open={manualCopyDialog !== null}
+                        onOpenChange={(open) => !open && setManualCopyDialog(null)}
+                      >
+                        <DialogContent className="max-w-2xl">
+                          <DialogHeader>
+                            <DialogTitle>Skopiuj ręcznie</DialogTitle>
+                            <DialogDescription>
+                              Automatyczne kopiowanie nie zadziałało. Tekst jest już zaznaczony —
+                              naciśnij <kbd className="px-1.5 py-0.5 text-xs font-mono rounded border border-border bg-muted">Ctrl</kbd>
+                              {" + "}
+                              <kbd className="px-1.5 py-0.5 text-xs font-mono rounded border border-border bg-muted">C</kbd>
+                              {" "}(lub{" "}
+                              <kbd className="px-1.5 py-0.5 text-xs font-mono rounded border border-border bg-muted">⌘</kbd>
+                              {" + "}
+                              <kbd className="px-1.5 py-0.5 text-xs font-mono rounded border border-border bg-muted">C</kbd>
+                              {" "}na Mac), żeby skopiować do schowka.
+                            </DialogDescription>
+                          </DialogHeader>
+                          {manualCopyDialog && (
+                            <div className="space-y-4">
+                              <div className="space-y-1.5">
+                                <label
+                                  htmlFor="manual-copy-textarea"
+                                  className="text-xs font-semibold text-foreground"
+                                >
+                                  {manualCopyDialog.label} ({manualCopyDialog.text.length} znaków)
+                                </label>
+                                <textarea
+                                  id="manual-copy-textarea"
+                                  readOnly
+                                  value={manualCopyDialog.text}
+                                  // Auto-focus + auto-select gdy modal się otwiera — admin
+                                  // ma od razu zaznaczony tekst i może wcisnąć Ctrl+C.
+                                  // `autoFocus` w React + onFocus.select() = niezawodna kombinacja
+                                  // (samo autoFocus nie zaznacza w Radix Dialog przez ich focus trap).
+                                  autoFocus
+                                  onFocus={(e) => {
+                                    e.currentTarget.select();
+                                    e.currentTarget.setSelectionRange(0, manualCopyDialog.text.length);
+                                  }}
+                                  className="w-full h-32 text-[11px] font-mono px-2 py-1.5 rounded-md border border-border bg-muted/30 text-foreground resize-none break-all"
+                                  aria-label={`Tekst do ręcznego skopiowania: ${manualCopyDialog.label}`}
+                                />
+                              </div>
+                              <Alert>
+                                <Info className="h-4 w-4" />
+                                <AlertTitle>Dlaczego automatyczne kopiowanie nie zadziałało?</AlertTitle>
+                                <AlertDescription className="text-xs leading-relaxed">
+                                  {manualCopyDialog.reason}
+                                </AlertDescription>
+                              </Alert>
+                              <div className="flex items-center justify-end gap-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    // Spróbuj jeszcze raz — admin mógł w międzyczasie zmienić
+                                    // permission/tab focus. Rebuilduje fallback chain od początku.
+                                    if (!manualCopyDialog) return;
+                                    const { text, label } = manualCopyDialog;
+                                    setManualCopyDialog(null);
+                                    void copyToClipboardWithFallback(text, label, () => {
+                                      toast.success("Skopiowano za drugim razem", {
+                                        description: `${label} (${text.length} znaków)`,
+                                      });
+                                    });
+                                  }}
+                                >
+                                  Spróbuj ponownie
+                                </Button>
+                                <Button
+                                  variant="default"
+                                  size="sm"
+                                  onClick={() => setManualCopyDialog(null)}
+                                >
+                                  Zamknij
+                                </Button>
+                              </div>
+                            </div>
+                          )}
+                        </DialogContent>
+                      </Dialog>
                       {retryFiltersActive && (
                         <Button
                           variant="ghost"
