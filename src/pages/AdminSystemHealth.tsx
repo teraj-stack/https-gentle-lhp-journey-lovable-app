@@ -23,6 +23,12 @@ import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YA
 import SeoHead from "@/components/shared/SeoHead";
 import { computeRowScrollTarget } from "@/lib/scrollHelpers";
 import { applyPulseSequence } from "@/lib/pulseAnimation";
+import {
+  exportFocusPrefsToJson,
+  importFocusPrefsFromJson,
+  buildFocusPrefsShareUrl,
+  extractFocusPrefsFromHash,
+} from "@/lib/focusPrefsSerialization";
 import { formatDistanceToNow } from "date-fns";
 import { pl } from "date-fns/locale";
 import { toast } from "sonner";
