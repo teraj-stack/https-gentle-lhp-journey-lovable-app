@@ -265,6 +265,29 @@ const formatFocusPrefsSummary = (prefs: FocusPrefs): string => {
   return `ring ${ring}px · glow ${glow}% · afterglow ${afterglow}`;
 };
 
+/**
+ * Single source of truth dla TYTUŁU i OPISU wszystkich toastów potwierdzających
+ * akcję „Kopiuj link (variant)" — używany jednocześnie przez:
+ *  - `toast.success` (kanał wizualny, natywny styl sonnera)
+ *  - `toast.custom` (kanał a11y, atomiczny live region)
+ *  - ewentualne przyszłe kanały (np. status bar, telemetria, e2e snapshoty)
+ *
+ * Trzymanie obu stringów w jednym helperze gwarantuje, że tytuł i opis NIGDY się
+ * nie rozjadą między kanałami (np. literówka w jednym miejscu = literówka wszędzie).
+ * Format: tytuł = `Skopiowano link ({label})`, opis = `Wariant {label}: {summary}`.
+ */
+const buildVariantCopyToastContent = (
+  variant: ThemeVariant,
+  prefs: FocusPrefs,
+): { title: string; description: string; label: string } => {
+  const label = formatFocusVariantLabel(variant);
+  return {
+    label,
+    title: `Skopiowano link (${label})`,
+    description: `Wariant ${label}: ${formatFocusPrefsSummary(prefs)}`,
+  };
+};
+
 const FocusDemo = ({
   prefs,
   highContrast,
