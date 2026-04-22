@@ -2168,6 +2168,81 @@ const AdminSystemHealth = () => {
                             );
                           })()}
 
+                          {/* Widok „Różnice" — pokazuje co admin zmienił w wybranym wariancie
+                              względem defaultów PRZED zapisem (zapis i tak idzie do localStorage
+                              w useEffect, ale wizualnie ta lista uświadamia różnicę zanim
+                              kliknie „Kopiuj link"/„Pobierz plik"). Pokazujemy TYLKO pola które
+                              różnią się — żeby było widać "diff", a nie pełną listę. */}
+                          {(() => {
+                            const defaults = getDefaultFocusPrefsByVariant()[editingVariant];
+                            const current = focusPrefsByVariant[editingVariant];
+                            const variantLabel =
+                              editingVariant === "hc"
+                                ? "High Contrast"
+                                : editingVariant === "light"
+                                  ? "Light"
+                                  : "Dark";
+                            // Lista pól + formattery wartości (s vs px vs %).
+                            const fields: Array<{
+                              key: keyof FocusPrefs;
+                              label: string;
+                              format: (v: number) => string;
+                            }> = [
+                              { key: "ringWidthPx", label: "Ring", format: (v) => `${v}px` },
+                              { key: "glowIntensity", label: "Glow", format: (v) => `${v}%` },
+                              {
+                                key: "afterglowMs",
+                                label: "Afterglow",
+                                format: (v) => `${(v / 1000).toFixed(1)}s`,
+                              },
+                            ];
+                            const diffs = fields.filter((f) => current[f.key] !== defaults[f.key]);
+                            return (
+                              <div className="pt-3 border-t border-border space-y-2">
+                                <div className="flex items-center justify-between">
+                                  <div className="text-xs font-semibold text-foreground">
+                                    Różnice ({variantLabel})
+                                  </div>
+                                  <span className="text-[10px] text-muted-foreground/70 font-mono">
+                                    {diffs.length === 0
+                                      ? "brak zmian"
+                                      : `${diffs.length}/${fields.length} zmienione`}
+                                  </span>
+                                </div>
+                                {diffs.length === 0 ? (
+                                  <p className="text-[11px] text-muted-foreground italic leading-snug">
+                                    Wszystkie wartości równe domyślnym dla wariantu{" "}
+                                    <span className="font-mono not-italic">{variantLabel}</span>.
+                                  </p>
+                                ) : (
+                                  <ul className="space-y-1">
+                                    {diffs.map((f) => {
+                                      const before = defaults[f.key];
+                                      const after = current[f.key];
+                                      return (
+                                        <li
+                                          key={f.key}
+                                          className="flex items-center justify-between gap-2 text-[11px] font-mono tabular-nums"
+                                        >
+                                          <span className="text-muted-foreground">{f.label}</span>
+                                          <span className="flex items-center gap-1.5">
+                                            <span className="text-muted-foreground/70 line-through">
+                                              {f.format(before)}
+                                            </span>
+                                            <span className="text-muted-foreground/50">→</span>
+                                            <span className="text-primary font-semibold">
+                                              {f.format(after)}
+                                            </span>
+                                          </span>
+                                        </li>
+                                      );
+                                    })}
+                                  </ul>
+                                )}
+                              </div>
+                            );
+                          })()}
+
                           {/* Sekcja eksport / import — przenoszenie prefs między urządzeniami.
                               3 ścieżki: (1) plik .json (backup/email), (2) shareable URL z #focus-prefs=base64url
                               do clipboardu (najszybsze), (3) import z .json (np. od kolegi). */}
