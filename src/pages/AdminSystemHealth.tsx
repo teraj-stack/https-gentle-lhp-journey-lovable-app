@@ -397,6 +397,9 @@ const AdminSystemHealth = () => {
   // Walidujemy tylko że indeks mieści się w aktualnej liczbie dopasowań — jeśli dane
   // retry się odświeżyły i indeks wypadł poza zakres, fallback do 0.
   useEffect(() => {
+    // Każda zmiana inspectSource (open/close/switch) resetuje wskaźnik klawiatury —
+    // to jest stan sesji nawigacji, nie powinien przeciekać między źródłami.
+    setKeyboardActiveKey(null);
     if (!inspectSource) {
       setInspectJumpIndex(0);
       setLastJumpDirection(null);
