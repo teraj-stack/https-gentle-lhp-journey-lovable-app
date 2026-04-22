@@ -863,12 +863,29 @@ const AdminSystemHealth = () => {
       // Krótki, konkretny opis — pokazujemy realne wartości ring/glow/afterglow,
       // żeby admin po skopiowaniu od razu wiedział co trafiło do schowka (i mógł
       // zweryfikować przed wysłaniem linka).
+      // a11y: explicite ustawiamy `role="status"` + `aria-live="polite"` + `aria-atomic`
+      // żeby czytniki ekranu (NVDA/JAWS/VoiceOver) ogłosiły KOMPLETNY komunikat
+      // (tytuł + opis razem) bez przerywania bieżącej wypowiedzi. Sonner domyślnie
+      // dodaje `aria-live` ale bez `aria-atomic`, co czasem powoduje że SR czyta
+      // tylko zmieniony fragment — atomic="true" wymusza odczyt całości.
       toast.success(`Skopiowano link (${label})`, {
         description: `Wariant ${label}: ring ${single.ringWidthPx}px · glow ${single.glowIntensity}% · afterglow ${single.afterglowMs}ms`,
+        ariaProps: {
+          role: "status",
+          "aria-live": "polite",
+          "aria-atomic": "true",
+        },
       });
     } catch (err) {
+      // Błąd = `role="alert"` + `aria-live="assertive"` — czytnik PRZERYWA aktualną
+      // wypowiedź żeby ogłosić problem (typowo: brak permission do clipboardu).
       toast.error("Nie udało się skopiować linka", {
         description: err instanceof Error ? err.message : "Brak dostępu do clipboardu",
+        ariaProps: {
+          role: "alert",
+          "aria-live": "assertive",
+          "aria-atomic": "true",
+        },
       });
     }
   };
