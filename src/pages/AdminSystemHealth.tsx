@@ -22,7 +22,7 @@ import { Label } from "@/components/ui/label";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import SeoHead from "@/components/shared/SeoHead";
 import { computeRowScrollTarget } from "@/lib/scrollHelpers";
-import { applyPulseSequence } from "@/lib/pulseAnimation";
+import { applyPulseSequence, type PulsePrefs } from "@/lib/pulseAnimation";
 import {
   exportFocusPrefsToJson,
   importFocusPrefsFromJson,
