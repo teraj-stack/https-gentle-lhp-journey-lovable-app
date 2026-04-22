@@ -447,12 +447,6 @@ const AdminSystemHealth = () => {
   // w `pulseRow` oraz na `<TableRow isNavigatorActive>` przez inline style.
   // ============================================================================
   const FOCUS_PREFS_LS_KEY = "admin-system-health.focus-style-prefs";
-  type FocusPrefs = {
-    afterglowMs: number; // 800–6000ms (default 2400)
-    ringWidthPx: number; // 1–6px (default 2; HC uses ringWidthPx + 2)
-    glowIntensity: number; // 0–100 (default 55; mapowane na opacity 0..1)
-  };
-  const FOCUS_PREFS_LS_KEY = "admin-system-health.focus-style-prefs";
   // Per-variant prefs (v2): trzymamy 3 osobne sety stylu focusu — `light`, `dark`, `hc`.
   // Aktywny variant wybierany przez `useThemeVariant(highContrastFocus)` — gdy admin
   // przełącza HC toggle albo zmienia motyw OS, automatycznie aplikuje się variant z LS.
