@@ -329,26 +329,40 @@ const AdminSystemHealth = () => {
   // Per-element timer w WeakMap czyści poprzedni cleanup zanim ustawi nowy — bez tego
   // szybki Next→Prev na tym samym wierszu mógłby uciąć drugą animację o pozostałe ms.
   // Respektuje `prefers-reduced-motion: reduce` — pomija animację dla a11y.
-  const pulseRow = (el: HTMLElement) => {
+  // Opcja `focus=true`: po pulse'ie ustawia fokus na wierszu (tabIndex=-1 + preventScroll),
+  // żeby a11y/keyboard users dostali screen-reader announcement i mogli kontynuować nawigację
+  // klawiszem (np. Tab z wiersza do kolejnych przycisków). Domyślnie false — focus podczas
+  // skoków w modalu ukradłby klawiaturę z dialogu.
+  const pulseRow = (el: HTMLElement, opts: { focus?: boolean } = {}) => {
     const prefersReducedMotion =
       typeof window.matchMedia === "function" &&
       window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (prefersReducedMotion) return;
-    const prevTimer = pulseTimersRef.current.get(el);
-    if (prevTimer !== undefined) {
-      window.clearTimeout(prevTimer);
-      pulseTimersRef.current.delete(el);
-    }
-    el.classList.remove("animate-jump-pulse");
-    // Force reflow — bez tego ponowne dodanie tej samej klasy nie restartuje animacji.
-    // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-    void el.offsetWidth;
-    el.classList.add("animate-jump-pulse");
-    const timer = window.setTimeout(() => {
+    if (!prefersReducedMotion) {
+      const prevTimer = pulseTimersRef.current.get(el);
+      if (prevTimer !== undefined) {
+        window.clearTimeout(prevTimer);
+        pulseTimersRef.current.delete(el);
+      }
       el.classList.remove("animate-jump-pulse");
-      pulseTimersRef.current.delete(el);
-    }, 1800);
-    pulseTimersRef.current.set(el, timer);
+      // Force reflow — bez tego ponowne dodanie tej samej klasy nie restartuje animacji.
+      // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+      void el.offsetWidth;
+      el.classList.add("animate-jump-pulse");
+      const timer = window.setTimeout(() => {
+        el.classList.remove("animate-jump-pulse");
+        pulseTimersRef.current.delete(el);
+      }, 1800);
+      pulseTimersRef.current.set(el, timer);
+    }
+    if (opts.focus) {
+      // preventScroll: nasz scrollRowIntoView już wycentrował wiersz — focus nie powinien
+      // tego cofać natywnym skokiem do brzegu viewportu.
+      try {
+        el.focus({ preventScroll: true });
+      } catch {
+        // Element bez tabIndex / detached — ignorujemy.
+      }
+    }
   };
 
   // Zamyka modal i przewija/podświetla wiersz w tabeli źródeł dla wskazanej kombinacji IP+UA.
@@ -391,6 +405,9 @@ const AdminSystemHealth = () => {
         let didScroll = false;
         if (el) {
           scrollRowIntoView(el);
+          // Pulse + focus po zamknięciu modala — modal już odmontowany, więc focus
+          // na wierszu jest bezpieczny i pomaga screen-readerowi ogłosić docelowy wiersz.
+          pulseRow(el, { focus: true });
           // Zapamiętaj exact source — render porównuje s.ip+s.ua dla mocnego highlightu,
           // a samo IP dla delikatnego highlightu pokrewnych wierszy z tego samego adresu.
           setHighlightedSource({ ip, ua });
@@ -454,7 +471,9 @@ const AdminSystemHealth = () => {
         return;
       }
       scrollRowIntoView(el, true);
-      pulseRow(el);
+      // focus=true: nawigator bar = modal zamknięty → bezpiecznie kradniemy fokus,
+      // żeby a11y/screen-reader ogłosił nowy wiersz i Tab kontynuował z tabeli.
+      pulseRow(el, { focus: true });
     };
     requestAnimationFrame(() => tryScroll(0));
   };
@@ -1591,14 +1610,15 @@ const AdminSystemHealth = () => {
                                 <TableRow
                                   key={rowKey}
                                   data-retry-row-key={rowKey}
+                                  tabIndex={-1}
                                   className={
                                     isNavigatorActive
-                                      ? "bg-primary/20 ring-2 ring-primary transition-colors cursor-help"
+                                      ? "bg-primary/20 ring-2 ring-primary transition-colors cursor-help focus:outline-none"
                                       : isExactHighlight
-                                        ? "bg-primary/15 ring-2 ring-primary/40 transition-colors cursor-help"
+                                        ? "bg-primary/15 ring-2 ring-primary/40 transition-colors cursor-help focus:outline-none"
                                         : isRelatedHighlight
-                                          ? "bg-primary/5 transition-colors cursor-help"
-                                          : "transition-colors"
+                                          ? "bg-primary/5 transition-colors cursor-help focus:outline-none"
+                                          : "transition-colors focus:outline-none"
                                   }
                                 >
                                   <TableCell className="font-mono text-xs">
