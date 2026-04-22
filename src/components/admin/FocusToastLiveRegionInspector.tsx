@@ -227,8 +227,8 @@ export const FocusToastLiveRegionInspector = () => {
         {events.length === 0 ? (
           <div className="text-[10px] text-muted-foreground/60 italic py-2 text-center">
             {enabled
-              ? "Brak zdarzeń. Kliknij „Odpal próbny toast" lub „Kopiuj link"."
-              : "Inspektor wyłączony. Kliknij „Start" żeby zacząć nasłuchiwać."}
+              ? `Brak zdarzeń. Kliknij „Odpal próbny toast" lub „Kopiuj link".`
+              : `Inspektor wyłączony. Kliknij „Start" żeby zacząć nasłuchiwać.`}
           </div>
         ) : (
           <ol
