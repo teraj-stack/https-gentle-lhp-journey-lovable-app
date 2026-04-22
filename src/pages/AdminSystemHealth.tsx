@@ -1992,7 +1992,11 @@ const AdminSystemHealth = () => {
             const jumpKeys = buildMatchKeys(inspectSource, highlightScope);
             if (jumpKeys.length <= 1) return null;
             const total = jumpKeys.length;
+            // currentDisplay = pozycja, do której skoczy NASTĘPNE Enter/J (1-based).
+            // Index 0 z buildMatchKeys = wiersz źródłowy (exact); 1..N = related.
+            // Mapujemy to na badge spójny z legendą: złoty "exact" vs szary "related".
             const currentDisplay = (inspectJumpIndex % total) + 1;
+            const isNextExact = inspectJumpIndex % total === 0;
             return (
               <Collapsible open={inspectListOpen} onOpenChange={setInspectListOpen}>
                 <CollapsibleTrigger asChild>
@@ -2008,8 +2012,34 @@ const AdminSystemHealth = () => {
                       <ChevronDown className="h-3.5 w-3.5" />
                     )}
                     Podgląd dopasowań ({total})
-                    <span className="ml-auto text-xs text-muted-foreground font-normal">
-                      Następne: {currentDisplay}
+                    {/* Licznik "Następne: X/Y" + mini-badge typu (exact/related) — kolory
+                        zgodne z legendą poniżej (primary = exact, muted = related). Tooltip
+                        wyjaśnia co zrobi Enter / J / klik "Skocz do następnego". */}
+                    <span className="ml-auto inline-flex items-center gap-1.5 text-xs font-normal">
+                      <UITooltip delayDuration={150}>
+                        <TooltipTrigger asChild>
+                          <span className="inline-flex items-center gap-1 cursor-help">
+                            <span className="text-muted-foreground">Następne:</span>
+                            <span className="font-mono tabular-nums text-foreground">
+                              {currentDisplay}/{total}
+                            </span>
+                            <span
+                              className={`inline-flex items-center justify-center min-w-4 h-4 px-1 rounded text-[9px] font-mono font-semibold ${
+                                isNextExact
+                                  ? "bg-primary text-primary-foreground"
+                                  : "bg-muted text-muted-foreground"
+                              }`}
+                            >
+                              {isNextExact ? "exact" : "related"}
+                            </span>
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" align="end" className="text-xs max-w-xs">
+                          {isNextExact
+                            ? `Następne Enter / J / klik wróci do wiersza źródłowego (1 z ${total}).`
+                            : `Następne Enter / J / klik podświetli dopasowanie powiązane ${currentDisplay} z ${total}.`}
+                        </TooltipContent>
+                      </UITooltip>
                     </span>
                   </Button>
                 </CollapsibleTrigger>
