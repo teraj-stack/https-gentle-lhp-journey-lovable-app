@@ -860,15 +860,29 @@ const AdminSystemHealth = () => {
       const url = buildFocusPrefsShareUrl(replicated, window.location.href);
       await navigator.clipboard.writeText(url);
       const label = formatFocusVariantLabel(editingVariant);
-      // Krótki, konkretny opis — pokazujemy realne wartości ring/glow/afterglow,
-      // żeby admin po skopiowaniu od razu wiedział co trafiło do schowka (i mógł
-      // zweryfikować przed wysłaniem linka).
-      toast.success(`Skopiowano link (${label})`, {
-        description: `Wariant ${label}: ring ${single.ringWidthPx}px · glow ${single.glowIntensity}% · afterglow ${single.afterglowMs}ms`,
+      const title = `Skopiowano link (${label})`;
+      const desc = `Wariant ${label}: ring ${single.ringWidthPx}px · glow ${single.glowIntensity}% · afterglow ${single.afterglowMs}ms`;
+      // a11y: Sonner domyślnie nadaje toastom `aria-live`, ale BRAK `aria-atomic`,
+      // przez co czytniki ekranu (NVDA/JAWS/VoiceOver) potrafią ominąć część
+      // komunikatu. Renderujemy `description` jako ReactNode z explicit live region
+      // wokół CAŁEJ treści (tytuł + opis), wymuszając pełny odczyt.
+      // role="status" + polite = nie przerywa bieżącej wypowiedzi (typowe dla success).
+      toast.success(title, {
+        description: (
+          <span role="status" aria-live="polite" aria-atomic="true" className="block">
+            {desc}
+          </span>
+        ),
       });
     } catch (err) {
+      const errMsg = err instanceof Error ? err.message : "Brak dostępu do clipboardu";
+      // Błąd = assertive — czytnik PRZERYWA aktualną wypowiedź żeby ogłosić problem.
       toast.error("Nie udało się skopiować linka", {
-        description: err instanceof Error ? err.message : "Brak dostępu do clipboardu",
+        description: (
+          <span role="alert" aria-live="assertive" aria-atomic="true" className="block">
+            {errMsg}
+          </span>
+        ),
       });
     }
   };
