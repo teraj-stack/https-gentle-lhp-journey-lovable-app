@@ -1061,8 +1061,12 @@ const AdminSystemHealth = () => {
     const single = focusPrefsByVariant[editingVariant];
     const replicated = { light: single, dark: single, hc: single };
     const url = buildFocusPrefsShareUrl(replicated, window.location.href);
-    const label = formatFocusVariantLabel(editingVariant);
-    const desc = `Wariant ${label}: ${formatFocusPrefsSummary(single)}`;
+    // Single source of truth — tytuł/opis dla obu kanałów toastów (success + custom).
+    // Nigdy nie buduj tych stringów inline — modyfikacje robić TYLKO w helperze.
+    const { title, description: desc, label } = buildVariantCopyToastContent(
+      editingVariant,
+      single,
+    );
     // Wszystkie błędy clipboard (NotAllowed/SecurityError/brak HTTPS) idą przez
     // copyToClipboardWithFallback → najpierw legacy execCommand, potem manual modal
     // z pre-selected tekstem. Admin nigdy nie traci linku.
