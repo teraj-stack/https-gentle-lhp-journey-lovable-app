@@ -2013,8 +2013,8 @@ const AdminSystemHealth = () => {
                                   className={
                                     isNavigatorActive
                                       ? highContrastFocus
-                                        ? "bg-primary/30 ring-offset-2 ring-offset-background outline outline-2 outline-offset-[-4px] outline-foreground/70 transition-all cursor-help focus:outline-none"
-                                        : "bg-primary/20 ring-offset-2 ring-offset-background transition-all cursor-help focus:outline-none"
+                                        ? "relative bg-primary/30 ring-offset-2 ring-offset-background outline outline-2 outline-offset-[-4px] outline-foreground/70 transition-all cursor-help focus:outline-none"
+                                        : "relative bg-primary/20 ring-offset-2 ring-offset-background transition-all cursor-help focus:outline-none"
                                       : isExactHighlight
                                         ? "bg-primary/15 ring-2 ring-primary/40 transition-colors cursor-help focus:outline-none"
                                         : isRelatedHighlight
@@ -2022,7 +2022,28 @@ const AdminSystemHealth = () => {
                                           : "transition-colors focus:outline-none"
                                   }
                                 >
-                                  <TableCell className="font-mono text-xs">
+                                  <TableCell className="font-mono text-xs relative">
+                                    {/* Persistent navigator marker — pionowy pasek + pill „▸ N/T"
+                                        po lewej stronie aktywnego wiersza. Niezależny od animacji
+                                        pulse/afterglow i pływającej etykiety JumpLabel — pozostaje
+                                        widoczny tak długo, jak długo wiersz jest `isNavigatorActive`,
+                                        więc przy szybkim scrollu zawsze wiadomo „gdzie jestem".
+                                        Position: absolute względem komórki (TableCell `relative`),
+                                        wysunięty w lewo poza krawędź tabeli (-left-1) z translate
+                                        żeby nie zaburzał szerokości kolumny. aria-hidden — to
+                                        wizualny duplikat ordinal-button, który jest dostępny dla a11y. */}
+                                    {isNavigatorActive && navOrdinal !== null && (
+                                      <span
+                                        aria-hidden="true"
+                                        className="pointer-events-none absolute -left-1 top-1/2 -translate-y-1/2 -translate-x-full flex items-center gap-1 z-10"
+                                      >
+                                        <span className="inline-block w-1 h-7 rounded-full bg-primary shadow-[0_0_10px_-1px_hsl(var(--primary)/0.7)]" />
+                                        <span className="hidden sm:inline-flex items-center gap-0.5 px-1.5 h-5 rounded bg-primary text-primary-foreground text-[10px] font-mono font-semibold shadow-md">
+                                          <span aria-hidden="true">▸</span>
+                                          {navOrdinal}/{navTotal}
+                                        </span>
+                                      </span>
+                                    )}
                                     <div className="flex items-center gap-2">
                                       {/* Numer porządkowy dopasowania — kolory spójne z legendą:
                                           primary (gold) = exact (1) lub aktywny kursor,
