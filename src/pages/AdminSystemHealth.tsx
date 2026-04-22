@@ -1893,6 +1893,59 @@ const AdminSystemHealth = () => {
                             każdej sesji. Zmiany działają od razu, sprawdź na kolejnym Next/Prev.
                           </p>
 
+                          {/* Tryb testowy: cykliczny podgląd pulse→afterglow na 3 sztucznych
+                              wierszach. Pozwala zobaczyć efekt zmiany sliderów BEZ scrollowania
+                              do tabeli. Toggle Play/Pause — domyślnie OFF (nie zaśmieca popovera). */}
+                          <div className="rounded-md border border-border/60 bg-muted/30 p-2.5 space-y-2">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-xs font-medium">Tryb testowy</span>
+                                {focusDemoActive && (
+                                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-primary/15 text-primary text-[9px] font-mono uppercase tracking-wide">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                                    Live
+                                  </span>
+                                )}
+                              </div>
+                              <Button
+                                variant={focusDemoActive ? "secondary" : "outline"}
+                                size="sm"
+                                className="h-7 px-2 text-xs gap-1"
+                                onClick={() => setFocusDemoActive((v) => !v)}
+                                aria-pressed={focusDemoActive}
+                                title={
+                                  focusDemoActive
+                                    ? "Zatrzymaj cykliczny podgląd"
+                                    : "Uruchom cykliczny podgląd efektu na sztucznych wierszach"
+                                }
+                              >
+                                {focusDemoActive ? (
+                                  <>
+                                    <Pause className="h-3 w-3" />
+                                    Stop
+                                  </>
+                                ) : (
+                                  <>
+                                    <Play className="h-3 w-3" />
+                                    Start
+                                  </>
+                                )}
+                              </Button>
+                            </div>
+                            <FocusDemo
+                              prefs={focusPrefs}
+                              highContrast={highContrastFocus}
+                              active={focusDemoActive}
+                            />
+                            {!focusDemoActive && (
+                              <p className="text-[10px] text-muted-foreground/70 leading-snug">
+                                Po włączeniu wiersze cyklicznie zagrają pulse → afterglow z aktualnymi
+                                ustawieniami. Zmiana slidera zastosuje się od razu w kolejnym cyklu.
+                              </p>
+                            )}
+                          </div>
+
+
                           <div className="space-y-2">
                             <div className="flex items-center justify-between">
                               <Label htmlFor="afterglow-slider" className="text-xs font-medium">
