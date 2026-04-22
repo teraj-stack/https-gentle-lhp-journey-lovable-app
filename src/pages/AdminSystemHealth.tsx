@@ -323,6 +323,34 @@ const AdminSystemHealth = () => {
     window.scrollTo({ top: Math.max(0, targetY), left: 0, behavior });
   };
 
+  // Aplikuje powtarzalne wyróżnienie (animate-jump-pulse) na wierszu — wizualne potwierdzenie
+  // skoku Next/Prev/Enter/J/K/klik badge. Replay przez force-reflow (`void el.offsetWidth`)
+  // żeby kolejny skok na ten sam element też zagrał animację od początku.
+  // Per-element timer w WeakMap czyści poprzedni cleanup zanim ustawi nowy — bez tego
+  // szybki Next→Prev na tym samym wierszu mógłby uciąć drugą animację o pozostałe ms.
+  // Respektuje `prefers-reduced-motion: reduce` — pomija animację dla a11y.
+  const pulseRow = (el: HTMLElement) => {
+    const prefersReducedMotion =
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (prefersReducedMotion) return;
+    const prevTimer = pulseTimersRef.current.get(el);
+    if (prevTimer !== undefined) {
+      window.clearTimeout(prevTimer);
+      pulseTimersRef.current.delete(el);
+    }
+    el.classList.remove("animate-jump-pulse");
+    // Force reflow — bez tego ponowne dodanie tej samej klasy nie restartuje animacji.
+    // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+    void el.offsetWidth;
+    el.classList.add("animate-jump-pulse");
+    const timer = window.setTimeout(() => {
+      el.classList.remove("animate-jump-pulse");
+      pulseTimersRef.current.delete(el);
+    }, 1800);
+    pulseTimersRef.current.set(el, timer);
+  };
+
   // Zamyka modal i przewija/podświetla wiersz w tabeli źródeł dla wskazanej kombinacji IP+UA.
   // Czeka jeden frame, żeby DOM zdążył odmontować dialog i przywrócić scroll body.
   const revealRowInTable = (ip: string, ua: string) => {
