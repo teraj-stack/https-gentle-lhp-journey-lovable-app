@@ -2191,6 +2191,19 @@ const AdminSystemHealth = () => {
                                 Import
                               </Button>
                             </div>
+                            {/* Drugi rząd: link tylko dla aktualnie edytowanego wariantu.
+                                Przydatne gdy admin chce udostępnić tylko jeden styl (np. HC dla a11y),
+                                bez nadpisywania pozostałych 2 wariantów u odbiorcy. */}
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-8 w-full text-xs gap-1"
+                              onClick={handleCopyFocusPrefsLinkVariant}
+                              title={`Skopiuj link tylko z ustawieniami wariantu ${editingVariant}`}
+                            >
+                              <Link2 className="h-3 w-3" />
+                              Kopiuj link ({editingVariant === "hc" ? "High Contrast" : editingVariant === "light" ? "Light" : "Dark"})
+                            </Button>
                             <input
                               ref={importFileInputRef}
                               type="file"
