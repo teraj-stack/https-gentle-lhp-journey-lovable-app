@@ -392,7 +392,7 @@ const AdminSystemHealth = () => {
         }
         return;
       }
-      scrollRowIntoView(el);
+      scrollRowIntoView(el, true);
       // Pulse animation — replay przez force-reflow (jak w performJumpToMatch).
       el.classList.remove("animate-jump-pulse");
       // eslint-disable-next-line @typescript-eslint/no-unused-expressions
@@ -479,7 +479,7 @@ const AdminSystemHealth = () => {
       const key = jumpKeys[idx];
       const el = document.querySelector<HTMLElement>(`[data-retry-row-key="${CSS.escape(key)}"]`);
       if (el) {
-        scrollRowIntoView(el);
+        scrollRowIntoView(el, true);
         el.classList.remove("animate-jump-pulse");
         // eslint-disable-next-line @typescript-eslint/no-unused-expressions
         void el.offsetWidth;
@@ -523,7 +523,7 @@ const AdminSystemHealth = () => {
       const key = jumpKeys[idx];
       const el = document.querySelector<HTMLElement>(`[data-retry-row-key="${CSS.escape(key)}"]`);
       if (el) {
-        scrollRowIntoView(el);
+        scrollRowIntoView(el, true);
         el.classList.remove("animate-jump-pulse");
         // eslint-disable-next-line @typescript-eslint/no-unused-expressions
         void el.offsetWidth;
