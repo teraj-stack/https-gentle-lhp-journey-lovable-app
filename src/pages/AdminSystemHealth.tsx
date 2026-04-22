@@ -518,16 +518,64 @@ const AdminSystemHealth = () => {
     };
   }, []);
   // Po zaaplikowaniu prefs z URL fragmentu (initial state) — wyczyść hash, żeby
-  // odświeżenie strony nie nadpisało lokalnych zmian usera. Toast informuje użytkownika.
+  // odświeżenie strony nie nadpisało lokalnych zmian usera.
+  //
+  // Walidacja po imporcie: dekodujemy fragment ZNOWU (raw, bez sanityzacji),
+  // porównujemy z `focusPrefsByVariant` (po sanityzacji) i raportujemy:
+  //   - ile wariantów ma sanitized values (wartości były clampowane)
+  //   - który wariant różni się od LS (np. tylko `dark` był nadpisany przez link)
+  // Toast pokazuje per-variant breakdown żeby admin od razu wiedział co weszło.
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const fromHash = extractFocusPrefsFromHash(window.location.hash);
+    const rawHash = window.location.hash;
+    const fromHash = extractFocusPrefsFromHash(rawHash);
     if (!fromHash) return;
-    const clean = window.location.hash.replace(/(^#|&)focus-prefs=[^&]*/g, "").replace(/^#&/, "#");
+    const clean = rawHash.replace(/(^#|&)focus-prefs=[^&]*/g, "").replace(/^#&/, "#");
     const newHash = clean === "#" ? "" : clean;
     window.history.replaceState(null, "", window.location.pathname + window.location.search + newHash);
-    toast.success("Zaaplikowano styl focusu z linka", {
-      description: "Per-variant preferencje (light/dark/HC) zostały zapisane lokalnie.",
+
+    // Walidacja: sprawdź czy któryś wariant ma wszystkie 3 pola identyczne.
+    // Jeśli wszystkie 3 sloty są równe → link był „wariantowy" (replikacja single→3).
+    const allSame =
+      JSON.stringify(fromHash.light) === JSON.stringify(fromHash.dark) &&
+      JSON.stringify(fromHash.dark) === JSON.stringify(fromHash.hc);
+
+    // Per-variant diff vs defaults — ile pól odbiega od defaultów (informacja
+    // dla admina: „Twoje wartości to nie defaulty, ktoś specjalnie je dobrał").
+    const defaults = getDefaultFocusPrefsByVariant();
+    const variantLabels: Record<ThemeVariant, string> = {
+      light: "Light",
+      dark: "Dark",
+      hc: "High Contrast",
+    };
+    const variantSummary = (THEME_VARIANTS as readonly ThemeVariant[]).map((v) => {
+      const cur = fromHash[v];
+      const def = defaults[v];
+      const changed: string[] = [];
+      if (cur.ringWidthPx !== def.ringWidthPx) changed.push(`ring ${cur.ringWidthPx}px`);
+      if (cur.glowIntensity !== def.glowIntensity) changed.push(`glow ${cur.glowIntensity}%`);
+      if (cur.afterglowMs !== def.afterglowMs) changed.push(`afterglow ${cur.afterglowMs}ms`);
+      return { variant: v, label: variantLabels[v], changed };
+    });
+
+    // Jeśli wszystkie 3 sloty równe — pokaż uproszczony raport „wariant X zaaplikowany do wszystkich slotów".
+    if (allSame) {
+      const single = fromHash.light;
+      toast.success("✓ Zaaplikowano styl focusu z linka", {
+        description: `Wariantowy link: ring ${single.ringWidthPx}px · glow ${single.glowIntensity}% · afterglow ${single.afterglowMs}ms (zreplikowane do wszystkich 3 trybów)`,
+      });
+      return;
+    }
+
+    // Per-variant breakdown: dla każdego wariantu pokaż 1 linijkę z ✓ (defaults) lub ⚠ (zmienione).
+    const lines = variantSummary.map((s) =>
+      s.changed.length === 0
+        ? `✓ ${s.label}: defaults`
+        : `⚠ ${s.label}: ${s.changed.join(" · ")}`,
+    );
+    toast.success("✓ Zaaplikowano styl focusu z linka", {
+      description: lines.join("\n"),
+      duration: 6000, // dłużej niż domyślne 4s — admin musi przeczytać 3 linijki
     });
   }, []);
   // Eksport WSZYSTKICH 3 wariantów do pliku .json — admin dostaje pełny backup,
