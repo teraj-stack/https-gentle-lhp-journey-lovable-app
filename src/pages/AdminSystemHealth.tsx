@@ -246,6 +246,25 @@ const AdminSystemHealth = () => {
     }
   }, [highlightScope]);
 
+  // Preferencja: tryb wysokiego kontrastu obrysu aktywnego wiersza po skoku.
+  // Gdy ON, wiersz isNavigatorActive otrzymuje grubszy ring (4px), mocniejszy halo
+  // shadow i dodatkowy inset-outline w kolorze foreground — czytelne zarówno na
+  // jasnych, jak i ciemnych motywach (warstwa primary+foreground + offset background).
+  // Animacje pulse/afterglow dostają klasę -hc, która podkręca opacity i grubość ringa.
+  // Persystowane w localStorage, default OFF (większość adminów zostaje przy spokojnym).
+  const HIGH_CONTRAST_LS_KEY = "admin-system-health.high-contrast-focus";
+  const [highContrastFocus, setHighContrastFocus] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem(HIGH_CONTRAST_LS_KEY) === "1";
+  });
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(HIGH_CONTRAST_LS_KEY, highContrastFocus ? "1" : "0");
+    } catch {
+      // ignoruj w private mode
+    }
+  }, [highContrastFocus]);
+
   // Auto-fade highlightu wiersza po 10s — wystarczająco długo, żeby admin zdążył zauważyć
   // wyróżnienie po zamknięciu modala, ale nie zostawia trwałego kolorowego rzędu.
   useEffect(() => {
