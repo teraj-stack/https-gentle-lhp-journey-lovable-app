@@ -265,6 +265,27 @@ const AdminSystemHealth = () => {
     window.scrollTo({ top: y, left: 0, behavior: "smooth" });
   };
 
+  // Przewija wiersz tabeli do widoku z uwzględnieniem wysokości sticky nagłówka strony
+  // (CSS var --header-height ustawiana przez Header.tsx). Natywne `scrollIntoView({ block: "center" })`
+  // ignoruje sticky elementy i potrafi schować górną część wiersza pod headerem — własny scroll
+  // z offsetem gwarantuje, że wiersz nigdy nie jest częściowo zasłonięty.
+  const scrollRowIntoView = (el: HTMLElement) => {
+    const cssVar = getComputedStyle(document.documentElement)
+      .getPropertyValue("--header-height")
+      .trim();
+    const headerH = cssVar ? parseFloat(cssVar) : 80;
+    const buffer = 16; // mały oddech, żeby wiersz nie kleił się do dolnej krawędzi headera
+    const rect = el.getBoundingClientRect();
+    const targetY = window.scrollY + rect.top - headerH - buffer;
+    // Jeśli wiersz wyższy niż dostępny viewport (rare), wyrównaj do górnej krawędzi pod headerem.
+    // Jeśli już widoczny w bezpiecznym oknie — pomiń scroll, żeby nie szarpać widokiem.
+    const safeTop = headerH + buffer;
+    const safeBottom = window.innerHeight - 24;
+    const fullyVisible = rect.top >= safeTop && rect.bottom <= safeBottom;
+    if (fullyVisible) return;
+    window.scrollTo({ top: Math.max(0, targetY), left: 0, behavior: "smooth" });
+  };
+
   // Zamyka modal i przewija/podświetla wiersz w tabeli źródeł dla wskazanej kombinacji IP+UA.
   // Czeka jeden frame, żeby DOM zdążył odmontować dialog i przywrócić scroll body.
   const revealRowInTable = (ip: string, ua: string) => {
