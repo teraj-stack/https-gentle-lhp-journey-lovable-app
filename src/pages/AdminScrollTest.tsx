@@ -167,10 +167,10 @@ const AdminScrollTest = () => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
       if (e.key === "j" || e.key === "ArrowDown") {
         e.preventDefault();
-        jump(1);
+        jump(1, "key-j");
       } else if (e.key === "k" || e.key === "ArrowUp") {
         e.preventDefault();
-        jump(-1);
+        jump(-1, "key-k");
       }
     };
     window.addEventListener("keydown", onKey);
