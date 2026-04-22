@@ -273,7 +273,8 @@ const AdminSystemHealth = () => {
   // Przewija wiersz tabeli do widoku z uwzględnieniem wysokości sticky nagłówka strony
   // (CSS var --header-height ustawiana przez Header.tsx). Natywne `scrollIntoView({ block: "center" })`
   // ignoruje sticky elementy i potrafi schować górną część wiersza pod headerem — własny scroll
-  // z offsetem gwarantuje, że wiersz nigdy nie jest częściowo zasłonięty.
+  // celuje w ŚRODEK bezpiecznej strefy (między dolną krawędzią headera a dnem viewportu),
+  // żeby wiersz był łatwy do zlokalizowania wzrokowo, a nie tylko minimalnie wsunięty pod header.
   // `force=true` (klik badge'a / Next/Prev / Enter/J/K) — zawsze scrolluj, żeby user dostał
   // wizualne potwierdzenie, że jego intencja została zarejestrowana.
   // `force=false` (auto-reveal po zamknięciu modala) — pomiń, gdy wiersz już w pełni widoczny,
@@ -288,12 +289,23 @@ const AdminSystemHealth = () => {
       .trim();
     const headerH = cssVar ? parseFloat(cssVar) : 80;
     const buffer = 16; // mały oddech, żeby wiersz nie kleił się do dolnej krawędzi headera
+    const bottomBuffer = 24;
     const rect = el.getBoundingClientRect();
-    const targetY = window.scrollY + rect.top - headerH - buffer;
+    // Środek bezpiecznej strefy = punkt poniżej headera, w którym chcemy mieć środek wiersza.
+    // safeAreaTop = headerH + buffer, safeAreaBottom = innerHeight - bottomBuffer.
+    // Centerujemy wiersz: targetTop dla wiersza = safeAreaTop + (safeAreaHeight - rowHeight)/2.
+    const safeAreaTop = headerH + buffer;
+    const safeAreaHeight = Math.max(0, window.innerHeight - safeAreaTop - bottomBuffer);
+    const rowHeight = rect.height;
+    // Gdy wiersz wyższy niż bezpieczna strefa (rare przy bardzo wysokim wierszu / małym viewport),
+    // wyrównaj górną krawędź wiersza do safeAreaTop — żeby przynajmniej początek był widoczny.
+    const desiredViewportTop =
+      rowHeight >= safeAreaHeight
+        ? safeAreaTop
+        : safeAreaTop + (safeAreaHeight - rowHeight) / 2;
+    const targetY = window.scrollY + rect.top - desiredViewportTop;
     if (!force) {
-      const safeTop = headerH + buffer;
-      const safeBottom = window.innerHeight - 24;
-      const fullyVisible = rect.top >= safeTop && rect.bottom <= safeBottom;
+      const fullyVisible = rect.top >= safeAreaTop && rect.bottom <= window.innerHeight - bottomBuffer;
       if (fullyVisible) return;
     }
     const now = performance.now();
