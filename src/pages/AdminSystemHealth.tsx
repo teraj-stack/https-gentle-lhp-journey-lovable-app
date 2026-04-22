@@ -18,6 +18,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tooltip as UITooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import SeoHead from "@/components/shared/SeoHead";
+import { computeRowScrollTarget } from "@/lib/scrollHelpers";
 import { formatDistanceToNow } from "date-fns";
 import { pl } from "date-fns/locale";
 import { toast } from "sonner";
@@ -293,26 +294,18 @@ const AdminSystemHealth = () => {
       .getPropertyValue("--header-height")
       .trim();
     const headerH = cssVar ? parseFloat(cssVar) : 80;
-    const buffer = 16; // mały oddech, żeby wiersz nie kleił się do dolnej krawędzi headera
-    const bottomBuffer = 24;
     const rect = el.getBoundingClientRect();
-    // Środek bezpiecznej strefy = punkt poniżej headera, w którym chcemy mieć środek wiersza.
-    // safeAreaTop = headerH + buffer, safeAreaBottom = innerHeight - bottomBuffer.
-    // Centerujemy wiersz: targetTop dla wiersza = safeAreaTop + (safeAreaHeight - rowHeight)/2.
-    const safeAreaTop = headerH + buffer;
-    const safeAreaHeight = Math.max(0, window.innerHeight - safeAreaTop - bottomBuffer);
-    const rowHeight = rect.height;
-    // Gdy wiersz wyższy niż bezpieczna strefa (rare przy bardzo wysokim wierszu / małym viewport),
-    // wyrównaj górną krawędź wiersza do safeAreaTop — żeby przynajmniej początek był widoczny.
-    const desiredViewportTop =
-      rowHeight >= safeAreaHeight
-        ? safeAreaTop
-        : safeAreaTop + (safeAreaHeight - rowHeight) / 2;
-    const targetY = window.scrollY + rect.top - desiredViewportTop;
-    if (!force) {
-      const fullyVisible = rect.top >= safeAreaTop && rect.bottom <= window.innerHeight - bottomBuffer;
-      if (fullyVisible) return;
-    }
+    // Pure helper (src/lib/scrollHelpers.ts) liczy targetY i wykrywa "już widoczny".
+    // Wyciągnięte żeby pokryć testem jednostkowym — patrz scrollHelpers.test.ts.
+    const targetY = computeRowScrollTarget({
+      rectTop: rect.top,
+      rowHeight: rect.height,
+      scrollY: window.scrollY,
+      viewportHeight: window.innerHeight,
+      headerHeight: headerH,
+      force,
+    });
+    if (targetY === null) return; // wiersz w pełni widoczny + !force → pomiń scroll
     const now = performance.now();
     const prefersReducedMotion =
       typeof window.matchMedia === "function" &&
@@ -320,7 +313,7 @@ const AdminSystemHealth = () => {
     const rapidRepeat = now - lastScrollAtRef.current < 250;
     const behavior: ScrollBehavior = prefersReducedMotion || rapidRepeat ? "auto" : "smooth";
     lastScrollAtRef.current = now;
-    window.scrollTo({ top: Math.max(0, targetY), left: 0, behavior });
+    window.scrollTo({ top: targetY, left: 0, behavior });
   };
 
   // Aplikuje powtarzalne wyróżnienie (animate-jump-pulse) na wierszu — wizualne potwierdzenie
