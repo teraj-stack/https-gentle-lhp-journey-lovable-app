@@ -456,12 +456,23 @@ const AdminSystemHealth = () => {
       if (highContrastFocus) {
         el.classList.add("jump-hc");
       }
+      // Aplikuj preferencje stylu focusu jako CSS custom properties — keyframes
+      // w index.css czytają je przez var() (--jump-ring-w, --jump-glow-blur,
+      // --jump-glow-spread, --jump-glow-opacity, --jump-afterglow-duration).
+      const prefs = focusPrefsRef.current;
+      const ringW = highContrastFocus ? prefs.ringWidthPx + 2 : prefs.ringWidthPx;
+      const glow = prefs.glowIntensity / 100;
+      el.style.setProperty("--jump-ring-w", `${ringW}px`);
+      el.style.setProperty("--jump-glow-blur", `${Math.round(20 + glow * 24)}px`);
+      el.style.setProperty("--jump-glow-spread", `${Math.round(2 + glow * 8)}px`);
+      el.style.setProperty("--jump-glow-opacity", (0.25 + glow * 0.55).toFixed(2));
+      el.style.setProperty("--jump-afterglow-duration", `${prefs.afterglowMs}ms`);
       // Force reflow — bez tego ponowne dodanie tej samej klasy nie restartuje animacji.
       // eslint-disable-next-line @typescript-eslint/no-unused-expressions
       void el.offsetWidth;
       el.classList.add("animate-jump-pulse");
       // Po ~1.7s (lekkie nakładanie z końcem pulse'a, żeby nie było „dziury" wizualnej)
-      // przełącz na afterglow — trwały ring + tło, które samo wygasa przez 2.4s.
+      // przełącz na afterglow — czas trwania konfigurowalny przez `--jump-afterglow-duration`.
       const afterglowTimer = window.setTimeout(() => {
         el.classList.remove("animate-jump-pulse");
         // eslint-disable-next-line @typescript-eslint/no-unused-expressions
@@ -470,17 +481,25 @@ const AdminSystemHealth = () => {
       }, 1700);
       (el as HTMLElement & { __afterglowTimer?: number }).__afterglowTimer =
         afterglowTimer;
-      // Cleanup obu klas po pełnej sekwencji (1.7s + 2.4s afterglow ≈ 4.1s, +100ms zapasu).
+      // Cleanup obu klas po pełnej sekwencji (1.7s pulse + afterglow + 100ms zapasu).
       const cleanupTimer = window.setTimeout(() => {
         el.classList.remove(
           "animate-jump-pulse",
           "animate-jump-afterglow",
           "jump-hc",
         );
+        // Wyczyść inline CSS vars — kolejny pulse i tak je nadpisze, ale lepiej
+        // zostawić DOM czysty (debugowanie w devtools, brak „wycieku" stylu na
+        // stan idle gdyby ktoś dodał selektor bez .animate-jump-*).
+        el.style.removeProperty("--jump-ring-w");
+        el.style.removeProperty("--jump-glow-blur");
+        el.style.removeProperty("--jump-glow-spread");
+        el.style.removeProperty("--jump-glow-opacity");
+        el.style.removeProperty("--jump-afterglow-duration");
         pulseTimersRef.current.delete(el);
         delete (el as HTMLElement & { __afterglowTimer?: number })
           .__afterglowTimer;
-      }, 4200);
+      }, 1700 + focusPrefsRef.current.afterglowMs + 100);
       pulseTimersRef.current.set(el, cleanupTimer);
     }
     if (opts.focus) {
