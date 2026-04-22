@@ -1536,25 +1536,78 @@ const AdminSystemHealth = () => {
                                           Aktywny wiersz dostaje ring + primary fill — synchronizacja
                                           z `isNavigatorActive` (matchNavigator/Enter/J/K). */}
                                       {navOrdinal !== null && (
-                                        <button
-                                          type="button"
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            // Klik = ten sam efekt co Enter na liczniku „X/Y" /
-                                            // przycisk „Skocz do następnego" wskazujący właśnie ten indeks.
-                                            // Skok absolutny do navIdx (0-based), animate + scroll + persist.
-                                            jumpToMatchIndex(navIdx);
-                                          }}
-                                          className={`shrink-0 inline-flex items-center justify-center min-w-5 h-5 px-1 rounded text-[10px] font-mono font-semibold transition-colors cursor-pointer hover:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-background ${
-                                            isNavigatorActive || navIdx === 0
-                                              ? "bg-primary text-primary-foreground"
-                                              : "bg-muted text-muted-foreground"
-                                          } ${isNavigatorActive ? "ring-2 ring-primary ring-offset-1 ring-offset-background" : ""}`}
-                                          title={`Dopasowanie ${navOrdinal}/${navTotal} ${navIdx === 0 ? "(exact — wiersz źródłowy)" : "(related)"}${isNavigatorActive ? " — bieżący kursor" : " — kliknij, aby przeskoczyć"}`}
-                                          aria-label={`Przejdź do dopasowania ${navOrdinal} z ${navTotal}`}
-                                        >
-                                          {navOrdinal}
-                                        </button>
+                                        <UITooltip delayDuration={150}>
+                                          <TooltipTrigger asChild>
+                                            <button
+                                              type="button"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                // Klik = ten sam efekt co Enter na liczniku „X/Y" /
+                                                // przycisk „Skocz do następnego" wskazujący właśnie ten indeks.
+                                                jumpToMatchIndex(navIdx);
+                                              }}
+                                              className={`shrink-0 inline-flex items-center justify-center min-w-5 h-5 px-1 rounded text-[10px] font-mono font-semibold transition-colors cursor-pointer hover:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-background ${
+                                                isNavigatorActive || navIdx === 0
+                                                  ? "bg-primary text-primary-foreground"
+                                                  : "bg-muted text-muted-foreground"
+                                              } ${isNavigatorActive ? "ring-2 ring-primary ring-offset-1 ring-offset-background" : ""}`}
+                                              aria-label={`Przejdź do dopasowania ${navOrdinal} z ${navTotal}`}
+                                            >
+                                              {navOrdinal}
+                                            </button>
+                                          </TooltipTrigger>
+                                          {/* Bogaty tooltip — wyjaśnia typ (exact/related), pozycję X/Y
+                                              oraz dokładnie co zrobi Enter/J dla TEGO konkretnego wiersza.
+                                              Treść akcji zależy od stanu kursora (active vs nieaktywny). */}
+                                          <TooltipContent side="top" align="start" className="text-xs max-w-sm">
+                                            <div className="space-y-1.5">
+                                              <div className="flex items-center gap-1.5 font-semibold">
+                                                <span className={`inline-flex items-center justify-center min-w-5 h-5 px-1 rounded text-[10px] font-mono ${
+                                                  navIdx === 0
+                                                    ? "bg-primary text-primary-foreground"
+                                                    : "bg-muted text-muted-foreground"
+                                                }`}>
+                                                  {navOrdinal}
+                                                </span>
+                                                <span>
+                                                  {navOrdinal}/{navTotal} —{" "}
+                                                  {navIdx === 0 ? (
+                                                    <strong className="text-primary">exact</strong>
+                                                  ) : (
+                                                    <strong>related</strong>
+                                                  )}
+                                                  {isNavigatorActive && (
+                                                    <span className="ml-1 text-primary">(bieżący kursor)</span>
+                                                  )}
+                                                </span>
+                                              </div>
+                                              <div className="text-muted-foreground">
+                                                {navIdx === 0
+                                                  ? "Wiersz źródłowy — dokładne dopasowanie IP+UA z modala inspekcji."
+                                                  : "Powiązany wiersz — ten sam IP lub User-Agent (zależnie od zakresu podświetlenia)."}
+                                              </div>
+                                              <div className="pt-1 border-t border-border/40 text-muted-foreground">
+                                                {isNavigatorActive ? (
+                                                  <>
+                                                    Ten wiersz jest aktywnym kursorem.{" "}
+                                                    <kbd className="px-1 py-0 text-[10px] font-mono rounded border border-border/60 bg-muted/60">Enter</kbd>{" "}
+                                                    /{" "}
+                                                    <kbd className="px-1 py-0 text-[10px] font-mono rounded border border-border/60 bg-muted/60">J</kbd>{" "}
+                                                    przejdzie do następnego ({((navIdx + 1) % Math.max(navTotal, 1)) + 1}/{navTotal}).
+                                                  </>
+                                                ) : (
+                                                  <>
+                                                    Klik (lub{" "}
+                                                    <kbd className="px-1 py-0 text-[10px] font-mono rounded border border-border/60 bg-muted/60">Enter</kbd>
+                                                    ) ustawi kursor tutaj. Następny{" "}
+                                                    <kbd className="px-1 py-0 text-[10px] font-mono rounded border border-border/60 bg-muted/60">J</kbd>{" "}
+                                                    pójdzie do {((navIdx + 1) % Math.max(navTotal, 1)) + 1}/{navTotal}.
+                                                  </>
+                                                )}
+                                              </div>
+                                            </div>
+                                          </TooltipContent>
+                                        </UITooltip>
                                       )}
                                       <span>{s.ip}</span>
                                     </div>
