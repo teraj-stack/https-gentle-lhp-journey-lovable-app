@@ -518,6 +518,24 @@ const AdminSystemHealth = () => {
       }, 1700 + focusPrefsRef.current.afterglowMs + 100);
       pulseTimersRef.current.set(el, cleanupTimer);
     }
+    // Pływająca etykieta „X/Y" obok wiersza — pokazujemy zawsze gdy podany label,
+    // niezależnie od prefers-reduced-motion (etykieta to informacja, nie animacja).
+    if (opts.label) {
+      const totalDuration = 1700 + focusPrefsRef.current.afterglowMs + 200;
+      setJumpLabel({
+        el,
+        ordinal: opts.label.ordinal,
+        total: opts.label.total,
+        expiresAt: performance.now() + totalDuration,
+      });
+      if (jumpLabelTimerRef.current !== null) {
+        window.clearTimeout(jumpLabelTimerRef.current);
+      }
+      jumpLabelTimerRef.current = window.setTimeout(() => {
+        setJumpLabel(null);
+        jumpLabelTimerRef.current = null;
+      }, totalDuration);
+    }
     if (opts.focus) {
       // preventScroll: nasz scrollRowIntoView już wycentrował wiersz — focus nie powinien
       // tego cofać natywnym skokiem do brzegu viewportu.
