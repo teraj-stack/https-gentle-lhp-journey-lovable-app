@@ -230,9 +230,11 @@ describe("applyPulseSequence — handle return value", () => {
   it("zwraca dwa różne ID timerów (afterglow + cleanup)", () => {
     const row = makeRow();
     const handle = applyPulseSequence(row, DEFAULT_PREFS, new WeakMap());
+    // Pod jsdom + vitest fake timers ID są obiektami Timeout (Node), w przeglądarce
+    // numerami — sprawdzamy tylko, że to dwa OSOBNE handle (osobne timery do anulowania).
     expect(handle!.afterglowTimerId).not.toBe(handle!.cleanupTimerId);
-    expect(typeof handle!.afterglowTimerId).toBe("number");
-    expect(typeof handle!.cleanupTimerId).toBe("number");
+    expect(handle!.afterglowTimerId).toBeDefined();
+    expect(handle!.cleanupTimerId).toBeDefined();
   });
 });
 
