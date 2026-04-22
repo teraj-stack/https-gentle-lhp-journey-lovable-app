@@ -967,7 +967,16 @@ const AdminSystemHealth = () => {
       const incoming = decoded[editingVariant];
       setFocusPrefsByVariant((prev) => ({ ...prev, [editingVariant]: incoming }));
       toast.success(`Zaaplikowano wariant ${label}`, {
-        description: `ring ${incoming.ringWidthPx}px · glow ${incoming.glowIntensity}% · afterglow ${incoming.afterglowMs}ms`,
+        description: (
+          <span
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
+            className="block whitespace-normal break-words leading-snug"
+          >
+            {formatFocusPrefsSummary(incoming)}
+          </span>
+        ),
       });
     } catch (err) {
       toast.error("Nie udało się odczytać schowka", {
