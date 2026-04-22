@@ -211,6 +211,29 @@ const JumpLabel = ({
 // `pulseDuration + cooldown` żeby admin zobaczył całą sekwencję pulse→afterglow→cleanup
 // zanim demo skoczy dalej. Dzięki temu zmiana sliderów daje natychmiastowy podgląd
 // efektu BEZ konieczności scrollowania do tabeli i klikania Next/Prev.
+
+/**
+ * Jednolite, czytelne etykiety wariantów stylu focusu — używane WSZĘDZIE w UI
+ * (przyciski popovera, tooltips, toasty, FocusPlayground header, raport po imporcie).
+ *
+ * Mapowanie kod → etykieta:
+ *   - "light" → "Light"
+ *   - "dark"  → "Dark"
+ *   - "hc"    → "High Contrast"
+ *
+ * Ten sam słownik jest używany w `extractFocusPrefsFromHash` walidacji (linie 759-763)
+ * — gwarancja że to co admin widzi w UI = to co pojawia się w raportach z URL fragmentu.
+ *
+ * Wyciągnięte jako pure helper żeby uniknąć duplikacji 5 inline-ternarów w popoverze.
+ */
+const FOCUS_VARIANT_LABELS: Record<ThemeVariant, string> = {
+  light: "Light",
+  dark: "Dark",
+  hc: "High Contrast",
+};
+const formatFocusVariantLabel = (variant: ThemeVariant): string =>
+  FOCUS_VARIANT_LABELS[variant];
+
 const FocusDemo = ({
   prefs,
   highContrast,
