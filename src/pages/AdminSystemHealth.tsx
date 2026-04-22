@@ -191,7 +191,7 @@ const JumpLabel = ({
   );
 };
 
-
+const AdminSystemHealth = () => {
   const navigate = useNavigate();
   const [session, setSession] = useState<Session | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
