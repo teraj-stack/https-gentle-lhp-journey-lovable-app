@@ -2311,28 +2311,50 @@ const AdminSystemHealth = () => {
                                 </span>
                               )}
                             </div>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-7 px-2 text-xs gap-1"
-                              onClick={() => {
-                                // Przywracamy defaults TYLKO dla aktualnie edytowanego wariantu —
-                                // setEditingVariantPrefs (linia 593-596) zapisuje wyłącznie do
-                                // `[editingVariant]`, więc pozostałe 2 sloty (np. light/hc gdy
-                                // resetujemy dark) zostają nietknięte.
-                                const defaults = getDefaultFocusPrefsByVariant();
-                                const variantLabel = formatFocusVariantLabel(editingVariant);
-                                const d = defaults[editingVariant];
-                                setEditingVariantPrefs(() => d);
-                                toast.success(`Przywrócono domyślne (${variantLabel})`, {
-                                  description: `Wariant ${variantLabel}: ring ${d.ringWidthPx}px · glow ${d.glowIntensity}% · afterglow ${d.afterglowMs}ms · pozostałe warianty bez zmian`,
-                                });
-                              }}
-                              title={`Przywróć wartości domyślne tylko dla wariantu ${formatFocusVariantLabel(editingVariant)} (pozostałe nietknięte)`}
-                            >
-                              <RotateCcw className="h-3 w-3" />
-                              Przywróć domyślne
-                            </Button>
+                            <div className="flex items-center gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 px-2 text-xs gap-1"
+                                onClick={() => {
+                                  // Przywracamy defaults TYLKO dla aktualnie edytowanego wariantu —
+                                  // setEditingVariantPrefs (linia 593-596) zapisuje wyłącznie do
+                                  // `[editingVariant]`, więc pozostałe 2 sloty (np. light/hc gdy
+                                  // resetujemy dark) zostają nietknięte.
+                                  const defaults = getDefaultFocusPrefsByVariant();
+                                  const variantLabel = formatFocusVariantLabel(editingVariant);
+                                  const d = defaults[editingVariant];
+                                  setEditingVariantPrefs(() => d);
+                                  toast.success(`Przywrócono domyślne (${variantLabel})`, {
+                                    description: `Wariant ${variantLabel}: ring ${d.ringWidthPx}px · glow ${d.glowIntensity}% · afterglow ${d.afterglowMs}ms · pozostałe warianty bez zmian`,
+                                  });
+                                }}
+                                title={`Przywróć wartości domyślne tylko dla wariantu ${formatFocusVariantLabel(editingVariant)} (pozostałe warianty nietknięte)`}
+                              >
+                                <RotateCcw className="h-3 w-3" />
+                                Reset ({formatFocusVariantLabel(editingVariant)})
+                              </Button>
+                              {/* Reset wszystkich 3 wariantów — opcja awaryjna „od zera".
+                                  Wymaga potwierdzenia, bo nadpisuje także warianty których
+                                  admin nie widzi w popoverze (np. dark gdy edytuje light). */}
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 px-2 text-[10px] gap-1 text-muted-foreground hover:text-foreground"
+                                onClick={() => {
+                                  if (!window.confirm(
+                                    "Zresetować WSZYSTKIE 3 warianty (Light, Dark, High Contrast) do wartości domyślnych?\n\nTa akcja nadpisze również warianty, których nie widzisz w popoverze.",
+                                  )) return;
+                                  setFocusPrefsByVariant(getDefaultFocusPrefsByVariant());
+                                  toast.success("Przywrócono domyślne (wszystkie warianty)", {
+                                    description: "Light, Dark i High Contrast wrócily do wartości fabrycznych.",
+                                  });
+                                }}
+                                title="Przywróć wartości domyślne dla WSZYSTKICH 3 wariantów (Light/Dark/HC)"
+                              >
+                                Wszystkie
+                              </Button>
+                            </div>
                           </div>
 
                           {/* Tabs wyboru wariantu motywu do edycji — Light / Dark / High Contrast.
