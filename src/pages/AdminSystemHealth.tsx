@@ -2288,26 +2288,33 @@ const AdminSystemHealth = () => {
                                 // klawiatury — intent się zmaterializował, badge nie ma już sensu.
                                 setKeyboardActiveKey(null);
                               }}
-                              className={`w-full flex items-center gap-2 px-3 py-1.5 text-left text-xs transition-colors hover:bg-primary/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-inset ${
-                                isNextCursor ? "bg-primary/15" : ""
+                              className={`group relative w-full flex items-center gap-2 pl-3 pr-3 py-1.5 text-left text-xs transition-colors hover:bg-primary/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-inset ${
+                                // "Bieżący" element (do którego trafi NASTĘPNE Enter/J — ten sam stan co
+                                // licznik "Następne: X/Y" w nagłówku). Mocne tło + lewy gold border-bar
+                                // (przez pseudo via className `before:`) — wizualnie spójne z licznikiem,
+                                // żeby user od razu widział "co wykonam Enterem".
+                                isNextCursor
+                                  ? "bg-primary/20 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1 before:bg-primary"
+                                  : ""
                               } ${
                                 // Dodatkowy ring dla aktywnego klawiaturą wiersza (poza focus-visible),
                                 // żeby był widoczny też wtedy, gdy focus ring jest słabo kontrastowy
                                 // na bg-primary/15. Inset, żeby nie wychodził za kontener.
                                 isKeyboardActive ? "ring-2 ring-primary ring-inset bg-primary/10" : ""
                               }`}
-                              title={`Skocz do dopasowania ${i + 1} z ${total}${isExact ? " (wiersz źródłowy)" : ""} — Enter`}
+                              aria-current={isNextCursor ? "true" : undefined}
+                              title={`${isNextCursor ? "[BIEŻĄCE] " : ""}Skocz do dopasowania ${i + 1} z ${total}${isExact ? " (wiersz źródłowy)" : ""} — Enter`}
                             >
                               <span
                                 className={`shrink-0 inline-flex items-center justify-center w-6 h-6 rounded text-[10px] font-mono font-semibold ${
                                   isExact
                                     ? "bg-primary text-primary-foreground"
                                     : "bg-muted text-muted-foreground"
-                                }`}
+                                } ${isNextCursor ? "ring-2 ring-primary ring-offset-1 ring-offset-background" : ""}`}
                               >
                                 {i + 1}
                               </span>
-                              <span className="flex-1 truncate font-mono text-foreground">{ip}</span>
+                              <span className={`flex-1 truncate font-mono ${isNextCursor ? "text-foreground font-semibold" : "text-foreground"}`}>{ip}</span>
                               <span className="shrink-0 text-muted-foreground hidden sm:inline truncate max-w-[180px]">
                                 {ua === "—" ? "—" : ua.split(" ")[0]}
                               </span>
@@ -2318,6 +2325,17 @@ const AdminSystemHealth = () => {
                                   title={`${sourceMeta.count} retry'ów`}
                                 >
                                   {sourceMeta.count}
+                                </Badge>
+                              )}
+                              {/* Badge "X/Y → Enter" pojawia się TYLKO na bieżącym kursorze i pokazuje
+                                  ten sam licznik co nagłówek + wskazówkę co wykona Enter. Ukryty gdy
+                                  isKeyboardActive (wtedy ⌨ Enter badge poniżej spełnia tę rolę). */}
+                              {isNextCursor && !isKeyboardActive && (
+                                <Badge
+                                  className="shrink-0 text-[10px] font-mono font-semibold h-5 px-1.5 bg-primary text-primary-foreground hover:bg-primary"
+                                  title={`Bieżące dopasowanie (${i + 1}/${total}) — Enter / J / klik wykona skok`}
+                                >
+                                  {i + 1}/{total} → Enter
                                 </Badge>
                               )}
                               {isKeyboardActive && (
