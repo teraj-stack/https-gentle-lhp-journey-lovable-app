@@ -551,7 +551,7 @@ const AdminSystemHealth = () => {
       // żeby admin po skopiowaniu od razu wiedział co trafiło do schowka (i mógł
       // zweryfikować przed wysłaniem linka).
       toast.success(`Skopiowano link (${label})`, {
-        description: `Wariant ${label}: ring ${single.ringWidth}px · glow ${single.glowOpacity}% · afterglow ${single.afterglowMs}ms`,
+        description: `Wariant ${label}: ring ${single.ringWidthPx}px · glow ${single.glowIntensity}% · afterglow ${single.afterglowMs}ms`,
       });
     } catch (err) {
       toast.error("Nie udało się skopiować linka", {
