@@ -165,6 +165,13 @@ const AdminSystemHealth = () => {
   // Query wyszukiwania w "Podgląd dopasowań" — filtruje po IP/UA (case-insensitive substring).
   // NIE persystowane (specyficzne dla bieżącej sesji eksploracji).
   const [inspectListQuery, setInspectListQuery] = useState("");
+  // Klucz `${ip}::${ua}` aktualnie wskazany strzałkami w mini-liście "Podgląd dopasowań".
+  // Dodaje wizualny ring + badge "klawiatura" obok zwykłego "next cursor", żeby user widział
+  // gdzie stoi fokus PRZED naciśnięciem Enter. Czyszczony po wykonaniu skoku (Enter/klik),
+  // przy zamknięciu modala oraz przy zmianie inspectSource — to stan "sesji nawigacji",
+  // nie persystowany. NIE używamy document.activeElement, bo focus może być utracony np.
+  // gdy lista re-renderuje się po zmianie filtra/sortowania.
+  const [keyboardActiveKey, setKeyboardActiveKey] = useState<string | null>(null);
   // Sortowanie mini-listy "Podgląd dopasowań": "default" (kolejność z buildMatchKeys = exact
   // + related), "count-desc" (najwięcej retry'ów na górze — typowy use-case "co naprawić"),
   // "ip-asc" (alfabetycznie po IP). Persystowane w LS — to preferencja widokowa.
