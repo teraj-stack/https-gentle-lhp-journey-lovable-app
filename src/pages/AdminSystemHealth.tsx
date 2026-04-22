@@ -1418,7 +1418,28 @@ const AdminSystemHealth = () => {
                             </TableRow>
                           </TableHeader>
                           <TableBody>
-                            {filteredRetrySources.map((s) => {
+                            {(() => {
+                              // Unified active-cursor key dla całego mapowania wierszy.
+                              // Priorytet: matchNavigator (po "Pokaż kolejne dopasowania", modal zamknięty)
+                              // > inspectSource+inspectJumpIndex (modal otwarty, J/K/„Skocz do następnego").
+                              // Dzięki temu kolor + ring badge'a w kolumnie IP zawsze podąża za bieżącym
+                              // kursorem niezależnie od źródła nawigacji.
+                              const navigatorKeys = matchNavigator?.keys ?? null;
+                              const navigatorIndex = matchNavigator?.index ?? -1;
+                              const modalKeys = !matchNavigator && inspectSource
+                                ? buildMatchKeys(inspectSource, highlightScope)
+                                : null;
+                              const modalActiveKey = modalKeys && modalKeys.length > 0
+                                ? modalKeys[inspectJumpIndex % modalKeys.length]
+                                : null;
+                              const activeCursorKey = navigatorKeys && navigatorKeys.length > 0
+                                ? navigatorKeys[navigatorIndex] ?? null
+                                : modalActiveKey;
+                              // Numery porządkowe: navigator > modal — żeby badge'e (1..N) w kolumnie IP
+                              // były widoczne także gdy navigator bar jeszcze nie wystartował (modal open).
+                              const ordinalKeys = navigatorKeys ?? modalKeys;
+                              const ordinalTotal = ordinalKeys?.length ?? 0;
+                              return filteredRetrySources.map((s) => {
                               const isDeno = /^Deno\//i.test(s.ua);
                               const rowKey = `${s.ip}::${s.ua}`;
                               // Dwa poziomy podświetlenia:
@@ -1437,24 +1458,17 @@ const AdminSystemHealth = () => {
                                 isInRelatedSet && highlightScope === "same-ua";
                               const isRelatedHighlight = isInRelatedSet;
                               const isHighlighted = isExactHighlight || isRelatedHighlight;
-                              // Czy navigator dopasowań aktualnie wskazuje ten wiersz —
-                              // dodajemy mocniejszy ring (primary, nie primary/40), żeby admin
-                              // od razu widział "gdzie jestem" w sekwencji ◀ Następne ▶.
-                              const isNavigatorActive =
-                                !!matchNavigator && matchNavigator.keys[matchNavigator.index] === rowKey;
-                              // Numer porządkowy w sekwencji nawigatora dopasowań (1-based) —
-                              // index 0 z buildMatchKeys = wiersz źródłowy (exact), reszta = related.
-                              // Renderujemy jako mały badge w komórce IP, żeby spójnie pasował
-                              // do licznika "Następne: X/Y" w modalu i mini-listy "Podgląd dopasowań".
-                              // null gdy wiersz nie jest częścią sekwencji nawigatora (np. nawigator
-                              // nieaktywny lub wiersz tylko delikatnie podświetlony, ale poza
-                              // matchNavigator.keys — choć w praktyce buildMatchKeys i nawigator
-                              // używają tego samego źródła).
-                              const navIdx = matchNavigator
-                                ? matchNavigator.keys.indexOf(rowKey)
-                                : -1;
+                              // Czy ten wiersz jest aktualnym kursorem nawigacji (Enter/J/K,
+                              // navigator bar lub „Skocz do następnego"). Używa unified
+                              // activeCursorKey wyliczonego raz dla całego mapowania.
+                              const isNavigatorActive = activeCursorKey === rowKey;
+                              // Numer porządkowy w sekwencji dopasowań (1-based) — index 0 = exact,
+                              // reszta = related. ordinalKeys to navigatorKeys (gdy aktywny) albo modalKeys
+                              // (gdy modal otwarty bez navigator bar) — dzięki temu badge'e w tabeli
+                              // są widoczne w obu trybach.
+                              const navIdx = ordinalKeys ? ordinalKeys.indexOf(rowKey) : -1;
                               const navOrdinal = navIdx >= 0 ? navIdx + 1 : null;
-                              const navTotal = matchNavigator?.keys.length ?? 0;
+                              const navTotal = ordinalTotal;
                               const row = (
                                 <TableRow
                                   key={rowKey}
@@ -1472,17 +1486,18 @@ const AdminSystemHealth = () => {
                                   <TableCell className="font-mono text-xs">
                                     <div className="flex items-center gap-2">
                                       {/* Numer porządkowy dopasowania — kolory spójne z legendą:
-                                          primary (gold) = exact (1), muted = related (2..N).
-                                          Pokazujemy też w title pełny "X/Y" do ujednolicenia z
-                                          licznikiem w modalu. Aria-label dla screen-readerów. */}
+                                          primary (gold) = exact (1) lub aktywny kursor,
+                                          muted = related (2..N) gdy nieaktywny.
+                                          Aktywny wiersz dostaje ring + primary fill — synchronizacja
+                                          z `isNavigatorActive` (matchNavigator/Enter/J/K). */}
                                       {navOrdinal !== null && (
                                         <span
-                                          className={`shrink-0 inline-flex items-center justify-center min-w-5 h-5 px-1 rounded text-[10px] font-mono font-semibold ${
-                                            navIdx === 0
+                                          className={`shrink-0 inline-flex items-center justify-center min-w-5 h-5 px-1 rounded text-[10px] font-mono font-semibold transition-colors ${
+                                            isNavigatorActive || navIdx === 0
                                               ? "bg-primary text-primary-foreground"
                                               : "bg-muted text-muted-foreground"
                                           } ${isNavigatorActive ? "ring-2 ring-primary ring-offset-1 ring-offset-background" : ""}`}
-                                          title={`Dopasowanie ${navOrdinal}/${navTotal} ${navIdx === 0 ? "(exact — wiersz źródłowy)" : "(related)"}`}
+                                          title={`Dopasowanie ${navOrdinal}/${navTotal} ${navIdx === 0 ? "(exact — wiersz źródłowy)" : "(related)"}${isNavigatorActive ? " — bieżący kursor" : ""}`}
                                           aria-label={`Dopasowanie ${navOrdinal} z ${navTotal}`}
                                         >
                                           {navOrdinal}
@@ -1562,7 +1577,8 @@ const AdminSystemHealth = () => {
                                   </TooltipContent>
                                 </UITooltip>
                               );
-                            })}
+                              });
+                            })()}
                           </TableBody>
                         </Table>
                         {/* Legenda numerów porządkowych w kolumnie IP — spójna z licznikiem
