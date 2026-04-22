@@ -22,6 +22,7 @@ import { Label } from "@/components/ui/label";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import SeoHead from "@/components/shared/SeoHead";
 import { computeRowScrollTarget } from "@/lib/scrollHelpers";
+import { applyPulseSequence } from "@/lib/pulseAnimation";
 import { formatDistanceToNow } from "date-fns";
 import { pl } from "date-fns/locale";
 import { toast } from "sonner";
@@ -502,78 +503,20 @@ const AdminSystemHealth = () => {
     const prefersReducedMotion =
       typeof window.matchMedia === "function" &&
       window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (!prefersReducedMotion) {
-      const prevTimer = pulseTimersRef.current.get(el);
-      if (prevTimer !== undefined) {
-        window.clearTimeout(prevTimer);
-        pulseTimersRef.current.delete(el);
-      }
-      // Wyzeruj również poprzedni afterglow timer (osobny, trzymany na elemencie),
-      // żeby szybkie Next→Prev na ten sam wiersz nie zaplanowało dwóch przejść
-      // pulse→afterglow równolegle.
-      const prevAfterglow = (el as HTMLElement & { __afterglowTimer?: number })
-        .__afterglowTimer;
-      if (prevAfterglow !== undefined) {
-        window.clearTimeout(prevAfterglow);
-        delete (el as HTMLElement & { __afterglowTimer?: number })
-          .__afterglowTimer;
-      }
-      el.classList.remove(
-        "animate-jump-pulse",
-        "animate-jump-afterglow",
-        "jump-hc",
-      );
-      // High-contrast: dodaj marker class — animacje pulse/afterglow respektują selector
-      // `.jump-hc.animate-jump-*` w index.css i renderują grubsze ringi + jaśniejsze halo.
-      if (highContrastFocus) {
-        el.classList.add("jump-hc");
-      }
-      // Aplikuj preferencje stylu focusu jako CSS custom properties — keyframes
-      // w index.css czytają je przez var() (--jump-ring-w, --jump-glow-blur,
-      // --jump-glow-spread, --jump-glow-opacity, --jump-afterglow-duration).
-      const prefs = focusPrefsRef.current;
-      const ringW = highContrastFocus ? prefs.ringWidthPx + 2 : prefs.ringWidthPx;
-      const glow = prefs.glowIntensity / 100;
-      el.style.setProperty("--jump-ring-w", `${ringW}px`);
-      el.style.setProperty("--jump-glow-blur", `${Math.round(20 + glow * 24)}px`);
-      el.style.setProperty("--jump-glow-spread", `${Math.round(2 + glow * 8)}px`);
-      el.style.setProperty("--jump-glow-opacity", (0.25 + glow * 0.55).toFixed(2));
-      el.style.setProperty("--jump-afterglow-duration", `${prefs.afterglowMs}ms`);
-      // Force reflow — bez tego ponowne dodanie tej samej klasy nie restartuje animacji.
-      // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-      void el.offsetWidth;
-      el.classList.add("animate-jump-pulse");
-      // Po ~1.7s (lekkie nakładanie z końcem pulse'a, żeby nie było „dziury" wizualnej)
-      // przełącz na afterglow — czas trwania konfigurowalny przez `--jump-afterglow-duration`.
-      const afterglowTimer = window.setTimeout(() => {
-        el.classList.remove("animate-jump-pulse");
-        // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-        void el.offsetWidth;
-        el.classList.add("animate-jump-afterglow");
-      }, 1700);
-      (el as HTMLElement & { __afterglowTimer?: number }).__afterglowTimer =
-        afterglowTimer;
-      // Cleanup obu klas po pełnej sekwencji (1.7s pulse + afterglow + 100ms zapasu).
-      const cleanupTimer = window.setTimeout(() => {
-        el.classList.remove(
-          "animate-jump-pulse",
-          "animate-jump-afterglow",
-          "jump-hc",
-        );
-        // Wyczyść inline CSS vars — kolejny pulse i tak je nadpisze, ale lepiej
-        // zostawić DOM czysty (debugowanie w devtools, brak „wycieku" stylu na
-        // stan idle gdyby ktoś dodał selektor bez .animate-jump-*).
-        el.style.removeProperty("--jump-ring-w");
-        el.style.removeProperty("--jump-glow-blur");
-        el.style.removeProperty("--jump-glow-spread");
-        el.style.removeProperty("--jump-glow-opacity");
-        el.style.removeProperty("--jump-afterglow-duration");
-        pulseTimersRef.current.delete(el);
-        delete (el as HTMLElement & { __afterglowTimer?: number })
-          .__afterglowTimer;
-      }, 1700 + focusPrefsRef.current.afterglowMs + 100);
-      pulseTimersRef.current.set(el, cleanupTimer);
-    }
+    // Cała logika DOM (klasy, CSS vars, timery, force-reflow, anulowanie poprzedniego
+    // pulse'u) wyciągnięta do `applyPulseSequence` w `src/lib/pulseAnimation.ts` —
+    // pokryta testami jednostkowymi (`pulseAnimation.test.ts`) które bronią kontraktu
+    // wizualnego: obrys MUSI pojawić się natychmiast i NIE wolno mu zniknąć przed
+    // czasem (1700 + afterglowMs + 100 ms).
+    applyPulseSequence(
+      el,
+      focusPrefsRef.current,
+      pulseTimersRef.current,
+      {
+        highContrast: highContrastFocus,
+        reducedMotion: prefersReducedMotion,
+      },
+    );
     // Pływająca etykieta „X/Y" obok wiersza — pokazujemy zawsze gdy podany label,
     // niezależnie od prefers-reduced-motion (etykieta to informacja, nie animacja).
     if (opts.label) {
