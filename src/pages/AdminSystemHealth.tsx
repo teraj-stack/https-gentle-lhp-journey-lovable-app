@@ -94,6 +94,13 @@ const REASON_VARIANT: Record<string, "default" | "secondary" | "destructive" | "
 // przy analizie ataku/pętli (retry-after, podgląd tokenu, metoda HTTP).
 const HIGHLIGHTED_METADATA_KEYS = new Set(["retryAfterSec", "tokenPreview", "method"]);
 
+// Walidator numerycznej preferencji z LS — chroni przed NaN/string/poza zakresem.
+function clampNum(v: unknown, min: number, max: number, fallback: number): number {
+  const n = typeof v === "number" ? v : Number(v);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.min(max, Math.max(min, n));
+}
+
 const MetadataView = ({ data }: { data: Record<string, unknown> }) => {
   const entries = Object.entries(data);
   if (entries.length === 0) {
