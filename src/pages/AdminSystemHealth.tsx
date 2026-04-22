@@ -352,14 +352,30 @@ const AdminSystemHealth = () => {
     }, 30_000);
   };
 
-  // Scrolluje do wiersza wskazanego przez index w keys.
+  // Scrolluje do wiersza wskazanego przez index w keys + aplikuje pulse animation
+  // (animate-jump-pulse) — spójnie z performJumpToMatch (J/K). Robust: rAF + 1 retry,
+  // bo navigator bar jest renderowany po zamknięciu modala i wiersz w tabeli może
+  // jeszcze nie być w DOM w momencie wywołania (transition/reflow po dialog close).
   const scrollToNavigatorIndex = (idx: number, keys: string[]) => {
     const key = keys[idx];
     if (!key) return;
-    const el = document.querySelector<HTMLElement>(`[data-retry-row-key="${CSS.escape(key)}"]`);
-    if (el) {
+    const tryScroll = (attempt: number) => {
+      const el = document.querySelector<HTMLElement>(`[data-retry-row-key="${CSS.escape(key)}"]`);
+      if (!el) {
+        if (attempt < 3) {
+          requestAnimationFrame(() => tryScroll(attempt + 1));
+        }
+        return;
+      }
       el.scrollIntoView({ behavior: "smooth", block: "center" });
-    }
+      // Pulse animation — replay przez force-reflow (jak w performJumpToMatch).
+      el.classList.remove("animate-jump-pulse");
+      // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+      void el.offsetWidth;
+      el.classList.add("animate-jump-pulse");
+      window.setTimeout(() => el.classList.remove("animate-jump-pulse"), 1800);
+    };
+    requestAnimationFrame(() => tryScroll(0));
   };
 
   // Otwiera nawigator dopasowań. keys[0] musi być exact (zostanie scrollowany pierwszy
