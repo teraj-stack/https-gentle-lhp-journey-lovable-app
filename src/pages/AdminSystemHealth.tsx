@@ -535,6 +535,27 @@ const AdminSystemHealth = () => {
       });
     }
   };
+  // Kopia shareable URL TYLKO dla aktualnie edytowanego wariantu — przydatne gdy admin
+  // chce udostępnić styl konkretnego motywu (np. tylko HC dla użytkownika a11y) bez
+  // nadpisywania pozostałych wariantów u odbiorcy. Replikujemy edytowane prefs do
+  // wszystkich 3 slotów schematu — odbiorca po imporcie dostaje jednolity styl,
+  // który może potem zróżnicować ręcznie.
+  const handleCopyFocusPrefsLinkVariant = async () => {
+    try {
+      const single = focusPrefsByVariant[editingVariant];
+      const replicated = { light: single, dark: single, hc: single };
+      const url = buildFocusPrefsShareUrl(replicated, window.location.href);
+      await navigator.clipboard.writeText(url);
+      const label = editingVariant === "hc" ? "High Contrast" : editingVariant === "light" ? "Light" : "Dark";
+      toast.success(`Skopiowano link (${label})`, {
+        description: "Link zawiera ustawienia tylko z edytowanego wariantu.",
+      });
+    } catch (err) {
+      toast.error("Nie udało się skopiować linka", {
+        description: err instanceof Error ? err.message : "Brak dostępu do clipboardu",
+      });
+    }
+  };
   // Import z pliku .json — czytamy przez FileReader, sanityzujemy, ustawiamy stan.
   // Akceptuje v2 (per-variant), v1 (single, replikowany) i legacy plain.
   const handleImportFocusPrefs = (file: File) => {
