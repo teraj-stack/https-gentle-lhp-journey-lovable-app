@@ -329,26 +329,40 @@ const AdminSystemHealth = () => {
   // Per-element timer w WeakMap czyści poprzedni cleanup zanim ustawi nowy — bez tego
   // szybki Next→Prev na tym samym wierszu mógłby uciąć drugą animację o pozostałe ms.
   // Respektuje `prefers-reduced-motion: reduce` — pomija animację dla a11y.
-  const pulseRow = (el: HTMLElement) => {
+  // Opcja `focus=true`: po pulse'ie ustawia fokus na wierszu (tabIndex=-1 + preventScroll),
+  // żeby a11y/keyboard users dostali screen-reader announcement i mogli kontynuować nawigację
+  // klawiszem (np. Tab z wiersza do kolejnych przycisków). Domyślnie false — focus podczas
+  // skoków w modalu ukradłby klawiaturę z dialogu.
+  const pulseRow = (el: HTMLElement, opts: { focus?: boolean } = {}) => {
     const prefersReducedMotion =
       typeof window.matchMedia === "function" &&
       window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (prefersReducedMotion) return;
-    const prevTimer = pulseTimersRef.current.get(el);
-    if (prevTimer !== undefined) {
-      window.clearTimeout(prevTimer);
-      pulseTimersRef.current.delete(el);
-    }
-    el.classList.remove("animate-jump-pulse");
-    // Force reflow — bez tego ponowne dodanie tej samej klasy nie restartuje animacji.
-    // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-    void el.offsetWidth;
-    el.classList.add("animate-jump-pulse");
-    const timer = window.setTimeout(() => {
+    if (!prefersReducedMotion) {
+      const prevTimer = pulseTimersRef.current.get(el);
+      if (prevTimer !== undefined) {
+        window.clearTimeout(prevTimer);
+        pulseTimersRef.current.delete(el);
+      }
       el.classList.remove("animate-jump-pulse");
-      pulseTimersRef.current.delete(el);
-    }, 1800);
-    pulseTimersRef.current.set(el, timer);
+      // Force reflow — bez tego ponowne dodanie tej samej klasy nie restartuje animacji.
+      // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+      void el.offsetWidth;
+      el.classList.add("animate-jump-pulse");
+      const timer = window.setTimeout(() => {
+        el.classList.remove("animate-jump-pulse");
+        pulseTimersRef.current.delete(el);
+      }, 1800);
+      pulseTimersRef.current.set(el, timer);
+    }
+    if (opts.focus) {
+      // preventScroll: nasz scrollRowIntoView już wycentrował wiersz — focus nie powinien
+      // tego cofać natywnym skokiem do brzegu viewportu.
+      try {
+        el.focus({ preventScroll: true });
+      } catch {
+        // Element bez tabIndex / detached — ignorujemy.
+      }
+    }
   };
 
   // Zamyka modal i przewija/podświetla wiersz w tabeli źródeł dla wskazanej kombinacji IP+UA.
