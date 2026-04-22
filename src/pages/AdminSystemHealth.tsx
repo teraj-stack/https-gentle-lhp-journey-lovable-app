@@ -823,19 +823,40 @@ const AdminSystemHealth = () => {
     if (allSame) {
       const single = fromHash.light;
       toast.success("✓ Zaaplikowano styl focusu z linka", {
-        description: `Wariantowy link: ${formatFocusPrefsSummary(single)} (zreplikowane do wszystkich 3 trybów)`,
+        description: (
+          <span
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
+            className="block whitespace-normal break-words leading-snug"
+          >
+            {`Wariantowy link: ${formatFocusPrefsSummary(single)} (zreplikowane do wszystkich 3 trybów)`}
+          </span>
+        ),
       });
       return;
     }
 
     // Per-variant breakdown: dla każdego wariantu pokaż 1 linijkę z ✓ (defaults) lub ⚠ (zmienione).
+    // Użycie `whitespace-pre-line` zachowuje `\n` jako podział linii (Sonner domyślnie
+    // collapsuje newlines do spacji). `break-words` zapobiega urywaniu długich wartości
+    // na wąskich ekranach (toast szerokość ~360px na mobile).
     const lines = variantSummary.map((s) =>
       s.changed.length === 0
         ? `✓ ${s.label}: defaults`
         : `⚠ ${s.label}: ${s.changed.join(" · ")}`,
     );
     toast.success("✓ Zaaplikowano styl focusu z linka", {
-      description: lines.join("\n"),
+      description: (
+        <span
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+          className="block whitespace-pre-line break-words leading-snug"
+        >
+          {lines.join("\n")}
+        </span>
+      ),
       duration: 6000, // dłużej niż domyślne 4s — admin musi przeczytać 3 linijki
     });
   }, []);
