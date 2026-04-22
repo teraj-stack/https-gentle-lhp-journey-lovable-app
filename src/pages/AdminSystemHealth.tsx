@@ -235,6 +235,36 @@ const FOCUS_VARIANT_LABELS: Record<ThemeVariant, string> = {
 const formatFocusVariantLabel = (variant: ThemeVariant): string =>
   FOCUS_VARIANT_LABELS[variant];
 
+/**
+ * Format wartości prefs do czytelnego, jednoliniowego opisu w toście / podglądzie.
+ *
+ * Zasady czytelności:
+ *  - **ring**: zaokrąglenie do 1 miejsca po przecinku, jednostka `px`. Slider chodzi
+ *    co 0.5px, więc `2`/`2.5`/`3` — nie pokazujemy `2.0px` (zbędne zero), używamy
+ *    `Number.toString()` po `toFixed(1)` żeby zwijać końcowe zera.
+ *  - **glow**: liczba całkowita 0–100, jednostka `%`.
+ *  - **afterglow**: ZAWSZE w sekundach z dokładnością 0.1s (np. `2.4s` zamiast
+ *    `2400ms`) — krótsze, naturalniejsze do czytania, spójne z FocusDemo (linia 401).
+ *    Dla wartości <100ms (skrajnie niski próg, edge-case) pokazujemy `ms` żeby
+ *    uniknąć `0.0s` który myli.
+ *  - Separator `·` (middle dot, U+00B7) zamiast `|` — wizualnie spokojniejszy
+ *    i nie myli się z URL pipe.
+ *
+ * Helper jest pure, eksportowany przez nazwę modułową — łatwy do unit-testu w przyszłości.
+ */
+const formatFocusPrefsSummary = (prefs: FocusPrefs): string => {
+  // Ring: toFixed(1) → string „2.0"/„2.5"; parseFloat zwija końcowe zera → „2"/„2.5".
+  const ring = parseFloat(prefs.ringWidthPx.toFixed(1)).toString();
+  const glow = Math.round(prefs.glowIntensity).toString();
+  // Afterglow: <100ms zachowujemy jako ms (rzadki edge-case minimum slidera),
+  // reszta → sekundy z 1 miejscem po przecinku, zwijając końcowe zero.
+  const afterglow =
+    prefs.afterglowMs < 100
+      ? `${Math.round(prefs.afterglowMs)}ms`
+      : `${parseFloat((prefs.afterglowMs / 1000).toFixed(1)).toString()}s`;
+  return `ring ${ring}px · glow ${glow}% · afterglow ${afterglow}`;
+};
+
 const FocusDemo = ({
   prefs,
   highContrast,
@@ -397,8 +427,7 @@ const FocusPlayground = ({
 
         <div className="flex items-center justify-between border-y border-border py-2 my-2">
           <div className="text-xs font-mono tabular-nums text-muted-foreground">
-            ring {prefs.ringWidthPx}px · glow {prefs.glowIntensity}% · afterglow{" "}
-            {(prefs.afterglowMs / 1000).toFixed(1)}s
+            {formatFocusPrefsSummary(prefs)}
             {highContrast && <span className="ml-2 text-primary">+ HC</span>}
           </div>
           <Button
@@ -784,9 +813,22 @@ const AdminSystemHealth = () => {
       const cur = fromHash[v];
       const def = defaults[v];
       const changed: string[] = [];
-      if (cur.ringWidthPx !== def.ringWidthPx) changed.push(`ring ${cur.ringWidthPx}px`);
-      if (cur.glowIntensity !== def.glowIntensity) changed.push(`glow ${cur.glowIntensity}%`);
-      if (cur.afterglowMs !== def.afterglowMs) changed.push(`afterglow ${cur.afterglowMs}ms`);
+      // Spójne formatowanie z `formatFocusPrefsSummary`: ring zwija końcowe zera
+      // (`2.0`→`2`), afterglow w sekundach z 0.1s precyzją (`2400ms`→`2.4s`).
+      if (cur.ringWidthPx !== def.ringWidthPx) {
+        const ring = parseFloat(cur.ringWidthPx.toFixed(1)).toString();
+        changed.push(`ring ${ring}px`);
+      }
+      if (cur.glowIntensity !== def.glowIntensity) {
+        changed.push(`glow ${Math.round(cur.glowIntensity)}%`);
+      }
+      if (cur.afterglowMs !== def.afterglowMs) {
+        const afterglow =
+          cur.afterglowMs < 100
+            ? `${Math.round(cur.afterglowMs)}ms`
+            : `${parseFloat((cur.afterglowMs / 1000).toFixed(1)).toString()}s`;
+        changed.push(`afterglow ${afterglow}`);
+      }
       return { variant: v, label: variantLabels[v], changed };
     });
 
@@ -794,19 +836,40 @@ const AdminSystemHealth = () => {
     if (allSame) {
       const single = fromHash.light;
       toast.success("✓ Zaaplikowano styl focusu z linka", {
-        description: `Wariantowy link: ring ${single.ringWidthPx}px · glow ${single.glowIntensity}% · afterglow ${single.afterglowMs}ms (zreplikowane do wszystkich 3 trybów)`,
+        description: (
+          <span
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
+            className="block whitespace-normal break-words leading-snug"
+          >
+            {`Wariantowy link: ${formatFocusPrefsSummary(single)} (zreplikowane do wszystkich 3 trybów)`}
+          </span>
+        ),
       });
       return;
     }
 
     // Per-variant breakdown: dla każdego wariantu pokaż 1 linijkę z ✓ (defaults) lub ⚠ (zmienione).
+    // Użycie `whitespace-pre-line` zachowuje `\n` jako podział linii (Sonner domyślnie
+    // collapsuje newlines do spacji). `break-words` zapobiega urywaniu długich wartości
+    // na wąskich ekranach (toast szerokość ~360px na mobile).
     const lines = variantSummary.map((s) =>
       s.changed.length === 0
         ? `✓ ${s.label}: defaults`
         : `⚠ ${s.label}: ${s.changed.join(" · ")}`,
     );
     toast.success("✓ Zaaplikowano styl focusu z linka", {
-      description: lines.join("\n"),
+      description: (
+        <span
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+          className="block whitespace-pre-line break-words leading-snug"
+        >
+          {lines.join("\n")}
+        </span>
+      ),
       duration: 6000, // dłużej niż domyślne 4s — admin musi przeczytać 3 linijki
     });
   }, []);
@@ -861,15 +924,23 @@ const AdminSystemHealth = () => {
       await navigator.clipboard.writeText(url);
       const label = formatFocusVariantLabel(editingVariant);
       const title = `Skopiowano link (${label})`;
-      const desc = `Wariant ${label}: ring ${single.ringWidthPx}px · glow ${single.glowIntensity}% · afterglow ${single.afterglowMs}ms`;
+      const desc = `Wariant ${label}: ${formatFocusPrefsSummary(single)}`;
       // a11y: Sonner domyślnie nadaje toastom `aria-live`, ale BRAK `aria-atomic`,
       // przez co czytniki ekranu (NVDA/JAWS/VoiceOver) potrafią ominąć część
       // komunikatu. Renderujemy `description` jako ReactNode z explicit live region
       // wokół CAŁEJ treści (tytuł + opis), wymuszając pełny odczyt.
       // role="status" + polite = nie przerywa bieżącej wypowiedzi (typowe dla success).
+      // Layout: `whitespace-normal break-words` chroni przed urywaniem na małych ekranach
+      // (Sonner domyślnie potrafi truncate'ować długi `description` w jedną linię).
+      // `leading-snug` zachowuje czytelność przy 2-3 liniach zawijania.
       toast.success(title, {
         description: (
-          <span role="status" aria-live="polite" aria-atomic="true" className="block">
+          <span
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
+            className="block whitespace-normal break-words leading-snug"
+          >
             {desc}
           </span>
         ),
@@ -879,7 +950,12 @@ const AdminSystemHealth = () => {
       // Błąd = assertive — czytnik PRZERYWA aktualną wypowiedź żeby ogłosić problem.
       toast.error("Nie udało się skopiować linka", {
         description: (
-          <span role="alert" aria-live="assertive" aria-atomic="true" className="block">
+          <span
+            role="alert"
+            aria-live="assertive"
+            aria-atomic="true"
+            className="block whitespace-normal break-words leading-snug"
+          >
             {errMsg}
           </span>
         ),
@@ -924,7 +1000,16 @@ const AdminSystemHealth = () => {
       const incoming = decoded[editingVariant];
       setFocusPrefsByVariant((prev) => ({ ...prev, [editingVariant]: incoming }));
       toast.success(`Zaaplikowano wariant ${label}`, {
-        description: `ring ${incoming.ringWidthPx}px · glow ${incoming.glowIntensity}% · afterglow ${incoming.afterglowMs}ms`,
+        description: (
+          <span
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
+            className="block whitespace-normal break-words leading-snug"
+          >
+            {formatFocusPrefsSummary(incoming)}
+          </span>
+        ),
       });
     } catch (err) {
       toast.error("Nie udało się odczytać schowka", {
@@ -2340,7 +2425,7 @@ const AdminSystemHealth = () => {
                                   const d = defaults[editingVariant];
                                   setEditingVariantPrefs(() => d);
                                   toast.success(`Przywrócono domyślne (${variantLabel})`, {
-                                    description: `Wariant ${variantLabel}: ring ${d.ringWidthPx}px · glow ${d.glowIntensity}% · afterglow ${d.afterglowMs}ms · pozostałe warianty bez zmian`,
+                                    description: `Wariant ${variantLabel}: ${formatFocusPrefsSummary(d)} · pozostałe warianty bez zmian`,
                                   });
                                 }}
                                 title={`Przywróć wartości domyślne tylko dla wariantu ${formatFocusVariantLabel(editingVariant)} (pozostałe warianty nietknięte)`}
