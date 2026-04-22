@@ -198,6 +198,11 @@ const AdminSystemHealth = () => {
   );
   // Timer auto-hide nawigatora po 30s bezczynności.
   const navigatorHideTimerRef = useRef<number | null>(null);
+  // Timestamp ostatniego smooth scrolla (performance.now). Używany do auto-degradacji
+  // smooth → instant gdy user spamuje J/K — kolejne smooth animacje anulują się nawzajem
+  // i wyglądają jak "lag", instant trzyma kursor synchronicznie z klawiszem.
+  // Próg 250ms ≈ szybsze niż komfortowe trzymanie klawisza (~30/s przy autorepeat).
+  const lastScrollAtRef = useRef<number>(0);
   // Preferencja użytkownika: czy zamknięcie modala / klik "Pokaż w tabeli" ma przewijać
   // i podświetlać wiersz w tabeli. Trzymane w localStorage żeby przeżyło reload.
   const AUTO_REVEAL_LS_KEY = "admin-system-health.auto-reveal-row";
@@ -273,6 +278,10 @@ const AdminSystemHealth = () => {
   // wizualne potwierdzenie, że jego intencja została zarejestrowana.
   // `force=false` (auto-reveal po zamknięciu modala) — pomiń, gdy wiersz już w pełni widoczny,
   // żeby nie szarpać widokiem bez powodu.
+  // Behavior: smooth domyślnie, ale auto (instant) gdy:
+  //  - user ma `prefers-reduced-motion: reduce` (accessibility),
+  //  - poprzedni scroll był <250ms temu (spam J/K — smooth animacje anulują się nawzajem
+  //    i wyglądają jak "lag" / kursor nie nadąża za klawiszem; instant utrzymuje 1:1 sync).
   const scrollRowIntoView = (el: HTMLElement, force = false) => {
     const cssVar = getComputedStyle(document.documentElement)
       .getPropertyValue("--header-height")
@@ -287,7 +296,14 @@ const AdminSystemHealth = () => {
       const fullyVisible = rect.top >= safeTop && rect.bottom <= safeBottom;
       if (fullyVisible) return;
     }
-    window.scrollTo({ top: Math.max(0, targetY), left: 0, behavior: "smooth" });
+    const now = performance.now();
+    const prefersReducedMotion =
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const rapidRepeat = now - lastScrollAtRef.current < 250;
+    const behavior: ScrollBehavior = prefersReducedMotion || rapidRepeat ? "auto" : "smooth";
+    lastScrollAtRef.current = now;
+    window.scrollTo({ top: Math.max(0, targetY), left: 0, behavior });
   };
 
   // Zamyka modal i przewija/podświetla wiersz w tabeli źródeł dla wskazanej kombinacji IP+UA.
