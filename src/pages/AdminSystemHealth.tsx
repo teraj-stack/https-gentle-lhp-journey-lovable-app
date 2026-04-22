@@ -589,7 +589,15 @@ const AdminSystemHealth = () => {
           scrollRowIntoView(el);
           // Pulse + focus po zamknięciu modala — modal już odmontowany, więc focus
           // na wierszu jest bezpieczny i pomaga screen-readerowi ogłosić docelowy wiersz.
-          pulseRow(el, { focus: true });
+          // Etykieta „X/Y": reveal trafia w exact (idx 0), więc ordinal=1; total
+          // wyznaczamy z buildMatchKeys (uwzględnia bieżący highlightScope).
+          {
+            const totalKeys = buildMatchKeys({ ip, ua }, highlightScope).length;
+            pulseRow(el, {
+              focus: true,
+              label: { ordinal: 1, total: Math.max(totalKeys, 1) },
+            });
+          }
           // Zapamiętaj exact source — render porównuje s.ip+s.ua dla mocnego highlightu,
           // a samo IP dla delikatnego highlightu pokrewnych wierszy z tego samego adresu.
           setHighlightedSource({ ip, ua });
