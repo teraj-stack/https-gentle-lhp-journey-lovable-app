@@ -322,6 +322,15 @@ const AdminSystemHealth = () => {
   // Per-element timer w WeakMap czyści poprzedni cleanup zanim ustawi nowy — bez tego
   // szybki Next→Prev na tym samym wierszu mógłby uciąć drugą animację o pozostałe ms.
   // Respektuje `prefers-reduced-motion: reduce` — pomija animację dla a11y.
+  //
+  // Sekwencja wzrokowa po skoku:
+  //   1. `animate-jump-pulse`     (~1.8s, 3× pulsujący ring + halo + scale 1.012)
+  //   2. `animate-jump-afterglow` (~2.4s, fade-out trwałego ringa + tła) — startuje
+  //      tuż przed końcem pulse'a (1.7s), żeby user nie tracił z oczu „gdzie jestem"
+  //      gdy main animation wygaśnie.
+  // Łącznie ~4s wyraźnego sygnału, potem wiersz wraca do neutralnego stanu (lub do
+  // ringa nawigatora gdy `isNavigatorActive` nadal true → patrz className TableRow).
+  //
   // Opcja `focus=true`: po pulse'ie ustawia fokus na wierszu (tabIndex=-1 + preventScroll),
   // żeby a11y/keyboard users dostali screen-reader announcement i mogli kontynuować nawigację
   // klawiszem (np. Tab z wiersza do kolejnych przycisków). Domyślnie false — focus podczas
@@ -336,16 +345,39 @@ const AdminSystemHealth = () => {
         window.clearTimeout(prevTimer);
         pulseTimersRef.current.delete(el);
       }
-      el.classList.remove("animate-jump-pulse");
+      // Wyzeruj również poprzedni afterglow timer (osobny, trzymany na elemencie),
+      // żeby szybkie Next→Prev na ten sam wiersz nie zaplanowało dwóch przejść
+      // pulse→afterglow równolegle.
+      const prevAfterglow = (el as HTMLElement & { __afterglowTimer?: number })
+        .__afterglowTimer;
+      if (prevAfterglow !== undefined) {
+        window.clearTimeout(prevAfterglow);
+        delete (el as HTMLElement & { __afterglowTimer?: number })
+          .__afterglowTimer;
+      }
+      el.classList.remove("animate-jump-pulse", "animate-jump-afterglow");
       // Force reflow — bez tego ponowne dodanie tej samej klasy nie restartuje animacji.
       // eslint-disable-next-line @typescript-eslint/no-unused-expressions
       void el.offsetWidth;
       el.classList.add("animate-jump-pulse");
-      const timer = window.setTimeout(() => {
+      // Po ~1.7s (lekkie nakładanie z końcem pulse'a, żeby nie było „dziury" wizualnej)
+      // przełącz na afterglow — trwały ring + tło, które samo wygasa przez 2.4s.
+      const afterglowTimer = window.setTimeout(() => {
         el.classList.remove("animate-jump-pulse");
+        // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+        void el.offsetWidth;
+        el.classList.add("animate-jump-afterglow");
+      }, 1700);
+      (el as HTMLElement & { __afterglowTimer?: number }).__afterglowTimer =
+        afterglowTimer;
+      // Cleanup obu klas po pełnej sekwencji (1.7s + 2.4s afterglow ≈ 4.1s, +100ms zapasu).
+      const cleanupTimer = window.setTimeout(() => {
+        el.classList.remove("animate-jump-pulse", "animate-jump-afterglow");
         pulseTimersRef.current.delete(el);
-      }, 1800);
-      pulseTimersRef.current.set(el, timer);
+        delete (el as HTMLElement & { __afterglowTimer?: number })
+          .__afterglowTimer;
+      }, 4200);
+      pulseTimersRef.current.set(el, cleanupTimer);
     }
     if (opts.focus) {
       // preventScroll: nasz scrollRowIntoView już wycentrował wiersz — focus nie powinien
