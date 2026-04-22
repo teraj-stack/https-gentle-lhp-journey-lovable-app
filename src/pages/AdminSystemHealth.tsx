@@ -685,6 +685,10 @@ const AdminSystemHealth = () => {
   // Sens TYLKO gdy `editingVariant !== activeThemeVariant`; w przeciwnym razie
   // toggle jest ukryty i state ignorowany przy renderze.
   const [focusDemoCompare, setFocusDemoCompare] = useState(false);
+  // Modal „Testuj na stronie" — izolowany sandbox z 4 sample komponentami
+  // (button/input/link/card) dla aktualnie edytowanego wariantu prefs.
+  // Read-only: zmiany w sandboxie NIE zapisują się do LS.
+  const [focusPlaygroundOpen, setFocusPlaygroundOpen] = useState(false);
   // Variant do EDYCJI w popoverze — domyślnie ten sam co aktywny, ale admin może
   // ręcznie wybrać inny żeby ustawić styl „z góry" zanim przełączy motyw.
   // null = follow active variant (default).
