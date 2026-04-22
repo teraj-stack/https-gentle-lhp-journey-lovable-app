@@ -473,6 +473,10 @@ const AdminSystemHealth = () => {
   // Tryb testowy w popoverze — cyklicznie pulsuje sztuczne wiersze, żeby admin
   // od razu zobaczył efekt po zmianie sliderów (bez chodzenia do tabeli).
   const [focusDemoActive, setFocusDemoActive] = useState(false);
+  // Compare mode — renderuje 2 kolumny FocusDemo: aktywny (z motywu) i edytowany.
+  // Sens TYLKO gdy `editingVariant !== activeThemeVariant`; w przeciwnym razie
+  // toggle jest ukryty i state ignorowany przy renderze.
+  const [focusDemoCompare, setFocusDemoCompare] = useState(false);
   // Variant do EDYCJI w popoverze — domyślnie ten sam co aktywny, ale admin może
   // ręcznie wybrać inny żeby ustawić styl „z góry" zanim przełączy motyw.
   // null = follow active variant (default).
@@ -2115,11 +2119,64 @@ const AdminSystemHealth = () => {
                                 )}
                               </Button>
                             </div>
-                            <FocusDemo
-                              prefs={focusPrefsByVariant[editingVariant]}
-                              highContrast={editingVariant === "hc"}
-                              active={focusDemoActive}
-                            />
+                            {/* Compare mode toggle — pojawia się TYLKO gdy edytujemy inny variant
+                                niż aktywny w motywie (inaczej obie kolumny byłyby identyczne).
+                                Pozwala obok siebie zobaczyć "co zobaczy user na produkcji" (active)
+                                vs "co właśnie tweakuję" (editing). */}
+                            {editingVariant !== activeThemeVariant && (
+                              <div className="flex items-center justify-between">
+                                <span className="text-[10px] text-muted-foreground">
+                                  Porównaj <span className="font-mono">{activeThemeVariant}</span>{" "}
+                                  vs <span className="font-mono">{editingVariant}</span>
+                                </span>
+                                <Button
+                                  variant={focusDemoCompare ? "secondary" : "ghost"}
+                                  size="sm"
+                                  className="h-6 px-2 text-[10px] gap-1"
+                                  onClick={() => setFocusDemoCompare((v) => !v)}
+                                  aria-pressed={focusDemoCompare}
+                                  title={
+                                    focusDemoCompare
+                                      ? "Wyłącz tryb porównania (jedna kolumna)"
+                                      : "Pokaż obok siebie aktywny i edytowany variant"
+                                  }
+                                >
+                                  {focusDemoCompare ? "Pojedynczy" : "Porównaj"}
+                                </Button>
+                              </div>
+                            )}
+                            {focusDemoCompare && editingVariant !== activeThemeVariant ? (
+                              <div className="grid grid-cols-2 gap-2">
+                                <div className="space-y-1">
+                                  <div className="text-[10px] font-mono text-muted-foreground flex items-center gap-1">
+                                    <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/60" />
+                                    active: {activeThemeVariant}
+                                  </div>
+                                  <FocusDemo
+                                    prefs={focusPrefsByVariant[activeThemeVariant]}
+                                    highContrast={activeThemeVariant === "hc"}
+                                    active={focusDemoActive}
+                                  />
+                                </div>
+                                <div className="space-y-1">
+                                  <div className="text-[10px] font-mono text-primary flex items-center gap-1">
+                                    <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+                                    editing: {editingVariant}
+                                  </div>
+                                  <FocusDemo
+                                    prefs={focusPrefsByVariant[editingVariant]}
+                                    highContrast={editingVariant === "hc"}
+                                    active={focusDemoActive}
+                                  />
+                                </div>
+                              </div>
+                            ) : (
+                              <FocusDemo
+                                prefs={focusPrefsByVariant[editingVariant]}
+                                highContrast={editingVariant === "hc"}
+                                active={focusDemoActive}
+                              />
+                            )}
 
                             {!focusDemoActive && (
                               <p className="text-[10px] text-muted-foreground/70 leading-snug">
