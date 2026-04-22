@@ -203,6 +203,11 @@ const AdminSystemHealth = () => {
   // i wyglądają jak "lag", instant trzyma kursor synchronicznie z klawiszem.
   // Próg 250ms ≈ szybsze niż komfortowe trzymanie klawisza (~30/s przy autorepeat).
   const lastScrollAtRef = useRef<number>(0);
+  // Per-element timery cleanup'u animacji `animate-jump-pulse`. WeakMap (klucz = HTMLElement)
+  // żeby uniknąć zaśmiecania jednym globalnym setTimeoutem, który mógłby ucinać kolejny pulse
+  // na tym samym wierszu (Next/Prev wracający do tego samego elementu). Każdy element ma swój
+  // timer — nowy pulse czyści stary, animacja zawsze gra do końca.
+  const pulseTimersRef = useRef<WeakMap<HTMLElement, number>>(new WeakMap());
   // Preferencja użytkownika: czy zamknięcie modala / klik "Pokaż w tabeli" ma przewijać
   // i podświetlać wiersz w tabeli. Trzymane w localStorage żeby przeżyło reload.
   const AUTO_REVEAL_LS_KEY = "admin-system-health.auto-reveal-row";
