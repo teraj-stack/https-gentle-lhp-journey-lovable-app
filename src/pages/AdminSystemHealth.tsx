@@ -2034,10 +2034,29 @@ const AdminSystemHealth = () => {
                             </span>
                           </span>
                         </TooltipTrigger>
-                        <TooltipContent side="top" align="end" className="text-xs max-w-xs">
-                          {isNextExact
-                            ? `Następne Enter / J / klik wróci do wiersza źródłowego (1 z ${total}).`
-                            : `Następne Enter / J / klik podświetli dopasowanie powiązane ${currentDisplay} z ${total}.`}
+                        <TooltipContent side="top" align="end" className="text-xs max-w-sm">
+                          {/* Bogata podpowiedź: definicje exact/related (zgodnie z legendą poniżej)
+                              + jasny komunikat co zrobi następna akcja klawiatury / klik. */}
+                          <div className="space-y-1.5">
+                            <div className="font-semibold">
+                              {currentDisplay}/{total} — {isNextExact ? "exact" : "related"}
+                            </div>
+                            <div className="flex items-start gap-1.5">
+                              <span className="inline-flex shrink-0 items-center justify-center w-3.5 h-3.5 rounded bg-primary text-primary-foreground text-[9px] font-mono font-semibold">1</span>
+                              <span><strong>exact</strong> — wiersz źródłowy z modala (dokładny IP+UA).</span>
+                            </div>
+                            <div className="flex items-start gap-1.5">
+                              <span className="inline-flex shrink-0 items-center justify-center w-3.5 h-3.5 rounded bg-muted text-muted-foreground text-[9px] font-mono font-semibold">n</span>
+                              <span><strong>related</strong> — wpisy z tym samym IP lub UA (wg „Zakres”).</span>
+                            </div>
+                            <div className="pt-1 border-t border-border/40 text-muted-foreground">
+                              <kbd className="font-mono">Enter</kbd> / <kbd className="font-mono">J</kbd> / klik „Skocz do następnego” →{" "}
+                              {isNextExact
+                                ? `wróci do wiersza źródłowego (1/${total}).`
+                                : `podświetli dopasowanie ${currentDisplay}/${total}.`}
+                              {" "}<kbd className="font-mono">K</kbd> = poprzednie (cyklicznie).
+                            </div>
+                          </div>
                         </TooltipContent>
                       </UITooltip>
                     </span>
