@@ -748,7 +748,7 @@ const AdminSystemHealth = () => {
       const el = document.querySelector<HTMLElement>(`[data-retry-row-key="${CSS.escape(key)}"]`);
       if (el) {
         scrollRowIntoView(el, true);
-        pulseRow(el);
+        pulseRow(el, { label: { ordinal: idx + 1, total } });
       }
       const nextIndex = (idx + 1) % total;
       // Persist do mapy — żeby reopen modala dla tego samego (ip, ua, scope) wrócił tu.
