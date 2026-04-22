@@ -663,7 +663,10 @@ const AdminSystemHealth = () => {
       scrollRowIntoView(el, true);
       // focus=true: nawigator bar = modal zamknięty → bezpiecznie kradniemy fokus,
       // żeby a11y/screen-reader ogłosił nowy wiersz i Tab kontynuował z tabeli.
-      pulseRow(el, { focus: true });
+      pulseRow(el, {
+        focus: true,
+        label: { ordinal: idx + 1, total: keys.length },
+      });
     };
     requestAnimationFrame(() => tryScroll(0));
   };
