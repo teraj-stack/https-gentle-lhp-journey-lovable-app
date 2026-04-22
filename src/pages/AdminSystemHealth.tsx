@@ -742,6 +742,13 @@ const AdminSystemHealth = () => {
   // (button/input/link/card) dla aktualnie edytowanego wariantu prefs.
   // Read-only: zmiany w sandboxie NIE zapisują się do LS.
   const [focusPlaygroundOpen, setFocusPlaygroundOpen] = useState(false);
+  // Modal „Pokaż link" — wyświetla pełny URL dla aktualnie edytowanego wariantu
+  // (read-only, z opcją kopiowania). Trzymamy URL w state'cie żeby snapshot był
+  // identyczny z tym co jest w schowku po kliknięciu „Kopiuj link" — gdyby admin
+  // zmienił prefs po skopiowaniu i otworzył podgląd, zobaczyłby ZAKTUALIZOWANY
+  // URL (rebuildujemy on-open na bazie aktualnego state'u — to jest oczekiwane
+  // i spójne z „Kopiuj link" które też używa aktualnych prefs).
+  const [showLinkOpen, setShowLinkOpen] = useState(false);
   // Variant do EDYCJI w popoverze — domyślnie ten sam co aktywny, ale admin może
   // ręcznie wybrać inny żeby ustawić styl „z góry" zanim przełączy motyw.
   // null = follow active variant (default).
