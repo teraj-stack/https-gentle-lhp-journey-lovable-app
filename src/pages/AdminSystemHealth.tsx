@@ -1932,14 +1932,27 @@ const AdminSystemHealth = () => {
                               size="sm"
                               className="h-7 px-2 text-xs gap-1"
                               onClick={() => {
+                                // Przywracamy defaults TYLKO dla aktualnie edytowanego wariantu —
+                                // setEditingVariantPrefs (linia 593-596) zapisuje wyłącznie do
+                                // `[editingVariant]`, więc pozostałe 2 sloty (np. light/hc gdy
+                                // resetujemy dark) zostają nietknięte.
                                 const defaults = getDefaultFocusPrefsByVariant();
-                                setEditingVariantPrefs(() => defaults[editingVariant]);
-                                toast.success(`Przywrócono domyślny styl focusu (${editingVariant})`);
+                                const variantLabel =
+                                  editingVariant === "hc"
+                                    ? "High Contrast"
+                                    : editingVariant === "light"
+                                      ? "Light"
+                                      : "Dark";
+                                const d = defaults[editingVariant];
+                                setEditingVariantPrefs(() => d);
+                                toast.success(`Przywrócono domyślne (${variantLabel})`, {
+                                  description: `Wariant ${variantLabel}: ring ${d.ringWidthPx}px · glow ${d.glowIntensity}% · afterglow ${d.afterglowMs}ms · pozostałe warianty bez zmian`,
+                                });
                               }}
-                              title={`Przywróć wartości domyślne dla wariantu ${editingVariant}`}
+                              title={`Przywróć wartości domyślne tylko dla wariantu ${editingVariant} (pozostałe nietknięte)`}
                             >
                               <RotateCcw className="h-3 w-3" />
-                              Reset
+                              Przywróć domyślne
                             </Button>
                           </div>
 
