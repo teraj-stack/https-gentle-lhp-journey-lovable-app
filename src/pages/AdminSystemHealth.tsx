@@ -235,6 +235,36 @@ const FOCUS_VARIANT_LABELS: Record<ThemeVariant, string> = {
 const formatFocusVariantLabel = (variant: ThemeVariant): string =>
   FOCUS_VARIANT_LABELS[variant];
 
+/**
+ * Format wartości prefs do czytelnego, jednoliniowego opisu w toście / podglądzie.
+ *
+ * Zasady czytelności:
+ *  - **ring**: zaokrąglenie do 1 miejsca po przecinku, jednostka `px`. Slider chodzi
+ *    co 0.5px, więc `2`/`2.5`/`3` — nie pokazujemy `2.0px` (zbędne zero), używamy
+ *    `Number.toString()` po `toFixed(1)` żeby zwijać końcowe zera.
+ *  - **glow**: liczba całkowita 0–100, jednostka `%`.
+ *  - **afterglow**: ZAWSZE w sekundach z dokładnością 0.1s (np. `2.4s` zamiast
+ *    `2400ms`) — krótsze, naturalniejsze do czytania, spójne z FocusDemo (linia 401).
+ *    Dla wartości <100ms (skrajnie niski próg, edge-case) pokazujemy `ms` żeby
+ *    uniknąć `0.0s` który myli.
+ *  - Separator `·` (middle dot, U+00B7) zamiast `|` — wizualnie spokojniejszy
+ *    i nie myli się z URL pipe.
+ *
+ * Helper jest pure, eksportowany przez nazwę modułową — łatwy do unit-testu w przyszłości.
+ */
+const formatFocusPrefsSummary = (prefs: FocusPrefs): string => {
+  // Ring: toFixed(1) → string „2.0"/„2.5"; parseFloat zwija końcowe zera → „2"/„2.5".
+  const ring = parseFloat(prefs.ringWidthPx.toFixed(1)).toString();
+  const glow = Math.round(prefs.glowIntensity).toString();
+  // Afterglow: <100ms zachowujemy jako ms (rzadki edge-case minimum slidera),
+  // reszta → sekundy z 1 miejscem po przecinku, zwijając końcowe zero.
+  const afterglow =
+    prefs.afterglowMs < 100
+      ? `${Math.round(prefs.afterglowMs)}ms`
+      : `${parseFloat((prefs.afterglowMs / 1000).toFixed(1)).toString()}s`;
+  return `ring ${ring}px · glow ${glow}% · afterglow ${afterglow}`;
+};
+
 const FocusDemo = ({
   prefs,
   highContrast,
