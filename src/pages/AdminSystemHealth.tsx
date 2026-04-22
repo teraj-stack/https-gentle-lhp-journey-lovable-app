@@ -454,12 +454,7 @@ const AdminSystemHealth = () => {
         return;
       }
       scrollRowIntoView(el, true);
-      // Pulse animation — replay przez force-reflow (jak w performJumpToMatch).
-      el.classList.remove("animate-jump-pulse");
-      // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-      void el.offsetWidth;
-      el.classList.add("animate-jump-pulse");
-      window.setTimeout(() => el.classList.remove("animate-jump-pulse"), 1800);
+      pulseRow(el);
     };
     requestAnimationFrame(() => tryScroll(0));
   };
@@ -541,11 +536,7 @@ const AdminSystemHealth = () => {
       const el = document.querySelector<HTMLElement>(`[data-retry-row-key="${CSS.escape(key)}"]`);
       if (el) {
         scrollRowIntoView(el, true);
-        el.classList.remove("animate-jump-pulse");
-        // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-        void el.offsetWidth;
-        el.classList.add("animate-jump-pulse");
-        window.setTimeout(() => el.classList.remove("animate-jump-pulse"), 1800);
+        pulseRow(el);
       }
       const nextIndex = (idx + 1) % total;
       // Persist do mapy — żeby reopen modala dla tego samego (ip, ua, scope) wrócił tu.
@@ -585,11 +576,7 @@ const AdminSystemHealth = () => {
       const el = document.querySelector<HTMLElement>(`[data-retry-row-key="${CSS.escape(key)}"]`);
       if (el) {
         scrollRowIntoView(el, true);
-        el.classList.remove("animate-jump-pulse");
-        // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-        void el.offsetWidth;
-        el.classList.add("animate-jump-pulse");
-        window.setTimeout(() => el.classList.remove("animate-jump-pulse"), 1800);
+        pulseRow(el);
       }
       // Persist tak samo jak performJumpToMatch — kolejny J pójdzie do idx+1.
       const nextIndex = (idx + 1) % total;
