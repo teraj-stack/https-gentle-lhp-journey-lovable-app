@@ -891,15 +891,23 @@ const AdminSystemHealth = () => {
       await navigator.clipboard.writeText(url);
       const label = formatFocusVariantLabel(editingVariant);
       const title = `Skopiowano link (${label})`;
-      const desc = `Wariant ${label}: ring ${single.ringWidthPx}px · glow ${single.glowIntensity}% · afterglow ${single.afterglowMs}ms`;
+      const desc = `Wariant ${label}: ${formatFocusPrefsSummary(single)}`;
       // a11y: Sonner domyślnie nadaje toastom `aria-live`, ale BRAK `aria-atomic`,
       // przez co czytniki ekranu (NVDA/JAWS/VoiceOver) potrafią ominąć część
       // komunikatu. Renderujemy `description` jako ReactNode z explicit live region
       // wokół CAŁEJ treści (tytuł + opis), wymuszając pełny odczyt.
       // role="status" + polite = nie przerywa bieżącej wypowiedzi (typowe dla success).
+      // Layout: `whitespace-normal break-words` chroni przed urywaniem na małych ekranach
+      // (Sonner domyślnie potrafi truncate'ować długi `description` w jedną linię).
+      // `leading-snug` zachowuje czytelność przy 2-3 liniach zawijania.
       toast.success(title, {
         description: (
-          <span role="status" aria-live="polite" aria-atomic="true" className="block">
+          <span
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
+            className="block whitespace-normal break-words leading-snug"
+          >
             {desc}
           </span>
         ),
@@ -909,7 +917,12 @@ const AdminSystemHealth = () => {
       // Błąd = assertive — czytnik PRZERYWA aktualną wypowiedź żeby ogłosić problem.
       toast.error("Nie udało się skopiować linka", {
         description: (
-          <span role="alert" aria-live="assertive" aria-atomic="true" className="block">
+          <span
+            role="alert"
+            aria-live="assertive"
+            aria-atomic="true"
+            className="block whitespace-normal break-words leading-snug"
+          >
             {errMsg}
           </span>
         ),
