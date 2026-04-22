@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { ArrowLeft, ShieldAlert, Activity, AlertTriangle, RefreshCw, Ban, Webhook, Repeat, Filter, X, Eye, Download, ArrowDownWideNarrow, ArrowUpWideNarrow, Locate, Info, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Settings2, RotateCcw } from "lucide-react";
+import { ArrowLeft, ShieldAlert, Activity, AlertTriangle, RefreshCw, Ban, Webhook, Repeat, Filter, X, Eye, Download, ArrowDownWideNarrow, ArrowUpWideNarrow, Locate, Info, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Settings2, RotateCcw, FileDown, FileUp, Link2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Toggle } from "@/components/ui/toggle";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -23,6 +23,12 @@ import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YA
 import SeoHead from "@/components/shared/SeoHead";
 import { computeRowScrollTarget } from "@/lib/scrollHelpers";
 import { applyPulseSequence } from "@/lib/pulseAnimation";
+import {
+  exportFocusPrefsToJson,
+  importFocusPrefsFromJson,
+  buildFocusPrefsShareUrl,
+  extractFocusPrefsFromHash,
+} from "@/lib/focusPrefsSerialization";
 import { formatDistanceToNow } from "date-fns";
 import { pl } from "date-fns/locale";
 import { toast } from "sonner";
@@ -353,6 +359,11 @@ const AdminSystemHealth = () => {
   };
   const [focusPrefs, setFocusPrefs] = useState<FocusPrefs>(() => {
     if (typeof window === "undefined") return FOCUS_PREFS_DEFAULTS;
+    // Priorytet 1: URL fragment `#focus-prefs=...` (np. po wklejeniu shared linka).
+    // Sanityzacja w extractFocusPrefsFromHash chroni przed out-of-range wartościami.
+    const fromHash = extractFocusPrefsFromHash(window.location.hash);
+    if (fromHash) return fromHash;
+    // Priorytet 2: localStorage (zapamiętane przy poprzedniej sesji).
     try {
       const raw = window.localStorage.getItem(FOCUS_PREFS_LS_KEY);
       if (!raw) return FOCUS_PREFS_DEFAULTS;
@@ -366,6 +377,8 @@ const AdminSystemHealth = () => {
       return FOCUS_PREFS_DEFAULTS;
     }
   });
+  // Hidden input ref dla Import — programowy klik z przycisku otwiera natywny picker.
+  const importFileInputRef = useRef<HTMLInputElement | null>(null);
   useEffect(() => {
     try {
       window.localStorage.setItem(FOCUS_PREFS_LS_KEY, JSON.stringify(focusPrefs));
@@ -373,6 +386,78 @@ const AdminSystemHealth = () => {
       // ignoruj w private mode
     }
   }, [focusPrefs]);
+  // Po zaaplikowaniu prefs z URL fragmentu (initial state) — wyczyść hash, żeby
+  // odświeżenie strony nie nadpisało lokalnych zmian usera. Toast informuje użytkownika.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const fromHash = extractFocusPrefsFromHash(window.location.hash);
+    if (!fromHash) return;
+    // Strip tylko nasz fragment — zachowaj inne klucze hasha jeśli były.
+    const clean = window.location.hash.replace(/(^#|&)focus-prefs=[^&]*/g, "").replace(/^#&/, "#");
+    const newHash = clean === "#" ? "" : clean;
+    window.history.replaceState(null, "", window.location.pathname + window.location.search + newHash);
+    toast.success("Zaaplikowano styl focusu z linka", {
+      description: "Preferencje zostały zapisane lokalnie.",
+    });
+  }, []);
+  // Eksport bieżących prefs do pliku .json — Blob + URL.createObjectURL + auto-click.
+  const handleExportFocusPrefs = () => {
+    try {
+      const json = exportFocusPrefsToJson(focusPrefs);
+      const blob = new Blob([json], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      const stamp = new Date().toISOString().slice(0, 10);
+      a.href = url;
+      a.download = `focus-prefs-${stamp}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast.success("Wyeksportowano preferencje", { description: a.download });
+    } catch (err) {
+      toast.error("Błąd eksportu", {
+        description: err instanceof Error ? err.message : "Nieznany błąd",
+      });
+    }
+  };
+  // Kopia shareable URL (#focus-prefs=base64url) do clipboardu — najwygodniejszy
+  // sposób przenosin prefs na inne urządzenie (telefon/inny laptop).
+  const handleCopyFocusPrefsLink = async () => {
+    try {
+      const url = buildFocusPrefsShareUrl(focusPrefs, window.location.href);
+      await navigator.clipboard.writeText(url);
+      toast.success("Skopiowano link z preferencjami", {
+        description: "Wklej go na innym urządzeniu, żeby zaaplikować ten sam styl focusu.",
+      });
+    } catch (err) {
+      toast.error("Nie udało się skopiować linka", {
+        description: err instanceof Error ? err.message : "Brak dostępu do clipboardu",
+      });
+    }
+  };
+  // Import z pliku .json — czytamy przez FileReader, sanityzujemy, ustawiamy stan.
+  const handleImportFocusPrefs = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const text = typeof reader.result === "string" ? reader.result : "";
+        const imported = importFocusPrefsFromJson(text);
+        setFocusPrefs(imported);
+        toast.success("Zaimportowano preferencje", {
+          description: `afterglow ${(imported.afterglowMs / 1000).toFixed(1)}s, ring ${imported.ringWidthPx}px, glow ${imported.glowIntensity}%`,
+        });
+      } catch (err) {
+        toast.error("Błąd importu", {
+          description: err instanceof Error ? err.message : "Niepoprawny plik JSON",
+        });
+      }
+    };
+    reader.onerror = () => {
+      toast.error("Nie udało się odczytać pliku");
+    };
+    reader.readAsText(file);
+  };
   // Trzymaj najnowsze wartości w refie — pulseRow czyta je w momencie wywołania,
   // żeby nie wymagać przebudowy callbacka po każdej zmianie slidera.
   const focusPrefsRef = useRef<FocusPrefs>(focusPrefs);
@@ -1792,6 +1877,64 @@ const AdminSystemHealth = () => {
                               <span>0% (off)</span>
                               <span>100% (max)</span>
                             </div>
+                          </div>
+
+                          {/* Sekcja eksport / import — przenoszenie prefs między urządzeniami.
+                              3 ścieżki: (1) plik .json (backup/email), (2) shareable URL z #focus-prefs=base64url
+                              do clipboardu (najszybsze), (3) import z .json (np. od kolegi). */}
+                          <div className="pt-3 border-t border-border space-y-2">
+                            <div className="text-xs font-semibold text-foreground">
+                              Przenieś między urządzeniami
+                            </div>
+                            <div className="grid grid-cols-3 gap-1.5">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-8 text-xs gap-1"
+                                onClick={handleExportFocusPrefs}
+                                title="Pobierz preferencje jako plik .json (backup, e-mail)"
+                              >
+                                <FileDown className="h-3 w-3" />
+                                Plik
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-8 text-xs gap-1"
+                                onClick={handleCopyFocusPrefsLink}
+                                title="Skopiuj link z preferencjami do clipboardu — wklej na innym urządzeniu"
+                              >
+                                <Link2 className="h-3 w-3" />
+                                Link
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-8 text-xs gap-1"
+                                onClick={() => importFileInputRef.current?.click()}
+                                title="Wczytaj preferencje z pliku .json"
+                              >
+                                <FileUp className="h-3 w-3" />
+                                Import
+                              </Button>
+                            </div>
+                            <input
+                              ref={importFileInputRef}
+                              type="file"
+                              accept="application/json,.json"
+                              className="hidden"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) handleImportFocusPrefs(file);
+                                // Reset value żeby ten sam plik mógł być wybrany ponownie.
+                                e.target.value = "";
+                              }}
+                              aria-label="Wybierz plik JSON z preferencjami stylu focusu"
+                            />
+                            <p className="text-[10px] text-muted-foreground/80 leading-snug">
+                              Link zawiera prefs w hashu URL — bezpieczne (nie trafia do logów serwera),
+                              kompaktowe (~40 znaków), działa po wklejeniu w pasku adresu.
+                            </p>
                           </div>
                         </PopoverContent>
                       </Popover>
