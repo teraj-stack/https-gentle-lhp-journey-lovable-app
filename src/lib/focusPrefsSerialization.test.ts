@@ -239,3 +239,89 @@ describe("focusPrefsSerialization — buildFocusPrefsShareUrl", () => {
     expect(extractFocusPrefsFromHash(hash)).toEqual(SAMPLE);
   });
 });
+
+/**
+ * Dedykowany scenariusz wariantowy z AdminSystemHealth.handleCopyFocusPrefsLinkVariant:
+ * admin edytuje JEDEN wariant (light/dark/hc) i kopiuje link, który powinien
+ * nieść TYLKO ten wariant. Implementacja w handlerze replikuje single → 3 sloty
+ * (back-compat ze schematem v2). Tutaj weryfikujemy że:
+ *   1. fragment URL zawiera dokładnie te wartości po dekodzie
+ *   2. wszystkie 3 sloty (light/dark/hc) są równe wybranemu prefs
+ *   3. NIE wycieka konfiguracja innych 2 wariantów ze stanu
+ *   4. działa identycznie dla każdego z 3 trybów (parametryzacja it.each)
+ */
+describe("focusPrefsSerialization — kopiowanie pojedynczego wariantu (handleCopyFocusPrefsLinkVariant)", () => {
+  /** Replika logiki handlera z AdminSystemHealth.tsx (linie 576-594) — pure helper. */
+  function buildSingleVariantShareUrl(
+    all: FocusPrefsByVariant,
+    editingVariant: keyof FocusPrefsByVariant,
+    baseUrl: string,
+  ): string {
+    const single = all[editingVariant];
+    const replicated: FocusPrefsByVariant = { light: single, dark: single, hc: single };
+    return buildFocusPrefsShareUrl(replicated, baseUrl);
+  }
+
+  it.each([
+    { variant: "light" as const, expected: SAMPLE.light },
+    { variant: "dark" as const, expected: SAMPLE.dark },
+    { variant: "hc" as const, expected: SAMPLE.hc },
+  ])(
+    "wariant $variant: link niesie TYLKO wybrany prefs zreplikowany do 3 slotów",
+    ({ variant, expected }) => {
+      const url = buildSingleVariantShareUrl(SAMPLE, variant, "https://example.com/admin");
+      const hash = url.slice(url.indexOf("#"));
+      const decoded = extractFocusPrefsFromHash(hash);
+
+      expect(decoded).not.toBeNull();
+      // Wszystkie 3 sloty mają wartości WYBRANEGO wariantu (replikacja).
+      expect(decoded!.light).toEqual(expected);
+      expect(decoded!.dark).toEqual(expected);
+      expect(decoded!.hc).toEqual(expected);
+    },
+  );
+
+  it.each([
+    { variant: "light" as const, leaked: ["dark", "hc"] as const },
+    { variant: "dark" as const, leaked: ["light", "hc"] as const },
+    { variant: "hc" as const, leaked: ["light", "dark"] as const },
+  ])(
+    "wariant $variant: NIE wycieka konfiguracja pozostałych 2 wariantów ze stanu",
+    ({ variant, leaked }) => {
+      const url = buildSingleVariantShareUrl(SAMPLE, variant, "https://example.com/admin");
+      const decoded = extractFocusPrefsFromHash(url.slice(url.indexOf("#")));
+      expect(decoded).not.toBeNull();
+      // Żaden ze slotów NIE zawiera oryginalnych wartości pozostałych 2 wariantów ze SAMPLE
+      // (chyba że przypadkowo równe — w SAMPLE są celowo różne).
+      const allSlotValues = [decoded!.light, decoded!.dark, decoded!.hc];
+      for (const otherVariant of leaked) {
+        expect(allSlotValues).not.toContainEqual(SAMPLE[otherVariant]);
+      }
+    },
+  );
+
+  it("3 różne linki wariantowe z tego samego stanu dają 3 RÓŻNE fragmenty URL", () => {
+    const lightUrl = buildSingleVariantShareUrl(SAMPLE, "light", "https://example.com/admin");
+    const darkUrl = buildSingleVariantShareUrl(SAMPLE, "dark", "https://example.com/admin");
+    const hcUrl = buildSingleVariantShareUrl(SAMPLE, "hc", "https://example.com/admin");
+
+    expect(lightUrl).not.toBe(darkUrl);
+    expect(darkUrl).not.toBe(hcUrl);
+    expect(lightUrl).not.toBe(hcUrl);
+  });
+
+  it("wariant z wartościami granicznymi (min/max) round-tripuje bez zniekształceń", () => {
+    const edge: FocusPrefsByVariant = {
+      light: { afterglowMs: 800, ringWidthPx: 1, glowIntensity: 0 }, // min
+      dark: { afterglowMs: 6000, ringWidthPx: 6, glowIntensity: 100 }, // max
+      hc: { afterglowMs: 2400, ringWidthPx: 2, glowIntensity: 55 }, // środek
+    };
+    for (const variant of ["light", "dark", "hc"] as const) {
+      const url = buildSingleVariantShareUrl(edge, variant, "https://example.com/admin");
+      const decoded = extractFocusPrefsFromHash(url.slice(url.indexOf("#")));
+      expect(decoded!.light).toEqual(edge[variant]);
+      expect(decoded!.dark).toEqual(edge[variant]);
+      expect(decoded!.hc).toEqual(edge[variant]);
+    }
+  });
+});
