@@ -1628,6 +1628,129 @@ const AdminSystemHealth = () => {
                         <Eye className="h-3.5 w-3.5 mr-1.5" />
                         HC focus {highContrastFocus ? "ON" : "OFF"}
                       </Toggle>
+                      {/* Popover „Styl focusu" — sliders dla afterglow duration, ring width
+                          i glow intensity. Wartości persystowane w localStorage (focusPrefs),
+                          aplikowane na żywo przez CSS vars w pulseRow + inline style w aktywnym
+                          wierszu. Reset przywraca defaulty. */}
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 gap-1.5"
+                            aria-label="Ustawienia stylu focusu po skoku"
+                            title="Dostosuj czas afterglow, grubość ringa i intensywność glow. Preferencje są zapamiętywane."
+                          >
+                            <Settings2 className="h-3.5 w-3.5" />
+                            Styl focusu
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-80 p-4 space-y-4" align="start">
+                          <div className="flex items-center justify-between">
+                            <div className="text-sm font-semibold">Styl focusu po skoku</div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 px-2 text-xs gap-1"
+                              onClick={() => {
+                                setFocusPrefs(FOCUS_PREFS_DEFAULTS);
+                                toast.success("Przywrócono domyślny styl focusu");
+                              }}
+                              title="Przywróć wartości domyślne (afterglow 2400ms, ring 2px, glow 55%)"
+                            >
+                              <RotateCcw className="h-3 w-3" />
+                              Reset
+                            </Button>
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            Preferencje zapisywane w przeglądarce — nie musisz ich ustawiać przy
+                            każdej sesji. Zmiany działają od razu, sprawdź na kolejnym Next/Prev.
+                          </p>
+
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <Label htmlFor="afterglow-slider" className="text-xs font-medium">
+                                Czas afterglow
+                              </Label>
+                              <span className="text-xs font-mono tabular-nums text-muted-foreground">
+                                {(focusPrefs.afterglowMs / 1000).toFixed(1)}s
+                              </span>
+                            </div>
+                            <Slider
+                              id="afterglow-slider"
+                              min={800}
+                              max={6000}
+                              step={100}
+                              value={[focusPrefs.afterglowMs]}
+                              onValueChange={([v]) =>
+                                setFocusPrefs((p) => ({ ...p, afterglowMs: v }))
+                              }
+                              aria-label="Czas trwania afterglow w milisekundach"
+                            />
+                            <div className="flex justify-between text-[10px] text-muted-foreground/70 font-mono">
+                              <span>0.8s</span>
+                              <span>6.0s</span>
+                            </div>
+                          </div>
+
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <Label htmlFor="ring-slider" className="text-xs font-medium">
+                                Grubość ringa
+                              </Label>
+                              <span className="text-xs font-mono tabular-nums text-muted-foreground">
+                                {focusPrefs.ringWidthPx}px
+                                {highContrastFocus && (
+                                  <span className="ml-1 text-primary">
+                                    (HC: {focusPrefs.ringWidthPx + 2}px)
+                                  </span>
+                                )}
+                              </span>
+                            </div>
+                            <Slider
+                              id="ring-slider"
+                              min={1}
+                              max={6}
+                              step={1}
+                              value={[focusPrefs.ringWidthPx]}
+                              onValueChange={([v]) =>
+                                setFocusPrefs((p) => ({ ...p, ringWidthPx: v }))
+                              }
+                              aria-label="Grubość ringa aktywnego wiersza w pikselach"
+                            />
+                            <div className="flex justify-between text-[10px] text-muted-foreground/70 font-mono">
+                              <span>1px</span>
+                              <span>6px</span>
+                            </div>
+                          </div>
+
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <Label htmlFor="glow-slider" className="text-xs font-medium">
+                                Intensywność glow
+                              </Label>
+                              <span className="text-xs font-mono tabular-nums text-muted-foreground">
+                                {focusPrefs.glowIntensity}%
+                              </span>
+                            </div>
+                            <Slider
+                              id="glow-slider"
+                              min={0}
+                              max={100}
+                              step={5}
+                              value={[focusPrefs.glowIntensity]}
+                              onValueChange={([v]) =>
+                                setFocusPrefs((p) => ({ ...p, glowIntensity: v }))
+                              }
+                              aria-label="Intensywność halo / shadow glow"
+                            />
+                            <div className="flex justify-between text-[10px] text-muted-foreground/70 font-mono">
+                              <span>0% (off)</span>
+                              <span>100% (max)</span>
+                            </div>
+                          </div>
+                        </PopoverContent>
+                      </Popover>
                       {retryFiltersActive && (
                         <Button
                           variant="ghost"
