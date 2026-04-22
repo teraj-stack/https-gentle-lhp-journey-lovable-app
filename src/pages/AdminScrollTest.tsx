@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { ArrowLeft, ChevronLeft, ChevronRight, Eye, EyeOff } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight, Eye, EyeOff, Bug, Trash2 } from "lucide-react";
 import Header from "@/components/layout/Header";
 import { computeRowScrollTarget } from "@/lib/scrollHelpers";
 import { cn } from "@/lib/utils";
@@ -28,10 +28,30 @@ interface SafeAreaSnapshot {
   status: "ok" | "hidden-top" | "hidden-bottom";
 }
 
+interface DebugEntry {
+  ts: number; // performance.now() chwili skoku
+  fromIdx: number;
+  toIdx: number;
+  trigger: "next" | "prev" | "quick" | "key-j" | "key-k";
+  headerH: number;
+  cssVarRaw: string; // surowa wartość --header-height (np. "80px")
+  rectTopBefore: number;
+  rowHeight: number;
+  scrollYBefore: number;
+  viewportHeight: number;
+  targetY: number | null; // null = wiersz już widoczny, force=false (u nas force=true → zawsze number)
+  offset: number; // delta scrollY: targetY - scrollYBefore
+  behavior: "smooth" | "auto";
+  reason: "default" | "reduced-motion" | "rapid-repeat";
+  msSinceLast: number; // ms od poprzedniego skoku (do diagnozy rapid-repeat)
+}
+
 const AdminScrollTest = () => {
   const { isAdmin, loading: isLoading } = useIsAdmin();
   const [activeIdx, setActiveIdx] = useState(0);
   const [showSafeArea, setShowSafeArea] = useState(true);
+  const [showDebug, setShowDebug] = useState(false);
+  const [debugLog, setDebugLog] = useState<DebugEntry[]>([]);
   const [snapshot, setSnapshot] = useState<SafeAreaSnapshot | null>(null);
   const lastScrollAtRef = useRef(0);
   const rowsRef = useRef<Map<number, HTMLDivElement>>(new Map());
@@ -68,46 +88,78 @@ const AdminScrollTest = () => {
     });
   };
 
-  const scrollToRow = (idx: number) => {
+  const scrollToRow = (idx: number, trigger: DebugEntry["trigger"], fromIdx: number) => {
     const el = rowsRef.current.get(idx);
     if (!el) return;
     const rect = el.getBoundingClientRect();
     const headerH = getHeaderH();
+    const cssVarRaw = getComputedStyle(document.documentElement)
+      .getPropertyValue("--header-height")
+      .trim() || "(brak)";
+    const scrollYBefore = window.scrollY;
+    const viewportHeight = window.innerHeight;
     const targetY = computeRowScrollTarget({
       rectTop: rect.top,
       rowHeight: rect.height,
-      scrollY: window.scrollY,
-      viewportHeight: window.innerHeight,
+      scrollY: scrollYBefore,
+      viewportHeight,
       headerHeight: headerH,
       force: true,
     });
-    if (targetY === null) {
-      // już widoczny, ale wymusiliśmy force=true → computeRowScrollTarget zawsze zwróci number
-      return;
-    }
     const now = performance.now();
+    const msSinceLast = lastScrollAtRef.current === 0 ? Infinity : now - lastScrollAtRef.current;
     const prefersReducedMotion =
       typeof window.matchMedia === "function" &&
       window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const rapidRepeat = now - lastScrollAtRef.current < 250;
+    const rapidRepeat = msSinceLast < 250;
     const behavior: ScrollBehavior = prefersReducedMotion || rapidRepeat ? "auto" : "smooth";
+    const reason: DebugEntry["reason"] = prefersReducedMotion
+      ? "reduced-motion"
+      : rapidRepeat
+      ? "rapid-repeat"
+      : "default";
+
+    // Loguj WSZYSTKO co poszło do helpera + co z niego wyleciało — ostatnie 10 wpisów (FIFO).
+    setDebugLog((log) => [
+      {
+        ts: now,
+        fromIdx,
+        toIdx: idx,
+        trigger,
+        headerH,
+        cssVarRaw,
+        rectTopBefore: rect.top,
+        rowHeight: rect.height,
+        scrollYBefore,
+        viewportHeight,
+        targetY,
+        offset: targetY === null ? 0 : targetY - scrollYBefore,
+        behavior: behavior as "smooth" | "auto",
+        reason,
+        msSinceLast: msSinceLast === Infinity ? 0 : msSinceLast,
+      },
+      ...log,
+    ].slice(0, 10));
+
+    if (targetY === null) return; // wiersz już widoczny + force=false (u nas nigdy)
     lastScrollAtRef.current = now;
     window.scrollTo({ top: targetY, left: 0, behavior });
-    // Snapshot po zakończeniu scrolla — opóźnienie żeby smooth zdążył wylądować.
     window.setTimeout(() => updateSnapshot(idx), behavior === "smooth" ? 450 : 50);
   };
 
-  const jump = (delta: number) => {
+  const jump = (delta: number, trigger: DebugEntry["trigger"] = delta > 0 ? "next" : "prev") => {
     setActiveIdx((prev) => {
       const next = Math.max(0, Math.min(ROW_COUNT - 1, prev + delta));
-      scrollToRow(next);
+      if (next !== prev) scrollToRow(next, trigger, prev);
       return next;
     });
   };
 
   const jumpTo = (idx: number) => {
-    setActiveIdx(idx);
-    scrollToRow(idx);
+    setActiveIdx((prev) => {
+      scrollToRow(idx, "quick", prev);
+      return idx;
+    });
   };
 
   useEffect(() => {
@@ -115,10 +167,10 @@ const AdminScrollTest = () => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
       if (e.key === "j" || e.key === "ArrowDown") {
         e.preventDefault();
-        jump(1);
+        jump(1, "key-j");
       } else if (e.key === "k" || e.key === "ArrowUp") {
         e.preventDefault();
-        jump(-1);
+        jump(-1, "key-k");
       }
     };
     window.addEventListener("keydown", onKey);
@@ -186,20 +238,31 @@ const AdminScrollTest = () => {
         )}
 
         <div className="container mx-auto px-4 py-6 max-w-3xl">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between mb-4 gap-2 flex-wrap">
             <Link to="/admin">
               <Button variant="ghost" size="sm">
                 <ArrowLeft className="w-4 h-4 mr-2" /> Admin
               </Button>
             </Link>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowSafeArea((v) => !v)}
-            >
-              {showSafeArea ? <EyeOff className="w-4 h-4 mr-2" /> : <Eye className="w-4 h-4 mr-2" />}
-              {showSafeArea ? "Ukryj safe-area" : "Pokaż safe-area"}
-            </Button>
+            <div className="flex items-center gap-2 flex-wrap">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowSafeArea((v) => !v)}
+              >
+                {showSafeArea ? <EyeOff className="w-4 h-4 mr-2" /> : <Eye className="w-4 h-4 mr-2" />}
+                {showSafeArea ? "Ukryj safe-area" : "Pokaż safe-area"}
+              </Button>
+              <Button
+                variant={showDebug ? "default" : "outline"}
+                size="sm"
+                onClick={() => setShowDebug((v) => !v)}
+                aria-pressed={showDebug}
+              >
+                <Bug className="w-4 h-4 mr-2" />
+                {showDebug ? "Debug ON" : "Debug OFF"}
+              </Button>
+            </div>
           </div>
 
           <Card className="mb-6">
@@ -266,6 +329,86 @@ const AdminScrollTest = () => {
             })}
           </div>
         </div>
+
+        {/* Debug overlay — sticky pod nawigatorem, ostatnie 10 skoków + live header-height */}
+        {showDebug && (
+          <div className="fixed bottom-16 left-0 right-0 z-40 bg-background/95 backdrop-blur border-t border-border shadow-lg max-h-[40vh] overflow-y-auto">
+            <div className="container mx-auto px-4 py-3 max-w-3xl">
+              <div className="flex items-center justify-between mb-2 gap-2 flex-wrap">
+                <div className="flex items-center gap-2 text-sm font-mono">
+                  <Bug className="w-4 h-4" />
+                  <span className="font-semibold">Debug</span>
+                  <span className="text-muted-foreground">
+                    --header-height = <span className="text-foreground">{snapshot ? `${snapshot.headerH}px` : "?"}</span>
+                  </span>
+                </div>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setDebugLog([])}
+                  disabled={debugLog.length === 0}
+                >
+                  <Trash2 className="w-3.5 h-3.5 mr-1" /> Wyczyść log
+                </Button>
+              </div>
+
+              {debugLog.length === 0 ? (
+                <p className="text-xs text-muted-foreground py-2">
+                  Brak skoków. Kliknij Next/Prev lub naciśnij J/K — log pojawi się tutaj (max 10 ostatnich).
+                </p>
+              ) : (
+                <div className="space-y-1.5">
+                  {debugLog.map((entry, i) => {
+                    const isLatest = i === 0;
+                    return (
+                      <div
+                        key={`${entry.ts}-${i}`}
+                        className={cn(
+                          "rounded border px-2 py-1.5 text-xs font-mono",
+                          isLatest ? "bg-primary/10 border-primary" : "bg-muted/30 border-border"
+                        )}
+                      >
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Badge variant="outline" className="text-[10px] py-0 h-4">
+                            #{entry.fromIdx + 1} → #{entry.toIdx + 1}
+                          </Badge>
+                          <span className="text-muted-foreground">{entry.trigger}</span>
+                          <Badge
+                            variant={entry.behavior === "smooth" ? "default" : "secondary"}
+                            className="text-[10px] py-0 h-4"
+                          >
+                            {entry.behavior}
+                          </Badge>
+                          <span className="text-muted-foreground">
+                            ({entry.reason})
+                          </span>
+                          {entry.msSinceLast > 0 && (
+                            <span className="text-muted-foreground">
+                              Δt={Math.round(entry.msSinceLast)}ms
+                            </span>
+                          )}
+                        </div>
+                        <div className="mt-1 text-muted-foreground grid grid-cols-2 sm:grid-cols-4 gap-x-3 gap-y-0.5">
+                          <span>headerH=<span className="text-foreground">{entry.headerH}px</span></span>
+                          <span>vh=<span className="text-foreground">{entry.viewportHeight}px</span></span>
+                          <span>scrollY=<span className="text-foreground">{Math.round(entry.scrollYBefore)}</span></span>
+                          <span>rectTop=<span className="text-foreground">{Math.round(entry.rectTopBefore)}</span></span>
+                          <span>rowH=<span className="text-foreground">{Math.round(entry.rowHeight)}</span></span>
+                          <span>targetY=<span className="text-foreground">{entry.targetY === null ? "skip" : Math.round(entry.targetY)}</span></span>
+                          <span className="col-span-2">
+                            offset=<span className={cn("text-foreground", entry.offset > 0 ? "text-primary" : entry.offset < 0 ? "text-destructive" : "")}>
+                              {entry.offset > 0 ? "+" : ""}{Math.round(entry.offset)}px
+                            </span>
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Sticky pasek nawigatora Next/Prev + status */}
         <div className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur border-t border-border shadow-lg">
