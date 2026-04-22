@@ -24,11 +24,17 @@ import SeoHead from "@/components/shared/SeoHead";
 import { computeRowScrollTarget } from "@/lib/scrollHelpers";
 import { applyPulseSequence, type PulsePrefs } from "@/lib/pulseAnimation";
 import {
+  type FocusPrefs,
+  type FocusPrefsByVariant,
+  type ThemeVariant,
   exportFocusPrefsToJson,
   importFocusPrefsFromJson,
   buildFocusPrefsShareUrl,
   extractFocusPrefsFromHash,
+  sanitizeFocusPrefsByVariant,
+  getDefaultFocusPrefsByVariant,
 } from "@/lib/focusPrefsSerialization";
+import { useThemeVariant } from "@/hooks/useThemeVariant";
 import { formatDistanceToNow } from "date-fns";
 import { pl } from "date-fns/locale";
 import { toast } from "sonner";
