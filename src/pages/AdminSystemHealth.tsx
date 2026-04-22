@@ -374,7 +374,16 @@ const AdminSystemHealth = () => {
         delete (el as HTMLElement & { __afterglowTimer?: number })
           .__afterglowTimer;
       }
-      el.classList.remove("animate-jump-pulse", "animate-jump-afterglow");
+      el.classList.remove(
+        "animate-jump-pulse",
+        "animate-jump-afterglow",
+        "jump-hc",
+      );
+      // High-contrast: dodaj marker class — animacje pulse/afterglow respektują selector
+      // `.jump-hc.animate-jump-*` w index.css i renderują grubsze ringi + jaśniejsze halo.
+      if (highContrastFocus) {
+        el.classList.add("jump-hc");
+      }
       // Force reflow — bez tego ponowne dodanie tej samej klasy nie restartuje animacji.
       // eslint-disable-next-line @typescript-eslint/no-unused-expressions
       void el.offsetWidth;
@@ -391,7 +400,11 @@ const AdminSystemHealth = () => {
         afterglowTimer;
       // Cleanup obu klas po pełnej sekwencji (1.7s + 2.4s afterglow ≈ 4.1s, +100ms zapasu).
       const cleanupTimer = window.setTimeout(() => {
-        el.classList.remove("animate-jump-pulse", "animate-jump-afterglow");
+        el.classList.remove(
+          "animate-jump-pulse",
+          "animate-jump-afterglow",
+          "jump-hc",
+        );
         pulseTimersRef.current.delete(el);
         delete (el as HTMLElement & { __afterglowTimer?: number })
           .__afterglowTimer;
