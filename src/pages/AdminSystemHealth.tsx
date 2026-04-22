@@ -1605,14 +1605,15 @@ const AdminSystemHealth = () => {
                                 <TableRow
                                   key={rowKey}
                                   data-retry-row-key={rowKey}
+                                  tabIndex={-1}
                                   className={
                                     isNavigatorActive
-                                      ? "bg-primary/20 ring-2 ring-primary transition-colors cursor-help"
+                                      ? "bg-primary/20 ring-2 ring-primary transition-colors cursor-help focus:outline-none"
                                       : isExactHighlight
-                                        ? "bg-primary/15 ring-2 ring-primary/40 transition-colors cursor-help"
+                                        ? "bg-primary/15 ring-2 ring-primary/40 transition-colors cursor-help focus:outline-none"
                                         : isRelatedHighlight
-                                          ? "bg-primary/5 transition-colors cursor-help"
-                                          : "transition-colors"
+                                          ? "bg-primary/5 transition-colors cursor-help focus:outline-none"
+                                          : "transition-colors focus:outline-none"
                                   }
                                 >
                                   <TableCell className="font-mono text-xs">
