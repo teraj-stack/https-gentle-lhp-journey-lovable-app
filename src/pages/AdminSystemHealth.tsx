@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useMemo } from "react";
+import { useEffect, useRef, useState, useMemo, type CSSProperties } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import type { Session } from "@supabase/supabase-js";
@@ -9,13 +9,16 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { ArrowLeft, ShieldAlert, Activity, AlertTriangle, RefreshCw, Ban, Webhook, Repeat, Filter, X, Eye, Download, ArrowDownWideNarrow, ArrowUpWideNarrow, Locate, Info, ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from "lucide-react";
+import { ArrowLeft, ShieldAlert, Activity, AlertTriangle, RefreshCw, Ban, Webhook, Repeat, Filter, X, Eye, Download, ArrowDownWideNarrow, ArrowUpWideNarrow, Locate, Info, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Settings2, RotateCcw } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Toggle } from "@/components/ui/toggle";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tooltip as UITooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Slider } from "@/components/ui/slider";
+import { Label } from "@/components/ui/label";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import SeoHead from "@/components/shared/SeoHead";
 import { computeRowScrollTarget } from "@/lib/scrollHelpers";
@@ -90,6 +93,13 @@ const REASON_VARIANT: Record<string, "default" | "secondary" | "destructive" | "
 // Pola podświetlane w widoku metadanych — szybciej rzuca się w oczy
 // przy analizie ataku/pętli (retry-after, podgląd tokenu, metoda HTTP).
 const HIGHLIGHTED_METADATA_KEYS = new Set(["retryAfterSec", "tokenPreview", "method"]);
+
+// Walidator numerycznej preferencji z LS — chroni przed NaN/string/poza zakresem.
+function clampNum(v: unknown, min: number, max: number, fallback: number): number {
+  const n = typeof v === "number" ? v : Number(v);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.min(max, Math.max(min, n));
+}
 
 const MetadataView = ({ data }: { data: Record<string, unknown> }) => {
   const entries = Object.entries(data);
@@ -265,6 +275,68 @@ const AdminSystemHealth = () => {
     }
   }, [highContrastFocus]);
 
+  // ============================================================================
+  // Preferencje stylu focusu po skoku — persystowane w localStorage.
+  // Sliders w popoverze "Styl focusu" (toolbar tabeli "Top retry sources") pozwalają
+  // dostroić: (1) afterglow duration (czas trwałego ringa po pulse'ie), (2) ring width
+  // (grubość obrysu aktywnego wiersza), (3) glow intensity (siła halo / shadow).
+  // Wartości są aplikowane przez CSS custom properties ustawiane na elemencie wiersza
+  // w `pulseRow` oraz na `<TableRow isNavigatorActive>` przez inline style.
+  // ============================================================================
+  const FOCUS_PREFS_LS_KEY = "admin-system-health.focus-style-prefs";
+  type FocusPrefs = {
+    afterglowMs: number; // 800–6000ms (default 2400)
+    ringWidthPx: number; // 1–6px (default 2; HC uses ringWidthPx + 2)
+    glowIntensity: number; // 0–100 (default 55; mapowane na opacity 0..1)
+  };
+  const FOCUS_PREFS_DEFAULTS: FocusPrefs = {
+    afterglowMs: 2400,
+    ringWidthPx: 2,
+    glowIntensity: 55,
+  };
+  const [focusPrefs, setFocusPrefs] = useState<FocusPrefs>(() => {
+    if (typeof window === "undefined") return FOCUS_PREFS_DEFAULTS;
+    try {
+      const raw = window.localStorage.getItem(FOCUS_PREFS_LS_KEY);
+      if (!raw) return FOCUS_PREFS_DEFAULTS;
+      const parsed = JSON.parse(raw) as Partial<FocusPrefs>;
+      return {
+        afterglowMs: clampNum(parsed.afterglowMs, 800, 6000, FOCUS_PREFS_DEFAULTS.afterglowMs),
+        ringWidthPx: clampNum(parsed.ringWidthPx, 1, 6, FOCUS_PREFS_DEFAULTS.ringWidthPx),
+        glowIntensity: clampNum(parsed.glowIntensity, 0, 100, FOCUS_PREFS_DEFAULTS.glowIntensity),
+      };
+    } catch {
+      return FOCUS_PREFS_DEFAULTS;
+    }
+  });
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(FOCUS_PREFS_LS_KEY, JSON.stringify(focusPrefs));
+    } catch {
+      // ignoruj w private mode
+    }
+  }, [focusPrefs]);
+  // Trzymaj najnowsze wartości w refie — pulseRow czyta je w momencie wywołania,
+  // żeby nie wymagać przebudowy callbacka po każdej zmianie slidera.
+  const focusPrefsRef = useRef<FocusPrefs>(focusPrefs);
+  useEffect(() => {
+    focusPrefsRef.current = focusPrefs;
+  }, [focusPrefs]);
+  // Inline style dla aktywnego wiersza (isNavigatorActive) — ring + halo wyliczone
+  // z preferencji. Memo, bo używane wielokrotnie w mapie wierszy.
+  const activeRowStyle = useMemo<CSSProperties>(() => {
+    const ring = highContrastFocus ? focusPrefs.ringWidthPx + 2 : focusPrefs.ringWidthPx;
+    const glow = focusPrefs.glowIntensity / 100; // 0..1
+    return {
+      // Tailwind ring używa CSS var --tw-ring-* — ustawiamy bezpośrednio outline
+      // przez box-shadow, żeby grubość była dynamiczna (Tailwind ring-N to statyczne klasy).
+      boxShadow: highContrastFocus
+        ? `inset 0 0 0 ${ring}px hsl(var(--primary)), inset 0 0 0 ${ring + 2}px hsl(var(--foreground) / 0.7), 0 0 ${Math.round(20 + glow * 20)}px ${Math.round(glow * 6)}px hsl(var(--primary) / ${(0.4 + glow * 0.5).toFixed(2)})`
+        : `inset 0 0 0 ${ring}px hsl(var(--primary)), 0 0 ${Math.round(16 + glow * 14)}px ${Math.round(glow * 4)}px hsl(var(--primary) / ${(0.25 + glow * 0.45).toFixed(2)})`,
+    };
+  }, [focusPrefs, highContrastFocus]);
+
+
   // Auto-fade highlightu wiersza po 10s — wystarczająco długo, żeby admin zdążył zauważyć
   // wyróżnienie po zamknięciu modala, ale nie zostawia trwałego kolorowego rzędu.
   useEffect(() => {
@@ -384,12 +456,23 @@ const AdminSystemHealth = () => {
       if (highContrastFocus) {
         el.classList.add("jump-hc");
       }
+      // Aplikuj preferencje stylu focusu jako CSS custom properties — keyframes
+      // w index.css czytają je przez var() (--jump-ring-w, --jump-glow-blur,
+      // --jump-glow-spread, --jump-glow-opacity, --jump-afterglow-duration).
+      const prefs = focusPrefsRef.current;
+      const ringW = highContrastFocus ? prefs.ringWidthPx + 2 : prefs.ringWidthPx;
+      const glow = prefs.glowIntensity / 100;
+      el.style.setProperty("--jump-ring-w", `${ringW}px`);
+      el.style.setProperty("--jump-glow-blur", `${Math.round(20 + glow * 24)}px`);
+      el.style.setProperty("--jump-glow-spread", `${Math.round(2 + glow * 8)}px`);
+      el.style.setProperty("--jump-glow-opacity", (0.25 + glow * 0.55).toFixed(2));
+      el.style.setProperty("--jump-afterglow-duration", `${prefs.afterglowMs}ms`);
       // Force reflow — bez tego ponowne dodanie tej samej klasy nie restartuje animacji.
       // eslint-disable-next-line @typescript-eslint/no-unused-expressions
       void el.offsetWidth;
       el.classList.add("animate-jump-pulse");
       // Po ~1.7s (lekkie nakładanie z końcem pulse'a, żeby nie było „dziury" wizualnej)
-      // przełącz na afterglow — trwały ring + tło, które samo wygasa przez 2.4s.
+      // przełącz na afterglow — czas trwania konfigurowalny przez `--jump-afterglow-duration`.
       const afterglowTimer = window.setTimeout(() => {
         el.classList.remove("animate-jump-pulse");
         // eslint-disable-next-line @typescript-eslint/no-unused-expressions
@@ -398,17 +481,25 @@ const AdminSystemHealth = () => {
       }, 1700);
       (el as HTMLElement & { __afterglowTimer?: number }).__afterglowTimer =
         afterglowTimer;
-      // Cleanup obu klas po pełnej sekwencji (1.7s + 2.4s afterglow ≈ 4.1s, +100ms zapasu).
+      // Cleanup obu klas po pełnej sekwencji (1.7s pulse + afterglow + 100ms zapasu).
       const cleanupTimer = window.setTimeout(() => {
         el.classList.remove(
           "animate-jump-pulse",
           "animate-jump-afterglow",
           "jump-hc",
         );
+        // Wyczyść inline CSS vars — kolejny pulse i tak je nadpisze, ale lepiej
+        // zostawić DOM czysty (debugowanie w devtools, brak „wycieku" stylu na
+        // stan idle gdyby ktoś dodał selektor bez .animate-jump-*).
+        el.style.removeProperty("--jump-ring-w");
+        el.style.removeProperty("--jump-glow-blur");
+        el.style.removeProperty("--jump-glow-spread");
+        el.style.removeProperty("--jump-glow-opacity");
+        el.style.removeProperty("--jump-afterglow-duration");
         pulseTimersRef.current.delete(el);
         delete (el as HTMLElement & { __afterglowTimer?: number })
           .__afterglowTimer;
-      }, 4200);
+      }, 1700 + focusPrefsRef.current.afterglowMs + 100);
       pulseTimersRef.current.set(el, cleanupTimer);
     }
     if (opts.focus) {
@@ -1537,6 +1628,129 @@ const AdminSystemHealth = () => {
                         <Eye className="h-3.5 w-3.5 mr-1.5" />
                         HC focus {highContrastFocus ? "ON" : "OFF"}
                       </Toggle>
+                      {/* Popover „Styl focusu" — sliders dla afterglow duration, ring width
+                          i glow intensity. Wartości persystowane w localStorage (focusPrefs),
+                          aplikowane na żywo przez CSS vars w pulseRow + inline style w aktywnym
+                          wierszu. Reset przywraca defaulty. */}
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 gap-1.5"
+                            aria-label="Ustawienia stylu focusu po skoku"
+                            title="Dostosuj czas afterglow, grubość ringa i intensywność glow. Preferencje są zapamiętywane."
+                          >
+                            <Settings2 className="h-3.5 w-3.5" />
+                            Styl focusu
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-80 p-4 space-y-4" align="start">
+                          <div className="flex items-center justify-between">
+                            <div className="text-sm font-semibold">Styl focusu po skoku</div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 px-2 text-xs gap-1"
+                              onClick={() => {
+                                setFocusPrefs(FOCUS_PREFS_DEFAULTS);
+                                toast.success("Przywrócono domyślny styl focusu");
+                              }}
+                              title="Przywróć wartości domyślne (afterglow 2400ms, ring 2px, glow 55%)"
+                            >
+                              <RotateCcw className="h-3 w-3" />
+                              Reset
+                            </Button>
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            Preferencje zapisywane w przeglądarce — nie musisz ich ustawiać przy
+                            każdej sesji. Zmiany działają od razu, sprawdź na kolejnym Next/Prev.
+                          </p>
+
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <Label htmlFor="afterglow-slider" className="text-xs font-medium">
+                                Czas afterglow
+                              </Label>
+                              <span className="text-xs font-mono tabular-nums text-muted-foreground">
+                                {(focusPrefs.afterglowMs / 1000).toFixed(1)}s
+                              </span>
+                            </div>
+                            <Slider
+                              id="afterglow-slider"
+                              min={800}
+                              max={6000}
+                              step={100}
+                              value={[focusPrefs.afterglowMs]}
+                              onValueChange={([v]) =>
+                                setFocusPrefs((p) => ({ ...p, afterglowMs: v }))
+                              }
+                              aria-label="Czas trwania afterglow w milisekundach"
+                            />
+                            <div className="flex justify-between text-[10px] text-muted-foreground/70 font-mono">
+                              <span>0.8s</span>
+                              <span>6.0s</span>
+                            </div>
+                          </div>
+
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <Label htmlFor="ring-slider" className="text-xs font-medium">
+                                Grubość ringa
+                              </Label>
+                              <span className="text-xs font-mono tabular-nums text-muted-foreground">
+                                {focusPrefs.ringWidthPx}px
+                                {highContrastFocus && (
+                                  <span className="ml-1 text-primary">
+                                    (HC: {focusPrefs.ringWidthPx + 2}px)
+                                  </span>
+                                )}
+                              </span>
+                            </div>
+                            <Slider
+                              id="ring-slider"
+                              min={1}
+                              max={6}
+                              step={1}
+                              value={[focusPrefs.ringWidthPx]}
+                              onValueChange={([v]) =>
+                                setFocusPrefs((p) => ({ ...p, ringWidthPx: v }))
+                              }
+                              aria-label="Grubość ringa aktywnego wiersza w pikselach"
+                            />
+                            <div className="flex justify-between text-[10px] text-muted-foreground/70 font-mono">
+                              <span>1px</span>
+                              <span>6px</span>
+                            </div>
+                          </div>
+
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <Label htmlFor="glow-slider" className="text-xs font-medium">
+                                Intensywność glow
+                              </Label>
+                              <span className="text-xs font-mono tabular-nums text-muted-foreground">
+                                {focusPrefs.glowIntensity}%
+                              </span>
+                            </div>
+                            <Slider
+                              id="glow-slider"
+                              min={0}
+                              max={100}
+                              step={5}
+                              value={[focusPrefs.glowIntensity]}
+                              onValueChange={([v]) =>
+                                setFocusPrefs((p) => ({ ...p, glowIntensity: v }))
+                              }
+                              aria-label="Intensywność halo / shadow glow"
+                            />
+                            <div className="flex justify-between text-[10px] text-muted-foreground/70 font-mono">
+                              <span>0% (off)</span>
+                              <span>100% (max)</span>
+                            </div>
+                          </div>
+                        </PopoverContent>
+                      </Popover>
                       {retryFiltersActive && (
                         <Button
                           variant="ghost"
@@ -1694,11 +1908,12 @@ const AdminSystemHealth = () => {
                                   key={rowKey}
                                   data-retry-row-key={rowKey}
                                   tabIndex={-1}
+                                  style={isNavigatorActive ? activeRowStyle : undefined}
                                   className={
                                     isNavigatorActive
                                       ? highContrastFocus
-                                        ? "bg-primary/30 ring-4 ring-primary ring-offset-2 ring-offset-background outline outline-2 outline-offset-[-4px] outline-foreground/70 shadow-[0_0_28px_-2px_hsl(var(--primary)/0.85)] transition-all cursor-help focus:outline-none"
-                                        : "bg-primary/20 ring-2 ring-primary ring-offset-2 ring-offset-background shadow-[0_0_20px_-4px_hsl(var(--primary)/0.55)] transition-all cursor-help focus:outline-none"
+                                        ? "bg-primary/30 ring-offset-2 ring-offset-background outline outline-2 outline-offset-[-4px] outline-foreground/70 transition-all cursor-help focus:outline-none"
+                                        : "bg-primary/20 ring-offset-2 ring-offset-background transition-all cursor-help focus:outline-none"
                                       : isExactHighlight
                                         ? "bg-primary/15 ring-2 ring-primary/40 transition-colors cursor-help focus:outline-none"
                                         : isRelatedHighlight
