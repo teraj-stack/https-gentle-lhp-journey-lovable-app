@@ -1511,6 +1511,32 @@ const AdminSystemHealth = () => {
                             ? "wszystkie z IP"
                             : "wszystkie z UA"}
                       </Button>
+                      {/* Wysoki kontrast obrysu aktywnego wiersza — grubszy ring, mocniejsze
+                          halo i dodatkowy outline w kolorze foreground (czytelne na jasnym
+                          i ciemnym motywie). Wzmacnia także animacje pulse/afterglow przez
+                          klasę `.jump-hc` (patrz index.css). */}
+                      <Toggle
+                        size="sm"
+                        pressed={highContrastFocus}
+                        onPressedChange={(v) => {
+                          setHighContrastFocus(v);
+                          toast.success(
+                            v
+                              ? "Wysoki kontrast obrysu włączony"
+                              : "Wysoki kontrast obrysu wyłączony",
+                          );
+                        }}
+                        aria-label="Wysoki kontrast obrysu aktywnego wiersza po skoku"
+                        title={
+                          highContrastFocus
+                            ? "Wysoki kontrast: obrys aktywnego wiersza i animacja skoku są wzmocnione (grubszy ring + outline foreground). Kliknij, aby wrócić do trybu standardowego."
+                            : "Standardowy obrys aktywnego wiersza. Kliknij, aby włączyć tryb wysokiego kontrastu (czytelniejszy focus na jasnych i ciemnych motywach)."
+                        }
+                        className="h-8 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+                      >
+                        <Eye className="h-3.5 w-3.5 mr-1.5" />
+                        HC focus {highContrastFocus ? "ON" : "OFF"}
+                      </Toggle>
                       {retryFiltersActive && (
                         <Button
                           variant="ghost"
