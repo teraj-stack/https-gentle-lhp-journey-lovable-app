@@ -89,16 +89,35 @@ export default {
           to: { height: "0" },
         },
         // Puls dla wiersza, do którego wykonano skok w nawigatorze dopasowań.
-        // Pulsuje box-shadow (ring efekt) + tło — używa semantic tokena --primary (HSL).
+        // Pulsuje box-shadow (podwójny ring: zewnętrzny halo + wewnętrzny outline)
+        // + tło + subtelne scale, żeby wiersz natychmiast „skoczył" wzrokowo.
         // 3 pełne cykle × ~600ms = ~1.8s całkowitego czasu trwania.
         "jump-pulse": {
           "0%, 100%": {
-            boxShadow: "0 0 0 0 hsl(var(--primary) / 0)",
-            backgroundColor: "hsl(var(--primary) / 0.05)",
+            boxShadow:
+              "inset 0 0 0 0 hsl(var(--primary) / 0), 0 0 0 0 hsl(var(--primary) / 0)",
+            backgroundColor: "hsl(var(--primary) / 0.08)",
+            transform: "scale(1)",
           },
           "50%": {
-            boxShadow: "0 0 0 4px hsl(var(--primary) / 0.6)",
-            backgroundColor: "hsl(var(--primary) / 0.25)",
+            boxShadow:
+              "inset 0 0 0 2px hsl(var(--primary) / 0.95), 0 0 0 6px hsl(var(--primary) / 0.45), 0 0 24px 4px hsl(var(--primary) / 0.35)",
+            backgroundColor: "hsl(var(--primary) / 0.28)",
+            transform: "scale(1.012)",
+          },
+        },
+        // Trwalszy obrys (~3s) zostający na wierszu PO zakończeniu pulse —
+        // żeby user nie tracił z oczu „gdzie jestem" gdy animacja wygaśnie.
+        "jump-afterglow": {
+          "0%": {
+            boxShadow:
+              "inset 0 0 0 2px hsl(var(--primary) / 0.9), 0 0 0 3px hsl(var(--primary) / 0.4)",
+            backgroundColor: "hsl(var(--primary) / 0.18)",
+          },
+          "100%": {
+            boxShadow:
+              "inset 0 0 0 1px hsl(var(--primary) / 0), 0 0 0 0 hsl(var(--primary) / 0)",
+            backgroundColor: "hsl(var(--primary) / 0)",
           },
         },
       },
@@ -106,6 +125,7 @@ export default {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "jump-pulse": "jump-pulse 0.6s ease-in-out 3",
+        "jump-afterglow": "jump-afterglow 2.4s ease-out 1 forwards",
       },
     },
   },
