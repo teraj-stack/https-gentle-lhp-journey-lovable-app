@@ -1992,11 +1992,31 @@ const AdminSystemHealth = () => {
             const jumpKeys = buildMatchKeys(inspectSource, highlightScope);
             if (jumpKeys.length <= 1) return null;
             const total = jumpKeys.length;
+            // Filtr wyszukiwania zastosowany TYLKO do wyświetlania (nie zmienia globalnego cursora
+            // inspectJumpIndex — ten cyklicznie chodzi po pełnej liście jumpKeys). Zachowujemy oryginalny
+            // indeks `i` per dopasowanie, żeby móc:
+            //   1) sprawdzić czy bieżący kursor (inspectJumpIndex % total) jest w widocznej części,
+            //   2) policzyć czy widoczne dopasowanie jest "exact" (i === 0).
+            // Liczymy w nagłówku, żeby badge "X/Y" odzwierciedlał aktualny widok listy.
+            const q = inspectListQuery.trim().toLowerCase();
+            const filteredKeys = q
+              ? jumpKeys
+                  .map((key, i) => ({ key, i }))
+                  .filter(({ key }) => {
+                    const [ip, ua] = key.split("::");
+                    return ip.toLowerCase().includes(q) || ua.toLowerCase().includes(q);
+                  })
+              : jumpKeys.map((key, i) => ({ key, i }));
+            const filteredTotal = filteredKeys.length;
+            const isFiltered = q.length > 0 && filteredTotal !== total;
+            // Pozycja kursora w przefiltrowanym widoku (1-based) — null gdy kursor odfiltrowany.
+            const cursorIndexInFull = inspectJumpIndex % total;
+            const cursorPosInFiltered = filteredKeys.findIndex(({ i }) => i === cursorIndexInFull);
+            const cursorVisibleInFiltered = cursorPosInFiltered !== -1;
             // currentDisplay = pozycja, do której skoczy NASTĘPNE Enter/J (1-based).
             // Index 0 z buildMatchKeys = wiersz źródłowy (exact); 1..N = related.
-            // Mapujemy to na badge spójny z legendą: złoty "exact" vs szary "related".
-            const currentDisplay = (inspectJumpIndex % total) + 1;
-            const isNextExact = inspectJumpIndex % total === 0;
+            const currentDisplay = cursorIndexInFull + 1;
+            const isNextExact = cursorIndexInFull === 0;
             return (
               <Collapsible open={inspectListOpen} onOpenChange={setInspectListOpen}>
                 <CollapsibleTrigger asChild>
@@ -2011,7 +2031,17 @@ const AdminSystemHealth = () => {
                     ) : (
                       <ChevronDown className="h-3.5 w-3.5" />
                     )}
-                    Podgląd dopasowań ({total})
+                    {/* Tytuł + globalny licznik. Gdy filtr aktywny i zawęża wynik, pokazujemy
+                        "(X z Y)" zamiast "(Y)" — Y zawsze odzwierciedla bieżący highlightScope
+                        (buildMatchKeys re-runs per render), a X — bieżący filtr wyszukiwania. */}
+                    Podgląd dopasowań{" "}
+                    {isFiltered ? (
+                      <span className="font-mono tabular-nums">
+                        ({filteredTotal} z {total})
+                      </span>
+                    ) : (
+                      <span className="font-mono tabular-nums">({total})</span>
+                    )}
                     {/* Licznik "Następne: X/Y" + mini-badge typu (exact/related) — kolory
                         zgodne z legendą poniżej (primary = exact, muted = related). Tooltip
                         wyjaśnia co zrobi Enter / J / klik "Skocz do następnego". */}
@@ -2020,9 +2050,22 @@ const AdminSystemHealth = () => {
                         <TooltipTrigger asChild>
                           <span className="inline-flex items-center gap-1 cursor-help">
                             <span className="text-muted-foreground">Następne:</span>
-                            <span className="font-mono tabular-nums text-foreground">
-                              {currentDisplay}/{total}
-                            </span>
+                            {/* Licznik dwa-trybowy:
+                                - bez filtra: "X/Y" (Y = total wynikający z highlightScope),
+                                - z filtrem zawężającym: "P/F z Y" gdzie P = pozycja kursora w widoku
+                                  (lub "—" gdy odfiltrowany), F = filteredTotal, Y = total.
+                                Dzięki temu od razu widać, że Enter skoczy w obrębie pełnej listy,
+                                ale widoczna część jest węższa. */}
+                            {isFiltered ? (
+                              <span className="font-mono tabular-nums text-foreground">
+                                {cursorVisibleInFiltered ? cursorPosInFiltered + 1 : "—"}/{filteredTotal}{" "}
+                                <span className="text-muted-foreground">z {total}</span>
+                              </span>
+                            ) : (
+                              <span className="font-mono tabular-nums text-foreground">
+                                {currentDisplay}/{total}
+                              </span>
+                            )}
                             <span
                               className={`inline-flex items-center justify-center min-w-4 h-4 px-1 rounded text-[9px] font-mono font-semibold ${
                                 isNextExact
@@ -2041,6 +2084,13 @@ const AdminSystemHealth = () => {
                             <div className="font-semibold">
                               {currentDisplay}/{total} — {isNextExact ? "exact" : "related"}
                             </div>
+                            {isFiltered && (
+                              <div className="text-muted-foreground">
+                                Widoczne po filtrze: <span className="font-mono">{filteredTotal}</span> z{" "}
+                                <span className="font-mono">{total}</span>
+                                {!cursorVisibleInFiltered && " · bieżący kursor jest poza filtrem"}
+                              </div>
+                            )}
                             <div className="flex items-start gap-1.5">
                               <span className="inline-flex shrink-0 items-center justify-center w-3.5 h-3.5 rounded bg-primary text-primary-foreground text-[9px] font-mono font-semibold">1</span>
                               <span><strong>exact</strong> — wiersz źródłowy z modala (dokładny IP+UA).</span>
@@ -2055,6 +2105,7 @@ const AdminSystemHealth = () => {
                                 ? `wróci do wiersza źródłowego (1/${total}).`
                                 : `podświetli dopasowanie ${currentDisplay}/${total}.`}
                               {" "}<kbd className="font-mono">K</kbd> = poprzednie (cyklicznie).
+                              {isFiltered && " Skok ignoruje filtr — chodzi po pełnej liście."}
                             </div>
                           </div>
                         </TooltipContent>
