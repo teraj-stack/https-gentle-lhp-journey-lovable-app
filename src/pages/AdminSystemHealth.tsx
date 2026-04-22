@@ -265,6 +265,29 @@ const formatFocusPrefsSummary = (prefs: FocusPrefs): string => {
   return `ring ${ring}px · glow ${glow}% · afterglow ${afterglow}`;
 };
 
+/**
+ * Single source of truth dla TYTUŁU i OPISU wszystkich toastów potwierdzających
+ * akcję „Kopiuj link (variant)" — używany jednocześnie przez:
+ *  - `toast.success` (kanał wizualny, natywny styl sonnera)
+ *  - `toast.custom` (kanał a11y, atomiczny live region)
+ *  - ewentualne przyszłe kanały (np. status bar, telemetria, e2e snapshoty)
+ *
+ * Trzymanie obu stringów w jednym helperze gwarantuje, że tytuł i opis NIGDY się
+ * nie rozjadą między kanałami (np. literówka w jednym miejscu = literówka wszędzie).
+ * Format: tytuł = `Skopiowano link ({label})`, opis = `Wariant {label}: {summary}`.
+ */
+const buildVariantCopyToastContent = (
+  variant: ThemeVariant,
+  prefs: FocusPrefs,
+): { title: string; description: string; label: string } => {
+  const label = formatFocusVariantLabel(variant);
+  return {
+    label,
+    title: `Skopiowano link (${label})`,
+    description: `Wariant ${label}: ${formatFocusPrefsSummary(prefs)}`,
+  };
+};
+
 const FocusDemo = ({
   prefs,
   highContrast,
@@ -1038,8 +1061,12 @@ const AdminSystemHealth = () => {
     const single = focusPrefsByVariant[editingVariant];
     const replicated = { light: single, dark: single, hc: single };
     const url = buildFocusPrefsShareUrl(replicated, window.location.href);
-    const label = formatFocusVariantLabel(editingVariant);
-    const desc = `Wariant ${label}: ${formatFocusPrefsSummary(single)}`;
+    // Single source of truth — tytuł/opis dla obu kanałów toastów (success + custom).
+    // Nigdy nie buduj tych stringów inline — modyfikacje robić TYLKO w helperze.
+    const { title, description: desc, label } = buildVariantCopyToastContent(
+      editingVariant,
+      single,
+    );
     // Wszystkie błędy clipboard (NotAllowed/SecurityError/brak HTTPS) idą przez
     // copyToClipboardWithFallback → najpierw legacy execCommand, potem manual modal
     // z pre-selected tekstem. Admin nigdy nie traci linku.
@@ -1068,7 +1095,8 @@ const AdminSystemHealth = () => {
       // z resztą UI. Użytkownik widzi 2 toasty (sukces + custom) — to akceptowalne
       // bo niosą tę samą informację, a custom dodatkowo eksponuje szczegóły opisu
       // bez ryzyka ucięcia przez SR.
-      const title = `Skopiowano link (${label})`;
+      // (title/desc/label pochodzą z `buildVariantCopyToastContent` powyżej —
+      // single source of truth, nie buduj tu nic ad-hoc.)
 
       // Kanał #1 — wizualne potwierdzenie sukcesu (natywny styl sonnera).
       toast.success(title, {
