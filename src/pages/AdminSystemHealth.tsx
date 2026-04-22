@@ -2392,7 +2392,7 @@ const AdminSystemHealth = () => {
                                   const d = defaults[editingVariant];
                                   setEditingVariantPrefs(() => d);
                                   toast.success(`Przywrócono domyślne (${variantLabel})`, {
-                                    description: `Wariant ${variantLabel}: ring ${d.ringWidthPx}px · glow ${d.glowIntensity}% · afterglow ${d.afterglowMs}ms · pozostałe warianty bez zmian`,
+                                    description: `Wariant ${variantLabel}: ${formatFocusPrefsSummary(d)} · pozostałe warianty bez zmian`,
                                   });
                                 }}
                                 title={`Przywróć wartości domyślne tylko dla wariantu ${formatFocusVariantLabel(editingVariant)} (pozostałe warianty nietknięte)`}
