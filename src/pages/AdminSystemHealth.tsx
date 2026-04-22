@@ -2054,24 +2054,65 @@ const AdminSystemHealth = () => {
                   </div>
                   {/* Legenda — wyjaśnia co oznaczają badge'e numeryczne w liście:
                       złoty/primary = wiersz źródłowy (exact, indeks 0 z buildMatchKeys),
-                      szary/muted = dopasowania powiązane (related, ten sam IP lub UA). */}
+                      szary/muted = dopasowania powiązane (related, ten sam IP lub UA).
+                      Każda pozycja ma tooltip z dokładniejszym opisem + osobny chip
+                      "⌨ Skróty" pokazuje pełną listę bindingów (↑/↓/Enter/Home/End). */}
                   <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-muted-foreground">
-                    <span className="inline-flex items-center gap-1.5">
-                      <span className="inline-flex items-center justify-center w-4 h-4 rounded bg-primary text-primary-foreground text-[9px] font-mono font-semibold">
-                        1
-                      </span>
-                      Wiersz źródłowy (exact)
-                    </span>
-                    <span className="inline-flex items-center gap-1.5">
-                      <span className="inline-flex items-center justify-center w-4 h-4 rounded bg-muted text-muted-foreground text-[9px] font-mono font-semibold">
-                        n
-                      </span>
-                      Powiązane (related)
-                    </span>
-                    <span className="inline-flex items-center gap-1.5">
-                      <ChevronRight className="h-3 w-3 text-primary" />
-                      Aktualny kursor
-                    </span>
+                    <UITooltip delayDuration={150}>
+                      <TooltipTrigger asChild>
+                        <span className="inline-flex items-center gap-1.5 cursor-help">
+                          <span className="inline-flex items-center justify-center w-4 h-4 rounded bg-primary text-primary-foreground text-[9px] font-mono font-semibold">
+                            1
+                          </span>
+                          Wiersz źródłowy (exact)
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="text-xs max-w-xs">
+                        Dokładne dopasowanie IP+UA z modala — pierwsze w kolejce skoków.
+                      </TooltipContent>
+                    </UITooltip>
+                    <UITooltip delayDuration={150}>
+                      <TooltipTrigger asChild>
+                        <span className="inline-flex items-center gap-1.5 cursor-help">
+                          <span className="inline-flex items-center justify-center w-4 h-4 rounded bg-muted text-muted-foreground text-[9px] font-mono font-semibold">
+                            n
+                          </span>
+                          Powiązane (related)
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="text-xs max-w-xs">
+                        Wiersze z tym samym IP lub UA (zakres zależy od „Zakres podświetlenia”).
+                      </TooltipContent>
+                    </UITooltip>
+                    <UITooltip delayDuration={150}>
+                      <TooltipTrigger asChild>
+                        <span className="inline-flex items-center gap-1.5 cursor-help">
+                          <ChevronRight className="h-3 w-3 text-primary" />
+                          Aktualny kursor
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="text-xs max-w-xs">
+                        Pozycja, do której skoczy następny ↓ / J / klik „Pokaż kolejne dopasowania”.
+                      </TooltipContent>
+                    </UITooltip>
+                    {/* Chip skrótów — wizualny separator + bogaty tooltip z pełną listą bindingów.
+                        Trzymamy zwięzłe „↑/↓ • Enter” w treści chipa, szczegóły w tooltipie. */}
+                    <UITooltip delayDuration={150}>
+                      <TooltipTrigger asChild>
+                        <span className="ml-auto inline-flex items-center gap-1 cursor-help rounded border border-border/60 bg-muted/40 px-1.5 py-0.5 font-mono text-[10px]">
+                          ⌨ ↑/↓ • Enter
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" align="end" className="text-xs max-w-xs">
+                        <div className="font-semibold mb-1">Skróty w liście</div>
+                        <ul className="space-y-0.5">
+                          <li><kbd className="font-mono">↑</kbd> / <kbd className="font-mono">↓</kbd> — przełącz wybór wiersza</li>
+                          <li><kbd className="font-mono">Home</kbd> / <kbd className="font-mono">End</kbd> — pierwszy / ostatni</li>
+                          <li><kbd className="font-mono">Enter</kbd> / <kbd className="font-mono">Space</kbd> — skok do wiersza</li>
+                          <li className="pt-1 text-muted-foreground">Globalnie (poza listą): <kbd className="font-mono">J</kbd>/<kbd className="font-mono">K</kbd> = następne / poprzednie</li>
+                        </ul>
+                      </TooltipContent>
+                    </UITooltip>
                   </div>
                   {(() => {
                     const q = inspectListQuery.trim().toLowerCase();
