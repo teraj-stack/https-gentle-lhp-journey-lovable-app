@@ -1035,23 +1035,19 @@ const AdminSystemHealth = () => {
   // wszystkich 3 slotów schematu — odbiorca po imporcie dostaje jednolity styl,
   // który może potem zróżnicować ręcznie.
   const handleCopyFocusPrefsLinkVariant = async () => {
-    try {
-      const single = focusPrefsByVariant[editingVariant];
-      const replicated = { light: single, dark: single, hc: single };
-      const url = buildFocusPrefsShareUrl(replicated, window.location.href);
-      await navigator.clipboard.writeText(url);
-      const label = formatFocusVariantLabel(editingVariant);
-      const title = `Skopiowano link (${label})`;
-      const desc = `Wariant ${label}: ${formatFocusPrefsSummary(single)}`;
-      // a11y: Sonner domyślnie nadaje toastom `aria-live`, ale BRAK `aria-atomic`,
-      // przez co czytniki ekranu (NVDA/JAWS/VoiceOver) potrafią ominąć część
-      // komunikatu. Renderujemy `description` jako ReactNode z explicit live region
-      // wokół CAŁEJ treści (tytuł + opis), wymuszając pełny odczyt.
-      // role="status" + polite = nie przerywa bieżącej wypowiedzi (typowe dla success).
-      // Layout: `whitespace-normal break-words` chroni przed urywaniem na małych ekranach
-      // (Sonner domyślnie potrafi truncate'ować długi `description` w jedną linię).
-      // `leading-snug` zachowuje czytelność przy 2-3 liniach zawijania.
-      toast.success(title, {
+    const single = focusPrefsByVariant[editingVariant];
+    const replicated = { light: single, dark: single, hc: single };
+    const url = buildFocusPrefsShareUrl(replicated, window.location.href);
+    const label = formatFocusVariantLabel(editingVariant);
+    const desc = `Wariant ${label}: ${formatFocusPrefsSummary(single)}`;
+    // Wszystkie błędy clipboard (NotAllowed/SecurityError/brak HTTPS) idą przez
+    // copyToClipboardWithFallback → najpierw legacy execCommand, potem manual modal
+    // z pre-selected tekstem. Admin nigdy nie traci linku.
+    await copyToClipboardWithFallback(url, `link wariantu ${label}`, () => {
+      // a11y: explicit live region (status+polite+atomic) — czytniki ekranu
+      // ogłaszają cały komunikat z wartościami ring/glow/afterglow.
+      // Layout: whitespace-normal+break-words+leading-snug = brak urwania na mobile.
+      toast.success(`Skopiowano link (${label})`, {
         description: (
           <span
             role="status"
@@ -1063,22 +1059,7 @@ const AdminSystemHealth = () => {
           </span>
         ),
       });
-    } catch (err) {
-      const errMsg = err instanceof Error ? err.message : "Brak dostępu do clipboardu";
-      // Błąd = assertive — czytnik PRZERYWA aktualną wypowiedź żeby ogłosić problem.
-      toast.error("Nie udało się skopiować linka", {
-        description: (
-          <span
-            role="alert"
-            aria-live="assertive"
-            aria-atomic="true"
-            className="block whitespace-normal break-words leading-snug"
-          >
-            {errMsg}
-          </span>
-        ),
-      });
-    }
+    });
   };
   // Wklej link ze schowka i zaaplikuj TYLKO do aktualnie edytowanego wariantu.
   // Akceptuje pełny URL z `#focus-prefs=...` ALBO sam fragment (sam encoded base64url),
