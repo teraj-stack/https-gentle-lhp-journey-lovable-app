@@ -1486,17 +1486,18 @@ const AdminSystemHealth = () => {
                                   <TableCell className="font-mono text-xs">
                                     <div className="flex items-center gap-2">
                                       {/* Numer porządkowy dopasowania — kolory spójne z legendą:
-                                          primary (gold) = exact (1), muted = related (2..N).
-                                          Pokazujemy też w title pełny "X/Y" do ujednolicenia z
-                                          licznikiem w modalu. Aria-label dla screen-readerów. */}
+                                          primary (gold) = exact (1) lub aktywny kursor,
+                                          muted = related (2..N) gdy nieaktywny.
+                                          Aktywny wiersz dostaje ring + primary fill — synchronizacja
+                                          z `isNavigatorActive` (matchNavigator/Enter/J/K). */}
                                       {navOrdinal !== null && (
                                         <span
-                                          className={`shrink-0 inline-flex items-center justify-center min-w-5 h-5 px-1 rounded text-[10px] font-mono font-semibold ${
-                                            navIdx === 0
+                                          className={`shrink-0 inline-flex items-center justify-center min-w-5 h-5 px-1 rounded text-[10px] font-mono font-semibold transition-colors ${
+                                            isNavigatorActive || navIdx === 0
                                               ? "bg-primary text-primary-foreground"
                                               : "bg-muted text-muted-foreground"
                                           } ${isNavigatorActive ? "ring-2 ring-primary ring-offset-1 ring-offset-background" : ""}`}
-                                          title={`Dopasowanie ${navOrdinal}/${navTotal} ${navIdx === 0 ? "(exact — wiersz źródłowy)" : "(related)"}`}
+                                          title={`Dopasowanie ${navOrdinal}/${navTotal} ${navIdx === 0 ? "(exact — wiersz źródłowy)" : "(related)"}${isNavigatorActive ? " — bieżący kursor" : ""}`}
                                           aria-label={`Dopasowanie ${navOrdinal} z ${navTotal}`}
                                         >
                                           {navOrdinal}
