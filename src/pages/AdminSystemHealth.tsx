@@ -345,6 +345,19 @@ const AdminSystemHealth = () => {
     return () => window.clearTimeout(t);
   }, [highlightedSource]);
 
+  // Pływająca etykieta „X/Y" pojawiająca się tuż obok aktywnego wiersza zaraz po skoku.
+  // Pokazuje aktualny indeks i sumę dopasowań, żeby user od razu widział „gdzie jestem"
+  // bez szukania badge'a w komórce. Ustawiana przez pulseRow(label={...}), automatycznie
+  // znika po `pulseLabelDuration` (1700ms pulse + afterglowMs + 200ms zapasu).
+  // `el` przechowywany żeby JumpLabel mógł śledzić rect przez rAF (scroll/resize).
+  const [jumpLabel, setJumpLabel] = useState<{
+    el: HTMLElement;
+    ordinal: number;
+    total: number;
+    expiresAt: number;
+  } | null>(null);
+  const jumpLabelTimerRef = useRef<number | null>(null);
+
   // Snapshot filtrów tabeli źródeł sprzed wywołania "Pokaż w tabeli" — używany do przywrócenia
   // poprzednich ustawień filtrowania, jeśli reveal je wyczyścił. null = brak aktywnego snapshotu.
   const [filtersSnapshot, setFiltersSnapshot] = useState<{
