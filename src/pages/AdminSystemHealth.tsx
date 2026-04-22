@@ -1908,18 +1908,81 @@ const AdminSystemHealth = () => {
                               size="sm"
                               className="h-7 px-2 text-xs gap-1"
                               onClick={() => {
-                                setFocusPrefs(FOCUS_PREFS_DEFAULTS);
-                                toast.success("Przywrócono domyślny styl focusu");
+                                const defaults = getDefaultFocusPrefsByVariant();
+                                setEditingVariantPrefs(() => defaults[editingVariant]);
+                                toast.success(`Przywrócono domyślny styl focusu (${editingVariant})`);
                               }}
-                              title="Przywróć wartości domyślne (afterglow 2400ms, ring 2px, glow 55%)"
+                              title={`Przywróć wartości domyślne dla wariantu ${editingVariant}`}
                             >
                               <RotateCcw className="h-3 w-3" />
                               Reset
                             </Button>
                           </div>
+
+                          {/* Tabs wyboru wariantu motywu do edycji — Light / Dark / High Contrast.
+                              Każdy variant ma osobny zestaw prefs (afterglow/ring/glow). Aktywny
+                              variant (oznaczony kropką ●) jest wybierany automatycznie na podstawie
+                              `useThemeVariant(highContrastFocus)` — admin może edytować INNY variant
+                              („z góry"), żeby przygotować ustawienia zanim przełączy motyw. */}
+                          <div className="space-y-1.5">
+                            <div className="flex items-center justify-between">
+                              <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                                Edytuj wariant
+                              </span>
+                              {editingVariantOverride !== null && (
+                                <button
+                                  type="button"
+                                  onClick={() => setEditingVariantOverride(null)}
+                                  className="text-[10px] text-primary hover:underline"
+                                  title="Wróć do edycji aktywnego wariantu"
+                                >
+                                  ← aktywny
+                                </button>
+                              )}
+                            </div>
+                            <div className="grid grid-cols-3 gap-1 rounded-md bg-muted/50 p-0.5">
+                              {(["light", "dark", "hc"] as const).map((v) => {
+                                const isEditing = editingVariant === v;
+                                const isActive = activeThemeVariant === v;
+                                const label = v === "hc" ? "High Contrast" : v === "light" ? "Light" : "Dark";
+                                return (
+                                  <button
+                                    key={v}
+                                    type="button"
+                                    onClick={() => setEditingVariantOverride(v === activeThemeVariant ? null : v)}
+                                    aria-pressed={isEditing}
+                                    className={`relative h-7 rounded text-[11px] font-medium transition-colors ${
+                                      isEditing
+                                        ? "bg-background text-foreground shadow-sm ring-1 ring-primary/40"
+                                        : "text-muted-foreground hover:text-foreground hover:bg-background/60"
+                                    }`}
+                                    title={
+                                      isActive
+                                        ? `${label} — aktywny teraz`
+                                        : `${label} — edytuj „z góry" (zaaplikuje się po przełączeniu motywu)`
+                                    }
+                                  >
+                                    {label}
+                                    {isActive && (
+                                      <span
+                                        className="absolute top-0.5 right-1 w-1.5 h-1.5 rounded-full bg-primary"
+                                        aria-label="Aktywny variant"
+                                      />
+                                    )}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                            <p className="text-[10px] text-muted-foreground/70 leading-snug">
+                              Edytujesz: <span className="font-mono text-foreground">{editingVariant}</span>
+                              {editingVariant !== activeThemeVariant && (
+                                <> — zmiany pojawią się po przełączeniu motywu (aktualnie aktywny: <span className="font-mono">{activeThemeVariant}</span>).</>
+                              )}
+                            </p>
+                          </div>
+
                           <p className="text-xs text-muted-foreground">
-                            Preferencje zapisywane w przeglądarce — nie musisz ich ustawiać przy
-                            każdej sesji. Zmiany działają od razu, sprawdź na kolejnym Next/Prev.
+                            Preferencje zapisywane w przeglądarce — osobny zestaw dla light / dark / HC.
                           </p>
 
                           {/* Tryb testowy: cykliczny podgląd pulse→afterglow na 3 sztucznych
