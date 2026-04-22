@@ -475,7 +475,7 @@ const AdminSystemHealth = () => {
       const key = jumpKeys[idx];
       const el = document.querySelector<HTMLElement>(`[data-retry-row-key="${CSS.escape(key)}"]`);
       if (el) {
-        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        scrollRowIntoView(el);
         el.classList.remove("animate-jump-pulse");
         // eslint-disable-next-line @typescript-eslint/no-unused-expressions
         void el.offsetWidth;
@@ -519,7 +519,7 @@ const AdminSystemHealth = () => {
       const key = jumpKeys[idx];
       const el = document.querySelector<HTMLElement>(`[data-retry-row-key="${CSS.escape(key)}"]`);
       if (el) {
-        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        scrollRowIntoView(el);
         el.classList.remove("animate-jump-pulse");
         // eslint-disable-next-line @typescript-eslint/no-unused-expressions
         void el.offsetWidth;
