@@ -405,6 +405,9 @@ const AdminSystemHealth = () => {
         let didScroll = false;
         if (el) {
           scrollRowIntoView(el);
+          // Pulse + focus po zamknięciu modala — modal już odmontowany, więc focus
+          // na wierszu jest bezpieczny i pomaga screen-readerowi ogłosić docelowy wiersz.
+          pulseRow(el, { focus: true });
           // Zapamiętaj exact source — render porównuje s.ip+s.ua dla mocnego highlightu,
           // a samo IP dla delikatnego highlightu pokrewnych wierszy z tego samego adresu.
           setHighlightedSource({ ip, ua });
