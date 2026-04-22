@@ -1011,17 +1011,23 @@ const AdminSystemHealth = () => {
       duration: 8000,
     });
   };
-    try {
-      const url = buildFocusPrefsShareUrl(focusPrefsByVariant, window.location.href);
-      await navigator.clipboard.writeText(url);
+  // Kopia shareable URL — link niesie wszystkie 3 warianty (compact base64url ~60 znaków).
+  const handleCopyFocusPrefsLink = async () => {
+    const url = buildFocusPrefsShareUrl(focusPrefsByVariant, window.location.href);
+    await copyToClipboardWithFallback(url, "link z 3 wariantami (light/dark/HC)", () => {
       toast.success("Skopiowano link z preferencjami", {
-        description: "Link zawiera wszystkie 3 warianty (light/dark/HC).",
+        description: (
+          <span
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
+            className="block whitespace-normal break-words leading-snug"
+          >
+            Link zawiera wszystkie 3 warianty (light/dark/HC).
+          </span>
+        ),
       });
-    } catch (err) {
-      toast.error("Nie udało się skopiować linka", {
-        description: err instanceof Error ? err.message : "Brak dostępu do clipboardu",
-      });
-    }
+    });
   };
   // Kopia shareable URL TYLKO dla aktualnie edytowanego wariantu — przydatne gdy admin
   // chce udostępnić styl konkretnego motywu (np. tylko HC dla użytkownika a11y) bez
