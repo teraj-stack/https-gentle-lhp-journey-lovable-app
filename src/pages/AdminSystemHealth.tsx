@@ -1785,11 +1785,12 @@ const AdminSystemHealth = () => {
                                   key={rowKey}
                                   data-retry-row-key={rowKey}
                                   tabIndex={-1}
+                                  style={isNavigatorActive ? activeRowStyle : undefined}
                                   className={
                                     isNavigatorActive
                                       ? highContrastFocus
-                                        ? "bg-primary/30 ring-4 ring-primary ring-offset-2 ring-offset-background outline outline-2 outline-offset-[-4px] outline-foreground/70 shadow-[0_0_28px_-2px_hsl(var(--primary)/0.85)] transition-all cursor-help focus:outline-none"
-                                        : "bg-primary/20 ring-2 ring-primary ring-offset-2 ring-offset-background shadow-[0_0_20px_-4px_hsl(var(--primary)/0.55)] transition-all cursor-help focus:outline-none"
+                                        ? "bg-primary/30 ring-offset-2 ring-offset-background outline outline-2 outline-offset-[-4px] outline-foreground/70 transition-all cursor-help focus:outline-none"
+                                        : "bg-primary/20 ring-offset-2 ring-offset-background transition-all cursor-help focus:outline-none"
                                       : isExactHighlight
                                         ? "bg-primary/15 ring-2 ring-primary/40 transition-colors cursor-help focus:outline-none"
                                         : isRelatedHighlight
