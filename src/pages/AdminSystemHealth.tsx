@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { ArrowLeft, ShieldAlert, Activity, AlertTriangle, RefreshCw, Ban, Webhook, Repeat, Filter, X, Eye, Download, ArrowDownWideNarrow, ArrowUpWideNarrow, Locate, Info, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Settings2, RotateCcw, FileDown, FileUp, Link2, Play, Pause, FlaskConical, ClipboardPaste } from "lucide-react";
+import { ArrowLeft, ShieldAlert, Activity, AlertTriangle, RefreshCw, Ban, Webhook, Repeat, Filter, X, Eye, Download, ArrowDownWideNarrow, ArrowUpWideNarrow, Locate, Info, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Settings2, RotateCcw, FileDown, FileUp, Link2, Play, Pause, FlaskConical, ClipboardPaste, CheckCircle2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Toggle } from "@/components/ui/toggle";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -1044,21 +1044,40 @@ const AdminSystemHealth = () => {
     // copyToClipboardWithFallback → najpierw legacy execCommand, potem manual modal
     // z pre-selected tekstem. Admin nigdy nie traci linku.
     await copyToClipboardWithFallback(url, `link wariantu ${label}`, () => {
-      // a11y: explicit live region (status+polite+atomic) — czytniki ekranu
-      // ogłaszają cały komunikat z wartościami ring/glow/afterglow.
-      // Layout: whitespace-normal+break-words+leading-snug = brak urwania na mobile.
-      toast.success(`Skopiowano link (${label})`, {
-        description: (
-          <span
+      // toast.custom — pełna kontrola nad markupem, dzięki czemu CAŁY toast
+      // (tytuł + opis + ikona) jest jednym live regionem `role=status` +
+      // `aria-live=polite` + `aria-atomic=true`. Czytniki ekranu ogłaszają
+      // komunikat jako spójną całość (nie dwa osobne fragmenty), co eliminuje
+      // ryzyko ucięcia drugiej części przez SR przy szybkich kolejnych toastach.
+      // Stylowanie odwzorowuje `toast.success` z sonnera (semantic tokens).
+      const title = `Skopiowano link (${label})`;
+      toast.custom(
+        (t) => (
+          <div
             role="status"
             aria-live="polite"
             aria-atomic="true"
-            className="block whitespace-normal break-words leading-snug"
+            className="pointer-events-auto flex w-full items-start gap-3 rounded-md border border-border bg-background p-4 text-foreground shadow-lg"
+            onClick={() => toast.dismiss(t)}
           >
-            {desc}
-          </span>
+            <CheckCircle2
+              className="mt-0.5 h-4 w-4 flex-shrink-0 text-primary"
+              aria-hidden="true"
+            />
+            <div className="flex min-w-0 flex-1 flex-col gap-1">
+              <div className="text-sm font-semibold leading-snug">{title}</div>
+              <div className="whitespace-normal break-words text-sm leading-snug text-muted-foreground">
+                {desc}
+              </div>
+            </div>
+          </div>
         ),
-      });
+        {
+          // Duration zgodne z domyślnym sukcesem sonnera; live region ogłosi
+          // się raz przy mount (atomic=true → pełny tekst).
+          duration: 4000,
+        },
+      );
     });
   };
   // Wklej link ze schowka i zaaplikuj TYLKO do aktualnie edytowanego wariantu.
