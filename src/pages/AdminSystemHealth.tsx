@@ -473,6 +473,10 @@ const AdminSystemHealth = () => {
   // Tryb testowy w popoverze — cyklicznie pulsuje sztuczne wiersze, żeby admin
   // od razu zobaczył efekt po zmianie sliderów (bez chodzenia do tabeli).
   const [focusDemoActive, setFocusDemoActive] = useState(false);
+  // Compare mode — renderuje 2 kolumny FocusDemo: aktywny (z motywu) i edytowany.
+  // Sens TYLKO gdy `editingVariant !== activeThemeVariant`; w przeciwnym razie
+  // toggle jest ukryty i state ignorowany przy renderze.
+  const [focusDemoCompare, setFocusDemoCompare] = useState(false);
   // Variant do EDYCJI w popoverze — domyślnie ten sam co aktywny, ale admin może
   // ręcznie wybrać inny żeby ustawić styl „z góry" zanim przełączy motyw.
   // null = follow active variant (default).
