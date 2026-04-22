@@ -265,6 +265,68 @@ const AdminSystemHealth = () => {
     }
   }, [highContrastFocus]);
 
+  // ============================================================================
+  // Preferencje stylu focusu po skoku — persystowane w localStorage.
+  // Sliders w popoverze "Styl focusu" (toolbar tabeli "Top retry sources") pozwalają
+  // dostroić: (1) afterglow duration (czas trwałego ringa po pulse'ie), (2) ring width
+  // (grubość obrysu aktywnego wiersza), (3) glow intensity (siła halo / shadow).
+  // Wartości są aplikowane przez CSS custom properties ustawiane na elemencie wiersza
+  // w `pulseRow` oraz na `<TableRow isNavigatorActive>` przez inline style.
+  // ============================================================================
+  const FOCUS_PREFS_LS_KEY = "admin-system-health.focus-style-prefs";
+  type FocusPrefs = {
+    afterglowMs: number; // 800–6000ms (default 2400)
+    ringWidthPx: number; // 1–6px (default 2; HC uses ringWidthPx + 2)
+    glowIntensity: number; // 0–100 (default 55; mapowane na opacity 0..1)
+  };
+  const FOCUS_PREFS_DEFAULTS: FocusPrefs = {
+    afterglowMs: 2400,
+    ringWidthPx: 2,
+    glowIntensity: 55,
+  };
+  const [focusPrefs, setFocusPrefs] = useState<FocusPrefs>(() => {
+    if (typeof window === "undefined") return FOCUS_PREFS_DEFAULTS;
+    try {
+      const raw = window.localStorage.getItem(FOCUS_PREFS_LS_KEY);
+      if (!raw) return FOCUS_PREFS_DEFAULTS;
+      const parsed = JSON.parse(raw) as Partial<FocusPrefs>;
+      return {
+        afterglowMs: clampNum(parsed.afterglowMs, 800, 6000, FOCUS_PREFS_DEFAULTS.afterglowMs),
+        ringWidthPx: clampNum(parsed.ringWidthPx, 1, 6, FOCUS_PREFS_DEFAULTS.ringWidthPx),
+        glowIntensity: clampNum(parsed.glowIntensity, 0, 100, FOCUS_PREFS_DEFAULTS.glowIntensity),
+      };
+    } catch {
+      return FOCUS_PREFS_DEFAULTS;
+    }
+  });
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(FOCUS_PREFS_LS_KEY, JSON.stringify(focusPrefs));
+    } catch {
+      // ignoruj w private mode
+    }
+  }, [focusPrefs]);
+  // Trzymaj najnowsze wartości w refie — pulseRow czyta je w momencie wywołania,
+  // żeby nie wymagać przebudowy callbacka po każdej zmianie slidera.
+  const focusPrefsRef = useRef<FocusPrefs>(focusPrefs);
+  useEffect(() => {
+    focusPrefsRef.current = focusPrefs;
+  }, [focusPrefs]);
+  // Inline style dla aktywnego wiersza (isNavigatorActive) — ring + halo wyliczone
+  // z preferencji. Memo, bo używane wielokrotnie w mapie wierszy.
+  const activeRowStyle = useMemo<React.CSSProperties>(() => {
+    const ring = highContrastFocus ? focusPrefs.ringWidthPx + 2 : focusPrefs.ringWidthPx;
+    const glow = focusPrefs.glowIntensity / 100; // 0..1
+    return {
+      // Tailwind ring używa CSS var --tw-ring-* — ustawiamy bezpośrednio outline
+      // przez box-shadow, żeby grubość była dynamiczna (Tailwind ring-N to statyczne klasy).
+      boxShadow: highContrastFocus
+        ? `inset 0 0 0 ${ring}px hsl(var(--primary)), inset 0 0 0 ${ring + 2}px hsl(var(--foreground) / 0.7), 0 0 ${Math.round(20 + glow * 20)}px ${Math.round(glow * 6)}px hsl(var(--primary) / ${(0.4 + glow * 0.5).toFixed(2)})`
+        : `inset 0 0 0 ${ring}px hsl(var(--primary)), 0 0 ${Math.round(16 + glow * 14)}px ${Math.round(glow * 4)}px hsl(var(--primary) / ${(0.25 + glow * 0.45).toFixed(2)})`,
+    };
+  }, [focusPrefs, highContrastFocus]);
+
+
   // Auto-fade highlightu wiersza po 10s — wystarczająco długo, żeby admin zdążył zauważyć
   // wyróżnienie po zamknięciu modala, ale nie zostawia trwałego kolorowego rzędu.
   useEffect(() => {
