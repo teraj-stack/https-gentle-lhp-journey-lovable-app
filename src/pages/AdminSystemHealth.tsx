@@ -1577,7 +1577,8 @@ const AdminSystemHealth = () => {
                                   </TooltipContent>
                                 </UITooltip>
                               );
-                            })}
+                              });
+                            })()}
                           </TableBody>
                         </Table>
                         {/* Legenda numerów porządkowych w kolumnie IP — spójna z licznikiem
