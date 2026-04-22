@@ -798,67 +798,6 @@ const AdminSystemHealth = () => {
     });
 };
 
-// Pływająca etykieta „X/Y" przyklejona do prawej krawędzi aktywnego wiersza
-// po skoku Next/Prev/Enter/J/K. Używa position: fixed + rAF do śledzenia rect
-// elementu (scroll/resize/animacja). Auto-fade-out w ostatnich 400ms żywotności
-// — odpowiada wygasającej afterglow animation.
-const JumpLabel = ({
-  el,
-  ordinal,
-  total,
-  expiresAt,
-}: {
-  el: HTMLElement;
-  ordinal: number;
-  total: number;
-  expiresAt: number;
-}) => {
-  const [pos, setPos] = useState<{ top: number; left: number; visible: boolean; opacity: number }>(
-    () => ({ top: 0, left: 0, visible: false, opacity: 0 }),
-  );
-  useEffect(() => {
-    let raf = 0;
-    const tick = () => {
-      const rect = el.getBoundingClientRect();
-      const vh = window.innerHeight;
-      const vw = window.innerWidth;
-      // Wiersz poza viewportem → ukryj (i nie pozycjonuj poza ekranem).
-      const visible = rect.bottom > 0 && rect.top < vh && rect.right > 0 && rect.left < vw;
-      // Fade-out w ostatnich 400ms — niezależnie od CSS animacji wiersza.
-      const remaining = expiresAt - performance.now();
-      const opacity = remaining > 400 ? 1 : Math.max(0, remaining / 400);
-      // Pozycja: prawa krawędź wiersza, wycentrowana pionowo. Klamruj do viewportu
-      // (gdy wiersz wystaje z prawej, dosuń etykietę do krawędzi - 12px).
-      const top = Math.max(8, Math.min(vh - 32, rect.top + rect.height / 2 - 14));
-      const left = Math.min(vw - 12, rect.right + 8);
-      setPos({ top, left, visible, opacity });
-      raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [el, expiresAt]);
-  if (!pos.visible || pos.opacity <= 0) return null;
-  return (
-    <div
-      role="status"
-      aria-live="polite"
-      style={{
-        position: "fixed",
-        top: pos.top,
-        left: pos.left,
-        opacity: pos.opacity,
-        pointerEvents: "none",
-        zIndex: 60,
-        transition: "opacity 120ms ease-out",
-      }}
-      className="px-2 py-1 rounded-md bg-primary text-primary-foreground text-xs font-mono font-semibold shadow-[0_4px_14px_-2px_hsl(var(--primary)/0.55)] ring-1 ring-primary-foreground/20 whitespace-nowrap"
-    >
-      <span className="opacity-80 mr-1">▸</span>
-      {ordinal}/{total}
-    </div>
-  );
-};
-
 
   // Skróty klawiszowe w modalu inspekcji:
   // - Ctrl/Cmd+K  → "Pokaż w tabeli" (zamyka modal i scrolluje do wiersza)
