@@ -298,6 +298,213 @@ const FocusDemo = ({
   );
 };
 
+/**
+ * FocusPlayground — modal z 4 przykładowymi komponentami (Button, Input, Link, Card),
+ * każdy ma własny refMap → użytkownik klika "Trigger pulse" i widzi efekt z AKTUALNIE
+ * edytowanymi prefs (passed via props, BEZ zapisu do LS — modal jest read-only sandbox).
+ *
+ * Use case: admin chce zobaczyć jak ring/glow/afterglow wygląda na realnych komponentach
+ * (przycisk vs input vs card z borderem) zanim potwierdzi ustawienia. Tryb testowy
+ * (FocusDemo) pokazuje tylko abstrakcyjne wiersze tabeli.
+ *
+ * UWAGA: Modal NIE zmienia state'u stronyx — to izolowany podgląd dla aktualnego
+ * editingVariant. Zamknięcie modala czyści wszystkie wciąż-trwające timery
+ * (cleanup w useEffect deps prefs).
+ */
+const FocusPlayground = ({
+  prefs,
+  highContrast,
+  variantLabel,
+  open,
+  onOpenChange,
+}: {
+  prefs: PulsePrefs;
+  highContrast: boolean;
+  variantLabel: string;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) => {
+  // 4 ref-y dla 4 sample komponentów. Indeksy stable przez cały lifecycle.
+  const refs = useRef<Record<string, HTMLElement | null>>({});
+  const timersRef = useRef<WeakMap<HTMLElement, number>>(new WeakMap());
+
+  // Cleanup wszystkich animacji gdy modal się zamyka albo prefs się zmieniają.
+  useEffect(() => {
+    if (!open) {
+      Object.values(refs.current).forEach((el) => {
+        if (!el) return;
+        el.classList.remove("animate-jump-pulse", "animate-jump-afterglow", "jump-hc");
+        el.style.removeProperty("--jump-ring-w");
+        el.style.removeProperty("--jump-glow-blur");
+        el.style.removeProperty("--jump-glow-spread");
+        el.style.removeProperty("--jump-glow-opacity");
+        el.style.removeProperty("--jump-afterglow-duration");
+      });
+    }
+  }, [open]);
+
+  const triggerOn = (key: string) => {
+    const el = refs.current[key];
+    if (!el) return;
+    applyPulseSequence(el, prefs, timersRef.current, { highContrast });
+  };
+
+  const triggerAll = () => {
+    Object.keys(refs.current).forEach((k, i) => {
+      // Lekki stagger 200ms żeby było widać kaskadę zamiast równoległego błysku.
+      setTimeout(() => triggerOn(k), i * 200);
+    });
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <FlaskConical className="h-4 w-4 text-primary" />
+            Testuj na stronie ({variantLabel})
+          </DialogTitle>
+          <DialogDescription>
+            Podgląd aktualnie edytowanych prefs na realnych komponentach. Kliknij „Trigger" przy każdym
+            komponencie, żeby zobaczyć efekt pulse → afterglow. Te zmiany NIE są zapisywane —
+            sandbox czyści się przy zamknięciu modala.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="flex items-center justify-between border-y border-border py-2 my-2">
+          <div className="text-xs font-mono tabular-nums text-muted-foreground">
+            ring {prefs.ringWidthPx}px · glow {prefs.glowIntensity}% · afterglow{" "}
+            {(prefs.afterglowMs / 1000).toFixed(1)}s
+            {highContrast && <span className="ml-2 text-primary">+ HC</span>}
+          </div>
+          <Button
+            variant="default"
+            size="sm"
+            className="h-7 px-3 text-xs gap-1"
+            onClick={triggerAll}
+          >
+            <Play className="h-3 w-3" />
+            Trigger wszystkie (kaskada)
+          </Button>
+        </div>
+
+        <div className="space-y-4">
+          {/* SAMPLE 1: Button */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label className="text-xs">Button (primary)</Label>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-6 px-2 text-[10px]"
+                onClick={() => triggerOn("button")}
+              >
+                Trigger
+              </Button>
+            </div>
+            <Button
+              ref={(el) => {
+                refs.current.button = el;
+              }}
+              variant="default"
+              className="w-full"
+            >
+              Przykładowy przycisk akcji
+            </Button>
+          </div>
+
+          {/* SAMPLE 2: Input */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="playground-input" className="text-xs">
+                Input (text)
+              </Label>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-6 px-2 text-[10px]"
+                onClick={() => triggerOn("input")}
+              >
+                Trigger
+              </Button>
+            </div>
+            <Input
+              id="playground-input"
+              ref={(el) => {
+                refs.current.input = el;
+              }}
+              placeholder="Wpisz coś (focus = zobaczysz domyślny ring; trigger = aplikujesz custom pulse)"
+              className="w-full"
+            />
+          </div>
+
+          {/* SAMPLE 3: Link / inline anchor */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label className="text-xs">Link inline</Label>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-6 px-2 text-[10px]"
+                onClick={() => triggerOn("link")}
+              >
+                Trigger
+              </Button>
+            </div>
+            <p className="text-sm text-muted-foreground p-3 bg-muted/30 rounded-md">
+              Lorem ipsum z{" "}
+              <a
+                ref={(el) => {
+                  refs.current.link = el;
+                }}
+                href="#"
+                onClick={(e) => e.preventDefault()}
+                className="text-primary underline underline-offset-2 hover:no-underline rounded px-0.5"
+              >
+                inline link
+              </a>{" "}
+              w treści — tu też focus ring powinien być widoczny.
+            </p>
+          </div>
+
+          {/* SAMPLE 4: Card */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label className="text-xs">Card (z border)</Label>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-6 px-2 text-[10px]"
+                onClick={() => triggerOn("card")}
+              >
+                Trigger
+              </Button>
+            </div>
+            <div
+              ref={(el) => {
+                refs.current.card = el;
+              }}
+              tabIndex={0}
+              className="rounded-lg border border-border bg-card p-4 outline-none"
+            >
+              <div className="text-sm font-semibold">Przykładowa karta</div>
+              <div className="text-xs text-muted-foreground mt-1">
+                Najczęstszy use case w tabeli /admin/system-health — wiersz z borderem dostaje pulse
+                po skoku z modala inspekcji.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <p className="text-[10px] text-muted-foreground/70 pt-2 border-t border-border">
+          ℹ️ Kliknięcie „Trigger" wywołuje `applyPulseSequence` z aktualnymi prefs (read-only).
+          Stan strony NIE zmienia się — zmiana wymaga zapisu w popoverze „Styl focusu".
+        </p>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 
 const AdminSystemHealth = () => {
   const navigate = useNavigate();
