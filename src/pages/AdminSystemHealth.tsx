@@ -165,6 +165,13 @@ const AdminSystemHealth = () => {
   // Query wyszukiwania w "Podgląd dopasowań" — filtruje po IP/UA (case-insensitive substring).
   // NIE persystowane (specyficzne dla bieżącej sesji eksploracji).
   const [inspectListQuery, setInspectListQuery] = useState("");
+  // Klucz `${ip}::${ua}` aktualnie wskazany strzałkami w mini-liście "Podgląd dopasowań".
+  // Dodaje wizualny ring + badge "klawiatura" obok zwykłego "next cursor", żeby user widział
+  // gdzie stoi fokus PRZED naciśnięciem Enter. Czyszczony po wykonaniu skoku (Enter/klik),
+  // przy zamknięciu modala oraz przy zmianie inspectSource — to stan "sesji nawigacji",
+  // nie persystowany. NIE używamy document.activeElement, bo focus może być utracony np.
+  // gdy lista re-renderuje się po zmianie filtra/sortowania.
+  const [keyboardActiveKey, setKeyboardActiveKey] = useState<string | null>(null);
   // Sortowanie mini-listy "Podgląd dopasowań": "default" (kolejność z buildMatchKeys = exact
   // + related), "count-desc" (najwięcej retry'ów na górze — typowy use-case "co naprawić"),
   // "ip-asc" (alfabetycznie po IP). Persystowane w LS — to preferencja widokowa.
@@ -390,6 +397,9 @@ const AdminSystemHealth = () => {
   // Walidujemy tylko że indeks mieści się w aktualnej liczbie dopasowań — jeśli dane
   // retry się odświeżyły i indeks wypadł poza zakres, fallback do 0.
   useEffect(() => {
+    // Każda zmiana inspectSource (open/close/switch) resetuje wskaźnik klawiatury —
+    // to jest stan sesji nawigacji, nie powinien przeciekać między źródłami.
+    setKeyboardActiveKey(null);
     if (!inspectSource) {
       setInspectJumpIndex(0);
       setLastJumpDirection(null);
@@ -2125,9 +2135,14 @@ const AdminSystemHealth = () => {
                           else if (e.key === "End") nextIdx = items.length - 1;
                           if (nextIdx !== activeIdx) {
                             e.preventDefault();
-                            items[nextIdx]?.focus();
+                            const target = items[nextIdx];
+                            target?.focus();
                             // Plynne wyrównanie fokusowanego elementu w widoku scrollowalnym.
-                            items[nextIdx]?.scrollIntoView({ block: "nearest" });
+                            target?.scrollIntoView({ block: "nearest" });
+                            // Zapamiętaj klucz wskazany strzałkami → użyte do dodatkowego ringa
+                            // i badge "klawiatura". Read z data-attr (set'owany w renderze button'a).
+                            const k = target?.getAttribute("data-key");
+                            if (k) setKeyboardActiveKey(k);
                           }
                         }}
                       >
@@ -2141,6 +2156,9 @@ const AdminSystemHealth = () => {
                           // "next" cursor wskazuje który wiersz zostanie podświetlony następnym
                           // skokiem — wyróżnij go w liście (żeby user widział, gdzie "stoi").
                           const isNextCursor = i === inspectJumpIndex % total;
+                          // Klawiatura: wskaźnik strzałek (gdzie stoi fokus po ArrowUp/Down).
+                          // Czyszczony po Enterze/kliknięciu — pokazuje INTENT przed skokiem.
+                          const isKeyboardActive = key === keyboardActiveKey;
                           // Roving tabindex: tylko jeden element w liście jest "tabbable".
                           // Preferujemy isNextCursor (jeśli widoczny po filtrze), inaczej pierwszy.
                           const hasCursorInList = filtered.some((f) => f.i === inspectJumpIndex % total);
@@ -2150,14 +2168,23 @@ const AdminSystemHealth = () => {
                               key={key}
                               type="button"
                               data-list-item="true"
+                              data-key={key}
                               tabIndex={isRovingActive ? 0 : -1}
                               onClick={() => {
                                 // Skok do konkretnego indeksu (offset = różnica od aktualnego kursora).
                                 const offset = i - (inspectJumpIndex % total);
                                 performJumpToMatch(offset);
+                                // Po wykonaniu skoku (Enter / Space / klik) czyścimy wskaźnik
+                                // klawiatury — intent się zmaterializował, badge nie ma już sensu.
+                                setKeyboardActiveKey(null);
                               }}
                               className={`w-full flex items-center gap-2 px-3 py-1.5 text-left text-xs transition-colors hover:bg-primary/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-inset ${
                                 isNextCursor ? "bg-primary/15" : ""
+                              } ${
+                                // Dodatkowy ring dla aktywnego klawiaturą wiersza (poza focus-visible),
+                                // żeby był widoczny też wtedy, gdy focus ring jest słabo kontrastowy
+                                // na bg-primary/15. Inset, żeby nie wychodził za kontener.
+                                isKeyboardActive ? "ring-2 ring-primary ring-inset bg-primary/10" : ""
                               }`}
                               title={`Skocz do dopasowania ${i + 1} z ${total}${isExact ? " (wiersz źródłowy)" : ""} — Enter`}
                             >
@@ -2181,6 +2208,15 @@ const AdminSystemHealth = () => {
                                   title={`${sourceMeta.count} retry'ów`}
                                 >
                                   {sourceMeta.count}
+                                </Badge>
+                              )}
+                              {isKeyboardActive && (
+                                <Badge
+                                  variant="outline"
+                                  className="shrink-0 text-[10px] font-normal h-5 px-1.5 border-primary/60 text-primary"
+                                  title="Aktywny strzałkami — Enter wykona skok"
+                                >
+                                  ⌨ Enter
                                 </Badge>
                               )}
                               {isNextCursor && (
