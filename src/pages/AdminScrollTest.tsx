@@ -238,20 +238,31 @@ const AdminScrollTest = () => {
         )}
 
         <div className="container mx-auto px-4 py-6 max-w-3xl">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between mb-4 gap-2 flex-wrap">
             <Link to="/admin">
               <Button variant="ghost" size="sm">
                 <ArrowLeft className="w-4 h-4 mr-2" /> Admin
               </Button>
             </Link>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowSafeArea((v) => !v)}
-            >
-              {showSafeArea ? <EyeOff className="w-4 h-4 mr-2" /> : <Eye className="w-4 h-4 mr-2" />}
-              {showSafeArea ? "Ukryj safe-area" : "Pokaż safe-area"}
-            </Button>
+            <div className="flex items-center gap-2 flex-wrap">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowSafeArea((v) => !v)}
+              >
+                {showSafeArea ? <EyeOff className="w-4 h-4 mr-2" /> : <Eye className="w-4 h-4 mr-2" />}
+                {showSafeArea ? "Ukryj safe-area" : "Pokaż safe-area"}
+              </Button>
+              <Button
+                variant={showDebug ? "default" : "outline"}
+                size="sm"
+                onClick={() => setShowDebug((v) => !v)}
+                aria-pressed={showDebug}
+              >
+                <Bug className="w-4 h-4 mr-2" />
+                {showDebug ? "Debug ON" : "Debug OFF"}
+              </Button>
+            </div>
           </div>
 
           <Card className="mb-6">
