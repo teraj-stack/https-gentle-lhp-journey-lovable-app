@@ -872,9 +872,52 @@ const AdminSystemHealth = () => {
       });
     }
   };
-  // Import z pliku .json — czytamy przez FileReader, sanityzujemy, ustawiamy stan.
-  // Akceptuje v2 (per-variant), v1 (single, replikowany) i legacy plain.
-  const handleImportFocusPrefs = (file: File) => {
+  // Wklej link ze schowka i zaaplikuj TYLKO do aktualnie edytowanego wariantu.
+  // Akceptuje pełny URL z `#focus-prefs=...` ALBO sam fragment (sam encoded base64url),
+  // żeby admin mógł skopiować dowolny format. Z dekodowanego obiektu (3 warianty)
+  // bierzemy TYLKO `editingVariant` — pozostałe 2 sloty pozostają bez zmian.
+  // Powód: parny przeciwwaga do „Kopiuj link (variant)" — admin udostępnia wariant,
+  // odbiorca wkleja i nadpisuje TYLKO ten jeden styl, nie tracąc swojego light/dark.
+  const handlePasteFocusPrefsLinkVariant = async () => {
+    const label = formatFocusVariantLabel(editingVariant);
+    try {
+      const text = (await navigator.clipboard.readText()).trim();
+      if (!text) {
+        toast.error("Schowek jest pusty", {
+          description: "Skopiuj najpierw link z preferencjami.",
+        });
+        return;
+      }
+      // Spróbuj 3 formaty wejścia kolejno:
+      //  1) pełny URL z hashem (`https://…#focus-prefs=…`)
+      //  2) sam hash (`#focus-prefs=…`)
+      //  3) goły fragment base64url (np. po skopiowaniu z URL ręcznie)
+      let decoded: FocusPrefsByVariant | null = null;
+      const hashIdx = text.indexOf("#");
+      if (hashIdx !== -1) {
+        decoded = extractFocusPrefsFromHash(text.slice(hashIdx));
+      } else if (text.startsWith("focus-prefs=")) {
+        decoded = decodeFocusPrefsFromFragment(text.slice("focus-prefs=".length));
+      } else {
+        decoded = decodeFocusPrefsFromFragment(text);
+      }
+      if (!decoded) {
+        toast.error("Nieprawidłowy link", {
+          description: "Schowek nie zawiera poprawnego linku z preferencjami stylu focusu.",
+        });
+        return;
+      }
+      const incoming = decoded[editingVariant];
+      setFocusPrefsByVariant((prev) => ({ ...prev, [editingVariant]: incoming }));
+      toast.success(`Zaaplikowano wariant ${label}`, {
+        description: `ring ${incoming.ringWidthPx}px · glow ${incoming.glowIntensity}% · afterglow ${incoming.afterglowMs}ms`,
+      });
+    } catch (err) {
+      toast.error("Nie udało się odczytać schowka", {
+        description: err instanceof Error ? err.message : "Brak dostępu do clipboardu",
+      });
+    }
+  };
     const reader = new FileReader();
     reader.onload = () => {
       try {
