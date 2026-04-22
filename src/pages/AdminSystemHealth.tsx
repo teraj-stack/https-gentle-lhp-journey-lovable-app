@@ -3030,25 +3030,28 @@ const AdminSystemHealth = () => {
                         const fragmentOnly = hashIdx === -1 ? "" : fullUrl.slice(hashIdx);
                         const variantLabel = formatFocusVariantLabel(editingVariant);
                         const handleCopyFromModal = async (text: string, kind: "URL" | "fragment") => {
-                          try {
-                            await navigator.clipboard.writeText(text);
-                            toast.success(`Skopiowano ${kind}`, {
-                              description: (
-                                <span
-                                  role="status"
-                                  aria-live="polite"
-                                  aria-atomic="true"
-                                  className="block whitespace-normal break-words leading-snug"
-                                >
-                                  {`Wariant ${variantLabel} (${text.length} znaków)`}
-                                </span>
-                              ),
-                            });
-                          } catch (err) {
-                            toast.error("Nie udało się skopiować", {
-                              description: err instanceof Error ? err.message : "Brak dostępu do clipboardu",
-                            });
-                          }
+                          // Reużywamy globalnego helpera — fallback (legacy execCommand →
+                          // manual modal) działa też tu. Jeśli `Pokaż link` jest otwarty
+                          // i clipboard zawiedzie, manualCopyDialog otworzy się NA WIERZCHU
+                          // (Radix Dialog stack obsługuje multiple modals correctly).
+                          await copyToClipboardWithFallback(
+                            text,
+                            `${kind} wariantu ${variantLabel}`,
+                            () => {
+                              toast.success(`Skopiowano ${kind}`, {
+                                description: (
+                                  <span
+                                    role="status"
+                                    aria-live="polite"
+                                    aria-atomic="true"
+                                    className="block whitespace-normal break-words leading-snug"
+                                  >
+                                    {`Wariant ${variantLabel} (${text.length} znaków)`}
+                                  </span>
+                                ),
+                              });
+                            },
+                          );
                         };
                         return (
                           <Dialog open={showLinkOpen} onOpenChange={setShowLinkOpen}>
