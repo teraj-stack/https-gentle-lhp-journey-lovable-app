@@ -325,7 +325,7 @@ const AdminSystemHealth = () => {
         const el = document.querySelector<HTMLElement>(`[data-retry-row-key="${CSS.escape(key)}"]`);
         let didScroll = false;
         if (el) {
-          el.scrollIntoView({ behavior: "smooth", block: "center" });
+          scrollRowIntoView(el);
           // Zapamiętaj exact source — render porównuje s.ip+s.ua dla mocnego highlightu,
           // a samo IP dla delikatnego highlightu pokrewnych wierszy z tego samego adresu.
           setHighlightedSource({ ip, ua });
@@ -388,7 +388,7 @@ const AdminSystemHealth = () => {
         }
         return;
       }
-      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      scrollRowIntoView(el);
       // Pulse animation — replay przez force-reflow (jak w performJumpToMatch).
       el.classList.remove("animate-jump-pulse");
       // eslint-disable-next-line @typescript-eslint/no-unused-expressions
