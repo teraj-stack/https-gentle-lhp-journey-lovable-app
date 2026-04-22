@@ -211,6 +211,29 @@ const JumpLabel = ({
 // `pulseDuration + cooldown` żeby admin zobaczył całą sekwencję pulse→afterglow→cleanup
 // zanim demo skoczy dalej. Dzięki temu zmiana sliderów daje natychmiastowy podgląd
 // efektu BEZ konieczności scrollowania do tabeli i klikania Next/Prev.
+
+/**
+ * Jednolite, czytelne etykiety wariantów stylu focusu — używane WSZĘDZIE w UI
+ * (przyciski popovera, tooltips, toasty, FocusPlayground header, raport po imporcie).
+ *
+ * Mapowanie kod → etykieta:
+ *   - "light" → "Light"
+ *   - "dark"  → "Dark"
+ *   - "hc"    → "High Contrast"
+ *
+ * Ten sam słownik jest używany w `extractFocusPrefsFromHash` walidacji (linie 759-763)
+ * — gwarancja że to co admin widzi w UI = to co pojawia się w raportach z URL fragmentu.
+ *
+ * Wyciągnięte jako pure helper żeby uniknąć duplikacji 5 inline-ternarów w popoverze.
+ */
+const FOCUS_VARIANT_LABELS: Record<ThemeVariant, string> = {
+  light: "Light",
+  dark: "Dark",
+  hc: "High Contrast",
+};
+const formatFocusVariantLabel = (variant: ThemeVariant): string =>
+  FOCUS_VARIANT_LABELS[variant];
+
 const FocusDemo = ({
   prefs,
   highContrast,
@@ -755,11 +778,7 @@ const AdminSystemHealth = () => {
     // Per-variant diff vs defaults — ile pól odbiega od defaultów (informacja
     // dla admina: „Twoje wartości to nie defaulty, ktoś specjalnie je dobrał").
     const defaults = getDefaultFocusPrefsByVariant();
-    const variantLabels: Record<ThemeVariant, string> = {
-      light: "Light",
-      dark: "Dark",
-      hc: "High Contrast",
-    };
+    const variantLabels = FOCUS_VARIANT_LABELS;
     const variantSummary = (THEME_VARIANTS as readonly ThemeVariant[]).map((v) => {
       const cur = fromHash[v];
       const def = defaults[v];
@@ -839,7 +858,7 @@ const AdminSystemHealth = () => {
       const replicated = { light: single, dark: single, hc: single };
       const url = buildFocusPrefsShareUrl(replicated, window.location.href);
       await navigator.clipboard.writeText(url);
-      const label = editingVariant === "hc" ? "High Contrast" : editingVariant === "light" ? "Light" : "Dark";
+      const label = formatFocusVariantLabel(editingVariant);
       // Krótki, konkretny opis — pokazujemy realne wartości ring/glow/afterglow,
       // żeby admin po skopiowaniu od razu wiedział co trafiło do schowka (i mógł
       // zweryfikować przed wysłaniem linka).
@@ -2255,19 +2274,14 @@ const AdminSystemHealth = () => {
                                 // `[editingVariant]`, więc pozostałe 2 sloty (np. light/hc gdy
                                 // resetujemy dark) zostają nietknięte.
                                 const defaults = getDefaultFocusPrefsByVariant();
-                                const variantLabel =
-                                  editingVariant === "hc"
-                                    ? "High Contrast"
-                                    : editingVariant === "light"
-                                      ? "Light"
-                                      : "Dark";
+                                const variantLabel = formatFocusVariantLabel(editingVariant);
                                 const d = defaults[editingVariant];
                                 setEditingVariantPrefs(() => d);
                                 toast.success(`Przywrócono domyślne (${variantLabel})`, {
                                   description: `Wariant ${variantLabel}: ring ${d.ringWidthPx}px · glow ${d.glowIntensity}% · afterglow ${d.afterglowMs}ms · pozostałe warianty bez zmian`,
                                 });
                               }}
-                              title={`Przywróć wartości domyślne tylko dla wariantu ${editingVariant} (pozostałe nietknięte)`}
+                              title={`Przywróć wartości domyślne tylko dla wariantu ${formatFocusVariantLabel(editingVariant)} (pozostałe nietknięte)`}
                             >
                               <RotateCcw className="h-3 w-3" />
                               Przywróć domyślne
@@ -2299,7 +2313,7 @@ const AdminSystemHealth = () => {
                               {(["light", "dark", "hc"] as const).map((v) => {
                                 const isEditing = editingVariant === v;
                                 const isActive = activeThemeVariant === v;
-                                const label = v === "hc" ? "High Contrast" : v === "light" ? "Light" : "Dark";
+                                const label = formatFocusVariantLabel(v);
                                 return (
                                   <button
                                     key={v}
@@ -2329,9 +2343,9 @@ const AdminSystemHealth = () => {
                               })}
                             </div>
                             <p className="text-[10px] text-muted-foreground/70 leading-snug">
-                              Edytujesz: <span className="font-mono text-foreground">{editingVariant}</span>
+                              Edytujesz: <span className="font-mono text-foreground">{formatFocusVariantLabel(editingVariant)}</span>
                               {editingVariant !== activeThemeVariant && (
-                                <> — zmiany pojawią się po przełączeniu motywu (aktualnie aktywny: <span className="font-mono">{activeThemeVariant}</span>).</>
+                                <> — zmiany pojawią się po przełączeniu motywu (aktualnie aktywny: <span className="font-mono">{formatFocusVariantLabel(activeThemeVariant)}</span>).</>
                               )}
                             </p>
                           </div>
@@ -2360,7 +2374,7 @@ const AdminSystemHealth = () => {
                                   size="sm"
                                   className="h-7 px-2 text-xs gap-1"
                                   onClick={() => setFocusPlaygroundOpen(true)}
-                                  title={`Otwórz podgląd na 4 sample komponentach (button/input/link/card) z prefs ${editingVariant} — bez zapisu`}
+                                  title={`Otwórz podgląd na 4 sample komponentach (button/input/link/card) z prefs ${formatFocusVariantLabel(editingVariant)} — bez zapisu`}
                                 >
                                   <FlaskConical className="h-3 w-3" />
                                   Testuj na stronie
@@ -2398,8 +2412,8 @@ const AdminSystemHealth = () => {
                             {editingVariant !== activeThemeVariant && (
                               <div className="flex items-center justify-between">
                                 <span className="text-[10px] text-muted-foreground">
-                                  Porównaj <span className="font-mono">{activeThemeVariant}</span>{" "}
-                                  vs <span className="font-mono">{editingVariant}</span>
+                                  Porównaj <span className="font-mono">{formatFocusVariantLabel(activeThemeVariant)}</span>{" "}
+                                  vs <span className="font-mono">{formatFocusVariantLabel(editingVariant)}</span>
                                 </span>
                                 <Button
                                   variant={focusDemoCompare ? "secondary" : "ghost"}
@@ -2422,7 +2436,7 @@ const AdminSystemHealth = () => {
                                 <div className="space-y-1">
                                   <div className="text-[10px] font-mono text-muted-foreground flex items-center gap-1">
                                     <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/60" />
-                                    active: {activeThemeVariant}
+                                    active: {formatFocusVariantLabel(activeThemeVariant)}
                                   </div>
                                   <FocusDemo
                                     prefs={focusPrefsByVariant[activeThemeVariant]}
@@ -2433,7 +2447,7 @@ const AdminSystemHealth = () => {
                                 <div className="space-y-1">
                                   <div className="text-[10px] font-mono text-primary flex items-center gap-1">
                                     <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-                                    editing: {editingVariant}
+                                    editing: {formatFocusVariantLabel(editingVariant)}
                                   </div>
                                   <FocusDemo
                                     prefs={focusPrefsByVariant[editingVariant]}
@@ -2559,12 +2573,7 @@ const AdminSystemHealth = () => {
                           {(() => {
                             const defaults = getDefaultFocusPrefsByVariant()[editingVariant];
                             const current = focusPrefsByVariant[editingVariant];
-                            const variantLabel =
-                              editingVariant === "hc"
-                                ? "High Contrast"
-                                : editingVariant === "light"
-                                  ? "Light"
-                                  : "Dark";
+                            const variantLabel = formatFocusVariantLabel(editingVariant);
                             // Lista pól + formattery wartości (s vs px vs %).
                             const fields: Array<{
                               key: keyof FocusPrefs;
@@ -2673,10 +2682,10 @@ const AdminSystemHealth = () => {
                               size="sm"
                               className="h-8 w-full text-xs gap-1"
                               onClick={handleCopyFocusPrefsLinkVariant}
-                              title={`Skopiuj link tylko z ustawieniami wariantu ${editingVariant}`}
+                              title={`Skopiuj link tylko z ustawieniami wariantu ${formatFocusVariantLabel(editingVariant)}`}
                             >
                               <Link2 className="h-3 w-3" />
-                              Kopiuj link ({editingVariant === "hc" ? "High Contrast" : editingVariant === "light" ? "Light" : "Dark"})
+                              Kopiuj link ({formatFocusVariantLabel(editingVariant)})
                             </Button>
                             <input
                               ref={importFileInputRef}
@@ -2705,13 +2714,7 @@ const AdminSystemHealth = () => {
                         onOpenChange={setFocusPlaygroundOpen}
                         prefs={focusPrefsByVariant[editingVariant]}
                         highContrast={editingVariant === "hc"}
-                        variantLabel={
-                          editingVariant === "hc"
-                            ? "High Contrast"
-                            : editingVariant === "light"
-                              ? "Light"
-                              : "Dark"
-                        }
+                        variantLabel={formatFocusVariantLabel(editingVariant)}
                       />
                       {retryFiltersActive && (
                         <Button
