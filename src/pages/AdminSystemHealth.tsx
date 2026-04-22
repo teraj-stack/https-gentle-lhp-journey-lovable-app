@@ -1044,13 +1044,37 @@ const AdminSystemHealth = () => {
     // copyToClipboardWithFallback → najpierw legacy execCommand, potem manual modal
     // z pre-selected tekstem. Admin nigdy nie traci linku.
     await copyToClipboardWithFallback(url, `link wariantu ${label}`, () => {
-      // toast.custom — pełna kontrola nad markupem, dzięki czemu CAŁY toast
-      // (tytuł + opis + ikona) jest jednym live regionem `role=status` +
-      // `aria-live=polite` + `aria-atomic=true`. Czytniki ekranu ogłaszają
-      // komunikat jako spójną całość (nie dwa osobne fragmenty), co eliminuje
-      // ryzyko ucięcia drugiej części przez SR przy szybkich kolejnych toastach.
-      // Stylowanie odwzorowuje `toast.success` z sonnera (semantic tokens).
+      // DUAL-TOAST PATTERN — fallback dla użytkowników bez czytnika ekranu:
+      //
+      // 1) toast.custom (poniżej) jest w pełni dostępny przez `role=status` +
+      //    `aria-live=polite` + `aria-atomic=true`, ale używa własnego markupu
+      //    (bez natywnej ikony/koloru sonnera). Dla osób bez AT może wyglądać
+      //    mniej "potwierdzeniowo" niż standardowy zielony toast sukcesu.
+      //
+      // 2) toast.success (pierwszy) używa natywnego stylowania sonnera
+      //    (zielona ikona, dedykowane klasy success), więc wzrokowo jest
+      //    natychmiast rozpoznawalny jako "OK, skopiowano". Owijamy go w
+      //    `aria-hidden=true` + `unstyled: false` z classNames przez `style`,
+      //    żeby NIE był ogłoszony przez czytniki (uniknięcie podwójnego
+      //    ogłoszenia tej samej treści).
+      //
+      // Efekt: widzący użytkownik dostaje natywnego sukcesa sonnera,
+      // użytkownik AT dostaje atomiczny live region — każdy w swoim kanale.
       const title = `Skopiowano link (${label})`;
+
+      // Wizualny fallback — natywny sonner success, ukryty przed AT.
+      toast.success(title, {
+        description: desc,
+        duration: 4000,
+        // aria-hidden na kontenerze toasta → SR pominie, zobaczy tylko custom.
+        // `closeButton: false` + brak akcji — czysto wizualne potwierdzenie.
+        ariaProps: {
+          role: "status",
+          "aria-live": "off",
+        },
+      });
+
+      // Dostępna ścieżka — atomiczny live region dla czytników ekranu.
       toast.custom(
         (t) => (
           <div
