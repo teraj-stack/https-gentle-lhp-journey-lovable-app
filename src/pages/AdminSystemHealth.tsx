@@ -749,6 +749,17 @@ const AdminSystemHealth = () => {
   // URL (rebuildujemy on-open na bazie aktualnego state'u — to jest oczekiwane
   // i spójne z „Kopiuj link" które też używa aktualnych prefs).
   const [showLinkOpen, setShowLinkOpen] = useState(false);
+  // Modal „Skopiuj ręcznie" — fallback gdy `navigator.clipboard.writeText` failuje
+  // (brak HTTPS, brak permission, sandboxed iframe, starsza przeglądarka). Zawiera
+  // textarea z pre-selected tekstem + instrukcją skrótu Ctrl/Cmd+C — admin kopiuje
+  // ręcznie, nie tracąc danych. `text` = co kopiujemy, `label` = przyjazna etykieta
+  // do nagłówka modala (np. "link wariantu Light"), `reason` = dlaczego clipboard
+  // nie zadziałał (do pokazania w opisie żeby admin wiedział co naprawić następnym razem).
+  const [manualCopyDialog, setManualCopyDialog] = useState<{
+    text: string;
+    label: string;
+    reason: string;
+  } | null>(null);
   // Variant do EDYCJI w popoverze — domyślnie ten sam co aktywny, ale admin może
   // ręcznie wybrać inny żeby ustawić styl „z góry" zanim przełączy motyw.
   // null = follow active variant (default).
@@ -904,19 +915,119 @@ const AdminSystemHealth = () => {
       });
     }
   };
+  /**
+   * Wspólny helper kopiowania do schowka z 2-stopniowym fallbackiem:
+   *
+   *  1. **Modern API** — `navigator.clipboard.writeText` (HTTPS, focused window, permission ok).
+   *     ~95% przypadków: Chrome/FF/Safari na produkcji.
+   *  2. **Legacy fallback** — `document.execCommand('copy')` na ukrytej `<textarea>`.
+   *     Działa też w sandboxed iframe i HTTP w starszych przeglądarkach. Deprecated
+   *     ale wciąż obsługiwane wszędzie. Próbujemy gdy modern API rzuci (`NotAllowed`,
+   *     `SecurityError`, brak `clipboard` w `navigator`).
+   *  3. **Manual fallback** — gdy oba zawiodą, otwiera modal `manualCopyDialog`
+   *     z pre-selected textarea + instrukcją Ctrl/Cmd+C. Admin nie traci danych,
+   *     dostaje też diagnozę dlaczego clipboard nie zadziałał.
+   *
+   * Toasty:
+   *  - **success** → woła `onSuccess` (przekazany przez wywołującego, np. własny
+   *    formatter z opisem prefs).
+   *  - **fallback success** → toast.success z dopiskiem „(legacy)" — admin wie że
+   *    przeglądarka ma issue z clipboardem ale akcja się udała.
+   *  - **manual fallback** → toast.error + otwarcie modala. Komunikat jasno mówi
+   *    co zrobić (3 kroki: zaznacz, Ctrl+C, gotowe).
+   *
+   * Helper jest pure-async — nie zależy od reactowych closure'ów innych niż
+   * `setManualCopyDialog`, więc można go wywołać z dowolnego event handlera.
+   */
+  const copyToClipboardWithFallback = async (
+    text: string,
+    label: string,
+    onSuccess: () => void,
+  ): Promise<void> => {
+    // KROK 1: modern API
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+        onSuccess();
+        return;
+      }
+    } catch {
+      // przejdź do fallback
+    }
+    // KROK 2: legacy execCommand — schowek, jednorazowy textarea, sytuacja awaryjna
+    try {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      // Ukryj poza viewportem ale zachowaj selectability (display:none zabija selection).
+      ta.style.position = "fixed";
+      ta.style.top = "-9999px";
+      ta.style.left = "-9999px";
+      ta.setAttribute("readonly", "");
+      document.body.appendChild(ta);
+      ta.select();
+      ta.setSelectionRange(0, text.length);
+      const ok = document.execCommand("copy");
+      document.body.removeChild(ta);
+      if (ok) {
+        onSuccess();
+        toast.info("Użyto trybu awaryjnego kopiowania", {
+          description: (
+            <span
+              role="status"
+              aria-live="polite"
+              className="block whitespace-normal break-words leading-snug"
+            >
+              Twoja przeglądarka ma ograniczony dostęp do schowka — kopia się udała przez tryb legacy.
+            </span>
+          ),
+          duration: 4000,
+        });
+        return;
+      }
+    } catch {
+      // przejdź do manual fallback
+    }
+    // KROK 3: manual — pokaż modal z tekstem do skopiowania ręcznie
+    // Diagnoza powodu — najczęstsze przyczyny w kolejności prawdopodobieństwa:
+    const reason = !window.isSecureContext
+      ? "Strona nie jest na HTTPS (przeglądarki blokują clipboard na HTTP poza localhost)."
+      : !navigator.clipboard
+        ? "Twoja przeglądarka nie obsługuje Clipboard API (bardzo stara wersja lub iframe bez uprawnień)."
+        : document.hasFocus() === false
+          ? "Okno przeglądarki nie ma focusu (kliknij stronę i spróbuj ponownie)."
+          : "Brak uprawnień do schowka (sprawdź ikonę kłódki w pasku adresu i zezwól na clipboard).";
+    setManualCopyDialog({ text, label, reason });
+    toast.error("Nie udało się skopiować automatycznie", {
+      description: (
+        <span
+          role="alert"
+          aria-live="assertive"
+          aria-atomic="true"
+          className="block whitespace-normal break-words leading-snug"
+        >
+          {`Otwórz okno „Skopiuj ręcznie" i naciśnij Ctrl+C (Cmd+C na Mac). Powód: ${reason}`}
+        </span>
+      ),
+      duration: 8000,
+    });
+  };
   // Kopia shareable URL — link niesie wszystkie 3 warianty (compact base64url ~60 znaków).
   const handleCopyFocusPrefsLink = async () => {
-    try {
-      const url = buildFocusPrefsShareUrl(focusPrefsByVariant, window.location.href);
-      await navigator.clipboard.writeText(url);
+    const url = buildFocusPrefsShareUrl(focusPrefsByVariant, window.location.href);
+    await copyToClipboardWithFallback(url, "link z 3 wariantami (light/dark/HC)", () => {
       toast.success("Skopiowano link z preferencjami", {
-        description: "Link zawiera wszystkie 3 warianty (light/dark/HC).",
+        description: (
+          <span
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
+            className="block whitespace-normal break-words leading-snug"
+          >
+            Link zawiera wszystkie 3 warianty (light/dark/HC).
+          </span>
+        ),
       });
-    } catch (err) {
-      toast.error("Nie udało się skopiować linka", {
-        description: err instanceof Error ? err.message : "Brak dostępu do clipboardu",
-      });
-    }
+    });
   };
   // Kopia shareable URL TYLKO dla aktualnie edytowanego wariantu — przydatne gdy admin
   // chce udostępnić styl konkretnego motywu (np. tylko HC dla użytkownika a11y) bez
@@ -924,23 +1035,19 @@ const AdminSystemHealth = () => {
   // wszystkich 3 slotów schematu — odbiorca po imporcie dostaje jednolity styl,
   // który może potem zróżnicować ręcznie.
   const handleCopyFocusPrefsLinkVariant = async () => {
-    try {
-      const single = focusPrefsByVariant[editingVariant];
-      const replicated = { light: single, dark: single, hc: single };
-      const url = buildFocusPrefsShareUrl(replicated, window.location.href);
-      await navigator.clipboard.writeText(url);
-      const label = formatFocusVariantLabel(editingVariant);
-      const title = `Skopiowano link (${label})`;
-      const desc = `Wariant ${label}: ${formatFocusPrefsSummary(single)}`;
-      // a11y: Sonner domyślnie nadaje toastom `aria-live`, ale BRAK `aria-atomic`,
-      // przez co czytniki ekranu (NVDA/JAWS/VoiceOver) potrafią ominąć część
-      // komunikatu. Renderujemy `description` jako ReactNode z explicit live region
-      // wokół CAŁEJ treści (tytuł + opis), wymuszając pełny odczyt.
-      // role="status" + polite = nie przerywa bieżącej wypowiedzi (typowe dla success).
-      // Layout: `whitespace-normal break-words` chroni przed urywaniem na małych ekranach
-      // (Sonner domyślnie potrafi truncate'ować długi `description` w jedną linię).
-      // `leading-snug` zachowuje czytelność przy 2-3 liniach zawijania.
-      toast.success(title, {
+    const single = focusPrefsByVariant[editingVariant];
+    const replicated = { light: single, dark: single, hc: single };
+    const url = buildFocusPrefsShareUrl(replicated, window.location.href);
+    const label = formatFocusVariantLabel(editingVariant);
+    const desc = `Wariant ${label}: ${formatFocusPrefsSummary(single)}`;
+    // Wszystkie błędy clipboard (NotAllowed/SecurityError/brak HTTPS) idą przez
+    // copyToClipboardWithFallback → najpierw legacy execCommand, potem manual modal
+    // z pre-selected tekstem. Admin nigdy nie traci linku.
+    await copyToClipboardWithFallback(url, `link wariantu ${label}`, () => {
+      // a11y: explicit live region (status+polite+atomic) — czytniki ekranu
+      // ogłaszają cały komunikat z wartościami ring/glow/afterglow.
+      // Layout: whitespace-normal+break-words+leading-snug = brak urwania na mobile.
+      toast.success(`Skopiowano link (${label})`, {
         description: (
           <span
             role="status"
@@ -952,22 +1059,7 @@ const AdminSystemHealth = () => {
           </span>
         ),
       });
-    } catch (err) {
-      const errMsg = err instanceof Error ? err.message : "Brak dostępu do clipboardu";
-      // Błąd = assertive — czytnik PRZERYWA aktualną wypowiedź żeby ogłosić problem.
-      toast.error("Nie udało się skopiować linka", {
-        description: (
-          <span
-            role="alert"
-            aria-live="assertive"
-            aria-atomic="true"
-            className="block whitespace-normal break-words leading-snug"
-          >
-            {errMsg}
-          </span>
-        ),
-      });
-    }
+    });
   };
   // Wklej link ze schowka i zaaplikuj TYLKO do aktualnie edytowanego wariantu.
   // Akceptuje pełny URL z `#focus-prefs=...` ALBO sam fragment (sam encoded base64url),
@@ -2938,25 +3030,28 @@ const AdminSystemHealth = () => {
                         const fragmentOnly = hashIdx === -1 ? "" : fullUrl.slice(hashIdx);
                         const variantLabel = formatFocusVariantLabel(editingVariant);
                         const handleCopyFromModal = async (text: string, kind: "URL" | "fragment") => {
-                          try {
-                            await navigator.clipboard.writeText(text);
-                            toast.success(`Skopiowano ${kind}`, {
-                              description: (
-                                <span
-                                  role="status"
-                                  aria-live="polite"
-                                  aria-atomic="true"
-                                  className="block whitespace-normal break-words leading-snug"
-                                >
-                                  {`Wariant ${variantLabel} (${text.length} znaków)`}
-                                </span>
-                              ),
-                            });
-                          } catch (err) {
-                            toast.error("Nie udało się skopiować", {
-                              description: err instanceof Error ? err.message : "Brak dostępu do clipboardu",
-                            });
-                          }
+                          // Reużywamy globalnego helpera — fallback (legacy execCommand →
+                          // manual modal) działa też tu. Jeśli `Pokaż link` jest otwarty
+                          // i clipboard zawiedzie, manualCopyDialog otworzy się NA WIERZCHU
+                          // (Radix Dialog stack obsługuje multiple modals correctly).
+                          await copyToClipboardWithFallback(
+                            text,
+                            `${kind} wariantu ${variantLabel}`,
+                            () => {
+                              toast.success(`Skopiowano ${kind}`, {
+                                description: (
+                                  <span
+                                    role="status"
+                                    aria-live="polite"
+                                    aria-atomic="true"
+                                    className="block whitespace-normal break-words leading-snug"
+                                  >
+                                    {`Wariant ${variantLabel} (${text.length} znaków)`}
+                                  </span>
+                                ),
+                              });
+                            },
+                          );
                         };
                         return (
                           <Dialog open={showLinkOpen} onOpenChange={setShowLinkOpen}>
@@ -3034,6 +3129,94 @@ const AdminSystemHealth = () => {
                           </Dialog>
                         );
                       })()}
+                      {/* Manual copy fallback modal — otwiera się gdy `copyToClipboardWithFallback`
+                          nie może użyć ani modern Clipboard API ani legacy execCommand. Pokazuje
+                          textarea z pre-selected tekstem, instrukcję skrótu klawiszowego i diagnozę
+                          dlaczego automatyczne kopiowanie nie zadziałało. Auto-focus + auto-select
+                          przy otwarciu — admin tylko klika Ctrl/Cmd+C. */}
+                      <Dialog
+                        open={manualCopyDialog !== null}
+                        onOpenChange={(open) => !open && setManualCopyDialog(null)}
+                      >
+                        <DialogContent className="max-w-2xl">
+                          <DialogHeader>
+                            <DialogTitle>Skopiuj ręcznie</DialogTitle>
+                            <DialogDescription>
+                              Automatyczne kopiowanie nie zadziałało. Tekst jest już zaznaczony —
+                              naciśnij <kbd className="px-1.5 py-0.5 text-xs font-mono rounded border border-border bg-muted">Ctrl</kbd>
+                              {" + "}
+                              <kbd className="px-1.5 py-0.5 text-xs font-mono rounded border border-border bg-muted">C</kbd>
+                              {" "}(lub{" "}
+                              <kbd className="px-1.5 py-0.5 text-xs font-mono rounded border border-border bg-muted">⌘</kbd>
+                              {" + "}
+                              <kbd className="px-1.5 py-0.5 text-xs font-mono rounded border border-border bg-muted">C</kbd>
+                              {" "}na Mac), żeby skopiować do schowka.
+                            </DialogDescription>
+                          </DialogHeader>
+                          {manualCopyDialog && (
+                            <div className="space-y-4">
+                              <div className="space-y-1.5">
+                                <label
+                                  htmlFor="manual-copy-textarea"
+                                  className="text-xs font-semibold text-foreground"
+                                >
+                                  {manualCopyDialog.label} ({manualCopyDialog.text.length} znaków)
+                                </label>
+                                <textarea
+                                  id="manual-copy-textarea"
+                                  readOnly
+                                  value={manualCopyDialog.text}
+                                  // Auto-focus + auto-select gdy modal się otwiera — admin
+                                  // ma od razu zaznaczony tekst i może wcisnąć Ctrl+C.
+                                  // `autoFocus` w React + onFocus.select() = niezawodna kombinacja
+                                  // (samo autoFocus nie zaznacza w Radix Dialog przez ich focus trap).
+                                  autoFocus
+                                  onFocus={(e) => {
+                                    e.currentTarget.select();
+                                    e.currentTarget.setSelectionRange(0, manualCopyDialog.text.length);
+                                  }}
+                                  className="w-full h-32 text-[11px] font-mono px-2 py-1.5 rounded-md border border-border bg-muted/30 text-foreground resize-none break-all"
+                                  aria-label={`Tekst do ręcznego skopiowania: ${manualCopyDialog.label}`}
+                                />
+                              </div>
+                              <Alert>
+                                <Info className="h-4 w-4" />
+                                <AlertTitle>Dlaczego automatyczne kopiowanie nie zadziałało?</AlertTitle>
+                                <AlertDescription className="text-xs leading-relaxed">
+                                  {manualCopyDialog.reason}
+                                </AlertDescription>
+                              </Alert>
+                              <div className="flex items-center justify-end gap-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    // Spróbuj jeszcze raz — admin mógł w międzyczasie zmienić
+                                    // permission/tab focus. Rebuilduje fallback chain od początku.
+                                    if (!manualCopyDialog) return;
+                                    const { text, label } = manualCopyDialog;
+                                    setManualCopyDialog(null);
+                                    void copyToClipboardWithFallback(text, label, () => {
+                                      toast.success("Skopiowano za drugim razem", {
+                                        description: `${label} (${text.length} znaków)`,
+                                      });
+                                    });
+                                  }}
+                                >
+                                  Spróbuj ponownie
+                                </Button>
+                                <Button
+                                  variant="default"
+                                  size="sm"
+                                  onClick={() => setManualCopyDialog(null)}
+                                >
+                                  Zamknij
+                                </Button>
+                              </div>
+                            </div>
+                          )}
+                        </DialogContent>
+                      </Dialog>
                       {retryFiltersActive && (
                         <Button
                           variant="ghost"
