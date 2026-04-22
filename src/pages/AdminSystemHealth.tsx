@@ -2723,17 +2723,31 @@ const AdminSystemHealth = () => {
                             </div>
                             {/* Drugi rząd: link tylko dla aktualnie edytowanego wariantu.
                                 Przydatne gdy admin chce udostępnić tylko jeden styl (np. HC dla a11y),
-                                bez nadpisywania pozostałych 2 wariantów u odbiorcy. */}
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="h-8 w-full text-xs gap-1"
-                              onClick={handleCopyFocusPrefsLinkVariant}
-                              title={`Skopiuj link tylko z ustawieniami wariantu ${formatFocusVariantLabel(editingVariant)}`}
-                            >
-                              <Link2 className="h-3 w-3" />
-                              Kopiuj link ({formatFocusVariantLabel(editingVariant)})
-                            </Button>
+                                bez nadpisywania pozostałych 2 wariantów u odbiorcy.
+                                „Wklej link i zastosuj" — przeciwwaga: odbiorca aktualizuje TYLKO
+                                ten wariant, pozostałe 2 sloty zostają bez zmian. */}
+                            <div className="flex items-center gap-1.5">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-8 flex-1 text-xs gap-1"
+                                onClick={handleCopyFocusPrefsLinkVariant}
+                                title={`Skopiuj link tylko z ustawieniami wariantu ${formatFocusVariantLabel(editingVariant)}`}
+                              >
+                                <Link2 className="h-3 w-3" />
+                                Kopiuj link ({formatFocusVariantLabel(editingVariant)})
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-8 flex-1 text-xs gap-1"
+                                onClick={handlePasteFocusPrefsLinkVariant}
+                                title={`Wklej link ze schowka i zastosuj TYLKO do wariantu ${formatFocusVariantLabel(editingVariant)} (pozostałe warianty bez zmian)`}
+                              >
+                                <ClipboardPaste className="h-3 w-3" />
+                                Wklej i zastosuj ({formatFocusVariantLabel(editingVariant)})
+                              </Button>
+                            </div>
                             <input
                               ref={importFileInputRef}
                               type="file"
