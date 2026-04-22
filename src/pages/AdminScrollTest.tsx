@@ -330,6 +330,86 @@ const AdminScrollTest = () => {
           </div>
         </div>
 
+        {/* Debug overlay — sticky pod nawigatorem, ostatnie 10 skoków + live header-height */}
+        {showDebug && (
+          <div className="fixed bottom-16 left-0 right-0 z-40 bg-background/95 backdrop-blur border-t border-border shadow-lg max-h-[40vh] overflow-y-auto">
+            <div className="container mx-auto px-4 py-3 max-w-3xl">
+              <div className="flex items-center justify-between mb-2 gap-2 flex-wrap">
+                <div className="flex items-center gap-2 text-sm font-mono">
+                  <Bug className="w-4 h-4" />
+                  <span className="font-semibold">Debug</span>
+                  <span className="text-muted-foreground">
+                    --header-height = <span className="text-foreground">{snapshot ? `${snapshot.headerH}px` : "?"}</span>
+                  </span>
+                </div>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setDebugLog([])}
+                  disabled={debugLog.length === 0}
+                >
+                  <Trash2 className="w-3.5 h-3.5 mr-1" /> Wyczyść log
+                </Button>
+              </div>
+
+              {debugLog.length === 0 ? (
+                <p className="text-xs text-muted-foreground py-2">
+                  Brak skoków. Kliknij Next/Prev lub naciśnij J/K — log pojawi się tutaj (max 10 ostatnich).
+                </p>
+              ) : (
+                <div className="space-y-1.5">
+                  {debugLog.map((entry, i) => {
+                    const isLatest = i === 0;
+                    return (
+                      <div
+                        key={`${entry.ts}-${i}`}
+                        className={cn(
+                          "rounded border px-2 py-1.5 text-xs font-mono",
+                          isLatest ? "bg-primary/10 border-primary" : "bg-muted/30 border-border"
+                        )}
+                      >
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Badge variant="outline" className="text-[10px] py-0 h-4">
+                            #{entry.fromIdx + 1} → #{entry.toIdx + 1}
+                          </Badge>
+                          <span className="text-muted-foreground">{entry.trigger}</span>
+                          <Badge
+                            variant={entry.behavior === "smooth" ? "default" : "secondary"}
+                            className="text-[10px] py-0 h-4"
+                          >
+                            {entry.behavior}
+                          </Badge>
+                          <span className="text-muted-foreground">
+                            ({entry.reason})
+                          </span>
+                          {entry.msSinceLast > 0 && (
+                            <span className="text-muted-foreground">
+                              Δt={Math.round(entry.msSinceLast)}ms
+                            </span>
+                          )}
+                        </div>
+                        <div className="mt-1 text-muted-foreground grid grid-cols-2 sm:grid-cols-4 gap-x-3 gap-y-0.5">
+                          <span>headerH=<span className="text-foreground">{entry.headerH}px</span></span>
+                          <span>vh=<span className="text-foreground">{entry.viewportHeight}px</span></span>
+                          <span>scrollY=<span className="text-foreground">{Math.round(entry.scrollYBefore)}</span></span>
+                          <span>rectTop=<span className="text-foreground">{Math.round(entry.rectTopBefore)}</span></span>
+                          <span>rowH=<span className="text-foreground">{Math.round(entry.rowHeight)}</span></span>
+                          <span>targetY=<span className="text-foreground">{entry.targetY === null ? "skip" : Math.round(entry.targetY)}</span></span>
+                          <span className="col-span-2">
+                            offset=<span className={cn("text-foreground", entry.offset > 0 ? "text-primary" : entry.offset < 0 ? "text-destructive" : "")}>
+                              {entry.offset > 0 ? "+" : ""}{Math.round(entry.offset)}px
+                            </span>
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Sticky pasek nawigatora Next/Prev + status */}
         <div className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur border-t border-border shadow-lg">
           <div className="container mx-auto px-4 py-3 max-w-3xl flex items-center gap-3 flex-wrap">
