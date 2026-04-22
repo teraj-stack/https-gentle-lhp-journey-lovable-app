@@ -427,8 +427,7 @@ const FocusPlayground = ({
 
         <div className="flex items-center justify-between border-y border-border py-2 my-2">
           <div className="text-xs font-mono tabular-nums text-muted-foreground">
-            ring {prefs.ringWidthPx}px · glow {prefs.glowIntensity}% · afterglow{" "}
-            {(prefs.afterglowMs / 1000).toFixed(1)}s
+            {formatFocusPrefsSummary(prefs)}
             {highContrast && <span className="ml-2 text-primary">+ HC</span>}
           </div>
           <Button
