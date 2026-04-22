@@ -452,12 +452,165 @@ const AdminSystemHealth = () => {
     ringWidthPx: number; // 1–6px (default 2; HC uses ringWidthPx + 2)
     glowIntensity: number; // 0–100 (default 55; mapowane na opacity 0..1)
   };
-  const FOCUS_PREFS_DEFAULTS: FocusPrefs = {
-    afterglowMs: 2400,
-    ringWidthPx: 2,
-    glowIntensity: 55,
+  const FOCUS_PREFS_LS_KEY = "admin-system-health.focus-style-prefs";
+  // Per-variant prefs (v2): trzymamy 3 osobne sety stylu focusu — `light`, `dark`, `hc`.
+  // Aktywny variant wybierany przez `useThemeVariant(highContrastFocus)` — gdy admin
+  // przełącza HC toggle albo zmienia motyw OS, automatycznie aplikuje się variant z LS.
+  // Storage trzyma cały obiekt `{ light, dark, hc }` jako JSON; legacy single-prefs
+  // (z v1) jest auto-replikowany do wszystkich 3 wariantów przez `sanitizeFocusPrefsByVariant`.
+  const [focusPrefsByVariant, setFocusPrefsByVariant] = useState<FocusPrefsByVariant>(() => {
+    if (typeof window === "undefined") return getDefaultFocusPrefsByVariant();
+    // Priorytet 1: URL fragment `#focus-prefs=...` (np. po wklejeniu shared linka).
+    const fromHash = extractFocusPrefsFromHash(window.location.hash);
+    if (fromHash) return fromHash;
+    // Priorytet 2: localStorage (zapamiętane przy poprzedniej sesji).
+    try {
+      const raw = window.localStorage.getItem(FOCUS_PREFS_LS_KEY);
+      if (!raw) return getDefaultFocusPrefsByVariant();
+      const parsed: unknown = JSON.parse(raw);
+      // sanitizeFocusPrefsByVariant rozpoznaje legacy v1 (single prefs) i replikuje do 3 wariantów.
+      return sanitizeFocusPrefsByVariant(parsed);
+    } catch {
+      return getDefaultFocusPrefsByVariant();
+    }
+  });
+  // Hidden input ref dla Import — programowy klik z przycisku otwiera natywny picker.
+  const importFileInputRef = useRef<HTMLInputElement | null>(null);
+  // Tryb testowy w popoverze — cyklicznie pulsuje sztuczne wiersze, żeby admin
+  // od razu zobaczył efekt po zmianie sliderów (bez chodzenia do tabeli).
+  const [focusDemoActive, setFocusDemoActive] = useState(false);
+  // Variant do EDYCJI w popoverze — domyślnie ten sam co aktywny, ale admin może
+  // ręcznie wybrać inny żeby ustawić styl „z góry" zanim przełączy motyw.
+  // null = follow active variant (default).
+  const [editingVariantOverride, setEditingVariantOverride] = useState<ThemeVariant | null>(null);
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(FOCUS_PREFS_LS_KEY, JSON.stringify(focusPrefsByVariant));
+    } catch {
+      // ignoruj w private mode
+    }
+  }, [focusPrefsByVariant]);
+  // Po zaaplikowaniu prefs z URL fragmentu (initial state) — wyczyść hash, żeby
+  // odświeżenie strony nie nadpisało lokalnych zmian usera. Toast informuje użytkownika.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const fromHash = extractFocusPrefsFromHash(window.location.hash);
+    if (!fromHash) return;
+    const clean = window.location.hash.replace(/(^#|&)focus-prefs=[^&]*/g, "").replace(/^#&/, "#");
+    const newHash = clean === "#" ? "" : clean;
+    window.history.replaceState(null, "", window.location.pathname + window.location.search + newHash);
+    toast.success("Zaaplikowano styl focusu z linka", {
+      description: "Per-variant preferencje (light/dark/HC) zostały zapisane lokalnie.",
+    });
+  }, []);
+  // Eksport WSZYSTKICH 3 wariantów do pliku .json — admin dostaje pełny backup,
+  // nie tylko aktywny variant.
+  const handleExportFocusPrefs = () => {
+    try {
+      const json = exportFocusPrefsToJson(focusPrefsByVariant);
+      const blob = new Blob([json], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      const stamp = new Date().toISOString().slice(0, 10);
+      a.href = url;
+      a.download = `focus-prefs-${stamp}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast.success("Wyeksportowano preferencje", {
+        description: `${a.download} (3 warianty: light/dark/HC)`,
+      });
+    } catch (err) {
+      toast.error("Błąd eksportu", {
+        description: err instanceof Error ? err.message : "Nieznany błąd",
+      });
+    }
   };
-  const [focusPrefs, setFocusPrefs] = useState<FocusPrefs>(() => {
+  // Kopia shareable URL — link niesie wszystkie 3 warianty (compact base64url ~60 znaków).
+  const handleCopyFocusPrefsLink = async () => {
+    try {
+      const url = buildFocusPrefsShareUrl(focusPrefsByVariant, window.location.href);
+      await navigator.clipboard.writeText(url);
+      toast.success("Skopiowano link z preferencjami", {
+        description: "Link zawiera wszystkie 3 warianty (light/dark/HC).",
+      });
+    } catch (err) {
+      toast.error("Nie udało się skopiować linka", {
+        description: err instanceof Error ? err.message : "Brak dostępu do clipboardu",
+      });
+    }
+  };
+  // Import z pliku .json — czytamy przez FileReader, sanityzujemy, ustawiamy stan.
+  // Akceptuje v2 (per-variant), v1 (single, replikowany) i legacy plain.
+  const handleImportFocusPrefs = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const text = typeof reader.result === "string" ? reader.result : "";
+        const imported = importFocusPrefsFromJson(text);
+        setFocusPrefsByVariant(imported);
+        toast.success("Zaimportowano preferencje", {
+          description: "Zaktualizowano wszystkie 3 warianty (light/dark/HC).",
+        });
+      } catch (err) {
+        toast.error("Błąd importu", {
+          description: err instanceof Error ? err.message : "Niepoprawny plik JSON",
+        });
+      }
+    };
+    reader.onerror = () => {
+      toast.error("Nie udało się odczytać pliku");
+    };
+    reader.readAsText(file);
+  };
+  // Aktualny variant motywu — `hc` zawsze wygrywa nad light/dark gdy HC toggle ON.
+  const activeThemeVariant = useThemeVariant(highContrastFocus);
+  // Variant edytowany w popoverze — domyślnie aktywny, override przez tabs.
+  const editingVariant: ThemeVariant = editingVariantOverride ?? activeThemeVariant;
+  // Aktywne prefs (do aplikacji w pulse + activeRowStyle) zawsze z aktywnego wariantu.
+  const focusPrefs: FocusPrefs = focusPrefsByVariant[activeThemeVariant];
+  // Setter dla aktualnie EDYTOWANEGO wariantu (slider/reset działają na nim).
+  const setEditingVariantPrefs = (updater: (prev: FocusPrefs) => FocusPrefs) => {
+    setFocusPrefsByVariant((all) => ({
+      ...all,
+      [editingVariant]: updater(all[editingVariant]),
+    }));
+  };
+  // Trzymaj najnowsze AKTYWNE wartości w refie — pulseRow czyta je w momencie wywołania.
+  const focusPrefsRef = useRef<FocusPrefs>(focusPrefs);
+  useEffect(() => {
+    focusPrefsRef.current = focusPrefs;
+  }, [focusPrefs]);
+  // Auto-toast gdy aktywny variant się zmienia (HC toggle, system theme switch) —
+  // admin dostaje feedback „przełączono na ciemny styl X".
+  const prevVariantRef = useRef<ThemeVariant>(activeThemeVariant);
+  useEffect(() => {
+    if (prevVariantRef.current === activeThemeVariant) return;
+    const labels: Record<ThemeVariant, string> = {
+      light: "jasny",
+      dark: "ciemny",
+      hc: "high-contrast",
+    };
+    toast.info(`Aktywny styl focusu: ${labels[activeThemeVariant]}`, {
+      description: `Załadowano zapisane prefs: afterglow ${(focusPrefs.afterglowMs / 1000).toFixed(1)}s, ring ${focusPrefs.ringWidthPx}px, glow ${focusPrefs.glowIntensity}%`,
+      duration: 2500,
+    });
+    prevVariantRef.current = activeThemeVariant;
+  }, [activeThemeVariant, focusPrefs]);
+  // Inline style dla aktywnego wiersza (isNavigatorActive) — ring + halo wyliczone
+  // z preferencji AKTYWNEGO wariantu. Memo, bo używane wielokrotnie w mapie wierszy.
+  const activeRowStyle = useMemo<CSSProperties>(() => {
+    const ring = highContrastFocus ? focusPrefs.ringWidthPx + 2 : focusPrefs.ringWidthPx;
+    const glow = focusPrefs.glowIntensity / 100; // 0..1
+    return {
+      boxShadow: highContrastFocus
+        ? `inset 0 0 0 ${ring}px hsl(var(--primary)), inset 0 0 0 ${ring + 2}px hsl(var(--foreground) / 0.7), 0 0 ${Math.round(20 + glow * 20)}px ${Math.round(glow * 6)}px hsl(var(--primary) / ${(0.4 + glow * 0.5).toFixed(2)})`
+        : `inset 0 0 0 ${ring}px hsl(var(--primary)), 0 0 ${Math.round(16 + glow * 14)}px ${Math.round(glow * 4)}px hsl(var(--primary) / ${(0.25 + glow * 0.45).toFixed(2)})`,
+    };
+  }, [focusPrefs, highContrastFocus]);
+
+
     if (typeof window === "undefined") return FOCUS_PREFS_DEFAULTS;
     // Priorytet 1: URL fragment `#focus-prefs=...` (np. po wklejeniu shared linka).
     // Sanityzacja w extractFocusPrefsFromHash chroni przed out-of-range wartościami.
