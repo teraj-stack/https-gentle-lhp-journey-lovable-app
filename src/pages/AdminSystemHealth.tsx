@@ -473,6 +473,9 @@ const AdminSystemHealth = () => {
   });
   // Hidden input ref dla Import — programowy klik z przycisku otwiera natywny picker.
   const importFileInputRef = useRef<HTMLInputElement | null>(null);
+  // Tryb testowy w popoverze — cyklicznie pulsuje sztuczne wiersze, żeby admin
+  // od razu zobaczył efekt po zmianie sliderów (bez chodzenia do tabeli).
+  const [focusDemoActive, setFocusDemoActive] = useState(false);
   useEffect(() => {
     try {
       window.localStorage.setItem(FOCUS_PREFS_LS_KEY, JSON.stringify(focusPrefs));
