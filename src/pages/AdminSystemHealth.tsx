@@ -860,32 +860,29 @@ const AdminSystemHealth = () => {
       const url = buildFocusPrefsShareUrl(replicated, window.location.href);
       await navigator.clipboard.writeText(url);
       const label = formatFocusVariantLabel(editingVariant);
-      // Krótki, konkretny opis — pokazujemy realne wartości ring/glow/afterglow,
-      // żeby admin po skopiowaniu od razu wiedział co trafiło do schowka (i mógł
-      // zweryfikować przed wysłaniem linka).
-      // a11y: explicite ustawiamy `role="status"` + `aria-live="polite"` + `aria-atomic`
-      // żeby czytniki ekranu (NVDA/JAWS/VoiceOver) ogłosiły KOMPLETNY komunikat
-      // (tytuł + opis razem) bez przerywania bieżącej wypowiedzi. Sonner domyślnie
-      // dodaje `aria-live` ale bez `aria-atomic`, co czasem powoduje że SR czyta
-      // tylko zmieniony fragment — atomic="true" wymusza odczyt całości.
-      toast.success(`Skopiowano link (${label})`, {
-        description: `Wariant ${label}: ring ${single.ringWidthPx}px · glow ${single.glowIntensity}% · afterglow ${single.afterglowMs}ms`,
-        ariaProps: {
-          role: "status",
-          "aria-live": "polite",
-          "aria-atomic": "true",
-        },
+      const title = `Skopiowano link (${label})`;
+      const desc = `Wariant ${label}: ring ${single.ringWidthPx}px · glow ${single.glowIntensity}% · afterglow ${single.afterglowMs}ms`;
+      // a11y: Sonner domyślnie nadaje toastom `aria-live`, ale BRAK `aria-atomic`,
+      // przez co czytniki ekranu (NVDA/JAWS/VoiceOver) potrafią ominąć część
+      // komunikatu. Renderujemy `description` jako ReactNode z explicit live region
+      // wokół CAŁEJ treści (tytuł + opis), wymuszając pełny odczyt.
+      // role="status" + polite = nie przerywa bieżącej wypowiedzi (typowe dla success).
+      toast.success(title, {
+        description: (
+          <span role="status" aria-live="polite" aria-atomic="true" className="block">
+            {desc}
+          </span>
+        ),
       });
     } catch (err) {
-      // Błąd = `role="alert"` + `aria-live="assertive"` — czytnik PRZERYWA aktualną
-      // wypowiedź żeby ogłosić problem (typowo: brak permission do clipboardu).
+      const errMsg = err instanceof Error ? err.message : "Brak dostępu do clipboardu";
+      // Błąd = assertive — czytnik PRZERYWA aktualną wypowiedź żeby ogłosić problem.
       toast.error("Nie udało się skopiować linka", {
-        description: err instanceof Error ? err.message : "Brak dostępu do clipboardu",
-        ariaProps: {
-          role: "alert",
-          "aria-live": "assertive",
-          "aria-atomic": "true",
-        },
+        description: (
+          <span role="alert" aria-live="assertive" aria-atomic="true" className="block">
+            {errMsg}
+          </span>
+        ),
       });
     }
   };
