@@ -269,7 +269,11 @@ const AdminSystemHealth = () => {
   // (CSS var --header-height ustawiana przez Header.tsx). Natywne `scrollIntoView({ block: "center" })`
   // ignoruje sticky elementy i potrafi schować górną część wiersza pod headerem — własny scroll
   // z offsetem gwarantuje, że wiersz nigdy nie jest częściowo zasłonięty.
-  const scrollRowIntoView = (el: HTMLElement) => {
+  // `force=true` (klik badge'a / Next/Prev / Enter/J/K) — zawsze scrolluj, żeby user dostał
+  // wizualne potwierdzenie, że jego intencja została zarejestrowana.
+  // `force=false` (auto-reveal po zamknięciu modala) — pomiń, gdy wiersz już w pełni widoczny,
+  // żeby nie szarpać widokiem bez powodu.
+  const scrollRowIntoView = (el: HTMLElement, force = false) => {
     const cssVar = getComputedStyle(document.documentElement)
       .getPropertyValue("--header-height")
       .trim();
@@ -277,12 +281,12 @@ const AdminSystemHealth = () => {
     const buffer = 16; // mały oddech, żeby wiersz nie kleił się do dolnej krawędzi headera
     const rect = el.getBoundingClientRect();
     const targetY = window.scrollY + rect.top - headerH - buffer;
-    // Jeśli wiersz wyższy niż dostępny viewport (rare), wyrównaj do górnej krawędzi pod headerem.
-    // Jeśli już widoczny w bezpiecznym oknie — pomiń scroll, żeby nie szarpać widokiem.
-    const safeTop = headerH + buffer;
-    const safeBottom = window.innerHeight - 24;
-    const fullyVisible = rect.top >= safeTop && rect.bottom <= safeBottom;
-    if (fullyVisible) return;
+    if (!force) {
+      const safeTop = headerH + buffer;
+      const safeBottom = window.innerHeight - 24;
+      const fullyVisible = rect.top >= safeTop && rect.bottom <= safeBottom;
+      if (fullyVisible) return;
+    }
     window.scrollTo({ top: Math.max(0, targetY), left: 0, behavior: "smooth" });
   };
 
