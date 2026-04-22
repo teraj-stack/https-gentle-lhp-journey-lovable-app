@@ -2698,6 +2698,21 @@ const AdminSystemHealth = () => {
                           </div>
                         </PopoverContent>
                       </Popover>
+                      {/* Sandbox modal — read-only podgląd na realnych komponentach (button/input/link/card)
+                          z aktualnie edytowanymi prefs. Stan strony nietknięty. */}
+                      <FocusPlayground
+                        open={focusPlaygroundOpen}
+                        onOpenChange={setFocusPlaygroundOpen}
+                        prefs={focusPrefsByVariant[editingVariant]}
+                        highContrast={editingVariant === "hc"}
+                        variantLabel={
+                          editingVariant === "hc"
+                            ? "High Contrast"
+                            : editingVariant === "light"
+                              ? "Light"
+                              : "Dark"
+                        }
+                      />
                       {retryFiltersActive && (
                         <Button
                           variant="ghost"
