@@ -367,6 +367,84 @@ const AdminSecurityChecklist = () => {
       // ignore quota / privacy mode errors
     }
   }, [pdfRotateToFit]);
+
+  // Effective custom dimensions after applying the "Rotate to fit" toggle.
+  // Heuristic: cards are wider than tall, so the page dimension that drives
+  // capacity is *width* (more text per line). When rotation makes the page
+  // wider, capacity grows roughly proportionally to the width gain. We swap
+  // only when:
+  //   • toggle is on, AND
+  //   • the page is portrait (h > w), AND
+  //   • the gain in usable width is meaningful (>=5%).
+  // For A4/Letter the same logic applies using their standard mm sizes.
+  const STANDARD_DIMS_MM: Record<"A4" | "Letter", { width: number; height: number }> = {
+    A4: { width: 210, height: 297 },
+    Letter: { width: 215.9, height: 279.4 },
+  };
+  const MARGIN_MM: Record<"narrow" | "standard" | "wide", number> = {
+    narrow: 10,
+    standard: 14,
+    wide: 20,
+  };
+  type EffectiveDims = {
+    width: number;
+    height: number;
+    rotated: boolean;
+    usableWidthMm: number;
+    usableHeightMm: number;
+  };
+  const computeEffectiveDims = useCallback(
+    (
+      size: "A4" | "Letter" | "Custom",
+      customW: number,
+      customH: number,
+      margin: "narrow" | "standard" | "wide",
+      rotateToFit: boolean,
+    ): EffectiveDims => {
+      const base =
+        size === "Custom"
+          ? { width: customW, height: customH }
+          : STANDARD_DIMS_MM[size];
+      const m = MARGIN_MM[margin];
+      // Margin gets capped at 30% of the shorter edge in the edge function;
+      // mirror that so the estimate matches the actual render.
+      const cap = Math.min(base.width, base.height) * 0.3;
+      const effM = Math.min(m, cap);
+      const usableW = Math.max(1, base.width - 2 * effM);
+      const usableH = Math.max(1, base.height - 2 * effM);
+      // Decide whether to rotate. Only consider rotation for portrait pages.
+      let rotated = false;
+      if (rotateToFit && base.height > base.width) {
+        const rotW = Math.max(1, base.height - 2 * effM);
+        const rotH = Math.max(1, base.width - 2 * effM);
+        // Capacity proxy: usableWidth * usableHeight (area of text region).
+        // Rotation helps when area grows by >=5% (margins eat a bit asymmetrically
+        // when the shorter edge changes, so a tiny gain isn't worth flipping).
+        const gain = (rotW * rotH) / (usableW * usableH);
+        // Width-driven gain (more chars/line) is the dominant win in practice;
+        // require either a 5% area gain OR a 10% width gain.
+        const widthGain = rotW / usableW;
+        if (gain >= 1.05 || widthGain >= 1.1) rotated = true;
+      }
+      if (rotated) {
+        return {
+          width: base.height,
+          height: base.width,
+          rotated: true,
+          usableWidthMm: base.height - 2 * effM,
+          usableHeightMm: base.width - 2 * effM,
+        };
+      }
+      return {
+        width: base.width,
+        height: base.height,
+        rotated: false,
+        usableWidthMm: usableW,
+        usableHeightMm: usableH,
+      };
+    },
+    [],
+  );
   const [exportingServer, setExportingServer] = useState(false);
   const [serverPhase, setServerPhase] = useState<ServerExportPhase>("idle");
   // Server-side PDF preview (single-page sample) state
