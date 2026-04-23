@@ -1717,6 +1717,57 @@ const AdminSecurityChecklist = () => {
               </p>
             </div>
             {(() => {
+              // Show "Rotate to fit" only when rotation could realistically help
+              // (i.e., the page is portrait). Square or landscape pages are skipped.
+              const customW = customSizeValidation.ok ? customSizeValidation.w : Number(pdfCustomWidthMm) || 0;
+              const customH = customSizeValidation.ok ? customSizeValidation.h : Number(pdfCustomHeightMm) || 0;
+              const eff = computeEffectiveDims(pdfPageSize, customW, customH, pdfPageMargin, pdfRotateToFit);
+              // Probe: would rotation actually be applied if toggled on right now?
+              const probe = computeEffectiveDims(pdfPageSize, customW, customH, pdfPageMargin, true);
+              const rotationHelpful = probe.rotated;
+              const isPortrait =
+                pdfPageSize === "Custom"
+                  ? customH > customW
+                  : true; // A4/Letter are portrait
+              if (!isPortrait) return null;
+              return (
+                <div className="space-y-1.5">
+                  <Label className="text-sm flex items-center gap-2">
+                    <span>Obróć aby zmieściło więcej</span>
+                  </Label>
+                  <label
+                    htmlFor="pdf-rotate-to-fit"
+                    className="flex items-start gap-2 cursor-pointer rounded-md border border-border/60 bg-muted/20 p-2.5"
+                  >
+                    <Checkbox
+                      id="pdf-rotate-to-fit"
+                      checked={pdfRotateToFit}
+                      onCheckedChange={(c) => setPdfRotateToFit(c === true)}
+                      className="mt-0.5"
+                    />
+                    <div className="space-y-0.5">
+                      <span className="text-xs font-medium text-foreground">
+                        Automatyczna orientacja pozioma
+                      </span>
+                      <p className="text-[11px] text-muted-foreground">
+                        Zamienia szerokość i wysokość, gdy poziom faktycznie zwiększa pojemność strony.
+                        {rotationHelpful ? (
+                          <span className="ml-1 text-emerald-500">
+                            Aktualnie: {Math.round(eff.usableWidthMm)}×{Math.round(eff.usableHeightMm)}mm{" "}
+                            {eff.rotated ? "(obrócone)" : "(bez zmian)"}.
+                          </span>
+                        ) : (
+                          <span className="ml-1 text-muted-foreground/80">
+                            Dla aktualnych ustawień obrót nic nie da — opcja zostanie zignorowana.
+                          </span>
+                        )}
+                      </p>
+                    </div>
+                  </label>
+                </div>
+              );
+            })()}
+            {(() => {
               const filtered = rows.filter((r) => {
                 const live = liveStatus[r.slug]?.status ?? r.status;
                 const sOk = (live === "pass" || live === "warn" || live === "fail")
