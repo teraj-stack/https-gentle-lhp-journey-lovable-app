@@ -72,6 +72,12 @@ type Category = "RLS" | "Realtime" | "Auth" | "Tokens";
 
 type AuditResult = { status: DbStatus; detail?: string };
 
+type PolicyRef = {
+  name: string;
+  table: string;
+  sql?: string;
+};
+
 type ChecklistRow = {
   id: string;
   slug: string;
@@ -81,6 +87,7 @@ type ChecklistRow = {
   status: DbStatus;
   detail: string | null;
   sort_order: number;
+  policies: PolicyRef[];
 };
 
 type DisplayCheck = ChecklistRow & {
