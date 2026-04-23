@@ -468,6 +468,7 @@ const Header = () => {
                           to={item.href}
                           role="menuitem"
                           onClick={handleMegaLinkClick}
+                          onPointerUp={handleMegaLinkPointerUp}
                           className={`block px-2 py-1.5 rounded-md text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:bg-accent/50 ${
                             isActive(item.href)
                               ? "text-primary bg-accent/50 font-medium"
