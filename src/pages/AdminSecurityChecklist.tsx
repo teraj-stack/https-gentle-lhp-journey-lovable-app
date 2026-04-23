@@ -451,7 +451,9 @@ const AdminSecurityChecklist = () => {
       return;
     }
     try {
-      const doc = new jsPDF({ unit: "pt", format: pageSize === "Letter" ? "letter" : "a4" });
+      // jsPDF doesn't support custom page sizes via this code path — fall back to A4.
+      const jsPdfFormat = pageSize === "Letter" ? "letter" : "a4";
+      const doc = new jsPDF({ unit: "pt", format: jsPdfFormat });
       const pageWidth = doc.internal.pageSize.getWidth();
       const margin = 40;
       const generatedAt = new Date();
