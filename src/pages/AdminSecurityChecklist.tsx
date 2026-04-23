@@ -442,7 +442,7 @@ const AdminSecurityChecklist = () => {
     else toast.success("Self-audit zakończony — wszystkie kontrole OK");
   }, [rows]);
 
-  const exportPdf = useCallback((opts?: { statuses?: DbStatus[]; category?: Category | "ALL"; pageSize?: "A4" | "Letter" }) => {
+  const exportPdf = useCallback((opts?: { statuses?: DbStatus[]; category?: Category | "ALL"; pageSize?: "A4" | "Letter" | "Custom" }) => {
     const allowedStatuses = new Set<DbStatus>(opts?.statuses && opts.statuses.length > 0 ? opts.statuses : STATUSES);
     const categoryFilter = opts?.category ?? "ALL";
     const pageSize = opts?.pageSize ?? "A4";
