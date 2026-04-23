@@ -1331,8 +1331,8 @@ const AdminSecurityChecklist = () => {
                         </div>
                       )}
                       <p className="text-[11px] text-muted-foreground pt-0.5">
-                        Szacowana objętość PDF: ~{estPages} {estPages === 1 ? "strona" : estPages < 5 ? "strony" : "stron"} A4
-                        <span className="text-muted-foreground/70"> (server) · ~{Math.max(1, Math.ceil(filtered.length / 4))} (client)</span>
+                        Szacowana objętość PDF: ~{estPages} {estPages === 1 ? "strona" : estPages < 5 ? "strony" : "stron"} {pdfPageSize}
+                        <span className="text-muted-foreground/70"> (server) · ~{estPagesClient} (client)</span>
                       </p>
                     </>
                   )}
