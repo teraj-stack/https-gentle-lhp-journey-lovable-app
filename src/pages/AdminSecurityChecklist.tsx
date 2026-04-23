@@ -1188,6 +1188,29 @@ const AdminSecurityChecklist = () => {
                 return sOk && cOk;
               }).length} z {rows.length} pozycji.
             </p>
+            {serverPhase !== "idle" && (
+              <div
+                className="space-y-2 rounded-md border border-border/60 bg-muted/30 p-3"
+                role="status"
+                aria-live="polite"
+                aria-busy={exportingServer}
+              >
+                <div className="flex items-center justify-between gap-2 text-xs">
+                  <span className="flex items-center gap-2 text-foreground">
+                    {serverPhase === "done" ? (
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                    ) : (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />
+                    )}
+                    {PHASE_META[serverPhase].label}
+                  </span>
+                  <span className="font-mono tabular-nums text-muted-foreground">
+                    {PHASE_META[serverPhase].value}%
+                  </span>
+                </div>
+                <Progress value={PHASE_META[serverPhase].value} className="h-1.5" />
+              </div>
+            )}
           </div>
           <DialogFooter className="flex-col sm:flex-row gap-2">
             <Button variant="ghost" onClick={() => setPdfDialogOpen(false)} disabled={exportingServer}>Anuluj</Button>
@@ -1205,7 +1228,7 @@ const AdminSecurityChecklist = () => {
               title="Renderuje PDF na serwerze (pdf-lib) — lepsze łamanie wierszy"
             >
               {exportingServer ? (
-                <><Loader2 className="w-4 h-4 mr-1 animate-spin" /> Generuję…</>
+                <><Loader2 className="w-4 h-4 mr-1 animate-spin" /> {PHASE_META[serverPhase === "idle" ? "preparing" : serverPhase].label}</>
               ) : (
                 <><Download className="w-4 h-4 mr-1" /> Pobierz (server)</>
               )}
