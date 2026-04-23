@@ -56,7 +56,10 @@ import {
   ChevronDown,
   Copy,
   FileCode2,
+  Download,
 } from "lucide-react";
+import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable";
 import SeoHead from "@/components/shared/SeoHead";
 import { toast } from "sonner";
 
