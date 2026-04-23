@@ -286,10 +286,10 @@ const AdminSecurityChecklist = () => {
   const [pdfDialogOpen, setPdfDialogOpen] = useState(false);
   const [pdfStatuses, setPdfStatuses] = useState<DbStatus[]>(["pass", "warn", "fail"]);
   const [pdfCategory, setPdfCategory] = useState<Category | "ALL">("ALL");
-  const [pdfPageSize, setPdfPageSize] = useState<"A4" | "Letter">(() => {
+  const [pdfPageSize, setPdfPageSize] = useState<"A4" | "Letter" | "Custom">(() => {
     if (typeof window === "undefined") return "A4";
     const saved = window.localStorage.getItem("cml.admin.pdfPageSize");
-    return saved === "Letter" || saved === "A4" ? saved : "A4";
+    return saved === "Letter" || saved === "A4" || saved === "Custom" ? saved : "A4";
   });
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -299,6 +299,45 @@ const AdminSecurityChecklist = () => {
       // ignore quota / privacy mode errors
     }
   }, [pdfPageSize]);
+  // Custom page size in millimetres (used only when pdfPageSize === "Custom").
+  // Bounds intentionally match the edge function's CUSTOM_MM_MIN/MAX.
+  const CUSTOM_MM_MIN = 50;
+  const CUSTOM_MM_MAX = 1200;
+  const [pdfCustomWidthMm, setPdfCustomWidthMm] = useState<string>(() => {
+    if (typeof window === "undefined") return "210";
+    return window.localStorage.getItem("cml.admin.pdfCustomWidthMm") ?? "210";
+  });
+  const [pdfCustomHeightMm, setPdfCustomHeightMm] = useState<string>(() => {
+    if (typeof window === "undefined") return "297";
+    return window.localStorage.getItem("cml.admin.pdfCustomHeightMm") ?? "297";
+  });
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem("cml.admin.pdfCustomWidthMm", pdfCustomWidthMm);
+      window.localStorage.setItem("cml.admin.pdfCustomHeightMm", pdfCustomHeightMm);
+    } catch {
+      // ignore quota / privacy mode errors
+    }
+  }, [pdfCustomWidthMm, pdfCustomHeightMm]);
+  // Parse + validate the custom-size inputs once per render. `error` is null
+  // when both values are within bounds; the dialog uses it for inline feedback
+  // and to disable the export button.
+  const customSizeValidation = (() => {
+    if (pdfPageSize !== "Custom") return { ok: true as const, w: 0, h: 0, error: null as string | null };
+    const w = Number(pdfCustomWidthMm.replace(",", "."));
+    const h = Number(pdfCustomHeightMm.replace(",", "."));
+    const inRange = (n: number) => Number.isFinite(n) && n >= CUSTOM_MM_MIN && n <= CUSTOM_MM_MAX;
+    if (!inRange(w) || !inRange(h)) {
+      return {
+        ok: false as const,
+        w,
+        h,
+        error: `Wymiary muszą być liczbami w zakresie ${CUSTOM_MM_MIN}–${CUSTOM_MM_MAX} mm.`,
+      };
+    }
+    return { ok: true as const, w, h, error: null as string | null };
+  })();
   const [pdfPageMargin, setPdfPageMargin] = useState<"narrow" | "standard" | "wide">(() => {
     if (typeof window === "undefined") return "standard";
     const saved = window.localStorage.getItem("cml.admin.pdfPageMargin");
@@ -403,7 +442,7 @@ const AdminSecurityChecklist = () => {
     else toast.success("Self-audit zakończony — wszystkie kontrole OK");
   }, [rows]);
 
-  const exportPdf = useCallback((opts?: { statuses?: DbStatus[]; category?: Category | "ALL"; pageSize?: "A4" | "Letter" }) => {
+  const exportPdf = useCallback((opts?: { statuses?: DbStatus[]; category?: Category | "ALL"; pageSize?: "A4" | "Letter" | "Custom" }) => {
     const allowedStatuses = new Set<DbStatus>(opts?.statuses && opts.statuses.length > 0 ? opts.statuses : STATUSES);
     const categoryFilter = opts?.category ?? "ALL";
     const pageSize = opts?.pageSize ?? "A4";
@@ -412,7 +451,9 @@ const AdminSecurityChecklist = () => {
       return;
     }
     try {
-      const doc = new jsPDF({ unit: "pt", format: pageSize === "Letter" ? "letter" : "a4" });
+      // jsPDF doesn't support custom page sizes via this code path — fall back to A4.
+      const jsPdfFormat = pageSize === "Letter" ? "letter" : "a4";
+      const doc = new jsPDF({ unit: "pt", format: jsPdfFormat });
       const pageWidth = doc.internal.pageSize.getWidth();
       const margin = 40;
       const generatedAt = new Date();
@@ -615,7 +656,13 @@ const AdminSecurityChecklist = () => {
 
   // Server-side PDF export — same payload, rendered with pdf-lib for crisp wrapping.
   const exportPdfServer = useCallback(
-    async (opts?: { statuses?: DbStatus[]; category?: Category | "ALL"; pageSize?: "A4" | "Letter"; pageMargin?: "narrow" | "standard" | "wide" }) => {
+    async (opts?: {
+      statuses?: DbStatus[];
+      category?: Category | "ALL";
+      pageSize?: "A4" | "Letter" | "Custom";
+      pageMargin?: "narrow" | "standard" | "wide";
+      customPageSizeMm?: { width: number; height: number };
+    }) => {
       if (rows.length === 0) {
         toast.error("Brak pozycji do eksportu");
         return;
@@ -655,17 +702,39 @@ const AdminSecurityChecklist = () => {
       };
       const pageSize = opts?.pageSize ?? "A4";
       const pageMargin = opts?.pageMargin ?? "standard";
+      const customPageSizeMm = opts?.customPageSizeMm;
+      // Re-validate custom dims defensively (the dialog already blocks invalid
+      // values, but a programmatic caller could still slip through).
+      if (pageSize === "Custom") {
+        const c = customPageSizeMm;
+        const inRange = (n: unknown): n is number =>
+          typeof n === "number" && Number.isFinite(n) && n >= 50 && n <= 1200;
+        if (!c || !inRange(c.width) || !inRange(c.height)) {
+          toast.error("Nieprawidłowe wymiary niestandardowej strony", {
+            description: "Szerokość i wysokość muszą mieścić się w zakresie 50–1200 mm.",
+          });
+          return;
+        }
+      }
       const marginLabel = pageMargin === "narrow" ? "wąskie" : pageMargin === "wide" ? "szerokie" : "standardowe";
+      const sizeLabel =
+        pageSize === "Custom" && customPageSizeMm
+          ? `Custom ${Math.round(customPageSizeMm.width)}×${Math.round(customPageSizeMm.height)}mm`
+          : pageSize;
       const overall = counts.fail > 0 ? "WYMAGA UWAGI" : counts.warn > 0 ? "DO PRZEGLĄDU" : "ZIELONY";
-      const filterLabel = `Filtr: ${categoryFilter === "ALL" ? "wszystkie kategorie" : categoryFilter} · statusy: ${[...allowedStatuses].map((s) => s.toUpperCase()).join("/")} · format: ${pageSize} · marginesy: ${marginLabel}`;
+      const filterLabel = `Filtr: ${categoryFilter === "ALL" ? "wszystkie kategorie" : categoryFilter} · statusy: ${[...allowedStatuses].map((s) => s.toUpperCase()).join("/")} · format: ${sizeLabel} · marginesy: ${marginLabel}`;
       const stamp = new Date().toISOString().slice(0, 10);
       const catSuffix = categoryFilter === "ALL" ? "all" : categoryFilter;
       const stSuffix = [...allowedStatuses].sort().join("-");
+      const sizeFilenamePart =
+        pageSize === "Custom" && customPageSizeMm
+          ? `custom-${Math.round(customPageSizeMm.width)}x${Math.round(customPageSizeMm.height)}mm`
+          : pageSize;
       const filename = buildSafePdfFilename({
         stamp,
         category: catSuffix,
         statuses: stSuffix,
-        pageSize,
+        pageSize: sizeFilenamePart,
         pageMargin,
         variant: "server",
       });
@@ -704,6 +773,7 @@ const AdminSecurityChecklist = () => {
             filename,
             pageSize,
             pageMargin,
+            ...(pageSize === "Custom" && customPageSizeMm ? { customPageSizeMm } : {}),
           }),
         });
         // promote to "generating" once request is in flight
@@ -1300,9 +1370,10 @@ const AdminSecurityChecklist = () => {
             </div>
             <div className="space-y-2">
               <Label className="text-sm">Format strony</Label>
-              <div className="flex gap-2" role="radiogroup" aria-label="Format strony PDF">
-                {(["A4", "Letter"] as const).map((sz) => {
+              <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Format strony PDF">
+                {(["A4", "Letter", "Custom"] as const).map((sz) => {
                   const active = pdfPageSize === sz;
+                  const hint = sz === "A4" ? "210×297mm" : sz === "Letter" ? "8.5×11in" : "własne wymiary";
                   return (
                     <Button
                       key={sz}
@@ -1315,13 +1386,74 @@ const AdminSecurityChecklist = () => {
                       onClick={() => setPdfPageSize(sz)}
                     >
                       {sz}
-                      <span className="ml-1.5 text-[10px] opacity-70 font-mono">
-                        {sz === "A4" ? "210×297mm" : "8.5×11in"}
-                      </span>
+                      <span className="ml-1.5 text-[10px] opacity-70 font-mono">{hint}</span>
                     </Button>
                   );
                 })}
               </div>
+              {pdfPageSize === "Custom" && (
+                <div className="space-y-1.5 rounded-md border border-border/60 bg-muted/20 p-2.5">
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-1">
+                      <Label htmlFor="pdf-custom-w" className="text-[11px] text-muted-foreground">
+                        Szerokość (mm)
+                      </Label>
+                      <Input
+                        id="pdf-custom-w"
+                        type="number"
+                        inputMode="decimal"
+                        min={CUSTOM_MM_MIN}
+                        max={CUSTOM_MM_MAX}
+                        step={1}
+                        value={pdfCustomWidthMm}
+                        onChange={(e) => setPdfCustomWidthMm(e.target.value)}
+                        className="h-8 text-sm"
+                        aria-invalid={!customSizeValidation.ok}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="pdf-custom-h" className="text-[11px] text-muted-foreground">
+                        Wysokość (mm)
+                      </Label>
+                      <Input
+                        id="pdf-custom-h"
+                        type="number"
+                        inputMode="decimal"
+                        min={CUSTOM_MM_MIN}
+                        max={CUSTOM_MM_MAX}
+                        step={1}
+                        value={pdfCustomHeightMm}
+                        onChange={(e) => setPdfCustomHeightMm(e.target.value)}
+                        className="h-8 text-sm"
+                        aria-invalid={!customSizeValidation.ok}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5 pt-0.5">
+                    <Button type="button" variant="ghost" size="sm" className="h-6 px-2 text-[10px]"
+                      onClick={() => { setPdfCustomWidthMm("210"); setPdfCustomHeightMm("297"); }}>
+                      A4 (210×297)
+                    </Button>
+                    <Button type="button" variant="ghost" size="sm" className="h-6 px-2 text-[10px]"
+                      onClick={() => { setPdfCustomWidthMm("148"); setPdfCustomHeightMm("210"); }}>
+                      A5 (148×210)
+                    </Button>
+                    <Button type="button" variant="ghost" size="sm" className="h-6 px-2 text-[10px]"
+                      onClick={() => { setPdfCustomWidthMm("279"); setPdfCustomHeightMm("432"); }}>
+                      Tabloid (279×432)
+                    </Button>
+                  </div>
+                  {customSizeValidation.error ? (
+                    <p className="text-[11px] text-destructive" role="alert">
+                      {customSizeValidation.error}
+                    </p>
+                  ) : (
+                    <p className="text-[11px] text-muted-foreground">
+                      Dozwolony zakres: {CUSTOM_MM_MIN}–{CUSTOM_MM_MAX} mm. Eksport klienta używa A4.
+                    </p>
+                  )}
+                </div>
+              )}
               <p className="text-[11px] text-muted-foreground">
                 Łamanie wierszy dopasowuje się automatycznie do szerokości wybranego formatu.
               </p>
@@ -1476,10 +1608,29 @@ const AdminSecurityChecklist = () => {
                   toast.error("Wybierz przynajmniej jeden status");
                   return;
                 }
-                await exportPdfServer({ statuses: pdfStatuses, category: pdfCategory, pageSize: pdfPageSize, pageMargin: pdfPageMargin });
+                if (pdfPageSize === "Custom" && !customSizeValidation.ok) {
+                  toast.error("Popraw wymiary niestandardowej strony", {
+                    description: customSizeValidation.error ?? undefined,
+                  });
+                  return;
+                }
+                await exportPdfServer({
+                  statuses: pdfStatuses,
+                  category: pdfCategory,
+                  pageSize: pdfPageSize,
+                  pageMargin: pdfPageMargin,
+                  customPageSizeMm:
+                    pdfPageSize === "Custom" && customSizeValidation.ok
+                      ? { width: customSizeValidation.w, height: customSizeValidation.h }
+                      : undefined,
+                });
                 if (!exportingServer) setPdfDialogOpen(false);
               }}
-              disabled={pdfStatuses.length === 0 || exportingServer}
+              disabled={
+                pdfStatuses.length === 0 ||
+                exportingServer ||
+                (pdfPageSize === "Custom" && !customSizeValidation.ok)
+              }
               title="Renderuje PDF na serwerze (pdf-lib) — lepsze łamanie wierszy"
             >
               {exportingServer ? (
