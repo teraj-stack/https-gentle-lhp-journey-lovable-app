@@ -974,6 +974,8 @@ const AdminSecurityChecklist = () => {
     },
     [rows, liveStatus, lastAuditAt, previewUrl],
   );
+
+  const openCreate = () => {
     setForm({ ...emptyForm, sort_order: (rows[rows.length - 1]?.sort_order ?? 0) + 10 });
     setEditor({ mode: "create" });
   };
