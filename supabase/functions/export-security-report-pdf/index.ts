@@ -628,11 +628,37 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-    if (payload.pageSize !== undefined && payload.pageSize !== "A4" && payload.pageSize !== "Letter") {
-      return new Response(JSON.stringify({ error: "Invalid pageSize (expected 'A4' or 'Letter')" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    if (
+      payload.pageSize !== undefined &&
+      payload.pageSize !== "A4" &&
+      payload.pageSize !== "Letter" &&
+      payload.pageSize !== "Custom"
+    ) {
+      return new Response(
+        JSON.stringify({ error: "Invalid pageSize (expected 'A4', 'Letter' or 'Custom')" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+    if (payload.pageSize === "Custom") {
+      const c = payload.customPageSizeMm;
+      const isFiniteNum = (n: unknown): n is number =>
+        typeof n === "number" && Number.isFinite(n);
+      if (
+        !c ||
+        !isFiniteNum(c.width) ||
+        !isFiniteNum(c.height) ||
+        c.width < CUSTOM_MM_MIN ||
+        c.width > CUSTOM_MM_MAX ||
+        c.height < CUSTOM_MM_MIN ||
+        c.height > CUSTOM_MM_MAX
+      ) {
+        return new Response(
+          JSON.stringify({
+            error: `Invalid customPageSizeMm (width/height must be finite numbers in [${CUSTOM_MM_MIN}, ${CUSTOM_MM_MAX}] mm)`,
+          }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
     }
     if (
       payload.pageMargin !== undefined &&
