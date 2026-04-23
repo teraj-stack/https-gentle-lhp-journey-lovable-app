@@ -233,6 +233,19 @@ const Header = () => {
     setNavKey((k) => k + 1);
   }, [clearMegaCloseTimer]);
 
+  // Touch backup: pointerup on a menu link guarantees the dropdown closes
+  // even in edge cases where React Router's <Link> click handler is delayed
+  // or suppressed (e.g. same-route navigation, native long-press menus).
+  const handleMegaLinkPointerUp = useCallback(
+    (event: React.PointerEvent<HTMLAnchorElement>) => {
+      if (event.pointerType !== "touch" && event.pointerType !== "pen") return;
+      clearMegaCloseTimer();
+      shouldRestoreFocus.current = false;
+      setMegaOpen(null);
+    },
+    [clearMegaCloseTimer],
+  );
+
   useEffect(() => () => clearMegaCloseTimer(), [clearMegaCloseTimer]);
 
   // Tap-outside dismissal for touch devices: if a touch lands outside the
@@ -365,6 +378,7 @@ const Header = () => {
                 to={item.href}
                 role="menuitem"
                 onClick={handleMegaLinkClick}
+                onPointerUp={handleMegaLinkPointerUp}
                 className={`block px-4 py-3 rounded-lg hover:bg-accent/50 transition-colors group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:bg-accent/50 ${
                   isActive(item.href) ? "bg-accent/50" : ""
                 }`}
@@ -454,6 +468,7 @@ const Header = () => {
                           to={item.href}
                           role="menuitem"
                           onClick={handleMegaLinkClick}
+                          onPointerUp={handleMegaLinkPointerUp}
                           className={`block px-2 py-1.5 rounded-md text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:bg-accent/50 ${
                             isActive(item.href)
                               ? "text-primary bg-accent/50 font-medium"
