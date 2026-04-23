@@ -228,6 +228,7 @@ const AdminSecurityChecklist = () => {
   const [pdfDialogOpen, setPdfDialogOpen] = useState(false);
   const [pdfStatuses, setPdfStatuses] = useState<DbStatus[]>(["pass", "warn", "fail"]);
   const [pdfCategory, setPdfCategory] = useState<Category | "ALL">("ALL");
+  const [exportingServer, setExportingServer] = useState(false);
   const togglePdfStatus = (s: DbStatus, checked: boolean) => {
     setPdfStatuses((prev) => (checked ? [...new Set([...prev, s])] : prev.filter((x) => x !== s)));
   };
@@ -525,6 +526,107 @@ const AdminSecurityChecklist = () => {
       toast.error(`Nie udalo sie wygenerowac PDF: ${err instanceof Error ? err.message : "blad"}`);
     }
   }, [rows, liveStatus, lastAuditAt]);
+
+  // Server-side PDF export — same payload, rendered with pdf-lib for crisp wrapping.
+  const exportPdfServer = useCallback(
+    async (opts?: { statuses?: DbStatus[]; category?: Category | "ALL" }) => {
+      if (rows.length === 0) {
+        toast.error("Brak pozycji do eksportu");
+        return;
+      }
+      const allowedStatuses = new Set<DbStatus>(opts?.statuses && opts.statuses.length > 0 ? opts.statuses : STATUSES);
+      const categoryFilter = opts?.category ?? "ALL";
+
+      const allChecks = rows.map((r) => {
+        const live = liveStatus[r.slug];
+        return {
+          slug: r.slug,
+          category: r.category,
+          title: r.title,
+          description: r.description,
+          detail: r.detail,
+          policies: r.policies,
+          status: (live?.status ?? r.status) as CheckStatus,
+        };
+      });
+      const checks = allChecks.filter((c) => {
+        const sOk = (c.status === "pass" || c.status === "warn" || c.status === "fail")
+          ? allowedStatuses.has(c.status as DbStatus)
+          : true;
+        const cOk = categoryFilter === "ALL" || c.category === categoryFilter;
+        return sOk && cOk;
+      });
+      if (checks.length === 0) {
+        toast.error("Brak pozycji pasujacych do filtra");
+        return;
+      }
+      const counts = {
+        pass: checks.filter((c) => c.status === "pass").length,
+        warn: checks.filter((c) => c.status === "warn").length,
+        fail: checks.filter((c) => c.status === "fail").length,
+        total: checks.length,
+        allTotal: allChecks.length,
+      };
+      const overall = counts.fail > 0 ? "WYMAGA UWAGI" : counts.warn > 0 ? "DO PRZEGLĄDU" : "ZIELONY";
+      const filterLabel = `Filtr: ${categoryFilter === "ALL" ? "wszystkie kategorie" : categoryFilter} · statusy: ${[...allowedStatuses].map((s) => s.toUpperCase()).join("/")}`;
+      const stamp = new Date().toISOString().slice(0, 10);
+      const catSuffix = categoryFilter === "ALL" ? "all" : categoryFilter.toLowerCase();
+      const stSuffix = [...allowedStatuses].sort().join("-");
+      const filename = `cml-security-report-${stamp}-${catSuffix}-${stSuffix}-server.pdf`;
+
+      setExportingServer(true);
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          toast.error("Brak sesji — zaloguj się ponownie");
+          return;
+        }
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
+        const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
+        const res = await fetch(`${supabaseUrl}/functions/v1/export-security-report-pdf`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+            apikey: anonKey,
+          },
+          body: JSON.stringify({
+            checks,
+            meta: {
+              generatedAt: new Date().toLocaleString("pl-PL"),
+              lastScanDate: new Date(LAST_SCAN_DATE).toLocaleDateString("pl-PL", { year: "numeric", month: "long", day: "numeric" }),
+              lastAuditAt: lastAuditAt ? lastAuditAt.toLocaleString("pl-PL") : null,
+              filterLabel,
+              overall,
+              counts,
+            },
+            filename,
+          }),
+        });
+        if (!res.ok) {
+          let msg = `HTTP ${res.status}`;
+          try { const j = await res.json(); if (j?.error) msg = String(j.error); } catch { /* ignore */ }
+          toast.error(`Eksport serwerowy nieudany: ${msg}`);
+          return;
+        }
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        toast.success(`Raport PDF (server) pobrany — ${counts.total} pozycji`);
+      } catch (err) {
+        toast.error(`Eksport serwerowy nieudany: ${err instanceof Error ? err.message : "blad"}`);
+      } finally {
+        setExportingServer(false);
+      }
+    },
+    [rows, liveStatus, lastAuditAt],
+  );
 
   const openCreate = () => {
     setForm({ ...emptyForm, sort_order: (rows[rows.length - 1]?.sort_order ?? 0) + 10 });
@@ -1061,8 +1163,27 @@ const AdminSecurityChecklist = () => {
               }).length} z {rows.length} pozycji.
             </p>
           </div>
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setPdfDialogOpen(false)}>Anuluj</Button>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button variant="ghost" onClick={() => setPdfDialogOpen(false)} disabled={exportingServer}>Anuluj</Button>
+            <Button
+              variant="outline"
+              onClick={async () => {
+                if (pdfStatuses.length === 0) {
+                  toast.error("Wybierz przynajmniej jeden status");
+                  return;
+                }
+                await exportPdfServer({ statuses: pdfStatuses, category: pdfCategory });
+                if (!exportingServer) setPdfDialogOpen(false);
+              }}
+              disabled={pdfStatuses.length === 0 || exportingServer}
+              title="Renderuje PDF na serwerze (pdf-lib) — lepsze łamanie wierszy"
+            >
+              {exportingServer ? (
+                <><Loader2 className="w-4 h-4 mr-1 animate-spin" /> Generuję…</>
+              ) : (
+                <><Download className="w-4 h-4 mr-1" /> Pobierz (server)</>
+              )}
+            </Button>
             <Button
               onClick={() => {
                 if (pdfStatuses.length === 0) {
@@ -1072,9 +1193,9 @@ const AdminSecurityChecklist = () => {
                 setPdfDialogOpen(false);
                 exportPdf({ statuses: pdfStatuses, category: pdfCategory });
               }}
-              disabled={pdfStatuses.length === 0}
+              disabled={pdfStatuses.length === 0 || exportingServer}
             >
-              <Download className="w-4 h-4 mr-1" /> Pobierz
+              <Download className="w-4 h-4 mr-1" /> Pobierz (client)
             </Button>
           </DialogFooter>
         </DialogContent>
