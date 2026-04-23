@@ -366,23 +366,65 @@ const AdminSecurityChecklist = () => {
   const deletePreset = useCallback((id: string) => {
     setCustomPresets((prev) => prev.filter((p) => p.id !== id));
   }, []);
-  // Parse + validate the custom-size inputs once per render. `error` is null
-  // when both values are within bounds; the dialog uses it for inline feedback
-  // and to disable the export button.
+  // Parse + validate the custom-size inputs once per render. Per-field details
+  // (`widthError` / `heightError`) drive inline hints; `error` is the rolled-up
+  // summary used as a fallback / aria-live message.
+  type FieldIssue =
+    | { kind: "empty" }
+    | { kind: "nan"; raw: string }
+    | { kind: "low"; value: number }
+    | { kind: "high"; value: number };
+  const validateField = (raw: string): { value: number; issue: FieldIssue | null } => {
+    const trimmed = raw.trim();
+    if (trimmed === "") return { value: NaN, issue: { kind: "empty" } };
+    const n = Number(trimmed.replace(",", "."));
+    if (!Number.isFinite(n)) return { value: NaN, issue: { kind: "nan", raw: trimmed } };
+    if (n < CUSTOM_MM_MIN) return { value: n, issue: { kind: "low", value: n } };
+    if (n > CUSTOM_MM_MAX) return { value: n, issue: { kind: "high", value: n } };
+    return { value: n, issue: null };
+  };
+  const formatMm = (n: number) =>
+    Number.isFinite(n) ? `${Math.round(n * 10) / 10} mm` : "—";
+  const describeIssue = (issue: FieldIssue, field: "Szerokość" | "Wysokość"): string => {
+    switch (issue.kind) {
+      case "empty":
+        return `${field}: pole jest puste. Wpisz wartość ${CUSTOM_MM_MIN}–${CUSTOM_MM_MAX} mm.`;
+      case "nan":
+        return `${field}: „${issue.raw}" nie jest liczbą. Wpisz wartość ${CUSTOM_MM_MIN}–${CUSTOM_MM_MAX} mm.`;
+      case "low":
+        return `${field}: ${formatMm(issue.value)} jest poniżej minimum (${CUSTOM_MM_MIN} mm). Brakuje ${formatMm(CUSTOM_MM_MIN - issue.value)}.`;
+      case "high":
+        return `${field}: ${formatMm(issue.value)} przekracza maksimum (${CUSTOM_MM_MAX} mm) o ${formatMm(issue.value - CUSTOM_MM_MAX)}.`;
+    }
+  };
   const customSizeValidation = (() => {
-    if (pdfPageSize !== "Custom") return { ok: true as const, w: 0, h: 0, error: null as string | null };
-    const w = Number(pdfCustomWidthMm.replace(",", "."));
-    const h = Number(pdfCustomHeightMm.replace(",", "."));
-    const inRange = (n: number) => Number.isFinite(n) && n >= CUSTOM_MM_MIN && n <= CUSTOM_MM_MAX;
-    if (!inRange(w) || !inRange(h)) {
+    if (pdfPageSize !== "Custom") {
       return {
-        ok: false as const,
-        w,
-        h,
-        error: `Wymiary muszą być liczbami w zakresie ${CUSTOM_MM_MIN}–${CUSTOM_MM_MAX} mm.`,
+        ok: true as const,
+        w: 0,
+        h: 0,
+        widthError: null as string | null,
+        heightError: null as string | null,
+        error: null as string | null,
       };
     }
-    return { ok: true as const, w, h, error: null as string | null };
+    const wField = validateField(pdfCustomWidthMm);
+    const hField = validateField(pdfCustomHeightMm);
+    const widthError = wField.issue ? describeIssue(wField.issue, "Szerokość") : null;
+    const heightError = hField.issue ? describeIssue(hField.issue, "Wysokość") : null;
+    if (widthError || heightError) {
+      // Summary: list both errors when both fail, otherwise the single failing field.
+      const error = [widthError, heightError].filter(Boolean).join(" • ");
+      return { ok: false as const, w: wField.value, h: hField.value, widthError, heightError, error };
+    }
+    return {
+      ok: true as const,
+      w: wField.value,
+      h: hField.value,
+      widthError: null,
+      heightError: null,
+      error: null,
+    };
   })();
   // Save the current Custom dimensions as a named preset. Declared after
   // customSizeValidation so it can read the parsed/clamped values directly.
@@ -1745,8 +1787,20 @@ const AdminSecurityChecklist = () => {
                         value={pdfCustomWidthMm}
                         onChange={(e) => setPdfCustomWidthMm(e.target.value)}
                         className="h-8 text-sm"
-                        aria-invalid={!customSizeValidation.ok}
+                        aria-invalid={!!customSizeValidation.widthError}
+                        aria-describedby={
+                          customSizeValidation.widthError ? "pdf-custom-w-error" : undefined
+                        }
                       />
+                      {customSizeValidation.widthError && (
+                        <p
+                          id="pdf-custom-w-error"
+                          className="text-[10px] text-destructive leading-tight"
+                          role="alert"
+                        >
+                          {customSizeValidation.widthError}
+                        </p>
+                      )}
                     </div>
                     <div className="space-y-1">
                       <Label htmlFor="pdf-custom-h" className="text-[11px] text-muted-foreground">
@@ -1762,8 +1816,20 @@ const AdminSecurityChecklist = () => {
                         value={pdfCustomHeightMm}
                         onChange={(e) => setPdfCustomHeightMm(e.target.value)}
                         className="h-8 text-sm"
-                        aria-invalid={!customSizeValidation.ok}
+                        aria-invalid={!!customSizeValidation.heightError}
+                        aria-describedby={
+                          customSizeValidation.heightError ? "pdf-custom-h-error" : undefined
+                        }
                       />
+                      {customSizeValidation.heightError && (
+                        <p
+                          id="pdf-custom-h-error"
+                          className="text-[10px] text-destructive leading-tight"
+                          role="alert"
+                        >
+                          {customSizeValidation.heightError}
+                        </p>
+                      )}
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-1.5 pt-0.5">
@@ -1780,13 +1846,16 @@ const AdminSecurityChecklist = () => {
                       Tabloid (279×432)
                     </Button>
                   </div>
-                  {customSizeValidation.error ? (
-                    <p className="text-[11px] text-destructive" role="alert">
-                      {customSizeValidation.error}
-                    </p>
-                  ) : (
+                  {customSizeValidation.ok ? (
                     <p className="text-[11px] text-muted-foreground">
                       Dozwolony zakres: {CUSTOM_MM_MIN}–{CUSTOM_MM_MAX} mm. Eksport klienta używa A4.
+                    </p>
+                  ) : (
+                    <p
+                      className="text-[11px] text-muted-foreground"
+                      aria-live="polite"
+                    >
+                      Popraw wskazane pole. Dozwolony zakres: {CUSTOM_MM_MIN}–{CUSTOM_MM_MAX} mm.
                     </p>
                   )}
                   {/* Saved presets: name + dimensions, click to apply, trash to delete. */}
