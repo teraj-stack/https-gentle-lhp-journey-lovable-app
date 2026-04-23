@@ -73,6 +73,9 @@ interface ExportPayload {
   pageMargin?: PageMargin;
   // Required when pageSize === "Custom". Width/height in millimetres.
   customPageSizeMm?: { width: number; height: number };
+  // When true, the server returns ONLY the first rendered page (preview mode).
+  // Used to drive an in-dialog preview before the full download.
+  previewOnly?: boolean;
 }
 
 const STATUS_LABEL: Record<CheckStatus, string> = {
