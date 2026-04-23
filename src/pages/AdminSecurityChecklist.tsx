@@ -321,6 +321,51 @@ const AdminSecurityChecklist = () => {
       // ignore quota / privacy mode errors
     }
   }, [pdfCustomWidthMm, pdfCustomHeightMm]);
+  // User-defined favourites for custom page sizes. Persisted in localStorage as
+  // a JSON array. Each entry is { id, name, width, height } in millimetres.
+  type CustomPreset = { id: string; name: string; width: number; height: number };
+  const PRESETS_STORAGE_KEY = "cml.admin.pdfCustomPresets";
+  const PRESETS_MAX = 12;
+  const [customPresets, setCustomPresets] = useState<CustomPreset[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const raw = window.localStorage.getItem(PRESETS_STORAGE_KEY);
+      if (!raw) return [];
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) return [];
+      // Defensive: filter to well-formed entries within the allowed range.
+      return parsed
+        .filter(
+          (p): p is CustomPreset =>
+            p &&
+            typeof p.id === "string" &&
+            typeof p.name === "string" &&
+            typeof p.width === "number" &&
+            typeof p.height === "number" &&
+            p.width >= 50 && p.width <= 1200 &&
+            p.height >= 50 && p.height <= 1200,
+        )
+        .slice(0, PRESETS_MAX);
+    } catch {
+      return [];
+    }
+  });
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem(PRESETS_STORAGE_KEY, JSON.stringify(customPresets));
+    } catch {
+      // ignore quota / privacy mode errors
+    }
+  }, [customPresets]);
+  const [presetNameDraft, setPresetNameDraft] = useState("");
+  const applyPreset = useCallback((preset: CustomPreset) => {
+    setPdfCustomWidthMm(String(preset.width));
+    setPdfCustomHeightMm(String(preset.height));
+  }, []);
+  const deletePreset = useCallback((id: string) => {
+    setCustomPresets((prev) => prev.filter((p) => p.id !== id));
+  }, []);
   // Parse + validate the custom-size inputs once per render. `error` is null
   // when both values are within bounds; the dialog uses it for inline feedback
   // and to disable the export button.
@@ -339,6 +384,47 @@ const AdminSecurityChecklist = () => {
     }
     return { ok: true as const, w, h, error: null as string | null };
   })();
+  // Save the current Custom dimensions as a named preset. Declared after
+  // customSizeValidation so it can read the parsed/clamped values directly.
+  const saveCurrentPreset = useCallback(() => {
+    if (!customSizeValidation.ok) {
+      toast.error("Wymiary muszą być prawidłowe, aby zapisać preset.");
+      return;
+    }
+    const name = presetNameDraft.trim();
+    if (!name) {
+      toast.error("Podaj nazwę presetu.");
+      return;
+    }
+    if (name.length > 40) {
+      toast.error("Nazwa presetu może mieć maksymalnie 40 znaków.");
+      return;
+    }
+    const w = Math.round(customSizeValidation.w * 10) / 10;
+    const h = Math.round(customSizeValidation.h * 10) / 10;
+    setCustomPresets((prev) => {
+      // Replace by case-insensitive name match, otherwise append. Cap at PRESETS_MAX.
+      const idx = prev.findIndex((p) => p.name.toLowerCase() === name.toLowerCase());
+      const entry: CustomPreset = {
+        id: idx >= 0 ? prev[idx].id : `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        name,
+        width: w,
+        height: h,
+      };
+      if (idx >= 0) {
+        const next = [...prev];
+        next[idx] = entry;
+        return next;
+      }
+      if (prev.length >= PRESETS_MAX) {
+        toast.error(`Limit presetów (${PRESETS_MAX}) osiągnięty. Usuń niepotrzebny, aby dodać nowy.`);
+        return prev;
+      }
+      return [...prev, entry];
+    });
+    setPresetNameDraft("");
+    toast.success(`Zapisano preset „${name}" (${w}×${h} mm).`);
+  }, [customSizeValidation, presetNameDraft]);
   const [pdfPageMargin, setPdfPageMargin] = useState<"narrow" | "standard" | "wide">(() => {
     if (typeof window === "undefined") return "standard";
     const saved = window.localStorage.getItem("cml.admin.pdfPageMargin");
@@ -1703,6 +1789,97 @@ const AdminSecurityChecklist = () => {
                       Dozwolony zakres: {CUSTOM_MM_MIN}–{CUSTOM_MM_MAX} mm. Eksport klienta używa A4.
                     </p>
                   )}
+                  {/* Saved presets: name + dimensions, click to apply, trash to delete. */}
+                  <div className="space-y-1.5 pt-1.5 border-t border-border/40">
+                    <div className="flex items-center justify-between gap-2">
+                      <Label htmlFor="pdf-preset-name" className="text-[11px] text-muted-foreground">
+                        Twoje presety {customPresets.length > 0 && (
+                          <span className="ml-1 tabular-nums opacity-70">
+                            ({customPresets.length}/{PRESETS_MAX})
+                          </span>
+                        )}
+                      </Label>
+                    </div>
+                    <div className="flex gap-1.5">
+                      <Input
+                        id="pdf-preset-name"
+                        type="text"
+                        placeholder="Nazwa presetu (np. Plakat A3)"
+                        value={presetNameDraft}
+                        onChange={(e) => setPresetNameDraft(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            saveCurrentPreset();
+                          }
+                        }}
+                        maxLength={40}
+                        className="h-7 text-xs"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="h-7 px-2 text-[11px] gap-1 shrink-0"
+                        onClick={saveCurrentPreset}
+                        disabled={
+                          !customSizeValidation.ok ||
+                          presetNameDraft.trim().length === 0
+                        }
+                        title="Zapisz aktualne wymiary jako preset"
+                      >
+                        <Plus className="h-3 w-3" aria-hidden="true" />
+                        Zapisz
+                      </Button>
+                    </div>
+                    {customPresets.length === 0 ? (
+                      <p className="text-[10px] text-muted-foreground/80">
+                        Brak zapisanych presetów. Wpisz nazwę i kliknij „Zapisz", aby utrwalić aktualne wymiary.
+                      </p>
+                    ) : (
+                      <div className="flex flex-wrap gap-1.5">
+                        {customPresets.map((preset) => {
+                          const isActive =
+                            customSizeValidation.ok &&
+                            Math.abs(customSizeValidation.w - preset.width) < 0.05 &&
+                            Math.abs(customSizeValidation.h - preset.height) < 0.05;
+                          return (
+                            <div
+                              key={preset.id}
+                              className={`group inline-flex items-center gap-1 rounded-md border ${
+                                isActive
+                                  ? "border-primary/50 bg-primary/10"
+                                  : "border-border/60 bg-background/60"
+                              } pl-2 pr-1 py-0.5 text-[10px]`}
+                            >
+                              <button
+                                type="button"
+                                className="flex items-center gap-1 hover:text-foreground transition-colors"
+                                onClick={() => applyPreset(preset)}
+                                title={`Zastosuj ${preset.width}×${preset.height} mm`}
+                              >
+                                <span className="font-medium text-foreground/90 max-w-[110px] truncate">
+                                  {preset.name}
+                                </span>
+                                <span className="font-mono tabular-nums opacity-70">
+                                  {preset.width}×{preset.height}
+                                </span>
+                              </button>
+                              <button
+                                type="button"
+                                className="ml-0.5 p-0.5 rounded hover:bg-destructive/15 hover:text-destructive opacity-60 group-hover:opacity-100 transition"
+                                onClick={() => deletePreset(preset.id)}
+                                aria-label={`Usuń preset ${preset.name}`}
+                                title="Usuń preset"
+                              >
+                                <Trash2 className="h-3 w-3" aria-hidden="true" />
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
               <p className="text-[11px] text-muted-foreground">
