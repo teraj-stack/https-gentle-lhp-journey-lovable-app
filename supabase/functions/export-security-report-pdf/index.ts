@@ -34,14 +34,21 @@ interface PdfCheck {
   policies?: PolicyRef[];
 }
 
-type PageSize = "A4" | "Letter";
+type PageSize = "A4" | "Letter" | "Custom";
 type PageMargin = "narrow" | "standard" | "wide";
 
 // Standard PDF point dimensions (1pt = 1/72 inch).
-const PAGE_DIMS: Record<PageSize, [number, number]> = {
+const PAGE_DIMS: Record<"A4" | "Letter", [number, number]> = {
   A4: [595.28, 841.89],       // 210 x 297 mm
   Letter: [612, 792],          // 8.5 x 11 in
 };
+
+// Custom page size bounds, expressed in millimetres so the UI can ask for
+// human-friendly numbers. Lower bound is roughly A8 (~52x74mm); upper bound
+// stays well under pdf-lib's hard limit (~14400pt) so we never hit it.
+const CUSTOM_MM_MIN = 50;
+const CUSTOM_MM_MAX = 1200;
+const MM_TO_PT = 72 / 25.4;
 
 // Margin presets in PDF points (1pt = 1/72 inch).
 // narrow ~10mm, standard ~14mm, wide ~20mm.
@@ -64,6 +71,8 @@ interface ExportPayload {
   filename?: string;
   pageSize?: PageSize;
   pageMargin?: PageMargin;
+  // Required when pageSize === "Custom". Width/height in millimetres.
+  customPageSizeMm?: { width: number; height: number };
 }
 
 const STATUS_LABEL: Record<CheckStatus, string> = {
