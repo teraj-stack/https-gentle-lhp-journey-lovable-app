@@ -164,13 +164,14 @@ interface RenderContext {
   page: PDFPage;
   pageWidth: number;
   pageHeight: number;
+  pageDims: [number, number];
   margin: number;
   cursorY: number;
   pageIndex: number;
 }
 
 function newPage(ctx: RenderContext): void {
-  ctx.page = ctx.doc.addPage([595.28, 841.89]); // A4
+  ctx.page = ctx.doc.addPage(ctx.pageDims);
   ctx.pageWidth = ctx.page.getWidth();
   ctx.pageHeight = ctx.page.getHeight();
   ctx.cursorY = ctx.pageHeight - ctx.margin;
