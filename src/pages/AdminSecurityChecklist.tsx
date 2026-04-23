@@ -190,6 +190,52 @@ const STATUS_META: Record<CheckStatus, { label: string; icon: typeof CheckCircle
 const CATEGORIES: Category[] = ["RLS", "Realtime", "Auth", "Tokens"];
 const STATUSES: DbStatus[] = ["pass", "warn", "fail"];
 
+// Map common Polish/diacritic chars to ASCII so the filename stays portable
+// across operating systems and HTTP headers.
+const DIACRITIC_MAP: Record<string, string> = {
+  ą: "a", ć: "c", ę: "e", ł: "l", ń: "n", ó: "o", ś: "s", ż: "z", ź: "z",
+  Ą: "A", Ć: "C", Ę: "E", Ł: "L", Ń: "N", Ó: "O", Ś: "S", Ż: "Z", Ź: "Z",
+};
+function asciiFold(s: string): string {
+  return s.replace(/[ąćęłńóśżźĄĆĘŁŃÓŚŻŹ]/g, (ch) => DIACRITIC_MAP[ch] ?? ch);
+}
+function slugifyToken(raw: string, max: number): string {
+  // Lower-case, fold diacritics, replace non-[a-z0-9] with hyphen,
+  // collapse repeats, trim hyphens, then truncate.
+  const cleaned = asciiFold(String(raw))
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+  const safe = cleaned.length > 0 ? cleaned : "x";
+  return safe.length > max ? safe.slice(0, max).replace(/-+$/g, "") : safe;
+}
+/**
+ * Build a browser-safe PDF filename. Variable parts (category/status) are
+ * length-capped so the final name stays well under common 200-char limits
+ * even when filters are long. Always ends with ".pdf".
+ */
+function buildSafePdfFilename(parts: {
+  stamp: string;
+  category: string;          // e.g. "ALL" or "RLS,Realtime,Auth"
+  statuses: string;          // e.g. "pass-warn-fail"
+  pageSize: string;          // "A4" | "Letter"
+  pageMargin?: string;       // "narrow" | "standard" | "wide"
+  variant?: string;          // e.g. "server"
+}): string {
+  const stamp = parts.stamp.replace(/[^0-9-]/g, "").slice(0, 10) || "report";
+  const cat = slugifyToken(parts.category, 24);
+  const st = slugifyToken(parts.statuses, 16);
+  const ps = slugifyToken(parts.pageSize, 8);
+  const pm = parts.pageMargin ? `-${slugifyToken(parts.pageMargin, 10)}` : "";
+  const variant = parts.variant ? `-${slugifyToken(parts.variant, 10)}` : "";
+  const base = `cml-security-report-${stamp}-${cat}-${st}-${ps}${pm}${variant}`;
+  // Hard cap on the stem (excl. extension) to stay safe across filesystems.
+  const MAX_STEM = 120;
+  const stem = base.length > MAX_STEM ? base.slice(0, MAX_STEM).replace(/-+$/g, "") : base;
+  return `${stem}.pdf`;
+}
+
 type EditorState =
   | { mode: "closed" }
   | { mode: "create" }
@@ -558,9 +604,9 @@ const AdminSecurityChecklist = () => {
       }
 
       const stamp = generatedAt.toISOString().slice(0, 10);
-      const catSuffix = categoryFilter === "ALL" ? "all" : categoryFilter.toLowerCase();
+      const catSuffix = categoryFilter === "ALL" ? "all" : categoryFilter;
       const stSuffix = [...allowedStatuses].sort().join("-");
-      doc.save(`cml-security-report-${stamp}-${catSuffix}-${stSuffix}-${pageSize.toLowerCase()}.pdf`);
+      doc.save(buildSafePdfFilename({ stamp, category: catSuffix, statuses: stSuffix, pageSize }));
       toast.success(`Raport PDF pobrany (${checks.length} pozycji)`);
     } catch (err) {
       toast.error(`Nie udalo sie wygenerowac PDF: ${err instanceof Error ? err.message : "blad"}`);
@@ -613,9 +659,16 @@ const AdminSecurityChecklist = () => {
       const overall = counts.fail > 0 ? "WYMAGA UWAGI" : counts.warn > 0 ? "DO PRZEGLĄDU" : "ZIELONY";
       const filterLabel = `Filtr: ${categoryFilter === "ALL" ? "wszystkie kategorie" : categoryFilter} · statusy: ${[...allowedStatuses].map((s) => s.toUpperCase()).join("/")} · format: ${pageSize} · marginesy: ${marginLabel}`;
       const stamp = new Date().toISOString().slice(0, 10);
-      const catSuffix = categoryFilter === "ALL" ? "all" : categoryFilter.toLowerCase();
+      const catSuffix = categoryFilter === "ALL" ? "all" : categoryFilter;
       const stSuffix = [...allowedStatuses].sort().join("-");
-      const filename = `cml-security-report-${stamp}-${catSuffix}-${stSuffix}-${pageSize.toLowerCase()}-${pageMargin}-server.pdf`;
+      const filename = buildSafePdfFilename({
+        stamp,
+        category: catSuffix,
+        statuses: stSuffix,
+        pageSize,
+        pageMargin,
+        variant: "server",
+      });
 
       setExportingServer(true);
       setServerPhase("preparing");
