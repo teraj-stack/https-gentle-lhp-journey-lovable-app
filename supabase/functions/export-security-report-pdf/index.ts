@@ -517,7 +517,7 @@ async function buildPdf(payload: ExportPayload): Promise<Uint8Array> {
   // Render each check as a card
   payload.checks.forEach((c, i) => drawCheckCard(ctx, i + 1, c));
 
-  drawFooter(ctx, ctx.doc.getPages().length);
+  drawFooter(ctx, ctx.doc.getPages().length, meta.generatedAt);
 
   const bytes = await doc.save();
   return bytes;
