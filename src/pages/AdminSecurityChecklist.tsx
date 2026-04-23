@@ -1788,7 +1788,18 @@ const AdminSecurityChecklist = () => {
               // Wider margins reduce capacity slightly (cards have less vertical room
               // because content area shrinks). Narrow → +8%, wide → -8%.
               const marginFactor = pdfPageMargin === "narrow" ? 1.08 : pdfPageMargin === "wide" ? 0.92 : 1;
-              const serverPerPage = (pdfPageSize === "A4" ? 3 : 2.85) * marginFactor;
+              // Rotate-to-fit boost: scale per-page capacity by the gain in usable
+              // text area (ratio of effective area to standard portrait area).
+              const customW = customSizeValidation.ok ? customSizeValidation.w : Number(pdfCustomWidthMm) || 0;
+              const customH = customSizeValidation.ok ? customSizeValidation.h : Number(pdfCustomHeightMm) || 0;
+              const baseEff = computeEffectiveDims(pdfPageSize, customW, customH, pdfPageMargin, false);
+              const eff = computeEffectiveDims(pdfPageSize, customW, customH, pdfPageMargin, pdfRotateToFit);
+              const rotateFactor =
+                eff.rotated && baseEff.usableWidthMm > 0 && baseEff.usableHeightMm > 0
+                  ? (eff.usableWidthMm * eff.usableHeightMm) /
+                    (baseEff.usableWidthMm * baseEff.usableHeightMm)
+                  : 1;
+              const serverPerPage = (pdfPageSize === "A4" ? 3 : 2.85) * marginFactor * rotateFactor;
               const clientPerPage = pdfPageSize === "A4" ? 4 : 3.78;
               const estPages = Math.max(1, Math.ceil(filtered.length / serverPerPage));
               const estPagesClient = Math.max(1, Math.ceil(filtered.length / clientPerPage));
