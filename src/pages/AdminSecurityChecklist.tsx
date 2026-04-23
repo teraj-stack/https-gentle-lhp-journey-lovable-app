@@ -35,6 +35,11 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import {
   CheckCircle2,
   AlertTriangle,
   ShieldCheck,
@@ -48,6 +53,9 @@ import {
   Pencil,
   Plus,
   Trash2,
+  ChevronDown,
+  Copy,
+  FileCode2,
 } from "lucide-react";
 import SeoHead from "@/components/shared/SeoHead";
 import { toast } from "sonner";
