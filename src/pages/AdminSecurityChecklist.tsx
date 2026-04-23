@@ -240,6 +240,7 @@ const AdminSecurityChecklist = () => {
   const [pdfDialogOpen, setPdfDialogOpen] = useState(false);
   const [pdfStatuses, setPdfStatuses] = useState<DbStatus[]>(["pass", "warn", "fail"]);
   const [pdfCategory, setPdfCategory] = useState<Category | "ALL">("ALL");
+  const [pdfPageSize, setPdfPageSize] = useState<"A4" | "Letter">("A4");
   const [exportingServer, setExportingServer] = useState(false);
   const [serverPhase, setServerPhase] = useState<ServerExportPhase>("idle");
   const togglePdfStatus = (s: DbStatus, checked: boolean) => {
