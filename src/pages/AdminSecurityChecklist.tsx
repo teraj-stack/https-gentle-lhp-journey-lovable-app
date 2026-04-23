@@ -332,15 +332,16 @@ const AdminSecurityChecklist = () => {
     else toast.success("Self-audit zakończony — wszystkie kontrole OK");
   }, [rows]);
 
-  const exportPdf = useCallback((opts?: { statuses?: DbStatus[]; category?: Category | "ALL" }) => {
+  const exportPdf = useCallback((opts?: { statuses?: DbStatus[]; category?: Category | "ALL"; pageSize?: "A4" | "Letter" }) => {
     const allowedStatuses = new Set<DbStatus>(opts?.statuses && opts.statuses.length > 0 ? opts.statuses : STATUSES);
     const categoryFilter = opts?.category ?? "ALL";
+    const pageSize = opts?.pageSize ?? "A4";
     if (rows.length === 0) {
       toast.error("Brak pozycji do eksportu");
       return;
     }
     try {
-      const doc = new jsPDF({ unit: "pt", format: "a4" });
+      const doc = new jsPDF({ unit: "pt", format: pageSize === "Letter" ? "letter" : "a4" });
       const pageWidth = doc.internal.pageSize.getWidth();
       const margin = 40;
       const generatedAt = new Date();
