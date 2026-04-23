@@ -115,6 +115,7 @@ const Header = () => {
   const [megaOpen, setMegaOpen] = useState<string | null>(null);
   const [navKey, setNavKey] = useState(0);
   const megaLockedUntil = useRef(0);
+  const megaCloseTimer = useRef<number | null>(null);
   const headerRef = useRef<HTMLElement>(null);
   const location = useLocation();
   const pathname = location.pathname;
@@ -133,16 +134,40 @@ const Header = () => {
     return () => ro.disconnect();
   }, []);
 
-  const handleMegaEnter = useCallback((key: string) => {
-    if (Date.now() < megaLockedUntil.current) return;
-    setMegaOpen(key);
+  // Delay closing mega-menu after mouse leave so users have time to move
+  // cursor onto the dropdown content (typical mega-menu hover intent pattern).
+  const MEGA_CLOSE_DELAY_MS = 600;
+
+  const clearMegaCloseTimer = useCallback(() => {
+    if (megaCloseTimer.current !== null) {
+      window.clearTimeout(megaCloseTimer.current);
+      megaCloseTimer.current = null;
+    }
   }, []);
-  const handleMegaLeave = useCallback(() => setMegaOpen(null), []);
+
+  const handleMegaEnter = useCallback(
+    (key: string) => {
+      clearMegaCloseTimer();
+      if (Date.now() < megaLockedUntil.current) return;
+      setMegaOpen(key);
+    },
+    [clearMegaCloseTimer],
+  );
+  const handleMegaLeave = useCallback(() => {
+    clearMegaCloseTimer();
+    megaCloseTimer.current = window.setTimeout(() => {
+      setMegaOpen(null);
+      megaCloseTimer.current = null;
+    }, MEGA_CLOSE_DELAY_MS);
+  }, [clearMegaCloseTimer]);
   const handleMegaLinkClick = useCallback(() => {
+    clearMegaCloseTimer();
     setMegaOpen(null);
     megaLockedUntil.current = Date.now() + 2000;
     setNavKey((k) => k + 1);
-  }, []);
+  }, [clearMegaCloseTimer]);
+
+  useEffect(() => () => clearMegaCloseTimer(), [clearMegaCloseTimer]);
 
   const isActive = (href: string) => pathname === href;
   const isSectionActive = (items: NavItem[]) => items.some((i) => pathname === i.href);
