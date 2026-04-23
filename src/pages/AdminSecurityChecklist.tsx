@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -223,6 +224,14 @@ const AdminSecurityChecklist = () => {
   const [saving, setSaving] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<ChecklistRow | null>(null);
 
+  // PDF export filter dialog state
+  const [pdfDialogOpen, setPdfDialogOpen] = useState(false);
+  const [pdfStatuses, setPdfStatuses] = useState<DbStatus[]>(["pass", "warn", "fail"]);
+  const [pdfCategory, setPdfCategory] = useState<Category | "ALL">("ALL");
+  const togglePdfStatus = (s: DbStatus, checked: boolean) => {
+    setPdfStatuses((prev) => (checked ? [...new Set([...prev, s])] : prev.filter((x) => x !== s)));
+  };
+
   // Auth bootstrap
   useEffect(() => {
     let isMounted = true;
@@ -308,7 +317,9 @@ const AdminSecurityChecklist = () => {
     else toast.success("Self-audit zakończony — wszystkie kontrole OK");
   }, [rows]);
 
-  const exportPdf = useCallback(() => {
+  const exportPdf = useCallback((opts?: { statuses?: DbStatus[]; category?: Category | "ALL" }) => {
+    const allowedStatuses = new Set<DbStatus>(opts?.statuses && opts.statuses.length > 0 ? opts.statuses : STATUSES);
+    const categoryFilter = opts?.category ?? "ALL";
     if (rows.length === 0) {
       toast.error("Brak pozycji do eksportu");
       return;
@@ -324,7 +335,7 @@ const AdminSecurityChecklist = () => {
       const dayLabelLocal = daysSince === 0 ? "dzisiaj" : daysSince === 1 ? "1 dzien temu" : `${daysSince} dni temu`;
 
       // Recompute display data locally so the PDF reflects what's on screen.
-      const checks = rows.map((r) => {
+      const allChecks = rows.map((r) => {
         const live = liveStatus[r.slug];
         return {
           ...r,
@@ -332,10 +343,22 @@ const AdminSecurityChecklist = () => {
           liveDetail: live?.detail,
         };
       });
+      const checks = allChecks.filter((c) => {
+        const statusOk = (c.liveStatus === "pass" || c.liveStatus === "warn" || c.liveStatus === "fail")
+          ? allowedStatuses.has(c.liveStatus as DbStatus)
+          : true; // include unknown/running rows defensively
+        const categoryOk = categoryFilter === "ALL" || c.category === categoryFilter;
+        return statusOk && categoryOk;
+      });
+      if (checks.length === 0) {
+        toast.error("Brak pozycji pasujacych do filtra");
+        return;
+      }
       const pass = checks.filter((c) => c.liveStatus === "pass").length;
       const fail = checks.filter((c) => c.liveStatus === "fail").length;
       const warn = checks.filter((c) => c.liveStatus === "warn").length;
       const overall = fail > 0 ? "WYMAGA UWAGI" : warn > 0 ? "DO PRZEGLĄDU" : "ZIELONY";
+      const filterLabel = `Filtr: ${categoryFilter === "ALL" ? "wszystkie kategorie" : categoryFilter} · statusy: ${[...allowedStatuses].map((s) => s.toUpperCase()).join("/")}`;
 
       // Header
       doc.setFont("helvetica", "bold");
@@ -354,7 +377,7 @@ const AdminSecurityChecklist = () => {
       const summaryY = lastAuditAt ? 116 : 102;
       doc.setDrawColor(220, 220, 220);
       doc.setFillColor(245, 245, 245);
-      doc.roundedRect(margin, summaryY, pageWidth - margin * 2, 60, 6, 6, "FD");
+      doc.roundedRect(margin, summaryY, pageWidth - margin * 2, 76, 6, 6, "FD");
       doc.setFont("helvetica", "bold");
       doc.setFontSize(12);
       doc.setTextColor(20, 20, 20);
@@ -363,10 +386,13 @@ const AdminSecurityChecklist = () => {
       doc.setFontSize(10);
       doc.setTextColor(60, 60, 60);
       doc.text(
-        `OK: ${pass}    Ostrzezenia: ${warn}    Krytyczne: ${fail}    Lacznie: ${checks.length}`,
+        `OK: ${pass}    Ostrzezenia: ${warn}    Krytyczne: ${fail}    Lacznie: ${checks.length} z ${allChecks.length}`,
         margin + 14,
         summaryY + 42,
       );
+      doc.setTextColor(90, 90, 90);
+      doc.setFontSize(9);
+      doc.text(filterLabel, margin + 14, summaryY + 60);
 
       // Table
       const statusLabel = (s: CheckStatus) =>
@@ -384,7 +410,7 @@ const AdminSecurityChecklist = () => {
       };
 
       autoTable(doc, {
-        startY: summaryY + 78,
+        startY: summaryY + 92,
         margin: { left: margin, right: margin },
         head: [["#", "Kategoria", "Kontrola", "Status", "Szczegoly / Polityki RLS i SQL"]],
         body: checks.flatMap((c, i) => {
@@ -451,8 +477,10 @@ const AdminSecurityChecklist = () => {
       }
 
       const stamp = generatedAt.toISOString().slice(0, 10);
-      doc.save(`cml-security-report-${stamp}.pdf`);
-      toast.success("Raport PDF pobrany");
+      const catSuffix = categoryFilter === "ALL" ? "all" : categoryFilter.toLowerCase();
+      const stSuffix = [...allowedStatuses].sort().join("-");
+      doc.save(`cml-security-report-${stamp}-${catSuffix}-${stSuffix}.pdf`);
+      toast.success(`Raport PDF pobrany (${checks.length} pozycji)`);
     } catch (err) {
       toast.error(`Nie udalo sie wygenerowac PDF: ${err instanceof Error ? err.message : "blad"}`);
     }
@@ -648,7 +676,7 @@ const AdminSecurityChecklist = () => {
                 <Button size="sm" variant="outline" onClick={openCreate}>
                   <Plus className="w-4 h-4 mr-1" /> Nowa pozycja
                 </Button>
-                <Button size="sm" variant="outline" onClick={exportPdf} disabled={rows.length === 0}>
+                <Button size="sm" variant="outline" onClick={() => setPdfDialogOpen(true)} disabled={rows.length === 0}>
                   <Download className="w-4 h-4 mr-1" /> Pobierz PDF
                 </Button>
                 <Button size="sm" variant="default" onClick={runSelfAudit} disabled={auditing || rows.length === 0}>
@@ -920,6 +948,93 @@ const AdminSecurityChecklist = () => {
             <Button onClick={submitForm} disabled={saving}>
               {saving && <Loader2 className="w-4 h-4 mr-1 animate-spin" />}
               {editor.mode === "create" ? "Dodaj" : "Zapisz"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* PDF export filter dialog */}
+      <Dialog open={pdfDialogOpen} onOpenChange={setPdfDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Eksport PDF — filtry</DialogTitle>
+            <DialogDescription>
+              Wybierz, które pozycje znajdą się w raporcie.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-5 py-2">
+            <div className="space-y-2">
+              <Label className="text-sm">Statusy do uwzględnienia</Label>
+              <div className="space-y-2">
+                {STATUSES.map((s) => {
+                  const meta = STATUS_META[s];
+                  const checked = pdfStatuses.includes(s);
+                  return (
+                    <label
+                      key={s}
+                      htmlFor={`pdf-status-${s}`}
+                      className="flex items-center gap-2 cursor-pointer text-sm"
+                    >
+                      <Checkbox
+                        id={`pdf-status-${s}`}
+                        checked={checked}
+                        onCheckedChange={(c) => togglePdfStatus(s, c === true)}
+                      />
+                      <span className={meta.className}>{meta.label}</span>
+                      <span className="text-xs text-muted-foreground uppercase">({s})</span>
+                    </label>
+                  );
+                })}
+              </div>
+              <div className="flex gap-2 pt-1">
+                <Button type="button" variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => setPdfStatuses(["pass", "warn", "fail"])}>
+                  Wszystkie
+                </Button>
+                <Button type="button" variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => setPdfStatuses(["fail"])}>
+                  Tylko FAIL
+                </Button>
+                <Button type="button" variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => setPdfStatuses(["warn", "fail"])}>
+                  WARN + FAIL
+                </Button>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="pdf-category" className="text-sm">Kategoria</Label>
+              <Select value={pdfCategory} onValueChange={(v) => setPdfCategory(v as Category | "ALL")}>
+                <SelectTrigger id="pdf-category">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">Wszystkie kategorie</SelectItem>
+                  {CATEGORIES.map((c) => (
+                    <SelectItem key={c} value={c}>{c}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Podgląd: {rows.filter((r) => {
+                const live = liveStatus[r.slug]?.status ?? r.status;
+                const sOk = (live === "pass" || live === "warn" || live === "fail") ? pdfStatuses.includes(live as DbStatus) : true;
+                const cOk = pdfCategory === "ALL" || r.category === pdfCategory;
+                return sOk && cOk;
+              }).length} z {rows.length} pozycji.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setPdfDialogOpen(false)}>Anuluj</Button>
+            <Button
+              onClick={() => {
+                if (pdfStatuses.length === 0) {
+                  toast.error("Wybierz przynajmniej jeden status");
+                  return;
+                }
+                setPdfDialogOpen(false);
+                exportPdf({ statuses: pdfStatuses, category: pdfCategory });
+              }}
+              disabled={pdfStatuses.length === 0}
+            >
+              <Download className="w-4 h-4 mr-1" /> Pobierz
             </Button>
           </DialogFooter>
         </DialogContent>
