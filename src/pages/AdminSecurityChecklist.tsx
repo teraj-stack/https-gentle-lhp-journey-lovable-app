@@ -527,6 +527,97 @@ const AdminSecurityChecklist = () => {
     }
   }, [rows, liveStatus, lastAuditAt]);
 
+  // Server-side PDF export — same payload, rendered with pdf-lib for crisp wrapping.
+  const exportPdfServer = useCallback(
+    async (opts?: { statuses?: DbStatus[]; category?: Category | "ALL" }) => {
+      if (rows.length === 0) {
+        toast.error("Brak pozycji do eksportu");
+        return;
+      }
+      const allowedStatuses = new Set<DbStatus>(opts?.statuses && opts.statuses.length > 0 ? opts.statuses : STATUSES);
+      const categoryFilter = opts?.category ?? "ALL";
+
+      const allChecks = rows.map((r) => {
+        const live = liveStatus[r.slug];
+        return {
+          slug: r.slug,
+          category: r.category,
+          title: r.title,
+          description: r.description,
+          detail: r.detail,
+          policies: r.policies,
+          status: (live?.status ?? r.status) as CheckStatus,
+        };
+      });
+      const checks = allChecks.filter((c) => {
+        const sOk = (c.status === "pass" || c.status === "warn" || c.status === "fail")
+          ? allowedStatuses.has(c.status as DbStatus)
+          : true;
+        const cOk = categoryFilter === "ALL" || c.category === categoryFilter;
+        return sOk && cOk;
+      });
+      if (checks.length === 0) {
+        toast.error("Brak pozycji pasujacych do filtra");
+        return;
+      }
+      const counts = {
+        pass: checks.filter((c) => c.status === "pass").length,
+        warn: checks.filter((c) => c.status === "warn").length,
+        fail: checks.filter((c) => c.status === "fail").length,
+        total: checks.length,
+        allTotal: allChecks.length,
+      };
+      const overall = counts.fail > 0 ? "WYMAGA UWAGI" : counts.warn > 0 ? "DO PRZEGLĄDU" : "ZIELONY";
+      const filterLabel = `Filtr: ${categoryFilter === "ALL" ? "wszystkie kategorie" : categoryFilter} · statusy: ${[...allowedStatuses].map((s) => s.toUpperCase()).join("/")}`;
+      const stamp = new Date().toISOString().slice(0, 10);
+      const catSuffix = categoryFilter === "ALL" ? "all" : categoryFilter.toLowerCase();
+      const stSuffix = [...allowedStatuses].sort().join("-");
+      const filename = `cml-security-report-${stamp}-${catSuffix}-${stSuffix}-server.pdf`;
+
+      setExportingServer(true);
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          toast.error("Brak sesji — zaloguj się ponownie");
+          return;
+        }
+        const { data, error } = await supabase.functions.invoke("export-security-report-pdf", {
+          body: {
+            checks,
+            meta: {
+              generatedAt: new Date().toLocaleString("pl-PL"),
+              lastScanDate: new Date(LAST_SCAN_DATE).toLocaleDateString("pl-PL", { year: "numeric", month: "long", day: "numeric" }),
+              lastAuditAt: lastAuditAt ? lastAuditAt.toLocaleString("pl-PL") : null,
+              filterLabel,
+              overall,
+              counts,
+            },
+            filename,
+          },
+        });
+        if (error) {
+          toast.error(`Eksport serwerowy nieudany: ${error.message}`);
+          return;
+        }
+        const blob = data instanceof Blob ? data : new Blob([data as ArrayBuffer], { type: "application/pdf" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        toast.success(`Raport PDF (server) pobrany — ${counts.total} pozycji`);
+      } catch (err) {
+        toast.error(`Eksport serwerowy nieudany: ${err instanceof Error ? err.message : "blad"}`);
+      } finally {
+        setExportingServer(false);
+      }
+    },
+    [rows, liveStatus, lastAuditAt],
+  );
+
   const openCreate = () => {
     setForm({ ...emptyForm, sort_order: (rows[rows.length - 1]?.sort_order ?? 0) + 10 });
     setEditor({ mode: "create" });
