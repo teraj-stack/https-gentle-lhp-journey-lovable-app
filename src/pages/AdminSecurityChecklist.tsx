@@ -62,7 +62,19 @@ import {
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import SeoHead from "@/components/shared/SeoHead";
+import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
+
+type ServerExportPhase = "idle" | "preparing" | "authenticating" | "uploading" | "generating" | "downloading" | "done";
+
+const PHASE_META: Record<Exclude<ServerExportPhase, "idle">, { label: string; value: number }> = {
+  preparing: { label: "Przygotowuję dane…", value: 15 },
+  authenticating: { label: "Weryfikuję sesję…", value: 30 },
+  uploading: { label: "Wysyłam zapytanie…", value: 45 },
+  generating: { label: "Renderuję PDF na serwerze…", value: 70 },
+  downloading: { label: "Pobieram plik…", value: 90 },
+  done: { label: "Gotowe", value: 100 },
+};
 
 // Date of the last manual security review reflected in the checklist below.
 // Update this whenever you re-verify policies or resolve new findings.
@@ -229,6 +241,7 @@ const AdminSecurityChecklist = () => {
   const [pdfStatuses, setPdfStatuses] = useState<DbStatus[]>(["pass", "warn", "fail"]);
   const [pdfCategory, setPdfCategory] = useState<Category | "ALL">("ALL");
   const [exportingServer, setExportingServer] = useState(false);
+  const [serverPhase, setServerPhase] = useState<ServerExportPhase>("idle");
   const togglePdfStatus = (s: DbStatus, checked: boolean) => {
     setPdfStatuses((prev) => (checked ? [...new Set([...prev, s])] : prev.filter((x) => x !== s)));
   };
@@ -575,7 +588,11 @@ const AdminSecurityChecklist = () => {
       const filename = `cml-security-report-${stamp}-${catSuffix}-${stSuffix}-server.pdf`;
 
       setExportingServer(true);
+      setServerPhase("preparing");
       try {
+        // tiny delay so the user sees the first phase even on fast networks
+        await new Promise((r) => setTimeout(r, 120));
+        setServerPhase("authenticating");
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) {
           toast.error("Brak sesji — zaloguj się ponownie");
@@ -583,7 +600,8 @@ const AdminSecurityChecklist = () => {
         }
         const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
         const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
-        const res = await fetch(`${supabaseUrl}/functions/v1/export-security-report-pdf`, {
+        setServerPhase("uploading");
+        const fetchPromise = fetch(`${supabaseUrl}/functions/v1/export-security-report-pdf`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -603,12 +621,17 @@ const AdminSecurityChecklist = () => {
             filename,
           }),
         });
+        // promote to "generating" once request is in flight
+        const generatingTimer = setTimeout(() => setServerPhase("generating"), 400);
+        const res = await fetchPromise;
+        clearTimeout(generatingTimer);
         if (!res.ok) {
           let msg = `HTTP ${res.status}`;
           try { const j = await res.json(); if (j?.error) msg = String(j.error); } catch { /* ignore */ }
           toast.error(`Eksport serwerowy nieudany: ${msg}`);
           return;
         }
+        setServerPhase("downloading");
         const blob = await res.blob();
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
@@ -618,11 +641,14 @@ const AdminSecurityChecklist = () => {
         a.click();
         a.remove();
         URL.revokeObjectURL(url);
+        setServerPhase("done");
         toast.success(`Raport PDF (server) pobrany — ${counts.total} pozycji`);
       } catch (err) {
         toast.error(`Eksport serwerowy nieudany: ${err instanceof Error ? err.message : "blad"}`);
       } finally {
         setExportingServer(false);
+        // brief hold on "done" before resetting so user sees 100%
+        setTimeout(() => setServerPhase("idle"), 600);
       }
     },
     [rows, liveStatus, lastAuditAt],
@@ -1162,6 +1188,29 @@ const AdminSecurityChecklist = () => {
                 return sOk && cOk;
               }).length} z {rows.length} pozycji.
             </p>
+            {serverPhase !== "idle" && (
+              <div
+                className="space-y-2 rounded-md border border-border/60 bg-muted/30 p-3"
+                role="status"
+                aria-live="polite"
+                aria-busy={exportingServer}
+              >
+                <div className="flex items-center justify-between gap-2 text-xs">
+                  <span className="flex items-center gap-2 text-foreground">
+                    {serverPhase === "done" ? (
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                    ) : (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />
+                    )}
+                    {PHASE_META[serverPhase].label}
+                  </span>
+                  <span className="font-mono tabular-nums text-muted-foreground">
+                    {PHASE_META[serverPhase].value}%
+                  </span>
+                </div>
+                <Progress value={PHASE_META[serverPhase].value} className="h-1.5" />
+              </div>
+            )}
           </div>
           <DialogFooter className="flex-col sm:flex-row gap-2">
             <Button variant="ghost" onClick={() => setPdfDialogOpen(false)} disabled={exportingServer}>Anuluj</Button>
@@ -1179,7 +1228,7 @@ const AdminSecurityChecklist = () => {
               title="Renderuje PDF na serwerze (pdf-lib) — lepsze łamanie wierszy"
             >
               {exportingServer ? (
-                <><Loader2 className="w-4 h-4 mr-1 animate-spin" /> Generuję…</>
+                <><Loader2 className="w-4 h-4 mr-1 animate-spin" /> {PHASE_META[serverPhase === "idle" ? "preparing" : serverPhase].label}</>
               ) : (
                 <><Download className="w-4 h-4 mr-1" /> Pobierz (server)</>
               )}
