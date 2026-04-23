@@ -238,14 +238,21 @@ const AdminSecurityChecklist = () => {
     setLoadingRows(true);
     const { data, error } = await supabase
       .from("security_checklist_items")
-      .select("id, slug, category, title, description, status, detail, sort_order")
+      .select("id, slug, category, title, description, status, detail, sort_order, policies")
       .order("sort_order", { ascending: true })
       .order("slug", { ascending: true });
     if (error) {
       toast.error(`Nie udało się załadować checklisty: ${error.message}`);
       setRows([]);
     } else {
-      setRows((data ?? []) as ChecklistRow[]);
+      setRows(
+        (data ?? []).map((r) => ({
+          ...(r as Omit<ChecklistRow, "policies">),
+          policies: Array.isArray((r as { policies?: unknown }).policies)
+            ? ((r as { policies: PolicyRef[] }).policies)
+            : [],
+        })),
+      );
     }
     setLoadingRows(false);
   }, []);
