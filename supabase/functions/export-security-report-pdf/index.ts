@@ -34,6 +34,14 @@ interface PdfCheck {
   policies?: PolicyRef[];
 }
 
+type PageSize = "A4" | "Letter";
+
+// Standard PDF point dimensions (1pt = 1/72 inch).
+const PAGE_DIMS: Record<PageSize, [number, number]> = {
+  A4: [595.28, 841.89],       // 210 x 297 mm
+  Letter: [612, 792],          // 8.5 x 11 in
+};
+
 interface ExportPayload {
   checks: PdfCheck[];
   meta?: {
@@ -45,6 +53,7 @@ interface ExportPayload {
     counts?: { pass: number; warn: number; fail: number; total: number; allTotal: number };
   };
   filename?: string;
+  pageSize?: PageSize;
 }
 
 const STATUS_LABEL: Record<CheckStatus, string> = {
@@ -155,13 +164,14 @@ interface RenderContext {
   page: PDFPage;
   pageWidth: number;
   pageHeight: number;
+  pageDims: [number, number];
   margin: number;
   cursorY: number;
   pageIndex: number;
 }
 
 function newPage(ctx: RenderContext): void {
-  ctx.page = ctx.doc.addPage([595.28, 841.89]); // A4
+  ctx.page = ctx.doc.addPage(ctx.pageDims);
   ctx.pageWidth = ctx.page.getWidth();
   ctx.pageHeight = ctx.page.getHeight();
   ctx.cursorY = ctx.pageHeight - ctx.margin;
@@ -428,16 +438,21 @@ async function buildPdf(payload: ExportPayload): Promise<Uint8Array> {
   const fontBold = await doc.embedFont(StandardFonts.HelveticaBold);
   const fontMono = await doc.embedFont(StandardFonts.Courier);
 
+  const pageSize: PageSize = payload.pageSize === "Letter" ? "Letter" : "A4";
+  const dims = PAGE_DIMS[pageSize];
+  const margin = 40;
+
   const ctx: RenderContext = {
     doc,
     font,
     fontBold,
     fontMono,
-    page: doc.addPage([595.28, 841.89]),
-    pageWidth: 595.28,
-    pageHeight: 841.89,
-    margin: 40,
-    cursorY: 841.89 - 40,
+    page: doc.addPage(dims),
+    pageWidth: dims[0],
+    pageHeight: dims[1],
+    pageDims: dims,
+    margin,
+    cursorY: dims[1] - margin,
     pageIndex: 1,
   };
 
@@ -578,6 +593,12 @@ Deno.serve(async (req) => {
     if (payload.checks.length > 500) {
       return new Response(JSON.stringify({ error: "Too many checks" }), {
         status: 413,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    if (payload.pageSize !== undefined && payload.pageSize !== "A4" && payload.pageSize !== "Letter") {
+      return new Response(JSON.stringify({ error: "Invalid pageSize (expected 'A4' or 'Letter')" }), {
+        status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }

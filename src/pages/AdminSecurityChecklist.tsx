@@ -240,6 +240,7 @@ const AdminSecurityChecklist = () => {
   const [pdfDialogOpen, setPdfDialogOpen] = useState(false);
   const [pdfStatuses, setPdfStatuses] = useState<DbStatus[]>(["pass", "warn", "fail"]);
   const [pdfCategory, setPdfCategory] = useState<Category | "ALL">("ALL");
+  const [pdfPageSize, setPdfPageSize] = useState<"A4" | "Letter">("A4");
   const [exportingServer, setExportingServer] = useState(false);
   const [serverPhase, setServerPhase] = useState<ServerExportPhase>("idle");
   const togglePdfStatus = (s: DbStatus, checked: boolean) => {
@@ -331,15 +332,16 @@ const AdminSecurityChecklist = () => {
     else toast.success("Self-audit zakończony — wszystkie kontrole OK");
   }, [rows]);
 
-  const exportPdf = useCallback((opts?: { statuses?: DbStatus[]; category?: Category | "ALL" }) => {
+  const exportPdf = useCallback((opts?: { statuses?: DbStatus[]; category?: Category | "ALL"; pageSize?: "A4" | "Letter" }) => {
     const allowedStatuses = new Set<DbStatus>(opts?.statuses && opts.statuses.length > 0 ? opts.statuses : STATUSES);
     const categoryFilter = opts?.category ?? "ALL";
+    const pageSize = opts?.pageSize ?? "A4";
     if (rows.length === 0) {
       toast.error("Brak pozycji do eksportu");
       return;
     }
     try {
-      const doc = new jsPDF({ unit: "pt", format: "a4" });
+      const doc = new jsPDF({ unit: "pt", format: pageSize === "Letter" ? "letter" : "a4" });
       const pageWidth = doc.internal.pageSize.getWidth();
       const margin = 40;
       const generatedAt = new Date();
@@ -533,7 +535,7 @@ const AdminSecurityChecklist = () => {
       const stamp = generatedAt.toISOString().slice(0, 10);
       const catSuffix = categoryFilter === "ALL" ? "all" : categoryFilter.toLowerCase();
       const stSuffix = [...allowedStatuses].sort().join("-");
-      doc.save(`cml-security-report-${stamp}-${catSuffix}-${stSuffix}.pdf`);
+      doc.save(`cml-security-report-${stamp}-${catSuffix}-${stSuffix}-${pageSize.toLowerCase()}.pdf`);
       toast.success(`Raport PDF pobrany (${checks.length} pozycji)`);
     } catch (err) {
       toast.error(`Nie udalo sie wygenerowac PDF: ${err instanceof Error ? err.message : "blad"}`);
@@ -542,7 +544,7 @@ const AdminSecurityChecklist = () => {
 
   // Server-side PDF export — same payload, rendered with pdf-lib for crisp wrapping.
   const exportPdfServer = useCallback(
-    async (opts?: { statuses?: DbStatus[]; category?: Category | "ALL" }) => {
+    async (opts?: { statuses?: DbStatus[]; category?: Category | "ALL"; pageSize?: "A4" | "Letter" }) => {
       if (rows.length === 0) {
         toast.error("Brak pozycji do eksportu");
         return;
@@ -580,12 +582,13 @@ const AdminSecurityChecklist = () => {
         total: checks.length,
         allTotal: allChecks.length,
       };
+      const pageSize = opts?.pageSize ?? "A4";
       const overall = counts.fail > 0 ? "WYMAGA UWAGI" : counts.warn > 0 ? "DO PRZEGLĄDU" : "ZIELONY";
-      const filterLabel = `Filtr: ${categoryFilter === "ALL" ? "wszystkie kategorie" : categoryFilter} · statusy: ${[...allowedStatuses].map((s) => s.toUpperCase()).join("/")}`;
+      const filterLabel = `Filtr: ${categoryFilter === "ALL" ? "wszystkie kategorie" : categoryFilter} · statusy: ${[...allowedStatuses].map((s) => s.toUpperCase()).join("/")} · format: ${pageSize}`;
       const stamp = new Date().toISOString().slice(0, 10);
       const catSuffix = categoryFilter === "ALL" ? "all" : categoryFilter.toLowerCase();
       const stSuffix = [...allowedStatuses].sort().join("-");
-      const filename = `cml-security-report-${stamp}-${catSuffix}-${stSuffix}-server.pdf`;
+      const filename = `cml-security-report-${stamp}-${catSuffix}-${stSuffix}-${pageSize.toLowerCase()}-server.pdf`;
 
       setExportingServer(true);
       setServerPhase("preparing");
@@ -619,6 +622,7 @@ const AdminSecurityChecklist = () => {
               counts,
             },
             filename,
+            pageSize,
           }),
         });
         // promote to "generating" once request is in flight
@@ -1213,6 +1217,34 @@ const AdminSecurityChecklist = () => {
                 </SelectContent>
               </Select>
             </div>
+            <div className="space-y-2">
+              <Label className="text-sm">Format strony</Label>
+              <div className="flex gap-2" role="radiogroup" aria-label="Format strony PDF">
+                {(["A4", "Letter"] as const).map((sz) => {
+                  const active = pdfPageSize === sz;
+                  return (
+                    <Button
+                      key={sz}
+                      type="button"
+                      variant={active ? "default" : "outline"}
+                      size="sm"
+                      role="radio"
+                      aria-checked={active}
+                      className="h-8 px-3 text-xs"
+                      onClick={() => setPdfPageSize(sz)}
+                    >
+                      {sz}
+                      <span className="ml-1.5 text-[10px] opacity-70 font-mono">
+                        {sz === "A4" ? "210×297mm" : "8.5×11in"}
+                      </span>
+                    </Button>
+                  );
+                })}
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                Łamanie wierszy dopasowuje się automatycznie do szerokości wybranego formatu.
+              </p>
+            </div>
             {(() => {
               const filtered = rows.filter((r) => {
                 const live = liveStatus[r.slug]?.status ?? r.status;
@@ -1324,7 +1356,7 @@ const AdminSecurityChecklist = () => {
                   toast.error("Wybierz przynajmniej jeden status");
                   return;
                 }
-                await exportPdfServer({ statuses: pdfStatuses, category: pdfCategory });
+                await exportPdfServer({ statuses: pdfStatuses, category: pdfCategory, pageSize: pdfPageSize });
                 if (!exportingServer) setPdfDialogOpen(false);
               }}
               disabled={pdfStatuses.length === 0 || exportingServer}
@@ -1343,7 +1375,7 @@ const AdminSecurityChecklist = () => {
                   return;
                 }
                 setPdfDialogOpen(false);
-                exportPdf({ statuses: pdfStatuses, category: pdfCategory });
+                exportPdf({ statuses: pdfStatuses, category: pdfCategory, pageSize: pdfPageSize });
               }}
               disabled={pdfStatuses.length === 0 || exportingServer}
             >
