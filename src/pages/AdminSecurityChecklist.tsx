@@ -308,7 +308,9 @@ const AdminSecurityChecklist = () => {
     else toast.success("Self-audit zakończony — wszystkie kontrole OK");
   }, [rows]);
 
-  const exportPdf = useCallback(() => {
+  const exportPdf = useCallback((opts?: { statuses?: DbStatus[]; category?: Category | "ALL" }) => {
+    const allowedStatuses = new Set<DbStatus>(opts?.statuses && opts.statuses.length > 0 ? opts.statuses : STATUSES);
+    const categoryFilter = opts?.category ?? "ALL";
     if (rows.length === 0) {
       toast.error("Brak pozycji do eksportu");
       return;
