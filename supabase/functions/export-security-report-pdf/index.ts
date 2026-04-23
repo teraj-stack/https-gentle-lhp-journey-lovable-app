@@ -689,13 +689,14 @@ Deno.serve(async (req) => {
 
     const pdfBytes = await buildPdf(payload);
     const filename = (payload.filename || "cml-security-report.pdf").replace(/[^a-zA-Z0-9._-]/g, "_");
+    const disposition = payload.previewOnly ? "inline" : "attachment";
 
     return new Response(pdfBytes, {
       status: 200,
       headers: {
         ...corsHeaders,
         "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="${filename}"`,
+        "Content-Disposition": `${disposition}; filename="${filename}"`,
         "Cache-Control": "no-store",
       },
     });
