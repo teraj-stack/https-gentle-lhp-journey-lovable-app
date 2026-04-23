@@ -1736,6 +1736,44 @@ const AdminSecurityChecklist = () => {
             <Button variant="ghost" onClick={() => setPdfDialogOpen(false)} disabled={exportingServer}>Anuluj</Button>
             <Button
               variant="outline"
+              onClick={() => {
+                if (pdfStatuses.length === 0) {
+                  toast.error("Wybierz przynajmniej jeden status");
+                  return;
+                }
+                if (pdfPageSize === "Custom" && !customSizeValidation.ok) {
+                  toast.error("Popraw wymiary niestandardowej strony", {
+                    description: customSizeValidation.error ?? undefined,
+                  });
+                  return;
+                }
+                void previewPdfServer({
+                  statuses: pdfStatuses,
+                  category: pdfCategory,
+                  pageSize: pdfPageSize,
+                  pageMargin: pdfPageMargin,
+                  customPageSizeMm:
+                    pdfPageSize === "Custom" && customSizeValidation.ok
+                      ? { width: customSizeValidation.w, height: customSizeValidation.h }
+                      : undefined,
+                });
+              }}
+              disabled={
+                pdfStatuses.length === 0 ||
+                exportingServer ||
+                previewLoading ||
+                (pdfPageSize === "Custom" && !customSizeValidation.ok)
+              }
+              title="Renderuje pierwszą stronę raportu na serwerze, w tym samym układzie co pełen PDF"
+            >
+              {previewLoading ? (
+                <><Loader2 className="w-4 h-4 mr-1 animate-spin" /> Podgląd…</>
+              ) : (
+                <><Eye className="w-4 h-4 mr-1" /> Podgląd (server)</>
+              )}
+            </Button>
+            <Button
+              variant="outline"
               onClick={async () => {
                 if (pdfStatuses.length === 0) {
                   toast.error("Wybierz przynajmniej jeden status");
