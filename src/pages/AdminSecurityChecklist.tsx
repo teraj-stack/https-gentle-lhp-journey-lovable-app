@@ -1375,7 +1375,7 @@ const AdminSecurityChecklist = () => {
                   return;
                 }
                 setPdfDialogOpen(false);
-                exportPdf({ statuses: pdfStatuses, category: pdfCategory });
+                exportPdf({ statuses: pdfStatuses, category: pdfCategory, pageSize: pdfPageSize });
               }}
               disabled={pdfStatuses.length === 0 || exportingServer}
             >
