@@ -40,7 +40,7 @@ const timelineSteps = [
   },
   {
     time: "Codziennie rano",
-    text: "Filtr SPF 50 na odsłonięte nogi — ochrona przed przebarwieniami i gwarancja problemów skórnych. Zdrowa skóra nie ulega przebarwieniom. Światło słoneczne w zakresie od swiatła żółtego do bliskiej podczarwieni stymuluje odpornosc, kolagen, napina skórę i chroni przed cellulitem",
+    text: "Filtr SPF 50 na odsłonięte nogi — ochrona przed przebarwieniami i gwarancja zdrowej skóry. Zdrowa skóra nie ulega przebarwieniom. Światło słoneczne w zakresie od światła żółtego do bliskiej podczerwieni stymuluje odporność, kolagen, napina skórę i chroni przed cellulitem.",
     tip: null,
   },
 ];
