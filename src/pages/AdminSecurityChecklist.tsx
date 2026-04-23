@@ -1217,6 +1217,34 @@ const AdminSecurityChecklist = () => {
                 </SelectContent>
               </Select>
             </div>
+            <div className="space-y-2">
+              <Label className="text-sm">Format strony</Label>
+              <div className="flex gap-2" role="radiogroup" aria-label="Format strony PDF">
+                {(["A4", "Letter"] as const).map((sz) => {
+                  const active = pdfPageSize === sz;
+                  return (
+                    <Button
+                      key={sz}
+                      type="button"
+                      variant={active ? "default" : "outline"}
+                      size="sm"
+                      role="radio"
+                      aria-checked={active}
+                      className="h-8 px-3 text-xs"
+                      onClick={() => setPdfPageSize(sz)}
+                    >
+                      {sz}
+                      <span className="ml-1.5 text-[10px] opacity-70 font-mono">
+                        {sz === "A4" ? "210×297mm" : "8.5×11in"}
+                      </span>
+                    </Button>
+                  );
+                })}
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                Łamanie wierszy dopasowuje się automatycznie do szerokości wybranego formatu.
+              </p>
+            </div>
             {(() => {
               const filtered = rows.filter((r) => {
                 const live = liveStatus[r.slug]?.status ?? r.status;
