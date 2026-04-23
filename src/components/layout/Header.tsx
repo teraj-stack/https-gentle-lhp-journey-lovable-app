@@ -233,6 +233,19 @@ const Header = () => {
     setNavKey((k) => k + 1);
   }, [clearMegaCloseTimer]);
 
+  // Touch backup: pointerup on a menu link guarantees the dropdown closes
+  // even in edge cases where React Router's <Link> click handler is delayed
+  // or suppressed (e.g. same-route navigation, native long-press menus).
+  const handleMegaLinkPointerUp = useCallback(
+    (event: React.PointerEvent<HTMLAnchorElement>) => {
+      if (event.pointerType !== "touch" && event.pointerType !== "pen") return;
+      clearMegaCloseTimer();
+      shouldRestoreFocus.current = false;
+      setMegaOpen(null);
+    },
+    [clearMegaCloseTimer],
+  );
+
   useEffect(() => () => clearMegaCloseTimer(), [clearMegaCloseTimer]);
 
   // Tap-outside dismissal for touch devices: if a touch lands outside the
