@@ -659,9 +659,16 @@ const AdminSecurityChecklist = () => {
       const overall = counts.fail > 0 ? "WYMAGA UWAGI" : counts.warn > 0 ? "DO PRZEGLĄDU" : "ZIELONY";
       const filterLabel = `Filtr: ${categoryFilter === "ALL" ? "wszystkie kategorie" : categoryFilter} · statusy: ${[...allowedStatuses].map((s) => s.toUpperCase()).join("/")} · format: ${pageSize} · marginesy: ${marginLabel}`;
       const stamp = new Date().toISOString().slice(0, 10);
-      const catSuffix = categoryFilter === "ALL" ? "all" : categoryFilter.toLowerCase();
+      const catSuffix = categoryFilter === "ALL" ? "all" : categoryFilter;
       const stSuffix = [...allowedStatuses].sort().join("-");
-      const filename = `cml-security-report-${stamp}-${catSuffix}-${stSuffix}-${pageSize.toLowerCase()}-${pageMargin}-server.pdf`;
+      const filename = buildSafePdfFilename({
+        stamp,
+        category: catSuffix,
+        statuses: stSuffix,
+        pageSize,
+        pageMargin,
+        variant: "server",
+      });
 
       setExportingServer(true);
       setServerPhase("preparing");
