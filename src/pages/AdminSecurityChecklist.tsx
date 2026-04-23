@@ -187,7 +187,21 @@ const emptyForm = {
   status: "pass" as DbStatus,
   detail: "",
   sort_order: 0,
+  policiesJson: "[]",
 };
+
+function policiesToText(p: PolicyRef[]): string {
+  return JSON.stringify(p, null, 2);
+}
+
+async function copyToClipboard(text: string, label = "Skopiowano") {
+  try {
+    await navigator.clipboard.writeText(text);
+    toast.success(label);
+  } catch {
+    toast.error("Nie udało się skopiować");
+  }
+}
 
 const AdminSecurityChecklist = () => {
   const navigate = useNavigate();
