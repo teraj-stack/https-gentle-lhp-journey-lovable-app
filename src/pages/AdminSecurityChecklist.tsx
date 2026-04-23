@@ -58,6 +58,7 @@ import {
   Copy,
   FileCode2,
   Download,
+  Eye,
 } from "lucide-react";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -353,9 +354,22 @@ const AdminSecurityChecklist = () => {
   }, [pdfPageMargin]);
   const [exportingServer, setExportingServer] = useState(false);
   const [serverPhase, setServerPhase] = useState<ServerExportPhase>("idle");
+  // Server-side PDF preview (single-page sample) state
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewError, setPreviewError] = useState<string | null>(null);
+  const [previewMeta, setPreviewMeta] = useState<{ size: string; margin: string; total: number } | null>(null);
   const togglePdfStatus = (s: DbStatus, checked: boolean) => {
     setPdfStatuses((prev) => (checked ? [...new Set([...prev, s])] : prev.filter((x) => x !== s)));
   };
+
+  // Revoke any blob URL when preview modal closes / unmounts to avoid leaks.
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    };
+  }, [previewUrl]);
 
   // Auth bootstrap
   useEffect(() => {
@@ -840,6 +854,125 @@ const AdminSecurityChecklist = () => {
       }
     },
     [rows, liveStatus, lastAuditAt],
+  );
+
+  // Server-side PDF preview — fetches a single-page sample using the same
+  // payload + page settings, then opens it inline in a modal iframe.
+  const previewPdfServer = useCallback(
+    async (opts: {
+      statuses: DbStatus[];
+      category: Category | "ALL";
+      pageSize: "A4" | "Letter" | "Custom";
+      pageMargin: "narrow" | "standard" | "wide";
+      customPageSizeMm?: { width: number; height: number };
+    }) => {
+      if (rows.length === 0) {
+        toast.error("Brak pozycji do podglądu");
+        return;
+      }
+      const allowedStatuses = new Set<DbStatus>(opts.statuses.length > 0 ? opts.statuses : STATUSES);
+      const categoryFilter = opts.category;
+      const allChecks = rows.map((r) => {
+        const live = liveStatus[r.slug];
+        return {
+          slug: r.slug,
+          category: r.category,
+          title: r.title,
+          description: r.description,
+          detail: r.detail,
+          policies: r.policies,
+          status: (live?.status ?? r.status) as CheckStatus,
+        };
+      });
+      const checks = allChecks.filter((c) => {
+        const sOk = (c.status === "pass" || c.status === "warn" || c.status === "fail")
+          ? allowedStatuses.has(c.status as DbStatus)
+          : true;
+        const cOk = categoryFilter === "ALL" || c.category === categoryFilter;
+        return sOk && cOk;
+      });
+      if (checks.length === 0) {
+        toast.error("Brak pozycji pasujących do filtra");
+        return;
+      }
+      const counts = {
+        pass: checks.filter((c) => c.status === "pass").length,
+        warn: checks.filter((c) => c.status === "warn").length,
+        fail: checks.filter((c) => c.status === "fail").length,
+        total: checks.length,
+        allTotal: allChecks.length,
+      };
+      const overall = counts.fail > 0 ? "WYMAGA UWAGI" : counts.warn > 0 ? "DO PRZEGLĄDU" : "ZIELONY";
+      const sizeLabel =
+        opts.pageSize === "Custom" && opts.customPageSizeMm
+          ? `Custom ${Math.round(opts.customPageSizeMm.width)}×${Math.round(opts.customPageSizeMm.height)}mm`
+          : opts.pageSize;
+      const marginLabel = opts.pageMargin === "narrow" ? "wąskie" : opts.pageMargin === "wide" ? "szerokie" : "standardowe";
+      const filterLabel = `Filtr: ${categoryFilter === "ALL" ? "wszystkie kategorie" : categoryFilter} · statusy: ${[...allowedStatuses].map((s) => s.toUpperCase()).join("/")} · format: ${sizeLabel} · marginesy: ${marginLabel} · PODGLĄD`;
+
+      // Reset previous preview before fetching a new one.
+      setPreviewError(null);
+      setPreviewMeta({ size: sizeLabel, margin: marginLabel, total: counts.total });
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+        setPreviewUrl(null);
+      }
+      setPreviewOpen(true);
+      setPreviewLoading(true);
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          setPreviewError("Brak sesji — zaloguj się ponownie");
+          return;
+        }
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
+        const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
+        const res = await fetch(`${supabaseUrl}/functions/v1/export-security-report-pdf`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+            apikey: anonKey,
+          },
+          body: JSON.stringify({
+            checks,
+            meta: {
+              generatedAt: new Date().toLocaleString("pl-PL"),
+              lastScanDate: new Date(LAST_SCAN_DATE).toLocaleDateString("pl-PL", { year: "numeric", month: "long", day: "numeric" }),
+              lastAuditAt: lastAuditAt ? lastAuditAt.toLocaleString("pl-PL") : null,
+              filterLabel,
+              overall,
+              counts,
+            },
+            filename: "cml-security-report-preview.pdf",
+            pageSize: opts.pageSize,
+            pageMargin: opts.pageMargin,
+            ...(opts.pageSize === "Custom" && opts.customPageSizeMm ? { customPageSizeMm: opts.customPageSizeMm } : {}),
+            previewOnly: true,
+          }),
+        });
+        if (!res.ok) {
+          const raw = await res.text().catch(() => "");
+          let msg = `HTTP ${res.status}`;
+          try {
+            const j = JSON.parse(raw);
+            if (typeof j?.error === "string") msg = j.error;
+          } catch {
+            if (raw) msg = raw.slice(0, 200);
+          }
+          setPreviewError(msg);
+          return;
+        }
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        setPreviewUrl(url);
+      } catch (err) {
+        setPreviewError(err instanceof Error ? err.message : "Nieznany błąd");
+      } finally {
+        setPreviewLoading(false);
+      }
+    },
+    [rows, liveStatus, lastAuditAt, previewUrl],
   );
 
   const openCreate = () => {
@@ -1603,6 +1736,44 @@ const AdminSecurityChecklist = () => {
             <Button variant="ghost" onClick={() => setPdfDialogOpen(false)} disabled={exportingServer}>Anuluj</Button>
             <Button
               variant="outline"
+              onClick={() => {
+                if (pdfStatuses.length === 0) {
+                  toast.error("Wybierz przynajmniej jeden status");
+                  return;
+                }
+                if (pdfPageSize === "Custom" && !customSizeValidation.ok) {
+                  toast.error("Popraw wymiary niestandardowej strony", {
+                    description: customSizeValidation.error ?? undefined,
+                  });
+                  return;
+                }
+                void previewPdfServer({
+                  statuses: pdfStatuses,
+                  category: pdfCategory,
+                  pageSize: pdfPageSize,
+                  pageMargin: pdfPageMargin,
+                  customPageSizeMm:
+                    pdfPageSize === "Custom" && customSizeValidation.ok
+                      ? { width: customSizeValidation.w, height: customSizeValidation.h }
+                      : undefined,
+                });
+              }}
+              disabled={
+                pdfStatuses.length === 0 ||
+                exportingServer ||
+                previewLoading ||
+                (pdfPageSize === "Custom" && !customSizeValidation.ok)
+              }
+              title="Renderuje pierwszą stronę raportu na serwerze, w tym samym układzie co pełen PDF"
+            >
+              {previewLoading ? (
+                <><Loader2 className="w-4 h-4 mr-1 animate-spin" /> Podgląd…</>
+              ) : (
+                <><Eye className="w-4 h-4 mr-1" /> Podgląd (server)</>
+              )}
+            </Button>
+            <Button
+              variant="outline"
               onClick={async () => {
                 if (pdfStatuses.length === 0) {
                   toast.error("Wybierz przynajmniej jeden status");
@@ -1651,6 +1822,82 @@ const AdminSecurityChecklist = () => {
               disabled={pdfStatuses.length === 0 || exportingServer}
             >
               <Download className="w-4 h-4 mr-1" /> Pobierz (client)
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Server PDF preview (single-page sample) */}
+      <Dialog
+        open={previewOpen}
+        onOpenChange={(o) => {
+          setPreviewOpen(o);
+          if (!o) {
+            // Free the blob URL when the user closes the preview.
+            if (previewUrl) {
+              URL.revokeObjectURL(previewUrl);
+              setPreviewUrl(null);
+            }
+            setPreviewError(null);
+          }
+        }}
+      >
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="w-4 h-4" /> Podgląd raportu PDF (pierwsza strona)
+            </DialogTitle>
+            <DialogDescription>
+              {previewMeta
+                ? `Format: ${previewMeta.size} · marginesy: ${previewMeta.margin} · łącznie pozycji w pełnym raporcie: ${previewMeta.total}.`
+                : "Renderowanie próbnej strony przy użyciu wybranych ustawień…"}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="rounded-md border border-border bg-muted/20 overflow-hidden">
+            {previewLoading ? (
+              <div className="flex items-center justify-center gap-2 h-[60vh] text-sm text-muted-foreground">
+                <Loader2 className="w-4 h-4 animate-spin" /> Renderuję podgląd…
+              </div>
+            ) : previewError ? (
+              <div className="flex flex-col items-center justify-center gap-2 h-[40vh] p-6 text-center">
+                <AlertTriangle className="w-6 h-6 text-destructive" />
+                <p className="text-sm text-destructive font-medium">Nie udało się wygenerować podglądu</p>
+                <p className="text-xs text-muted-foreground break-words max-w-md">{previewError}</p>
+              </div>
+            ) : previewUrl ? (
+              <iframe
+                src={previewUrl}
+                title="Podgląd PDF — pierwsza strona"
+                className="w-full h-[70vh] bg-background"
+              />
+            ) : (
+              <div className="h-[40vh]" />
+            )}
+          </div>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button variant="ghost" onClick={() => setPreviewOpen(false)}>Zamknij</Button>
+            <Button
+              onClick={async () => {
+                setPreviewOpen(false);
+                await exportPdfServer({
+                  statuses: pdfStatuses,
+                  category: pdfCategory,
+                  pageSize: pdfPageSize,
+                  pageMargin: pdfPageMargin,
+                  customPageSizeMm:
+                    pdfPageSize === "Custom" && customSizeValidation.ok
+                      ? { width: customSizeValidation.w, height: customSizeValidation.h }
+                      : undefined,
+                });
+              }}
+              disabled={
+                !previewUrl ||
+                exportingServer ||
+                pdfStatuses.length === 0 ||
+                (pdfPageSize === "Custom" && !customSizeValidation.ok)
+              }
+            >
+              <Download className="w-4 h-4 mr-1" /> Pobierz pełen raport
             </Button>
           </DialogFooter>
         </DialogContent>
