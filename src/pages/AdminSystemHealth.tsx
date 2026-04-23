@@ -3143,6 +3143,10 @@ const AdminSystemHealth = () => {
                                 Pomocny przy QA na mobile (375px), gdzie tekst toasta może
                                 wystawać poza viewport. */}
                             {import.meta.env.DEV && <FocusToastLiveRegionInspector />}
+                            {/* Manual QA dla tap-outside dismissal mega-menu (touch).
+                                Symuluje syntetyczny PointerEvent("touch") poza header
+                                i loguje czas zamknięcia + raport krok po kroku. */}
+                            {import.meta.env.DEV && <HeaderTouchDismissTester />}
                           </div>
                         </PopoverContent>
                       </Popover>
