@@ -445,6 +445,31 @@ const AdminSecurityChecklist = () => {
     },
     [],
   );
+
+  // Build the API payload fragment ({ pageSize, customPageSizeMm }) honouring
+  // the rotate-to-fit toggle. When rotation is applied to a standard size
+  // (A4/Letter), we send it as Custom with the swapped mm dimensions so the
+  // edge function receives literal width/height rather than re-deriving them.
+  const buildExportSizeArgs = useCallback(
+    (
+      size: "A4" | "Letter" | "Custom",
+      customW: number,
+      customH: number,
+      margin: "narrow" | "standard" | "wide",
+      rotateToFit: boolean,
+    ): { pageSize: "A4" | "Letter" | "Custom"; customPageSizeMm?: { width: number; height: number } } => {
+      const eff = computeEffectiveDims(size, customW, customH, margin, rotateToFit);
+      if (!eff.rotated) {
+        if (size === "Custom") {
+          return { pageSize: "Custom", customPageSizeMm: { width: customW, height: customH } };
+        }
+        return { pageSize: size };
+      }
+      // Rotated → always send as Custom with the swapped dims.
+      return { pageSize: "Custom", customPageSizeMm: { width: eff.width, height: eff.height } };
+    },
+    [computeEffectiveDims],
+  );
   const [exportingServer, setExportingServer] = useState(false);
   const [serverPhase, setServerPhase] = useState<ServerExportPhase>("idle");
   // Server-side PDF preview (single-page sample) state
