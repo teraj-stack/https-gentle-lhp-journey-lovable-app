@@ -181,6 +181,9 @@ const Header = () => {
     if (isTouchDevice) return;
     clearMegaCloseTimer();
     megaCloseTimer.current = window.setTimeout(() => {
+      // Mouse-out close: don't yank focus back to the trigger — the user
+      // moved their pointer away, they didn't request a focus change.
+      shouldRestoreFocus.current = false;
       setMegaOpen(null);
       megaCloseTimer.current = null;
     }, MEGA_CLOSE_DELAY_MS);
@@ -194,13 +197,23 @@ const Header = () => {
       event.preventDefault();
       event.stopPropagation();
       clearMegaCloseTimer();
-      setMegaOpen((current) => (current === key ? null : key));
+      setMegaOpen((current) => {
+        if (current === key) {
+          // Closing via tap on trigger — keyboard users get focus back on the trigger.
+          shouldRestoreFocus.current = true;
+          return null;
+        }
+        return key;
+      });
     },
     [clearMegaCloseTimer, isTouchDevice],
   );
 
   const handleMegaLinkClick = useCallback(() => {
     clearMegaCloseTimer();
+    // Navigating to a new page — do NOT restore focus to the trigger;
+    // the destination page's focus order should take over.
+    shouldRestoreFocus.current = false;
     setMegaOpen(null);
     megaLockedUntil.current = Date.now() + 2000;
     setNavKey((k) => k + 1);
@@ -218,11 +231,54 @@ const Header = () => {
       if (!target) return;
       if (headerRef.current && headerRef.current.contains(target)) return;
       clearMegaCloseTimer();
+      // Tap outside is a deliberate dismiss — focus should not jump back into
+      // the header.
+      shouldRestoreFocus.current = false;
       setMegaOpen(null);
     };
     document.addEventListener("pointerdown", handlePointerDown, true);
     return () => document.removeEventListener("pointerdown", handlePointerDown, true);
   }, [isTouchDevice, megaOpen, clearMegaCloseTimer]);
+
+  // Escape closes the open dropdown and restores focus to its trigger.
+  useEffect(() => {
+    if (megaOpen === null) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.stopPropagation();
+      clearMegaCloseTimer();
+      shouldRestoreFocus.current = true;
+      setMegaOpen(null);
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [megaOpen, clearMegaCloseTimer]);
+
+  // Focus shift on open/close transitions.
+  // Open  → move focus to first interactive element in the dropdown panel.
+  // Close → return focus to the triggering button (only when explicitly requested).
+  useEffect(() => {
+    const previous = previousMegaOpen.current;
+    if (megaOpen && megaOpen !== previous) {
+      // Defer until AnimatePresence has mounted the panel.
+      const id = window.requestAnimationFrame(() => {
+        const panel = panelRefs.current[megaOpen];
+        const firstFocusable = panel?.querySelector<HTMLElement>(
+          'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        );
+        firstFocusable?.focus();
+      });
+      previousMegaOpen.current = megaOpen;
+      return () => window.cancelAnimationFrame(id);
+    }
+    if (!megaOpen && previous) {
+      if (shouldRestoreFocus.current) {
+        triggerRefs.current[previous]?.focus();
+      }
+      shouldRestoreFocus.current = false;
+      previousMegaOpen.current = null;
+    }
+  }, [megaOpen]);
 
   const isActive = (href: string) => pathname === href;
   const isSectionActive = (items: NavItem[]) => items.some((i) => pathname === i.href);
