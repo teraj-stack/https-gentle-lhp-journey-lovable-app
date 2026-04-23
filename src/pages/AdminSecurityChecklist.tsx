@@ -352,6 +352,124 @@ const AdminSecurityChecklist = () => {
       // ignore quota / privacy mode errors
     }
   }, [pdfPageMargin]);
+  // "Rotate to fit": when on, swap width/height (portrait <-> landscape) iff
+  // the rotated orientation increases usable text capacity per page. This is a
+  // pure presentation flag — it never changes the user's stored width/height.
+  const [pdfRotateToFit, setPdfRotateToFit] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem("cml.admin.pdfRotateToFit") === "1";
+  });
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem("cml.admin.pdfRotateToFit", pdfRotateToFit ? "1" : "0");
+    } catch {
+      // ignore quota / privacy mode errors
+    }
+  }, [pdfRotateToFit]);
+
+  // Effective custom dimensions after applying the "Rotate to fit" toggle.
+  // Heuristic: cards are wider than tall, so the page dimension that drives
+  // capacity is *width* (more text per line). When rotation makes the page
+  // wider, capacity grows roughly proportionally to the width gain. We swap
+  // only when:
+  //   • toggle is on, AND
+  //   • the page is portrait (h > w), AND
+  //   • the gain in usable width is meaningful (>=5%).
+  // For A4/Letter the same logic applies using their standard mm sizes.
+  const STANDARD_DIMS_MM: Record<"A4" | "Letter", { width: number; height: number }> = {
+    A4: { width: 210, height: 297 },
+    Letter: { width: 215.9, height: 279.4 },
+  };
+  const MARGIN_MM: Record<"narrow" | "standard" | "wide", number> = {
+    narrow: 10,
+    standard: 14,
+    wide: 20,
+  };
+  type EffectiveDims = {
+    width: number;
+    height: number;
+    rotated: boolean;
+    usableWidthMm: number;
+    usableHeightMm: number;
+  };
+  const computeEffectiveDims = useCallback(
+    (
+      size: "A4" | "Letter" | "Custom",
+      customW: number,
+      customH: number,
+      margin: "narrow" | "standard" | "wide",
+      rotateToFit: boolean,
+    ): EffectiveDims => {
+      const base =
+        size === "Custom"
+          ? { width: customW, height: customH }
+          : STANDARD_DIMS_MM[size];
+      const m = MARGIN_MM[margin];
+      // Margin gets capped at 30% of the shorter edge in the edge function;
+      // mirror that so the estimate matches the actual render.
+      const cap = Math.min(base.width, base.height) * 0.3;
+      const effM = Math.min(m, cap);
+      const usableW = Math.max(1, base.width - 2 * effM);
+      const usableH = Math.max(1, base.height - 2 * effM);
+      // Decide whether to rotate. Only consider rotation for portrait pages.
+      let rotated = false;
+      if (rotateToFit && base.height > base.width) {
+        const rotW = Math.max(1, base.height - 2 * effM);
+        const rotH = Math.max(1, base.width - 2 * effM);
+        // Capacity proxy: usableWidth * usableHeight (area of text region).
+        // Rotation helps when area grows by >=5% (margins eat a bit asymmetrically
+        // when the shorter edge changes, so a tiny gain isn't worth flipping).
+        const gain = (rotW * rotH) / (usableW * usableH);
+        // Width-driven gain (more chars/line) is the dominant win in practice;
+        // require either a 5% area gain OR a 10% width gain.
+        const widthGain = rotW / usableW;
+        if (gain >= 1.05 || widthGain >= 1.1) rotated = true;
+      }
+      if (rotated) {
+        return {
+          width: base.height,
+          height: base.width,
+          rotated: true,
+          usableWidthMm: base.height - 2 * effM,
+          usableHeightMm: base.width - 2 * effM,
+        };
+      }
+      return {
+        width: base.width,
+        height: base.height,
+        rotated: false,
+        usableWidthMm: usableW,
+        usableHeightMm: usableH,
+      };
+    },
+    [],
+  );
+
+  // Build the API payload fragment ({ pageSize, customPageSizeMm }) honouring
+  // the rotate-to-fit toggle. When rotation is applied to a standard size
+  // (A4/Letter), we send it as Custom with the swapped mm dimensions so the
+  // edge function receives literal width/height rather than re-deriving them.
+  const buildExportSizeArgs = useCallback(
+    (
+      size: "A4" | "Letter" | "Custom",
+      customW: number,
+      customH: number,
+      margin: "narrow" | "standard" | "wide",
+      rotateToFit: boolean,
+    ): { pageSize: "A4" | "Letter" | "Custom"; customPageSizeMm?: { width: number; height: number } } => {
+      const eff = computeEffectiveDims(size, customW, customH, margin, rotateToFit);
+      if (!eff.rotated) {
+        if (size === "Custom") {
+          return { pageSize: "Custom", customPageSizeMm: { width: customW, height: customH } };
+        }
+        return { pageSize: size };
+      }
+      // Rotated → always send as Custom with the swapped dims.
+      return { pageSize: "Custom", customPageSizeMm: { width: eff.width, height: eff.height } };
+    },
+    [computeEffectiveDims],
+  );
   const [exportingServer, setExportingServer] = useState(false);
   const [serverPhase, setServerPhase] = useState<ServerExportPhase>("idle");
   // Server-side PDF preview (single-page sample) state
@@ -1624,6 +1742,57 @@ const AdminSecurityChecklist = () => {
               </p>
             </div>
             {(() => {
+              // Show "Rotate to fit" only when rotation could realistically help
+              // (i.e., the page is portrait). Square or landscape pages are skipped.
+              const customW = customSizeValidation.ok ? customSizeValidation.w : Number(pdfCustomWidthMm) || 0;
+              const customH = customSizeValidation.ok ? customSizeValidation.h : Number(pdfCustomHeightMm) || 0;
+              const eff = computeEffectiveDims(pdfPageSize, customW, customH, pdfPageMargin, pdfRotateToFit);
+              // Probe: would rotation actually be applied if toggled on right now?
+              const probe = computeEffectiveDims(pdfPageSize, customW, customH, pdfPageMargin, true);
+              const rotationHelpful = probe.rotated;
+              const isPortrait =
+                pdfPageSize === "Custom"
+                  ? customH > customW
+                  : true; // A4/Letter are portrait
+              if (!isPortrait) return null;
+              return (
+                <div className="space-y-1.5">
+                  <Label className="text-sm flex items-center gap-2">
+                    <span>Obróć aby zmieściło więcej</span>
+                  </Label>
+                  <label
+                    htmlFor="pdf-rotate-to-fit"
+                    className="flex items-start gap-2 cursor-pointer rounded-md border border-border/60 bg-muted/20 p-2.5"
+                  >
+                    <Checkbox
+                      id="pdf-rotate-to-fit"
+                      checked={pdfRotateToFit}
+                      onCheckedChange={(c) => setPdfRotateToFit(c === true)}
+                      className="mt-0.5"
+                    />
+                    <div className="space-y-0.5">
+                      <span className="text-xs font-medium text-foreground">
+                        Automatyczna orientacja pozioma
+                      </span>
+                      <p className="text-[11px] text-muted-foreground">
+                        Zamienia szerokość i wysokość, gdy poziom faktycznie zwiększa pojemność strony.
+                        {rotationHelpful ? (
+                          <span className="ml-1 text-emerald-500">
+                            Aktualnie: {Math.round(eff.usableWidthMm)}×{Math.round(eff.usableHeightMm)}mm{" "}
+                            {eff.rotated ? "(obrócone)" : "(bez zmian)"}.
+                          </span>
+                        ) : (
+                          <span className="ml-1 text-muted-foreground/80">
+                            Dla aktualnych ustawień obrót nic nie da — opcja zostanie zignorowana.
+                          </span>
+                        )}
+                      </p>
+                    </div>
+                  </label>
+                </div>
+              );
+            })()}
+            {(() => {
               const filtered = rows.filter((r) => {
                 const live = liveStatus[r.slug]?.status ?? r.status;
                 const sOk = (live === "pass" || live === "warn" || live === "fail")
@@ -1644,7 +1813,18 @@ const AdminSecurityChecklist = () => {
               // Wider margins reduce capacity slightly (cards have less vertical room
               // because content area shrinks). Narrow → +8%, wide → -8%.
               const marginFactor = pdfPageMargin === "narrow" ? 1.08 : pdfPageMargin === "wide" ? 0.92 : 1;
-              const serverPerPage = (pdfPageSize === "A4" ? 3 : 2.85) * marginFactor;
+              // Rotate-to-fit boost: scale per-page capacity by the gain in usable
+              // text area (ratio of effective area to standard portrait area).
+              const customW = customSizeValidation.ok ? customSizeValidation.w : Number(pdfCustomWidthMm) || 0;
+              const customH = customSizeValidation.ok ? customSizeValidation.h : Number(pdfCustomHeightMm) || 0;
+              const baseEff = computeEffectiveDims(pdfPageSize, customW, customH, pdfPageMargin, false);
+              const eff = computeEffectiveDims(pdfPageSize, customW, customH, pdfPageMargin, pdfRotateToFit);
+              const rotateFactor =
+                eff.rotated && baseEff.usableWidthMm > 0 && baseEff.usableHeightMm > 0
+                  ? (eff.usableWidthMm * eff.usableHeightMm) /
+                    (baseEff.usableWidthMm * baseEff.usableHeightMm)
+                  : 1;
+              const serverPerPage = (pdfPageSize === "A4" ? 3 : 2.85) * marginFactor * rotateFactor;
               const clientPerPage = pdfPageSize === "A4" ? 4 : 3.78;
               const estPages = Math.max(1, Math.ceil(filtered.length / serverPerPage));
               const estPagesClient = Math.max(1, Math.ceil(filtered.length / clientPerPage));
@@ -1701,6 +1881,9 @@ const AdminSecurityChecklist = () => {
                       )}
                       <p className="text-[11px] text-muted-foreground pt-0.5">
                         Szacowana objętość PDF: ~{estPages} {estPages === 1 ? "strona" : estPages < 5 ? "strony" : "stron"} {pdfPageSize}
+                        {eff.rotated && (
+                          <span className="ml-1 text-emerald-500">(orientacja pozioma)</span>
+                        )}
                         <span className="text-muted-foreground/70"> (server) · ~{estPagesClient} (client)</span>
                       </p>
                     </>
@@ -1750,12 +1933,14 @@ const AdminSecurityChecklist = () => {
                 void previewPdfServer({
                   statuses: pdfStatuses,
                   category: pdfCategory,
-                  pageSize: pdfPageSize,
                   pageMargin: pdfPageMargin,
-                  customPageSizeMm:
-                    pdfPageSize === "Custom" && customSizeValidation.ok
-                      ? { width: customSizeValidation.w, height: customSizeValidation.h }
-                      : undefined,
+                  ...buildExportSizeArgs(
+                    pdfPageSize,
+                    customSizeValidation.ok ? customSizeValidation.w : 0,
+                    customSizeValidation.ok ? customSizeValidation.h : 0,
+                    pdfPageMargin,
+                    pdfRotateToFit,
+                  ),
                 });
               }}
               disabled={
@@ -1788,12 +1973,14 @@ const AdminSecurityChecklist = () => {
                 await exportPdfServer({
                   statuses: pdfStatuses,
                   category: pdfCategory,
-                  pageSize: pdfPageSize,
                   pageMargin: pdfPageMargin,
-                  customPageSizeMm:
-                    pdfPageSize === "Custom" && customSizeValidation.ok
-                      ? { width: customSizeValidation.w, height: customSizeValidation.h }
-                      : undefined,
+                  ...buildExportSizeArgs(
+                    pdfPageSize,
+                    customSizeValidation.ok ? customSizeValidation.w : 0,
+                    customSizeValidation.ok ? customSizeValidation.h : 0,
+                    pdfPageMargin,
+                    pdfRotateToFit,
+                  ),
                 });
                 if (!exportingServer) setPdfDialogOpen(false);
               }}
@@ -1882,12 +2069,14 @@ const AdminSecurityChecklist = () => {
                 await exportPdfServer({
                   statuses: pdfStatuses,
                   category: pdfCategory,
-                  pageSize: pdfPageSize,
                   pageMargin: pdfPageMargin,
-                  customPageSizeMm:
-                    pdfPageSize === "Custom" && customSizeValidation.ok
-                      ? { width: customSizeValidation.w, height: customSizeValidation.h }
-                      : undefined,
+                  ...buildExportSizeArgs(
+                    pdfPageSize,
+                    customSizeValidation.ok ? customSizeValidation.w : 0,
+                    customSizeValidation.ok ? customSizeValidation.h : 0,
+                    pdfPageMargin,
+                    pdfRotateToFit,
+                  ),
                 });
               }}
               disabled={
