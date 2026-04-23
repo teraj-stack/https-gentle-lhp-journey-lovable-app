@@ -1273,6 +1273,38 @@ const AdminSecurityChecklist = () => {
                 Łamanie wierszy dopasowuje się automatycznie do szerokości wybranego formatu.
               </p>
             </div>
+            <div className="space-y-2">
+              <Label className="text-sm">Marginesy strony</Label>
+              <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Marginesy strony PDF">
+                {(
+                  [
+                    { key: "narrow", label: "Wąskie", hint: "~10mm" },
+                    { key: "standard", label: "Standardowe", hint: "~14mm" },
+                    { key: "wide", label: "Szerokie", hint: "~20mm" },
+                  ] as const
+                ).map((m) => {
+                  const active = pdfPageMargin === m.key;
+                  return (
+                    <Button
+                      key={m.key}
+                      type="button"
+                      variant={active ? "default" : "outline"}
+                      size="sm"
+                      role="radio"
+                      aria-checked={active}
+                      className="h-8 px-3 text-xs"
+                      onClick={() => setPdfPageMargin(m.key)}
+                    >
+                      {m.label}
+                      <span className="ml-1.5 text-[10px] opacity-70 font-mono">{m.hint}</span>
+                    </Button>
+                  );
+                })}
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                Łamanie wierszy uwzględnia szerokość marginesów — tekst nie jest przycinany.
+              </p>
+            </div>
             {(() => {
               const filtered = rows.filter((r) => {
                 const live = liveStatus[r.slug]?.status ?? r.status;
