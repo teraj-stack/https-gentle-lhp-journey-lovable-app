@@ -240,7 +240,19 @@ const AdminSecurityChecklist = () => {
   const [pdfDialogOpen, setPdfDialogOpen] = useState(false);
   const [pdfStatuses, setPdfStatuses] = useState<DbStatus[]>(["pass", "warn", "fail"]);
   const [pdfCategory, setPdfCategory] = useState<Category | "ALL">("ALL");
-  const [pdfPageSize, setPdfPageSize] = useState<"A4" | "Letter">("A4");
+  const [pdfPageSize, setPdfPageSize] = useState<"A4" | "Letter">(() => {
+    if (typeof window === "undefined") return "A4";
+    const saved = window.localStorage.getItem("cml.admin.pdfPageSize");
+    return saved === "Letter" || saved === "A4" ? saved : "A4";
+  });
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem("cml.admin.pdfPageSize", pdfPageSize);
+    } catch {
+      // ignore quota / privacy mode errors
+    }
+  }, [pdfPageSize]);
   const [exportingServer, setExportingServer] = useState(false);
   const [serverPhase, setServerPhase] = useState<ServerExportPhase>("idle");
   const togglePdfStatus = (s: DbStatus, checked: boolean) => {
