@@ -1213,14 +1213,84 @@ const AdminSecurityChecklist = () => {
                 </SelectContent>
               </Select>
             </div>
-            <p className="text-xs text-muted-foreground">
-              Podgląd: {rows.filter((r) => {
+            {(() => {
+              const filtered = rows.filter((r) => {
                 const live = liveStatus[r.slug]?.status ?? r.status;
-                const sOk = (live === "pass" || live === "warn" || live === "fail") ? pdfStatuses.includes(live as DbStatus) : true;
+                const sOk = (live === "pass" || live === "warn" || live === "fail")
+                  ? pdfStatuses.includes(live as DbStatus)
+                  : true;
                 const cOk = pdfCategory === "ALL" || r.category === pdfCategory;
                 return sOk && cOk;
-              }).length} z {rows.length} pozycji.
-            </p>
+              });
+              const byStatus = { pass: 0, warn: 0, fail: 0 } as Record<DbStatus, number>;
+              const byCategory = new Map<string, number>();
+              for (const r of filtered) {
+                const live = (liveStatus[r.slug]?.status ?? r.status) as DbStatus;
+                if (live === "pass" || live === "warn" || live === "fail") byStatus[live]++;
+                byCategory.set(r.category, (byCategory.get(r.category) ?? 0) + 1);
+              }
+              // ~3 checks per A4 page in the server layout (card-based)
+              const estPages = Math.max(1, Math.ceil(filtered.length / 3));
+              const empty = filtered.length === 0;
+              return (
+                <div
+                  className="rounded-md border border-border/60 bg-muted/20 p-3 space-y-2"
+                  aria-live="polite"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs font-medium text-foreground">
+                      Podgląd eksportu PDF
+                    </span>
+                    <span className="text-xs font-mono tabular-nums text-muted-foreground">
+                      {filtered.length} / {rows.length} pozycji
+                    </span>
+                  </div>
+                  {empty ? (
+                    <p className="text-xs text-destructive">
+                      Brak pozycji pasujących do wybranych filtrów — zmień status lub kategorię.
+                    </p>
+                  ) : (
+                    <>
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        {(["pass", "warn", "fail"] as DbStatus[]).map((s) => {
+                          const meta = STATUS_META[s];
+                          const count = byStatus[s];
+                          const active = pdfStatuses.includes(s);
+                          return (
+                            <Badge
+                              key={s}
+                              variant="outline"
+                              className={`text-[11px] font-mono ${active ? meta.badgeClass : "opacity-50"}`}
+                              title={active ? `${count} × ${meta.label}` : `${meta.label} pominięte przez filtr`}
+                            >
+                              {s.toUpperCase()}: {active ? count : "—"}
+                            </Badge>
+                          );
+                        })}
+                      </div>
+                      {pdfCategory === "ALL" && byCategory.size > 1 && (
+                        <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                          {[...byCategory.entries()]
+                            .sort((a, b) => b[1] - a[1])
+                            .map(([cat, n]) => (
+                              <span
+                                key={cat}
+                                className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-muted text-muted-foreground border border-border/40"
+                              >
+                                {cat}: {n}
+                              </span>
+                            ))}
+                        </div>
+                      )}
+                      <p className="text-[11px] text-muted-foreground pt-0.5">
+                        Szacowana objętość PDF: ~{estPages} {estPages === 1 ? "strona" : estPages < 5 ? "strony" : "stron"} A4
+                        <span className="text-muted-foreground/70"> (server) · ~{Math.max(1, Math.ceil(filtered.length / 4))} (client)</span>
+                      </p>
+                    </>
+                  )}
+                </div>
+              );
+            })()}
             {serverPhase !== "idle" && (
               <div
                 className="space-y-2 rounded-md border border-border/60 bg-muted/30 p-3"
