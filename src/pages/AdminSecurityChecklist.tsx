@@ -1933,12 +1933,14 @@ const AdminSecurityChecklist = () => {
                 void previewPdfServer({
                   statuses: pdfStatuses,
                   category: pdfCategory,
-                  pageSize: pdfPageSize,
                   pageMargin: pdfPageMargin,
-                  customPageSizeMm:
-                    pdfPageSize === "Custom" && customSizeValidation.ok
-                      ? { width: customSizeValidation.w, height: customSizeValidation.h }
-                      : undefined,
+                  ...buildExportSizeArgs(
+                    pdfPageSize,
+                    customSizeValidation.ok ? customSizeValidation.w : 0,
+                    customSizeValidation.ok ? customSizeValidation.h : 0,
+                    pdfPageMargin,
+                    pdfRotateToFit,
+                  ),
                 });
               }}
               disabled={
