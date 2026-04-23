@@ -115,6 +115,7 @@ const Header = () => {
   const [megaOpen, setMegaOpen] = useState<string | null>(null);
   const [navKey, setNavKey] = useState(0);
   const megaLockedUntil = useRef(0);
+  const megaCloseTimer = useRef<number | null>(null);
   const headerRef = useRef<HTMLElement>(null);
   const location = useLocation();
   const pathname = location.pathname;
