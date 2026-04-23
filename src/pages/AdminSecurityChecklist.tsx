@@ -581,8 +581,16 @@ const AdminSecurityChecklist = () => {
           toast.error("Brak sesji — zaloguj się ponownie");
           return;
         }
-        const { data, error } = await supabase.functions.invoke("export-security-report-pdf", {
-          body: {
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
+        const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
+        const res = await fetch(`${supabaseUrl}/functions/v1/export-security-report-pdf`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+            apikey: anonKey,
+          },
+          body: JSON.stringify({
             checks,
             meta: {
               generatedAt: new Date().toLocaleString("pl-PL"),
@@ -593,13 +601,15 @@ const AdminSecurityChecklist = () => {
               counts,
             },
             filename,
-          },
+          }),
         });
-        if (error) {
-          toast.error(`Eksport serwerowy nieudany: ${error.message}`);
+        if (!res.ok) {
+          let msg = `HTTP ${res.status}`;
+          try { const j = await res.json(); if (j?.error) msg = String(j.error); } catch { /* ignore */ }
+          toast.error(`Eksport serwerowy nieudany: ${msg}`);
           return;
         }
-        const blob = data instanceof Blob ? data : new Blob([data as ArrayBuffer], { type: "application/pdf" });
+        const blob = await res.blob();
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
