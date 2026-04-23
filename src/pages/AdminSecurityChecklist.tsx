@@ -726,6 +726,38 @@ const AdminSecurityChecklist = () => {
               <Label htmlFor="detail">Szczegóły (opcjonalne)</Label>
               <Textarea id="detail" rows={2} value={form.detail} onChange={(e) => setForm({ ...form, detail: e.target.value })} />
             </div>
+            <div className="space-y-1">
+              <div className="flex items-center justify-between gap-2">
+                <Label htmlFor="policies">Powiązane polityki (JSON)</Label>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  className="h-6 text-xs"
+                  onClick={() =>
+                    setForm({
+                      ...form,
+                      policiesJson: policiesToText([
+                        { name: "Admins can view X", table: "your_table", sql: "USING (has_role('admin'::app_role))" },
+                      ]),
+                    })
+                  }
+                >
+                  Wstaw szablon
+                </Button>
+              </div>
+              <Textarea
+                id="policies"
+                rows={6}
+                value={form.policiesJson}
+                onChange={(e) => setForm({ ...form, policiesJson: e.target.value })}
+                placeholder='[{"name":"...","table":"...","sql":"..."}]'
+                className="font-mono text-xs"
+              />
+              <p className="text-xs text-muted-foreground">
+                Tablica obiektów <code>{"{ name, table, sql? }"}</code>. Pokazują się jako linki + snippet SQL na karcie kontroli.
+              </p>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="ghost" onClick={closeEditor} disabled={saving}>Anuluj</Button>
