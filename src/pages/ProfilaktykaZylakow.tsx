@@ -72,7 +72,7 @@ const prevention = [
   {
     icon: Footprints,
     title: "Regularny ruch",
-    desc: "Minimum 30 min dziennie: spacer, pływanie, rower. Aktywuje pompę mięśniową łydki — naturalny mechanizm odprowadzający krew z nóg.",
+    desc: "Minimum 30 min dziennie: spacer, pływanie, rower. Aktywuje pompę mięśniową łydki — naturalny mechanizm odprowadzający krew z nóg. WAZNE: ruch należy wykonywac na swierzym powietrzu, z odsłoniętą skórą podudzi, wykonywanie aktywnosci na siłowni, w ciasnych legginsach lub długich spodniach zwiększają ryzyko żylaków ",
   },
   {
     icon: Apple,
