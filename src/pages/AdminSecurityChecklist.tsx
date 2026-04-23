@@ -1370,9 +1370,10 @@ const AdminSecurityChecklist = () => {
             </div>
             <div className="space-y-2">
               <Label className="text-sm">Format strony</Label>
-              <div className="flex gap-2" role="radiogroup" aria-label="Format strony PDF">
-                {(["A4", "Letter"] as const).map((sz) => {
+              <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Format strony PDF">
+                {(["A4", "Letter", "Custom"] as const).map((sz) => {
                   const active = pdfPageSize === sz;
+                  const hint = sz === "A4" ? "210×297mm" : sz === "Letter" ? "8.5×11in" : "własne wymiary";
                   return (
                     <Button
                       key={sz}
@@ -1385,13 +1386,74 @@ const AdminSecurityChecklist = () => {
                       onClick={() => setPdfPageSize(sz)}
                     >
                       {sz}
-                      <span className="ml-1.5 text-[10px] opacity-70 font-mono">
-                        {sz === "A4" ? "210×297mm" : "8.5×11in"}
-                      </span>
+                      <span className="ml-1.5 text-[10px] opacity-70 font-mono">{hint}</span>
                     </Button>
                   );
                 })}
               </div>
+              {pdfPageSize === "Custom" && (
+                <div className="space-y-1.5 rounded-md border border-border/60 bg-muted/20 p-2.5">
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-1">
+                      <Label htmlFor="pdf-custom-w" className="text-[11px] text-muted-foreground">
+                        Szerokość (mm)
+                      </Label>
+                      <Input
+                        id="pdf-custom-w"
+                        type="number"
+                        inputMode="decimal"
+                        min={CUSTOM_MM_MIN}
+                        max={CUSTOM_MM_MAX}
+                        step={1}
+                        value={pdfCustomWidthMm}
+                        onChange={(e) => setPdfCustomWidthMm(e.target.value)}
+                        className="h-8 text-sm"
+                        aria-invalid={!customSizeValidation.ok}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="pdf-custom-h" className="text-[11px] text-muted-foreground">
+                        Wysokość (mm)
+                      </Label>
+                      <Input
+                        id="pdf-custom-h"
+                        type="number"
+                        inputMode="decimal"
+                        min={CUSTOM_MM_MIN}
+                        max={CUSTOM_MM_MAX}
+                        step={1}
+                        value={pdfCustomHeightMm}
+                        onChange={(e) => setPdfCustomHeightMm(e.target.value)}
+                        className="h-8 text-sm"
+                        aria-invalid={!customSizeValidation.ok}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5 pt-0.5">
+                    <Button type="button" variant="ghost" size="sm" className="h-6 px-2 text-[10px]"
+                      onClick={() => { setPdfCustomWidthMm("210"); setPdfCustomHeightMm("297"); }}>
+                      A4 (210×297)
+                    </Button>
+                    <Button type="button" variant="ghost" size="sm" className="h-6 px-2 text-[10px]"
+                      onClick={() => { setPdfCustomWidthMm("148"); setPdfCustomHeightMm("210"); }}>
+                      A5 (148×210)
+                    </Button>
+                    <Button type="button" variant="ghost" size="sm" className="h-6 px-2 text-[10px]"
+                      onClick={() => { setPdfCustomWidthMm("279"); setPdfCustomHeightMm("432"); }}>
+                      Tabloid (279×432)
+                    </Button>
+                  </div>
+                  {customSizeValidation.error ? (
+                    <p className="text-[11px] text-destructive" role="alert">
+                      {customSizeValidation.error}
+                    </p>
+                  ) : (
+                    <p className="text-[11px] text-muted-foreground">
+                      Dozwolony zakres: {CUSTOM_MM_MIN}–{CUSTOM_MM_MAX} mm. Eksport klienta używa A4.
+                    </p>
+                  )}
+                </div>
+              )}
               <p className="text-[11px] text-muted-foreground">
                 Łamanie wierszy dopasowuje się automatycznie do szerokości wybranego formatu.
               </p>
