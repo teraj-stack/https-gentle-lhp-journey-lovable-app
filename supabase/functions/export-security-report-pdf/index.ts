@@ -373,17 +373,51 @@ function drawCheckCard(ctx: RenderContext, idx: number, c: PdfCheck): void {
   ctx.cursorY = endY - 10;
 }
 
-function drawFooter(ctx: RenderContext, total: number): void {
+function drawFooter(ctx: RenderContext, total: number, generatedAt?: string): void {
   const pages = ctx.doc.getPages();
+  const footerY = 24;
+  const dividerY = footerY + 14;
+  const grey: [number, number, number] = [0.55, 0.55, 0.55];
+  const lightGrey: [number, number, number] = [0.85, 0.85, 0.85];
+
   pages.forEach((page, i) => {
-    const text = `CML - Security Report (server) - str. ${i + 1}/${total}`;
-    const w = ctx.font.widthOfTextAtSize(text, 8);
-    page.drawText(text, {
-      x: (page.getWidth() - w) / 2,
-      y: 24,
+    const w = page.getWidth();
+    // Thin divider
+    page.drawLine({
+      start: { x: ctx.margin, y: dividerY },
+      end: { x: w - ctx.margin, y: dividerY },
+      thickness: 0.4,
+      color: rgb(lightGrey[0], lightGrey[1], lightGrey[2]),
+    });
+    // Left: brand
+    page.drawText(sanitize("CML - Raport bezpieczenstwa"), {
+      x: ctx.margin,
+      y: footerY,
       size: 8,
       font: ctx.font,
-      color: rgb(0.55, 0.55, 0.55),
+      color: rgb(grey[0], grey[1], grey[2]),
+    });
+    // Center: timestamp (optional)
+    if (generatedAt) {
+      const ts = sanitize(generatedAt);
+      const tsW = ctx.font.widthOfTextAtSize(ts, 8);
+      page.drawText(ts, {
+        x: (w - tsW) / 2,
+        y: footerY,
+        size: 8,
+        font: ctx.font,
+        color: rgb(grey[0], grey[1], grey[2]),
+      });
+    }
+    // Right: page N of TOTAL (bold page number, regular separators)
+    const label = sanitize(`Strona ${i + 1} z ${total}`);
+    const labelW = ctx.fontBold.widthOfTextAtSize(label, 8);
+    page.drawText(label, {
+      x: w - ctx.margin - labelW,
+      y: footerY,
+      size: 8,
+      font: ctx.fontBold,
+      color: rgb(grey[0], grey[1], grey[2]),
     });
   });
 }
@@ -483,7 +517,7 @@ async function buildPdf(payload: ExportPayload): Promise<Uint8Array> {
   // Render each check as a card
   payload.checks.forEach((c, i) => drawCheckCard(ctx, i + 1, c));
 
-  drawFooter(ctx, ctx.doc.getPages().length);
+  drawFooter(ctx, ctx.doc.getPages().length, meta.generatedAt);
 
   const bytes = await doc.save();
   return bytes;
