@@ -773,6 +773,7 @@ const AdminSecurityChecklist = () => {
             filename,
             pageSize,
             pageMargin,
+            ...(pageSize === "Custom" && customPageSizeMm ? { customPageSizeMm } : {}),
           }),
         });
         // promote to "generating" once request is in flight
