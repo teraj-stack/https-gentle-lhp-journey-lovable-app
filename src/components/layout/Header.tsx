@@ -117,6 +117,14 @@ const Header = () => {
   const megaLockedUntil = useRef(0);
   const megaCloseTimer = useRef<number | null>(null);
   const headerRef = useRef<HTMLElement>(null);
+  // Focus management: refs to each dropdown trigger button + panel container.
+  // When a dropdown opens we move focus into the panel; when it closes we
+  // return focus to its trigger (only if the close was caused by user action,
+  // not by route navigation).
+  const triggerRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+  const panelRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const previousMegaOpen = useRef<string | null>(null);
+  const shouldRestoreFocus = useRef(false);
   const location = useLocation();
   const pathname = location.pathname;
 
@@ -173,26 +181,53 @@ const Header = () => {
     if (isTouchDevice) return;
     clearMegaCloseTimer();
     megaCloseTimer.current = window.setTimeout(() => {
+      // Mouse-out close: don't yank focus back to the trigger — the user
+      // moved their pointer away, they didn't request a focus change.
+      shouldRestoreFocus.current = false;
       setMegaOpen(null);
       megaCloseTimer.current = null;
     }, MEGA_CLOSE_DELAY_MS);
   }, [clearMegaCloseTimer, isTouchDevice]);
 
-  // Touch trigger: tap on the dropdown button toggles it open/closed
-  // without relying on hover state.
+  // Click on the dropdown trigger.
+  // - Touch: toggles the menu (no hover available).
+  // - Keyboard (Enter/Space dispatches a click with detail === 0): toggles too,
+  //   so users navigating without a mouse can open the panel and have focus
+  //   moved into it by the open/close effect below.
+  // - Mouse on desktop: hover already opened it, so a click only toggles it
+  //   closed (and returns focus to the trigger).
   const handleMegaTriggerClick = useCallback(
     (key: string, event: React.MouseEvent<HTMLButtonElement>) => {
-      if (!isTouchDevice) return;
+      const isKeyboardActivation = event.detail === 0;
+      if (!isTouchDevice && !isKeyboardActivation) {
+        if (megaOpen === key) {
+          event.preventDefault();
+          event.stopPropagation();
+          clearMegaCloseTimer();
+          shouldRestoreFocus.current = true;
+          setMegaOpen(null);
+        }
+        return;
+      }
       event.preventDefault();
       event.stopPropagation();
       clearMegaCloseTimer();
-      setMegaOpen((current) => (current === key ? null : key));
+      setMegaOpen((current) => {
+        if (current === key) {
+          shouldRestoreFocus.current = true;
+          return null;
+        }
+        return key;
+      });
     },
-    [clearMegaCloseTimer, isTouchDevice],
+    [clearMegaCloseTimer, isTouchDevice, megaOpen],
   );
 
   const handleMegaLinkClick = useCallback(() => {
     clearMegaCloseTimer();
+    // Navigating to a new page — do NOT restore focus to the trigger;
+    // the destination page's focus order should take over.
+    shouldRestoreFocus.current = false;
     setMegaOpen(null);
     megaLockedUntil.current = Date.now() + 2000;
     setNavKey((k) => k + 1);
@@ -210,11 +245,54 @@ const Header = () => {
       if (!target) return;
       if (headerRef.current && headerRef.current.contains(target)) return;
       clearMegaCloseTimer();
+      // Tap outside is a deliberate dismiss — focus should not jump back into
+      // the header.
+      shouldRestoreFocus.current = false;
       setMegaOpen(null);
     };
     document.addEventListener("pointerdown", handlePointerDown, true);
     return () => document.removeEventListener("pointerdown", handlePointerDown, true);
   }, [isTouchDevice, megaOpen, clearMegaCloseTimer]);
+
+  // Escape closes the open dropdown and restores focus to its trigger.
+  useEffect(() => {
+    if (megaOpen === null) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.stopPropagation();
+      clearMegaCloseTimer();
+      shouldRestoreFocus.current = true;
+      setMegaOpen(null);
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [megaOpen, clearMegaCloseTimer]);
+
+  // Focus shift on open/close transitions.
+  // Open  → move focus to first interactive element in the dropdown panel.
+  // Close → return focus to the triggering button (only when explicitly requested).
+  useEffect(() => {
+    const previous = previousMegaOpen.current;
+    if (megaOpen && megaOpen !== previous) {
+      // Defer until AnimatePresence has mounted the panel.
+      const id = window.requestAnimationFrame(() => {
+        const panel = panelRefs.current[megaOpen];
+        const firstFocusable = panel?.querySelector<HTMLElement>(
+          'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        );
+        firstFocusable?.focus();
+      });
+      previousMegaOpen.current = megaOpen;
+      return () => window.cancelAnimationFrame(id);
+    }
+    if (!megaOpen && previous) {
+      if (shouldRestoreFocus.current) {
+        triggerRefs.current[previous]?.focus();
+      }
+      shouldRestoreFocus.current = false;
+      previousMegaOpen.current = null;
+    }
+  }, [megaOpen]);
 
   const isActive = (href: string) => pathname === href;
   const isSectionActive = (items: NavItem[]) => items.some((i) => pathname === i.href);
@@ -250,11 +328,14 @@ const Header = () => {
       onMouseLeave={handleMegaLeave}
     >
       <button
+        ref={(el) => {
+          triggerRefs.current[keyName] = el;
+        }}
         type="button"
         onClick={(e) => handleMegaTriggerClick(keyName, e)}
         aria-expanded={megaOpen === keyName}
         aria-haspopup="menu"
-        className={`flex items-center gap-1 px-4 py-2 text-sm font-medium transition-colors rounded-lg hover:bg-accent/50 ${
+        className={`flex items-center gap-1 px-4 py-2 text-sm font-medium transition-colors rounded-lg hover:bg-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
           isSectionActive(items)
             ? "text-primary bg-accent/50"
             : "text-foreground/80 hover:text-primary"
@@ -268,6 +349,10 @@ const Header = () => {
       <AnimatePresence>
         {megaOpen === keyName && (
           <motion.div
+            ref={(el) => {
+              panelRefs.current[keyName] = el;
+            }}
+            role="menu"
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 8 }}
@@ -278,8 +363,9 @@ const Header = () => {
               <Link
                 key={item.href}
                 to={item.href}
+                role="menuitem"
                 onClick={handleMegaLinkClick}
-                className={`block px-4 py-3 rounded-lg hover:bg-accent/50 transition-colors group ${
+                className={`block px-4 py-3 rounded-lg hover:bg-accent/50 transition-colors group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:bg-accent/50 ${
                   isActive(item.href) ? "bg-accent/50" : ""
                 }`}
               >
@@ -322,11 +408,14 @@ const Header = () => {
         onMouseLeave={handleMegaLeave}
       >
         <button
+          ref={(el) => {
+            triggerRefs.current[keyName] = el;
+          }}
           type="button"
           onClick={(e) => handleMegaTriggerClick(keyName, e)}
           aria-expanded={megaOpen === keyName}
           aria-haspopup="menu"
-          className={`flex items-center gap-1 px-4 py-2 text-sm font-medium transition-colors rounded-lg hover:bg-accent/50 ${
+          className={`flex items-center gap-1 px-4 py-2 text-sm font-medium transition-colors rounded-lg hover:bg-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
             isSectionActive(allItems)
               ? "text-primary bg-accent/50"
               : "text-foreground/80 hover:text-primary"
@@ -340,6 +429,10 @@ const Header = () => {
         <AnimatePresence>
           {megaOpen === keyName && (
             <motion.div
+              ref={(el) => {
+                panelRefs.current[keyName] = el;
+              }}
+              role="menu"
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 8 }}
@@ -359,8 +452,9 @@ const Header = () => {
                       <li key={item.href}>
                         <Link
                           to={item.href}
+                          role="menuitem"
                           onClick={handleMegaLinkClick}
-                          className={`block px-2 py-1.5 rounded-md text-sm transition-colors ${
+                          className={`block px-2 py-1.5 rounded-md text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:bg-accent/50 ${
                             isActive(item.href)
                               ? "text-primary bg-accent/50 font-medium"
                               : "text-foreground/80 hover:text-primary hover:bg-accent/40"
