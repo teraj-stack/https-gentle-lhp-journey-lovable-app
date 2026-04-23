@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useMemo, type CSSProperties } from "react";
 import { FocusToastLiveRegionInspector } from "@/components/admin/FocusToastLiveRegionInspector";
+import { HeaderTouchDismissTester } from "@/components/admin/HeaderTouchDismissTester";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import type { Session } from "@supabase/supabase-js";
@@ -3142,6 +3143,10 @@ const AdminSystemHealth = () => {
                                 Pomocny przy QA na mobile (375px), gdzie tekst toasta może
                                 wystawać poza viewport. */}
                             {import.meta.env.DEV && <FocusToastLiveRegionInspector />}
+                            {/* Manual QA dla tap-outside dismissal mega-menu (touch).
+                                Symuluje syntetyczny PointerEvent("touch") poza header
+                                i loguje czas zamknięcia + raport krok po kroku. */}
+                            {import.meta.env.DEV && <HeaderTouchDismissTester />}
                           </div>
                         </PopoverContent>
                       </Popover>
