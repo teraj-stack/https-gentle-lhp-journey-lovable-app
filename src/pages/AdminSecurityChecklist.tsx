@@ -368,7 +368,7 @@ const AdminSecurityChecklist = () => {
       const summaryY = lastAuditAt ? 116 : 102;
       doc.setDrawColor(220, 220, 220);
       doc.setFillColor(245, 245, 245);
-      doc.roundedRect(margin, summaryY, pageWidth - margin * 2, 60, 6, 6, "FD");
+      doc.roundedRect(margin, summaryY, pageWidth - margin * 2, 76, 6, 6, "FD");
       doc.setFont("helvetica", "bold");
       doc.setFontSize(12);
       doc.setTextColor(20, 20, 20);
@@ -377,10 +377,13 @@ const AdminSecurityChecklist = () => {
       doc.setFontSize(10);
       doc.setTextColor(60, 60, 60);
       doc.text(
-        `OK: ${pass}    Ostrzezenia: ${warn}    Krytyczne: ${fail}    Lacznie: ${checks.length}`,
+        `OK: ${pass}    Ostrzezenia: ${warn}    Krytyczne: ${fail}    Lacznie: ${checks.length} z ${allChecks.length}`,
         margin + 14,
         summaryY + 42,
       );
+      doc.setTextColor(90, 90, 90);
+      doc.setFontSize(9);
+      doc.text(filterLabel, margin + 14, summaryY + 60);
 
       // Table
       const statusLabel = (s: CheckStatus) =>
