@@ -438,16 +438,21 @@ async function buildPdf(payload: ExportPayload): Promise<Uint8Array> {
   const fontBold = await doc.embedFont(StandardFonts.HelveticaBold);
   const fontMono = await doc.embedFont(StandardFonts.Courier);
 
+  const pageSize: PageSize = payload.pageSize === "Letter" ? "Letter" : "A4";
+  const dims = PAGE_DIMS[pageSize];
+  const margin = 40;
+
   const ctx: RenderContext = {
     doc,
     font,
     fontBold,
     fontMono,
-    page: doc.addPage([595.28, 841.89]),
-    pageWidth: 595.28,
-    pageHeight: 841.89,
-    margin: 40,
-    cursorY: 841.89 - 40,
+    page: doc.addPage(dims),
+    pageWidth: dims[0],
+    pageHeight: dims[1],
+    pageDims: dims,
+    margin,
+    cursorY: dims[1] - margin,
     pageIndex: 1,
   };
 
