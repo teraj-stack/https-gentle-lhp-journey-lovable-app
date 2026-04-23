@@ -588,7 +588,11 @@ const AdminSecurityChecklist = () => {
       const filename = `cml-security-report-${stamp}-${catSuffix}-${stSuffix}-server.pdf`;
 
       setExportingServer(true);
+      setServerPhase("preparing");
       try {
+        // tiny delay so the user sees the first phase even on fast networks
+        await new Promise((r) => setTimeout(r, 120));
+        setServerPhase("authenticating");
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) {
           toast.error("Brak sesji — zaloguj się ponownie");
@@ -596,7 +600,8 @@ const AdminSecurityChecklist = () => {
         }
         const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
         const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
-        const res = await fetch(`${supabaseUrl}/functions/v1/export-security-report-pdf`, {
+        setServerPhase("uploading");
+        const fetchPromise = fetch(`${supabaseUrl}/functions/v1/export-security-report-pdf`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -616,12 +621,17 @@ const AdminSecurityChecklist = () => {
             filename,
           }),
         });
+        // promote to "generating" once request is in flight
+        const generatingTimer = setTimeout(() => setServerPhase("generating"), 400);
+        const res = await fetchPromise;
+        clearTimeout(generatingTimer);
         if (!res.ok) {
           let msg = `HTTP ${res.status}`;
           try { const j = await res.json(); if (j?.error) msg = String(j.error); } catch { /* ignore */ }
           toast.error(`Eksport serwerowy nieudany: ${msg}`);
           return;
         }
+        setServerPhase("downloading");
         const blob = await res.blob();
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
@@ -631,11 +641,14 @@ const AdminSecurityChecklist = () => {
         a.click();
         a.remove();
         URL.revokeObjectURL(url);
+        setServerPhase("done");
         toast.success(`Raport PDF (server) pobrany — ${counts.total} pozycji`);
       } catch (err) {
         toast.error(`Eksport serwerowy nieudany: ${err instanceof Error ? err.message : "blad"}`);
       } finally {
         setExportingServer(false);
+        // brief hold on "done" before resetting so user sees 100%
+        setTimeout(() => setServerPhase("idle"), 600);
       }
     },
     [rows, liveStatus, lastAuditAt],
