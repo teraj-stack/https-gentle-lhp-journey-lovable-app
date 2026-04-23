@@ -6,6 +6,34 @@ import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   CheckCircle2,
   AlertTriangle,
@@ -17,6 +45,9 @@ import {
   RefreshCw,
   Loader2,
   PlayCircle,
+  Pencil,
+  Plus,
+  Trash2,
 } from "lucide-react";
 import SeoHead from "@/components/shared/SeoHead";
 import { toast } from "sonner";
@@ -27,148 +58,70 @@ const LAST_SCAN_DATE = "2026-04-23";
 // Number of days after which the checklist is considered "stale" and needs review.
 const FRESHNESS_DAYS = 30;
 
-type CheckStatus = "pass" | "warn" | "fail" | "running" | "unknown";
+type DbStatus = "pass" | "warn" | "fail";
+type CheckStatus = DbStatus | "running" | "unknown";
+type Category = "RLS" | "Realtime" | "Auth" | "Tokens";
 
-type AuditResult = { status: Exclude<CheckStatus, "running">; detail?: string };
+type AuditResult = { status: DbStatus; detail?: string };
 
-type SecurityCheck = {
+type ChecklistRow = {
   id: string;
-  category: "RLS" | "Realtime" | "Auth" | "Tokens";
+  slug: string;
+  category: Category;
   title: string;
   description: string;
-  status: CheckStatus;
-  detail?: string;
-  /** Optional runtime probe — returns live status when "Self-audit" is clicked. */
+  status: DbStatus;
+  detail: string | null;
+  sort_order: number;
+};
+
+type DisplayCheck = ChecklistRow & {
+  liveStatus: CheckStatus;
+  liveDetail?: string;
   audit?: () => Promise<AuditResult>;
 };
 
 /**
  * Generic helper: a SELECT against an admin-only table should succeed for the
- * current admin session (RLS allows it via has_role) AND return data without
- * a "permission denied" error. If the query errors with 42501 / RLS message,
- * RLS is misconfigured for the admin path. We don't expose row contents.
+ * current admin session. Errors indicate misconfigured RLS for the admin path.
  */
 async function probeAdminReadable(table: string): Promise<AuditResult> {
   const { error } = await supabase
-    // Cast to keep this generic across tables; we only inspect error/count.
     .from(table as never)
     .select("*", { count: "exact", head: true });
   if (error) {
-    return {
-      status: "fail",
-      detail: `Admin SELECT na ${table} zwrócił błąd: ${error.message}`,
-    };
+    return { status: "fail", detail: `Admin SELECT na ${table} zwrócił błąd: ${error.message}` };
   }
   return { status: "pass", detail: `Admin SELECT na ${table} dozwolony (RLS OK).` };
 }
 
-const initialChecks: SecurityCheck[] = [
-  {
-    id: "rls-bookings",
-    category: "RLS",
-    title: "Tabela bookings — RLS aktywne",
-    description: "SELECT/UPDATE/DELETE wyłącznie dla adminów; INSERT tylko service_role.",
-    status: "pass",
-    detail: "Polityki: 'Admins can view/update/delete bookings' + 'Service role can insert bookings'.",
-    audit: () => probeAdminReadable("bookings"),
+// Map slug -> live audit probe. Items not in this map are "static" (no live check).
+const AUDITS: Record<string, () => Promise<AuditResult>> = {
+  "rls-bookings": () => probeAdminReadable("bookings"),
+  "rls-user-roles": () => probeAdminReadable("user_roles"),
+  "rls-tokens-action": () => probeAdminReadable("booking_action_tokens"),
+  "rls-tokens-optout": () => probeAdminReadable("booking_reminder_opt_out_tokens"),
+  "rls-status-history": () => probeAdminReadable("booking_status_history"),
+  "rls-email-log": () => probeAdminReadable("email_send_log"),
+  "rls-notification-recipients": () => probeAdminReadable("notification_recipients"),
+  "rls-blog": () => probeAdminReadable("blog_posts"),
+  "auth-rbac": async () => {
+    const { data, error } = await supabase.rpc("has_role", { _role: "admin" });
+    if (error) return { status: "fail", detail: `RPC has_role() błąd: ${error.message}` };
+    if (data === true) return { status: "pass", detail: "has_role('admin') = true dla bieżącej sesji." };
+    return { status: "warn", detail: "has_role('admin') zwróciło false — sesja nie jest adminem." };
   },
-  {
-    id: "rls-user-roles",
-    category: "RLS",
-    title: "Tabela user_roles — pełna ochrona",
-    description: "Wszystkie operacje (SELECT/INSERT/UPDATE/DELETE) wymagają roli admin.",
-    status: "pass",
-    detail: "Polityka UPDATE dodana w ostatniej iteracji — uszczelniono wektor eskalacji uprawnień.",
-    audit: () => probeAdminReadable("user_roles"),
+  "auth-rate-limit": async () => {
+    const { error } = await supabase.rpc("check_and_increment_rate_limit", {
+      p_endpoint: "self-audit-probe",
+      p_ip: "0.0.0.0",
+      p_max: 1_000_000,
+      p_window_sec: 60,
+    });
+    if (error) return { status: "fail", detail: `RPC rate limiter błąd: ${error.message}` };
+    return { status: "pass", detail: "RPC check_and_increment_rate_limit dostępne." };
   },
-  {
-    id: "rls-tokens-action",
-    category: "Tokens",
-    title: "booking_action_tokens — admin-only odczyt",
-    description: "Tokeny akcji (potwierdź/anuluj) widoczne tylko dla adminów; pełen dostęp dla service_role.",
-    status: "pass",
-    audit: () => probeAdminReadable("booking_action_tokens"),
-  },
-  {
-    id: "rls-tokens-optout",
-    category: "Tokens",
-    title: "booking_reminder_opt_out_tokens — admin-only odczyt",
-    description: "Jednorazowe tokeny rezygnacji z reminderów chronione RLS.",
-    status: "pass",
-    audit: () => probeAdminReadable("booking_reminder_opt_out_tokens"),
-  },
-  {
-    id: "rls-status-history",
-    category: "RLS",
-    title: "booking_status_history — admin-only odczyt",
-    description: "Historia zmian statusu rezerwacji widoczna wyłącznie dla adminów.",
-    status: "pass",
-    audit: () => probeAdminReadable("booking_status_history"),
-  },
-  {
-    id: "rls-email-log",
-    category: "RLS",
-    title: "email_send_log — admin-only odczyt",
-    description: "Logi wysyłki maili dostępne tylko dla adminów.",
-    status: "pass",
-    audit: () => probeAdminReadable("email_send_log"),
-  },
-  {
-    id: "rls-notification-recipients",
-    category: "RLS",
-    title: "notification_recipients — admin-only CRUD",
-    description: "Pełen CRUD wymaga roli admin; service_role ma osobny pełen dostęp.",
-    status: "pass",
-    audit: () => probeAdminReadable("notification_recipients"),
-  },
-  {
-    id: "rls-blog",
-    category: "RLS",
-    title: "blog_posts — publiczne tylko opublikowane",
-    description: "Anon/authenticated widzą wpisy z published=true; modyfikacje wymagają admina.",
-    status: "pass",
-    audit: () => probeAdminReadable("blog_posts"),
-  },
-  {
-    id: "realtime-bookings",
-    category: "Realtime",
-    title: "Realtime bookings — egzekwuje RLS",
-    description: "Subskrypcje używają postgres_changes (nie Broadcast), więc RLS źródła filtruje payloady na serwerze.",
-    status: "pass",
-    detail: "Tylko admini otrzymują live updaty. Finding 'bookings_realtime_no_rls' — zignorowany jako mitygowany.",
-  },
-  {
-    id: "auth-rbac",
-    category: "Auth",
-    title: "RBAC przez has_role()",
-    description: "Funkcja security definer has_role() zapobiega rekursji RLS i centralizuje sprawdzenie roli.",
-    status: "pass",
-    audit: async () => {
-      const { data, error } = await supabase.rpc("has_role", { _role: "admin" });
-      if (error) return { status: "fail", detail: `RPC has_role() błąd: ${error.message}` };
-      if (data === true) return { status: "pass", detail: "has_role('admin') = true dla bieżącej sesji." };
-      return { status: "warn", detail: "has_role('admin') zwróciło false — sesja nie jest adminem." };
-    },
-  },
-  {
-    id: "auth-rate-limit",
-    category: "Auth",
-    title: "Rate limiting publicznych endpointów",
-    description: "Edge functions chronione przez check_and_increment_rate_limit + Cloudflare Turnstile.",
-    status: "pass",
-    audit: async () => {
-      // Probe RPC existence with a high limit so we never trip a real bucket.
-      const { error } = await supabase.rpc("check_and_increment_rate_limit", {
-        p_endpoint: "self-audit-probe",
-        p_ip: "0.0.0.0",
-        p_max: 1_000_000,
-        p_window_sec: 60,
-      });
-      if (error) return { status: "fail", detail: `RPC rate limiter błąd: ${error.message}` };
-      return { status: "pass", detail: "RPC check_and_increment_rate_limit dostępne." };
-    },
-  },
-];
+};
 
 const STATUS_META: Record<CheckStatus, { label: string; icon: typeof CheckCircle2; className: string; badgeClass: string }> = {
   pass: {
@@ -203,15 +156,42 @@ const STATUS_META: Record<CheckStatus, { label: string; icon: typeof CheckCircle
   },
 };
 
+const CATEGORIES: Category[] = ["RLS", "Realtime", "Auth", "Tokens"];
+const STATUSES: DbStatus[] = ["pass", "warn", "fail"];
+
+type EditorState =
+  | { mode: "closed" }
+  | { mode: "create" }
+  | { mode: "edit"; row: ChecklistRow };
+
+const emptyForm = {
+  slug: "",
+  category: "RLS" as Category,
+  title: "",
+  description: "",
+  status: "pass" as DbStatus,
+  detail: "",
+  sort_order: 0,
+};
+
 const AdminSecurityChecklist = () => {
   const navigate = useNavigate();
   const [session, setSession] = useState<Session | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const { isAdmin, loading: adminLoading } = useIsAdmin();
-  const [checks, setChecks] = useState<SecurityCheck[]>(initialChecks);
+
+  const [rows, setRows] = useState<ChecklistRow[]>([]);
+  const [liveStatus, setLiveStatus] = useState<Record<string, { status: CheckStatus; detail?: string }>>({});
+  const [loadingRows, setLoadingRows] = useState(true);
   const [auditing, setAuditing] = useState(false);
   const [lastAuditAt, setLastAuditAt] = useState<Date | null>(null);
 
+  const [editor, setEditor] = useState<EditorState>({ mode: "closed" });
+  const [form, setForm] = useState(emptyForm);
+  const [saving, setSaving] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState<ChecklistRow | null>(null);
+
+  // Auth bootstrap
   useEffect(() => {
     let isMounted = true;
     const apply = (s: Session | null) => {
@@ -225,6 +205,26 @@ const AdminSecurityChecklist = () => {
     return () => { isMounted = false; subscription.unsubscribe(); };
   }, [navigate]);
 
+  const loadRows = useCallback(async () => {
+    setLoadingRows(true);
+    const { data, error } = await supabase
+      .from("security_checklist_items")
+      .select("id, slug, category, title, description, status, detail, sort_order")
+      .order("sort_order", { ascending: true })
+      .order("slug", { ascending: true });
+    if (error) {
+      toast.error(`Nie udało się załadować checklisty: ${error.message}`);
+      setRows([]);
+    } else {
+      setRows((data ?? []) as ChecklistRow[]);
+    }
+    setLoadingRows(false);
+  }, []);
+
+  useEffect(() => {
+    if (isAdmin) loadRows();
+  }, [isAdmin, loadRows]);
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate("/admin/login", { replace: true });
@@ -232,36 +232,32 @@ const AdminSecurityChecklist = () => {
 
   const runSelfAudit = useCallback(async () => {
     setAuditing(true);
-    // Mark all auditable checks as "running" up front so the UI reflects progress.
-    setChecks((prev) =>
-      prev.map((c) => (c.audit ? { ...c, status: "running" as CheckStatus } : c)),
-    );
+    const next: Record<string, { status: CheckStatus; detail?: string }> = {};
+    rows.forEach((r) => {
+      if (AUDITS[r.slug]) next[r.slug] = { status: "running" };
+    });
+    setLiveStatus(next);
 
     const results = await Promise.all(
-      initialChecks.map(async (c) => {
-        if (!c.audit) return { id: c.id, result: null as AuditResult | null };
+      rows.map(async (r) => {
+        const fn = AUDITS[r.slug];
+        if (!fn) return { slug: r.slug, result: null as AuditResult | null };
         try {
-          const result = await c.audit();
-          return { id: c.id, result };
+          return { slug: r.slug, result: await fn() };
         } catch (err) {
           return {
-            id: c.id,
-            result: {
-              status: "fail" as const,
-              detail: `Wyjątek: ${err instanceof Error ? err.message : String(err)}`,
-            },
+            slug: r.slug,
+            result: { status: "fail" as DbStatus, detail: `Wyjątek: ${err instanceof Error ? err.message : String(err)}` },
           };
         }
       }),
     );
 
-    setChecks((prev) =>
-      prev.map((c) => {
-        const r = results.find((x) => x.id === c.id)?.result;
-        if (!r) return c; // No audit defined — keep static state.
-        return { ...c, status: r.status, detail: r.detail ?? c.detail };
-      }),
-    );
+    const final: Record<string, { status: CheckStatus; detail?: string }> = {};
+    results.forEach(({ slug, result }) => {
+      if (result) final[slug] = { status: result.status, detail: result.detail };
+    });
+    setLiveStatus(final);
     setLastAuditAt(new Date());
     setAuditing(false);
 
@@ -270,7 +266,98 @@ const AdminSecurityChecklist = () => {
     if (failed > 0) toast.error(`Self-audit: ${failed} kontrol(i) krytycznych`);
     else if (warned > 0) toast.warning(`Self-audit: ${warned} ostrzeżeń`);
     else toast.success("Self-audit zakończony — wszystkie kontrole OK");
-  }, []);
+  }, [rows]);
+
+  const openCreate = () => {
+    setForm({ ...emptyForm, sort_order: (rows[rows.length - 1]?.sort_order ?? 0) + 10 });
+    setEditor({ mode: "create" });
+  };
+
+  const openEdit = (row: ChecklistRow) => {
+    setForm({
+      slug: row.slug,
+      category: row.category,
+      title: row.title,
+      description: row.description,
+      status: row.status,
+      detail: row.detail ?? "",
+      sort_order: row.sort_order,
+    });
+    setEditor({ mode: "edit", row });
+  };
+
+  const closeEditor = () => setEditor({ mode: "closed" });
+
+  const submitForm = async () => {
+    if (!form.slug.trim() || !form.title.trim() || !form.description.trim()) {
+      toast.error("Slug, tytuł i opis są wymagane");
+      return;
+    }
+    setSaving(true);
+    const payload = {
+      slug: form.slug.trim(),
+      category: form.category,
+      title: form.title.trim(),
+      description: form.description.trim(),
+      status: form.status,
+      detail: form.detail.trim() || null,
+      sort_order: Number.isFinite(form.sort_order) ? form.sort_order : 0,
+    };
+
+    if (editor.mode === "create") {
+      const { error } = await supabase.from("security_checklist_items").insert(payload);
+      if (error) {
+        toast.error(`Błąd zapisu: ${error.message}`);
+        setSaving(false);
+        return;
+      }
+      toast.success("Pozycja dodana");
+    } else if (editor.mode === "edit") {
+      const { error } = await supabase
+        .from("security_checklist_items")
+        .update(payload)
+        .eq("id", editor.row.id);
+      if (error) {
+        toast.error(`Błąd zapisu: ${error.message}`);
+        setSaving(false);
+        return;
+      }
+      toast.success("Pozycja zaktualizowana");
+    }
+    setSaving(false);
+    closeEditor();
+    await loadRows();
+  };
+
+  const updateStatus = async (row: ChecklistRow, status: DbStatus) => {
+    // Optimistic update.
+    setRows((prev) => prev.map((r) => (r.id === row.id ? { ...r, status } : r)));
+    const { error } = await supabase
+      .from("security_checklist_items")
+      .update({ status })
+      .eq("id", row.id);
+    if (error) {
+      toast.error(`Nie udało się zmienić statusu: ${error.message}`);
+      await loadRows();
+    } else {
+      toast.success(`Status: ${STATUS_META[status].label}`);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!confirmDelete) return;
+    const { error } = await supabase
+      .from("security_checklist_items")
+      .delete()
+      .eq("id", confirmDelete.id);
+    if (error) {
+      toast.error(`Błąd usuwania: ${error.message}`);
+    } else {
+      toast.success("Pozycja usunięta");
+      await loadRows();
+    }
+    setConfirmDelete(null);
+  };
 
   if (authLoading || adminLoading) {
     return (
@@ -296,19 +383,26 @@ const AdminSecurityChecklist = () => {
     );
   }
 
-  const passCount = checks.filter((c) => c.status === "pass").length;
-  const failCount = checks.filter((c) => c.status === "fail").length;
-  const totalCount = checks.length;
-  const allPass = passCount === totalCount;
+  // Build display checks: live status (when audit ran) takes precedence over DB status.
+  const displayChecks: DisplayCheck[] = rows.map((r) => {
+    const live = liveStatus[r.slug];
+    return {
+      ...r,
+      audit: AUDITS[r.slug],
+      liveStatus: live?.status ?? r.status,
+      liveDetail: live?.detail,
+    };
+  });
+
+  const passCount = displayChecks.filter((c) => c.liveStatus === "pass").length;
+  const failCount = displayChecks.filter((c) => c.liveStatus === "fail").length;
+  const totalCount = displayChecks.length;
+  const allPass = totalCount > 0 && passCount === totalCount;
 
   const lastScan = new Date(LAST_SCAN_DATE);
   const daysSinceScan = Math.floor((Date.now() - lastScan.getTime()) / (1000 * 60 * 60 * 24));
   const isFresh = daysSinceScan <= FRESHNESS_DAYS;
-  const formattedDate = lastScan.toLocaleDateString("pl-PL", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
+  const formattedDate = lastScan.toLocaleDateString("pl-PL", { year: "numeric", month: "long", day: "numeric" });
   const dayLabel = daysSinceScan === 0 ? "dzisiaj" : daysSinceScan === 1 ? "1 dzień temu" : `${daysSinceScan} dni temu`;
   const healthy = allPass && isFresh && failCount === 0;
 
@@ -344,12 +438,10 @@ const AdminSecurityChecklist = () => {
                 </div>
               </div>
               <div className="flex items-center gap-2 flex-wrap">
-                <Button
-                  size="sm"
-                  variant="default"
-                  onClick={runSelfAudit}
-                  disabled={auditing}
-                >
+                <Button size="sm" variant="outline" onClick={openCreate}>
+                  <Plus className="w-4 h-4 mr-1" /> Nowa pozycja
+                </Button>
+                <Button size="sm" variant="default" onClick={runSelfAudit} disabled={auditing || rows.length === 0}>
                   {auditing ? (
                     <><Loader2 className="w-4 h-4 mr-1 animate-spin" /> Audyt…</>
                   ) : (
@@ -367,10 +459,7 @@ const AdminSecurityChecklist = () => {
                 <span className="text-muted-foreground">Ostatni przegląd:</span>
                 <span className="text-foreground font-medium">{formattedDate}</span>
                 <span className="text-muted-foreground">({dayLabel})</span>
-                <Badge
-                  variant="outline"
-                  className={`ml-auto ${isFresh ? STATUS_META.pass.badgeClass : STATUS_META.warn.badgeClass}`}
-                >
+                <Badge variant="outline" className={`ml-auto ${isFresh ? STATUS_META.pass.badgeClass : STATUS_META.warn.badgeClass}`}>
                   {isFresh ? (
                     <><CheckCircle2 className="w-3 h-3 mr-1" /> Aktualny</>
                   ) : (
@@ -386,39 +475,75 @@ const AdminSecurityChecklist = () => {
             </CardContent>
           </Card>
 
-          <div className="grid gap-3">
-            {checks.map((check) => {
-              const meta = STATUS_META[check.status];
-              const Icon = meta.icon;
-              return (
-                <Card key={check.id}>
-                  <CardContent className="pt-6">
-                    <div className="flex items-start gap-4">
-                      <Icon className={`w-6 h-6 shrink-0 mt-0.5 ${meta.className}`} aria-hidden />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap mb-1">
-                          <h3 className="font-semibold text-foreground">{check.title}</h3>
-                          <Badge variant="outline" className="text-xs">{check.category}</Badge>
-                          <Badge variant="outline" className={`text-xs ${meta.badgeClass}`}>
-                            {meta.label}
-                          </Badge>
-                          {!check.audit && (
-                            <Badge variant="outline" className="text-xs bg-muted text-muted-foreground border-border">
-                              statyczny
+          {loadingRows ? (
+            <div className="flex justify-center py-12">
+              <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : displayChecks.length === 0 ? (
+            <Card>
+              <CardContent className="pt-6 text-center text-sm text-muted-foreground">
+                Brak pozycji. Dodaj pierwszą kontrolę przyciskiem „Nowa pozycja”.
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid gap-3">
+              {displayChecks.map((check) => {
+                const meta = STATUS_META[check.liveStatus];
+                const Icon = meta.icon;
+                const detail = check.liveDetail ?? check.detail ?? undefined;
+                return (
+                  <Card key={check.id}>
+                    <CardContent className="pt-6">
+                      <div className="flex items-start gap-4">
+                        <Icon className={`w-6 h-6 shrink-0 mt-0.5 ${meta.className}`} aria-hidden />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap mb-1">
+                            <h3 className="font-semibold text-foreground">{check.title}</h3>
+                            <Badge variant="outline" className="text-xs">{check.category}</Badge>
+                            <Badge variant="outline" className={`text-xs ${meta.badgeClass}`}>
+                              {meta.label}
                             </Badge>
+                            {!check.audit && (
+                              <Badge variant="outline" className="text-xs bg-muted text-muted-foreground border-border">
+                                statyczny
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="text-sm text-muted-foreground">{check.description}</p>
+                          {detail && (
+                            <p className="text-xs text-muted-foreground/80 mt-2 italic">{detail}</p>
                           )}
                         </div>
-                        <p className="text-sm text-muted-foreground">{check.description}</p>
-                        {check.detail && (
-                          <p className="text-xs text-muted-foreground/80 mt-2 italic">{check.detail}</p>
-                        )}
+                        <div className="flex flex-col items-end gap-2 shrink-0">
+                          <Select
+                            value={check.status}
+                            onValueChange={(v) => updateStatus(check, v as DbStatus)}
+                          >
+                            <SelectTrigger className="h-8 w-[140px] text-xs">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {STATUSES.map((s) => (
+                                <SelectItem key={s} value={s}>{STATUS_META[s].label}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <div className="flex gap-1">
+                            <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => openEdit(check)} aria-label="Edytuj">
+                              <Pencil className="w-4 h-4" />
+                            </Button>
+                            <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setConfirmDelete(check)} aria-label="Usuń">
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
 
           <p className="text-xs text-muted-foreground text-center pt-4">
             Self-audit uruchamia żywe sondy RLS/RPC w bieżącej sesji admina. Kontrole oznaczone „statyczny”
@@ -426,6 +551,100 @@ const AdminSecurityChecklist = () => {
           </p>
         </main>
       </div>
+
+      {/* Editor dialog */}
+      <Dialog open={editor.mode !== "closed"} onOpenChange={(o) => !o && closeEditor()}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>
+              {editor.mode === "create" ? "Nowa pozycja checklisty" : "Edytuj pozycję"}
+            </DialogTitle>
+            <DialogDescription>
+              Pola: kategoria, status oraz tekst widoczny administratorom na stronie /admin/security.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label htmlFor="slug">Slug</Label>
+                <Input
+                  id="slug"
+                  value={form.slug}
+                  onChange={(e) => setForm({ ...form, slug: e.target.value })}
+                  placeholder="rls-bookings"
+                  disabled={editor.mode === "edit"}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="sort">Kolejność</Label>
+                <Input
+                  id="sort"
+                  type="number"
+                  value={form.sort_order}
+                  onChange={(e) => setForm({ ...form, sort_order: parseInt(e.target.value, 10) || 0 })}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label>Kategoria</Label>
+                <Select value={form.category} onValueChange={(v) => setForm({ ...form, category: v as Category })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <Label>Status</Label>
+                <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v as DbStatus })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {STATUSES.map((s) => <SelectItem key={s} value={s}>{STATUS_META[s].label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="title">Tytuł</Label>
+              <Input id="title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="description">Opis</Label>
+              <Textarea id="description" rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="detail">Szczegóły (opcjonalne)</Label>
+              <Textarea id="detail" rows={2} value={form.detail} onChange={(e) => setForm({ ...form, detail: e.target.value })} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={closeEditor} disabled={saving}>Anuluj</Button>
+            <Button onClick={submitForm} disabled={saving}>
+              {saving && <Loader2 className="w-4 h-4 mr-1 animate-spin" />}
+              {editor.mode === "create" ? "Dodaj" : "Zapisz"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete confirmation */}
+      <AlertDialog open={!!confirmDelete} onOpenChange={(o) => !o && setConfirmDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Usunąć pozycję?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirmDelete?.title} — operacja nieodwracalna.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Anuluj</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Usuń
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 };
