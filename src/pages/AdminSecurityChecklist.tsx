@@ -6,8 +6,14 @@ import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, AlertTriangle, ShieldCheck, ShieldAlert, LogOut, ArrowLeft } from "lucide-react";
+import { CheckCircle2, AlertTriangle, ShieldCheck, ShieldAlert, LogOut, ArrowLeft, Clock, RefreshCw } from "lucide-react";
 import SeoHead from "@/components/shared/SeoHead";
+
+// Date of the last manual security review reflected in the checklist below.
+// Update this whenever you re-verify policies or resolve new findings.
+const LAST_SCAN_DATE = "2026-04-23";
+// Number of days after which the checklist is considered "stale" and needs review.
+const FRESHNESS_DAYS = 30;
 
 type CheckStatus = "pass" | "warn" | "fail";
 
@@ -178,6 +184,17 @@ const AdminSecurityChecklist = () => {
   const totalCount = checks.length;
   const allPass = passCount === totalCount;
 
+  const lastScan = new Date(LAST_SCAN_DATE);
+  const daysSinceScan = Math.floor((Date.now() - lastScan.getTime()) / (1000 * 60 * 60 * 24));
+  const isFresh = daysSinceScan <= FRESHNESS_DAYS;
+  const formattedDate = lastScan.toLocaleDateString("pl-PL", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+  const dayLabel = daysSinceScan === 0 ? "dzisiaj" : daysSinceScan === 1 ? "1 dzień temu" : `${daysSinceScan} dni temu`;
+  const healthy = allPass && isFresh;
+
   return (
     <>
       <SeoHead title="Security Checklist — Admin" description="Status zabezpieczeń RLS i Realtime" path="/admin/security" />
@@ -195,23 +212,41 @@ const AdminSecurityChecklist = () => {
         </header>
 
         <main className="max-w-5xl mx-auto px-4 py-8 md:px-8 space-y-6">
-          <Card className={allPass ? "border-emerald-500/40" : "border-yellow-500/40"}>
-            <CardHeader className="flex flex-row items-center justify-between">
+          <Card className={healthy ? "border-emerald-500/40" : "border-yellow-500/40"}>
+            <CardHeader className="flex flex-row items-center justify-between gap-4 flex-wrap">
               <div className="flex items-center gap-3">
-                <ShieldCheck className={`w-8 h-8 ${allPass ? "text-emerald-500" : "text-yellow-500"}`} />
+                <ShieldCheck className={`w-8 h-8 ${healthy ? "text-emerald-500" : "text-yellow-500"}`} />
                 <div>
                   <CardTitle className="text-lg">
-                    {allPass ? "Wszystkie kontrole przeszły" : "Wymaga uwagi"}
+                    {healthy ? "Wszystkie kontrole przeszły" : allPass ? "Checklist wymaga odświeżenia" : "Wymaga uwagi"}
                   </CardTitle>
                   <p className="text-sm text-muted-foreground mt-1">
                     {passCount} z {totalCount} kontroli OK
                   </p>
                 </div>
               </div>
-              <Badge variant="outline" className={allPass ? STATUS_META.pass.badgeClass : STATUS_META.warn.badgeClass}>
-                {allPass ? "ZIELONY" : "DO PRZEGLĄDU"}
+              <Badge variant="outline" className={healthy ? STATUS_META.pass.badgeClass : STATUS_META.warn.badgeClass}>
+                {healthy ? "ZIELONY" : "DO PRZEGLĄDU"}
               </Badge>
             </CardHeader>
+            <CardContent className="pt-0">
+              <div className="flex items-center gap-2 flex-wrap text-sm border-t border-border pt-4">
+                <Clock className={`w-4 h-4 ${isFresh ? "text-muted-foreground" : "text-yellow-500"}`} aria-hidden />
+                <span className="text-muted-foreground">Ostatni przegląd:</span>
+                <span className="text-foreground font-medium">{formattedDate}</span>
+                <span className="text-muted-foreground">({dayLabel})</span>
+                <Badge
+                  variant="outline"
+                  className={`ml-auto ${isFresh ? STATUS_META.pass.badgeClass : STATUS_META.warn.badgeClass}`}
+                >
+                  {isFresh ? (
+                    <><CheckCircle2 className="w-3 h-3 mr-1" /> Aktualny</>
+                  ) : (
+                    <><RefreshCw className="w-3 h-3 mr-1" /> Wymaga przeglądu (&gt;{FRESHNESS_DAYS} dni)</>
+                  )}
+                </Badge>
+              </div>
+            </CardContent>
           </Card>
 
           <div className="grid gap-3">
