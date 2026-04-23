@@ -354,9 +354,22 @@ const AdminSecurityChecklist = () => {
   }, [pdfPageMargin]);
   const [exportingServer, setExportingServer] = useState(false);
   const [serverPhase, setServerPhase] = useState<ServerExportPhase>("idle");
+  // Server-side PDF preview (single-page sample) state
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewError, setPreviewError] = useState<string | null>(null);
+  const [previewMeta, setPreviewMeta] = useState<{ size: string; margin: string; total: number } | null>(null);
   const togglePdfStatus = (s: DbStatus, checked: boolean) => {
     setPdfStatuses((prev) => (checked ? [...new Set([...prev, s])] : prev.filter((x) => x !== s)));
   };
+
+  // Revoke any blob URL when preview modal closes / unmounts to avoid leaks.
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    };
+  }, [previewUrl]);
 
   // Auth bootstrap
   useEffect(() => {
