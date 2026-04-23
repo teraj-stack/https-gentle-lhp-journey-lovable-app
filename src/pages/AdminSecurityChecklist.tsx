@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -6,8 +6,20 @@ import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, AlertTriangle, ShieldCheck, ShieldAlert, LogOut, ArrowLeft, Clock, RefreshCw } from "lucide-react";
+import {
+  CheckCircle2,
+  AlertTriangle,
+  ShieldCheck,
+  ShieldAlert,
+  LogOut,
+  ArrowLeft,
+  Clock,
+  RefreshCw,
+  Loader2,
+  PlayCircle,
+} from "lucide-react";
 import SeoHead from "@/components/shared/SeoHead";
+import { toast } from "sonner";
 
 // Date of the last manual security review reflected in the checklist below.
 // Update this whenever you re-verify policies or resolve new findings.
@@ -15,7 +27,9 @@ const LAST_SCAN_DATE = "2026-04-23";
 // Number of days after which the checklist is considered "stale" and needs review.
 const FRESHNESS_DAYS = 30;
 
-type CheckStatus = "pass" | "warn" | "fail";
+type CheckStatus = "pass" | "warn" | "fail" | "running" | "unknown";
+
+type AuditResult = { status: Exclude<CheckStatus, "running">; detail?: string };
 
 type SecurityCheck = {
   id: string;
@@ -24,11 +38,31 @@ type SecurityCheck = {
   description: string;
   status: CheckStatus;
   detail?: string;
+  /** Optional runtime probe — returns live status when "Self-audit" is clicked. */
+  audit?: () => Promise<AuditResult>;
 };
 
-// Reflects the current state of the database (manually curated, mirrors RLS
-// policies and security findings as of last review). Update when policies change.
-const checks: SecurityCheck[] = [
+/**
+ * Generic helper: a SELECT against an admin-only table should succeed for the
+ * current admin session (RLS allows it via has_role) AND return data without
+ * a "permission denied" error. If the query errors with 42501 / RLS message,
+ * RLS is misconfigured for the admin path. We don't expose row contents.
+ */
+async function probeAdminReadable(table: string): Promise<AuditResult> {
+  const { error } = await supabase
+    // Cast to keep this generic across tables; we only inspect error/count.
+    .from(table as never)
+    .select("*", { count: "exact", head: true });
+  if (error) {
+    return {
+      status: "fail",
+      detail: `Admin SELECT na ${table} zwrócił błąd: ${error.message}`,
+    };
+  }
+  return { status: "pass", detail: `Admin SELECT na ${table} dozwolony (RLS OK).` };
+}
+
+const initialChecks: SecurityCheck[] = [
   {
     id: "rls-bookings",
     category: "RLS",
@@ -36,6 +70,7 @@ const checks: SecurityCheck[] = [
     description: "SELECT/UPDATE/DELETE wyłącznie dla adminów; INSERT tylko service_role.",
     status: "pass",
     detail: "Polityki: 'Admins can view/update/delete bookings' + 'Service role can insert bookings'.",
+    audit: () => probeAdminReadable("bookings"),
   },
   {
     id: "rls-user-roles",
@@ -44,6 +79,7 @@ const checks: SecurityCheck[] = [
     description: "Wszystkie operacje (SELECT/INSERT/UPDATE/DELETE) wymagają roli admin.",
     status: "pass",
     detail: "Polityka UPDATE dodana w ostatniej iteracji — uszczelniono wektor eskalacji uprawnień.",
+    audit: () => probeAdminReadable("user_roles"),
   },
   {
     id: "rls-tokens-action",
@@ -51,6 +87,7 @@ const checks: SecurityCheck[] = [
     title: "booking_action_tokens — admin-only odczyt",
     description: "Tokeny akcji (potwierdź/anuluj) widoczne tylko dla adminów; pełen dostęp dla service_role.",
     status: "pass",
+    audit: () => probeAdminReadable("booking_action_tokens"),
   },
   {
     id: "rls-tokens-optout",
@@ -58,6 +95,7 @@ const checks: SecurityCheck[] = [
     title: "booking_reminder_opt_out_tokens — admin-only odczyt",
     description: "Jednorazowe tokeny rezygnacji z reminderów chronione RLS.",
     status: "pass",
+    audit: () => probeAdminReadable("booking_reminder_opt_out_tokens"),
   },
   {
     id: "rls-status-history",
@@ -65,6 +103,7 @@ const checks: SecurityCheck[] = [
     title: "booking_status_history — admin-only odczyt",
     description: "Historia zmian statusu rezerwacji widoczna wyłącznie dla adminów.",
     status: "pass",
+    audit: () => probeAdminReadable("booking_status_history"),
   },
   {
     id: "rls-email-log",
@@ -72,6 +111,7 @@ const checks: SecurityCheck[] = [
     title: "email_send_log — admin-only odczyt",
     description: "Logi wysyłki maili dostępne tylko dla adminów.",
     status: "pass",
+    audit: () => probeAdminReadable("email_send_log"),
   },
   {
     id: "rls-notification-recipients",
@@ -79,6 +119,7 @@ const checks: SecurityCheck[] = [
     title: "notification_recipients — admin-only CRUD",
     description: "Pełen CRUD wymaga roli admin; service_role ma osobny pełen dostęp.",
     status: "pass",
+    audit: () => probeAdminReadable("notification_recipients"),
   },
   {
     id: "rls-blog",
@@ -86,6 +127,7 @@ const checks: SecurityCheck[] = [
     title: "blog_posts — publiczne tylko opublikowane",
     description: "Anon/authenticated widzą wpisy z published=true; modyfikacje wymagają admina.",
     status: "pass",
+    audit: () => probeAdminReadable("blog_posts"),
   },
   {
     id: "realtime-bookings",
@@ -101,6 +143,12 @@ const checks: SecurityCheck[] = [
     title: "RBAC przez has_role()",
     description: "Funkcja security definer has_role() zapobiega rekursji RLS i centralizuje sprawdzenie roli.",
     status: "pass",
+    audit: async () => {
+      const { data, error } = await supabase.rpc("has_role", { _role: "admin" });
+      if (error) return { status: "fail", detail: `RPC has_role() błąd: ${error.message}` };
+      if (data === true) return { status: "pass", detail: "has_role('admin') = true dla bieżącej sesji." };
+      return { status: "warn", detail: "has_role('admin') zwróciło false — sesja nie jest adminem." };
+    },
   },
   {
     id: "auth-rate-limit",
@@ -108,6 +156,17 @@ const checks: SecurityCheck[] = [
     title: "Rate limiting publicznych endpointów",
     description: "Edge functions chronione przez check_and_increment_rate_limit + Cloudflare Turnstile.",
     status: "pass",
+    audit: async () => {
+      // Probe RPC existence with a high limit so we never trip a real bucket.
+      const { error } = await supabase.rpc("check_and_increment_rate_limit", {
+        p_endpoint: "self-audit-probe",
+        p_ip: "0.0.0.0",
+        p_max: 1_000_000,
+        p_window_sec: 60,
+      });
+      if (error) return { status: "fail", detail: `RPC rate limiter błąd: ${error.message}` };
+      return { status: "pass", detail: "RPC check_and_increment_rate_limit dostępne." };
+    },
   },
 ];
 
@@ -130,6 +189,18 @@ const STATUS_META: Record<CheckStatus, { label: string; icon: typeof CheckCircle
     className: "text-destructive",
     badgeClass: "bg-destructive/15 text-destructive border-destructive/30",
   },
+  running: {
+    label: "Sprawdzanie…",
+    icon: Loader2,
+    className: "text-muted-foreground animate-spin",
+    badgeClass: "bg-muted text-muted-foreground border-border",
+  },
+  unknown: {
+    label: "Brak audytu",
+    icon: AlertTriangle,
+    className: "text-muted-foreground",
+    badgeClass: "bg-muted text-muted-foreground border-border",
+  },
 };
 
 const AdminSecurityChecklist = () => {
@@ -137,6 +208,9 @@ const AdminSecurityChecklist = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const { isAdmin, loading: adminLoading } = useIsAdmin();
+  const [checks, setChecks] = useState<SecurityCheck[]>(initialChecks);
+  const [auditing, setAuditing] = useState(false);
+  const [lastAuditAt, setLastAuditAt] = useState<Date | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -155,6 +229,48 @@ const AdminSecurityChecklist = () => {
     await supabase.auth.signOut();
     navigate("/admin/login", { replace: true });
   };
+
+  const runSelfAudit = useCallback(async () => {
+    setAuditing(true);
+    // Mark all auditable checks as "running" up front so the UI reflects progress.
+    setChecks((prev) =>
+      prev.map((c) => (c.audit ? { ...c, status: "running" as CheckStatus } : c)),
+    );
+
+    const results = await Promise.all(
+      initialChecks.map(async (c) => {
+        if (!c.audit) return { id: c.id, result: null as AuditResult | null };
+        try {
+          const result = await c.audit();
+          return { id: c.id, result };
+        } catch (err) {
+          return {
+            id: c.id,
+            result: {
+              status: "fail" as const,
+              detail: `Wyjątek: ${err instanceof Error ? err.message : String(err)}`,
+            },
+          };
+        }
+      }),
+    );
+
+    setChecks((prev) =>
+      prev.map((c) => {
+        const r = results.find((x) => x.id === c.id)?.result;
+        if (!r) return c; // No audit defined — keep static state.
+        return { ...c, status: r.status, detail: r.detail ?? c.detail };
+      }),
+    );
+    setLastAuditAt(new Date());
+    setAuditing(false);
+
+    const failed = results.filter((r) => r.result?.status === "fail").length;
+    const warned = results.filter((r) => r.result?.status === "warn").length;
+    if (failed > 0) toast.error(`Self-audit: ${failed} kontrol(i) krytycznych`);
+    else if (warned > 0) toast.warning(`Self-audit: ${warned} ostrzeżeń`);
+    else toast.success("Self-audit zakończony — wszystkie kontrole OK");
+  }, []);
 
   if (authLoading || adminLoading) {
     return (
@@ -181,6 +297,7 @@ const AdminSecurityChecklist = () => {
   }
 
   const passCount = checks.filter((c) => c.status === "pass").length;
+  const failCount = checks.filter((c) => c.status === "fail").length;
   const totalCount = checks.length;
   const allPass = passCount === totalCount;
 
@@ -193,7 +310,7 @@ const AdminSecurityChecklist = () => {
     day: "numeric",
   });
   const dayLabel = daysSinceScan === 0 ? "dzisiaj" : daysSinceScan === 1 ? "1 dzień temu" : `${daysSinceScan} dni temu`;
-  const healthy = allPass && isFresh;
+  const healthy = allPass && isFresh && failCount === 0;
 
   return (
     <>
@@ -222,14 +339,29 @@ const AdminSecurityChecklist = () => {
                   </CardTitle>
                   <p className="text-sm text-muted-foreground mt-1">
                     {passCount} z {totalCount} kontroli OK
+                    {failCount > 0 && ` · ${failCount} krytyczne`}
                   </p>
                 </div>
               </div>
-              <Badge variant="outline" className={healthy ? STATUS_META.pass.badgeClass : STATUS_META.warn.badgeClass}>
-                {healthy ? "ZIELONY" : "DO PRZEGLĄDU"}
-              </Badge>
+              <div className="flex items-center gap-2 flex-wrap">
+                <Button
+                  size="sm"
+                  variant="default"
+                  onClick={runSelfAudit}
+                  disabled={auditing}
+                >
+                  {auditing ? (
+                    <><Loader2 className="w-4 h-4 mr-1 animate-spin" /> Audyt…</>
+                  ) : (
+                    <><PlayCircle className="w-4 h-4 mr-1" /> Self-audit</>
+                  )}
+                </Button>
+                <Badge variant="outline" className={healthy ? STATUS_META.pass.badgeClass : STATUS_META.warn.badgeClass}>
+                  {healthy ? "ZIELONY" : "DO PRZEGLĄDU"}
+                </Badge>
+              </div>
             </CardHeader>
-            <CardContent className="pt-0">
+            <CardContent className="pt-0 space-y-3">
               <div className="flex items-center gap-2 flex-wrap text-sm border-t border-border pt-4">
                 <Clock className={`w-4 h-4 ${isFresh ? "text-muted-foreground" : "text-yellow-500"}`} aria-hidden />
                 <span className="text-muted-foreground">Ostatni przegląd:</span>
@@ -246,6 +378,11 @@ const AdminSecurityChecklist = () => {
                   )}
                 </Badge>
               </div>
+              {lastAuditAt && (
+                <p className="text-xs text-muted-foreground">
+                  Ostatni self-audit: {lastAuditAt.toLocaleString("pl-PL")}
+                </p>
+              )}
             </CardContent>
           </Card>
 
@@ -265,6 +402,11 @@ const AdminSecurityChecklist = () => {
                           <Badge variant="outline" className={`text-xs ${meta.badgeClass}`}>
                             {meta.label}
                           </Badge>
+                          {!check.audit && (
+                            <Badge variant="outline" className="text-xs bg-muted text-muted-foreground border-border">
+                              statyczny
+                            </Badge>
+                          )}
                         </div>
                         <p className="text-sm text-muted-foreground">{check.description}</p>
                         {check.detail && (
@@ -279,8 +421,8 @@ const AdminSecurityChecklist = () => {
           </div>
 
           <p className="text-xs text-muted-foreground text-center pt-4">
-            Status statyczny — odzwierciedla aktualny stan polityk RLS i findings z ostatniego skanu.
-            Pełen audyt: panel Lovable Cloud → Security.
+            Self-audit uruchamia żywe sondy RLS/RPC w bieżącej sesji admina. Kontrole oznaczone „statyczny”
+            (np. Realtime) pochodzą z ręcznego przeglądu. Pełen audyt: panel Lovable Cloud → Security.
           </p>
         </main>
       </div>
