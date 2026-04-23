@@ -318,6 +318,10 @@ const AdminSecurityChecklist = () => {
       const pageWidth = doc.internal.pageSize.getWidth();
       const margin = 40;
       const generatedAt = new Date();
+      const lastScanLocal = new Date(LAST_SCAN_DATE);
+      const daysSince = Math.floor((Date.now() - lastScanLocal.getTime()) / (1000 * 60 * 60 * 24));
+      const formattedScan = lastScanLocal.toLocaleDateString("pl-PL", { year: "numeric", month: "long", day: "numeric" });
+      const dayLabelLocal = daysSince === 0 ? "dzisiaj" : daysSince === 1 ? "1 dzien temu" : `${daysSince} dni temu`;
 
       // Recompute display data locally so the PDF reflects what's on screen.
       const checks = rows.map((r) => {
