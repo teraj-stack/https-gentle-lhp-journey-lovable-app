@@ -953,6 +953,93 @@ const AdminSecurityChecklist = () => {
         </DialogContent>
       </Dialog>
 
+      {/* PDF export filter dialog */}
+      <Dialog open={pdfDialogOpen} onOpenChange={setPdfDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Eksport PDF — filtry</DialogTitle>
+            <DialogDescription>
+              Wybierz, które pozycje znajdą się w raporcie.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-5 py-2">
+            <div className="space-y-2">
+              <Label className="text-sm">Statusy do uwzględnienia</Label>
+              <div className="space-y-2">
+                {STATUSES.map((s) => {
+                  const meta = STATUS_META[s];
+                  const checked = pdfStatuses.includes(s);
+                  return (
+                    <label
+                      key={s}
+                      htmlFor={`pdf-status-${s}`}
+                      className="flex items-center gap-2 cursor-pointer text-sm"
+                    >
+                      <Checkbox
+                        id={`pdf-status-${s}`}
+                        checked={checked}
+                        onCheckedChange={(c) => togglePdfStatus(s, c === true)}
+                      />
+                      <span className={meta.className}>{meta.label}</span>
+                      <span className="text-xs text-muted-foreground uppercase">({s})</span>
+                    </label>
+                  );
+                })}
+              </div>
+              <div className="flex gap-2 pt-1">
+                <Button type="button" variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => setPdfStatuses(["pass", "warn", "fail"])}>
+                  Wszystkie
+                </Button>
+                <Button type="button" variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => setPdfStatuses(["fail"])}>
+                  Tylko FAIL
+                </Button>
+                <Button type="button" variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => setPdfStatuses(["warn", "fail"])}>
+                  WARN + FAIL
+                </Button>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="pdf-category" className="text-sm">Kategoria</Label>
+              <Select value={pdfCategory} onValueChange={(v) => setPdfCategory(v as Category | "ALL")}>
+                <SelectTrigger id="pdf-category">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">Wszystkie kategorie</SelectItem>
+                  {CATEGORIES.map((c) => (
+                    <SelectItem key={c} value={c}>{c}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Podgląd: {rows.filter((r) => {
+                const live = liveStatus[r.slug]?.status ?? r.status;
+                const sOk = (live === "pass" || live === "warn" || live === "fail") ? pdfStatuses.includes(live as DbStatus) : true;
+                const cOk = pdfCategory === "ALL" || r.category === pdfCategory;
+                return sOk && cOk;
+              }).length} z {rows.length} pozycji.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setPdfDialogOpen(false)}>Anuluj</Button>
+            <Button
+              onClick={() => {
+                if (pdfStatuses.length === 0) {
+                  toast.error("Wybierz przynajmniej jeden status");
+                  return;
+                }
+                setPdfDialogOpen(false);
+                exportPdf({ statuses: pdfStatuses, category: pdfCategory });
+              }}
+              disabled={pdfStatuses.length === 0}
+            >
+              <Download className="w-4 h-4 mr-1" /> Pobierz
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Delete confirmation */}
       <AlertDialog open={!!confirmDelete} onOpenChange={(o) => !o && setConfirmDelete(null)}>
         <AlertDialogContent>
