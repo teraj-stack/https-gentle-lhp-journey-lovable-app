@@ -1273,8 +1273,12 @@ const AdminSecurityChecklist = () => {
                 if (live === "pass" || live === "warn" || live === "fail") byStatus[live]++;
                 byCategory.set(r.category, (byCategory.get(r.category) ?? 0) + 1);
               }
-              // ~3 checks per A4 page in the server layout (card-based)
-              const estPages = Math.max(1, Math.ceil(filtered.length / 3));
+              // Server layout (cards): ~3 checks / A4 page; Letter is ~6% shorter → ~2.85
+              // Client layout (table):  ~4 checks / A4 page → ~3.78 on Letter
+              const serverPerPage = pdfPageSize === "A4" ? 3 : 2.85;
+              const clientPerPage = pdfPageSize === "A4" ? 4 : 3.78;
+              const estPages = Math.max(1, Math.ceil(filtered.length / serverPerPage));
+              const estPagesClient = Math.max(1, Math.ceil(filtered.length / clientPerPage));
               const empty = filtered.length === 0;
               return (
                 <div
@@ -1327,8 +1331,8 @@ const AdminSecurityChecklist = () => {
                         </div>
                       )}
                       <p className="text-[11px] text-muted-foreground pt-0.5">
-                        Szacowana objętość PDF: ~{estPages} {estPages === 1 ? "strona" : estPages < 5 ? "strony" : "stron"} A4
-                        <span className="text-muted-foreground/70"> (server) · ~{Math.max(1, Math.ceil(filtered.length / 4))} (client)</span>
+                        Szacowana objętość PDF: ~{estPages} {estPages === 1 ? "strona" : estPages < 5 ? "strony" : "stron"} {pdfPageSize}
+                        <span className="text-muted-foreground/70"> (server) · ~{estPagesClient} (client)</span>
                       </p>
                     </>
                   )}
