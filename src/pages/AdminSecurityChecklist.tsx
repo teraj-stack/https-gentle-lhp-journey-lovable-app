@@ -650,6 +650,7 @@ const AdminSecurityChecklist = () => {
             },
             filename,
             pageSize,
+            pageMargin,
           }),
         });
         // promote to "generating" once request is in flight
