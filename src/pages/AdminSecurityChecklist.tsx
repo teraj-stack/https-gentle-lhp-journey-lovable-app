@@ -608,12 +608,14 @@ const AdminSecurityChecklist = () => {
         allTotal: allChecks.length,
       };
       const pageSize = opts?.pageSize ?? "A4";
+      const pageMargin = opts?.pageMargin ?? "standard";
+      const marginLabel = pageMargin === "narrow" ? "wąskie" : pageMargin === "wide" ? "szerokie" : "standardowe";
       const overall = counts.fail > 0 ? "WYMAGA UWAGI" : counts.warn > 0 ? "DO PRZEGLĄDU" : "ZIELONY";
-      const filterLabel = `Filtr: ${categoryFilter === "ALL" ? "wszystkie kategorie" : categoryFilter} · statusy: ${[...allowedStatuses].map((s) => s.toUpperCase()).join("/")} · format: ${pageSize}`;
+      const filterLabel = `Filtr: ${categoryFilter === "ALL" ? "wszystkie kategorie" : categoryFilter} · statusy: ${[...allowedStatuses].map((s) => s.toUpperCase()).join("/")} · format: ${pageSize} · marginesy: ${marginLabel}`;
       const stamp = new Date().toISOString().slice(0, 10);
       const catSuffix = categoryFilter === "ALL" ? "all" : categoryFilter.toLowerCase();
       const stSuffix = [...allowedStatuses].sort().join("-");
-      const filename = `cml-security-report-${stamp}-${catSuffix}-${stSuffix}-${pageSize.toLowerCase()}-server.pdf`;
+      const filename = `cml-security-report-${stamp}-${catSuffix}-${stSuffix}-${pageSize.toLowerCase()}-${pageMargin}-server.pdf`;
 
       setExportingServer(true);
       setServerPhase("preparing");
