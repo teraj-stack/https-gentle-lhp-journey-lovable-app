@@ -246,12 +246,13 @@ const AdminSecurityChecklist = () => {
       setRows([]);
     } else {
       setRows(
-        (data ?? []).map((r) => ({
-          ...(r as Omit<ChecklistRow, "policies">),
-          policies: Array.isArray((r as { policies?: unknown }).policies)
-            ? ((r as { policies: PolicyRef[] }).policies)
-            : [],
-        })),
+        (data ?? []).map((r) => {
+          const raw = r as { policies?: unknown } & Omit<ChecklistRow, "policies">;
+          return {
+            ...raw,
+            policies: Array.isArray(raw.policies) ? (raw.policies as unknown as PolicyRef[]) : [],
+          } satisfies ChecklistRow;
+        }),
       );
     }
     setLoadingRows(false);
