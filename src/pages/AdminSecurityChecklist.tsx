@@ -319,6 +319,7 @@ const AdminSecurityChecklist = () => {
       status: row.status,
       detail: row.detail ?? "",
       sort_order: row.sort_order,
+      policiesJson: policiesToText(row.policies),
     });
     setEditor({ mode: "edit", row });
   };
@@ -330,6 +331,21 @@ const AdminSecurityChecklist = () => {
       toast.error("Slug, tytuł i opis są wymagane");
       return;
     }
+    let parsedPolicies: PolicyRef[] = [];
+    if (form.policiesJson.trim()) {
+      try {
+        const parsed = JSON.parse(form.policiesJson);
+        if (!Array.isArray(parsed)) throw new Error("oczekiwana tablica");
+        parsedPolicies = parsed.map((p: unknown) => {
+          const obj = p as Partial<PolicyRef>;
+          if (!obj.name || !obj.table) throw new Error("każda polityka wymaga 'name' i 'table'");
+          return { name: String(obj.name), table: String(obj.table), sql: obj.sql ? String(obj.sql) : undefined };
+        });
+      } catch (err) {
+        toast.error(`Polityki – błędny JSON: ${err instanceof Error ? err.message : "parse error"}`);
+        return;
+      }
+    }
     setSaving(true);
     const payload = {
       slug: form.slug.trim(),
@@ -339,6 +355,7 @@ const AdminSecurityChecklist = () => {
       status: form.status,
       detail: form.detail.trim() || null,
       sort_order: Number.isFinite(form.sort_order) ? form.sort_order : 0,
+      policies: parsedPolicies as unknown as never,
     };
 
     if (editor.mode === "create") {
