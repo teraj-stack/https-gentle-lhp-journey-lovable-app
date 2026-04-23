@@ -224,6 +224,14 @@ const AdminSecurityChecklist = () => {
   const [saving, setSaving] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<ChecklistRow | null>(null);
 
+  // PDF export filter dialog state
+  const [pdfDialogOpen, setPdfDialogOpen] = useState(false);
+  const [pdfStatuses, setPdfStatuses] = useState<DbStatus[]>(["pass", "warn", "fail"]);
+  const [pdfCategory, setPdfCategory] = useState<Category | "ALL">("ALL");
+  const togglePdfStatus = (s: DbStatus, checked: boolean) => {
+    setPdfStatuses((prev) => (checked ? [...new Set([...prev, s])] : prev.filter((x) => x !== s)));
+  };
+
   // Auth bootstrap
   useEffect(() => {
     let isMounted = true;
