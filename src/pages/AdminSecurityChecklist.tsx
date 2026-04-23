@@ -1323,7 +1323,10 @@ const AdminSecurityChecklist = () => {
               }
               // Server layout (cards): ~3 checks / A4 page; Letter is ~6% shorter → ~2.85
               // Client layout (table):  ~4 checks / A4 page → ~3.78 on Letter
-              const serverPerPage = pdfPageSize === "A4" ? 3 : 2.85;
+              // Wider margins reduce capacity slightly (cards have less vertical room
+              // because content area shrinks). Narrow → +8%, wide → -8%.
+              const marginFactor = pdfPageMargin === "narrow" ? 1.08 : pdfPageMargin === "wide" ? 0.92 : 1;
+              const serverPerPage = (pdfPageSize === "A4" ? 3 : 2.85) * marginFactor;
               const clientPerPage = pdfPageSize === "A4" ? 4 : 3.78;
               const estPages = Math.max(1, Math.ceil(filtered.length / serverPerPage));
               const estPagesClient = Math.max(1, Math.ceil(filtered.length / clientPerPage));
