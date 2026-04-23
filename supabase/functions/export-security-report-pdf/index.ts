@@ -564,8 +564,20 @@ async function buildPdf(payload: ExportPayload): Promise<Uint8Array> {
   }
   ctx.cursorY = boxTop - summaryHeight - 14;
 
-  // Render each check as a card
-  payload.checks.forEach((c, i) => drawCheckCard(ctx, i + 1, c));
+  // Render each check as a card. In preview mode we stop adding cards as soon
+  // as we have spilled onto a second page so the output is a single sample page.
+  const previewOnly = payload.previewOnly === true;
+  for (let i = 0; i < payload.checks.length; i++) {
+    if (previewOnly && ctx.doc.getPages().length > 1) break;
+    drawCheckCard(ctx, i + 1, payload.checks[i]);
+  }
+
+  // In preview mode, drop every page after the first so the iframe shows
+  // exactly what the first page of the full export would look like.
+  if (previewOnly) {
+    const total = ctx.doc.getPages().length;
+    for (let i = total - 1; i >= 1; i--) ctx.doc.removePage(i);
+  }
 
   drawFooter(ctx, ctx.doc.getPages().length, meta.generatedAt);
 
