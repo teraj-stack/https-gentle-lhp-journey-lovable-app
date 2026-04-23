@@ -136,7 +136,21 @@ const Header = () => {
 
   // Delay closing mega-menu after mouse leave so users have time to move
   // cursor onto the dropdown content (typical mega-menu hover intent pattern).
+  // For touch devices (no hover) we skip this delay entirely — taps must close
+  // immediately when the user taps outside the menu.
   const MEGA_CLOSE_DELAY_MS = 600;
+
+  // Detect coarse pointer / no-hover (touch devices). Reactive to changes
+  // (e.g. plugging in a mouse on tablets).
+  const [isTouchDevice, setIsTouchDevice] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return;
+    const mql = window.matchMedia("(hover: none), (pointer: coarse)");
+    const update = () => setIsTouchDevice(mql.matches);
+    update();
+    mql.addEventListener?.("change", update);
+    return () => mql.removeEventListener?.("change", update);
+  }, []);
 
   const clearMegaCloseTimer = useCallback(() => {
     if (megaCloseTimer.current !== null) {
@@ -147,19 +161,36 @@ const Header = () => {
 
   const handleMegaEnter = useCallback(
     (key: string) => {
+      // Hover events are unreliable / synthetic on touch — ignore them.
+      if (isTouchDevice) return;
       clearMegaCloseTimer();
       if (Date.now() < megaLockedUntil.current) return;
       setMegaOpen(key);
     },
-    [clearMegaCloseTimer],
+    [clearMegaCloseTimer, isTouchDevice],
   );
   const handleMegaLeave = useCallback(() => {
+    if (isTouchDevice) return;
     clearMegaCloseTimer();
     megaCloseTimer.current = window.setTimeout(() => {
       setMegaOpen(null);
       megaCloseTimer.current = null;
     }, MEGA_CLOSE_DELAY_MS);
-  }, [clearMegaCloseTimer]);
+  }, [clearMegaCloseTimer, isTouchDevice]);
+
+  // Touch trigger: tap on the dropdown button toggles it open/closed
+  // without relying on hover state.
+  const handleMegaTriggerClick = useCallback(
+    (key: string, event: React.MouseEvent<HTMLButtonElement>) => {
+      if (!isTouchDevice) return;
+      event.preventDefault();
+      event.stopPropagation();
+      clearMegaCloseTimer();
+      setMegaOpen((current) => (current === key ? null : key));
+    },
+    [clearMegaCloseTimer, isTouchDevice],
+  );
+
   const handleMegaLinkClick = useCallback(() => {
     clearMegaCloseTimer();
     setMegaOpen(null);
@@ -168,6 +199,22 @@ const Header = () => {
   }, [clearMegaCloseTimer]);
 
   useEffect(() => () => clearMegaCloseTimer(), [clearMegaCloseTimer]);
+
+  // Tap-outside dismissal for touch devices: if a touch lands outside the
+  // header (and outside any open dropdown rendered inside it), close immediately.
+  useEffect(() => {
+    if (!isTouchDevice || megaOpen === null) return;
+    const handlePointerDown = (event: PointerEvent) => {
+      if (event.pointerType !== "touch" && event.pointerType !== "pen") return;
+      const target = event.target as Node | null;
+      if (!target) return;
+      if (headerRef.current && headerRef.current.contains(target)) return;
+      clearMegaCloseTimer();
+      setMegaOpen(null);
+    };
+    document.addEventListener("pointerdown", handlePointerDown, true);
+    return () => document.removeEventListener("pointerdown", handlePointerDown, true);
+  }, [isTouchDevice, megaOpen, clearMegaCloseTimer]);
 
   const isActive = (href: string) => pathname === href;
   const isSectionActive = (items: NavItem[]) => items.some((i) => pathname === i.href);
