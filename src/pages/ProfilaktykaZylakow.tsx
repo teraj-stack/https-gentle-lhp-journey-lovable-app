@@ -77,7 +77,7 @@ const prevention = [
   {
     icon: Apple,
     title: "Zdrowa dieta",
-    desc: "Błonnik (warzywa, owoce, pełne ziarna) zapobiega zaparciom. Ogranicz sól (zatrzymuje wodę) i utrzymuj prawidłową masę ciała. WAŻNE: Aby błonnik spełniał swoją funkcję, w jelicie grubym ponad 50% powinny stanowic Laseczki glebowe, głównie bakterie z grupy Clostridium (metabolizują błonnik do kwasu masłowego gwarantując dobrostan jelita grubego. Znajdziesz je na warzywach i owocach rosnących w warunkach naturalnych",
+    desc: "Błonnik (warzywa, owoce, pełne ziarna) zapobiega zaparciom. Ogranicz sól (zatrzymuje wodę) i utrzymuj prawidłową masę ciała. WAŻNE: Aby błonnik spełniał swoją funkcję, w jelicie grubym ponad 50% powinny stanowić Laseczki glebowe, głównie bakterie z grupy Clostridium (metabolizują błonnik do kwasu masłowego, gwarantując dobrostan jelita grubego). Znajdziesz je na warzywach i owocach rosnących w warunkach naturalnych.",
   },
   {
     icon: Droplet,
