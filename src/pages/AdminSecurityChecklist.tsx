@@ -6,8 +6,14 @@ import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, AlertTriangle, ShieldCheck, ShieldAlert, LogOut, ArrowLeft } from "lucide-react";
+import { CheckCircle2, AlertTriangle, ShieldCheck, ShieldAlert, LogOut, ArrowLeft, Clock, RefreshCw } from "lucide-react";
 import SeoHead from "@/components/shared/SeoHead";
+
+// Date of the last manual security review reflected in the checklist below.
+// Update this whenever you re-verify policies or resolve new findings.
+const LAST_SCAN_DATE = "2026-04-23";
+// Number of days after which the checklist is considered "stale" and needs review.
+const FRESHNESS_DAYS = 30;
 
 type CheckStatus = "pass" | "warn" | "fail";
 
