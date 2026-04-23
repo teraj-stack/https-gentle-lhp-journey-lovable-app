@@ -1742,6 +1742,56 @@ const AdminSecurityChecklist = () => {
               </p>
             </div>
             {(() => {
+              // Usable content area panel: page dims minus capped margins.
+              // Mirrors the edge-function logic (margin capped at 30% of shorter edge)
+              // so the operator sees exactly what the renderer will produce.
+              const customW = customSizeValidation.ok ? customSizeValidation.w : Number(pdfCustomWidthMm) || 0;
+              const customH = customSizeValidation.ok ? customSizeValidation.h : Number(pdfCustomHeightMm) || 0;
+              const baseW = pdfPageSize === "Custom" ? customW : STANDARD_DIMS_MM[pdfPageSize].width;
+              const baseH = pdfPageSize === "Custom" ? customH : STANDARD_DIMS_MM[pdfPageSize].height;
+              if (!baseW || !baseH) return null;
+              const requestedM = MARGIN_MM[pdfPageMargin];
+              const cap = Math.min(baseW, baseH) * 0.3;
+              const effM = Math.min(requestedM, cap);
+              const marginCapped = effM < requestedM - 0.05;
+              const eff = computeEffectiveDims(pdfPageSize, customW, customH, pdfPageMargin, pdfRotateToFit);
+              const pageArea = baseW * baseH;
+              const usableArea = eff.usableWidthMm * eff.usableHeightMm;
+              const usablePct = pageArea > 0 ? Math.round((usableArea / pageArea) * 100) : 0;
+              const fmt = (n: number) => (Math.round(n * 10) / 10).toString();
+              return (
+                <div className="space-y-1.5">
+                  <Label className="text-sm">Obszar treści</Label>
+                  <div className="rounded-md border border-border/60 bg-muted/20 p-2.5 space-y-1.5">
+                    <div className="flex items-baseline justify-between gap-3 flex-wrap">
+                      <div className="flex items-baseline gap-2">
+                        <span className="font-mono text-sm font-medium text-foreground tabular-nums">
+                          {fmt(eff.usableWidthMm)}×{fmt(eff.usableHeightMm)} mm
+                        </span>
+                        {eff.rotated && (
+                          <span className="text-[10px] uppercase tracking-wide text-emerald-500">
+                            obrócone
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-[11px] text-muted-foreground tabular-nums">
+                        {usablePct}% strony
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground leading-relaxed">
+                      Strona {fmt(baseW)}×{fmt(baseH)} mm · margines{" "}
+                      <span className="tabular-nums">{fmt(effM)} mm</span>
+                      {marginCapped && (
+                        <span className="ml-1 text-amber-500">
+                          (przycięty z {fmt(requestedM)} mm — limit 30% krótszej krawędzi)
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                </div>
+              );
+            })()}
+            {(() => {
               // Show "Rotate to fit" only when rotation could realistically help
               // (i.e., the page is portrait). Square or landscape pages are skipped.
               const customW = customSizeValidation.ok ? customSizeValidation.w : Number(pdfCustomWidthMm) || 0;
