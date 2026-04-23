@@ -54,6 +54,7 @@ const AdminBookings = lazy(() => import("@/pages/AdminBookings"));
 const AdminNotificationRecipients = lazy(() => import("@/pages/AdminNotificationRecipients"));
 const AdminSystemHealth = lazy(() => import("@/pages/AdminSystemHealth"));
 const AdminEmailDashboard = lazy(() => import("@/pages/AdminEmailDashboard"));
+const AdminSecurityChecklist = lazy(() => import("@/pages/AdminSecurityChecklist"));
 const AdminScrollTest = lazy(() => import("@/pages/AdminScrollTest"));
 
 const Unsubscribe = lazy(() => import("@/pages/Unsubscribe"));
@@ -157,6 +158,7 @@ const App = () => (
             <Route path="/admin/notification-recipients" element={<AdminNotificationRecipients />} />
             <Route path="/admin/system-health" element={<AdminSystemHealth />} />
             <Route path="/admin/email-dashboard" element={<AdminEmailDashboard />} />
+            <Route path="/admin/security" element={<AdminSecurityChecklist />} />
             <Route path="/admin/scroll-test" element={<AdminScrollTest />} />
             
             <Route path="/unsubscribe" element={<Unsubscribe />} />
