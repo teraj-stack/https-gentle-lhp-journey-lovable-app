@@ -581,12 +581,13 @@ const AdminSecurityChecklist = () => {
         total: checks.length,
         allTotal: allChecks.length,
       };
+      const pageSize = opts?.pageSize ?? "A4";
       const overall = counts.fail > 0 ? "WYMAGA UWAGI" : counts.warn > 0 ? "DO PRZEGLĄDU" : "ZIELONY";
-      const filterLabel = `Filtr: ${categoryFilter === "ALL" ? "wszystkie kategorie" : categoryFilter} · statusy: ${[...allowedStatuses].map((s) => s.toUpperCase()).join("/")}`;
+      const filterLabel = `Filtr: ${categoryFilter === "ALL" ? "wszystkie kategorie" : categoryFilter} · statusy: ${[...allowedStatuses].map((s) => s.toUpperCase()).join("/")} · format: ${pageSize}`;
       const stamp = new Date().toISOString().slice(0, 10);
       const catSuffix = categoryFilter === "ALL" ? "all" : categoryFilter.toLowerCase();
       const stSuffix = [...allowedStatuses].sort().join("-");
-      const filename = `cml-security-report-${stamp}-${catSuffix}-${stSuffix}-server.pdf`;
+      const filename = `cml-security-report-${stamp}-${catSuffix}-${stSuffix}-${pageSize.toLowerCase()}-server.pdf`;
 
       setExportingServer(true);
       setServerPhase("preparing");
