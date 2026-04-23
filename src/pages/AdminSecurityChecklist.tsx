@@ -626,9 +626,42 @@ const AdminSecurityChecklist = () => {
         const res = await fetchPromise;
         clearTimeout(generatingTimer);
         if (!res.ok) {
-          let msg = `HTTP ${res.status}`;
-          try { const j = await res.json(); if (j?.error) msg = String(j.error); } catch { /* ignore */ }
-          toast.error(`Eksport serwerowy nieudany: ${msg}`);
+          // Try to extract a meaningful message from the response body.
+          // Supports: { error: "..." } | { error: { fieldErrors: {...} } } | { message: "..." } | plain text
+          let title = `Eksport serwerowy nieudany (HTTP ${res.status})`;
+          let description: string | undefined;
+          const raw = await res.text().catch(() => "");
+          if (raw) {
+            try {
+              const j = JSON.parse(raw);
+              const errVal = j?.error ?? j?.message ?? j?.msg;
+              if (typeof errVal === "string") {
+                description = errVal;
+              } else if (errVal && typeof errVal === "object") {
+                // zod-style fieldErrors / formErrors
+                const fieldErrors = (errVal as { fieldErrors?: Record<string, string[]> }).fieldErrors;
+                const formErrors = (errVal as { formErrors?: string[] }).formErrors;
+                const parts: string[] = [];
+                if (formErrors?.length) parts.push(formErrors.join("; "));
+                if (fieldErrors) {
+                  for (const [field, msgs] of Object.entries(fieldErrors)) {
+                    if (Array.isArray(msgs) && msgs.length) parts.push(`${field}: ${msgs.join(", ")}`);
+                  }
+                }
+                description = parts.length ? parts.join(" • ") : JSON.stringify(errVal).slice(0, 400);
+              }
+            } catch {
+              // not JSON — use raw text (trimmed)
+              description = raw.trim().slice(0, 400);
+            }
+          }
+          // Friendlier title for common auth statuses
+          if (res.status === 401) title = "Brak autoryzacji — zaloguj się ponownie";
+          else if (res.status === 403) title = "Brak uprawnień (wymagana rola admin)";
+          else if (res.status === 400) title = "Nieprawidłowe dane wejściowe";
+          else if (res.status === 429) title = "Zbyt wiele zapytań — spróbuj za chwilę";
+          else if (res.status >= 500) title = `Błąd serwera (HTTP ${res.status})`;
+          toast.error(title, description ? { description, duration: 8000 } : undefined);
           return;
         }
         setServerPhase("downloading");
