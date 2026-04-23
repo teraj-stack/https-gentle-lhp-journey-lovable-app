@@ -656,7 +656,13 @@ const AdminSecurityChecklist = () => {
 
   // Server-side PDF export — same payload, rendered with pdf-lib for crisp wrapping.
   const exportPdfServer = useCallback(
-    async (opts?: { statuses?: DbStatus[]; category?: Category | "ALL"; pageSize?: "A4" | "Letter"; pageMargin?: "narrow" | "standard" | "wide" }) => {
+    async (opts?: {
+      statuses?: DbStatus[];
+      category?: Category | "ALL";
+      pageSize?: "A4" | "Letter" | "Custom";
+      pageMargin?: "narrow" | "standard" | "wide";
+      customPageSizeMm?: { width: number; height: number };
+    }) => {
       if (rows.length === 0) {
         toast.error("Brak pozycji do eksportu");
         return;
