@@ -596,6 +596,12 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    if (payload.pageSize !== undefined && payload.pageSize !== "A4" && payload.pageSize !== "Letter") {
+      return new Response(JSON.stringify({ error: "Invalid pageSize (expected 'A4' or 'Letter')" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     const pdfBytes = await buildPdf(payload);
     const filename = (payload.filename || "cml-security-report.pdf").replace(/[^a-zA-Z0-9._-]/g, "_");
