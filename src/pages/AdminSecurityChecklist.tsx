@@ -253,6 +253,19 @@ const AdminSecurityChecklist = () => {
       // ignore quota / privacy mode errors
     }
   }, [pdfPageSize]);
+  const [pdfPageMargin, setPdfPageMargin] = useState<"narrow" | "standard" | "wide">(() => {
+    if (typeof window === "undefined") return "standard";
+    const saved = window.localStorage.getItem("cml.admin.pdfPageMargin");
+    return saved === "narrow" || saved === "wide" || saved === "standard" ? saved : "standard";
+  });
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem("cml.admin.pdfPageMargin", pdfPageMargin);
+    } catch {
+      // ignore quota / privacy mode errors
+    }
+  }, [pdfPageMargin]);
   const [exportingServer, setExportingServer] = useState(false);
   const [serverPhase, setServerPhase] = useState<ServerExportPhase>("idle");
   const togglePdfStatus = (s: DbStatus, checked: boolean) => {
@@ -556,7 +569,7 @@ const AdminSecurityChecklist = () => {
 
   // Server-side PDF export — same payload, rendered with pdf-lib for crisp wrapping.
   const exportPdfServer = useCallback(
-    async (opts?: { statuses?: DbStatus[]; category?: Category | "ALL"; pageSize?: "A4" | "Letter" }) => {
+    async (opts?: { statuses?: DbStatus[]; category?: Category | "ALL"; pageSize?: "A4" | "Letter"; pageMargin?: "narrow" | "standard" | "wide" }) => {
       if (rows.length === 0) {
         toast.error("Brak pozycji do eksportu");
         return;
@@ -595,12 +608,14 @@ const AdminSecurityChecklist = () => {
         allTotal: allChecks.length,
       };
       const pageSize = opts?.pageSize ?? "A4";
+      const pageMargin = opts?.pageMargin ?? "standard";
+      const marginLabel = pageMargin === "narrow" ? "wąskie" : pageMargin === "wide" ? "szerokie" : "standardowe";
       const overall = counts.fail > 0 ? "WYMAGA UWAGI" : counts.warn > 0 ? "DO PRZEGLĄDU" : "ZIELONY";
-      const filterLabel = `Filtr: ${categoryFilter === "ALL" ? "wszystkie kategorie" : categoryFilter} · statusy: ${[...allowedStatuses].map((s) => s.toUpperCase()).join("/")} · format: ${pageSize}`;
+      const filterLabel = `Filtr: ${categoryFilter === "ALL" ? "wszystkie kategorie" : categoryFilter} · statusy: ${[...allowedStatuses].map((s) => s.toUpperCase()).join("/")} · format: ${pageSize} · marginesy: ${marginLabel}`;
       const stamp = new Date().toISOString().slice(0, 10);
       const catSuffix = categoryFilter === "ALL" ? "all" : categoryFilter.toLowerCase();
       const stSuffix = [...allowedStatuses].sort().join("-");
-      const filename = `cml-security-report-${stamp}-${catSuffix}-${stSuffix}-${pageSize.toLowerCase()}-server.pdf`;
+      const filename = `cml-security-report-${stamp}-${catSuffix}-${stSuffix}-${pageSize.toLowerCase()}-${pageMargin}-server.pdf`;
 
       setExportingServer(true);
       setServerPhase("preparing");
@@ -635,6 +650,7 @@ const AdminSecurityChecklist = () => {
             },
             filename,
             pageSize,
+            pageMargin,
           }),
         });
         // promote to "generating" once request is in flight
@@ -1257,6 +1273,38 @@ const AdminSecurityChecklist = () => {
                 Łamanie wierszy dopasowuje się automatycznie do szerokości wybranego formatu.
               </p>
             </div>
+            <div className="space-y-2">
+              <Label className="text-sm">Marginesy strony</Label>
+              <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Marginesy strony PDF">
+                {(
+                  [
+                    { key: "narrow", label: "Wąskie", hint: "~10mm" },
+                    { key: "standard", label: "Standardowe", hint: "~14mm" },
+                    { key: "wide", label: "Szerokie", hint: "~20mm" },
+                  ] as const
+                ).map((m) => {
+                  const active = pdfPageMargin === m.key;
+                  return (
+                    <Button
+                      key={m.key}
+                      type="button"
+                      variant={active ? "default" : "outline"}
+                      size="sm"
+                      role="radio"
+                      aria-checked={active}
+                      className="h-8 px-3 text-xs"
+                      onClick={() => setPdfPageMargin(m.key)}
+                    >
+                      {m.label}
+                      <span className="ml-1.5 text-[10px] opacity-70 font-mono">{m.hint}</span>
+                    </Button>
+                  );
+                })}
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                Łamanie wierszy uwzględnia szerokość marginesów — tekst nie jest przycinany.
+              </p>
+            </div>
             {(() => {
               const filtered = rows.filter((r) => {
                 const live = liveStatus[r.slug]?.status ?? r.status;
@@ -1275,7 +1323,10 @@ const AdminSecurityChecklist = () => {
               }
               // Server layout (cards): ~3 checks / A4 page; Letter is ~6% shorter → ~2.85
               // Client layout (table):  ~4 checks / A4 page → ~3.78 on Letter
-              const serverPerPage = pdfPageSize === "A4" ? 3 : 2.85;
+              // Wider margins reduce capacity slightly (cards have less vertical room
+              // because content area shrinks). Narrow → +8%, wide → -8%.
+              const marginFactor = pdfPageMargin === "narrow" ? 1.08 : pdfPageMargin === "wide" ? 0.92 : 1;
+              const serverPerPage = (pdfPageSize === "A4" ? 3 : 2.85) * marginFactor;
               const clientPerPage = pdfPageSize === "A4" ? 4 : 3.78;
               const estPages = Math.max(1, Math.ceil(filtered.length / serverPerPage));
               const estPagesClient = Math.max(1, Math.ceil(filtered.length / clientPerPage));
@@ -1372,7 +1423,7 @@ const AdminSecurityChecklist = () => {
                   toast.error("Wybierz przynajmniej jeden status");
                   return;
                 }
-                await exportPdfServer({ statuses: pdfStatuses, category: pdfCategory, pageSize: pdfPageSize });
+                await exportPdfServer({ statuses: pdfStatuses, category: pdfCategory, pageSize: pdfPageSize, pageMargin: pdfPageMargin });
                 if (!exportingServer) setPdfDialogOpen(false);
               }}
               disabled={pdfStatuses.length === 0 || exportingServer}

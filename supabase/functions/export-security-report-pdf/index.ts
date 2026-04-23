@@ -35,11 +35,20 @@ interface PdfCheck {
 }
 
 type PageSize = "A4" | "Letter";
+type PageMargin = "narrow" | "standard" | "wide";
 
 // Standard PDF point dimensions (1pt = 1/72 inch).
 const PAGE_DIMS: Record<PageSize, [number, number]> = {
   A4: [595.28, 841.89],       // 210 x 297 mm
   Letter: [612, 792],          // 8.5 x 11 in
+};
+
+// Margin presets in PDF points (1pt = 1/72 inch).
+// narrow ~10mm, standard ~14mm, wide ~20mm.
+const MARGIN_PRESETS: Record<PageMargin, number> = {
+  narrow: 28,
+  standard: 40,
+  wide: 56,
 };
 
 interface ExportPayload {
@@ -54,6 +63,7 @@ interface ExportPayload {
   };
   filename?: string;
   pageSize?: PageSize;
+  pageMargin?: PageMargin;
 }
 
 const STATUS_LABEL: Record<CheckStatus, string> = {
@@ -440,7 +450,9 @@ async function buildPdf(payload: ExportPayload): Promise<Uint8Array> {
 
   const pageSize: PageSize = payload.pageSize === "Letter" ? "Letter" : "A4";
   const dims = PAGE_DIMS[pageSize];
-  const margin = 40;
+  const marginKey: PageMargin =
+    payload.pageMargin === "narrow" || payload.pageMargin === "wide" ? payload.pageMargin : "standard";
+  const margin = MARGIN_PRESETS[marginKey];
 
   const ctx: RenderContext = {
     doc,
@@ -601,6 +613,17 @@ Deno.serve(async (req) => {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
+    if (
+      payload.pageMargin !== undefined &&
+      payload.pageMargin !== "narrow" &&
+      payload.pageMargin !== "standard" &&
+      payload.pageMargin !== "wide"
+    ) {
+      return new Response(
+        JSON.stringify({ error: "Invalid pageMargin (expected 'narrow', 'standard' or 'wide')" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
     }
 
     const pdfBytes = await buildPdf(payload);
