@@ -614,6 +614,17 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    if (
+      payload.pageMargin !== undefined &&
+      payload.pageMargin !== "narrow" &&
+      payload.pageMargin !== "standard" &&
+      payload.pageMargin !== "wide"
+    ) {
+      return new Response(
+        JSON.stringify({ error: "Invalid pageMargin (expected 'narrow', 'standard' or 'wide')" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
 
     const pdfBytes = await buildPdf(payload);
     const filename = (payload.filename || "cml-security-report.pdf").replace(/[^a-zA-Z0-9._-]/g, "_");
