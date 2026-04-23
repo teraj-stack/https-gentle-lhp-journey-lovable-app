@@ -241,6 +241,7 @@ const AdminSecurityChecklist = () => {
   const [pdfStatuses, setPdfStatuses] = useState<DbStatus[]>(["pass", "warn", "fail"]);
   const [pdfCategory, setPdfCategory] = useState<Category | "ALL">("ALL");
   const [exportingServer, setExportingServer] = useState(false);
+  const [serverPhase, setServerPhase] = useState<ServerExportPhase>("idle");
   const togglePdfStatus = (s: DbStatus, checked: boolean) => {
     setPdfStatuses((prev) => (checked ? [...new Set([...prev, s])] : prev.filter((x) => x !== s)));
   };
