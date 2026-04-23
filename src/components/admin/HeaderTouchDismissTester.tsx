@@ -241,14 +241,14 @@ export function HeaderTouchDismissTester() {
               key={`${r.startedAt}-${i}`}
               className={`text-xs rounded-md border p-2 ${
                 r.passed
-                  ? "border-green-500/30 bg-green-500/5"
+                  ? "border-primary/30 bg-primary/5"
                   : "border-destructive/40 bg-destructive/5"
               }`}
             >
               <div className="flex items-center justify-between gap-2 mb-1">
                 <div className="flex items-center gap-1.5 font-semibold">
                   {r.passed ? (
-                    <CheckCircle2 className="w-3.5 h-3.5 text-green-600" />
+                    <CheckCircle2 className="w-3.5 h-3.5 text-primary" />
                   ) : (
                     <XCircle className="w-3.5 h-3.5 text-destructive" />
                   )}
@@ -261,7 +261,7 @@ export function HeaderTouchDismissTester() {
                 </Badge>
               </div>
               {!r.isTouchEnv && (
-                <div className="flex items-start gap-1 text-[11px] text-amber-600 mb-1">
+                <div className="flex items-start gap-1 text-[11px] text-muted-foreground mb-1">
                   <AlertTriangle className="w-3 h-3 mt-0.5 shrink-0" />
                   Środowisko nie jest touch — wynik orientacyjny.
                 </div>
