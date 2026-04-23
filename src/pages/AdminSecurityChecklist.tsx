@@ -567,6 +567,61 @@ const AdminSecurityChecklist = () => {
                           {detail && (
                             <p className="text-xs text-muted-foreground/80 mt-2 italic">{detail}</p>
                           )}
+                          {check.policies.length > 0 && (
+                            <Collapsible className="mt-3">
+                              <CollapsibleTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-7 px-2 text-xs gap-1 text-muted-foreground hover:text-foreground"
+                                >
+                                  <FileCode2 className="w-3.5 h-3.5" />
+                                  Powiązane polityki ({check.policies.length})
+                                  <ChevronDown className="w-3.5 h-3.5 transition-transform data-[state=open]:rotate-180" />
+                                </Button>
+                              </CollapsibleTrigger>
+                              <CollapsibleContent className="mt-2 space-y-2">
+                                {check.policies.map((p, idx) => (
+                                  <div
+                                    key={`${p.name}-${idx}`}
+                                    className="rounded-md border border-border bg-muted/30 p-3 space-y-2"
+                                  >
+                                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                                      <div className="min-w-0">
+                                        <p className="text-sm font-medium text-foreground truncate">{p.name}</p>
+                                        <p className="text-xs text-muted-foreground font-mono">{p.table}</p>
+                                      </div>
+                                      <div className="flex gap-1">
+                                        <Button
+                                          size="sm"
+                                          variant="ghost"
+                                          className="h-7 px-2 text-xs"
+                                          onClick={() => copyToClipboard(p.name, "Skopiowano nazwę polityki")}
+                                        >
+                                          <Copy className="w-3 h-3 mr-1" /> Nazwa
+                                        </Button>
+                                        {p.sql && (
+                                          <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            className="h-7 px-2 text-xs"
+                                            onClick={() => copyToClipboard(p.sql!, "Skopiowano SQL")}
+                                          >
+                                            <Copy className="w-3 h-3 mr-1" /> SQL
+                                          </Button>
+                                        )}
+                                      </div>
+                                    </div>
+                                    {p.sql && (
+                                      <pre className="text-xs bg-background border border-border rounded p-2 overflow-x-auto font-mono text-muted-foreground whitespace-pre-wrap break-words">
+                                        {p.sql}
+                                      </pre>
+                                    )}
+                                  </div>
+                                ))}
+                              </CollapsibleContent>
+                            </Collapsible>
+                          )}
                         </div>
                         <div className="flex flex-col items-end gap-2 shrink-0">
                           <Select
