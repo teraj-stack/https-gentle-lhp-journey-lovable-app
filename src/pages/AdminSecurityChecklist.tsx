@@ -621,6 +621,7 @@ const AdminSecurityChecklist = () => {
               counts,
             },
             filename,
+            pageSize,
           }),
         });
         // promote to "generating" once request is in flight
