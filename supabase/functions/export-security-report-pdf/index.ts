@@ -457,11 +457,22 @@ async function buildPdf(payload: ExportPayload): Promise<Uint8Array> {
   const fontBold = await doc.embedFont(StandardFonts.HelveticaBold);
   const fontMono = await doc.embedFont(StandardFonts.Courier);
 
-  const pageSize: PageSize = payload.pageSize === "Letter" ? "Letter" : "A4";
-  const dims = PAGE_DIMS[pageSize];
+  const requestedSize: PageSize =
+    payload.pageSize === "Letter" || payload.pageSize === "Custom" ? payload.pageSize : "A4";
+  let dims: [number, number];
+  if (requestedSize === "Custom" && payload.customPageSizeMm) {
+    const wPt = payload.customPageSizeMm.width * MM_TO_PT;
+    const hPt = payload.customPageSizeMm.height * MM_TO_PT;
+    dims = [wPt, hPt];
+  } else {
+    dims = PAGE_DIMS[requestedSize === "Custom" ? "A4" : requestedSize];
+  }
   const marginKey: PageMargin =
     payload.pageMargin === "narrow" || payload.pageMargin === "wide" ? payload.pageMargin : "standard";
-  const margin = MARGIN_PRESETS[marginKey];
+  // Cap the margin so it can never exceed ~30% of the shorter edge — otherwise
+  // a tiny custom page could leave zero usable content area.
+  const shorter = Math.min(dims[0], dims[1]);
+  const margin = Math.min(MARGIN_PRESETS[marginKey], Math.floor(shorter * 0.3));
 
   const ctx: RenderContext = {
     doc,
