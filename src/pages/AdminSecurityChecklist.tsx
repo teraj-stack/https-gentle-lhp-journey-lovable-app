@@ -321,6 +321,90 @@ const AdminSecurityChecklist = () => {
       // ignore quota / privacy mode errors
     }
   }, [pdfCustomWidthMm, pdfCustomHeightMm]);
+  // User-defined favourites for custom page sizes. Persisted in localStorage as
+  // a JSON array. Each entry is { id, name, width, height } in millimetres.
+  type CustomPreset = { id: string; name: string; width: number; height: number };
+  const PRESETS_STORAGE_KEY = "cml.admin.pdfCustomPresets";
+  const PRESETS_MAX = 12;
+  const [customPresets, setCustomPresets] = useState<CustomPreset[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const raw = window.localStorage.getItem(PRESETS_STORAGE_KEY);
+      if (!raw) return [];
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) return [];
+      // Defensive: filter to well-formed entries within the allowed range.
+      return parsed
+        .filter(
+          (p): p is CustomPreset =>
+            p &&
+            typeof p.id === "string" &&
+            typeof p.name === "string" &&
+            typeof p.width === "number" &&
+            typeof p.height === "number" &&
+            p.width >= 50 && p.width <= 1200 &&
+            p.height >= 50 && p.height <= 1200,
+        )
+        .slice(0, PRESETS_MAX);
+    } catch {
+      return [];
+    }
+  });
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem(PRESETS_STORAGE_KEY, JSON.stringify(customPresets));
+    } catch {
+      // ignore quota / privacy mode errors
+    }
+  }, [customPresets]);
+  const [presetNameDraft, setPresetNameDraft] = useState("");
+  const saveCurrentPreset = useCallback(() => {
+    if (!customSizeValidation.ok) {
+      toast.error("Wymiary muszą być prawidłowe, aby zapisać preset.");
+      return;
+    }
+    const name = presetNameDraft.trim();
+    if (!name) {
+      toast.error("Podaj nazwę presetu.");
+      return;
+    }
+    if (name.length > 40) {
+      toast.error("Nazwa presetu może mieć maksymalnie 40 znaków.");
+      return;
+    }
+    const w = Math.round(customSizeValidation.w * 10) / 10;
+    const h = Math.round(customSizeValidation.h * 10) / 10;
+    setCustomPresets((prev) => {
+      // Replace by case-insensitive name match, otherwise append. Cap at PRESETS_MAX.
+      const idx = prev.findIndex((p) => p.name.toLowerCase() === name.toLowerCase());
+      const entry: CustomPreset = {
+        id: idx >= 0 ? prev[idx].id : `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        name,
+        width: w,
+        height: h,
+      };
+      if (idx >= 0) {
+        const next = [...prev];
+        next[idx] = entry;
+        return next;
+      }
+      if (prev.length >= PRESETS_MAX) {
+        toast.error(`Limit presetów (${PRESETS_MAX}) osiągnięty. Usuń niepotrzebny, aby dodać nowy.`);
+        return prev;
+      }
+      return [...prev, entry];
+    });
+    setPresetNameDraft("");
+    toast.success(`Zapisano preset „${name}" (${w}×${h} mm).`);
+  }, [customSizeValidation, presetNameDraft]);
+  const applyPreset = useCallback((preset: CustomPreset) => {
+    setPdfCustomWidthMm(String(preset.width));
+    setPdfCustomHeightMm(String(preset.height));
+  }, []);
+  const deletePreset = useCallback((id: string) => {
+    setCustomPresets((prev) => prev.filter((p) => p.id !== id));
+  }, []);
   // Parse + validate the custom-size inputs once per render. `error` is null
   // when both values are within bounds; the dialog uses it for inline feedback
   // and to disable the export button.
