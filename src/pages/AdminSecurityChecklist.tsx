@@ -1827,6 +1827,82 @@ const AdminSecurityChecklist = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Server PDF preview (single-page sample) */}
+      <Dialog
+        open={previewOpen}
+        onOpenChange={(o) => {
+          setPreviewOpen(o);
+          if (!o) {
+            // Free the blob URL when the user closes the preview.
+            if (previewUrl) {
+              URL.revokeObjectURL(previewUrl);
+              setPreviewUrl(null);
+            }
+            setPreviewError(null);
+          }
+        }}
+      >
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="w-4 h-4" /> Podgląd raportu PDF (pierwsza strona)
+            </DialogTitle>
+            <DialogDescription>
+              {previewMeta
+                ? `Format: ${previewMeta.size} · marginesy: ${previewMeta.margin} · łącznie pozycji w pełnym raporcie: ${previewMeta.total}.`
+                : "Renderowanie próbnej strony przy użyciu wybranych ustawień…"}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="rounded-md border border-border bg-muted/20 overflow-hidden">
+            {previewLoading ? (
+              <div className="flex items-center justify-center gap-2 h-[60vh] text-sm text-muted-foreground">
+                <Loader2 className="w-4 h-4 animate-spin" /> Renderuję podgląd…
+              </div>
+            ) : previewError ? (
+              <div className="flex flex-col items-center justify-center gap-2 h-[40vh] p-6 text-center">
+                <AlertTriangle className="w-6 h-6 text-destructive" />
+                <p className="text-sm text-destructive font-medium">Nie udało się wygenerować podglądu</p>
+                <p className="text-xs text-muted-foreground break-words max-w-md">{previewError}</p>
+              </div>
+            ) : previewUrl ? (
+              <iframe
+                src={previewUrl}
+                title="Podgląd PDF — pierwsza strona"
+                className="w-full h-[70vh] bg-background"
+              />
+            ) : (
+              <div className="h-[40vh]" />
+            )}
+          </div>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button variant="ghost" onClick={() => setPreviewOpen(false)}>Zamknij</Button>
+            <Button
+              onClick={async () => {
+                setPreviewOpen(false);
+                await exportPdfServer({
+                  statuses: pdfStatuses,
+                  category: pdfCategory,
+                  pageSize: pdfPageSize,
+                  pageMargin: pdfPageMargin,
+                  customPageSizeMm:
+                    pdfPageSize === "Custom" && customSizeValidation.ok
+                      ? { width: customSizeValidation.w, height: customSizeValidation.h }
+                      : undefined,
+                });
+              }}
+              disabled={
+                !previewUrl ||
+                exportingServer ||
+                pdfStatuses.length === 0 ||
+                (pdfPageSize === "Custom" && !customSizeValidation.ok)
+              }
+            >
+              <Download className="w-4 h-4 mr-1" /> Pobierz pełen raport
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Delete confirmation */}
       <AlertDialog open={!!confirmDelete} onOpenChange={(o) => !o && setConfirmDelete(null)}>
         <AlertDialogContent>
