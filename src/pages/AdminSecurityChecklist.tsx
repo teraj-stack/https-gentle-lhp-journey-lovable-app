@@ -702,17 +702,39 @@ const AdminSecurityChecklist = () => {
       };
       const pageSize = opts?.pageSize ?? "A4";
       const pageMargin = opts?.pageMargin ?? "standard";
+      const customPageSizeMm = opts?.customPageSizeMm;
+      // Re-validate custom dims defensively (the dialog already blocks invalid
+      // values, but a programmatic caller could still slip through).
+      if (pageSize === "Custom") {
+        const c = customPageSizeMm;
+        const inRange = (n: unknown): n is number =>
+          typeof n === "number" && Number.isFinite(n) && n >= 50 && n <= 1200;
+        if (!c || !inRange(c.width) || !inRange(c.height)) {
+          toast.error("Nieprawidłowe wymiary niestandardowej strony", {
+            description: "Szerokość i wysokość muszą mieścić się w zakresie 50–1200 mm.",
+          });
+          return;
+        }
+      }
       const marginLabel = pageMargin === "narrow" ? "wąskie" : pageMargin === "wide" ? "szerokie" : "standardowe";
+      const sizeLabel =
+        pageSize === "Custom" && customPageSizeMm
+          ? `Custom ${Math.round(customPageSizeMm.width)}×${Math.round(customPageSizeMm.height)}mm`
+          : pageSize;
       const overall = counts.fail > 0 ? "WYMAGA UWAGI" : counts.warn > 0 ? "DO PRZEGLĄDU" : "ZIELONY";
-      const filterLabel = `Filtr: ${categoryFilter === "ALL" ? "wszystkie kategorie" : categoryFilter} · statusy: ${[...allowedStatuses].map((s) => s.toUpperCase()).join("/")} · format: ${pageSize} · marginesy: ${marginLabel}`;
+      const filterLabel = `Filtr: ${categoryFilter === "ALL" ? "wszystkie kategorie" : categoryFilter} · statusy: ${[...allowedStatuses].map((s) => s.toUpperCase()).join("/")} · format: ${sizeLabel} · marginesy: ${marginLabel}`;
       const stamp = new Date().toISOString().slice(0, 10);
       const catSuffix = categoryFilter === "ALL" ? "all" : categoryFilter;
       const stSuffix = [...allowedStatuses].sort().join("-");
+      const sizeFilenamePart =
+        pageSize === "Custom" && customPageSizeMm
+          ? `custom-${Math.round(customPageSizeMm.width)}x${Math.round(customPageSizeMm.height)}mm`
+          : pageSize;
       const filename = buildSafePdfFilename({
         stamp,
         category: catSuffix,
         statuses: stSuffix,
-        pageSize,
+        pageSize: sizeFilenamePart,
         pageMargin,
         variant: "server",
       });
