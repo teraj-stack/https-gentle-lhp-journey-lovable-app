@@ -352,6 +352,21 @@ const AdminSecurityChecklist = () => {
       // ignore quota / privacy mode errors
     }
   }, [pdfPageMargin]);
+  // "Rotate to fit": when on, swap width/height (portrait <-> landscape) iff
+  // the rotated orientation increases usable text capacity per page. This is a
+  // pure presentation flag — it never changes the user's stored width/height.
+  const [pdfRotateToFit, setPdfRotateToFit] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem("cml.admin.pdfRotateToFit") === "1";
+  });
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem("cml.admin.pdfRotateToFit", pdfRotateToFit ? "1" : "0");
+    } catch {
+      // ignore quota / privacy mode errors
+    }
+  }, [pdfRotateToFit]);
   const [exportingServer, setExportingServer] = useState(false);
   const [serverPhase, setServerPhase] = useState<ServerExportPhase>("idle");
   // Server-side PDF preview (single-page sample) state
