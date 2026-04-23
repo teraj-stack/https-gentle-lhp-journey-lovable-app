@@ -286,10 +286,10 @@ const AdminSecurityChecklist = () => {
   const [pdfDialogOpen, setPdfDialogOpen] = useState(false);
   const [pdfStatuses, setPdfStatuses] = useState<DbStatus[]>(["pass", "warn", "fail"]);
   const [pdfCategory, setPdfCategory] = useState<Category | "ALL">("ALL");
-  const [pdfPageSize, setPdfPageSize] = useState<"A4" | "Letter">(() => {
+  const [pdfPageSize, setPdfPageSize] = useState<"A4" | "Letter" | "Custom">(() => {
     if (typeof window === "undefined") return "A4";
     const saved = window.localStorage.getItem("cml.admin.pdfPageSize");
-    return saved === "Letter" || saved === "A4" ? saved : "A4";
+    return saved === "Letter" || saved === "A4" || saved === "Custom" ? saved : "A4";
   });
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -299,6 +299,45 @@ const AdminSecurityChecklist = () => {
       // ignore quota / privacy mode errors
     }
   }, [pdfPageSize]);
+  // Custom page size in millimetres (used only when pdfPageSize === "Custom").
+  // Bounds intentionally match the edge function's CUSTOM_MM_MIN/MAX.
+  const CUSTOM_MM_MIN = 50;
+  const CUSTOM_MM_MAX = 1200;
+  const [pdfCustomWidthMm, setPdfCustomWidthMm] = useState<string>(() => {
+    if (typeof window === "undefined") return "210";
+    return window.localStorage.getItem("cml.admin.pdfCustomWidthMm") ?? "210";
+  });
+  const [pdfCustomHeightMm, setPdfCustomHeightMm] = useState<string>(() => {
+    if (typeof window === "undefined") return "297";
+    return window.localStorage.getItem("cml.admin.pdfCustomHeightMm") ?? "297";
+  });
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem("cml.admin.pdfCustomWidthMm", pdfCustomWidthMm);
+      window.localStorage.setItem("cml.admin.pdfCustomHeightMm", pdfCustomHeightMm);
+    } catch {
+      // ignore quota / privacy mode errors
+    }
+  }, [pdfCustomWidthMm, pdfCustomHeightMm]);
+  // Parse + validate the custom-size inputs once per render. `error` is null
+  // when both values are within bounds; the dialog uses it for inline feedback
+  // and to disable the export button.
+  const customSizeValidation = (() => {
+    if (pdfPageSize !== "Custom") return { ok: true as const, w: 0, h: 0, error: null as string | null };
+    const w = Number(pdfCustomWidthMm.replace(",", "."));
+    const h = Number(pdfCustomHeightMm.replace(",", "."));
+    const inRange = (n: number) => Number.isFinite(n) && n >= CUSTOM_MM_MIN && n <= CUSTOM_MM_MAX;
+    if (!inRange(w) || !inRange(h)) {
+      return {
+        ok: false as const,
+        w,
+        h,
+        error: `Wymiary muszą być liczbami w zakresie ${CUSTOM_MM_MIN}–${CUSTOM_MM_MAX} mm.`,
+      };
+    }
+    return { ok: true as const, w, h, error: null as string | null };
+  })();
   const [pdfPageMargin, setPdfPageMargin] = useState<"narrow" | "standard" | "wide">(() => {
     if (typeof window === "undefined") return "standard";
     const saved = window.localStorage.getItem("cml.admin.pdfPageMargin");
