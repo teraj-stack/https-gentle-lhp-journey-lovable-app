@@ -343,25 +343,25 @@ const AdminSecurityChecklist = () => {
       doc.text("Raport bezpieczenstwa — CML", margin, 50);
       doc.setFont("helvetica", "normal");
       doc.setFontSize(10);
-      doc.setTextColor(100);
+      doc.setTextColor(100, 100, 100);
       doc.text(`Wygenerowano: ${generatedAt.toLocaleString("pl-PL")}`, margin, 68);
-      doc.text(`Ostatni przeglad checklisty: ${formattedDate} (${dayLabel})`, margin, 82);
+      doc.text(`Ostatni przeglad checklisty: ${formattedScan} (${dayLabelLocal})`, margin, 82);
       if (lastAuditAt) {
         doc.text(`Ostatni self-audit: ${lastAuditAt.toLocaleString("pl-PL")}`, margin, 96);
       }
 
       // Summary box
       const summaryY = lastAuditAt ? 116 : 102;
-      doc.setDrawColor(220);
-      doc.setFillColor(245);
+      doc.setDrawColor(220, 220, 220);
+      doc.setFillColor(245, 245, 245);
       doc.roundedRect(margin, summaryY, pageWidth - margin * 2, 60, 6, 6, "FD");
       doc.setFont("helvetica", "bold");
       doc.setFontSize(12);
-      doc.setTextColor(20);
+      doc.setTextColor(20, 20, 20);
       doc.text(`Status ogolny: ${overall}`, margin + 14, summaryY + 22);
       doc.setFont("helvetica", "normal");
       doc.setFontSize(10);
-      doc.setTextColor(60);
+      doc.setTextColor(60, 60, 60);
       doc.text(
         `OK: ${pass}    Ostrzezenia: ${warn}    Krytyczne: ${fail}    Lacznie: ${checks.length}`,
         margin + 14,
@@ -408,7 +408,7 @@ const AdminSecurityChecklist = () => {
         doc.setPage(p);
         doc.setFont("helvetica", "normal");
         doc.setFontSize(8);
-        doc.setTextColor(140);
+        doc.setTextColor(140, 140, 140);
         doc.text(
           `CML — Security Report · str. ${p}/${pageCount}`,
           pageWidth / 2,
@@ -423,7 +423,7 @@ const AdminSecurityChecklist = () => {
     } catch (err) {
       toast.error(`Nie udalo sie wygenerowac PDF: ${err instanceof Error ? err.message : "blad"}`);
     }
-  }, [rows, liveStatus, lastAuditAt, formattedDate, dayLabel]);
+  }, [rows, liveStatus, lastAuditAt]);
 
   const openCreate = () => {
     setForm({ ...emptyForm, sort_order: (rows[rows.length - 1]?.sort_order ?? 0) + 10 });
