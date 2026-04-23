@@ -56,7 +56,10 @@ import {
   ChevronDown,
   Copy,
   FileCode2,
+  Download,
 } from "lucide-react";
+import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable";
 import SeoHead from "@/components/shared/SeoHead";
 import { toast } from "sonner";
 
@@ -305,6 +308,123 @@ const AdminSecurityChecklist = () => {
     else toast.success("Self-audit zakończony — wszystkie kontrole OK");
   }, [rows]);
 
+  const exportPdf = useCallback(() => {
+    if (rows.length === 0) {
+      toast.error("Brak pozycji do eksportu");
+      return;
+    }
+    try {
+      const doc = new jsPDF({ unit: "pt", format: "a4" });
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const margin = 40;
+      const generatedAt = new Date();
+      const lastScanLocal = new Date(LAST_SCAN_DATE);
+      const daysSince = Math.floor((Date.now() - lastScanLocal.getTime()) / (1000 * 60 * 60 * 24));
+      const formattedScan = lastScanLocal.toLocaleDateString("pl-PL", { year: "numeric", month: "long", day: "numeric" });
+      const dayLabelLocal = daysSince === 0 ? "dzisiaj" : daysSince === 1 ? "1 dzien temu" : `${daysSince} dni temu`;
+
+      // Recompute display data locally so the PDF reflects what's on screen.
+      const checks = rows.map((r) => {
+        const live = liveStatus[r.slug];
+        return {
+          ...r,
+          liveStatus: (live?.status ?? r.status) as CheckStatus,
+          liveDetail: live?.detail,
+        };
+      });
+      const pass = checks.filter((c) => c.liveStatus === "pass").length;
+      const fail = checks.filter((c) => c.liveStatus === "fail").length;
+      const warn = checks.filter((c) => c.liveStatus === "warn").length;
+      const overall = fail > 0 ? "WYMAGA UWAGI" : warn > 0 ? "DO PRZEGLĄDU" : "ZIELONY";
+
+      // Header
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(18);
+      doc.text("Raport bezpieczenstwa — CML", margin, 50);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+      doc.setTextColor(100, 100, 100);
+      doc.text(`Wygenerowano: ${generatedAt.toLocaleString("pl-PL")}`, margin, 68);
+      doc.text(`Ostatni przeglad checklisty: ${formattedScan} (${dayLabelLocal})`, margin, 82);
+      if (lastAuditAt) {
+        doc.text(`Ostatni self-audit: ${lastAuditAt.toLocaleString("pl-PL")}`, margin, 96);
+      }
+
+      // Summary box
+      const summaryY = lastAuditAt ? 116 : 102;
+      doc.setDrawColor(220, 220, 220);
+      doc.setFillColor(245, 245, 245);
+      doc.roundedRect(margin, summaryY, pageWidth - margin * 2, 60, 6, 6, "FD");
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(12);
+      doc.setTextColor(20, 20, 20);
+      doc.text(`Status ogolny: ${overall}`, margin + 14, summaryY + 22);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+      doc.setTextColor(60, 60, 60);
+      doc.text(
+        `OK: ${pass}    Ostrzezenia: ${warn}    Krytyczne: ${fail}    Lacznie: ${checks.length}`,
+        margin + 14,
+        summaryY + 42,
+      );
+
+      // Table
+      const statusLabel = (s: CheckStatus) =>
+        s === "pass" ? "OK" : s === "warn" ? "WARN" : s === "fail" ? "FAIL" : s === "running" ? "..." : "?";
+
+      autoTable(doc, {
+        startY: summaryY + 78,
+        margin: { left: margin, right: margin },
+        head: [["#", "Kategoria", "Kontrola", "Status", "Szczegoly"]],
+        body: checks.map((c, i) => [
+          String(i + 1),
+          c.category,
+          c.title,
+          statusLabel(c.liveStatus),
+          c.liveDetail || c.detail || c.description,
+        ]),
+        styles: { font: "helvetica", fontSize: 9, cellPadding: 6, valign: "top", overflow: "linebreak" },
+        headStyles: { fillColor: [33, 33, 33], textColor: 255, fontStyle: "bold" },
+        columnStyles: {
+          0: { cellWidth: 24, halign: "right" },
+          1: { cellWidth: 64 },
+          2: { cellWidth: 150 },
+          3: { cellWidth: 50, halign: "center", fontStyle: "bold" },
+          4: { cellWidth: "auto" },
+        },
+        didParseCell: (data) => {
+          if (data.section === "body" && data.column.index === 3) {
+            const raw = checks[data.row.index].liveStatus;
+            if (raw === "pass") data.cell.styles.textColor = [21, 128, 61];
+            else if (raw === "warn") data.cell.styles.textColor = [161, 98, 7];
+            else if (raw === "fail") data.cell.styles.textColor = [185, 28, 28];
+          }
+        },
+      });
+
+      // Footer (page numbers)
+      const pageCount = doc.getNumberOfPages();
+      for (let p = 1; p <= pageCount; p++) {
+        doc.setPage(p);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8);
+        doc.setTextColor(140, 140, 140);
+        doc.text(
+          `CML — Security Report · str. ${p}/${pageCount}`,
+          pageWidth / 2,
+          doc.internal.pageSize.getHeight() - 20,
+          { align: "center" },
+        );
+      }
+
+      const stamp = generatedAt.toISOString().slice(0, 10);
+      doc.save(`cml-security-report-${stamp}.pdf`);
+      toast.success("Raport PDF pobrany");
+    } catch (err) {
+      toast.error(`Nie udalo sie wygenerowac PDF: ${err instanceof Error ? err.message : "blad"}`);
+    }
+  }, [rows, liveStatus, lastAuditAt]);
+
   const openCreate = () => {
     setForm({ ...emptyForm, sort_order: (rows[rows.length - 1]?.sort_order ?? 0) + 10 });
     setEditor({ mode: "create" });
@@ -494,6 +614,9 @@ const AdminSecurityChecklist = () => {
               <div className="flex items-center gap-2 flex-wrap">
                 <Button size="sm" variant="outline" onClick={openCreate}>
                   <Plus className="w-4 h-4 mr-1" /> Nowa pozycja
+                </Button>
+                <Button size="sm" variant="outline" onClick={exportPdf} disabled={rows.length === 0}>
+                  <Download className="w-4 h-4 mr-1" /> Pobierz PDF
                 </Button>
                 <Button size="sm" variant="default" onClick={runSelfAudit} disabled={auditing || rows.length === 0}>
                   {auditing ? (
