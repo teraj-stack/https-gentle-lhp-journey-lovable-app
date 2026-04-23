@@ -395,6 +395,45 @@ export type Database = {
         }
         Relationships: []
       }
+      security_checklist_items: {
+        Row: {
+          category: string
+          created_at: string
+          description: string
+          detail: string | null
+          id: string
+          slug: string
+          sort_order: number
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          description: string
+          detail?: string | null
+          id?: string
+          slug: string
+          sort_order?: number
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string
+          detail?: string | null
+          id?: string
+          slug?: string
+          sort_order?: number
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       suppressed_emails: {
         Row: {
           created_at: string
