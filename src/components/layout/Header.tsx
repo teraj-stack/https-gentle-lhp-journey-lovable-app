@@ -333,45 +333,55 @@ const Header = () => {
     label: string;
     items: NavItem[];
     align?: "left" | "right";
-  }) => (
-    <div
-      key={`${keyName}-${navKey}`}
-      className="relative"
-      onMouseEnter={() => handleMegaEnter(keyName)}
-      onMouseLeave={handleMegaLeave}
-    >
-      <button
-        ref={(el) => {
-          triggerRefs.current[keyName] = el;
-        }}
-        type="button"
-        onClick={(e) => handleMegaTriggerClick(keyName, e)}
-        aria-expanded={megaOpen === keyName}
-        aria-haspopup="menu"
-        className={`flex items-center gap-1 px-4 py-2 text-sm font-medium transition-colors rounded-lg hover:bg-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
-          isSectionActive(items)
-            ? "text-primary bg-accent/50"
-            : "text-foreground/80 hover:text-primary"
-        }`}
+  }) => {
+    const panelId = `mega-panel-${keyName}`;
+    const triggerId = `mega-trigger-${keyName}`;
+    const isOpen = megaOpen === keyName;
+    return (
+      <div
+        key={`${keyName}-${navKey}`}
+        className="relative"
+        onMouseEnter={() => handleMegaEnter(keyName)}
+        onMouseLeave={handleMegaLeave}
       >
-        {label}
-        <ChevronDown
-          className={`w-3.5 h-3.5 transition-transform ${megaOpen === keyName ? "rotate-180" : ""}`}
-        />
-      </button>
-      <AnimatePresence>
-        {megaOpen === keyName && (
-          <motion.div
-            ref={(el) => {
-              panelRefs.current[keyName] = el;
-            }}
-            role="menu"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 8 }}
-            transition={{ duration: 0.2 }}
-            className={`absolute top-full ${align === "right" ? "right-0" : "left-0"} mt-1 w-80 bg-card rounded-xl shadow-lg border border-border p-2`}
-          >
+        <button
+          id={triggerId}
+          ref={(el) => {
+            triggerRefs.current[keyName] = el;
+          }}
+          type="button"
+          onClick={(e) => handleMegaTriggerClick(keyName, e)}
+          aria-expanded={isOpen}
+          aria-haspopup="menu"
+          aria-controls={panelId}
+          aria-label={`Menu sekcji ${label}`}
+          className={`flex items-center gap-1 px-4 py-2 text-sm font-medium transition-colors rounded-lg hover:bg-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
+            isSectionActive(items)
+              ? "text-primary bg-accent/50"
+              : "text-foreground/80 hover:text-primary"
+          }`}
+        >
+          {label}
+          <ChevronDown
+            className={`w-3.5 h-3.5 transition-transform ${isOpen ? "rotate-180" : ""}`}
+          />
+        </button>
+        <AnimatePresence>
+          {isOpen && (
+            <motion.div
+              id={panelId}
+              ref={(el) => {
+                panelRefs.current[keyName] = el;
+              }}
+              role="menu"
+              aria-label={`${label} — lista odnośników`}
+              aria-labelledby={triggerId}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 8 }}
+              transition={{ duration: 0.2 }}
+              className={`absolute top-full ${align === "right" ? "right-0" : "left-0"} mt-1 w-80 bg-card rounded-xl shadow-lg border border-border p-2`}
+            >
             {items.map((item) => (
               <Link
                 key={item.href}
