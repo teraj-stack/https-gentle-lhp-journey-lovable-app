@@ -450,7 +450,9 @@ async function buildPdf(payload: ExportPayload): Promise<Uint8Array> {
 
   const pageSize: PageSize = payload.pageSize === "Letter" ? "Letter" : "A4";
   const dims = PAGE_DIMS[pageSize];
-  const margin = 40;
+  const marginKey: PageMargin =
+    payload.pageMargin === "narrow" || payload.pageMargin === "wide" ? payload.pageMargin : "standard";
+  const margin = MARGIN_PRESETS[marginKey];
 
   const ctx: RenderContext = {
     doc,
