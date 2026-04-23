@@ -411,7 +411,8 @@ const Header = () => {
         )}
       </AnimatePresence>
     </div>
-  );
+    );
+  };
 
   // ---------- Multi-column mega dropdown ----------
   const MegaDropdown = ({
