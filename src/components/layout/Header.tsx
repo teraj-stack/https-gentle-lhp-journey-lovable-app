@@ -267,15 +267,44 @@ const Header = () => {
     return () => document.removeEventListener("pointerdown", handlePointerDown, true);
   }, [isTouchDevice, megaOpen, clearMegaCloseTimer]);
 
-  // Escape closes the open dropdown and restores focus to its trigger.
+  // Escape closes the open dropdown (restoring focus to trigger).
+  // Tab / Shift+Tab cycles focus inside the dropdown — focus trap so users
+  // can't accidentally tab out into the rest of the page while the menu
+  // is meant to be the active interaction context.
   useEffect(() => {
     if (megaOpen === null) return;
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== "Escape") return;
-      event.stopPropagation();
-      clearMegaCloseTimer();
-      shouldRestoreFocus.current = true;
-      setMegaOpen(null);
+      if (event.key === "Escape") {
+        event.stopPropagation();
+        clearMegaCloseTimer();
+        shouldRestoreFocus.current = true;
+        setMegaOpen(null);
+        return;
+      }
+      if (event.key !== "Tab") return;
+      const trigger = triggerRefs.current[megaOpen];
+      const panel = panelRefs.current[megaOpen];
+      if (!trigger || !panel) return;
+      // Build the focus loop: trigger first, then every focusable inside the panel.
+      const panelFocusables = Array.from(
+        panel.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ),
+      ).filter((el) => !el.hasAttribute("disabled") && el.offsetParent !== null);
+      const loop: HTMLElement[] = [trigger, ...panelFocusables];
+      if (loop.length < 2) return;
+      const active = document.activeElement as HTMLElement | null;
+      const currentIndex = active ? loop.indexOf(active) : -1;
+      // If focus is somehow outside the loop, pull it back to the panel.
+      if (currentIndex === -1) {
+        event.preventDefault();
+        loop[1].focus();
+        return;
+      }
+      const delta = event.shiftKey ? -1 : 1;
+      const nextIndex = (currentIndex + delta + loop.length) % loop.length;
+      event.preventDefault();
+      loop[nextIndex].focus();
     };
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
