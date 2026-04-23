@@ -1608,10 +1608,29 @@ const AdminSecurityChecklist = () => {
                   toast.error("Wybierz przynajmniej jeden status");
                   return;
                 }
-                await exportPdfServer({ statuses: pdfStatuses, category: pdfCategory, pageSize: pdfPageSize, pageMargin: pdfPageMargin });
+                if (pdfPageSize === "Custom" && !customSizeValidation.ok) {
+                  toast.error("Popraw wymiary niestandardowej strony", {
+                    description: customSizeValidation.error ?? undefined,
+                  });
+                  return;
+                }
+                await exportPdfServer({
+                  statuses: pdfStatuses,
+                  category: pdfCategory,
+                  pageSize: pdfPageSize,
+                  pageMargin: pdfPageMargin,
+                  customPageSizeMm:
+                    pdfPageSize === "Custom" && customSizeValidation.ok
+                      ? { width: customSizeValidation.w, height: customSizeValidation.h }
+                      : undefined,
+                });
                 if (!exportingServer) setPdfDialogOpen(false);
               }}
-              disabled={pdfStatuses.length === 0 || exportingServer}
+              disabled={
+                pdfStatuses.length === 0 ||
+                exportingServer ||
+                (pdfPageSize === "Custom" && !customSizeValidation.ok)
+              }
               title="Renderuje PDF na serwerze (pdf-lib) — lepsze łamanie wierszy"
             >
               {exportingServer ? (
