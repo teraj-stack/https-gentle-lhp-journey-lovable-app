@@ -253,6 +253,19 @@ const AdminSecurityChecklist = () => {
       // ignore quota / privacy mode errors
     }
   }, [pdfPageSize]);
+  const [pdfPageMargin, setPdfPageMargin] = useState<"narrow" | "standard" | "wide">(() => {
+    if (typeof window === "undefined") return "standard";
+    const saved = window.localStorage.getItem("cml.admin.pdfPageMargin");
+    return saved === "narrow" || saved === "wide" || saved === "standard" ? saved : "standard";
+  });
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem("cml.admin.pdfPageMargin", pdfPageMargin);
+    } catch {
+      // ignore quota / privacy mode errors
+    }
+  }, [pdfPageMargin]);
   const [exportingServer, setExportingServer] = useState(false);
   const [serverPhase, setServerPhase] = useState<ServerExportPhase>("idle");
   const togglePdfStatus = (s: DbStatus, checked: boolean) => {
