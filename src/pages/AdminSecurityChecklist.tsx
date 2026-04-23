@@ -62,7 +62,19 @@ import {
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import SeoHead from "@/components/shared/SeoHead";
+import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
+
+type ServerExportPhase = "idle" | "preparing" | "authenticating" | "uploading" | "generating" | "downloading" | "done";
+
+const PHASE_META: Record<Exclude<ServerExportPhase, "idle">, { label: string; value: number }> = {
+  preparing: { label: "Przygotowuję dane…", value: 15 },
+  authenticating: { label: "Weryfikuję sesję…", value: 30 },
+  uploading: { label: "Wysyłam zapytanie…", value: 45 },
+  generating: { label: "Renderuję PDF na serwerze…", value: 70 },
+  downloading: { label: "Pobieram plik…", value: 90 },
+  done: { label: "Gotowe", value: 100 },
+};
 
 // Date of the last manual security review reflected in the checklist below.
 // Update this whenever you re-verify policies or resolve new findings.
