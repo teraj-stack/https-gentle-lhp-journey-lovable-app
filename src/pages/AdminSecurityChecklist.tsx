@@ -359,6 +359,33 @@ const AdminSecurityChecklist = () => {
     }
   }, [customPresets]);
   const [presetNameDraft, setPresetNameDraft] = useState("");
+  const applyPreset = useCallback((preset: CustomPreset) => {
+    setPdfCustomWidthMm(String(preset.width));
+    setPdfCustomHeightMm(String(preset.height));
+  }, []);
+  const deletePreset = useCallback((id: string) => {
+    setCustomPresets((prev) => prev.filter((p) => p.id !== id));
+  }, []);
+  // Parse + validate the custom-size inputs once per render. `error` is null
+  // when both values are within bounds; the dialog uses it for inline feedback
+  // and to disable the export button.
+  const customSizeValidation = (() => {
+    if (pdfPageSize !== "Custom") return { ok: true as const, w: 0, h: 0, error: null as string | null };
+    const w = Number(pdfCustomWidthMm.replace(",", "."));
+    const h = Number(pdfCustomHeightMm.replace(",", "."));
+    const inRange = (n: number) => Number.isFinite(n) && n >= CUSTOM_MM_MIN && n <= CUSTOM_MM_MAX;
+    if (!inRange(w) || !inRange(h)) {
+      return {
+        ok: false as const,
+        w,
+        h,
+        error: `Wymiary muszą być liczbami w zakresie ${CUSTOM_MM_MIN}–${CUSTOM_MM_MAX} mm.`,
+      };
+    }
+    return { ok: true as const, w, h, error: null as string | null };
+  })();
+  // Save the current Custom dimensions as a named preset. Declared after
+  // customSizeValidation so it can read the parsed/clamped values directly.
   const saveCurrentPreset = useCallback(() => {
     if (!customSizeValidation.ok) {
       toast.error("Wymiary muszą być prawidłowe, aby zapisać preset.");
@@ -398,31 +425,6 @@ const AdminSecurityChecklist = () => {
     setPresetNameDraft("");
     toast.success(`Zapisano preset „${name}" (${w}×${h} mm).`);
   }, [customSizeValidation, presetNameDraft]);
-  const applyPreset = useCallback((preset: CustomPreset) => {
-    setPdfCustomWidthMm(String(preset.width));
-    setPdfCustomHeightMm(String(preset.height));
-  }, []);
-  const deletePreset = useCallback((id: string) => {
-    setCustomPresets((prev) => prev.filter((p) => p.id !== id));
-  }, []);
-  // Parse + validate the custom-size inputs once per render. `error` is null
-  // when both values are within bounds; the dialog uses it for inline feedback
-  // and to disable the export button.
-  const customSizeValidation = (() => {
-    if (pdfPageSize !== "Custom") return { ok: true as const, w: 0, h: 0, error: null as string | null };
-    const w = Number(pdfCustomWidthMm.replace(",", "."));
-    const h = Number(pdfCustomHeightMm.replace(",", "."));
-    const inRange = (n: number) => Number.isFinite(n) && n >= CUSTOM_MM_MIN && n <= CUSTOM_MM_MAX;
-    if (!inRange(w) || !inRange(h)) {
-      return {
-        ok: false as const,
-        w,
-        h,
-        error: `Wymiary muszą być liczbami w zakresie ${CUSTOM_MM_MIN}–${CUSTOM_MM_MAX} mm.`,
-      };
-    }
-    return { ok: true as const, w, h, error: null as string | null };
-  })();
   const [pdfPageMargin, setPdfPageMargin] = useState<"narrow" | "standard" | "wide">(() => {
     if (typeof window === "undefined") return "standard";
     const saved = window.localStorage.getItem("cml.admin.pdfPageMargin");
