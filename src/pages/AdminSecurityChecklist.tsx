@@ -35,6 +35,11 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import {
   CheckCircle2,
   AlertTriangle,
   ShieldCheck,
@@ -48,6 +53,9 @@ import {
   Pencil,
   Plus,
   Trash2,
+  ChevronDown,
+  Copy,
+  FileCode2,
 } from "lucide-react";
 import SeoHead from "@/components/shared/SeoHead";
 import { toast } from "sonner";
@@ -64,6 +72,12 @@ type Category = "RLS" | "Realtime" | "Auth" | "Tokens";
 
 type AuditResult = { status: DbStatus; detail?: string };
 
+type PolicyRef = {
+  name: string;
+  table: string;
+  sql?: string;
+};
+
 type ChecklistRow = {
   id: string;
   slug: string;
@@ -73,6 +87,7 @@ type ChecklistRow = {
   status: DbStatus;
   detail: string | null;
   sort_order: number;
+  policies: PolicyRef[];
 };
 
 type DisplayCheck = ChecklistRow & {
@@ -172,7 +187,21 @@ const emptyForm = {
   status: "pass" as DbStatus,
   detail: "",
   sort_order: 0,
+  policiesJson: "[]",
 };
+
+function policiesToText(p: PolicyRef[]): string {
+  return JSON.stringify(p, null, 2);
+}
+
+async function copyToClipboard(text: string, label = "Skopiowano") {
+  try {
+    await navigator.clipboard.writeText(text);
+    toast.success(label);
+  } catch {
+    toast.error("Nie udało się skopiować");
+  }
+}
 
 const AdminSecurityChecklist = () => {
   const navigate = useNavigate();
@@ -209,14 +238,22 @@ const AdminSecurityChecklist = () => {
     setLoadingRows(true);
     const { data, error } = await supabase
       .from("security_checklist_items")
-      .select("id, slug, category, title, description, status, detail, sort_order")
+      .select("id, slug, category, title, description, status, detail, sort_order, policies")
       .order("sort_order", { ascending: true })
       .order("slug", { ascending: true });
     if (error) {
       toast.error(`Nie udało się załadować checklisty: ${error.message}`);
       setRows([]);
     } else {
-      setRows((data ?? []) as ChecklistRow[]);
+      setRows(
+        (data ?? []).map((r) => {
+          const raw = r as { policies?: unknown } & Omit<ChecklistRow, "policies">;
+          return {
+            ...raw,
+            policies: Array.isArray(raw.policies) ? (raw.policies as unknown as PolicyRef[]) : [],
+          } satisfies ChecklistRow;
+        }),
+      );
     }
     setLoadingRows(false);
   }, []);
@@ -282,6 +319,7 @@ const AdminSecurityChecklist = () => {
       status: row.status,
       detail: row.detail ?? "",
       sort_order: row.sort_order,
+      policiesJson: policiesToText(row.policies),
     });
     setEditor({ mode: "edit", row });
   };
@@ -293,6 +331,21 @@ const AdminSecurityChecklist = () => {
       toast.error("Slug, tytuł i opis są wymagane");
       return;
     }
+    let parsedPolicies: PolicyRef[] = [];
+    if (form.policiesJson.trim()) {
+      try {
+        const parsed = JSON.parse(form.policiesJson);
+        if (!Array.isArray(parsed)) throw new Error("oczekiwana tablica");
+        parsedPolicies = parsed.map((p: unknown) => {
+          const obj = p as Partial<PolicyRef>;
+          if (!obj.name || !obj.table) throw new Error("każda polityka wymaga 'name' i 'table'");
+          return { name: String(obj.name), table: String(obj.table), sql: obj.sql ? String(obj.sql) : undefined };
+        });
+      } catch (err) {
+        toast.error(`Polityki – błędny JSON: ${err instanceof Error ? err.message : "parse error"}`);
+        return;
+      }
+    }
     setSaving(true);
     const payload = {
       slug: form.slug.trim(),
@@ -302,6 +355,7 @@ const AdminSecurityChecklist = () => {
       status: form.status,
       detail: form.detail.trim() || null,
       sort_order: Number.isFinite(form.sort_order) ? form.sort_order : 0,
+      policies: parsedPolicies as unknown as never,
     };
 
     if (editor.mode === "create") {
@@ -513,6 +567,61 @@ const AdminSecurityChecklist = () => {
                           {detail && (
                             <p className="text-xs text-muted-foreground/80 mt-2 italic">{detail}</p>
                           )}
+                          {check.policies.length > 0 && (
+                            <Collapsible className="mt-3">
+                              <CollapsibleTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-7 px-2 text-xs gap-1 text-muted-foreground hover:text-foreground"
+                                >
+                                  <FileCode2 className="w-3.5 h-3.5" />
+                                  Powiązane polityki ({check.policies.length})
+                                  <ChevronDown className="w-3.5 h-3.5 transition-transform data-[state=open]:rotate-180" />
+                                </Button>
+                              </CollapsibleTrigger>
+                              <CollapsibleContent className="mt-2 space-y-2">
+                                {check.policies.map((p, idx) => (
+                                  <div
+                                    key={`${p.name}-${idx}`}
+                                    className="rounded-md border border-border bg-muted/30 p-3 space-y-2"
+                                  >
+                                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                                      <div className="min-w-0">
+                                        <p className="text-sm font-medium text-foreground truncate">{p.name}</p>
+                                        <p className="text-xs text-muted-foreground font-mono">{p.table}</p>
+                                      </div>
+                                      <div className="flex gap-1">
+                                        <Button
+                                          size="sm"
+                                          variant="ghost"
+                                          className="h-7 px-2 text-xs"
+                                          onClick={() => copyToClipboard(p.name, "Skopiowano nazwę polityki")}
+                                        >
+                                          <Copy className="w-3 h-3 mr-1" /> Nazwa
+                                        </Button>
+                                        {p.sql && (
+                                          <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            className="h-7 px-2 text-xs"
+                                            onClick={() => copyToClipboard(p.sql!, "Skopiowano SQL")}
+                                          >
+                                            <Copy className="w-3 h-3 mr-1" /> SQL
+                                          </Button>
+                                        )}
+                                      </div>
+                                    </div>
+                                    {p.sql && (
+                                      <pre className="text-xs bg-background border border-border rounded p-2 overflow-x-auto font-mono text-muted-foreground whitespace-pre-wrap break-words">
+                                        {p.sql}
+                                      </pre>
+                                    )}
+                                  </div>
+                                ))}
+                              </CollapsibleContent>
+                            </Collapsible>
+                          )}
                         </div>
                         <div className="flex flex-col items-end gap-2 shrink-0">
                           <Select
@@ -616,6 +725,38 @@ const AdminSecurityChecklist = () => {
             <div className="space-y-1">
               <Label htmlFor="detail">Szczegóły (opcjonalne)</Label>
               <Textarea id="detail" rows={2} value={form.detail} onChange={(e) => setForm({ ...form, detail: e.target.value })} />
+            </div>
+            <div className="space-y-1">
+              <div className="flex items-center justify-between gap-2">
+                <Label htmlFor="policies">Powiązane polityki (JSON)</Label>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  className="h-6 text-xs"
+                  onClick={() =>
+                    setForm({
+                      ...form,
+                      policiesJson: policiesToText([
+                        { name: "Admins can view X", table: "your_table", sql: "USING (has_role('admin'::app_role))" },
+                      ]),
+                    })
+                  }
+                >
+                  Wstaw szablon
+                </Button>
+              </div>
+              <Textarea
+                id="policies"
+                rows={6}
+                value={form.policiesJson}
+                onChange={(e) => setForm({ ...form, policiesJson: e.target.value })}
+                placeholder='[{"name":"...","table":"...","sql":"..."}]'
+                className="font-mono text-xs"
+              />
+              <p className="text-xs text-muted-foreground">
+                Tablica obiektów <code>{"{ name, table, sql? }"}</code>. Pokazują się jako linki + snippet SQL na karcie kontroli.
+              </p>
             </div>
           </div>
           <DialogFooter>
