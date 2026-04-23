@@ -1153,8 +1153,27 @@ const AdminSecurityChecklist = () => {
               }).length} z {rows.length} pozycji.
             </p>
           </div>
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setPdfDialogOpen(false)}>Anuluj</Button>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button variant="ghost" onClick={() => setPdfDialogOpen(false)} disabled={exportingServer}>Anuluj</Button>
+            <Button
+              variant="outline"
+              onClick={async () => {
+                if (pdfStatuses.length === 0) {
+                  toast.error("Wybierz przynajmniej jeden status");
+                  return;
+                }
+                await exportPdfServer({ statuses: pdfStatuses, category: pdfCategory });
+                if (!exportingServer) setPdfDialogOpen(false);
+              }}
+              disabled={pdfStatuses.length === 0 || exportingServer}
+              title="Renderuje PDF na serwerze (pdf-lib) — lepsze łamanie wierszy"
+            >
+              {exportingServer ? (
+                <><Loader2 className="w-4 h-4 mr-1 animate-spin" /> Generuję…</>
+              ) : (
+                <><Download className="w-4 h-4 mr-1" /> Pobierz (server)</>
+              )}
+            </Button>
             <Button
               onClick={() => {
                 if (pdfStatuses.length === 0) {
@@ -1164,9 +1183,9 @@ const AdminSecurityChecklist = () => {
                 setPdfDialogOpen(false);
                 exportPdf({ statuses: pdfStatuses, category: pdfCategory });
               }}
-              disabled={pdfStatuses.length === 0}
+              disabled={pdfStatuses.length === 0 || exportingServer}
             >
-              <Download className="w-4 h-4 mr-1" /> Pobierz
+              <Download className="w-4 h-4 mr-1" /> Pobierz (client)
             </Button>
           </DialogFooter>
         </DialogContent>
