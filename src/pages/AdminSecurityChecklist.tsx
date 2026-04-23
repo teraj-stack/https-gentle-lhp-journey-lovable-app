@@ -535,7 +535,7 @@ const AdminSecurityChecklist = () => {
       const stamp = generatedAt.toISOString().slice(0, 10);
       const catSuffix = categoryFilter === "ALL" ? "all" : categoryFilter.toLowerCase();
       const stSuffix = [...allowedStatuses].sort().join("-");
-      doc.save(`cml-security-report-${stamp}-${catSuffix}-${stSuffix}.pdf`);
+      doc.save(`cml-security-report-${stamp}-${catSuffix}-${stSuffix}-${pageSize.toLowerCase()}.pdf`);
       toast.success(`Raport PDF pobrany (${checks.length} pozycji)`);
     } catch (err) {
       toast.error(`Nie udalo sie wygenerowac PDF: ${err instanceof Error ? err.message : "blad"}`);
