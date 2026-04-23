@@ -1787,8 +1787,20 @@ const AdminSecurityChecklist = () => {
                         value={pdfCustomWidthMm}
                         onChange={(e) => setPdfCustomWidthMm(e.target.value)}
                         className="h-8 text-sm"
-                        aria-invalid={!customSizeValidation.ok}
+                        aria-invalid={!!customSizeValidation.widthError}
+                        aria-describedby={
+                          customSizeValidation.widthError ? "pdf-custom-w-error" : undefined
+                        }
                       />
+                      {customSizeValidation.widthError && (
+                        <p
+                          id="pdf-custom-w-error"
+                          className="text-[10px] text-destructive leading-tight"
+                          role="alert"
+                        >
+                          {customSizeValidation.widthError}
+                        </p>
+                      )}
                     </div>
                     <div className="space-y-1">
                       <Label htmlFor="pdf-custom-h" className="text-[11px] text-muted-foreground">
@@ -1804,8 +1816,20 @@ const AdminSecurityChecklist = () => {
                         value={pdfCustomHeightMm}
                         onChange={(e) => setPdfCustomHeightMm(e.target.value)}
                         className="h-8 text-sm"
-                        aria-invalid={!customSizeValidation.ok}
+                        aria-invalid={!!customSizeValidation.heightError}
+                        aria-describedby={
+                          customSizeValidation.heightError ? "pdf-custom-h-error" : undefined
+                        }
                       />
+                      {customSizeValidation.heightError && (
+                        <p
+                          id="pdf-custom-h-error"
+                          className="text-[10px] text-destructive leading-tight"
+                          role="alert"
+                        >
+                          {customSizeValidation.heightError}
+                        </p>
+                      )}
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-1.5 pt-0.5">
@@ -1822,13 +1846,16 @@ const AdminSecurityChecklist = () => {
                       Tabloid (279×432)
                     </Button>
                   </div>
-                  {customSizeValidation.error ? (
-                    <p className="text-[11px] text-destructive" role="alert">
-                      {customSizeValidation.error}
-                    </p>
-                  ) : (
+                  {customSizeValidation.ok ? (
                     <p className="text-[11px] text-muted-foreground">
                       Dozwolony zakres: {CUSTOM_MM_MIN}–{CUSTOM_MM_MAX} mm. Eksport klienta używa A4.
+                    </p>
+                  ) : (
+                    <p
+                      className="text-[11px] text-muted-foreground"
+                      aria-live="polite"
+                    >
+                      Popraw wskazane pole. Dozwolony zakres: {CUSTOM_MM_MIN}–{CUSTOM_MM_MAX} mm.
                     </p>
                   )}
                   {/* Saved presets: name + dimensions, click to apply, trash to delete. */}
