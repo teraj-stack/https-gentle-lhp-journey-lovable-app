@@ -1198,7 +1198,7 @@ const AdminSecurityChecklist = () => {
                 <div className="flex items-center justify-between gap-2 text-xs">
                   <span className="flex items-center gap-2 text-foreground">
                     {serverPhase === "done" ? (
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                      <CheckCircle2 className="w-3.5 h-3.5 text-success" />
                     ) : (
                       <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />
                     )}
