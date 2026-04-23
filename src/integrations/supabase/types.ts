@@ -402,6 +402,7 @@ export type Database = {
           description: string
           detail: string | null
           id: string
+          policies: Json
           slug: string
           sort_order: number
           status: string
@@ -414,6 +415,7 @@ export type Database = {
           description: string
           detail?: string | null
           id?: string
+          policies?: Json
           slug: string
           sort_order?: number
           status?: string
@@ -426,6 +428,7 @@ export type Database = {
           description?: string
           detail?: string | null
           id?: string
+          policies?: Json
           slug?: string
           sort_order?: number
           status?: string
