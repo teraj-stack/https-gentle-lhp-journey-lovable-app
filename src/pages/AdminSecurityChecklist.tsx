@@ -856,7 +856,124 @@ const AdminSecurityChecklist = () => {
     [rows, liveStatus, lastAuditAt],
   );
 
-  const openCreate = () => {
+  // Server-side PDF preview — fetches a single-page sample using the same
+  // payload + page settings, then opens it inline in a modal iframe.
+  const previewPdfServer = useCallback(
+    async (opts: {
+      statuses: DbStatus[];
+      category: Category | "ALL";
+      pageSize: "A4" | "Letter" | "Custom";
+      pageMargin: "narrow" | "standard" | "wide";
+      customPageSizeMm?: { width: number; height: number };
+    }) => {
+      if (rows.length === 0) {
+        toast.error("Brak pozycji do podglądu");
+        return;
+      }
+      const allowedStatuses = new Set<DbStatus>(opts.statuses.length > 0 ? opts.statuses : STATUSES);
+      const categoryFilter = opts.category;
+      const allChecks = rows.map((r) => {
+        const live = liveStatus[r.slug];
+        return {
+          slug: r.slug,
+          category: r.category,
+          title: r.title,
+          description: r.description,
+          detail: r.detail,
+          policies: r.policies,
+          status: (live?.status ?? r.status) as CheckStatus,
+        };
+      });
+      const checks = allChecks.filter((c) => {
+        const sOk = (c.status === "pass" || c.status === "warn" || c.status === "fail")
+          ? allowedStatuses.has(c.status as DbStatus)
+          : true;
+        const cOk = categoryFilter === "ALL" || c.category === categoryFilter;
+        return sOk && cOk;
+      });
+      if (checks.length === 0) {
+        toast.error("Brak pozycji pasujących do filtra");
+        return;
+      }
+      const counts = {
+        pass: checks.filter((c) => c.status === "pass").length,
+        warn: checks.filter((c) => c.status === "warn").length,
+        fail: checks.filter((c) => c.status === "fail").length,
+        total: checks.length,
+        allTotal: allChecks.length,
+      };
+      const overall = counts.fail > 0 ? "WYMAGA UWAGI" : counts.warn > 0 ? "DO PRZEGLĄDU" : "ZIELONY";
+      const sizeLabel =
+        opts.pageSize === "Custom" && opts.customPageSizeMm
+          ? `Custom ${Math.round(opts.customPageSizeMm.width)}×${Math.round(opts.customPageSizeMm.height)}mm`
+          : opts.pageSize;
+      const marginLabel = opts.pageMargin === "narrow" ? "wąskie" : opts.pageMargin === "wide" ? "szerokie" : "standardowe";
+      const filterLabel = `Filtr: ${categoryFilter === "ALL" ? "wszystkie kategorie" : categoryFilter} · statusy: ${[...allowedStatuses].map((s) => s.toUpperCase()).join("/")} · format: ${sizeLabel} · marginesy: ${marginLabel} · PODGLĄD`;
+
+      // Reset previous preview before fetching a new one.
+      setPreviewError(null);
+      setPreviewMeta({ size: sizeLabel, margin: marginLabel, total: counts.total });
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+        setPreviewUrl(null);
+      }
+      setPreviewOpen(true);
+      setPreviewLoading(true);
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          setPreviewError("Brak sesji — zaloguj się ponownie");
+          return;
+        }
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
+        const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
+        const res = await fetch(`${supabaseUrl}/functions/v1/export-security-report-pdf`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+            apikey: anonKey,
+          },
+          body: JSON.stringify({
+            checks,
+            meta: {
+              generatedAt: new Date().toLocaleString("pl-PL"),
+              lastScanDate: new Date(LAST_SCAN_DATE).toLocaleDateString("pl-PL", { year: "numeric", month: "long", day: "numeric" }),
+              lastAuditAt: lastAuditAt ? lastAuditAt.toLocaleString("pl-PL") : null,
+              filterLabel,
+              overall,
+              counts,
+            },
+            filename: "cml-security-report-preview.pdf",
+            pageSize: opts.pageSize,
+            pageMargin: opts.pageMargin,
+            ...(opts.pageSize === "Custom" && opts.customPageSizeMm ? { customPageSizeMm: opts.customPageSizeMm } : {}),
+            previewOnly: true,
+          }),
+        });
+        if (!res.ok) {
+          const raw = await res.text().catch(() => "");
+          let msg = `HTTP ${res.status}`;
+          try {
+            const j = JSON.parse(raw);
+            if (typeof j?.error === "string") msg = j.error;
+          } catch {
+            if (raw) msg = raw.slice(0, 200);
+          }
+          setPreviewError(msg);
+          return;
+        }
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        setPreviewUrl(url);
+      } catch (err) {
+        setPreviewError(err instanceof Error ? err.message : "Nieznany błąd");
+      } finally {
+        setPreviewLoading(false);
+      }
+    },
+    [rows, liveStatus, lastAuditAt, previewUrl],
+  );
     setForm({ ...emptyForm, sort_order: (rows[rows.length - 1]?.sort_order ?? 0) + 10 });
     setEditor({ mode: "create" });
   };
