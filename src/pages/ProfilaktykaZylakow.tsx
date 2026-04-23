@@ -82,7 +82,7 @@ const prevention = [
   {
     icon: Droplet,
     title: "Nawodnienie",
-    desc: "1,5–2 l wody dziennie. Odwodnienie zagęszcza krew i utrudnia jej przepływ przez żyły.",
+    desc: "1,5–2 l wody dziennie. Odwodnienie zagęszcza krew i utrudnia jej przepływ przez żyły. WAŻNE: zapotrzebowanie człowieka na wodę wynosi 30ml/kg m.c. na dobę. To oznacza, że jogurt, szklanka wody i pełnowartościowe dwa posiłki, to około 1500ml wody",
   },
   {
     icon: Snowflake,
