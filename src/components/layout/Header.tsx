@@ -189,24 +189,38 @@ const Header = () => {
     }, MEGA_CLOSE_DELAY_MS);
   }, [clearMegaCloseTimer, isTouchDevice]);
 
-  // Touch trigger: tap on the dropdown button toggles it open/closed
-  // without relying on hover state.
+  // Click on the dropdown trigger.
+  // - Touch: toggles the menu (no hover available).
+  // - Keyboard (Enter/Space dispatches a click with detail === 0): toggles too,
+  //   so users navigating without a mouse can open the panel and have focus
+  //   moved into it by the open/close effect below.
+  // - Mouse on desktop: hover already opened it, so a click only toggles it
+  //   closed (and returns focus to the trigger).
   const handleMegaTriggerClick = useCallback(
     (key: string, event: React.MouseEvent<HTMLButtonElement>) => {
-      if (!isTouchDevice) return;
+      const isKeyboardActivation = event.detail === 0;
+      if (!isTouchDevice && !isKeyboardActivation) {
+        if (megaOpen === key) {
+          event.preventDefault();
+          event.stopPropagation();
+          clearMegaCloseTimer();
+          shouldRestoreFocus.current = true;
+          setMegaOpen(null);
+        }
+        return;
+      }
       event.preventDefault();
       event.stopPropagation();
       clearMegaCloseTimer();
       setMegaOpen((current) => {
         if (current === key) {
-          // Closing via tap on trigger — keyboard users get focus back on the trigger.
           shouldRestoreFocus.current = true;
           return null;
         }
         return key;
       });
     },
-    [clearMegaCloseTimer, isTouchDevice],
+    [clearMegaCloseTimer, isTouchDevice, megaOpen],
   );
 
   const handleMegaLinkClick = useCallback(() => {
