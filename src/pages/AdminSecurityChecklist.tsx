@@ -615,6 +615,9 @@ const AdminSecurityChecklist = () => {
                 <Button size="sm" variant="outline" onClick={openCreate}>
                   <Plus className="w-4 h-4 mr-1" /> Nowa pozycja
                 </Button>
+                <Button size="sm" variant="outline" onClick={exportPdf} disabled={rows.length === 0}>
+                  <Download className="w-4 h-4 mr-1" /> Pobierz PDF
+                </Button>
                 <Button size="sm" variant="default" onClick={runSelfAudit} disabled={auditing || rows.length === 0}>
                   {auditing ? (
                     <><Loader2 className="w-4 h-4 mr-1 animate-spin" /> Audyt…</>
