@@ -398,57 +398,97 @@ const AdminSecurityChecklist = () => {
       const statusLabel = (s: CheckStatus) =>
         s === "pass" ? "OK" : s === "warn" ? "WARN" : s === "fail" ? "FAIL" : s === "running" ? "..." : "?";
 
+      // Soft-wrap long unbroken tokens (e.g. SQL identifiers, URLs) so jspdf-autotable
+      // can break them across lines instead of overflowing the cell.
+      const softWrap = (text: string, max = 60): string =>
+        text
+          .split("\n")
+          .map((line) =>
+            line
+              .split(" ")
+              .map((token) => {
+                if (token.length <= max) return token;
+                const chunks: string[] = [];
+                for (let i = 0; i < token.length; i += max) chunks.push(token.slice(i, i + max));
+                return chunks.join("\n");
+              })
+              .join(" "),
+          )
+          .join("\n");
+
       const formatPoliciesText = (policies: PolicyRef[]) => {
         if (!policies || policies.length === 0) return "Brak powiazanych polityk RLS.";
         return policies
           .map((p, idx) => {
-            const header = `${idx + 1}. ${p.name}  [tabela: ${p.table}]`;
-            const sql = p.sql ? `\nSQL: ${p.sql}` : "";
+            const header = softWrap(`${idx + 1}. ${p.name}  [tabela: ${p.table}]`, 70);
+            const sql = p.sql ? `\nSQL:\n${softWrap(p.sql, 70)}` : "";
             return `${header}${sql}`;
           })
           .join("\n\n");
       };
 
       autoTable(doc, {
-        startY: summaryY + 92,
-        margin: { left: margin, right: margin },
-        head: [["#", "Kategoria", "Kontrola", "Status", "Szczegoly / Polityki RLS i SQL"]],
+        startY: summaryY + 100,
+        margin: { left: margin, right: margin, bottom: 50 },
+        head: [["#", "Kategoria", "Kontrola", "Status", "Szczegoly"]],
         body: checks.flatMap((c, i) => {
-          const detailText = c.liveDetail || c.detail || c.description;
+          const detailText = softWrap(c.liveDetail || c.detail || c.description, 80);
+          const titleText = softWrap(c.title, 40);
           const policiesText = formatPoliciesText(c.policies);
           return [
             [
               String(i + 1),
               c.category,
-              c.title,
+              titleText,
               statusLabel(c.liveStatus),
               detailText,
             ],
             [
               { content: "", colSpan: 1, styles: { fillColor: [250, 250, 250] } },
               {
-                content: `Powiazane polityki RLS (${c.policies?.length ?? 0}):\n${policiesText}`,
+                content: `Powiazane polityki RLS (${c.policies?.length ?? 0}):\n\n${policiesText}`,
                 colSpan: 4,
                 styles: {
                   font: "courier",
-                  fontSize: 8,
+                  fontSize: 7.5,
                   textColor: [40, 40, 40],
                   fillColor: [248, 248, 248],
-                  cellPadding: 6,
+                  cellPadding: { top: 8, right: 10, bottom: 10, left: 10 },
+                  lineColor: [220, 220, 220],
+                  lineWidth: 0.25,
+                  minCellHeight: 24,
                 },
               },
             ],
           ];
         }),
-        styles: { font: "helvetica", fontSize: 9, cellPadding: 6, valign: "top", overflow: "linebreak" },
-        headStyles: { fillColor: [33, 33, 33], textColor: 255, fontStyle: "bold" },
+        styles: {
+          font: "helvetica",
+          fontSize: 9,
+          cellPadding: { top: 7, right: 8, bottom: 7, left: 8 },
+          valign: "top",
+          overflow: "linebreak",
+          lineColor: [225, 225, 225],
+          lineWidth: 0.25,
+          minCellHeight: 18,
+        },
+        headStyles: {
+          fillColor: [33, 33, 33],
+          textColor: 255,
+          fontStyle: "bold",
+          fontSize: 9,
+          cellPadding: { top: 8, right: 8, bottom: 8, left: 8 },
+        },
+        bodyStyles: { textColor: [40, 40, 40] },
+        alternateRowStyles: { fillColor: [252, 252, 252] },
         columnStyles: {
-          0: { cellWidth: 24, halign: "right" },
-          1: { cellWidth: 64 },
-          2: { cellWidth: 150 },
-          3: { cellWidth: 50, halign: "center", fontStyle: "bold" },
+          0: { cellWidth: 22, halign: "right", textColor: [120, 120, 120] },
+          1: { cellWidth: 58 },
+          2: { cellWidth: 120, fontStyle: "bold" },
+          3: { cellWidth: 46, halign: "center", fontStyle: "bold" },
           4: { cellWidth: "auto" },
         },
+        rowPageBreak: "avoid",
         didParseCell: (data) => {
           // Status color only on the primary row (every even body row index: 0,2,4...).
           if (data.section === "body" && data.column.index === 3 && data.row.index % 2 === 0) {
