@@ -372,17 +372,48 @@ const AdminSecurityChecklist = () => {
       const statusLabel = (s: CheckStatus) =>
         s === "pass" ? "OK" : s === "warn" ? "WARN" : s === "fail" ? "FAIL" : s === "running" ? "..." : "?";
 
+      const formatPoliciesText = (policies: PolicyRef[]) => {
+        if (!policies || policies.length === 0) return "Brak powiazanych polityk RLS.";
+        return policies
+          .map((p, idx) => {
+            const header = `${idx + 1}. ${p.name}  [tabela: ${p.table}]`;
+            const sql = p.sql ? `\nSQL: ${p.sql}` : "";
+            return `${header}${sql}`;
+          })
+          .join("\n\n");
+      };
+
       autoTable(doc, {
         startY: summaryY + 78,
         margin: { left: margin, right: margin },
-        head: [["#", "Kategoria", "Kontrola", "Status", "Szczegoly"]],
-        body: checks.map((c, i) => [
-          String(i + 1),
-          c.category,
-          c.title,
-          statusLabel(c.liveStatus),
-          c.liveDetail || c.detail || c.description,
-        ]),
+        head: [["#", "Kategoria", "Kontrola", "Status", "Szczegoly / Polityki RLS i SQL"]],
+        body: checks.flatMap((c, i) => {
+          const detailText = c.liveDetail || c.detail || c.description;
+          const policiesText = formatPoliciesText(c.policies);
+          return [
+            [
+              String(i + 1),
+              c.category,
+              c.title,
+              statusLabel(c.liveStatus),
+              detailText,
+            ],
+            [
+              { content: "", colSpan: 1, styles: { fillColor: [250, 250, 250] } },
+              {
+                content: `Powiazane polityki RLS (${c.policies?.length ?? 0}):\n${policiesText}`,
+                colSpan: 4,
+                styles: {
+                  font: "courier",
+                  fontSize: 8,
+                  textColor: [40, 40, 40],
+                  fillColor: [248, 248, 248],
+                  cellPadding: 6,
+                },
+              },
+            ],
+          ];
+        }),
         styles: { font: "helvetica", fontSize: 9, cellPadding: 6, valign: "top", overflow: "linebreak" },
         headStyles: { fillColor: [33, 33, 33], textColor: 255, fontStyle: "bold" },
         columnStyles: {
@@ -393,8 +424,10 @@ const AdminSecurityChecklist = () => {
           4: { cellWidth: "auto" },
         },
         didParseCell: (data) => {
-          if (data.section === "body" && data.column.index === 3) {
-            const raw = checks[data.row.index].liveStatus;
+          // Status color only on the primary row (every even body row index: 0,2,4...).
+          if (data.section === "body" && data.column.index === 3 && data.row.index % 2 === 0) {
+            const checkIdx = data.row.index / 2;
+            const raw = checks[checkIdx]?.liveStatus;
             if (raw === "pass") data.cell.styles.textColor = [21, 128, 61];
             else if (raw === "warn") data.cell.styles.textColor = [161, 98, 7];
             else if (raw === "fail") data.cell.styles.textColor = [185, 28, 28];
