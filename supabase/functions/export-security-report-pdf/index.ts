@@ -34,6 +34,14 @@ interface PdfCheck {
   policies?: PolicyRef[];
 }
 
+type PageSize = "A4" | "Letter";
+
+// Standard PDF point dimensions (1pt = 1/72 inch).
+const PAGE_DIMS: Record<PageSize, [number, number]> = {
+  A4: [595.28, 841.89],       // 210 x 297 mm
+  Letter: [612, 792],          // 8.5 x 11 in
+};
+
 interface ExportPayload {
   checks: PdfCheck[];
   meta?: {
@@ -45,6 +53,7 @@ interface ExportPayload {
     counts?: { pass: number; warn: number; fail: number; total: number; allTotal: number };
   };
   filename?: string;
+  pageSize?: PageSize;
 }
 
 const STATUS_LABEL: Record<CheckStatus, string> = {
