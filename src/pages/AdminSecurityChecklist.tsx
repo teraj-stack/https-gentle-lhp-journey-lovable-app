@@ -401,7 +401,7 @@ const AdminSecurityChecklist = () => {
       };
 
       autoTable(doc, {
-        startY: summaryY + 78,
+        startY: summaryY + 92,
         margin: { left: margin, right: margin },
         head: [["#", "Kategoria", "Kontrola", "Status", "Szczegoly / Polityki RLS i SQL"]],
         body: checks.flatMap((c, i) => {
