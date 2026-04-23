@@ -328,11 +328,14 @@ const Header = () => {
       onMouseLeave={handleMegaLeave}
     >
       <button
+        ref={(el) => {
+          triggerRefs.current[keyName] = el;
+        }}
         type="button"
         onClick={(e) => handleMegaTriggerClick(keyName, e)}
         aria-expanded={megaOpen === keyName}
         aria-haspopup="menu"
-        className={`flex items-center gap-1 px-4 py-2 text-sm font-medium transition-colors rounded-lg hover:bg-accent/50 ${
+        className={`flex items-center gap-1 px-4 py-2 text-sm font-medium transition-colors rounded-lg hover:bg-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
           isSectionActive(items)
             ? "text-primary bg-accent/50"
             : "text-foreground/80 hover:text-primary"
@@ -346,6 +349,10 @@ const Header = () => {
       <AnimatePresence>
         {megaOpen === keyName && (
           <motion.div
+            ref={(el) => {
+              panelRefs.current[keyName] = el;
+            }}
+            role="menu"
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 8 }}
