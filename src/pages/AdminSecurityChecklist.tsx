@@ -326,7 +326,7 @@ const AdminSecurityChecklist = () => {
       const dayLabelLocal = daysSince === 0 ? "dzisiaj" : daysSince === 1 ? "1 dzien temu" : `${daysSince} dni temu`;
 
       // Recompute display data locally so the PDF reflects what's on screen.
-      const checks = rows.map((r) => {
+      const allChecks = rows.map((r) => {
         const live = liveStatus[r.slug];
         return {
           ...r,
@@ -334,10 +334,22 @@ const AdminSecurityChecklist = () => {
           liveDetail: live?.detail,
         };
       });
+      const checks = allChecks.filter((c) => {
+        const statusOk = (c.liveStatus === "pass" || c.liveStatus === "warn" || c.liveStatus === "fail")
+          ? allowedStatuses.has(c.liveStatus as DbStatus)
+          : true; // include unknown/running rows defensively
+        const categoryOk = categoryFilter === "ALL" || c.category === categoryFilter;
+        return statusOk && categoryOk;
+      });
+      if (checks.length === 0) {
+        toast.error("Brak pozycji pasujacych do filtra");
+        return;
+      }
       const pass = checks.filter((c) => c.liveStatus === "pass").length;
       const fail = checks.filter((c) => c.liveStatus === "fail").length;
       const warn = checks.filter((c) => c.liveStatus === "warn").length;
       const overall = fail > 0 ? "WYMAGA UWAGI" : warn > 0 ? "DO PRZEGLĄDU" : "ZIELONY";
+      const filterLabel = `Filtr: ${categoryFilter === "ALL" ? "wszystkie kategorie" : categoryFilter} · statusy: ${[...allowedStatuses].map((s) => s.toUpperCase()).join("/")}`;
 
       // Header
       doc.setFont("helvetica", "bold");
