@@ -1356,7 +1356,7 @@ const AdminSecurityChecklist = () => {
                   toast.error("Wybierz przynajmniej jeden status");
                   return;
                 }
-                await exportPdfServer({ statuses: pdfStatuses, category: pdfCategory });
+                await exportPdfServer({ statuses: pdfStatuses, category: pdfCategory, pageSize: pdfPageSize });
                 if (!exportingServer) setPdfDialogOpen(false);
               }}
               disabled={pdfStatuses.length === 0 || exportingServer}
