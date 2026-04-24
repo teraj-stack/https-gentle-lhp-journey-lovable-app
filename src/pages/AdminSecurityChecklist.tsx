@@ -506,6 +506,35 @@ const AdminSecurityChecklist = () => {
     setPresetNameDraft("");
     toast.success(`Zapisano preset „${name}" (${w}×${h} mm).`);
   }, [customSizeValidation, presetNameDraft]);
+  // Snap a possibly-invalid raw input to the nearest valid value in
+  // [CUSTOM_MM_MIN, CUSTOM_MM_MAX]. Empty / non-numeric input snaps to the
+  // minimum so the operator always lands on a usable value. Returns the
+  // chosen number (rounded to 1 decimal) and a short reason for the toast.
+  const snapToNearestValid = useCallback((raw: string): { value: number; reason: string } => {
+    const trimmed = raw.trim();
+    const n = Number(trimmed.replace(",", "."));
+    if (trimmed === "" || !Number.isFinite(n)) {
+      return { value: CUSTOM_MM_MIN, reason: `pole było puste — ustawiono minimum (${CUSTOM_MM_MIN} mm)` };
+    }
+    if (n < CUSTOM_MM_MIN) {
+      return { value: CUSTOM_MM_MIN, reason: `${formatMm(n)} → ${CUSTOM_MM_MIN} mm (minimum)` };
+    }
+    if (n > CUSTOM_MM_MAX) {
+      return { value: CUSTOM_MM_MAX, reason: `${formatMm(n)} → ${CUSTOM_MM_MAX} mm (maksimum)` };
+    }
+    const rounded = Math.round(n * 10) / 10;
+    return { value: rounded, reason: `zaokrąglono do ${formatMm(rounded)}` };
+  }, []);
+  const snapWidth = useCallback(() => {
+    const { value, reason } = snapToNearestValid(pdfCustomWidthMm);
+    setPdfCustomWidthMm(String(value));
+    toast.success(`Szerokość: ${reason}`);
+  }, [pdfCustomWidthMm, snapToNearestValid]);
+  const snapHeight = useCallback(() => {
+    const { value, reason } = snapToNearestValid(pdfCustomHeightMm);
+    setPdfCustomHeightMm(String(value));
+    toast.success(`Wysokość: ${reason}`);
+  }, [pdfCustomHeightMm, snapToNearestValid]);
   // Final pre-export validation: focuses + scrolls to the first invalid custom
   // size field and surfaces a toast that includes the entered value and the
   // exact allowed range. Returns `true` when the export may proceed.
@@ -1850,12 +1879,26 @@ const AdminSecurityChecklist = () => {
                         <Label htmlFor="pdf-custom-w" className="text-[11px] text-muted-foreground">
                           Szerokość (mm)
                         </Label>
-                        <span
-                          className="text-[10px] font-mono text-muted-foreground/80 tabular-nums"
-                          aria-hidden="true"
-                        >
-                          {CUSTOM_MM_MIN}–{CUSTOM_MM_MAX}
-                        </span>
+                        <div className="flex items-baseline gap-1.5">
+                          {customSizeValidation.widthError && (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="h-5 px-1.5 text-[10px] leading-none"
+                              onClick={snapWidth}
+                              title={`Dopasuj do najbliższej dozwolonej wartości (${CUSTOM_MM_MIN}–${CUSTOM_MM_MAX} mm)`}
+                            >
+                              Dopasuj
+                            </Button>
+                          )}
+                          <span
+                            className="text-[10px] font-mono text-muted-foreground/80 tabular-nums"
+                            aria-hidden="true"
+                          >
+                            {CUSTOM_MM_MIN}–{CUSTOM_MM_MAX}
+                          </span>
+                        </div>
                       </div>
                       <Input
                         id="pdf-custom-w"
@@ -1902,12 +1945,26 @@ const AdminSecurityChecklist = () => {
                         <Label htmlFor="pdf-custom-h" className="text-[11px] text-muted-foreground">
                           Wysokość (mm)
                         </Label>
-                        <span
-                          className="text-[10px] font-mono text-muted-foreground/80 tabular-nums"
-                          aria-hidden="true"
-                        >
-                          {CUSTOM_MM_MIN}–{CUSTOM_MM_MAX}
-                        </span>
+                        <div className="flex items-baseline gap-1.5">
+                          {customSizeValidation.heightError && (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="h-5 px-1.5 text-[10px] leading-none"
+                              onClick={snapHeight}
+                              title={`Dopasuj do najbliższej dozwolonej wartości (${CUSTOM_MM_MIN}–${CUSTOM_MM_MAX} mm)`}
+                            >
+                              Dopasuj
+                            </Button>
+                          )}
+                          <span
+                            className="text-[10px] font-mono text-muted-foreground/80 tabular-nums"
+                            aria-hidden="true"
+                          >
+                            {CUSTOM_MM_MIN}–{CUSTOM_MM_MAX}
+                          </span>
+                        </div>
                       </div>
                       <Input
                         id="pdf-custom-h"
