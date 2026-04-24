@@ -12,10 +12,12 @@ import {
   Check,
   Download,
   Stethoscope,
+  ArrowDown,
 } from "lucide-react";
 
 type Option = { label: string; points: number };
 type Question = { id: string; q: string; options: Option[] };
+type Recommendation = { text: string; anchor: string };
 
 const questions: Question[] = [
   {
@@ -75,7 +77,7 @@ type RiskTier = {
   border: string;
   headline: string;
   desc: string;
-  recommendations: string[];
+  recommendations: Recommendation[];
   ctaLabel: string;
   ctaHref: string;
   ctaInternal: boolean;
@@ -95,10 +97,11 @@ const tiers: RiskTier[] = [
     desc:
       "Twój styl życia minimalizuje ryzyko hemoroidów. Kontynuuj profilaktykę i obserwuj objawy.",
     recommendations: [
-      "Utrzymuj 25–35 g błonnika dziennie i 2–2,5 l wody",
-      "Krótkie wizyty w toalecie (do 3 minut) — bez telefonu",
-      "Min. 30 min aktywności fizycznej dziennie",
-      "Każde krwawienie z odbytu — zgłoś proktologowi (nawet jednorazowe)",
+      { text: "Utrzymuj 25–35 g błonnika dziennie", anchor: "fiber" },
+      { text: "Pij 2–2,5 l wody dziennie", anchor: "hydration" },
+      { text: "Krótkie wizyty w toalecie (do 3 minut) — bez telefonu", anchor: "toilet" },
+      { text: "Min. 30 min aktywności fizycznej dziennie", anchor: "movement" },
+      { text: "Każde krwawienie z odbytu — zgłoś proktologowi (nawet jednorazowe)", anchor: "symptoms" },
     ],
     ctaLabel: "Pobierz checklistę PDF",
     ctaHref:
@@ -117,12 +120,12 @@ const tiers: RiskTier[] = [
     desc:
       "Masz kilka czynników, które kumulatywnie zwiększają ryzyko hemoroidów. Wprowadź zmiany od dziś — większość przypadków ustępuje pod wpływem leczenia zachowawczego.",
     recommendations: [
-      "Zwiększ błonnik (psyllium 1 łyżka dziennie) i pij dodatkowe 0,5 l wody",
-      "Skróć czas w toalecie do 3 minut — bez telefonu i książki",
-      "Wprowadź podnóżek (kąt 35°) dla pozycji kucznej",
-      "Dodaj codzienny spacer 30 min + ćwiczenia Kegla 3×10",
-      "Przy podnoszeniu ciężarów wydychaj powietrze (unikaj próby Valsalvy)",
-      "Jeśli pojawi się krwawienie lub guzek — umów konsultację proktologiczną",
+      { text: "Zwiększ błonnik (psyllium 1 łyżka dziennie)", anchor: "fiber" },
+      { text: "Pij dodatkowe 0,5 l wody dziennie", anchor: "hydration" },
+      { text: "Skróć czas w toalecie do 3 minut + użyj podnóżka (pozycja kuczna)", anchor: "toilet" },
+      { text: "Dodaj codzienny spacer 30 min + ćwiczenia Kegla 3×10", anchor: "movement" },
+      { text: "Przy podnoszeniu ciężarów wydychaj powietrze (unikaj próby Valsalvy)", anchor: "movement" },
+      { text: "Jeśli pojawi się krwawienie lub guzek — umów konsultację proktologiczną", anchor: "symptoms" },
     ],
     ctaLabel: "Umów konsultację proktologiczną",
     ctaHref: "/kontakt",
@@ -140,12 +143,12 @@ const tiers: RiskTier[] = [
     desc:
       "Kombinacja czynników stylu życia i objawów wskazuje na duże prawdopodobieństwo aktywnej choroby hemoroidalnej. Wczesna ocena pozwala leczyć małoinwazyjnie (LHP) z szybkim powrotem do aktywności.",
     recommendations: [
-      "Umów konsultację proktologiczną w ciągu najbliższych 7 dni",
-      "Każde krwawienie z odbytu wymaga oceny — wyklucz inne przyczyny",
-      "Wprowadź pełną checklistę 4 filarów (błonnik, woda, toaleta, ruch)",
-      "Unikaj długiego siedzenia bez przerw i podnoszenia dużych ciężarów",
-      "Notuj objawy: częstotliwość, intensywność, kolor krwawienia",
-      "Pilnie zgłoś się przy: obfitym krwawieniu, gorączce, silnym bólu",
+      { text: "Umów konsultację proktologiczną w ciągu najbliższych 7 dni", anchor: "symptoms" },
+      { text: "Każde krwawienie z odbytu wymaga oceny — wyklucz inne przyczyny", anchor: "symptoms" },
+      { text: "Wprowadź pełną checklistę 4 filarów (błonnik, woda, toaleta, ruch)", anchor: "fiber" },
+      { text: "Unikaj długiego siedzenia bez przerw i podnoszenia dużych ciężarów", anchor: "movement" },
+      { text: "Notuj objawy: częstotliwość, intensywność, kolor krwawienia", anchor: "symptoms" },
+      { text: "Pilnie zgłoś się przy: obfitym krwawieniu, gorączce, silnym bólu", anchor: "urgent" },
     ],
     ctaLabel: "Pilnie umów konsultację",
     ctaHref: "/kontakt",
@@ -277,15 +280,24 @@ const HemoroidyRiskQuiz = () => {
                 <p className="text-xs font-sans uppercase tracking-[0.18em] text-primary mb-3">
                   Twoje dopasowane zalecenia
                 </p>
-                <ul className="space-y-2.5">
+                <p className="text-xs text-muted-foreground mb-4">
+                  Kliknij zalecenie, aby przeskoczyć do odpowiedniej sekcji checklisty poniżej.
+                </p>
+                <ul className="space-y-2">
                   {tier.recommendations.map((rec) => (
-                    <li key={rec} className="flex items-start gap-3">
-                      <span className="w-5 h-5 rounded-full bg-primary/15 flex items-center justify-center shrink-0 mt-0.5">
-                        <Check className="w-3 h-3 text-primary" strokeWidth={3} />
-                      </span>
-                      <span className="text-sm md:text-base text-foreground/90 leading-relaxed">
-                        {rec}
-                      </span>
+                    <li key={rec.text}>
+                      <a
+                        href={`#${rec.anchor}`}
+                        className="group flex items-start gap-3 p-2.5 -mx-2.5 rounded-lg hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-colors"
+                      >
+                        <span className="w-5 h-5 rounded-full bg-primary/15 group-hover:bg-primary/25 flex items-center justify-center shrink-0 mt-0.5 transition-colors">
+                          <Check className="w-3 h-3 text-primary" strokeWidth={3} />
+                        </span>
+                        <span className="flex-1 text-sm md:text-base text-foreground/90 group-hover:text-foreground leading-relaxed">
+                          {rec.text}
+                        </span>
+                        <ArrowDown className="w-4 h-4 text-muted-foreground group-hover:text-primary group-hover:translate-y-0.5 transition-all shrink-0 mt-1" />
+                      </a>
                     </li>
                   ))}
                 </ul>

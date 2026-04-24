@@ -1,6 +1,6 @@
 ---
 name: Quiz ryzyka hemoroidów
-description: Dedykowana podstrona /dla-pacjenta/quiz-hemoroidy z 5-pytaniowym interaktywnym quizem, scoringiem 0–16 pkt, 3 poziomami ryzyka i dopasowanymi zaleceniami EBM
+description: Dedykowana podstrona /dla-pacjenta/quiz-hemoroidy z 5-pytaniowym interaktywnym quizem, scoringiem 0–16 pkt, 3 poziomami ryzyka, klikalnymi zaleceniami z deep-linkami do sekcji checklisty i bibliografią EBM
 type: feature
 ---
 
@@ -8,7 +8,9 @@ Interaktywny test ryzyka hemoroidów na podstronie `/dla-pacjenta/quiz-hemoroidy
 
 ## Komponenty
 - `src/components/hemoroidy/HemoroidyRiskQuiz.tsx` — reużywalny komponent quizu
-- `src/pages/QuizHemoroidy.tsx` — strona z hero, quizem i 3 kafelkami linków zwrotnymi
+- `src/components/hemoroidy/HemoroidyChecklistSections.tsx` — 6 sekcji checklisty (anchor targets) pod quizem
+- `src/components/hemoroidy/EBMSourcesSection.tsx` — bibliografia EBM
+- `src/pages/QuizHemoroidy.tsx` — strona: hero → quiz → checklist → kafelki → źródła EBM
 
 ## Struktura quizu
 - 5 pytań (błonnik, nawodnienie, czas w toalecie, ruch/styl życia, objawy)
@@ -17,9 +19,18 @@ Interaktywny test ryzyka hemoroidów na podstronie `/dla-pacjenta/quiz-hemoroidy
   - **Niskie (0–5 pkt)**: zielona ramka, CTA → pobierz PDF checklisty
   - **Średnie (6–11 pkt)**: złota ramka, CTA → konsultacja proktologiczna (`/kontakt`)
   - **Wysokie (12+ pkt)**: czerwona ramka, dodatkowy box „pilnie do lekarza", CTA → konsultacja
-- Każdy poziom ma 4–6 dopasowanych zaleceń z 4 filarów checklisty
+- Każde zalecenie typu `{ text, anchor }` — klikalny link do `#fiber|hydration|toilet|movement|symptoms|urgent`
 - Linki wtórne: Hemoroidy A–Z, LHP, FAQ proktolog
 - Disclaimer EBM (ASCRS / ESCP)
+
+## Sekcje checklisty (anchory)
+- `#fiber` — Błonnik 25–35 g
+- `#hydration` — Nawodnienie 2–2,5 l
+- `#toilet` — Nawyki toaletowe (max 3 min, podnóżek)
+- `#movement` — Ruch min. 30 min
+- `#symptoms` — Kiedy do proktologa
+- `#urgent` — Pilne objawy (24–48 h, czerwona ramka)
+Każda sekcja: ikona (Lucide), lead, lista zaleceń, przypis źródła. `scroll-mt-32` pod sticky header.
 
 ## Linki
 - Z wpisu blogowego `/blog/seks-analny-a-hemoroidy-fakty-i-mity` (sekcja „Wersja do pobrania")

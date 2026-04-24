@@ -5,6 +5,7 @@ import { BREADCRUMBS_MAP } from "@/lib/breadcrumbsMap";
 import SeoHead from "@/components/shared/SeoHead";
 import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 import HemoroidyRiskQuiz from "@/components/hemoroidy/HemoroidyRiskQuiz";
+import HemoroidyChecklistSections from "@/components/hemoroidy/HemoroidyChecklistSections";
 import EBMSourcesSection from "@/components/hemoroidy/EBMSourcesSection";
 import { ClipboardList, Sparkles, BookOpen, Stethoscope } from "lucide-react";
 
@@ -66,6 +67,11 @@ const QuizHemoroidy = () => {
           >
             <HemoroidyRiskQuiz />
           </motion.div>
+
+          {/* Checklist sections — anchor targets for quiz recommendations */}
+          <div className="mt-20">
+            <HemoroidyChecklistSections />
+          </div>
 
           {/* Disclaimer + related */}
           <motion.div
