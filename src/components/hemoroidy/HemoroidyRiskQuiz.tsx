@@ -301,28 +301,24 @@ const HemoroidyRiskQuiz = () => {
                   </h3>
                 </div>
               </div>
-              <p className="font-heading text-lg text-foreground mb-3">{tier.headline}</p>
-              <p className="text-sm md:text-base text-muted-foreground leading-relaxed mb-6">
-                {tier.desc}
+              <p className="text-base md:text-lg text-foreground/90 mb-6 leading-relaxed">
+                {tier.headline}
               </p>
 
-              {/* Recommendations */}
+              {/* Recommendations — top 5 actionable steps */}
               <div className="mb-6">
                 <p className="text-xs font-sans uppercase tracking-[0.18em] text-primary mb-3">
-                  Twoje dopasowane zalecenia
+                  Twoje 5 kroków · kliknij, aby przejść do checklisty
                 </p>
-                <p className="text-xs text-muted-foreground mb-4">
-                  Kliknij zalecenie, aby przeskoczyć do odpowiedniej sekcji checklisty poniżej.
-                </p>
-                <ul className="space-y-2">
-                  {tier.recommendations.map((rec) => (
+                <ol className="space-y-2">
+                  {tier.recommendations.slice(0, 5).map((rec, idx) => (
                     <li key={rec.text}>
                       <a
                         href={`#${rec.anchor}`}
                         className="group flex items-start gap-3 p-2.5 -mx-2.5 rounded-lg hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-colors"
                       >
-                        <span className="w-5 h-5 rounded-full bg-primary/15 group-hover:bg-primary/25 flex items-center justify-center shrink-0 mt-0.5 transition-colors">
-                          <Check className="w-3 h-3 text-primary" strokeWidth={3} />
+                        <span className="w-6 h-6 rounded-full bg-primary/15 group-hover:bg-primary/25 flex items-center justify-center shrink-0 mt-0.5 text-xs font-semibold text-primary transition-colors">
+                          {idx + 1}
                         </span>
                         <span className="flex-1 text-sm md:text-base text-foreground/90 group-hover:text-foreground leading-relaxed">
                           {rec.text}
@@ -331,7 +327,7 @@ const HemoroidyRiskQuiz = () => {
                       </a>
                     </li>
                   ))}
-                </ul>
+                </ol>
               </div>
 
               {/* Urgent warning for high tier */}
