@@ -124,7 +124,20 @@ const BlogPost = () => {
 
           <div className="premium-divider !mx-0 mb-8" />
 
-          <MarkdownRenderer content={post.content} className="prose-custom" />
+          {post.content.includes(RISK_MARKER) ? (
+            (() => {
+              const [before, after] = post.content.split(RISK_MARKER);
+              return (
+                <>
+                  <MarkdownRenderer content={before} className="prose-custom" />
+                  <RiskFactorsAccordion />
+                  <MarkdownRenderer content={after} className="prose-custom" />
+                </>
+              );
+            })()
+          ) : (
+            <MarkdownRenderer content={post.content} className="prose-custom" />
+          )}
 
           <RelatedPosts currentSlug={post.slug} category={detectCategory(post)} />
         </div>
