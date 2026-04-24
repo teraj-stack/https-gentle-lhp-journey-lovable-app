@@ -5,6 +5,7 @@ import { BREADCRUMBS_MAP } from "@/lib/breadcrumbsMap";
 import SeoHead from "@/components/shared/SeoHead";
 import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 import HemoroidyRiskQuiz from "@/components/hemoroidy/HemoroidyRiskQuiz";
+import EBMSourcesSection from "@/components/hemoroidy/EBMSourcesSection";
 import { ClipboardList, Sparkles, BookOpen, Stethoscope } from "lucide-react";
 
 const easeOut = [0.16, 1, 0.3, 1] as const;
@@ -111,6 +112,13 @@ const QuizHemoroidy = () => {
               </p>
             </Link>
           </motion.div>
+
+          {/* EBM Sources */}
+          <div className="mt-20">
+            <EBMSourcesSection
+              subtitle="Każde pytanie i zalecenie w teście opiera się na recenzowanych badaniach. Poniżej pełna bibliografia (8 kategorii, 22 referencje) z linkami do PubMed i wytycznych ASCRS / ESCP."
+            />
+          </div>
         </div>
       </section>
     </>
