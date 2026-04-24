@@ -156,6 +156,7 @@ const CATEGORIES: Category[] = [
     id: "activity",
     title: "Aktywność fizyczna i siedzący tryb życia",
     intro: "Wpływ ruchu na motorykę jelit i czynniki ryzyka choroby hemoroidalnej.",
+    tldr: "ESCP zaznacza, że regularna aktywność fizyczna (≥150 min/tydz.) poprawia motorykę jelit i zmniejsza ryzyko zaparć; siedzący tryb życia oraz długie pozostawanie w pozycji siedzącej są niezależnymi czynnikami ryzyka choroby hemoroidalnej.",
     Icon: Activity,
     items: [
       {
