@@ -506,6 +506,39 @@ const AdminSecurityChecklist = () => {
     setPresetNameDraft("");
     toast.success(`Zapisano preset „${name}" (${w}×${h} mm).`);
   }, [customSizeValidation, presetNameDraft]);
+  // Final pre-export validation: focuses + scrolls to the first invalid custom
+  // size field and surfaces a toast that includes the entered value and the
+  // exact allowed range. Returns `true` when the export may proceed.
+  const runFinalCustomSizeCheck = useCallback((): boolean => {
+    if (pdfPageSize !== "Custom") return true;
+    if (customSizeValidation.ok) return true;
+    const firstBadId = customSizeValidation.widthError
+      ? "pdf-custom-w"
+      : customSizeValidation.heightError
+        ? "pdf-custom-h"
+        : null;
+    const firstBadLabel = customSizeValidation.widthError ? "Szerokość" : "Wysokość";
+    const firstBadValue = customSizeValidation.widthError
+      ? pdfCustomWidthMm
+      : pdfCustomHeightMm;
+    const detail = customSizeValidation.widthError ?? customSizeValidation.heightError ?? "";
+    toast.error("Nie można wyeksportować — popraw wymiary strony", {
+      description: `${firstBadLabel}: wpisano „${firstBadValue || "—"}", dozwolony zakres ${CUSTOM_MM_MIN}–${CUSTOM_MM_MAX} mm. ${detail}`,
+    });
+    if (firstBadId && typeof document !== "undefined") {
+      const el = document.getElementById(firstBadId) as HTMLInputElement | null;
+      if (el) {
+        // Scroll into view, then focus + select so the operator can immediately retype.
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        // Defer focus until after the smooth scroll kicks off to avoid jump-cancel.
+        window.setTimeout(() => {
+          el.focus({ preventScroll: true });
+          try { el.select(); } catch { /* number inputs may reject select() in some browsers */ }
+        }, 120);
+      }
+    }
+    return false;
+  }, [pdfPageSize, customSizeValidation, pdfCustomWidthMm, pdfCustomHeightMm]);
   const [pdfPageMargin, setPdfPageMargin] = useState<"narrow" | "standard" | "wide">(() => {
     if (typeof window === "undefined") return "standard";
     const saved = window.localStorage.getItem("cml.admin.pdfPageMargin");
