@@ -397,6 +397,45 @@ const AdminSecurityChecklist = () => {
         return `${field}: ${formatMm(issue.value)} przekracza maksimum (${CUSTOM_MM_MAX} mm) o ${formatMm(issue.value - CUSTOM_MM_MAX)}.`;
     }
   };
+  // Live hint shown under each field as the user types. Returns a status
+  // (`ok` / `warn` / `error`) plus a short message describing how the value
+  // compares to the allowed range, without waiting for blur.
+  type LiveHint = { tone: "ok" | "warn" | "error"; message: string };
+  const describeFieldHint = (raw: string, field: "Szerokość" | "Wysokość"): LiveHint => {
+    const trimmed = raw.trim();
+    if (trimmed === "") {
+      return {
+        tone: "warn",
+        message: `Wpisz ${field.toLowerCase()} w zakresie ${CUSTOM_MM_MIN}–${CUSTOM_MM_MAX} mm.`,
+      };
+    }
+    const n = Number(trimmed.replace(",", "."));
+    if (!Number.isFinite(n)) {
+      return {
+        tone: "error",
+        message: `„${trimmed}" nie jest liczbą — użyj cyfr (np. 210 lub 210,5).`,
+      };
+    }
+    if (n < CUSTOM_MM_MIN) {
+      return {
+        tone: "error",
+        message: `${formatMm(n)} — za mało o ${formatMm(CUSTOM_MM_MIN - n)} (min. ${CUSTOM_MM_MIN} mm).`,
+      };
+    }
+    if (n > CUSTOM_MM_MAX) {
+      return {
+        tone: "error",
+        message: `${formatMm(n)} — za dużo o ${formatMm(n - CUSTOM_MM_MAX)} (maks. ${CUSTOM_MM_MAX} mm).`,
+      };
+    }
+    // Valid — surface the parsed value plus how much headroom remains on each side.
+    const toMin = n - CUSTOM_MM_MIN;
+    const toMax = CUSTOM_MM_MAX - n;
+    return {
+      tone: "ok",
+      message: `OK · ${formatMm(n)} (${formatMm(toMin)} nad min., ${formatMm(toMax)} pod maks.).`,
+    };
+  };
   const customSizeValidation = (() => {
     if (pdfPageSize !== "Custom") {
       return {
