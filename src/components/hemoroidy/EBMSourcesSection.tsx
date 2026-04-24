@@ -354,6 +354,89 @@ const EBMSourcesSection = ({
         </Button>
       </motion.div>
 
+      {/* Filter & search */}
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.2 }}
+        transition={{ duration: 0.5, ease: easeOut }}
+        className="mb-5 space-y-3"
+        role="search"
+        aria-label="Filtrowanie źródeł EBM"
+      >
+        <div className="relative">
+          <Search
+            className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none"
+            aria-hidden="true"
+          />
+          <Input
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Szukaj: autor, tytuł, journal, rok…"
+            aria-label="Wyszukaj w bibliografii"
+            className="pl-9 pr-9 bg-background/40 border-border focus-visible:ring-primary"
+          />
+          {query.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setQuery("")}
+              aria-label="Wyczyść wyszukiwanie"
+              className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+
+        <div className="flex flex-wrap gap-2" role="tablist" aria-label="Kategoria źródeł">
+          {[{ id: "all", title: "Wszystkie", Icon: BookMarked }, ...baseCats].map((c) => {
+            const Icon = c.Icon;
+            const active = activeCat === c.id;
+            return (
+              <button
+                key={c.id}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                onClick={() => setActiveCat(c.id)}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs sm:text-sm border transition-colors ${
+                  active
+                    ? "bg-primary/15 border-primary/40 text-primary"
+                    : "bg-background/40 border-border text-muted-foreground hover:text-foreground hover:border-primary/30"
+                }`}
+              >
+                <Icon className="w-3.5 h-3.5" />
+                {c.title}
+              </button>
+            );
+          })}
+        </div>
+
+        {isFiltering && (
+          <p className="text-xs text-muted-foreground" aria-live="polite">
+            Znaleziono <span className="text-foreground font-medium">{totalMatches}</span>{" "}
+            {totalMatches === 1 ? "pozycję" : totalMatches >= 2 && totalMatches <= 4 ? "pozycje" : "pozycji"}
+            {filtered.length > 0 && (
+              <>
+                {" "}w <span className="text-foreground font-medium">{filtered.length}</span>{" "}
+                {filtered.length === 1 ? "kategorii" : "kategoriach"}
+              </>
+            )}
+            <button
+              type="button"
+              onClick={() => {
+                setQuery("");
+                setActiveCat("all");
+              }}
+              className="ml-2 text-primary hover:underline"
+            >
+              Wyczyść filtry
+            </button>
+          </p>
+        )}
+      </motion.div>
+
       {/* Accordion list */}
       <motion.div
         initial={{ opacity: 0, y: 16 }}
@@ -361,8 +444,25 @@ const EBMSourcesSection = ({
         viewport={{ once: true, amount: 0.15 }}
         transition={{ duration: 0.6, ease: easeOut }}
       >
-        <Accordion type="multiple" className="space-y-2">
-          {cats.map((cat) => {
+        {filtered.length === 0 ? (
+          <div className="rounded-xl border border-border bg-background/40 p-8 text-center">
+            <p className="text-sm text-muted-foreground">
+              Brak źródeł pasujących do wyszukiwania{query ? ` „${query}”` : ""}.
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                setQuery("");
+                setActiveCat("all");
+              }}
+              className="mt-3 text-sm text-primary hover:underline"
+            >
+              Wyczyść filtry
+            </button>
+          </div>
+        ) : (
+        <Accordion type="multiple" value={openValues} className="space-y-2">
+          {filtered.map((cat) => {
             const Icon = cat.Icon;
             return (
               <AccordionItem
