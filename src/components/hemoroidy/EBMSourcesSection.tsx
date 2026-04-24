@@ -43,6 +43,7 @@ const CATEGORIES: Category[] = [
     id: "guidelines",
     title: "Wytyczne kliniczne",
     intro: "Oficjalne rekomendacje towarzystw kolorektalnych — fundament zaleceń profilaktycznych.",
+    tldr: "ASCRS (2018) i ESCP (2020) zgodnie zalecają leczenie zachowawcze (błonnik + nawodnienie) jako pierwszą linię terapii w I–II stopniu, a metody małoinwazyjne i chirurgiczne rezerwują dla wyższych stopni i nawrotów.",
     Icon: ScrollText,
     items: [
       {
