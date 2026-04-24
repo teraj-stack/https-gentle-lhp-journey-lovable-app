@@ -9,6 +9,9 @@ import NewBadge, { isNew } from "@/components/blog/NewBadge";
 import CategoryBadge from "@/components/blog/CategoryBadge";
 import RelatedPosts from "@/components/blog/RelatedPosts";
 import { detectCategory } from "@/lib/blogCategories";
+import RiskFactorsAccordion from "@/components/blog/RiskFactorsAccordion";
+
+const RISK_MARKER = "<!-- RISK_FACTORS_ACCORDION -->";
 
 const BlogPost = () => {
   const { slug } = useParams<{ slug: string }>();
