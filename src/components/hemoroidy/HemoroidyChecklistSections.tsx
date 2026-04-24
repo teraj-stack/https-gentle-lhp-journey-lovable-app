@@ -64,6 +64,7 @@ const sections: ChecklistSection[] = [
       "Bez parcia (próby Valsalvy) — to ono uszkadza sploty żylne",
     ],
     source: "ASCRS 2018 · Garg 2018",
+    ebmId: "toilet",
   },
   {
     id: "movement",
