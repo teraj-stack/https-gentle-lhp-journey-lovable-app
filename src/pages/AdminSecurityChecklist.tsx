@@ -456,8 +456,8 @@ const AdminSecurityChecklist = () => {
     }
     const wField = validateField(pdfCustomWidthMm);
     const hField = validateField(pdfCustomHeightMm);
-    const widthError = wField.issue ? describeIssue(wField.issue, "Szerokość") : null;
-    const heightError = hField.issue ? describeIssue(hField.issue, "Wysokość") : null;
+    const widthError = wField.issue ? describeIssue(wField.issue, "width") : null;
+    const heightError = hField.issue ? describeIssue(hField.issue, "height") : null;
     if (widthError || heightError) {
       // Summary: list both errors when both fail, otherwise the single failing field.
       const error = [widthError, heightError].filter(Boolean).join(" • ");
