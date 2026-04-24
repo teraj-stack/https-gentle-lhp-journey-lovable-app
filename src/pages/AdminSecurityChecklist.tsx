@@ -385,47 +385,54 @@ const AdminSecurityChecklist = () => {
   };
   const formatMm = (n: number) =>
     Number.isFinite(n) ? `${Math.round(n * 10) / 10} mm` : "—";
-  const describeIssue = (issue: FieldIssue, field: "Szerokość" | "Wysokość"): string => {
+  // Single source of truth for the human-readable allowed range, reused across
+  // inline hints, error messages and toasts so the wording never drifts.
+  const RANGE_LABEL = `${CUSTOM_MM_MIN}–${CUSTOM_MM_MAX} mm`;
+  const fieldLabel = (field: "width" | "height") =>
+    field === "width" ? "Szerokość" : "Wysokość";
+  const describeIssue = (issue: FieldIssue, field: "width" | "height"): string => {
+    const label = fieldLabel(field);
     switch (issue.kind) {
       case "empty":
-        return `${field}: pole jest puste. Wpisz wartość ${CUSTOM_MM_MIN}–${CUSTOM_MM_MAX} mm.`;
+        return `${label}: pole jest puste. Wpisz wartość z zakresu ${RANGE_LABEL}.`;
       case "nan":
-        return `${field}: „${issue.raw}" nie jest liczbą. Wpisz wartość ${CUSTOM_MM_MIN}–${CUSTOM_MM_MAX} mm.`;
+        return `${label}: „${issue.raw}” nie jest liczbą. Wpisz wartość z zakresu ${RANGE_LABEL}.`;
       case "low":
-        return `${field}: ${formatMm(issue.value)} jest poniżej minimum (${CUSTOM_MM_MIN} mm). Brakuje ${formatMm(CUSTOM_MM_MIN - issue.value)}.`;
+        return `${label}: ${formatMm(issue.value)} jest poniżej minimum (${CUSTOM_MM_MIN} mm). Brakuje ${formatMm(CUSTOM_MM_MIN - issue.value)}.`;
       case "high":
-        return `${field}: ${formatMm(issue.value)} przekracza maksimum (${CUSTOM_MM_MAX} mm) o ${formatMm(issue.value - CUSTOM_MM_MAX)}.`;
+        return `${label}: ${formatMm(issue.value)} przekracza maksimum (${CUSTOM_MM_MAX} mm) o ${formatMm(issue.value - CUSTOM_MM_MAX)}.`;
     }
   };
   // Live hint shown under each field as the user types. Returns a status
   // (`ok` / `warn` / `error`) plus a short message describing how the value
   // compares to the allowed range, without waiting for blur.
   type LiveHint = { tone: "ok" | "warn" | "error"; message: string };
-  const describeFieldHint = (raw: string, field: "Szerokość" | "Wysokość"): LiveHint => {
+  const describeFieldHint = (raw: string, field: "width" | "height"): LiveHint => {
+    const label = fieldLabel(field);
     const trimmed = raw.trim();
     if (trimmed === "") {
       return {
         tone: "warn",
-        message: `Wpisz ${field.toLowerCase()} w zakresie ${CUSTOM_MM_MIN}–${CUSTOM_MM_MAX} mm.`,
+        message: `Wpisz ${label.toLowerCase()} w zakresie ${RANGE_LABEL}.`,
       };
     }
     const n = Number(trimmed.replace(",", "."));
     if (!Number.isFinite(n)) {
       return {
         tone: "error",
-        message: `„${trimmed}" nie jest liczbą — użyj cyfr (np. 210 lub 210,5).`,
+        message: `„${trimmed}” nie jest liczbą — użyj cyfr (np. 210 lub 210,5).`,
       };
     }
     if (n < CUSTOM_MM_MIN) {
       return {
         tone: "error",
-        message: `${formatMm(n)} — za mało o ${formatMm(CUSTOM_MM_MIN - n)} (min. ${CUSTOM_MM_MIN} mm).`,
+        message: `${formatMm(n)} — za mało o ${formatMm(CUSTOM_MM_MIN - n)} (minimum ${CUSTOM_MM_MIN} mm).`,
       };
     }
     if (n > CUSTOM_MM_MAX) {
       return {
         tone: "error",
-        message: `${formatMm(n)} — za dużo o ${formatMm(n - CUSTOM_MM_MAX)} (maks. ${CUSTOM_MM_MAX} mm).`,
+        message: `${formatMm(n)} — za dużo o ${formatMm(n - CUSTOM_MM_MAX)} (maksimum ${CUSTOM_MM_MAX} mm).`,
       };
     }
     // Valid — surface the parsed value plus how much headroom remains on each side.
@@ -433,7 +440,7 @@ const AdminSecurityChecklist = () => {
     const toMax = CUSTOM_MM_MAX - n;
     return {
       tone: "ok",
-      message: `OK · ${formatMm(n)} (${formatMm(toMin)} nad min., ${formatMm(toMax)} pod maks.).`,
+      message: `OK · ${formatMm(n)} (${formatMm(toMin)} nad minimum, ${formatMm(toMax)} pod maksimum).`,
     };
   };
   const customSizeValidation = (() => {
@@ -449,8 +456,8 @@ const AdminSecurityChecklist = () => {
     }
     const wField = validateField(pdfCustomWidthMm);
     const hField = validateField(pdfCustomHeightMm);
-    const widthError = wField.issue ? describeIssue(wField.issue, "Szerokość") : null;
-    const heightError = hField.issue ? describeIssue(hField.issue, "Wysokość") : null;
+    const widthError = wField.issue ? describeIssue(wField.issue, "width") : null;
+    const heightError = hField.issue ? describeIssue(hField.issue, "height") : null;
     if (widthError || heightError) {
       // Summary: list both errors when both fail, otherwise the single failing field.
       const error = [widthError, heightError].filter(Boolean).join(" • ");
@@ -469,7 +476,7 @@ const AdminSecurityChecklist = () => {
   // customSizeValidation so it can read the parsed/clamped values directly.
   const saveCurrentPreset = useCallback(() => {
     if (!customSizeValidation.ok) {
-      toast.error("Wymiary muszą być prawidłowe, aby zapisać preset.");
+      toast.error(`Wymiary niestandardowej strony muszą mieścić się w zakresie ${RANGE_LABEL}.`);
       return;
     }
     const name = presetNameDraft.trim();
@@ -514,7 +521,7 @@ const AdminSecurityChecklist = () => {
     const trimmed = raw.trim();
     const n = Number(trimmed.replace(",", "."));
     if (trimmed === "" || !Number.isFinite(n)) {
-      return { value: CUSTOM_MM_MIN, reason: `pole było puste — ustawiono minimum (${CUSTOM_MM_MIN} mm)` };
+      return { value: CUSTOM_MM_MIN, reason: `ustawiono minimum (${CUSTOM_MM_MIN} mm) — pole było puste lub nieprawidłowe` };
     }
     if (n < CUSTOM_MM_MIN) {
       return { value: CUSTOM_MM_MIN, reason: `${formatMm(n)} → ${CUSTOM_MM_MIN} mm (minimum)` };
@@ -551,8 +558,8 @@ const AdminSecurityChecklist = () => {
       ? pdfCustomWidthMm
       : pdfCustomHeightMm;
     const detail = customSizeValidation.widthError ?? customSizeValidation.heightError ?? "";
-    toast.error("Nie można wyeksportować — popraw wymiary strony", {
-      description: `${firstBadLabel}: wpisano „${firstBadValue || "—"}", dozwolony zakres ${CUSTOM_MM_MIN}–${CUSTOM_MM_MAX} mm. ${detail}`,
+    toast.error("Nie można wyeksportować — popraw wymiary niestandardowej strony", {
+      description: `${firstBadLabel}: wpisano „${firstBadValue || "—"}”. Dozwolony zakres: ${RANGE_LABEL}. ${detail}`.trim(),
     });
     if (firstBadId && typeof document !== "undefined") {
       const el = document.getElementById(firstBadId) as HTMLInputElement | null;
@@ -1072,7 +1079,7 @@ const AdminSecurityChecklist = () => {
           typeof n === "number" && Number.isFinite(n) && n >= 50 && n <= 1200;
         if (!c || !inRange(c.width) || !inRange(c.height)) {
           toast.error("Nieprawidłowe wymiary niestandardowej strony", {
-            description: "Szerokość i wysokość muszą mieścić się w zakresie 50–1200 mm.",
+            description: `Szerokość i wysokość muszą mieścić się w zakresie ${RANGE_LABEL}.`,
           });
           return;
         }
@@ -1887,7 +1894,7 @@ const AdminSecurityChecklist = () => {
                               size="sm"
                               className="h-5 px-1.5 text-[10px] leading-none"
                               onClick={snapWidth}
-                              title={`Dopasuj do najbliższej dozwolonej wartości (${CUSTOM_MM_MIN}–${CUSTOM_MM_MAX} mm)`}
+                              title={`Dopasuj do najbliższej dozwolonej wartości (zakres ${RANGE_LABEL})`}
                             >
                               Dopasuj
                             </Button>
@@ -1918,10 +1925,10 @@ const AdminSecurityChecklist = () => {
                         id="pdf-custom-w-range"
                         className="text-[10px] text-muted-foreground/80 leading-tight tabular-nums"
                       >
-                        min {CUSTOM_MM_MIN} mm · maks {CUSTOM_MM_MAX} mm
+                        minimum {CUSTOM_MM_MIN} mm · maksimum {CUSTOM_MM_MAX} mm
                       </p>
                       {(() => {
-                        const hint = describeFieldHint(pdfCustomWidthMm, "Szerokość");
+                        const hint = describeFieldHint(pdfCustomWidthMm, "width");
                         const toneClass =
                           hint.tone === "ok"
                             ? "text-emerald-600 dark:text-emerald-400"
@@ -1953,7 +1960,7 @@ const AdminSecurityChecklist = () => {
                               size="sm"
                               className="h-5 px-1.5 text-[10px] leading-none"
                               onClick={snapHeight}
-                              title={`Dopasuj do najbliższej dozwolonej wartości (${CUSTOM_MM_MIN}–${CUSTOM_MM_MAX} mm)`}
+                              title={`Dopasuj do najbliższej dozwolonej wartości (zakres ${RANGE_LABEL})`}
                             >
                               Dopasuj
                             </Button>
@@ -1984,10 +1991,10 @@ const AdminSecurityChecklist = () => {
                         id="pdf-custom-h-range"
                         className="text-[10px] text-muted-foreground/80 leading-tight tabular-nums"
                       >
-                        min {CUSTOM_MM_MIN} mm · maks {CUSTOM_MM_MAX} mm
+                        minimum {CUSTOM_MM_MIN} mm · maksimum {CUSTOM_MM_MAX} mm
                       </p>
                       {(() => {
-                        const hint = describeFieldHint(pdfCustomHeightMm, "Wysokość");
+                        const hint = describeFieldHint(pdfCustomHeightMm, "height");
                         const toneClass =
                           hint.tone === "ok"
                             ? "text-emerald-600 dark:text-emerald-400"
@@ -2023,14 +2030,14 @@ const AdminSecurityChecklist = () => {
                   </div>
                   {customSizeValidation.ok ? (
                     <p className="text-[11px] text-muted-foreground">
-                      Dozwolony zakres: {CUSTOM_MM_MIN}–{CUSTOM_MM_MAX} mm. Eksport klienta używa A4.
+                      Dozwolony zakres: {RANGE_LABEL}. Eksport klienta używa A4.
                     </p>
                   ) : (
                     <p
                       className="text-[11px] text-muted-foreground"
                       aria-live="polite"
                     >
-                      Popraw wskazane pole. Dozwolony zakres: {CUSTOM_MM_MIN}–{CUSTOM_MM_MAX} mm.
+                      Popraw wskazane pole. Dozwolony zakres: {RANGE_LABEL}.
                     </p>
                   )}
                   {/* Saved presets: name + dimensions, click to apply, trash to delete. */}
