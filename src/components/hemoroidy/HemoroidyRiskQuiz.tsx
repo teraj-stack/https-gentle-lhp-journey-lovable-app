@@ -222,9 +222,25 @@ const HemoroidyRiskQuiz = () => {
   };
 
   const score = answers.reduce((a, b) => a + b, 0);
+  const maxScore = questions.reduce(
+    (sum, q) => sum + Math.max(...q.options.map((o) => o.points)),
+    0
+  );
   const tier = getTier(score);
   const TierIcon = tier.Icon;
   const current = questions[step];
+
+  const handleDownloadPdf = () => {
+    generateQuizResultPdf({
+      score,
+      maxScore,
+      tierLabel: tier.label,
+      tierRange: tier.range,
+      headline: tier.headline,
+      recommendations: tier.recommendations.slice(0, 5),
+      showUrgent: tier.showUrgent,
+    });
+  };
 
   return (
     <div className="glass-card rounded-2xl p-5 sm:p-6 md:p-10 max-w-3xl mx-auto">
