@@ -398,6 +398,43 @@ const EbmHemoroidy = () => {
             </div>
           </div>
 
+          {/* Quiz CTA — bridge between risk factors / prevention and bibliography */}
+          <motion.aside
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.3 }}
+            transition={{ duration: 0.6, ease: easeOut }}
+            className="mb-12 md:mb-16"
+            aria-label="Quiz ryzyka hemoroidów"
+          >
+            <div className="relative overflow-hidden rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/10 via-background/40 to-background/40 p-6 sm:p-8">
+              <div className="absolute -right-10 -top-10 w-40 h-40 rounded-full bg-primary/10 blur-3xl pointer-events-none" aria-hidden="true" />
+              <div className="relative flex flex-col md:flex-row md:items-center gap-5 md:gap-6">
+                <div className="w-12 h-12 rounded-xl bg-primary/15 border border-primary/30 flex items-center justify-center shrink-0">
+                  <Sparkles className="w-5 h-5 text-primary" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-primary/10 border border-primary/30 text-[10px] font-sans uppercase tracking-[0.16em] text-primary mb-2">
+                    Sprawdź siebie
+                  </p>
+                  <h3 className="font-heading text-xl md:text-2xl text-foreground leading-snug mb-1.5">
+                    Twoje czynniki ryzyka — w 9 pytaniach
+                  </h3>
+                  <p className="text-sm md:text-base text-muted-foreground leading-relaxed max-w-xl">
+                    Przełóż wiedzę z tej sekcji na swój styl życia. Quiz oparty na ASCRS / ESCP
+                    oszacuje Twoje ryzyko i podpowie konkretne kroki profilaktyczne.
+                  </p>
+                </div>
+                <Button variant="hero" size="lg" asChild className="shrink-0 w-full md:w-auto">
+                  <Link to="/dla-pacjenta/quiz-hemoroidy">
+                    Zrób quiz ryzyka hemoroidów
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </Link>
+                </Button>
+              </div>
+            </div>
+          </motion.aside>
+
           {/* Full bibliography */}
           <div className="mb-20" id="bibliografia">
             <EBMSourcesSection
