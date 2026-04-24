@@ -2713,13 +2713,33 @@ const AdminSecurityChecklist = () => {
               <div className="h-[40vh]" />
             )}
           </div>
+          {/* Mirror of the export-attempt error inside the preview dialog. */}
+          {exportAttemptError && (
+            <div
+              role="alert"
+              aria-live="assertive"
+              className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs"
+            >
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="w-4 h-4 text-destructive shrink-0 mt-0.5" aria-hidden="true" />
+                <p className="text-foreground/90 leading-snug break-words">
+                  <span className="font-medium text-destructive">
+                    Eksport zablokowany — popraw {exportAttemptError.label.toLowerCase()}.
+                  </span>{" "}
+                  Wpisano „{exportAttemptError.rawValue || "—"}". Dozwolony zakres: {RANGE_LABEL}.
+                  Otwórz okno eksportu, aby poprawić wartość.
+                </p>
+              </div>
+            </div>
+          )}
           <DialogFooter className="flex-col sm:flex-row gap-2">
             <Button variant="ghost" onClick={() => setPreviewOpen(false)}>Zamknij</Button>
             <Button
               onClick={async () => {
                 if (!runFinalCustomSizeCheck()) {
-                  // Close the preview so the operator can see + fix the field highlighted in the export dialog.
-                  setPreviewOpen(false);
+                  // Keep the preview open so the operator sees the in-dialog
+                  // banner; they can close it manually and return to the
+                  // export dialog (which also shows the same banner).
                   return;
                 }
                 setPreviewOpen(false);
