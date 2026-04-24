@@ -1,0 +1,120 @@
+import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
+import Breadcrumbs from "@/components/layout/Breadcrumbs";
+import { BREADCRUMBS_MAP } from "@/lib/breadcrumbsMap";
+import SeoHead from "@/components/shared/SeoHead";
+import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
+import HemoroidyRiskQuiz from "@/components/hemoroidy/HemoroidyRiskQuiz";
+import { ClipboardList, Sparkles, BookOpen, Stethoscope } from "lucide-react";
+
+const easeOut = [0.16, 1, 0.3, 1] as const;
+
+const QuizHemoroidy = () => {
+  const trail = BREADCRUMBS_MAP["/dla-pacjenta/quiz-hemoroidy"];
+
+  return (
+    <>
+      <SeoHead
+        title="Test ryzyka hemoroidów — quiz 5 pytań | CML"
+        description="Sprawdź swoje ryzyko hemoroidów w 1 minutę. 5 pytań o styl życia (błonnik, woda, toaleta, ruch, objawy), 3 poziomy ryzyka i dopasowane zalecenia EBM."
+        path="/dla-pacjenta/quiz-hemoroidy"
+      />
+      <MedicalWebPageSchema
+        name="Test ryzyka hemoroidów"
+        description="Interaktywny quiz oceniający ryzyko choroby hemoroidalnej na podstawie czynników stylu życia (dieta, nawodnienie, nawyki toaletowe, aktywność, objawy) — z dopasowanymi zaleceniami EBM."
+        path="/dla-pacjenta/quiz-hemoroidy"
+      />
+
+      <section className="pt-32 pb-16 md:pt-40 md:pb-24 px-4 md:px-8 relative overflow-hidden">
+        {/* Subtle background gradient */}
+        <div
+          className="absolute inset-0 bg-gradient-to-b from-primary/5 via-transparent to-transparent pointer-events-none"
+          aria-hidden="true"
+        />
+
+        <div className="max-w-4xl mx-auto relative">
+          {trail && <Breadcrumbs items={trail} className="mb-8" />}
+
+          {/* Hero */}
+          <motion.div
+            initial={{ opacity: 0, y: 24, filter: "blur(4px)" }}
+            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+            transition={{ duration: 0.8, ease: easeOut }}
+            className="text-center mb-12"
+          >
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/30 mb-5">
+              <Sparkles className="w-3.5 h-3.5 text-primary" />
+              <span className="text-xs font-sans uppercase tracking-[0.18em] text-primary">
+                Świadomy pacjent · EBM
+              </span>
+            </div>
+            <h1 className="font-heading text-3xl md:text-5xl lg:text-6xl text-foreground mb-5 leading-[1.1]">
+              Test ryzyka <em className="text-primary not-italic">hemoroidów</em>
+            </h1>
+            <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+              5 pytań o Twoje codzienne nawyki. W minutę poznasz poziom ryzyka i otrzymasz
+              dopasowane zalecenia oparte na wytycznych ASCRS i ESCP.
+            </p>
+          </motion.div>
+
+          {/* Quiz */}
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.15, ease: easeOut }}
+          >
+            <HemoroidyRiskQuiz />
+          </motion.div>
+
+          {/* Disclaimer + related */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.3 }}
+            transition={{ duration: 0.6, ease: easeOut }}
+            className="mt-16 grid md:grid-cols-3 gap-4 max-w-3xl mx-auto"
+          >
+            <Link
+              to="/dla-pacjenta/hemoroidy"
+              className="group rounded-xl border border-border bg-background/40 hover:bg-primary/5 hover:border-primary/40 p-5 transition-all"
+            >
+              <BookOpen className="w-5 h-5 text-primary mb-2.5" />
+              <p className="font-heading text-foreground mb-1 group-hover:text-primary transition-colors">
+                Hemoroidy od A do Z
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Pełny przewodnik EBM po objawach, stopniach i metodach leczenia.
+              </p>
+            </Link>
+            <Link
+              to="/leczenie/lhp"
+              className="group rounded-xl border border-border bg-background/40 hover:bg-primary/5 hover:border-primary/40 p-5 transition-all"
+            >
+              <Stethoscope className="w-5 h-5 text-primary mb-2.5" />
+              <p className="font-heading text-foreground mb-1 group-hover:text-primary transition-colors">
+                Leczenie laserowe LHP
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Małoinwazyjna metoda z szybkim powrotem do aktywności.
+              </p>
+            </Link>
+            <Link
+              to="/dla-pacjenta/proktolog-faq"
+              className="group rounded-xl border border-border bg-background/40 hover:bg-primary/5 hover:border-primary/40 p-5 transition-all"
+            >
+              <ClipboardList className="w-5 h-5 text-primary mb-2.5" />
+              <p className="font-heading text-foreground mb-1 group-hover:text-primary transition-colors">
+                FAQ proktolog
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Najczęstsze pytania pacjentów do dr Jana Bujoka.
+              </p>
+            </Link>
+          </motion.div>
+        </div>
+      </section>
+    </>
+  );
+};
+
+export default QuizHemoroidy;
