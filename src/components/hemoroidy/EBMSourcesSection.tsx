@@ -272,6 +272,26 @@ const EBMSourcesSection = ({
 
   const [activeCat, setActiveCat] = useState<string>("all");
   const [query, setQuery] = useState<string>("");
+  const [forcedOpen, setForcedOpen] = useState<string[]>([]);
+
+  // Open category from URL hash (#ebm-<id>) and scroll to it
+  useEffect(() => {
+    const applyHash = () => {
+      const h = typeof window !== "undefined" ? window.location.hash : "";
+      const m = h.match(/^#ebm-([a-z0-9-]+)$/i);
+      if (!m) return;
+      const id = m[1];
+      if (!baseCats.some((c) => c.id === id)) return;
+      setForcedOpen((prev) => (prev.includes(id) ? prev : [...prev, id]));
+      window.setTimeout(() => {
+        const el = document.getElementById(`ebm-${id}`);
+        el?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 80);
+    };
+    applyHash();
+    window.addEventListener("hashchange", applyHash);
+    return () => window.removeEventListener("hashchange", applyHash);
+  }, [baseCats]);
 
   const filtered = useMemo(() => {
     const q = normalize(query.trim());
