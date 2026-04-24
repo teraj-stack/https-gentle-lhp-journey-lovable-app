@@ -319,22 +319,37 @@ const HemoroidyRiskQuiz = () => {
               {/* CTAs */}
               <div className="flex flex-col sm:flex-row gap-3">
                 {tier.ctaInternal ? (
-                  <Button variant="hero" size="lg" asChild className="flex-1">
+                  <Button
+                    variant="hero"
+                    size="lg"
+                    asChild
+                    className="flex-1 h-auto min-h-11 py-2.5 px-4 sm:px-6 whitespace-normal text-sm sm:text-base text-center leading-snug tracking-wide"
+                  >
                     <Link to={tier.ctaHref}>
-                      <Stethoscope className="w-4 h-4 mr-2" />
-                      {tier.ctaLabel}
+                      <Stethoscope className="w-4 h-4 mr-2 shrink-0" />
+                      <span>{tier.ctaLabel}</span>
                     </Link>
                   </Button>
                 ) : (
-                  <Button variant="hero" size="lg" asChild className="flex-1">
+                  <Button
+                    variant="hero"
+                    size="lg"
+                    asChild
+                    className="flex-1 h-auto min-h-11 py-2.5 px-4 sm:px-6 whitespace-normal text-sm sm:text-base text-center leading-snug tracking-wide"
+                  >
                     <a href={tier.ctaHref} target="_blank" rel="noopener noreferrer">
-                      <Download className="w-4 h-4 mr-2" />
-                      {tier.ctaLabel}
+                      <Download className="w-4 h-4 mr-2 shrink-0" />
+                      <span>{tier.ctaLabel}</span>
                     </a>
                   </Button>
                 )}
-                <Button variant="outline" size="lg" onClick={reset} className="gap-2">
-                  <RotateCcw className="w-4 h-4" />
+                <Button
+                  variant="outline"
+                  size="lg"
+                  onClick={reset}
+                  className="gap-2 h-auto min-h-11 py-2.5 px-4 sm:px-6 whitespace-normal"
+                >
+                  <RotateCcw className="w-4 h-4 shrink-0" />
                   Wypełnij ponownie
                 </Button>
               </div>
