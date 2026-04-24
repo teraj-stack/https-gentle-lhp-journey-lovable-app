@@ -2343,12 +2343,7 @@ const AdminSecurityChecklist = () => {
                   toast.error("Wybierz przynajmniej jeden status");
                   return;
                 }
-                if (pdfPageSize === "Custom" && !customSizeValidation.ok) {
-                  toast.error("Popraw wymiary niestandardowej strony", {
-                    description: customSizeValidation.error ?? undefined,
-                  });
-                  return;
-                }
+                if (!runFinalCustomSizeCheck()) return;
                 await exportPdfServer({
                   statuses: pdfStatuses,
                   category: pdfCategory,
