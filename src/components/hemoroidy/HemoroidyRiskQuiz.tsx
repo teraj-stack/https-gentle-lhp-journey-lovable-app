@@ -12,7 +12,9 @@ import {
   Download,
   Stethoscope,
   ArrowDown,
+  FileDown,
 } from "lucide-react";
+import { generateQuizResultPdf } from "@/lib/quizResultPdf";
 
 type Option = { label: string; points: number };
 type Question = { id: string; q: string; options: Option[] };
