@@ -476,7 +476,7 @@ const AdminSecurityChecklist = () => {
   // customSizeValidation so it can read the parsed/clamped values directly.
   const saveCurrentPreset = useCallback(() => {
     if (!customSizeValidation.ok) {
-      toast.error("Wymiary muszą być prawidłowe, aby zapisać preset.");
+      toast.error(`Wymiary niestandardowej strony muszą mieścić się w zakresie ${RANGE_LABEL}.`);
       return;
     }
     const name = presetNameDraft.trim();
@@ -558,8 +558,8 @@ const AdminSecurityChecklist = () => {
       ? pdfCustomWidthMm
       : pdfCustomHeightMm;
     const detail = customSizeValidation.widthError ?? customSizeValidation.heightError ?? "";
-    toast.error("Nie można wyeksportować — popraw wymiary strony", {
-      description: `${firstBadLabel}: wpisano „${firstBadValue || "—"}", dozwolony zakres ${CUSTOM_MM_MIN}–${CUSTOM_MM_MAX} mm. ${detail}`,
+    toast.error("Nie można wyeksportować — popraw wymiary niestandardowej strony", {
+      description: `${firstBadLabel}: wpisano „${firstBadValue || "—"}”. Dozwolony zakres: ${RANGE_LABEL}. ${detail}`.trim(),
     });
     if (firstBadId && typeof document !== "undefined") {
       const el = document.getElementById(firstBadId) as HTMLInputElement | null;
@@ -1079,7 +1079,7 @@ const AdminSecurityChecklist = () => {
           typeof n === "number" && Number.isFinite(n) && n >= 50 && n <= 1200;
         if (!c || !inRange(c.width) || !inRange(c.height)) {
           toast.error("Nieprawidłowe wymiary niestandardowej strony", {
-            description: "Szerokość i wysokość muszą mieścić się w zakresie 50–1200 mm.",
+            description: `Szerokość i wysokość muszą mieścić się w zakresie ${RANGE_LABEL}.`,
           });
           return;
         }
