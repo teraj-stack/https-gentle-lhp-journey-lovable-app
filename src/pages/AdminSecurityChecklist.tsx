@@ -1945,12 +1945,26 @@ const AdminSecurityChecklist = () => {
                         <Label htmlFor="pdf-custom-h" className="text-[11px] text-muted-foreground">
                           Wysokość (mm)
                         </Label>
-                        <span
-                          className="text-[10px] font-mono text-muted-foreground/80 tabular-nums"
-                          aria-hidden="true"
-                        >
-                          {CUSTOM_MM_MIN}–{CUSTOM_MM_MAX}
-                        </span>
+                        <div className="flex items-baseline gap-1.5">
+                          {customSizeValidation.heightError && (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="h-5 px-1.5 text-[10px] leading-none"
+                              onClick={snapHeight}
+                              title={`Dopasuj do najbliższej dozwolonej wartości (${CUSTOM_MM_MIN}–${CUSTOM_MM_MAX} mm)`}
+                            >
+                              Dopasuj
+                            </Button>
+                          )}
+                          <span
+                            className="text-[10px] font-mono text-muted-foreground/80 tabular-nums"
+                            aria-hidden="true"
+                          >
+                            {CUSTOM_MM_MIN}–{CUSTOM_MM_MAX}
+                          </span>
+                        </div>
                       </div>
                       <Input
                         id="pdf-custom-h"
