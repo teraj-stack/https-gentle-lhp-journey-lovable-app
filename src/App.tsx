@@ -61,6 +61,7 @@ const Unsubscribe = lazy(() => import("@/pages/Unsubscribe"));
 const ReminderOptOut = lazy(() => import("@/pages/ReminderOptOut"));
 const BookingAction = lazy(() => import("@/pages/BookingAction"));
 const HemoroidyInfografika = lazy(() => import("@/pages/HemoroidyInfografika"));
+const QuizHemoroidy = lazy(() => import("@/pages/QuizHemoroidy"));
 const FaldyOdbytu = lazy(() => import("@/pages/FaldyOdbytu"));
 const Ginekomastia = lazy(() => import("@/pages/Ginekomastia"));
 const GinekomastiaGruczolowa = lazy(() => import("@/pages/GinekomastiaGruczolowa"));
@@ -138,6 +139,7 @@ const App = () => (
               <Route path="/dla-pacjenta/zalecenia-po-mikroflebektomii" element={<ZaleceniaPoMikroflebektomii />} />
               <Route path="/dla-pacjenta/zalecenia-po-ginekomastii" element={<ZaleceniaPoGinekomastii />} />
               <Route path="/dla-pacjenta/hemoroidy-infografika" element={<HemoroidyInfografika />} />
+              <Route path="/dla-pacjenta/quiz-hemoroidy" element={<QuizHemoroidy />} />
               <Route path="/dla-pacjenta/faldy-odbytu" element={<FaldyOdbytu />} />
               <Route path="/leczenie/ginekomastia" element={<Ginekomastia />} />
               <Route path="/leczenie/ginekomastia-gruczolowa" element={<GinekomastiaGruczolowa />} />
