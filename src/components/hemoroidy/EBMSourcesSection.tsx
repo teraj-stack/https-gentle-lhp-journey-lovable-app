@@ -209,6 +209,7 @@ const CATEGORIES: Category[] = [
     id: "diagnosis",
     title: "Diagnostyka i kiedy do lekarza",
     intro: "Zasady różnicowania krwawień z odbytu i wskazania do oceny specjalistycznej / kolonoskopii.",
+    tldr: "ASCRS i ESCP są jednoznaczne: każde krwawienie z odbytu wymaga oceny lekarskiej, a u osób >45 r.ż. lub z czynnikami ryzyka — kolonoskopii. Hemoroidów nie wolno rozpoznawać „na odległość”, bo identyczne objawy daje m.in. rak jelita grubego.",
     Icon: Stethoscope,
     items: [
       {
