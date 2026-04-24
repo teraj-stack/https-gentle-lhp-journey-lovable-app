@@ -618,9 +618,10 @@ const AdminSecurityChecklist = () => {
     if (firstBadId && typeof document !== "undefined") {
       const el = document.getElementById(firstBadId) as HTMLInputElement | null;
       if (el) {
-        // Scroll into view, then focus + select so the operator can immediately retype.
-        el.scrollIntoView({ behavior: "smooth", block: "center" });
-        // Defer focus until after the smooth scroll kicks off to avoid jump-cancel.
+        // Scroll into view with the configured offset so the field never lands
+        // under the dialog's sticky header. Defer focus until after the
+        // smooth scroll kicks off to avoid jump-cancel.
+        scrollIntoViewWithOffset(el, focusScrollOffset);
         window.setTimeout(() => {
           el.focus({ preventScroll: true });
           try { el.select(); } catch { /* number inputs may reject select() in some browsers */ }
@@ -628,7 +629,7 @@ const AdminSecurityChecklist = () => {
       }
     }
     return false;
-  }, [pdfPageSize, customSizeValidation, pdfCustomWidthMm, pdfCustomHeightMm]);
+  }, [pdfPageSize, customSizeValidation, pdfCustomWidthMm, pdfCustomHeightMm, scrollIntoViewWithOffset, focusScrollOffset]);
   const [pdfPageMargin, setPdfPageMargin] = useState<"narrow" | "standard" | "wide">(() => {
     if (typeof window === "undefined") return "standard";
     const saved = window.localStorage.getItem("cml.admin.pdfPageMargin");
