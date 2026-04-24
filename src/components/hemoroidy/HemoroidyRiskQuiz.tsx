@@ -12,7 +12,9 @@ import {
   Download,
   Stethoscope,
   ArrowDown,
+  FileDown,
 } from "lucide-react";
+import { generateQuizResultPdf } from "@/lib/quizResultPdf";
 
 type Option = { label: string; points: number };
 type Question = { id: string; q: string; options: Option[] };
@@ -220,9 +222,25 @@ const HemoroidyRiskQuiz = () => {
   };
 
   const score = answers.reduce((a, b) => a + b, 0);
+  const maxScore = questions.reduce(
+    (sum, q) => sum + Math.max(...q.options.map((o) => o.points)),
+    0
+  );
   const tier = getTier(score);
   const TierIcon = tier.Icon;
   const current = questions[step];
+
+  const handleDownloadPdf = () => {
+    generateQuizResultPdf({
+      score,
+      maxScore,
+      tierLabel: tier.label,
+      tierRange: tier.range,
+      headline: tier.headline,
+      recommendations: tier.recommendations.slice(0, 5),
+      showUrgent: tier.showUrgent,
+    });
+  };
 
   return (
     <div className="glass-card rounded-2xl p-5 sm:p-6 md:p-10 max-w-3xl mx-auto">
@@ -392,6 +410,15 @@ const HemoroidyRiskQuiz = () => {
                     </a>
                   </Button>
                 )}
+                <Button
+                  variant="outline"
+                  size="lg"
+                  onClick={handleDownloadPdf}
+                  className="gap-2 h-auto min-h-11 py-2.5 px-4 sm:px-6 whitespace-normal border-primary/40 text-primary hover:bg-primary/10 hover:text-primary"
+                >
+                  <FileDown className="w-4 h-4 shrink-0" />
+                  Pobierz wynik (PDF)
+                </Button>
                 <Button
                   variant="outline"
                   size="lg"
