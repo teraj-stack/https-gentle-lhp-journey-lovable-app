@@ -7,6 +7,7 @@ import {
   Stethoscope,
   AlertOctagon,
   CheckCircle2,
+  BookOpen,
 } from "lucide-react";
 
 const easeOut = [0.16, 1, 0.3, 1] as const;
