@@ -1334,6 +1334,9 @@ const AdminSecurityChecklist = () => {
         a.remove();
         URL.revokeObjectURL(url);
         setServerPhase("done");
+        if (pageSize === "Custom" && customPageSizeMm) {
+          rememberSuccessfulCustomSize(customPageSizeMm.width, customPageSizeMm.height);
+        }
         toast.success(`Raport PDF (server) pobrany — ${counts.total} pozycji`);
       } catch (err) {
         toast.error(`Eksport serwerowy nieudany: ${err instanceof Error ? err.message : "blad"}`);
