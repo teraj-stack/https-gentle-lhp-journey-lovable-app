@@ -73,6 +73,7 @@ const CATEGORIES: Category[] = [
     id: "fiber",
     title: "Błonnik i dieta",
     intro: "Dowody na skuteczność błonnika rozpuszczalnego (psyllium) w redukcji objawów i krwawienia.",
+    tldr: "Według ASCRS i ESCP suplementacja błonnika (≥25 g/dobę, najlepiej psyllium) zmniejsza ryzyko krwawienia i nasilenie objawów o ~50% — to najsilniej rekomendowana interwencja zachowawcza (poziom dowodów 1A).",
     Icon: Salad,
     items: [
       {
