@@ -711,6 +711,70 @@ const AdminSecurityChecklist = () => {
     focusCustomSizeField(fieldId);
     return false;
   }, [pdfPageSize, customSizeValidation, pdfCustomWidthMm, pdfCustomHeightMm, focusCustomSizeField]);
+  // Keyboard flow during export validation: while an export-attempt is being
+  // corrected, Enter (and Tab when current field is still invalid) jumps to
+  // the OTHER field if it is the remaining problem; otherwise re-runs the
+  // final check so the operator can submit without leaving the keyboard.
+  const handleCustomSizeFieldKeyDown = useCallback(
+    (currentField: "pdf-custom-w" | "pdf-custom-h") =>
+      (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (!exportAttemptError) return;
+        if (e.key !== "Enter" && e.key !== "Tab") return;
+        const currentInvalid =
+          currentField === "pdf-custom-w"
+            ? !!customSizeValidation.widthError
+            : !!customSizeValidation.heightError;
+        const otherField: "pdf-custom-w" | "pdf-custom-h" =
+          currentField === "pdf-custom-w" ? "pdf-custom-h" : "pdf-custom-w";
+        const otherInvalid =
+          otherField === "pdf-custom-w"
+            ? !!customSizeValidation.widthError
+            : !!customSizeValidation.heightError;
+        // Tab away while still invalid: keep focus here (block default), so the
+        // operator can fix the field before being shuttled to the next control.
+        if (e.key === "Tab" && currentInvalid && !e.shiftKey) {
+          e.preventDefault();
+          return;
+        }
+        if (e.key === "Enter") {
+          e.preventDefault();
+          if (currentInvalid) {
+            // Re-surface the same field's error context; nothing new to jump to.
+            focusCustomSizeField(currentField);
+            return;
+          }
+          if (otherInvalid) {
+            // First field fixed — hop to the remaining problem and update banner.
+            const otherLabel: "Szerokość" | "Wysokość" =
+              otherField === "pdf-custom-w" ? "Szerokość" : "Wysokość";
+            const otherRaw =
+              otherField === "pdf-custom-w" ? pdfCustomWidthMm : pdfCustomHeightMm;
+            const otherDetail =
+              (otherField === "pdf-custom-w"
+                ? customSizeValidation.widthError
+                : customSizeValidation.heightError) ?? "";
+            setExportAttemptError({
+              fieldId: otherField,
+              label: otherLabel,
+              rawValue: otherRaw,
+              detail: otherDetail,
+              at: Date.now(),
+            });
+            focusCustomSizeField(otherField);
+            return;
+          }
+          // Both valid — clear the banner; the operator can re-trigger export.
+          setExportAttemptError(null);
+        }
+      },
+    [
+      exportAttemptError,
+      customSizeValidation,
+      pdfCustomWidthMm,
+      pdfCustomHeightMm,
+      focusCustomSizeField,
+    ],
+  );
   const [pdfPageMargin, setPdfPageMargin] = useState<"narrow" | "standard" | "wide">(() => {
     if (typeof window === "undefined") return "standard";
     const saved = window.localStorage.getItem("cml.admin.pdfPageMargin");
@@ -2056,6 +2120,7 @@ const AdminSecurityChecklist = () => {
                         placeholder={`${CUSTOM_MM_MIN}–${CUSTOM_MM_MAX}`}
                         value={pdfCustomWidthMm}
                         onChange={(e) => setPdfCustomWidthMm(e.target.value)}
+                        onKeyDown={handleCustomSizeFieldKeyDown("pdf-custom-w")}
                         className={`h-8 text-sm transition-shadow ${
                           exportAttemptError?.fieldId === "pdf-custom-w"
                             ? "border-destructive ring-2 ring-destructive/60 ring-offset-1 ring-offset-background animate-pulse"
@@ -2144,6 +2209,7 @@ const AdminSecurityChecklist = () => {
                         placeholder={`${CUSTOM_MM_MIN}–${CUSTOM_MM_MAX}`}
                         value={pdfCustomHeightMm}
                         onChange={(e) => setPdfCustomHeightMm(e.target.value)}
+                        onKeyDown={handleCustomSizeFieldKeyDown("pdf-custom-h")}
                         className={`h-8 text-sm transition-shadow ${
                           exportAttemptError?.fieldId === "pdf-custom-h"
                             ? "border-destructive ring-2 ring-destructive/60 ring-offset-1 ring-offset-background animate-pulse"
