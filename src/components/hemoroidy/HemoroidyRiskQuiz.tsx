@@ -244,6 +244,18 @@ const HemoroidyRiskQuiz = () => {
     });
   };
 
+  // Persist completed quiz to local history (once per completion).
+  useEffect(() => {
+    if (!done) return;
+    addEntry({
+      score,
+      maxScore,
+      level: tier.level,
+      label: tier.label,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [done]);
+
   return (
     <div className="glass-card rounded-2xl p-5 sm:p-6 md:p-10 max-w-3xl mx-auto">
       {/* Header */}
