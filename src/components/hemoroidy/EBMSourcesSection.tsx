@@ -514,6 +514,7 @@ const EBMSourcesSection = ({
             );
           })}
         </Accordion>
+        )}
       </motion.div>
 
       {/* Disclaimer — quiz vs konsultacja vs charakter linków */}
