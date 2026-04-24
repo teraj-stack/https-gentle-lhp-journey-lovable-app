@@ -492,7 +492,8 @@ const EBMSourcesSection = ({
               <AccordionItem
                 key={cat.id}
                 value={cat.id}
-                className="rounded-xl border border-border bg-background/40 overflow-hidden data-[state=open]:border-primary/40 data-[state=open]:bg-primary/5 transition-colors"
+                id={`ebm-${cat.id}`}
+                className="scroll-mt-32 rounded-xl border border-border bg-background/40 overflow-hidden data-[state=open]:border-primary/40 data-[state=open]:bg-primary/5 transition-colors"
               >
                 <AccordionTrigger className="px-5 py-4 hover:no-underline group">
                   <div className="flex items-center gap-3 text-left">
