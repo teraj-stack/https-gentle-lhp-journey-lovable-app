@@ -6,7 +6,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import Breadcrumbs from "@/components/layout/Breadcrumbs";
 import { BREADCRUMBS_MAP } from "@/lib/breadcrumbsMap";
 import SeoHead from "@/components/shared/SeoHead";
-import { BookOpen, Download, FileText, Shield, Clock, Heart, ArrowRight } from "lucide-react";
+import { BookOpen, Download, FileText, Shield, Clock, Heart, ArrowRight, Sparkles, BookMarked } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { StaggeredListItem } from "@/components/shared/StaggeredList";
@@ -35,6 +35,20 @@ const mainEbook = {
 };
 
 const onlineGuides = [
+  {
+    title: "Test ryzyka hemoroidów",
+    subtitle: "Interaktywny quiz · 5 pytań",
+    desc: "Sprawdź swoje ryzyko hemoroidów w 1 minutę. 3 poziomy ryzyka, dopasowane zalecenia EBM i checklista PDF do pobrania.",
+    href: "/dla-pacjenta/quiz-hemoroidy",
+    icon: "🧪",
+  },
+  {
+    title: "EBM hemoroidy — czynniki ryzyka i profilaktyka",
+    subtitle: "Kompendium naukowe",
+    desc: "6 kluczowych czynników ryzyka i 6 filarów profilaktyki z linkami do badań PubMed, ASCRS, ESCP i Cochrane.",
+    href: "/dla-pacjenta/ebm-hemoroidy",
+    icon: "📚",
+  },
   {
     title: "Hemoroidy i wizyta u proktologa",
     subtitle: "Lekarz odpowiada",
@@ -160,6 +174,51 @@ const DlaPacjenta = () => {
             </motion.div>
           ))}
         </div>
+      </motion.section>
+
+      {/* Featured: Quiz CTA — wyraźnie wyeksponowany na samej górze */}
+      <motion.section {...fadeUp}>
+        <Link
+          to="/dla-pacjenta/quiz-hemoroidy"
+          className="group block glass-card rounded-2xl p-6 md:p-8 border border-primary/30 hover:border-primary/60 transition-all relative overflow-hidden"
+        >
+          <div
+            className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-transparent pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity"
+            aria-hidden="true"
+          />
+          <div className="relative flex flex-col md:flex-row items-start md:items-center gap-5">
+            <div className="w-14 h-14 rounded-xl bg-primary/15 flex items-center justify-center shrink-0">
+              <Sparkles className="w-7 h-7 text-primary" />
+            </div>
+            <div className="flex-1">
+              <p className="text-xs font-sans uppercase tracking-[0.18em] text-primary mb-1.5">
+                Nowość · Interaktywny test
+              </p>
+              <h3 className="text-xl md:text-2xl font-bold text-foreground mb-2 group-hover:text-primary transition-colors">
+                Sprawdź swoje ryzyko hemoroidów w 1 minutę
+              </h3>
+              <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
+                5 pytań o styl życia · 3 poziomy ryzyka · dopasowane zalecenia EBM i checklista PDF do pobrania.
+              </p>
+            </div>
+            <Button variant="hero" size="lg" className="shrink-0 w-full md:w-auto pointer-events-none">
+              Wypełnij test
+              <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />
+            </Button>
+          </div>
+        </Link>
+
+        {/* Sekundarny link — bibliografia EBM */}
+        <Link
+          to="/dla-pacjenta/ebm-hemoroidy"
+          className="group mt-4 flex items-center gap-3 text-sm text-muted-foreground hover:text-primary transition-colors justify-center"
+        >
+          <BookMarked className="w-4 h-4" />
+          <span>
+            Wolisz najpierw przeczytać badania? Zobacz <strong>kompendium EBM hemoroidy</strong>
+          </span>
+          <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />
+        </Link>
       </motion.section>
 
       {/* Main E-book (PDF download) */}
