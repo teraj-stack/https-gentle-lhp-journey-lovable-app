@@ -596,40 +596,60 @@ const AdminSecurityChecklist = () => {
     const targetTop = container.scrollTop + deltaFromTop - offset;
     container.scrollTo({ top: Math.max(0, targetTop), behavior: "smooth" });
   }, []);
+  // Persistent (per-attempt) error surfaced inside the export / preview
+  // dialogs so the operator can fix the issue without relying on a toast.
+  // Cleared automatically once the underlying validation passes.
+  type ExportAttemptError = {
+    fieldId: "pdf-custom-w" | "pdf-custom-h";
+    label: "Szerokość" | "Wysokość";
+    rawValue: string;
+    detail: string;
+    at: number;
+  };
+  const [exportAttemptError, setExportAttemptError] = useState<ExportAttemptError | null>(null);
+  // Auto-clear the banner when the validation passes (e.g. user fixes the value)
+  // or when they switch away from the Custom page size.
+  useEffect(() => {
+    if (pdfPageSize !== "Custom" || customSizeValidation.ok) {
+      setExportAttemptError(null);
+    }
+  }, [pdfPageSize, customSizeValidation.ok]);
+  // Focus + scroll a custom-size input into view, applying the configured
+  // offset so it never lands under the dialog's sticky header. Shared by
+  // `runFinalCustomSizeCheck` and the in-dialog "Przejdź do pola" action.
+  const focusCustomSizeField = useCallback((fieldId: "pdf-custom-w" | "pdf-custom-h") => {
+    if (typeof document === "undefined") return;
+    const el = document.getElementById(fieldId) as HTMLInputElement | null;
+    if (!el) return;
+    scrollIntoViewWithOffset(el, focusScrollOffset);
+    window.setTimeout(() => {
+      el.focus({ preventScroll: true });
+      try { el.select(); } catch { /* number inputs may reject select() in some browsers */ }
+    }, 120);
+  }, [scrollIntoViewWithOffset, focusScrollOffset]);
   // Final pre-export validation: focuses + scrolls to the first invalid custom
-  // size field and surfaces a toast that includes the entered value and the
-  // exact allowed range. Returns `true` when the export may proceed.
+  // size field, surfaces a toast AND a persistent in-dialog banner that
+  // includes the entered value and the exact allowed range. Returns `true`
+  // when the export may proceed.
   const runFinalCustomSizeCheck = useCallback((): boolean => {
     if (pdfPageSize !== "Custom") return true;
-    if (customSizeValidation.ok) return true;
-    const firstBadId = customSizeValidation.widthError
-      ? "pdf-custom-w"
-      : customSizeValidation.heightError
-        ? "pdf-custom-h"
-        : null;
-    const firstBadLabel = customSizeValidation.widthError ? "Szerokość" : "Wysokość";
-    const firstBadValue = customSizeValidation.widthError
-      ? pdfCustomWidthMm
-      : pdfCustomHeightMm;
-    const detail = customSizeValidation.widthError ?? customSizeValidation.heightError ?? "";
-    toast.error("Nie można wyeksportować — popraw wymiary niestandardowej strony", {
-      description: `${firstBadLabel}: wpisano „${firstBadValue || "—"}”. Dozwolony zakres: ${RANGE_LABEL}. ${detail}`.trim(),
-    });
-    if (firstBadId && typeof document !== "undefined") {
-      const el = document.getElementById(firstBadId) as HTMLInputElement | null;
-      if (el) {
-        // Scroll into view with the configured offset so the field never lands
-        // under the dialog's sticky header. Defer focus until after the
-        // smooth scroll kicks off to avoid jump-cancel.
-        scrollIntoViewWithOffset(el, focusScrollOffset);
-        window.setTimeout(() => {
-          el.focus({ preventScroll: true });
-          try { el.select(); } catch { /* number inputs may reject select() in some browsers */ }
-        }, 120);
-      }
+    if (customSizeValidation.ok) {
+      setExportAttemptError(null);
+      return true;
     }
+    const fieldId: "pdf-custom-w" | "pdf-custom-h" = customSizeValidation.widthError
+      ? "pdf-custom-w"
+      : "pdf-custom-h";
+    const label: "Szerokość" | "Wysokość" = customSizeValidation.widthError ? "Szerokość" : "Wysokość";
+    const rawValue = customSizeValidation.widthError ? pdfCustomWidthMm : pdfCustomHeightMm;
+    const detail = customSizeValidation.widthError ?? customSizeValidation.heightError ?? "";
+    setExportAttemptError({ fieldId, label, rawValue, detail, at: Date.now() });
+    toast.error("Nie można wyeksportować — popraw wymiary niestandardowej strony", {
+      description: `${label}: wpisano „${rawValue || "—"}”. Dozwolony zakres: ${RANGE_LABEL}. ${detail}`.trim(),
+    });
+    focusCustomSizeField(fieldId);
     return false;
-  }, [pdfPageSize, customSizeValidation, pdfCustomWidthMm, pdfCustomHeightMm, scrollIntoViewWithOffset, focusScrollOffset]);
+  }, [pdfPageSize, customSizeValidation, pdfCustomWidthMm, pdfCustomHeightMm, focusCustomSizeField]);
   const [pdfPageMargin, setPdfPageMargin] = useState<"narrow" | "standard" | "wide">(() => {
     if (typeof window === "undefined") return "standard";
     const saved = window.localStorage.getItem("cml.admin.pdfPageMargin");
@@ -2498,6 +2518,65 @@ const AdminSecurityChecklist = () => {
               </div>
             )}
           </div>
+          {/* Persistent in-dialog banner mirroring the latest export-attempt
+              error. Stays visible until the operator fixes the field. */}
+          {exportAttemptError && (
+            <div
+              role="alert"
+              aria-live="assertive"
+              className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2.5 text-xs space-y-1.5"
+            >
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="w-4 h-4 text-destructive shrink-0 mt-0.5" aria-hidden="true" />
+                <div className="space-y-0.5 min-w-0 flex-1">
+                  <p className="font-medium text-destructive leading-tight">
+                    Eksport zablokowany — popraw {exportAttemptError.label.toLowerCase()}
+                  </p>
+                  <p className="text-foreground/80 leading-snug break-words">
+                    Wpisano „{exportAttemptError.rawValue || "—"}". Dozwolony zakres: {RANGE_LABEL}.
+                  </p>
+                  {exportAttemptError.detail && (
+                    <p className="text-muted-foreground leading-snug break-words">
+                      {exportAttemptError.detail}
+                    </p>
+                  )}
+                </div>
+              </div>
+              <div className="flex flex-wrap items-center gap-1.5 pl-6">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="h-6 px-2 text-[11px]"
+                  onClick={() => focusCustomSizeField(exportAttemptError.fieldId)}
+                >
+                  Przejdź do pola
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="h-6 px-2 text-[11px]"
+                  onClick={() => {
+                    if (exportAttemptError.fieldId === "pdf-custom-w") snapWidth();
+                    else snapHeight();
+                  }}
+                  title={`Dopasuj do najbliższej dozwolonej wartości (zakres ${RANGE_LABEL})`}
+                >
+                  Dopasuj automatycznie
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  className="h-6 px-2 text-[11px] ml-auto"
+                  onClick={() => setExportAttemptError(null)}
+                >
+                  Ukryj
+                </Button>
+              </div>
+            </div>
+          )}
           <DialogFooter className="flex-col sm:flex-row gap-2">
             <Button variant="ghost" onClick={() => setPdfDialogOpen(false)} disabled={exportingServer}>Anuluj</Button>
             <Button
@@ -2634,13 +2713,33 @@ const AdminSecurityChecklist = () => {
               <div className="h-[40vh]" />
             )}
           </div>
+          {/* Mirror of the export-attempt error inside the preview dialog. */}
+          {exportAttemptError && (
+            <div
+              role="alert"
+              aria-live="assertive"
+              className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs"
+            >
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="w-4 h-4 text-destructive shrink-0 mt-0.5" aria-hidden="true" />
+                <p className="text-foreground/90 leading-snug break-words">
+                  <span className="font-medium text-destructive">
+                    Eksport zablokowany — popraw {exportAttemptError.label.toLowerCase()}.
+                  </span>{" "}
+                  Wpisano „{exportAttemptError.rawValue || "—"}". Dozwolony zakres: {RANGE_LABEL}.
+                  Otwórz okno eksportu, aby poprawić wartość.
+                </p>
+              </div>
+            </div>
+          )}
           <DialogFooter className="flex-col sm:flex-row gap-2">
             <Button variant="ghost" onClick={() => setPreviewOpen(false)}>Zamknij</Button>
             <Button
               onClick={async () => {
                 if (!runFinalCustomSizeCheck()) {
-                  // Close the preview so the operator can see + fix the field highlighted in the export dialog.
-                  setPreviewOpen(false);
+                  // Keep the preview open so the operator sees the in-dialog
+                  // banner; they can close it manually and return to the
+                  // export dialog (which also shows the same banner).
                   return;
                 }
                 setPreviewOpen(false);
