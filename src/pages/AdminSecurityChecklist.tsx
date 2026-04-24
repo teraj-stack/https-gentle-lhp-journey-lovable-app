@@ -2167,6 +2167,52 @@ const AdminSecurityChecklist = () => {
                       Tabloid (279×432)
                     </Button>
                   </div>
+                  {/* Last successfully exported custom size — prefilled when the
+                      dialog reopens. Operator can re-apply or clear the memory. */}
+                  {lastSuccessfulCustomSize && (
+                    <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border/40 bg-muted/10 px-2 py-1.5">
+                      <div className="text-[11px] text-muted-foreground leading-tight">
+                        <span className="font-medium text-foreground/80">Ostatnio użyte: </span>
+                        <span className="tabular-nums">
+                          {lastSuccessfulCustomSize.w}×{lastSuccessfulCustomSize.h} mm
+                        </span>
+                        <span className="ml-1 opacity-70">
+                          ({new Date(lastSuccessfulCustomSize.savedAt).toLocaleString("pl-PL", {
+                            dateStyle: "short",
+                            timeStyle: "short",
+                          })})
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        {(String(lastSuccessfulCustomSize.w) !== pdfCustomWidthMm ||
+                          String(lastSuccessfulCustomSize.h) !== pdfCustomHeightMm) && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="h-6 px-2 text-[10px]"
+                            onClick={() => {
+                              setPdfCustomWidthMm(String(lastSuccessfulCustomSize.w));
+                              setPdfCustomHeightMm(String(lastSuccessfulCustomSize.h));
+                            }}
+                            title="Wstaw ostatnio pomyślnie wyeksportowane wymiary"
+                          >
+                            Przywróć
+                          </Button>
+                        )}
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 px-2 text-[10px]"
+                          onClick={clearLastSuccessfulCustomSize}
+                          title="Zapomnij ostatnio użyte wymiary"
+                        >
+                          Wyczyść
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                   {customSizeValidation.ok ? (
                     <p className="text-[11px] text-muted-foreground">
                       Dozwolony zakres: {RANGE_LABEL}. Eksport klienta używa A4.
