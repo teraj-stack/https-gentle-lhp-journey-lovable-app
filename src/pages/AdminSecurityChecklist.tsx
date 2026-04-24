@@ -1152,9 +1152,6 @@ const AdminSecurityChecklist = () => {
       const catSuffix = categoryFilter === "ALL" ? "all" : categoryFilter;
       const stSuffix = [...allowedStatuses].sort().join("-");
       doc.save(buildSafePdfFilename({ stamp, category: catSuffix, statuses: stSuffix, pageSize }));
-      if (pageSize === "Custom" && opts?.customPageSizeMm) {
-        rememberSuccessfulCustomSize(opts.customPageSizeMm.width, opts.customPageSizeMm.height);
-      }
       toast.success(`Raport PDF pobrany (${checks.length} pozycji)`);
     } catch (err) {
       toast.error(`Nie udalo sie wygenerowac PDF: ${err instanceof Error ? err.message : "blad"}`);
