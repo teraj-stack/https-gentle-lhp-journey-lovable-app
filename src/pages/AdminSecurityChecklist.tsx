@@ -385,47 +385,54 @@ const AdminSecurityChecklist = () => {
   };
   const formatMm = (n: number) =>
     Number.isFinite(n) ? `${Math.round(n * 10) / 10} mm` : "—";
-  const describeIssue = (issue: FieldIssue, field: "Szerokość" | "Wysokość"): string => {
+  // Single source of truth for the human-readable allowed range, reused across
+  // inline hints, error messages and toasts so the wording never drifts.
+  const RANGE_LABEL = `${CUSTOM_MM_MIN}–${CUSTOM_MM_MAX} mm`;
+  const fieldLabel = (field: "width" | "height") =>
+    field === "width" ? "Szerokość" : "Wysokość";
+  const describeIssue = (issue: FieldIssue, field: "width" | "height"): string => {
+    const label = fieldLabel(field);
     switch (issue.kind) {
       case "empty":
-        return `${field}: pole jest puste. Wpisz wartość ${CUSTOM_MM_MIN}–${CUSTOM_MM_MAX} mm.`;
+        return `${label}: pole jest puste. Wpisz wartość z zakresu ${RANGE_LABEL}.`;
       case "nan":
-        return `${field}: „${issue.raw}" nie jest liczbą. Wpisz wartość ${CUSTOM_MM_MIN}–${CUSTOM_MM_MAX} mm.`;
+        return `${label}: „${issue.raw}” nie jest liczbą. Wpisz wartość z zakresu ${RANGE_LABEL}.`;
       case "low":
-        return `${field}: ${formatMm(issue.value)} jest poniżej minimum (${CUSTOM_MM_MIN} mm). Brakuje ${formatMm(CUSTOM_MM_MIN - issue.value)}.`;
+        return `${label}: ${formatMm(issue.value)} jest poniżej minimum (${CUSTOM_MM_MIN} mm). Brakuje ${formatMm(CUSTOM_MM_MIN - issue.value)}.`;
       case "high":
-        return `${field}: ${formatMm(issue.value)} przekracza maksimum (${CUSTOM_MM_MAX} mm) o ${formatMm(issue.value - CUSTOM_MM_MAX)}.`;
+        return `${label}: ${formatMm(issue.value)} przekracza maksimum (${CUSTOM_MM_MAX} mm) o ${formatMm(issue.value - CUSTOM_MM_MAX)}.`;
     }
   };
   // Live hint shown under each field as the user types. Returns a status
   // (`ok` / `warn` / `error`) plus a short message describing how the value
   // compares to the allowed range, without waiting for blur.
   type LiveHint = { tone: "ok" | "warn" | "error"; message: string };
-  const describeFieldHint = (raw: string, field: "Szerokość" | "Wysokość"): LiveHint => {
+  const describeFieldHint = (raw: string, field: "width" | "height"): LiveHint => {
+    const label = fieldLabel(field);
     const trimmed = raw.trim();
     if (trimmed === "") {
       return {
         tone: "warn",
-        message: `Wpisz ${field.toLowerCase()} w zakresie ${CUSTOM_MM_MIN}–${CUSTOM_MM_MAX} mm.`,
+        message: `Wpisz ${label.toLowerCase()} w zakresie ${RANGE_LABEL}.`,
       };
     }
     const n = Number(trimmed.replace(",", "."));
     if (!Number.isFinite(n)) {
       return {
         tone: "error",
-        message: `„${trimmed}" nie jest liczbą — użyj cyfr (np. 210 lub 210,5).`,
+        message: `„${trimmed}” nie jest liczbą — użyj cyfr (np. 210 lub 210,5).`,
       };
     }
     if (n < CUSTOM_MM_MIN) {
       return {
         tone: "error",
-        message: `${formatMm(n)} — za mało o ${formatMm(CUSTOM_MM_MIN - n)} (min. ${CUSTOM_MM_MIN} mm).`,
+        message: `${formatMm(n)} — za mało o ${formatMm(CUSTOM_MM_MIN - n)} (minimum ${CUSTOM_MM_MIN} mm).`,
       };
     }
     if (n > CUSTOM_MM_MAX) {
       return {
         tone: "error",
-        message: `${formatMm(n)} — za dużo o ${formatMm(n - CUSTOM_MM_MAX)} (maks. ${CUSTOM_MM_MAX} mm).`,
+        message: `${formatMm(n)} — za dużo o ${formatMm(n - CUSTOM_MM_MAX)} (maksimum ${CUSTOM_MM_MAX} mm).`,
       };
     }
     // Valid — surface the parsed value plus how much headroom remains on each side.
@@ -433,7 +440,7 @@ const AdminSecurityChecklist = () => {
     const toMax = CUSTOM_MM_MAX - n;
     return {
       tone: "ok",
-      message: `OK · ${formatMm(n)} (${formatMm(toMin)} nad min., ${formatMm(toMax)} pod maks.).`,
+      message: `OK · ${formatMm(n)} (${formatMm(toMin)} nad minimum, ${formatMm(toMax)} pod maksimum).`,
     };
   };
   const customSizeValidation = (() => {
