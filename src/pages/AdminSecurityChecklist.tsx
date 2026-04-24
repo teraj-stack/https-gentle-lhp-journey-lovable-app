@@ -542,6 +542,60 @@ const AdminSecurityChecklist = () => {
     setPdfCustomHeightMm(String(value));
     toast.success(`Wysokość: ${reason}`);
   }, [pdfCustomHeightMm, snapToNearestValid]);
+  // Optional scroll offset (px) applied when the focused-on-error helper
+  // scrolls an invalid custom-size field into view inside the export dialog.
+  // The dialog's `DialogHeader` is sticky-ish at the top of its scroll
+  // container; on small viewports a centered scroll can still leave the
+  // input partially obscured. Operators can tune this once and we persist it.
+  const SCROLL_OFFSET_KEY = "cml.admin.pdfFocusScrollOffset";
+  const SCROLL_OFFSET_MIN = 0;
+  const SCROLL_OFFSET_MAX = 240;
+  const SCROLL_OFFSET_DEFAULT = 72;
+  const [focusScrollOffset, setFocusScrollOffset] = useState<number>(() => {
+    if (typeof window === "undefined") return SCROLL_OFFSET_DEFAULT;
+    const raw = window.localStorage.getItem(SCROLL_OFFSET_KEY);
+    if (raw === null) return SCROLL_OFFSET_DEFAULT;
+    const n = Number(raw);
+    if (!Number.isFinite(n)) return SCROLL_OFFSET_DEFAULT;
+    return Math.min(SCROLL_OFFSET_MAX, Math.max(SCROLL_OFFSET_MIN, Math.round(n)));
+  });
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem(SCROLL_OFFSET_KEY, String(focusScrollOffset));
+    } catch {
+      // ignore quota / privacy mode errors
+    }
+  }, [focusScrollOffset]);
+  // Scroll a target element into view inside its nearest scrollable ancestor,
+  // leaving `offset` pixels of headroom above it (so it never lands under a
+  // sticky header). Falls back to `el.scrollIntoView` when no scroll
+  // container is found (e.g. during SSR or detached node).
+  const scrollIntoViewWithOffset = useCallback((el: HTMLElement, offset: number) => {
+    const findScrollableAncestor = (node: HTMLElement | null): HTMLElement | null => {
+      let cur: HTMLElement | null = node?.parentElement ?? null;
+      while (cur && cur !== document.body) {
+        const style = window.getComputedStyle(cur);
+        const overflowY = style.overflowY;
+        if ((overflowY === "auto" || overflowY === "scroll" || overflowY === "overlay") && cur.scrollHeight > cur.clientHeight) {
+          return cur;
+        }
+        cur = cur.parentElement;
+      }
+      return null;
+    };
+    const container = findScrollableAncestor(el);
+    if (!container) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
+    const containerRect = container.getBoundingClientRect();
+    const elRect = el.getBoundingClientRect();
+    // Distance from the top of the container's viewport to the element's top.
+    const deltaFromTop = elRect.top - containerRect.top;
+    const targetTop = container.scrollTop + deltaFromTop - offset;
+    container.scrollTo({ top: Math.max(0, targetTop), behavior: "smooth" });
+  }, []);
   // Final pre-export validation: focuses + scrolls to the first invalid custom
   // size field and surfaces a toast that includes the entered value and the
   // exact allowed range. Returns `true` when the export may proceed.
@@ -564,9 +618,10 @@ const AdminSecurityChecklist = () => {
     if (firstBadId && typeof document !== "undefined") {
       const el = document.getElementById(firstBadId) as HTMLInputElement | null;
       if (el) {
-        // Scroll into view, then focus + select so the operator can immediately retype.
-        el.scrollIntoView({ behavior: "smooth", block: "center" });
-        // Defer focus until after the smooth scroll kicks off to avoid jump-cancel.
+        // Scroll into view with the configured offset so the field never lands
+        // under the dialog's sticky header. Defer focus until after the
+        // smooth scroll kicks off to avoid jump-cancel.
+        scrollIntoViewWithOffset(el, focusScrollOffset);
         window.setTimeout(() => {
           el.focus({ preventScroll: true });
           try { el.select(); } catch { /* number inputs may reject select() in some browsers */ }
@@ -574,7 +629,7 @@ const AdminSecurityChecklist = () => {
       }
     }
     return false;
-  }, [pdfPageSize, customSizeValidation, pdfCustomWidthMm, pdfCustomHeightMm]);
+  }, [pdfPageSize, customSizeValidation, pdfCustomWidthMm, pdfCustomHeightMm, scrollIntoViewWithOffset, focusScrollOffset]);
   const [pdfPageMargin, setPdfPageMargin] = useState<"narrow" | "standard" | "wide">(() => {
     if (typeof window === "undefined") return "standard";
     const saved = window.localStorage.getItem("cml.admin.pdfPageMargin");
@@ -2040,6 +2095,56 @@ const AdminSecurityChecklist = () => {
                       Popraw wskazane pole. Dozwolony zakres: {RANGE_LABEL}.
                     </p>
                   )}
+                  {/* Optional scroll offset for the focus-on-error helper.
+                      Persisted in localStorage so the operator tunes it once. */}
+                  <div className="flex items-center justify-between gap-2 pt-1.5 border-t border-border/40">
+                    <Label
+                      htmlFor="pdf-focus-scroll-offset"
+                      className="text-[11px] text-muted-foreground"
+                      title="Liczba pikseli zostawiana nad polem po przewinięciu — zapobiega chowaniu się pola pod nagłówkiem okna."
+                    >
+                      Odstęp przewijania (px)
+                    </Label>
+                    <div className="flex items-center gap-1.5">
+                      <Input
+                        id="pdf-focus-scroll-offset"
+                        type="number"
+                        inputMode="numeric"
+                        min={SCROLL_OFFSET_MIN}
+                        max={SCROLL_OFFSET_MAX}
+                        step={4}
+                        value={focusScrollOffset}
+                        onChange={(e) => {
+                          const n = Number(e.target.value);
+                          if (!Number.isFinite(n)) return;
+                          setFocusScrollOffset(
+                            Math.min(SCROLL_OFFSET_MAX, Math.max(SCROLL_OFFSET_MIN, Math.round(n))),
+                          );
+                        }}
+                        className="h-7 w-20 text-xs tabular-nums"
+                        aria-describedby="pdf-focus-scroll-offset-hint"
+                      />
+                      {focusScrollOffset !== SCROLL_OFFSET_DEFAULT && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 px-2 text-[10px]"
+                          onClick={() => setFocusScrollOffset(SCROLL_OFFSET_DEFAULT)}
+                          title={`Przywróć domyślny (${SCROLL_OFFSET_DEFAULT} px)`}
+                        >
+                          Reset
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                  <p
+                    id="pdf-focus-scroll-offset-hint"
+                    className="text-[10px] text-muted-foreground/80 leading-tight"
+                  >
+                    Stosowane przy walidacji eksportu, gdy podświetlone pole musi zostać przewinięte do widoku
+                    (zakres {SCROLL_OFFSET_MIN}–{SCROLL_OFFSET_MAX} px, domyślnie {SCROLL_OFFSET_DEFAULT}).
+                  </p>
                   {/* Saved presets: name + dimensions, click to apply, trash to delete. */}
                   <div className="space-y-1.5 pt-1.5 border-t border-border/40">
                     <div className="flex items-center justify-between gap-2">
