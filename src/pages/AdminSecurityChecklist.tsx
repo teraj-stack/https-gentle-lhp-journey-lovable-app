@@ -1929,7 +1929,6 @@ const AdminSecurityChecklist = () => {
                       >
                         min {CUSTOM_MM_MIN} mm · maks {CUSTOM_MM_MAX} mm
                       </p>
-                      />
                       {(() => {
                         const hint = describeFieldHint(pdfCustomHeightMm, "Wysokość");
                         const toneClass =
