@@ -68,6 +68,11 @@ const QuizHemoroidy = () => {
             <HemoroidyRiskQuiz />
           </motion.div>
 
+          {/* Checklist sections — anchor targets for quiz recommendations */}
+          <div className="mt-20">
+            <HemoroidyChecklistSections />
+          </div>
+
           {/* Disclaimer + related */}
           <motion.div
             initial={{ opacity: 0, y: 16 }}
