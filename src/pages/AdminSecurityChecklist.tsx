@@ -2518,6 +2518,65 @@ const AdminSecurityChecklist = () => {
               </div>
             )}
           </div>
+          {/* Persistent in-dialog banner mirroring the latest export-attempt
+              error. Stays visible until the operator fixes the field. */}
+          {exportAttemptError && (
+            <div
+              role="alert"
+              aria-live="assertive"
+              className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2.5 text-xs space-y-1.5"
+            >
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="w-4 h-4 text-destructive shrink-0 mt-0.5" aria-hidden="true" />
+                <div className="space-y-0.5 min-w-0 flex-1">
+                  <p className="font-medium text-destructive leading-tight">
+                    Eksport zablokowany — popraw {exportAttemptError.label.toLowerCase()}
+                  </p>
+                  <p className="text-foreground/80 leading-snug break-words">
+                    Wpisano „{exportAttemptError.rawValue || "—"}". Dozwolony zakres: {RANGE_LABEL}.
+                  </p>
+                  {exportAttemptError.detail && (
+                    <p className="text-muted-foreground leading-snug break-words">
+                      {exportAttemptError.detail}
+                    </p>
+                  )}
+                </div>
+              </div>
+              <div className="flex flex-wrap items-center gap-1.5 pl-6">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="h-6 px-2 text-[11px]"
+                  onClick={() => focusCustomSizeField(exportAttemptError.fieldId)}
+                >
+                  Przejdź do pola
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="h-6 px-2 text-[11px]"
+                  onClick={() => {
+                    if (exportAttemptError.fieldId === "pdf-custom-w") snapWidth();
+                    else snapHeight();
+                  }}
+                  title={`Dopasuj do najbliższej dozwolonej wartości (zakres ${RANGE_LABEL})`}
+                >
+                  Dopasuj automatycznie
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  className="h-6 px-2 text-[11px] ml-auto"
+                  onClick={() => setExportAttemptError(null)}
+                >
+                  Ukryj
+                </Button>
+              </div>
+            </div>
+          )}
           <DialogFooter className="flex-col sm:flex-row gap-2">
             <Button variant="ghost" onClick={() => setPdfDialogOpen(false)} disabled={exportingServer}>Anuluj</Button>
             <Button
