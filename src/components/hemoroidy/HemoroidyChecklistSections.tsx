@@ -92,6 +92,7 @@ const sections: ChecklistSection[] = [
       "Zmiana rytmu wypróżnień, naprzemienne biegunki/zaparcia (≥40 r.ż.)",
     ],
     source: "ASCRS 2018 · NICE Guidelines",
+    ebmId: "diagnosis",
   },
   {
     id: "urgent",
