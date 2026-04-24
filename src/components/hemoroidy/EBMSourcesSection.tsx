@@ -318,7 +318,11 @@ const EBMSourcesSection = ({
 
   const totalMatches = filtered.reduce((sum, c) => sum + c.matchedItems.length, 0);
   const isFiltering = query.trim().length >= 2 || activeCat !== "all";
-  const openValues = isFiltering ? filtered.map((c) => c.id) : undefined;
+  const computedOpen = isFiltering ? filtered.map((c) => c.id) : [];
+  const openValues =
+    isFiltering || forcedOpen.length > 0
+      ? Array.from(new Set([...computedOpen, ...forcedOpen]))
+      : undefined;
 
   return (
     <section className="max-w-3xl mx-auto" aria-labelledby="ebm-sources-heading">
