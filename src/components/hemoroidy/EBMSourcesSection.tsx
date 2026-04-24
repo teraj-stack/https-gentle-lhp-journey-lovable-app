@@ -526,6 +526,21 @@ const EBMSourcesSection = ({
                   </div>
                 </AccordionTrigger>
                 <AccordionContent className="px-5 pb-5">
+                  {cat.tldr && (
+                    <div className="mt-1 mb-4 rounded-lg border border-primary/25 bg-primary/5 p-3.5 sm:p-4">
+                      <div className="flex items-start gap-2.5">
+                        <span
+                          className="mt-0.5 inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-sans uppercase tracking-[0.14em] bg-primary/15 text-primary border border-primary/30 shrink-0"
+                          aria-label="Podsumowanie wytycznych ASCRS i ESCP"
+                        >
+                          TL;DR · ASCRS / ESCP
+                        </span>
+                      </div>
+                      <p className="mt-2 text-sm leading-relaxed text-foreground/90">
+                        {cat.tldr}
+                      </p>
+                    </div>
+                  )}
                   <ul className="space-y-3 pt-2 border-t border-border/50">
                     {cat.matchedItems.map((src, i) => (
                       <li
