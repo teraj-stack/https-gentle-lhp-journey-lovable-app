@@ -6,7 +6,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import Breadcrumbs from "@/components/layout/Breadcrumbs";
 import { BREADCRUMBS_MAP } from "@/lib/breadcrumbsMap";
 import SeoHead from "@/components/shared/SeoHead";
-import { BookOpen, Download, FileText, Shield, Clock, Heart, ArrowRight } from "lucide-react";
+import { BookOpen, Download, FileText, Shield, Clock, Heart, ArrowRight, Sparkles, BookMarked } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { StaggeredListItem } from "@/components/shared/StaggeredList";
@@ -35,6 +35,20 @@ const mainEbook = {
 };
 
 const onlineGuides = [
+  {
+    title: "Test ryzyka hemoroidów",
+    subtitle: "Interaktywny quiz · 5 pytań",
+    desc: "Sprawdź swoje ryzyko hemoroidów w 1 minutę. 3 poziomy ryzyka, dopasowane zalecenia EBM i checklista PDF do pobrania.",
+    href: "/dla-pacjenta/quiz-hemoroidy",
+    icon: "🧪",
+  },
+  {
+    title: "EBM hemoroidy — czynniki ryzyka i profilaktyka",
+    subtitle: "Kompendium naukowe",
+    desc: "6 kluczowych czynników ryzyka i 6 filarów profilaktyki z linkami do badań PubMed, ASCRS, ESCP i Cochrane.",
+    href: "/dla-pacjenta/ebm-hemoroidy",
+    icon: "📚",
+  },
   {
     title: "Hemoroidy i wizyta u proktologa",
     subtitle: "Lekarz odpowiada",
