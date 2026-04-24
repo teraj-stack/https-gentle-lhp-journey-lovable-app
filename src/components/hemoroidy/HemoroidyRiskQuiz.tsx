@@ -317,13 +317,13 @@ const HemoroidyRiskQuiz = () => {
               )}
 
               {/* CTAs */}
-              <div className="flex flex-col sm:flex-row gap-3">
+              <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3">
                 {tier.ctaInternal ? (
                   <Button
                     variant="hero"
                     size="lg"
                     asChild
-                    className="flex-1 h-auto min-h-11 py-2.5 px-4 sm:px-6 whitespace-normal text-sm sm:text-base text-center leading-snug tracking-wide"
+                    className="flex-1 sm:min-w-[220px] h-auto min-h-11 py-2.5 px-4 sm:px-6 whitespace-normal text-sm sm:text-base text-center leading-snug tracking-wide"
                   >
                     <Link to={tier.ctaHref}>
                       <Stethoscope className="w-4 h-4 mr-2 shrink-0" />
@@ -335,11 +335,34 @@ const HemoroidyRiskQuiz = () => {
                     variant="hero"
                     size="lg"
                     asChild
-                    className="flex-1 h-auto min-h-11 py-2.5 px-4 sm:px-6 whitespace-normal text-sm sm:text-base text-center leading-snug tracking-wide"
+                    className="flex-1 sm:min-w-[220px] h-auto min-h-11 py-2.5 px-4 sm:px-6 whitespace-normal text-sm sm:text-base text-center leading-snug tracking-wide"
                   >
-                    <a href={tier.ctaHref} target="_blank" rel="noopener noreferrer">
+                    <a
+                      href={`/downloads/checklista-profilaktyka-hemoroidow-CML.pdf?tier=${tier.level}&score=${score}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      download
+                    >
                       <Download className="w-4 h-4 mr-2 shrink-0" />
                       <span>{tier.ctaLabel}</span>
+                    </a>
+                  </Button>
+                )}
+                {tier.ctaInternal && (
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    asChild
+                    className="flex-1 sm:min-w-[220px] gap-2 h-auto min-h-11 py-2.5 px-4 sm:px-6 whitespace-normal text-sm sm:text-base text-center leading-snug border-primary/40 text-primary hover:bg-primary/10 hover:text-primary"
+                  >
+                    <a
+                      href={`/downloads/checklista-profilaktyka-hemoroidow-CML.pdf?tier=${tier.level}&score=${score}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      download
+                    >
+                      <Download className="w-4 h-4 shrink-0" />
+                      <span>Pobierz checklistę PDF</span>
                     </a>
                   </Button>
                 )}
