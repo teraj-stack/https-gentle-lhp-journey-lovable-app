@@ -1928,7 +1928,7 @@ const AdminSecurityChecklist = () => {
                         min {CUSTOM_MM_MIN} mm · maks {CUSTOM_MM_MAX} mm
                       </p>
                       {(() => {
-                        const hint = describeFieldHint(pdfCustomWidthMm, "Szerokość");
+                        const hint = describeFieldHint(pdfCustomWidthMm, "width");
                         const toneClass =
                           hint.tone === "ok"
                             ? "text-emerald-600 dark:text-emerald-400"
