@@ -143,12 +143,12 @@ const tiers: RiskTier[] = [
     desc:
       "Kombinacja czynników stylu życia i objawów wskazuje na duże prawdopodobieństwo aktywnej choroby hemoroidalnej. Wczesna ocena pozwala leczyć małoinwazyjnie (LHP) z szybkim powrotem do aktywności.",
     recommendations: [
-      "Umów konsultację proktologiczną w ciągu najbliższych 7 dni",
-      "Każde krwawienie z odbytu wymaga oceny — wyklucz inne przyczyny",
-      "Wprowadź pełną checklistę 4 filarów (błonnik, woda, toaleta, ruch)",
-      "Unikaj długiego siedzenia bez przerw i podnoszenia dużych ciężarów",
-      "Notuj objawy: częstotliwość, intensywność, kolor krwawienia",
-      "Pilnie zgłoś się przy: obfitym krwawieniu, gorączce, silnym bólu",
+      { text: "Umów konsultację proktologiczną w ciągu najbliższych 7 dni", anchor: "symptoms" },
+      { text: "Każde krwawienie z odbytu wymaga oceny — wyklucz inne przyczyny", anchor: "symptoms" },
+      { text: "Wprowadź pełną checklistę 4 filarów (błonnik, woda, toaleta, ruch)", anchor: "fiber" },
+      { text: "Unikaj długiego siedzenia bez przerw i podnoszenia dużych ciężarów", anchor: "movement" },
+      { text: "Notuj objawy: częstotliwość, intensywność, kolor krwawienia", anchor: "symptoms" },
+      { text: "Pilnie zgłoś się przy: obfitym krwawieniu, gorączce, silnym bólu", anchor: "urgent" },
     ],
     ctaLabel: "Pilnie umów konsultację",
     ctaHref: "/kontakt",
