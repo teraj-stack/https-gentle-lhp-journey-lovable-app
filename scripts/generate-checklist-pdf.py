@@ -405,7 +405,7 @@ def build_day_table(days: list[tuple[str, str, str]]) -> Table:
             Paragraph(task, BODY_SMALL),
             Paragraph("☐", BODY),
         ])
-    t = Table(rows, colWidths=[14 * mm, 42 * mm, 100 * mm, 9 * mm], repeatRows=1)
+    t = Table(rows, colWidths=[18 * mm, 42 * mm, 96 * mm, 9 * mm], repeatRows=1)
     style = [
         ("BACKGROUND", (0, 0), (-1, 0), GOLD),
         ("TEXTCOLOR", (0, 0), (-1, 0), white),
