@@ -487,7 +487,7 @@ const EBMSourcesSection = ({
                 </AccordionTrigger>
                 <AccordionContent className="px-5 pb-5">
                   <ul className="space-y-3 pt-2 border-t border-border/50">
-                    {cat.items.map((src, i) => (
+                    {cat.matchedItems.map((src, i) => (
                       <li
                         key={`${cat.id}-${i}`}
                         className="text-sm leading-relaxed text-foreground/90"
