@@ -106,6 +106,7 @@ const sections: ChecklistSection[] = [
       "Gorączka z bólem okolicy odbytu (ryzyko ropnia)",
     ],
     source: "ASCRS Emergency Criteria",
+    ebmId: "diagnosis",
   },
 ];
 
