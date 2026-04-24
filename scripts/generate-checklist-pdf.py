@@ -76,14 +76,14 @@ def draw_chrome(canvas, doc):
     canvas.line(20 * mm, A4[1] - 18 * mm, A4[0] - 20 * mm, A4[1] - 18 * mm)
     # Brand mark top-right
     canvas.setFillColor(GOLD)
-    canvas.setFont("Helvetica-Bold", 9)
+    canvas.setFont(FONT_BOLD, 9)
     canvas.drawRightString(A4[0] - 20 * mm, A4[1] - 14 * mm, "CML  ·  Centrum Medycyny Laserowej")
     # Footer
     canvas.setStrokeColor(GOLD_SOFT)
     canvas.setLineWidth(0.5)
     canvas.line(20 * mm, 16 * mm, A4[0] - 20 * mm, 16 * mm)
     canvas.setFillColor(INK_SOFT)
-    canvas.setFont("Helvetica", 8)
+    canvas.setFont(FONT, 8)
     canvas.drawString(20 * mm, 11 * mm, "mcml.pl  ·  Profilaktyka choroby hemoroidalnej oparta na EBM")
     canvas.drawRightString(A4[0] - 20 * mm, 11 * mm, f"Strona {doc.page}")
     canvas.restoreState()
@@ -97,7 +97,7 @@ base = getSampleStyleSheet()
 H1 = ParagraphStyle(
     "H1",
     parent=base["Heading1"],
-    fontName="Helvetica-Bold",
+    fontName=FONT_BOLD,
     fontSize=24,
     leading=28,
     textColor=INK,
@@ -107,7 +107,7 @@ H1 = ParagraphStyle(
 EYEBROW = ParagraphStyle(
     "Eyebrow",
     parent=base["Normal"],
-    fontName="Helvetica-Bold",
+    fontName=FONT_BOLD,
     fontSize=8,
     leading=11,
     textColor=GOLD,
@@ -116,7 +116,7 @@ EYEBROW = ParagraphStyle(
 LEAD = ParagraphStyle(
     "Lead",
     parent=base["Normal"],
-    fontName="Helvetica",
+    fontName=FONT,
     fontSize=11,
     leading=16,
     textColor=INK_SOFT,
@@ -125,7 +125,7 @@ LEAD = ParagraphStyle(
 H2 = ParagraphStyle(
     "H2",
     parent=base["Heading2"],
-    fontName="Helvetica-Bold",
+    fontName=FONT_BOLD,
     fontSize=14,
     leading=18,
     textColor=INK,
@@ -135,7 +135,7 @@ H2 = ParagraphStyle(
 H3 = ParagraphStyle(
     "H3",
     parent=base["Heading3"],
-    fontName="Helvetica-Bold",
+    fontName=FONT_BOLD,
     fontSize=11,
     leading=14,
     textColor=GOLD,
@@ -145,7 +145,7 @@ H3 = ParagraphStyle(
 BODY = ParagraphStyle(
     "Body",
     parent=base["Normal"],
-    fontName="Helvetica",
+    fontName=FONT,
     fontSize=10,
     leading=14,
     textColor=INK,
@@ -160,7 +160,7 @@ BODY_SMALL = ParagraphStyle(
 BIB_AUTH = ParagraphStyle(
     "BibAuth",
     parent=BODY_SMALL,
-    fontName="Helvetica-Bold",
+    fontName=FONT_BOLD,
     fontSize=9,
     leading=12,
     textColor=INK,
