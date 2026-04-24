@@ -50,6 +50,7 @@ const sections: ChecklistSection[] = [
       "Sygnał ostrzegawczy: ciemny kolor moczu = za mało wody",
     ],
     source: "ESCP Guidelines · ASCRS 2018",
+    ebmId: "hydration",
   },
   {
     id: "toilet",
