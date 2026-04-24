@@ -18,7 +18,7 @@ const normalize = (s: string): string =>
     .replace(/ł/g, "l");
 
 const PDF_URL =
-  "https://jowtjcyevactqmhqrytz.supabase.co/storage/v1/object/public/blog-covers/downloads%2Fzrodla-EBM-profilaktyka-hemoroidow-CML.pdf";
+  "https://jowtjcyevactqmhqrytz.supabase.co/storage/v1/object/public/blog-covers/downloads%2Fzrodla-EBM-quiz-hemoroidy-CML.pdf";
 
 type Source = {
   authors: string;
