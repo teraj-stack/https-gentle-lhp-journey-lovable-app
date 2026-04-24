@@ -32,6 +32,8 @@ type Category = {
   id: string;
   title: string;
   intro: string;
+  /** Krótkie 1–2 zdania TL;DR z wytycznych ASCRS/ESCP dla danej kategorii. */
+  tldr?: string;
   Icon: typeof BookMarked;
   items: Source[];
 };
