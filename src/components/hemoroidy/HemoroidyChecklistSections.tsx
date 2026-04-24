@@ -36,6 +36,7 @@ const sections: ChecklistSection[] = [
       "Ogranicz żywność wysokoprzetworzoną, fast food i biały chleb",
     ],
     source: "Wytyczne ASCRS 2018 · Cochrane 2005",
+    ebmId: "fiber",
   },
   {
     id: "hydration",
