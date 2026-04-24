@@ -77,7 +77,7 @@ type RiskTier = {
   border: string;
   headline: string;
   desc: string;
-  recommendations: string[];
+  recommendations: Recommendation[];
   ctaLabel: string;
   ctaHref: string;
   ctaInternal: boolean;
