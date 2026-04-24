@@ -280,15 +280,24 @@ const HemoroidyRiskQuiz = () => {
                 <p className="text-xs font-sans uppercase tracking-[0.18em] text-primary mb-3">
                   Twoje dopasowane zalecenia
                 </p>
-                <ul className="space-y-2.5">
+                <p className="text-xs text-muted-foreground mb-4">
+                  Kliknij zalecenie, aby przeskoczyć do odpowiedniej sekcji checklisty poniżej.
+                </p>
+                <ul className="space-y-2">
                   {tier.recommendations.map((rec) => (
-                    <li key={rec} className="flex items-start gap-3">
-                      <span className="w-5 h-5 rounded-full bg-primary/15 flex items-center justify-center shrink-0 mt-0.5">
-                        <Check className="w-3 h-3 text-primary" strokeWidth={3} />
-                      </span>
-                      <span className="text-sm md:text-base text-foreground/90 leading-relaxed">
-                        {rec}
-                      </span>
+                    <li key={rec.text}>
+                      <a
+                        href={`#${rec.anchor}`}
+                        className="group flex items-start gap-3 p-2.5 -mx-2.5 rounded-lg hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-colors"
+                      >
+                        <span className="w-5 h-5 rounded-full bg-primary/15 group-hover:bg-primary/25 flex items-center justify-center shrink-0 mt-0.5 transition-colors">
+                          <Check className="w-3 h-3 text-primary" strokeWidth={3} />
+                        </span>
+                        <span className="flex-1 text-sm md:text-base text-foreground/90 group-hover:text-foreground leading-relaxed">
+                          {rec.text}
+                        </span>
+                        <ArrowDown className="w-4 h-4 text-muted-foreground group-hover:text-primary group-hover:translate-y-0.5 transition-all shrink-0 mt-1" />
+                      </a>
                     </li>
                   ))}
                 </ul>
