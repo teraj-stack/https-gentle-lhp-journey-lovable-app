@@ -321,6 +321,67 @@ const AdminSecurityChecklist = () => {
       // ignore quota / privacy mode errors
     }
   }, [pdfCustomWidthMm, pdfCustomHeightMm]);
+  // Last successfully exported custom dimensions. Stored separately from the
+  // live editor values so a failed/aborted attempt never overwrites them.
+  // Used to prefill the dialog the next time the operator opens it.
+  type LastSuccessfulCustomSize = { w: number; h: number; savedAt: string };
+  const LAST_SUCCESS_STORAGE_KEY = "cml.admin.pdfLastSuccessfulCustomSize";
+  const [lastSuccessfulCustomSize, setLastSuccessfulCustomSize] =
+    useState<LastSuccessfulCustomSize | null>(() => {
+      if (typeof window === "undefined") return null;
+      try {
+        const raw = window.localStorage.getItem(LAST_SUCCESS_STORAGE_KEY);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        if (
+          parsed &&
+          typeof parsed.w === "number" &&
+          typeof parsed.h === "number" &&
+          typeof parsed.savedAt === "string" &&
+          parsed.w >= 50 && parsed.w <= 1200 &&
+          parsed.h >= 50 && parsed.h <= 1200
+        ) {
+          return parsed as LastSuccessfulCustomSize;
+        }
+        return null;
+      } catch {
+        return null;
+      }
+    });
+  const rememberSuccessfulCustomSize = useCallback((w: number, h: number) => {
+    const rounded: LastSuccessfulCustomSize = {
+      w: Math.round(w * 10) / 10,
+      h: Math.round(h * 10) / 10,
+      savedAt: new Date().toISOString(),
+    };
+    setLastSuccessfulCustomSize(rounded);
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem(LAST_SUCCESS_STORAGE_KEY, JSON.stringify(rounded));
+    } catch {
+      // ignore quota / privacy mode errors
+    }
+  }, []);
+  const clearLastSuccessfulCustomSize = useCallback(() => {
+    setLastSuccessfulCustomSize(null);
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.removeItem(LAST_SUCCESS_STORAGE_KEY);
+    } catch {
+      // ignore
+    }
+  }, []);
+  // Open the PDF export dialog and, if we have a remembered last-successful
+  // custom size that differs from the current editor values, prefill it.
+  const openPdfDialog = useCallback(() => {
+    if (lastSuccessfulCustomSize) {
+      const wStr = String(lastSuccessfulCustomSize.w);
+      const hStr = String(lastSuccessfulCustomSize.h);
+      if (pdfCustomWidthMm !== wStr) setPdfCustomWidthMm(wStr);
+      if (pdfCustomHeightMm !== hStr) setPdfCustomHeightMm(hStr);
+    }
+    setPdfDialogOpen(true);
+  }, [lastSuccessfulCustomSize, pdfCustomWidthMm, pdfCustomHeightMm]);
   // User-defined favourites for custom page sizes. Persisted in localStorage as
   // a JSON array. Each entry is { id, name, width, height } in millimetres.
   type CustomPreset = { id: string; name: string; width: number; height: number };
@@ -1273,6 +1334,9 @@ const AdminSecurityChecklist = () => {
         a.remove();
         URL.revokeObjectURL(url);
         setServerPhase("done");
+        if (pageSize === "Custom" && customPageSizeMm) {
+          rememberSuccessfulCustomSize(customPageSizeMm.width, customPageSizeMm.height);
+        }
         toast.success(`Raport PDF (server) pobrany — ${counts.total} pozycji`);
       } catch (err) {
         toast.error(`Eksport serwerowy nieudany: ${err instanceof Error ? err.message : "blad"}`);
@@ -1282,7 +1346,7 @@ const AdminSecurityChecklist = () => {
         setTimeout(() => setServerPhase("idle"), 600);
       }
     },
-    [rows, liveStatus, lastAuditAt],
+    [rows, liveStatus, lastAuditAt, rememberSuccessfulCustomSize],
   );
 
   // Server-side PDF preview — fetches a single-page sample using the same
@@ -1594,7 +1658,7 @@ const AdminSecurityChecklist = () => {
                 <Button size="sm" variant="outline" onClick={openCreate}>
                   <Plus className="w-4 h-4 mr-1" /> Nowa pozycja
                 </Button>
-                <Button size="sm" variant="outline" onClick={() => setPdfDialogOpen(true)} disabled={rows.length === 0}>
+                <Button size="sm" variant="outline" onClick={openPdfDialog} disabled={rows.length === 0}>
                   <Download className="w-4 h-4 mr-1" /> Pobierz PDF
                 </Button>
                 <Button size="sm" variant="default" onClick={runSelfAudit} disabled={auditing || rows.length === 0}>
@@ -2103,6 +2167,52 @@ const AdminSecurityChecklist = () => {
                       Tabloid (279×432)
                     </Button>
                   </div>
+                  {/* Last successfully exported custom size — prefilled when the
+                      dialog reopens. Operator can re-apply or clear the memory. */}
+                  {lastSuccessfulCustomSize && (
+                    <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border/40 bg-muted/10 px-2 py-1.5">
+                      <div className="text-[11px] text-muted-foreground leading-tight">
+                        <span className="font-medium text-foreground/80">Ostatnio użyte: </span>
+                        <span className="tabular-nums">
+                          {lastSuccessfulCustomSize.w}×{lastSuccessfulCustomSize.h} mm
+                        </span>
+                        <span className="ml-1 opacity-70">
+                          ({new Date(lastSuccessfulCustomSize.savedAt).toLocaleString("pl-PL", {
+                            dateStyle: "short",
+                            timeStyle: "short",
+                          })})
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        {(String(lastSuccessfulCustomSize.w) !== pdfCustomWidthMm ||
+                          String(lastSuccessfulCustomSize.h) !== pdfCustomHeightMm) && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="h-6 px-2 text-[10px]"
+                            onClick={() => {
+                              setPdfCustomWidthMm(String(lastSuccessfulCustomSize.w));
+                              setPdfCustomHeightMm(String(lastSuccessfulCustomSize.h));
+                            }}
+                            title="Wstaw ostatnio pomyślnie wyeksportowane wymiary"
+                          >
+                            Przywróć
+                          </Button>
+                        )}
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 px-2 text-[10px]"
+                          onClick={clearLastSuccessfulCustomSize}
+                          title="Zapomnij ostatnio użyte wymiary"
+                        >
+                          Wyczyść
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                   {customSizeValidation.ok ? (
                     <p className="text-[11px] text-muted-foreground">
                       Dozwolony zakres: {RANGE_LABEL}. Eksport klienta używa A4.
