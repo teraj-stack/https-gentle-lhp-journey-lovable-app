@@ -521,7 +521,7 @@ const AdminSecurityChecklist = () => {
     const trimmed = raw.trim();
     const n = Number(trimmed.replace(",", "."));
     if (trimmed === "" || !Number.isFinite(n)) {
-      return { value: CUSTOM_MM_MIN, reason: `pole było puste — ustawiono minimum (${CUSTOM_MM_MIN} mm)` };
+      return { value: CUSTOM_MM_MIN, reason: `ustawiono minimum (${CUSTOM_MM_MIN} mm) — pole było puste lub nieprawidłowe` };
     }
     if (n < CUSTOM_MM_MIN) {
       return { value: CUSTOM_MM_MIN, reason: `${formatMm(n)} → ${CUSTOM_MM_MIN} mm (minimum)` };
