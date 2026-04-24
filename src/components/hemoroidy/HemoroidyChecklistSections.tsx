@@ -180,9 +180,19 @@ const HemoroidyChecklistSections = () => {
                 ))}
               </ul>
 
-              <p className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground/70 mt-4 ml-0 md:ml-[60px]">
-                Źródło: {section.source}
-              </p>
+              <div className="mt-4 ml-0 md:ml-[60px] flex flex-wrap items-center gap-x-3 gap-y-1.5">
+                <p className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground/70">
+                  Źródło: {section.source}
+                </p>
+                <a
+                  href={`#ebm-${section.ebmId}`}
+                  className="inline-flex items-center gap-1 text-[11px] font-sans uppercase tracking-[0.12em] text-primary hover:text-primary/80 hover:underline underline-offset-2 transition-colors"
+                  aria-label={`Zobacz źródło EBM dla: ${section.title}`}
+                >
+                  <BookOpen className="w-3 h-3" />
+                  Źródło EBM →
+                </a>
+              </div>
             </motion.section>
           );
         })}
