@@ -363,17 +363,22 @@ const EBMSourcesSection = ({
         </div>
         <div className="flex-1">
           <p className="font-heading text-base md:text-lg text-foreground mb-1">
-            Pełna bibliografia w PDF
+            Bibliografia EBM (PDF) — dokładnie te same źródła
           </p>
           <p className="text-xs md:text-sm text-muted-foreground leading-relaxed">
-            8 kategorii · 22 referencje z linkami do PubMed/journal · do wglądu lekarza lub
-            wydruku.
+            8 kategorii · 21 referencji z aktywnymi linkami do PubMed, ASCRS, ESCP i Cochrane —
+            1:1 z sekcją poniżej. Do wglądu lekarza lub wydruku.
           </p>
         </div>
         <Button variant="hero" asChild className="shrink-0 w-full sm:w-auto">
-          <a href={PDF_URL} target="_blank" rel="noopener noreferrer">
+          <a
+            href={PDF_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            download="zrodla-EBM-quiz-hemoroidy-CML.pdf"
+          >
             <Download className="w-4 h-4 mr-2" />
-            Pobierz PDF
+            Pobierz PDF (bibliografia)
           </a>
         </Button>
       </motion.div>
