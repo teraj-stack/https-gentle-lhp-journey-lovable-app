@@ -1846,9 +1846,17 @@ const AdminSecurityChecklist = () => {
                 <div className="space-y-1.5 rounded-md border border-border/60 bg-muted/20 p-2.5">
                   <div className="grid grid-cols-2 gap-2">
                     <div className="space-y-1">
-                      <Label htmlFor="pdf-custom-w" className="text-[11px] text-muted-foreground">
-                        Szerokość (mm)
-                      </Label>
+                      <div className="flex items-baseline justify-between gap-2">
+                        <Label htmlFor="pdf-custom-w" className="text-[11px] text-muted-foreground">
+                          Szerokość (mm)
+                        </Label>
+                        <span
+                          className="text-[10px] font-mono text-muted-foreground/80 tabular-nums"
+                          aria-hidden="true"
+                        >
+                          {CUSTOM_MM_MIN}–{CUSTOM_MM_MAX}
+                        </span>
+                      </div>
                       <Input
                         id="pdf-custom-w"
                         type="number"
@@ -1856,12 +1864,19 @@ const AdminSecurityChecklist = () => {
                         min={CUSTOM_MM_MIN}
                         max={CUSTOM_MM_MAX}
                         step={1}
+                        placeholder={`${CUSTOM_MM_MIN}–${CUSTOM_MM_MAX}`}
                         value={pdfCustomWidthMm}
                         onChange={(e) => setPdfCustomWidthMm(e.target.value)}
                         className="h-8 text-sm"
                         aria-invalid={!!customSizeValidation.widthError}
-                        aria-describedby="pdf-custom-w-hint"
+                        aria-describedby="pdf-custom-w-hint pdf-custom-w-range"
                       />
+                      <p
+                        id="pdf-custom-w-range"
+                        className="text-[10px] text-muted-foreground/80 leading-tight tabular-nums"
+                      >
+                        min {CUSTOM_MM_MIN} mm · maks {CUSTOM_MM_MAX} mm
+                      </p>
                       {(() => {
                         const hint = describeFieldHint(pdfCustomWidthMm, "Szerokość");
                         const toneClass =
@@ -1883,9 +1898,17 @@ const AdminSecurityChecklist = () => {
                       })()}
                     </div>
                     <div className="space-y-1">
-                      <Label htmlFor="pdf-custom-h" className="text-[11px] text-muted-foreground">
-                        Wysokość (mm)
-                      </Label>
+                      <div className="flex items-baseline justify-between gap-2">
+                        <Label htmlFor="pdf-custom-h" className="text-[11px] text-muted-foreground">
+                          Wysokość (mm)
+                        </Label>
+                        <span
+                          className="text-[10px] font-mono text-muted-foreground/80 tabular-nums"
+                          aria-hidden="true"
+                        >
+                          {CUSTOM_MM_MIN}–{CUSTOM_MM_MAX}
+                        </span>
+                      </div>
                       <Input
                         id="pdf-custom-h"
                         type="number"
@@ -1893,11 +1916,19 @@ const AdminSecurityChecklist = () => {
                         min={CUSTOM_MM_MIN}
                         max={CUSTOM_MM_MAX}
                         step={1}
+                        placeholder={`${CUSTOM_MM_MIN}–${CUSTOM_MM_MAX}`}
                         value={pdfCustomHeightMm}
                         onChange={(e) => setPdfCustomHeightMm(e.target.value)}
                         className="h-8 text-sm"
                         aria-invalid={!!customSizeValidation.heightError}
-                        aria-describedby="pdf-custom-h-hint"
+                        aria-describedby="pdf-custom-h-hint pdf-custom-h-range"
+                      />
+                      <p
+                        id="pdf-custom-h-range"
+                        className="text-[10px] text-muted-foreground/80 leading-tight tabular-nums"
+                      >
+                        min {CUSTOM_MM_MIN} mm · maks {CUSTOM_MM_MAX} mm
+                      </p>
                       />
                       {(() => {
                         const hint = describeFieldHint(pdfCustomHeightMm, "Wysokość");
