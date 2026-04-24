@@ -1827,19 +1827,27 @@ const AdminSecurityChecklist = () => {
                         onChange={(e) => setPdfCustomWidthMm(e.target.value)}
                         className="h-8 text-sm"
                         aria-invalid={!!customSizeValidation.widthError}
-                        aria-describedby={
-                          customSizeValidation.widthError ? "pdf-custom-w-error" : undefined
-                        }
+                        aria-describedby="pdf-custom-w-hint"
                       />
-                      {customSizeValidation.widthError && (
-                        <p
-                          id="pdf-custom-w-error"
-                          className="text-[10px] text-destructive leading-tight"
-                          role="alert"
-                        >
-                          {customSizeValidation.widthError}
-                        </p>
-                      )}
+                      {(() => {
+                        const hint = describeFieldHint(pdfCustomWidthMm, "Szerokość");
+                        const toneClass =
+                          hint.tone === "ok"
+                            ? "text-emerald-600 dark:text-emerald-400"
+                            : hint.tone === "warn"
+                              ? "text-muted-foreground"
+                              : "text-destructive";
+                        return (
+                          <p
+                            id="pdf-custom-w-hint"
+                            className={`text-[10px] leading-tight ${toneClass}`}
+                            role={hint.tone === "error" ? "alert" : undefined}
+                            aria-live="polite"
+                          >
+                            {hint.message}
+                          </p>
+                        );
+                      })()}
                     </div>
                     <div className="space-y-1">
                       <Label htmlFor="pdf-custom-h" className="text-[11px] text-muted-foreground">
@@ -1856,19 +1864,27 @@ const AdminSecurityChecklist = () => {
                         onChange={(e) => setPdfCustomHeightMm(e.target.value)}
                         className="h-8 text-sm"
                         aria-invalid={!!customSizeValidation.heightError}
-                        aria-describedby={
-                          customSizeValidation.heightError ? "pdf-custom-h-error" : undefined
-                        }
+                        aria-describedby="pdf-custom-h-hint"
                       />
-                      {customSizeValidation.heightError && (
-                        <p
-                          id="pdf-custom-h-error"
-                          className="text-[10px] text-destructive leading-tight"
-                          role="alert"
-                        >
-                          {customSizeValidation.heightError}
-                        </p>
-                      )}
+                      {(() => {
+                        const hint = describeFieldHint(pdfCustomHeightMm, "Wysokość");
+                        const toneClass =
+                          hint.tone === "ok"
+                            ? "text-emerald-600 dark:text-emerald-400"
+                            : hint.tone === "warn"
+                              ? "text-muted-foreground"
+                              : "text-destructive";
+                        return (
+                          <p
+                            id="pdf-custom-h-hint"
+                            className={`text-[10px] leading-tight ${toneClass}`}
+                            role={hint.tone === "error" ? "alert" : undefined}
+                            aria-live="polite"
+                          >
+                            {hint.message}
+                          </p>
+                        );
+                      })()}
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-1.5 pt-0.5">
