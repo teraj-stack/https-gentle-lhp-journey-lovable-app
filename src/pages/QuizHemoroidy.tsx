@@ -70,6 +70,11 @@ const QuizHemoroidy = () => {
             <HemoroidyRiskQuiz />
           </motion.div>
 
+          {/* History — local trend of past quiz results */}
+          <div className="mt-12 max-w-3xl mx-auto">
+            <QuizHistorySection />
+          </div>
+
           {/* Red Flags FAQ — alarm symptoms with EBM links, complements quiz risk markers */}
           <div className="mt-20">
             <RedFlagsFAQ />
