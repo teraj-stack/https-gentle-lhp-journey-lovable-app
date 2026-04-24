@@ -1894,7 +1894,7 @@ const AdminSecurityChecklist = () => {
                               size="sm"
                               className="h-5 px-1.5 text-[10px] leading-none"
                               onClick={snapWidth}
-                              title={`Dopasuj do najbliższej dozwolonej wartości (${CUSTOM_MM_MIN}–${CUSTOM_MM_MAX} mm)`}
+                              title={`Dopasuj do najbliższej dozwolonej wartości (zakres ${RANGE_LABEL})`}
                             >
                               Dopasuj
                             </Button>
@@ -1960,7 +1960,7 @@ const AdminSecurityChecklist = () => {
                               size="sm"
                               className="h-5 px-1.5 text-[10px] leading-none"
                               onClick={snapHeight}
-                              title={`Dopasuj do najbliższej dozwolonej wartości (${CUSTOM_MM_MIN}–${CUSTOM_MM_MAX} mm)`}
+                              title={`Dopasuj do najbliższej dozwolonej wartości (zakres ${RANGE_LABEL})`}
                             >
                               Dopasuj
                             </Button>
@@ -2030,14 +2030,14 @@ const AdminSecurityChecklist = () => {
                   </div>
                   {customSizeValidation.ok ? (
                     <p className="text-[11px] text-muted-foreground">
-                      Dozwolony zakres: {CUSTOM_MM_MIN}–{CUSTOM_MM_MAX} mm. Eksport klienta używa A4.
+                      Dozwolony zakres: {RANGE_LABEL}. Eksport klienta używa A4.
                     </p>
                   ) : (
                     <p
                       className="text-[11px] text-muted-foreground"
                       aria-live="polite"
                     >
-                      Popraw wskazane pole. Dozwolony zakres: {CUSTOM_MM_MIN}–{CUSTOM_MM_MAX} mm.
+                      Popraw wskazane pole. Dozwolony zakres: {RANGE_LABEL}.
                     </p>
                   )}
                   {/* Saved presets: name + dimensions, click to apply, trash to delete. */}
