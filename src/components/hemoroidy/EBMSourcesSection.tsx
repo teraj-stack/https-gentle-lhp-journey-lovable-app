@@ -32,6 +32,8 @@ type Category = {
   id: string;
   title: string;
   intro: string;
+  /** Krótkie 1–2 zdania TL;DR z wytycznych ASCRS/ESCP dla danej kategorii. */
+  tldr?: string;
   Icon: typeof BookMarked;
   items: Source[];
 };
@@ -41,6 +43,7 @@ const CATEGORIES: Category[] = [
     id: "guidelines",
     title: "Wytyczne kliniczne",
     intro: "Oficjalne rekomendacje towarzystw kolorektalnych — fundament zaleceń profilaktycznych.",
+    tldr: "ASCRS (2018) i ESCP (2020) zgodnie zalecają leczenie zachowawcze (błonnik + nawodnienie) jako pierwszą linię terapii w I–II stopniu, a metody małoinwazyjne i chirurgiczne rezerwują dla wyższych stopni i nawrotów.",
     Icon: ScrollText,
     items: [
       {
@@ -70,6 +73,7 @@ const CATEGORIES: Category[] = [
     id: "fiber",
     title: "Błonnik i dieta",
     intro: "Dowody na skuteczność błonnika rozpuszczalnego (psyllium) w redukcji objawów i krwawienia.",
+    tldr: "Według ASCRS i ESCP suplementacja błonnika (≥25 g/dobę, najlepiej psyllium) zmniejsza ryzyko krwawienia i nasilenie objawów o ~50% — to najsilniej rekomendowana interwencja zachowawcza (poziom dowodów 1A).",
     Icon: Salad,
     items: [
       {
@@ -99,6 +103,7 @@ const CATEGORIES: Category[] = [
     id: "hydration",
     title: "Nawodnienie i konsystencja stolca",
     intro: "Związek niedostatecznej podaży płynów z zaparciami — kluczowym czynnikiem ryzyka.",
+    tldr: "ASCRS i ESCP wskazują nawodnienie (1,5–2 l wody/dobę) jako niezbędne uzupełnienie diety bogatobłonnikowej — bez wody błonnik może nasilać zaparcia i parcie, czyli kluczowy mechanizm uszkadzający sploty hemoroidalne.",
     Icon: Droplet,
     items: [
       {
@@ -121,6 +126,7 @@ const CATEGORIES: Category[] = [
     id: "toilet",
     title: "Nawyki toaletowe i parcie",
     intro: "Rola czasu w toalecie, parcia (próby Valsalvy) i pozycji ciała w patogenezie.",
+    tldr: "ASCRS i ESCP rekomendują skrócenie czasu defekacji (<3–5 min), unikanie parcia (Valsalva) i czytania w toalecie — przewlekłe parcie zwiększa ciśnienie w splotach i jest udokumentowanym czynnikiem powstawania oraz nawrotu hemoroidów.",
     Icon: Timer,
     items: [
       {
@@ -150,6 +156,7 @@ const CATEGORIES: Category[] = [
     id: "activity",
     title: "Aktywność fizyczna i siedzący tryb życia",
     intro: "Wpływ ruchu na motorykę jelit i czynniki ryzyka choroby hemoroidalnej.",
+    tldr: "ESCP zaznacza, że regularna aktywność fizyczna (≥150 min/tydz.) poprawia motorykę jelit i zmniejsza ryzyko zaparć; siedzący tryb życia oraz długie pozostawanie w pozycji siedzącej są niezależnymi czynnikami ryzyka choroby hemoroidalnej.",
     Icon: Activity,
     items: [
       {
@@ -179,6 +186,7 @@ const CATEGORIES: Category[] = [
     id: "risk",
     title: "Czynniki ryzyka — ciąża, wiek, masa ciała",
     intro: "Modyfikowalne i niemodyfikowalne czynniki ryzyka z badań populacyjnych.",
+    tldr: "ASCRS i ESCP wymieniają ciążę, poród naturalny, wiek >45 lat, otyłość i przewlekłe zaparcia jako główne czynniki ryzyka — w ciąży i połogu choroba hemoroidalna dotyczy nawet 25–35% kobiet i wymaga szczególnej profilaktyki zachowawczej.",
     Icon: AlertCircle,
     items: [
       {
@@ -201,6 +209,7 @@ const CATEGORIES: Category[] = [
     id: "diagnosis",
     title: "Diagnostyka i kiedy do lekarza",
     intro: "Zasady różnicowania krwawień z odbytu i wskazania do oceny specjalistycznej / kolonoskopii.",
+    tldr: "ASCRS i ESCP są jednoznaczne: każde krwawienie z odbytu wymaga oceny lekarskiej, a u osób >45 r.ż. lub z czynnikami ryzyka — kolonoskopii. Hemoroidów nie wolno rozpoznawać „na odległość”, bo identyczne objawy daje m.in. rak jelita grubego.",
     Icon: Stethoscope,
     items: [
       {
@@ -223,6 +232,7 @@ const CATEGORIES: Category[] = [
     id: "lhp",
     title: "Leczenie laserowe (LHP) i małoinwazyjne",
     intro: "Dowody skuteczności i bezpieczeństwa LHP w porównaniu z metodami klasycznymi.",
+    tldr: "RCT i meta-analizy cytowane także w wytycznych ESCP pokazują, że LHP daje porównywalną skuteczność do operacji Milligana-Morgana przy istotnie mniejszym bólu pooperacyjnym, krótszej rekonwalescencji i szybszym powrocie do pracy.",
     Icon: Microscope,
     items: [
       {
@@ -516,6 +526,21 @@ const EBMSourcesSection = ({
                   </div>
                 </AccordionTrigger>
                 <AccordionContent className="px-5 pb-5">
+                  {cat.tldr && (
+                    <div className="mt-1 mb-4 rounded-lg border border-primary/25 bg-primary/5 p-3.5 sm:p-4">
+                      <div className="flex items-start gap-2.5">
+                        <span
+                          className="mt-0.5 inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-sans uppercase tracking-[0.14em] bg-primary/15 text-primary border border-primary/30 shrink-0"
+                          aria-label="Podsumowanie wytycznych ASCRS i ESCP"
+                        >
+                          TL;DR · ASCRS / ESCP
+                        </span>
+                      </div>
+                      <p className="mt-2 text-sm leading-relaxed text-foreground/90">
+                        {cat.tldr}
+                      </p>
+                    </div>
+                  )}
                   <ul className="space-y-3 pt-2 border-t border-border/50">
                     {cat.matchedItems.map((src, i) => (
                       <li
