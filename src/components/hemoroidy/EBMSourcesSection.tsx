@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -272,6 +272,26 @@ const EBMSourcesSection = ({
 
   const [activeCat, setActiveCat] = useState<string>("all");
   const [query, setQuery] = useState<string>("");
+  const [forcedOpen, setForcedOpen] = useState<string[]>([]);
+
+  // Open category from URL hash (#ebm-<id>) and scroll to it
+  useEffect(() => {
+    const applyHash = () => {
+      const h = typeof window !== "undefined" ? window.location.hash : "";
+      const m = h.match(/^#ebm-([a-z0-9-]+)$/i);
+      if (!m) return;
+      const id = m[1];
+      if (!baseCats.some((c) => c.id === id)) return;
+      setForcedOpen((prev) => (prev.includes(id) ? prev : [...prev, id]));
+      window.setTimeout(() => {
+        const el = document.getElementById(`ebm-${id}`);
+        el?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 80);
+    };
+    applyHash();
+    window.addEventListener("hashchange", applyHash);
+    return () => window.removeEventListener("hashchange", applyHash);
+  }, [baseCats]);
 
   const filtered = useMemo(() => {
     const q = normalize(query.trim());
@@ -298,7 +318,11 @@ const EBMSourcesSection = ({
 
   const totalMatches = filtered.reduce((sum, c) => sum + c.matchedItems.length, 0);
   const isFiltering = query.trim().length >= 2 || activeCat !== "all";
-  const openValues = isFiltering ? filtered.map((c) => c.id) : undefined;
+  const computedOpen = isFiltering ? filtered.map((c) => c.id) : [];
+  const openValues =
+    isFiltering || forcedOpen.length > 0
+      ? Array.from(new Set([...computedOpen, ...forcedOpen]))
+      : undefined;
 
   return (
     <section className="max-w-3xl mx-auto" aria-labelledby="ebm-sources-heading">
@@ -468,7 +492,8 @@ const EBMSourcesSection = ({
               <AccordionItem
                 key={cat.id}
                 value={cat.id}
-                className="rounded-xl border border-border bg-background/40 overflow-hidden data-[state=open]:border-primary/40 data-[state=open]:bg-primary/5 transition-colors"
+                id={`ebm-${cat.id}`}
+                className="scroll-mt-32 rounded-xl border border-border bg-background/40 overflow-hidden data-[state=open]:border-primary/40 data-[state=open]:bg-primary/5 transition-colors"
               >
                 <AccordionTrigger className="px-5 py-4 hover:no-underline group">
                   <div className="flex items-center gap-3 text-left">

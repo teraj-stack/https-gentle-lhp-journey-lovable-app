@@ -7,6 +7,7 @@ import {
   Stethoscope,
   AlertOctagon,
   CheckCircle2,
+  BookOpen,
 } from "lucide-react";
 
 const easeOut = [0.16, 1, 0.3, 1] as const;
@@ -18,6 +19,8 @@ type ChecklistSection = {
   lead: string;
   items: string[];
   source: string;
+  /** Id kategorii w sekcji EBM (#ebm-<id>) */
+  ebmId: "fiber" | "hydration" | "toilet" | "activity" | "diagnosis" | "guidelines";
 };
 
 const sections: ChecklistSection[] = [
@@ -33,6 +36,7 @@ const sections: ChecklistSection[] = [
       "Ogranicz żywność wysokoprzetworzoną, fast food i biały chleb",
     ],
     source: "Wytyczne ASCRS 2018 · Cochrane 2005",
+    ebmId: "fiber",
   },
   {
     id: "hydration",
@@ -46,6 +50,7 @@ const sections: ChecklistSection[] = [
       "Sygnał ostrzegawczy: ciemny kolor moczu = za mało wody",
     ],
     source: "ESCP Guidelines · ASCRS 2018",
+    ebmId: "hydration",
   },
   {
     id: "toilet",
@@ -59,6 +64,7 @@ const sections: ChecklistSection[] = [
       "Bez parcia (próby Valsalvy) — to ono uszkadza sploty żylne",
     ],
     source: "ASCRS 2018 · Garg 2018",
+    ebmId: "toilet",
   },
   {
     id: "movement",
@@ -72,6 +78,7 @@ const sections: ChecklistSection[] = [
       "Przy podnoszeniu ciężarów — wydychaj powietrze (unikaj próby Valsalvy)",
     ],
     source: "ESCP Guidelines · WHO Physical Activity",
+    ebmId: "activity",
   },
   {
     id: "symptoms",
@@ -85,6 +92,7 @@ const sections: ChecklistSection[] = [
       "Zmiana rytmu wypróżnień, naprzemienne biegunki/zaparcia (≥40 r.ż.)",
     ],
     source: "ASCRS 2018 · NICE Guidelines",
+    ebmId: "diagnosis",
   },
   {
     id: "urgent",
@@ -98,6 +106,7 @@ const sections: ChecklistSection[] = [
       "Gorączka z bólem okolicy odbytu (ryzyko ropnia)",
     ],
     source: "ASCRS Emergency Criteria",
+    ebmId: "diagnosis",
   },
 ];
 
@@ -171,9 +180,19 @@ const HemoroidyChecklistSections = () => {
                 ))}
               </ul>
 
-              <p className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground/70 mt-4 ml-0 md:ml-[60px]">
-                Źródło: {section.source}
-              </p>
+              <div className="mt-4 ml-0 md:ml-[60px] flex flex-wrap items-center gap-x-3 gap-y-1.5">
+                <p className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground/70">
+                  Źródło: {section.source}
+                </p>
+                <a
+                  href={`#ebm-${section.ebmId}`}
+                  className="inline-flex items-center gap-1 text-[11px] font-sans uppercase tracking-[0.12em] text-primary hover:text-primary/80 hover:underline underline-offset-2 transition-colors"
+                  aria-label={`Zobacz źródło EBM dla: ${section.title}`}
+                >
+                  <BookOpen className="w-3 h-3" />
+                  Źródło EBM →
+                </a>
+              </div>
             </motion.section>
           );
         })}
