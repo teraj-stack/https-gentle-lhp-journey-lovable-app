@@ -418,7 +418,7 @@ const EbmHemoroidy = () => {
             >
               <Sparkles className="w-5 h-5 text-primary mb-2.5" />
               <p className="font-heading text-foreground mb-1 group-hover:text-primary transition-colors">
-                Test ryzyka — 5 pytań
+                Test ryzyka — 9 pytań
               </p>
               <p className="text-xs text-muted-foreground">
                 Sprawdź swoje ryzyko w minutę i otrzymaj dopasowane zalecenia.

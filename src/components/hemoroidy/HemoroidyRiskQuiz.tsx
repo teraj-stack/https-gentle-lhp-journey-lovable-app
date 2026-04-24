@@ -30,6 +30,15 @@ const questions: Question[] = [
     ],
   },
   {
+    id: "constipation",
+    q: "Jak często masz zaparcia (twarde stolce, wypróżnienia rzadziej niż co 2 dni)?",
+    options: [
+      { label: "Bardzo rzadko lub nigdy", points: 0 },
+      { label: "Kilka razy w miesiącu", points: 2 },
+      { label: "Co tydzień lub przewlekle (>3 miesiące)", points: 3 },
+    ],
+  },
+  {
     id: "hydration",
     q: "Ile wody pijesz w ciągu typowego dnia?",
     options: [
@@ -48,12 +57,39 @@ const questions: Question[] = [
     ],
   },
   {
+    id: "phone",
+    q: "Czy zabierasz do toalety smartfon, książkę lub gazetę?",
+    options: [
+      { label: "Nie, wychodzę zaraz po wypróżnieniu", points: 0 },
+      { label: "Czasem, gdy mam wolną chwilę", points: 2 },
+      { label: "Tak, prawie zawsze — to mój moment dla siebie", points: 3 },
+    ],
+  },
+  {
     id: "movement",
     q: "Jak wygląda Twoja codzienna aktywność?",
     options: [
       { label: "Min. 30 min ruchu dziennie + przerwy w pracy", points: 0 },
       { label: "Praca siedząca, ruch 1–2 razy w tygodniu", points: 2 },
-      { label: "Siedzący tryb życia, ciąża lub nadwaga", points: 3 },
+      { label: "Siedzący tryb życia bez regularnego ruchu", points: 3 },
+    ],
+  },
+  {
+    id: "sitting",
+    q: "Ile godzin dziennie spędzasz w pozycji siedzącej (praca + auto + dom)?",
+    options: [
+      { label: "Mniej niż 4 godziny — mam pracę aktywną", points: 0 },
+      { label: "4–8 godzin z regularnymi przerwami", points: 2 },
+      { label: "Powyżej 8 godzin, często bez przerwy", points: 3 },
+    ],
+  },
+  {
+    id: "pregnancy",
+    q: "Czy jesteś w ciąży, po porodzie (do 6 mies.) lub masz BMI > 30?",
+    options: [
+      { label: "Nie dotyczy", points: 0 },
+      { label: "Jeden z czynników (np. nadwaga lub okres okołoporodowy)", points: 2 },
+      { label: "Tak — ciąża/połóg lub otyłość (BMI > 30)", points: 3 },
     ],
   },
   {
@@ -88,7 +124,7 @@ const tiers: RiskTier[] = [
   {
     level: "low",
     label: "Niskie ryzyko",
-    range: "0–5 pkt",
+    range: "0–8 pkt",
     Icon: ShieldCheck,
     color: "text-emerald-400",
     bg: "bg-emerald-500/10",
@@ -111,7 +147,7 @@ const tiers: RiskTier[] = [
   {
     level: "medium",
     label: "Średnie ryzyko",
-    range: "6–11 pkt",
+    range: "9–17 pkt",
     Icon: AlertTriangle,
     color: "text-primary",
     bg: "bg-primary/10",
@@ -134,7 +170,7 @@ const tiers: RiskTier[] = [
   {
     level: "high",
     label: "Wysokie ryzyko",
-    range: "12+ pkt",
+    range: "18+ pkt",
     Icon: AlertOctagon,
     color: "text-destructive",
     bg: "bg-destructive/10",
@@ -158,8 +194,8 @@ const tiers: RiskTier[] = [
 ];
 
 const getTier = (score: number): RiskTier => {
-  if (score <= 5) return tiers[0];
-  if (score <= 11) return tiers[1];
+  if (score <= 8) return tiers[0];
+  if (score <= 17) return tiers[1];
   return tiers[2];
 };
 
@@ -203,7 +239,7 @@ const HemoroidyRiskQuiz = () => {
         </div>
         <div className="min-w-0">
           <p className="text-[10px] sm:text-xs font-sans uppercase tracking-[0.14em] sm:tracking-[0.18em] text-primary">
-            Test ryzyka · 5 pytań · ~1 minuta
+            Test ryzyka · 9 pytań · ~2 minuty
           </p>
           <h2 className="font-heading text-lg sm:text-xl md:text-2xl text-foreground leading-tight">
             Sprawdź swoje ryzyko hemoroidów

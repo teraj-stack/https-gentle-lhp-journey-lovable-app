@@ -37,7 +37,7 @@ const mainEbook = {
 const onlineGuides = [
   {
     title: "Test ryzyka hemoroidów",
-    subtitle: "Interaktywny quiz · 5 pytań",
+    subtitle: "Interaktywny quiz · 9 pytań",
     desc: "Sprawdź swoje ryzyko hemoroidów w 1 minutę. 3 poziomy ryzyka, dopasowane zalecenia EBM i checklista PDF do pobrania.",
     href: "/dla-pacjenta/quiz-hemoroidy",
     icon: "🧪",
@@ -198,7 +198,7 @@ const DlaPacjenta = () => {
                 Sprawdź swoje ryzyko hemoroidów w 1 minutę
               </h3>
               <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
-                5 pytań o styl życia · 3 poziomy ryzyka · dopasowane zalecenia EBM i checklista PDF do pobrania.
+                9 pytań o styl życia · 3 poziomy ryzyka · dopasowane zalecenia EBM i checklista PDF do pobrania.
               </p>
             </div>
             <Button variant="hero" size="lg" className="shrink-0 w-full md:w-auto pointer-events-none">
