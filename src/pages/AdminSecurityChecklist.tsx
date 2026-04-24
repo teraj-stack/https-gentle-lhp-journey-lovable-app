@@ -2439,6 +2439,11 @@ const AdminSecurityChecklist = () => {
             <Button variant="ghost" onClick={() => setPreviewOpen(false)}>Zamknij</Button>
             <Button
               onClick={async () => {
+                if (!runFinalCustomSizeCheck()) {
+                  // Close the preview so the operator can see + fix the field highlighted in the export dialog.
+                  setPreviewOpen(false);
+                  return;
+                }
                 setPreviewOpen(false);
                 await exportPdfServer({
                   statuses: pdfStatuses,
