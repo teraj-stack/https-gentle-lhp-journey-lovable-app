@@ -2209,6 +2209,7 @@ const AdminSecurityChecklist = () => {
                         placeholder={`${CUSTOM_MM_MIN}–${CUSTOM_MM_MAX}`}
                         value={pdfCustomHeightMm}
                         onChange={(e) => setPdfCustomHeightMm(e.target.value)}
+                        onKeyDown={handleCustomSizeFieldKeyDown("pdf-custom-h")}
                         className={`h-8 text-sm transition-shadow ${
                           exportAttemptError?.fieldId === "pdf-custom-h"
                             ? "border-destructive ring-2 ring-destructive/60 ring-offset-1 ring-offset-background animate-pulse"
