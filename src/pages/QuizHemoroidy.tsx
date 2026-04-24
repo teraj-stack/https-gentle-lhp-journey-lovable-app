@@ -5,6 +5,7 @@ import { BREADCRUMBS_MAP } from "@/lib/breadcrumbsMap";
 import SeoHead from "@/components/shared/SeoHead";
 import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 import HemoroidyRiskQuiz from "@/components/hemoroidy/HemoroidyRiskQuiz";
+import QuizHistorySection from "@/components/hemoroidy/QuizHistorySection";
 import HemoroidyChecklistSections from "@/components/hemoroidy/HemoroidyChecklistSections";
 import EBMSourcesSection from "@/components/hemoroidy/EBMSourcesSection";
 import RedFlagsFAQ from "@/components/hemoroidy/RedFlagsFAQ";
@@ -68,6 +69,11 @@ const QuizHemoroidy = () => {
           >
             <HemoroidyRiskQuiz />
           </motion.div>
+
+          {/* History — local trend of past quiz results */}
+          <div className="mt-12 max-w-3xl mx-auto">
+            <QuizHistorySection />
+          </div>
 
           {/* Red Flags FAQ — alarm symptoms with EBM links, complements quiz risk markers */}
           <div className="mt-20">

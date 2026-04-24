@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,7 @@ import {
   FileDown,
 } from "lucide-react";
 import { generateQuizResultPdf } from "@/lib/quizResultPdf";
+import { useQuizHistory } from "@/hooks/useQuizHistory";
 
 type Option = { label: string; points: number };
 type Question = { id: string; q: string; options: Option[] };
@@ -201,6 +202,7 @@ const HemoroidyRiskQuiz = () => {
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<number[]>([]);
   const [done, setDone] = useState(false);
+  const { addEntry } = useQuizHistory();
 
   const total = questions.length;
   const progress = done ? 100 : Math.round((step / total) * 100);
@@ -241,6 +243,18 @@ const HemoroidyRiskQuiz = () => {
       showUrgent: tier.showUrgent,
     });
   };
+
+  // Persist completed quiz to local history (once per completion).
+  useEffect(() => {
+    if (!done) return;
+    addEntry({
+      score,
+      maxScore,
+      level: tier.level,
+      label: tier.label,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [done]);
 
   return (
     <div className="glass-card rounded-2xl p-5 sm:p-6 md:p-10 max-w-3xl mx-auto">
