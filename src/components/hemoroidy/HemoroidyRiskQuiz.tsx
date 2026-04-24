@@ -127,7 +127,7 @@ const tiers: RiskTier[] = [
       { text: "Przy podnoszeniu ciężarów wydychaj powietrze (unikaj próby Valsalvy)", anchor: "movement" },
       { text: "Jeśli pojawi się krwawienie lub guzek — umów konsultację proktologiczną", anchor: "symptoms" },
     ],
-    ctaLabel: "Umów konsultację proktologiczną",
+    ctaLabel: "Umów konsultację",
     ctaHref: "/kontakt",
     ctaInternal: true,
   },
@@ -195,17 +195,17 @@ const HemoroidyRiskQuiz = () => {
   const current = questions[step];
 
   return (
-    <div className="glass-card rounded-2xl p-6 md:p-10 max-w-3xl mx-auto">
+    <div className="glass-card rounded-2xl p-5 sm:p-6 md:p-10 max-w-3xl mx-auto">
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
         <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
           <ClipboardList className="w-5 h-5 text-primary" />
         </div>
-        <div>
-          <p className="text-xs font-sans uppercase tracking-[0.18em] text-primary">
+        <div className="min-w-0">
+          <p className="text-[10px] sm:text-xs font-sans uppercase tracking-[0.14em] sm:tracking-[0.18em] text-primary">
             Test ryzyka · 5 pytań · ~1 minuta
           </p>
-          <h2 className="font-heading text-xl md:text-2xl text-foreground">
+          <h2 className="font-heading text-lg sm:text-xl md:text-2xl text-foreground leading-tight">
             Sprawdź swoje ryzyko hemoroidów
           </h2>
         </div>
@@ -258,14 +258,14 @@ const HemoroidyRiskQuiz = () => {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5, ease: easeOut }}
           >
-            <div className={`rounded-xl border ${tier.border} ${tier.bg} p-6 md:p-8`}>
+            <div className={`rounded-xl border ${tier.border} ${tier.bg} p-5 sm:p-6 md:p-8`}>
               <div className="flex items-start gap-3 mb-3">
                 <TierIcon className={`w-7 h-7 ${tier.color} shrink-0 mt-0.5`} />
-                <div>
-                  <p className="text-xs font-sans uppercase tracking-[0.18em] text-muted-foreground">
+                <div className="min-w-0">
+                  <p className="text-[10px] sm:text-xs font-sans uppercase tracking-[0.14em] sm:tracking-[0.18em] text-muted-foreground">
                     Twój wynik · {score} pkt · {tier.range}
                   </p>
-                  <h3 className={`font-heading text-2xl md:text-3xl ${tier.color}`}>
+                  <h3 className={`font-heading text-2xl md:text-3xl ${tier.color} leading-tight`}>
                     {tier.label}
                   </h3>
                 </div>
@@ -319,22 +319,37 @@ const HemoroidyRiskQuiz = () => {
               {/* CTAs */}
               <div className="flex flex-col sm:flex-row gap-3">
                 {tier.ctaInternal ? (
-                  <Button variant="hero" size="lg" asChild className="flex-1">
+                  <Button
+                    variant="hero"
+                    size="lg"
+                    asChild
+                    className="flex-1 h-auto min-h-11 py-2.5 px-4 sm:px-6 whitespace-normal text-sm sm:text-base text-center leading-snug tracking-wide"
+                  >
                     <Link to={tier.ctaHref}>
-                      <Stethoscope className="w-4 h-4 mr-2" />
-                      {tier.ctaLabel}
+                      <Stethoscope className="w-4 h-4 mr-2 shrink-0" />
+                      <span>{tier.ctaLabel}</span>
                     </Link>
                   </Button>
                 ) : (
-                  <Button variant="hero" size="lg" asChild className="flex-1">
+                  <Button
+                    variant="hero"
+                    size="lg"
+                    asChild
+                    className="flex-1 h-auto min-h-11 py-2.5 px-4 sm:px-6 whitespace-normal text-sm sm:text-base text-center leading-snug tracking-wide"
+                  >
                     <a href={tier.ctaHref} target="_blank" rel="noopener noreferrer">
-                      <Download className="w-4 h-4 mr-2" />
-                      {tier.ctaLabel}
+                      <Download className="w-4 h-4 mr-2 shrink-0" />
+                      <span>{tier.ctaLabel}</span>
                     </a>
                   </Button>
                 )}
-                <Button variant="outline" size="lg" onClick={reset} className="gap-2">
-                  <RotateCcw className="w-4 h-4" />
+                <Button
+                  variant="outline"
+                  size="lg"
+                  onClick={reset}
+                  className="gap-2 h-auto min-h-11 py-2.5 px-4 sm:px-6 whitespace-normal"
+                >
+                  <RotateCcw className="w-4 h-4 shrink-0" />
                   Wypełnij ponownie
                 </Button>
               </div>
