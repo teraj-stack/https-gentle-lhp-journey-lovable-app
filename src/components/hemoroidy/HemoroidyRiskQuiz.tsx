@@ -413,6 +413,15 @@ const HemoroidyRiskQuiz = () => {
                 <Button
                   variant="outline"
                   size="lg"
+                  onClick={handleDownloadPdf}
+                  className="gap-2 h-auto min-h-11 py-2.5 px-4 sm:px-6 whitespace-normal border-primary/40 text-primary hover:bg-primary/10 hover:text-primary"
+                >
+                  <FileDown className="w-4 h-4 shrink-0" />
+                  Pobierz wynik (PDF)
+                </Button>
+                <Button
+                  variant="outline"
+                  size="lg"
                   onClick={reset}
                   className="gap-2 h-auto min-h-11 py-2.5 px-4 sm:px-6 whitespace-normal"
                 >
