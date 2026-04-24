@@ -19,6 +19,8 @@ type ChecklistSection = {
   lead: string;
   items: string[];
   source: string;
+  /** Id kategorii w sekcji EBM (#ebm-<id>) */
+  ebmId: "fiber" | "hydration" | "toilet" | "activity" | "diagnosis" | "guidelines";
 };
 
 const sections: ChecklistSection[] = [
