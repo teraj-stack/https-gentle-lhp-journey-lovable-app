@@ -2144,9 +2144,20 @@ const AdminSecurityChecklist = () => {
                         placeholder={`${CUSTOM_MM_MIN}–${CUSTOM_MM_MAX}`}
                         value={pdfCustomHeightMm}
                         onChange={(e) => setPdfCustomHeightMm(e.target.value)}
-                        className="h-8 text-sm"
-                        aria-invalid={!!customSizeValidation.heightError}
-                        aria-describedby="pdf-custom-h-hint pdf-custom-h-range"
+                        className={`h-8 text-sm transition-shadow ${
+                          exportAttemptError?.fieldId === "pdf-custom-h"
+                            ? "border-destructive ring-2 ring-destructive/60 ring-offset-1 ring-offset-background animate-pulse"
+                            : ""
+                        }`}
+                        aria-invalid={
+                          !!customSizeValidation.heightError ||
+                          exportAttemptError?.fieldId === "pdf-custom-h"
+                        }
+                        aria-describedby={
+                          exportAttemptError?.fieldId === "pdf-custom-h"
+                            ? "pdf-custom-h-hint pdf-custom-h-range pdf-custom-h-block"
+                            : "pdf-custom-h-hint pdf-custom-h-range"
+                        }
                       />
                       <p
                         id="pdf-custom-h-range"
@@ -2154,6 +2165,17 @@ const AdminSecurityChecklist = () => {
                       >
                         minimum {CUSTOM_MM_MIN} mm · maksimum {CUSTOM_MM_MAX} mm
                       </p>
+                      {exportAttemptError?.fieldId === "pdf-custom-h" && (
+                        <p
+                          id="pdf-custom-h-block"
+                          role="alert"
+                          aria-live="assertive"
+                          className="text-[10px] leading-tight text-destructive font-medium break-words"
+                        >
+                          Eksport zablokowany — wpisano „{exportAttemptError.rawValue || "—"}".
+                          {exportAttemptError.detail ? ` ${exportAttemptError.detail}` : ` Dozwolony zakres: ${RANGE_LABEL}.`}
+                        </p>
+                      )}
                       {(() => {
                         const hint = describeFieldHint(pdfCustomHeightMm, "height");
                         const toneClass =
