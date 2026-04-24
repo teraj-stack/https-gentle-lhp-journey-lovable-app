@@ -97,10 +97,11 @@ const tiers: RiskTier[] = [
     desc:
       "Twój styl życia minimalizuje ryzyko hemoroidów. Kontynuuj profilaktykę i obserwuj objawy.",
     recommendations: [
-      "Utrzymuj 25–35 g błonnika dziennie i 2–2,5 l wody",
-      "Krótkie wizyty w toalecie (do 3 minut) — bez telefonu",
-      "Min. 30 min aktywności fizycznej dziennie",
-      "Każde krwawienie z odbytu — zgłoś proktologowi (nawet jednorazowe)",
+      { text: "Utrzymuj 25–35 g błonnika dziennie", anchor: "fiber" },
+      { text: "Pij 2–2,5 l wody dziennie", anchor: "hydration" },
+      { text: "Krótkie wizyty w toalecie (do 3 minut) — bez telefonu", anchor: "toilet" },
+      { text: "Min. 30 min aktywności fizycznej dziennie", anchor: "movement" },
+      { text: "Każde krwawienie z odbytu — zgłoś proktologowi (nawet jednorazowe)", anchor: "symptoms" },
     ],
     ctaLabel: "Pobierz checklistę PDF",
     ctaHref:
