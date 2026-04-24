@@ -321,6 +321,67 @@ const AdminSecurityChecklist = () => {
       // ignore quota / privacy mode errors
     }
   }, [pdfCustomWidthMm, pdfCustomHeightMm]);
+  // Last successfully exported custom dimensions. Stored separately from the
+  // live editor values so a failed/aborted attempt never overwrites them.
+  // Used to prefill the dialog the next time the operator opens it.
+  type LastSuccessfulCustomSize = { w: number; h: number; savedAt: string };
+  const LAST_SUCCESS_STORAGE_KEY = "cml.admin.pdfLastSuccessfulCustomSize";
+  const [lastSuccessfulCustomSize, setLastSuccessfulCustomSize] =
+    useState<LastSuccessfulCustomSize | null>(() => {
+      if (typeof window === "undefined") return null;
+      try {
+        const raw = window.localStorage.getItem(LAST_SUCCESS_STORAGE_KEY);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        if (
+          parsed &&
+          typeof parsed.w === "number" &&
+          typeof parsed.h === "number" &&
+          typeof parsed.savedAt === "string" &&
+          parsed.w >= 50 && parsed.w <= 1200 &&
+          parsed.h >= 50 && parsed.h <= 1200
+        ) {
+          return parsed as LastSuccessfulCustomSize;
+        }
+        return null;
+      } catch {
+        return null;
+      }
+    });
+  const rememberSuccessfulCustomSize = useCallback((w: number, h: number) => {
+    const rounded: LastSuccessfulCustomSize = {
+      w: Math.round(w * 10) / 10,
+      h: Math.round(h * 10) / 10,
+      savedAt: new Date().toISOString(),
+    };
+    setLastSuccessfulCustomSize(rounded);
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem(LAST_SUCCESS_STORAGE_KEY, JSON.stringify(rounded));
+    } catch {
+      // ignore quota / privacy mode errors
+    }
+  }, []);
+  const clearLastSuccessfulCustomSize = useCallback(() => {
+    setLastSuccessfulCustomSize(null);
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.removeItem(LAST_SUCCESS_STORAGE_KEY);
+    } catch {
+      // ignore
+    }
+  }, []);
+  // Open the PDF export dialog and, if we have a remembered last-successful
+  // custom size that differs from the current editor values, prefill it.
+  const openPdfDialog = useCallback(() => {
+    if (lastSuccessfulCustomSize) {
+      const wStr = String(lastSuccessfulCustomSize.w);
+      const hStr = String(lastSuccessfulCustomSize.h);
+      if (pdfCustomWidthMm !== wStr) setPdfCustomWidthMm(wStr);
+      if (pdfCustomHeightMm !== hStr) setPdfCustomHeightMm(hStr);
+    }
+    setPdfDialogOpen(true);
+  }, [lastSuccessfulCustomSize, pdfCustomWidthMm, pdfCustomHeightMm]);
   // User-defined favourites for custom page sizes. Persisted in localStorage as
   // a JSON array. Each entry is { id, name, width, height } in millimetres.
   type CustomPreset = { id: string; name: string; width: number; height: number };
