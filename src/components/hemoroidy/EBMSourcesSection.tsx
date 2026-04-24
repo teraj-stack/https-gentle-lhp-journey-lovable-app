@@ -186,6 +186,7 @@ const CATEGORIES: Category[] = [
     id: "risk",
     title: "Czynniki ryzyka — ciąża, wiek, masa ciała",
     intro: "Modyfikowalne i niemodyfikowalne czynniki ryzyka z badań populacyjnych.",
+    tldr: "ASCRS i ESCP wymieniają ciążę, poród naturalny, wiek >45 lat, otyłość i przewlekłe zaparcia jako główne czynniki ryzyka — w ciąży i połogu choroba hemoroidalna dotyczy nawet 25–35% kobiet i wymaga szczególnej profilaktyki zachowawczej.",
     Icon: AlertCircle,
     items: [
       {
