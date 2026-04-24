@@ -195,17 +195,17 @@ const HemoroidyRiskQuiz = () => {
   const current = questions[step];
 
   return (
-    <div className="glass-card rounded-2xl p-6 md:p-10 max-w-3xl mx-auto">
+    <div className="glass-card rounded-2xl p-5 sm:p-6 md:p-10 max-w-3xl mx-auto">
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
         <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
           <ClipboardList className="w-5 h-5 text-primary" />
         </div>
-        <div>
-          <p className="text-xs font-sans uppercase tracking-[0.18em] text-primary">
+        <div className="min-w-0">
+          <p className="text-[10px] sm:text-xs font-sans uppercase tracking-[0.14em] sm:tracking-[0.18em] text-primary">
             Test ryzyka · 5 pytań · ~1 minuta
           </p>
-          <h2 className="font-heading text-xl md:text-2xl text-foreground">
+          <h2 className="font-heading text-lg sm:text-xl md:text-2xl text-foreground leading-tight">
             Sprawdź swoje ryzyko hemoroidów
           </h2>
         </div>
