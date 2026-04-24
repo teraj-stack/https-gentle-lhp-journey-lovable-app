@@ -397,6 +397,45 @@ const AdminSecurityChecklist = () => {
         return `${field}: ${formatMm(issue.value)} przekracza maksimum (${CUSTOM_MM_MAX} mm) o ${formatMm(issue.value - CUSTOM_MM_MAX)}.`;
     }
   };
+  // Live hint shown under each field as the user types. Returns a status
+  // (`ok` / `warn` / `error`) plus a short message describing how the value
+  // compares to the allowed range, without waiting for blur.
+  type LiveHint = { tone: "ok" | "warn" | "error"; message: string };
+  const describeFieldHint = (raw: string, field: "Szerokość" | "Wysokość"): LiveHint => {
+    const trimmed = raw.trim();
+    if (trimmed === "") {
+      return {
+        tone: "warn",
+        message: `Wpisz ${field.toLowerCase()} w zakresie ${CUSTOM_MM_MIN}–${CUSTOM_MM_MAX} mm.`,
+      };
+    }
+    const n = Number(trimmed.replace(",", "."));
+    if (!Number.isFinite(n)) {
+      return {
+        tone: "error",
+        message: `„${trimmed}" nie jest liczbą — użyj cyfr (np. 210 lub 210,5).`,
+      };
+    }
+    if (n < CUSTOM_MM_MIN) {
+      return {
+        tone: "error",
+        message: `${formatMm(n)} — za mało o ${formatMm(CUSTOM_MM_MIN - n)} (min. ${CUSTOM_MM_MIN} mm).`,
+      };
+    }
+    if (n > CUSTOM_MM_MAX) {
+      return {
+        tone: "error",
+        message: `${formatMm(n)} — za dużo o ${formatMm(n - CUSTOM_MM_MAX)} (maks. ${CUSTOM_MM_MAX} mm).`,
+      };
+    }
+    // Valid — surface the parsed value plus how much headroom remains on each side.
+    const toMin = n - CUSTOM_MM_MIN;
+    const toMax = CUSTOM_MM_MAX - n;
+    return {
+      tone: "ok",
+      message: `OK · ${formatMm(n)} (${formatMm(toMin)} nad min., ${formatMm(toMax)} pod maks.).`,
+    };
+  };
   const customSizeValidation = (() => {
     if (pdfPageSize !== "Custom") {
       return {
@@ -1788,19 +1827,27 @@ const AdminSecurityChecklist = () => {
                         onChange={(e) => setPdfCustomWidthMm(e.target.value)}
                         className="h-8 text-sm"
                         aria-invalid={!!customSizeValidation.widthError}
-                        aria-describedby={
-                          customSizeValidation.widthError ? "pdf-custom-w-error" : undefined
-                        }
+                        aria-describedby="pdf-custom-w-hint"
                       />
-                      {customSizeValidation.widthError && (
-                        <p
-                          id="pdf-custom-w-error"
-                          className="text-[10px] text-destructive leading-tight"
-                          role="alert"
-                        >
-                          {customSizeValidation.widthError}
-                        </p>
-                      )}
+                      {(() => {
+                        const hint = describeFieldHint(pdfCustomWidthMm, "Szerokość");
+                        const toneClass =
+                          hint.tone === "ok"
+                            ? "text-emerald-600 dark:text-emerald-400"
+                            : hint.tone === "warn"
+                              ? "text-muted-foreground"
+                              : "text-destructive";
+                        return (
+                          <p
+                            id="pdf-custom-w-hint"
+                            className={`text-[10px] leading-tight ${toneClass}`}
+                            role={hint.tone === "error" ? "alert" : undefined}
+                            aria-live="polite"
+                          >
+                            {hint.message}
+                          </p>
+                        );
+                      })()}
                     </div>
                     <div className="space-y-1">
                       <Label htmlFor="pdf-custom-h" className="text-[11px] text-muted-foreground">
@@ -1817,19 +1864,27 @@ const AdminSecurityChecklist = () => {
                         onChange={(e) => setPdfCustomHeightMm(e.target.value)}
                         className="h-8 text-sm"
                         aria-invalid={!!customSizeValidation.heightError}
-                        aria-describedby={
-                          customSizeValidation.heightError ? "pdf-custom-h-error" : undefined
-                        }
+                        aria-describedby="pdf-custom-h-hint"
                       />
-                      {customSizeValidation.heightError && (
-                        <p
-                          id="pdf-custom-h-error"
-                          className="text-[10px] text-destructive leading-tight"
-                          role="alert"
-                        >
-                          {customSizeValidation.heightError}
-                        </p>
-                      )}
+                      {(() => {
+                        const hint = describeFieldHint(pdfCustomHeightMm, "Wysokość");
+                        const toneClass =
+                          hint.tone === "ok"
+                            ? "text-emerald-600 dark:text-emerald-400"
+                            : hint.tone === "warn"
+                              ? "text-muted-foreground"
+                              : "text-destructive";
+                        return (
+                          <p
+                            id="pdf-custom-h-hint"
+                            className={`text-[10px] leading-tight ${toneClass}`}
+                            role={hint.tone === "error" ? "alert" : undefined}
+                            aria-live="polite"
+                          >
+                            {hint.message}
+                          </p>
+                        );
+                      })()}
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-1.5 pt-0.5">
