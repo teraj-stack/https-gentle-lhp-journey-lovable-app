@@ -155,7 +155,7 @@ const PREVENTION: KeyPoint[] = [
   {
     title: "Krótkie wizyty w toalecie (max 3 min, bez telefonu)",
     summary:
-      "Zasada „3 minuty bez parcia". Jeśli stolec nie schodzi — wstań i wróć później. Pozycja kuczna (podnóżek) redukuje parcie o 60%.",
+      "Zasada „3 minuty bez parcia”. Jeśli stolec nie schodzi — wstań i wróć później. Pozycja kuczna (podnóżek) redukuje parcie o 60%.",
     evidence:
       "Sikirov D. (2003) — RCT n=28: pozycja kuczna istotnie skraca czas defekacji i parcie.",
     sources: [
