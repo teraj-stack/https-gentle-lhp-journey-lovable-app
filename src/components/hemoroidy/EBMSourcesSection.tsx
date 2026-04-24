@@ -377,10 +377,36 @@ const EBMSourcesSection = ({
         </Accordion>
       </motion.div>
 
-      <p className="text-xs text-muted-foreground italic mt-6 text-center max-w-2xl mx-auto">
-        Bibliografia ma charakter edukacyjny i nie zastępuje konsultacji lekarskiej. Aktualizacja:
-        kwiecień 2026.
-      </p>
+      {/* Disclaimer — quiz vs konsultacja vs charakter linków */}
+      <div className="mt-8 max-w-3xl mx-auto rounded-xl border border-primary/20 bg-primary/5 p-5 sm:p-6">
+        <div className="flex items-start gap-3">
+          <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+            <Info className="w-4 h-4 text-primary" />
+          </div>
+          <div className="min-w-0 space-y-2.5">
+            <p className="font-heading text-base sm:text-lg text-foreground leading-snug">
+              Quiz i bibliografia mają charakter edukacyjny
+            </p>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              <span className="text-foreground/90 font-medium">Wynik testu nie jest diagnozą</span>{" "}
+              i nie zastępuje konsultacji proktologicznej. Quiz służy ocenie ryzyka na podstawie
+              stylu życia — wyłącznie lekarz po badaniu fizykalnym może rozpoznać chorobę
+              hemoroidalną i odróżnić ją od innych przyczyn dolegliwości (m.in. szczeliny odbytu,
+              polipów, choroby zapalnej jelit czy nowotworu).
+            </p>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              Linki do publikacji w PubMed, ASCRS i ESCP udostępniamy do{" "}
+              <span className="text-foreground/90 font-medium">pogłębienia wiedzy</span>{" "}
+              — pozwalają zweryfikować źródło każdego zalecenia. Nie należy ich traktować jako
+              instrukcji samoleczenia ani podstawy do dobierania terapii bez nadzoru lekarza.
+            </p>
+            <p className="text-xs text-muted-foreground italic pt-1">
+              W razie objawów alarmowych (krwawienie, silny ból, gorączka, twardy guz) skontaktuj
+              się pilnie z proktologiem lub zgłoś na SOR. Aktualizacja bibliografii: kwiecień 2026.
+            </p>
+          </div>
+        </div>
+      </div>
     </section>
   );
 };
