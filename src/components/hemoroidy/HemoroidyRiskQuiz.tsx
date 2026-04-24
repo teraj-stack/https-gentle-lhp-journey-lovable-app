@@ -9,7 +9,6 @@ import {
   AlertTriangle,
   AlertOctagon,
   ArrowRight,
-  Check,
   Download,
   Stethoscope,
   ArrowDown,
