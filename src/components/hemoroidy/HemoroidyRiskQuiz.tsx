@@ -12,10 +12,12 @@ import {
   Check,
   Download,
   Stethoscope,
+  ArrowDown,
 } from "lucide-react";
 
 type Option = { label: string; points: number };
 type Question = { id: string; q: string; options: Option[] };
+type Recommendation = { text: string; anchor: string };
 
 const questions: Question[] = [
   {
