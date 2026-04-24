@@ -232,6 +232,7 @@ const CATEGORIES: Category[] = [
     id: "lhp",
     title: "Leczenie laserowe (LHP) i małoinwazyjne",
     intro: "Dowody skuteczności i bezpieczeństwa LHP w porównaniu z metodami klasycznymi.",
+    tldr: "RCT i meta-analizy cytowane także w wytycznych ESCP pokazują, że LHP daje porównywalną skuteczność do operacji Milligana-Morgana przy istotnie mniejszym bólu pooperacyjnym, krótszej rekonwalescencji i szybszym powrocie do pracy.",
     Icon: Microscope,
     items: [
       {
