@@ -15,6 +15,7 @@ import {
   FileDown,
 } from "lucide-react";
 import { generateQuizResultPdf } from "@/lib/quizResultPdf";
+import { useQuizHistory } from "@/hooks/useQuizHistory";
 
 type Option = { label: string; points: number };
 type Question = { id: string; q: string; options: Option[] };
