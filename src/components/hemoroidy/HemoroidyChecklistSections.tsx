@@ -134,11 +134,11 @@ const HemoroidyChecklistSections = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.2 }}
               transition={{ duration: 0.5, delay: idx * 0.05, ease: easeOut }}
-              className={`scroll-mt-32 glass-card rounded-2xl p-6 md:p-7 border ${
+              className={`scroll-mt-32 glass-card rounded-2xl p-5 sm:p-6 md:p-7 border ${
                 isUrgent ? "border-destructive/40 bg-destructive/5" : "border-border"
               }`}
             >
-              <div className="flex items-start gap-4 mb-4">
+              <div className="flex items-start gap-3 sm:gap-4 mb-4">
                 <div
                   className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${
                     isUrgent ? "bg-destructive/15" : "bg-primary/15"
@@ -148,8 +148,8 @@ const HemoroidyChecklistSections = () => {
                     className={`w-5 h-5 ${isUrgent ? "text-destructive" : "text-primary"}`}
                   />
                 </div>
-                <div>
-                  <h3 className="font-heading text-xl md:text-2xl text-foreground leading-tight mb-1.5">
+                <div className="min-w-0 flex-1">
+                  <h3 className="font-heading text-lg sm:text-xl md:text-2xl text-foreground leading-tight mb-1.5">
                     {section.title}
                   </h3>
                   <p className="text-sm text-muted-foreground leading-relaxed">{section.lead}</p>
