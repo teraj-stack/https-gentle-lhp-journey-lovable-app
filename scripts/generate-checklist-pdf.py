@@ -16,6 +16,8 @@ from reportlab.lib.enums import TA_LEFT, TA_CENTER
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import mm
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.platypus import (
     BaseDocTemplate,
     Frame,
@@ -27,6 +29,26 @@ from reportlab.platypus import (
     Table,
     TableStyle,
 )
+
+# ---------------------------------------------------------------------------
+# Fonts — DejaVu Sans supports the full Polish diacritics set
+# ---------------------------------------------------------------------------
+FONT_DIR = Path("/tmp/fonts")
+pdfmetrics.registerFont(TTFont("DejaVu", str(FONT_DIR / "DejaVuSans.ttf")))
+pdfmetrics.registerFont(TTFont("DejaVu-Bold", str(FONT_DIR / "DejaVuSans-Bold.ttf")))
+pdfmetrics.registerFont(TTFont("DejaVu-Oblique", str(FONT_DIR / "DejaVuSans-Oblique.ttf")))
+pdfmetrics.registerFont(TTFont("DejaVu-BoldOblique", str(FONT_DIR / "DejaVuSans-BoldOblique.ttf")))
+from reportlab.pdfbase.pdfmetrics import registerFontFamily
+registerFontFamily(
+    "DejaVu",
+    normal="DejaVu",
+    bold="DejaVu-Bold",
+    italic="DejaVu-Oblique",
+    boldItalic="DejaVu-BoldOblique",
+)
+
+FONT = "DejaVu"
+FONT_BOLD = "DejaVu-Bold"
 
 # ---------------------------------------------------------------------------
 # Brand
