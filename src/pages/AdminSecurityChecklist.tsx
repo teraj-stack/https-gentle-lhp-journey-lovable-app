@@ -2095,6 +2095,56 @@ const AdminSecurityChecklist = () => {
                       Popraw wskazane pole. Dozwolony zakres: {RANGE_LABEL}.
                     </p>
                   )}
+                  {/* Optional scroll offset for the focus-on-error helper.
+                      Persisted in localStorage so the operator tunes it once. */}
+                  <div className="flex items-center justify-between gap-2 pt-1.5 border-t border-border/40">
+                    <Label
+                      htmlFor="pdf-focus-scroll-offset"
+                      className="text-[11px] text-muted-foreground"
+                      title="Liczba pikseli zostawiana nad polem po przewinięciu — zapobiega chowaniu się pola pod nagłówkiem okna."
+                    >
+                      Odstęp przewijania (px)
+                    </Label>
+                    <div className="flex items-center gap-1.5">
+                      <Input
+                        id="pdf-focus-scroll-offset"
+                        type="number"
+                        inputMode="numeric"
+                        min={SCROLL_OFFSET_MIN}
+                        max={SCROLL_OFFSET_MAX}
+                        step={4}
+                        value={focusScrollOffset}
+                        onChange={(e) => {
+                          const n = Number(e.target.value);
+                          if (!Number.isFinite(n)) return;
+                          setFocusScrollOffset(
+                            Math.min(SCROLL_OFFSET_MAX, Math.max(SCROLL_OFFSET_MIN, Math.round(n))),
+                          );
+                        }}
+                        className="h-7 w-20 text-xs tabular-nums"
+                        aria-describedby="pdf-focus-scroll-offset-hint"
+                      />
+                      {focusScrollOffset !== SCROLL_OFFSET_DEFAULT && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 px-2 text-[10px]"
+                          onClick={() => setFocusScrollOffset(SCROLL_OFFSET_DEFAULT)}
+                          title={`Przywróć domyślny (${SCROLL_OFFSET_DEFAULT} px)`}
+                        >
+                          Reset
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                  <p
+                    id="pdf-focus-scroll-offset-hint"
+                    className="text-[10px] text-muted-foreground/80 leading-tight"
+                  >
+                    Stosowane przy walidacji eksportu, gdy podświetlone pole musi zostać przewinięte do widoku
+                    (zakres {SCROLL_OFFSET_MIN}–{SCROLL_OFFSET_MAX} px, domyślnie {SCROLL_OFFSET_DEFAULT}).
+                  </p>
                   {/* Saved presets: name + dimensions, click to apply, trash to delete. */}
                   <div className="space-y-1.5 pt-1.5 border-t border-border/40">
                     <div className="flex items-center justify-between gap-2">
