@@ -124,7 +124,7 @@ const tiers: RiskTier[] = [
   {
     level: "low",
     label: "Niskie ryzyko",
-    range: "0–5 pkt",
+    range: "0–8 pkt",
     Icon: ShieldCheck,
     color: "text-emerald-400",
     bg: "bg-emerald-500/10",
@@ -147,7 +147,7 @@ const tiers: RiskTier[] = [
   {
     level: "medium",
     label: "Średnie ryzyko",
-    range: "6–11 pkt",
+    range: "9–17 pkt",
     Icon: AlertTriangle,
     color: "text-primary",
     bg: "bg-primary/10",
@@ -170,7 +170,7 @@ const tiers: RiskTier[] = [
   {
     level: "high",
     label: "Wysokie ryzyko",
-    range: "12+ pkt",
+    range: "18+ pkt",
     Icon: AlertOctagon,
     color: "text-destructive",
     bg: "bg-destructive/10",
@@ -194,8 +194,8 @@ const tiers: RiskTier[] = [
 ];
 
 const getTier = (score: number): RiskTier => {
-  if (score <= 5) return tiers[0];
-  if (score <= 11) return tiers[1];
+  if (score <= 8) return tiers[0];
+  if (score <= 17) return tiers[1];
   return tiers[2];
 };
 
@@ -239,7 +239,7 @@ const HemoroidyRiskQuiz = () => {
         </div>
         <div className="min-w-0">
           <p className="text-[10px] sm:text-xs font-sans uppercase tracking-[0.14em] sm:tracking-[0.18em] text-primary">
-            Test ryzyka · 5 pytań · ~1 minuta
+            Test ryzyka · 9 pytań · ~2 minuty
           </p>
           <h2 className="font-heading text-lg sm:text-xl md:text-2xl text-foreground leading-tight">
             Sprawdź swoje ryzyko hemoroidów
