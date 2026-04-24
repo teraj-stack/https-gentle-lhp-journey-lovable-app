@@ -1,12 +1,21 @@
+import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { BookMarked, Download, ExternalLink, Salad, Droplet, Timer, Activity, Stethoscope, ScrollText, AlertCircle, Microscope, Info } from "lucide-react";
+import { BookMarked, Download, ExternalLink, Salad, Droplet, Timer, Activity, Stethoscope, ScrollText, AlertCircle, Microscope, Info, Search, X } from "lucide-react";
+
+const normalize = (s: string): string =>
+  s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/ł/g, "l");
 
 const PDF_URL =
   "https://jowtjcyevactqmhqrytz.supabase.co/storage/v1/object/public/blog-covers/downloads%2Fzrodla-EBM-profilaktyka-hemoroidow-CML.pdf";
@@ -257,9 +266,39 @@ const EBMSourcesSection = ({
   title = "Źródła EBM",
   subtitle = "Pełna bibliografia oparta na wytycznych ASCRS, ESCP, Cochrane i recenzowanych publikacjach z PubMed.",
 }: EBMSourcesSectionProps) => {
-  const cats = categoryIds
+  const baseCats = categoryIds
     ? CATEGORIES.filter((c) => categoryIds.includes(c.id))
     : CATEGORIES;
+
+  const [activeCat, setActiveCat] = useState<string>("all");
+  const [query, setQuery] = useState<string>("");
+
+  const filtered = useMemo(() => {
+    const q = normalize(query.trim());
+    const byCat = activeCat === "all" ? baseCats : baseCats.filter((c) => c.id === activeCat);
+    if (q.length < 2) {
+      return byCat.map((c) => ({ ...c, matchedItems: c.items }));
+    }
+    return byCat
+      .map((c) => {
+        const catHit =
+          normalize(c.title).includes(q) || normalize(c.intro).includes(q);
+        const matchedItems = c.items.filter((s) => {
+          const haystack = normalize(
+            `${s.authors} ${s.year} ${s.title} ${s.journal}`,
+          );
+          return haystack.includes(q);
+        });
+        if (catHit) return { ...c, matchedItems: c.items };
+        if (matchedItems.length > 0) return { ...c, matchedItems };
+        return null;
+      })
+      .filter((c): c is Category & { matchedItems: Source[] } => c !== null);
+  }, [baseCats, activeCat, query]);
+
+  const totalMatches = filtered.reduce((sum, c) => sum + c.matchedItems.length, 0);
+  const isFiltering = query.trim().length >= 2 || activeCat !== "all";
+  const openValues = isFiltering ? filtered.map((c) => c.id) : undefined;
 
   return (
     <section className="max-w-3xl mx-auto" aria-labelledby="ebm-sources-heading">
@@ -315,6 +354,89 @@ const EBMSourcesSection = ({
         </Button>
       </motion.div>
 
+      {/* Filter & search */}
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.2 }}
+        transition={{ duration: 0.5, ease: easeOut }}
+        className="mb-5 space-y-3"
+        role="search"
+        aria-label="Filtrowanie źródeł EBM"
+      >
+        <div className="relative">
+          <Search
+            className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none"
+            aria-hidden="true"
+          />
+          <Input
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Szukaj: autor, tytuł, journal, rok…"
+            aria-label="Wyszukaj w bibliografii"
+            className="pl-9 pr-9 bg-background/40 border-border focus-visible:ring-primary"
+          />
+          {query.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setQuery("")}
+              aria-label="Wyczyść wyszukiwanie"
+              className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+
+        <div className="flex flex-wrap gap-2" role="tablist" aria-label="Kategoria źródeł">
+          {[{ id: "all", title: "Wszystkie", Icon: BookMarked }, ...baseCats].map((c) => {
+            const Icon = c.Icon;
+            const active = activeCat === c.id;
+            return (
+              <button
+                key={c.id}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                onClick={() => setActiveCat(c.id)}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs sm:text-sm border transition-colors ${
+                  active
+                    ? "bg-primary/15 border-primary/40 text-primary"
+                    : "bg-background/40 border-border text-muted-foreground hover:text-foreground hover:border-primary/30"
+                }`}
+              >
+                <Icon className="w-3.5 h-3.5" />
+                {c.title}
+              </button>
+            );
+          })}
+        </div>
+
+        {isFiltering && (
+          <p className="text-xs text-muted-foreground" aria-live="polite">
+            Znaleziono <span className="text-foreground font-medium">{totalMatches}</span>{" "}
+            {totalMatches === 1 ? "pozycję" : totalMatches >= 2 && totalMatches <= 4 ? "pozycje" : "pozycji"}
+            {filtered.length > 0 && (
+              <>
+                {" "}w <span className="text-foreground font-medium">{filtered.length}</span>{" "}
+                {filtered.length === 1 ? "kategorii" : "kategoriach"}
+              </>
+            )}
+            <button
+              type="button"
+              onClick={() => {
+                setQuery("");
+                setActiveCat("all");
+              }}
+              className="ml-2 text-primary hover:underline"
+            >
+              Wyczyść filtry
+            </button>
+          </p>
+        )}
+      </motion.div>
+
       {/* Accordion list */}
       <motion.div
         initial={{ opacity: 0, y: 16 }}
@@ -322,8 +444,25 @@ const EBMSourcesSection = ({
         viewport={{ once: true, amount: 0.15 }}
         transition={{ duration: 0.6, ease: easeOut }}
       >
-        <Accordion type="multiple" className="space-y-2">
-          {cats.map((cat) => {
+        {filtered.length === 0 ? (
+          <div className="rounded-xl border border-border bg-background/40 p-8 text-center">
+            <p className="text-sm text-muted-foreground">
+              Brak źródeł pasujących do wyszukiwania{query ? ` „${query}”` : ""}.
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                setQuery("");
+                setActiveCat("all");
+              }}
+              className="mt-3 text-sm text-primary hover:underline"
+            >
+              Wyczyść filtry
+            </button>
+          </div>
+        ) : (
+        <Accordion type="multiple" value={openValues} className="space-y-2">
+          {filtered.map((cat) => {
             const Icon = cat.Icon;
             return (
               <AccordionItem
@@ -348,7 +487,7 @@ const EBMSourcesSection = ({
                 </AccordionTrigger>
                 <AccordionContent className="px-5 pb-5">
                   <ul className="space-y-3 pt-2 border-t border-border/50">
-                    {cat.items.map((src, i) => (
+                    {cat.matchedItems.map((src, i) => (
                       <li
                         key={`${cat.id}-${i}`}
                         className="text-sm leading-relaxed text-foreground/90"
@@ -375,6 +514,7 @@ const EBMSourcesSection = ({
             );
           })}
         </Accordion>
+        )}
       </motion.div>
 
       {/* Disclaimer — quiz vs konsultacja vs charakter linków */}
