@@ -126,6 +126,7 @@ const CATEGORIES: Category[] = [
     id: "toilet",
     title: "Nawyki toaletowe i parcie",
     intro: "Rola czasu w toalecie, parcia (próby Valsalvy) i pozycji ciała w patogenezie.",
+    tldr: "ASCRS i ESCP rekomendują skrócenie czasu defekacji (<3–5 min), unikanie parcia (Valsalva) i czytania w toalecie — przewlekłe parcie zwiększa ciśnienie w splotach i jest udokumentowanym czynnikiem powstawania oraz nawrotu hemoroidów.",
     Icon: Timer,
     items: [
       {
