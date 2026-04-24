@@ -73,7 +73,14 @@ const QuizHemoroidy = () => {
             <HemoroidyChecklistSections />
           </div>
 
-          {/* Disclaimer + related */}
+          {/* EBM Sources — bibliography backing the quiz recommendations */}
+          <div className="mt-20">
+            <EBMSourcesSection
+              subtitle="Każde pytanie i zalecenie w teście opiera się na recenzowanych badaniach. Poniżej pełna bibliografia (8 kategorii, 22 referencje) z linkami do PubMed i wytycznych ASCRS / ESCP."
+            />
+          </div>
+
+          {/* Related links */}
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -118,13 +125,6 @@ const QuizHemoroidy = () => {
               </p>
             </Link>
           </motion.div>
-
-          {/* EBM Sources */}
-          <div className="mt-20">
-            <EBMSourcesSection
-              subtitle="Każde pytanie i zalecenie w teście opiera się na recenzowanych badaniach. Poniżej pełna bibliografia (8 kategorii, 22 referencje) z linkami do PubMed i wytycznych ASCRS / ESCP."
-            />
-          </div>
         </div>
       </section>
     </>
