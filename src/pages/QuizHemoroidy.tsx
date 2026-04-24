@@ -20,10 +20,9 @@ const QuizHemoroidy = () => {
         path="/dla-pacjenta/quiz-hemoroidy"
       />
       <MedicalWebPageSchema
-        title="Test ryzyka hemoroidów"
+        name="Test ryzyka hemoroidów"
         description="Interaktywny quiz oceniający ryzyko choroby hemoroidalnej na podstawie czynników stylu życia (dieta, nawodnienie, nawyki toaletowe, aktywność, objawy) — z dopasowanymi zaleceniami EBM."
         path="/dla-pacjenta/quiz-hemoroidy"
-        about="Hemorrhoid risk assessment"
       />
 
       <section className="pt-32 pb-16 md:pt-40 md:pb-24 px-4 md:px-8 relative overflow-hidden">
