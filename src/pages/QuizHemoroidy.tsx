@@ -7,6 +7,7 @@ import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 import HemoroidyRiskQuiz from "@/components/hemoroidy/HemoroidyRiskQuiz";
 import HemoroidyChecklistSections from "@/components/hemoroidy/HemoroidyChecklistSections";
 import EBMSourcesSection from "@/components/hemoroidy/EBMSourcesSection";
+import RedFlagsFAQ from "@/components/hemoroidy/RedFlagsFAQ";
 import { ClipboardList, Sparkles, BookOpen, Stethoscope } from "lucide-react";
 
 const easeOut = [0.16, 1, 0.3, 1] as const;
@@ -67,6 +68,11 @@ const QuizHemoroidy = () => {
           >
             <HemoroidyRiskQuiz />
           </motion.div>
+
+          {/* Red Flags FAQ — alarm symptoms with EBM links, complements quiz risk markers */}
+          <div className="mt-20">
+            <RedFlagsFAQ />
+          </div>
 
           {/* Checklist sections — anchor targets for quiz recommendations */}
           <div className="mt-20">
