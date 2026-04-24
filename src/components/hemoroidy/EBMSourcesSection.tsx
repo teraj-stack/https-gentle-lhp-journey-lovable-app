@@ -266,9 +266,39 @@ const EBMSourcesSection = ({
   title = "Źródła EBM",
   subtitle = "Pełna bibliografia oparta na wytycznych ASCRS, ESCP, Cochrane i recenzowanych publikacjach z PubMed.",
 }: EBMSourcesSectionProps) => {
-  const cats = categoryIds
+  const baseCats = categoryIds
     ? CATEGORIES.filter((c) => categoryIds.includes(c.id))
     : CATEGORIES;
+
+  const [activeCat, setActiveCat] = useState<string>("all");
+  const [query, setQuery] = useState<string>("");
+
+  const filtered = useMemo(() => {
+    const q = normalize(query.trim());
+    const byCat = activeCat === "all" ? baseCats : baseCats.filter((c) => c.id === activeCat);
+    if (q.length < 2) {
+      return byCat.map((c) => ({ ...c, matchedItems: c.items }));
+    }
+    return byCat
+      .map((c) => {
+        const catHit =
+          normalize(c.title).includes(q) || normalize(c.intro).includes(q);
+        const matchedItems = c.items.filter((s) => {
+          const haystack = normalize(
+            `${s.authors} ${s.year} ${s.title} ${s.journal}`,
+          );
+          return haystack.includes(q);
+        });
+        if (catHit) return { ...c, matchedItems: c.items };
+        if (matchedItems.length > 0) return { ...c, matchedItems };
+        return null;
+      })
+      .filter((c): c is Category & { matchedItems: Source[] } => c !== null);
+  }, [baseCats, activeCat, query]);
+
+  const totalMatches = filtered.reduce((sum, c) => sum + c.matchedItems.length, 0);
+  const isFiltering = query.trim().length >= 2 || activeCat !== "all";
+  const openValues = isFiltering ? filtered.map((c) => c.id) : undefined;
 
   return (
     <section className="max-w-3xl mx-auto" aria-labelledby="ebm-sources-heading">
