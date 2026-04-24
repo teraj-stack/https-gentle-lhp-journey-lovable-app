@@ -9,7 +9,6 @@ import {
   AlertTriangle,
   AlertOctagon,
   ArrowRight,
-  Check,
   Download,
   Stethoscope,
   ArrowDown,
@@ -129,15 +128,14 @@ const tiers: RiskTier[] = [
     color: "text-emerald-400",
     bg: "bg-emerald-500/10",
     border: "border-emerald-500/30",
-    headline: "Świetnie — Twoje nawyki sprzyjają zdrowiu jelit.",
-    desc:
-      "Twój styl życia minimalizuje ryzyko hemoroidów. Kontynuuj profilaktykę i obserwuj objawy.",
+    headline: "Twoje nawyki dobrze chronią jelita — kontynuuj profilaktykę.",
+    desc: "",
     recommendations: [
       { text: "Utrzymuj 25–35 g błonnika dziennie", anchor: "fiber" },
       { text: "Pij 2–2,5 l wody dziennie", anchor: "hydration" },
-      { text: "Krótkie wizyty w toalecie (do 3 minut) — bez telefonu", anchor: "toilet" },
-      { text: "Min. 30 min aktywności fizycznej dziennie", anchor: "movement" },
-      { text: "Każde krwawienie z odbytu — zgłoś proktologowi (nawet jednorazowe)", anchor: "symptoms" },
+      { text: "Krótkie wizyty w toalecie (do 3 min, bez telefonu)", anchor: "toilet" },
+      { text: "Min. 30 min ruchu dziennie", anchor: "movement" },
+      { text: "Każde krwawienie z odbytu — skonsultuj z proktologiem", anchor: "symptoms" },
     ],
     ctaLabel: "Pobierz checklistę PDF",
     ctaHref:
@@ -152,16 +150,14 @@ const tiers: RiskTier[] = [
     color: "text-primary",
     bg: "bg-primary/10",
     border: "border-primary/40",
-    headline: "Warto wzmocnić codzienne nawyki.",
-    desc:
-      "Masz kilka czynników, które kumulatywnie zwiększają ryzyko hemoroidów. Wprowadź zmiany od dziś — większość przypadków ustępuje pod wpływem leczenia zachowawczego.",
+    headline: "Kilka czynników kumuluje ryzyko — zacznij wzmacniać nawyki od dziś.",
+    desc: "",
     recommendations: [
-      { text: "Zwiększ błonnik (psyllium 1 łyżka dziennie)", anchor: "fiber" },
-      { text: "Pij dodatkowe 0,5 l wody dziennie", anchor: "hydration" },
-      { text: "Skróć czas w toalecie do 3 minut + użyj podnóżka (pozycja kuczna)", anchor: "toilet" },
-      { text: "Dodaj codzienny spacer 30 min + ćwiczenia Kegla 3×10", anchor: "movement" },
-      { text: "Przy podnoszeniu ciężarów wydychaj powietrze (unikaj próby Valsalvy)", anchor: "movement" },
-      { text: "Jeśli pojawi się krwawienie lub guzek — umów konsultację proktologiczną", anchor: "symptoms" },
+      { text: "Dodaj błonnik (psyllium 1 łyżka dziennie) + 0,5 l wody więcej", anchor: "fiber" },
+      { text: "Skróć czas w toalecie do 3 min, użyj podnóżka (pozycja kuczna)", anchor: "toilet" },
+      { text: "Codzienny spacer 30 min + ćwiczenia Kegla 3×10", anchor: "movement" },
+      { text: "Przy podnoszeniu ciężarów wydychaj powietrze (bez próby Valsalvy)", anchor: "movement" },
+      { text: "Krwawienie lub guzek — umów konsultację proktologiczną", anchor: "symptoms" },
     ],
     ctaLabel: "Umów konsultację",
     ctaHref: "/kontakt",
@@ -175,16 +171,14 @@ const tiers: RiskTier[] = [
     color: "text-destructive",
     bg: "bg-destructive/10",
     border: "border-destructive/40",
-    headline: "Nie odkładaj wizyty u proktologa.",
-    desc:
-      "Kombinacja czynników stylu życia i objawów wskazuje na duże prawdopodobieństwo aktywnej choroby hemoroidalnej. Wczesna ocena pozwala leczyć małoinwazyjnie (LHP) z szybkim powrotem do aktywności.",
+    headline: "Wysokie prawdopodobieństwo aktywnej choroby — nie odkładaj wizyty.",
+    desc: "",
     recommendations: [
-      { text: "Umów konsultację proktologiczną w ciągu najbliższych 7 dni", anchor: "symptoms" },
-      { text: "Każde krwawienie z odbytu wymaga oceny — wyklucz inne przyczyny", anchor: "symptoms" },
-      { text: "Wprowadź pełną checklistę 4 filarów (błonnik, woda, toaleta, ruch)", anchor: "fiber" },
-      { text: "Unikaj długiego siedzenia bez przerw i podnoszenia dużych ciężarów", anchor: "movement" },
-      { text: "Notuj objawy: częstotliwość, intensywność, kolor krwawienia", anchor: "symptoms" },
-      { text: "Pilnie zgłoś się przy: obfitym krwawieniu, gorączce, silnym bólu", anchor: "urgent" },
+      { text: "Umów konsultację proktologiczną w ciągu 7 dni", anchor: "symptoms" },
+      { text: "Każde krwawienie z odbytu wymaga oceny lekarskiej", anchor: "symptoms" },
+      { text: "Wprowadź 4 filary: błonnik, woda, krótka toaleta, ruch", anchor: "fiber" },
+      { text: "Unikaj długiego siedzenia i podnoszenia dużych ciężarów", anchor: "movement" },
+      { text: "Pilnie 24–48 h: obfite krwawienie, gorączka, silny ból", anchor: "urgent" },
     ],
     ctaLabel: "Pilnie umów konsultację",
     ctaHref: "/kontakt",
@@ -306,28 +300,24 @@ const HemoroidyRiskQuiz = () => {
                   </h3>
                 </div>
               </div>
-              <p className="font-heading text-lg text-foreground mb-3">{tier.headline}</p>
-              <p className="text-sm md:text-base text-muted-foreground leading-relaxed mb-6">
-                {tier.desc}
+              <p className="text-base md:text-lg text-foreground/90 mb-6 leading-relaxed">
+                {tier.headline}
               </p>
 
-              {/* Recommendations */}
+              {/* Recommendations — top 5 actionable steps */}
               <div className="mb-6">
                 <p className="text-xs font-sans uppercase tracking-[0.18em] text-primary mb-3">
-                  Twoje dopasowane zalecenia
+                  Twoje 5 kroków · kliknij, aby przejść do checklisty
                 </p>
-                <p className="text-xs text-muted-foreground mb-4">
-                  Kliknij zalecenie, aby przeskoczyć do odpowiedniej sekcji checklisty poniżej.
-                </p>
-                <ul className="space-y-2">
-                  {tier.recommendations.map((rec) => (
+                <ol className="space-y-2">
+                  {tier.recommendations.slice(0, 5).map((rec, idx) => (
                     <li key={rec.text}>
                       <a
                         href={`#${rec.anchor}`}
                         className="group flex items-start gap-3 p-2.5 -mx-2.5 rounded-lg hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-colors"
                       >
-                        <span className="w-5 h-5 rounded-full bg-primary/15 group-hover:bg-primary/25 flex items-center justify-center shrink-0 mt-0.5 transition-colors">
-                          <Check className="w-3 h-3 text-primary" strokeWidth={3} />
+                        <span className="w-6 h-6 rounded-full bg-primary/15 group-hover:bg-primary/25 flex items-center justify-center shrink-0 mt-0.5 text-xs font-semibold text-primary transition-colors">
+                          {idx + 1}
                         </span>
                         <span className="flex-1 text-sm md:text-base text-foreground/90 group-hover:text-foreground leading-relaxed">
                           {rec.text}
@@ -336,7 +326,7 @@ const HemoroidyRiskQuiz = () => {
                       </a>
                     </li>
                   ))}
-                </ul>
+                </ol>
               </div>
 
               {/* Urgent warning for high tier */}
