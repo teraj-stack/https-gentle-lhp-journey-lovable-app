@@ -103,6 +103,7 @@ const CATEGORIES: Category[] = [
     id: "hydration",
     title: "Nawodnienie i konsystencja stolca",
     intro: "Związek niedostatecznej podaży płynów z zaparciami — kluczowym czynnikiem ryzyka.",
+    tldr: "ASCRS i ESCP wskazują nawodnienie (1,5–2 l wody/dobę) jako niezbędne uzupełnienie diety bogatobłonnikowej — bez wody błonnik może nasilać zaparcia i parcie, czyli kluczowy mechanizm uszkadzający sploty hemoroidalne.",
     Icon: Droplet,
     items: [
       {
