@@ -542,6 +542,60 @@ const AdminSecurityChecklist = () => {
     setPdfCustomHeightMm(String(value));
     toast.success(`Wysokość: ${reason}`);
   }, [pdfCustomHeightMm, snapToNearestValid]);
+  // Optional scroll offset (px) applied when the focused-on-error helper
+  // scrolls an invalid custom-size field into view inside the export dialog.
+  // The dialog's `DialogHeader` is sticky-ish at the top of its scroll
+  // container; on small viewports a centered scroll can still leave the
+  // input partially obscured. Operators can tune this once and we persist it.
+  const SCROLL_OFFSET_KEY = "cml.admin.pdfFocusScrollOffset";
+  const SCROLL_OFFSET_MIN = 0;
+  const SCROLL_OFFSET_MAX = 240;
+  const SCROLL_OFFSET_DEFAULT = 72;
+  const [focusScrollOffset, setFocusScrollOffset] = useState<number>(() => {
+    if (typeof window === "undefined") return SCROLL_OFFSET_DEFAULT;
+    const raw = window.localStorage.getItem(SCROLL_OFFSET_KEY);
+    if (raw === null) return SCROLL_OFFSET_DEFAULT;
+    const n = Number(raw);
+    if (!Number.isFinite(n)) return SCROLL_OFFSET_DEFAULT;
+    return Math.min(SCROLL_OFFSET_MAX, Math.max(SCROLL_OFFSET_MIN, Math.round(n)));
+  });
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem(SCROLL_OFFSET_KEY, String(focusScrollOffset));
+    } catch {
+      // ignore quota / privacy mode errors
+    }
+  }, [focusScrollOffset]);
+  // Scroll a target element into view inside its nearest scrollable ancestor,
+  // leaving `offset` pixels of headroom above it (so it never lands under a
+  // sticky header). Falls back to `el.scrollIntoView` when no scroll
+  // container is found (e.g. during SSR or detached node).
+  const scrollIntoViewWithOffset = useCallback((el: HTMLElement, offset: number) => {
+    const findScrollableAncestor = (node: HTMLElement | null): HTMLElement | null => {
+      let cur: HTMLElement | null = node?.parentElement ?? null;
+      while (cur && cur !== document.body) {
+        const style = window.getComputedStyle(cur);
+        const overflowY = style.overflowY;
+        if ((overflowY === "auto" || overflowY === "scroll" || overflowY === "overlay") && cur.scrollHeight > cur.clientHeight) {
+          return cur;
+        }
+        cur = cur.parentElement;
+      }
+      return null;
+    };
+    const container = findScrollableAncestor(el);
+    if (!container) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
+    const containerRect = container.getBoundingClientRect();
+    const elRect = el.getBoundingClientRect();
+    // Distance from the top of the container's viewport to the element's top.
+    const deltaFromTop = elRect.top - containerRect.top;
+    const targetTop = container.scrollTop + deltaFromTop - offset;
+    container.scrollTo({ top: Math.max(0, targetTop), behavior: "smooth" });
+  }, []);
   // Final pre-export validation: focuses + scrolls to the first invalid custom
   // size field and surfaces a toast that includes the entered value and the
   // exact allowed range. Returns `true` when the export may proceed.
