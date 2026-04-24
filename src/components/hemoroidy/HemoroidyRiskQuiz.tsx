@@ -120,12 +120,12 @@ const tiers: RiskTier[] = [
     desc:
       "Masz kilka czynników, które kumulatywnie zwiększają ryzyko hemoroidów. Wprowadź zmiany od dziś — większość przypadków ustępuje pod wpływem leczenia zachowawczego.",
     recommendations: [
-      "Zwiększ błonnik (psyllium 1 łyżka dziennie) i pij dodatkowe 0,5 l wody",
-      "Skróć czas w toalecie do 3 minut — bez telefonu i książki",
-      "Wprowadź podnóżek (kąt 35°) dla pozycji kucznej",
-      "Dodaj codzienny spacer 30 min + ćwiczenia Kegla 3×10",
-      "Przy podnoszeniu ciężarów wydychaj powietrze (unikaj próby Valsalvy)",
-      "Jeśli pojawi się krwawienie lub guzek — umów konsultację proktologiczną",
+      { text: "Zwiększ błonnik (psyllium 1 łyżka dziennie)", anchor: "fiber" },
+      { text: "Pij dodatkowe 0,5 l wody dziennie", anchor: "hydration" },
+      { text: "Skróć czas w toalecie do 3 minut + użyj podnóżka (pozycja kuczna)", anchor: "toilet" },
+      { text: "Dodaj codzienny spacer 30 min + ćwiczenia Kegla 3×10", anchor: "movement" },
+      { text: "Przy podnoszeniu ciężarów wydychaj powietrze (unikaj próby Valsalvy)", anchor: "movement" },
+      { text: "Jeśli pojawi się krwawienie lub guzek — umów konsultację proktologiczną", anchor: "symptoms" },
     ],
     ctaLabel: "Umów konsultację proktologiczną",
     ctaHref: "/kontakt",
