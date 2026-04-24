@@ -258,14 +258,14 @@ const HemoroidyRiskQuiz = () => {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5, ease: easeOut }}
           >
-            <div className={`rounded-xl border ${tier.border} ${tier.bg} p-6 md:p-8`}>
+            <div className={`rounded-xl border ${tier.border} ${tier.bg} p-5 sm:p-6 md:p-8`}>
               <div className="flex items-start gap-3 mb-3">
                 <TierIcon className={`w-7 h-7 ${tier.color} shrink-0 mt-0.5`} />
-                <div>
-                  <p className="text-xs font-sans uppercase tracking-[0.18em] text-muted-foreground">
+                <div className="min-w-0">
+                  <p className="text-[10px] sm:text-xs font-sans uppercase tracking-[0.14em] sm:tracking-[0.18em] text-muted-foreground">
                     Twój wynik · {score} pkt · {tier.range}
                   </p>
-                  <h3 className={`font-heading text-2xl md:text-3xl ${tier.color}`}>
+                  <h3 className={`font-heading text-2xl md:text-3xl ${tier.color} leading-tight`}>
                     {tier.label}
                   </h3>
                 </div>
