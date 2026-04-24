@@ -1346,7 +1346,7 @@ const AdminSecurityChecklist = () => {
         setTimeout(() => setServerPhase("idle"), 600);
       }
     },
-    [rows, liveStatus, lastAuditAt],
+    [rows, liveStatus, lastAuditAt, rememberSuccessfulCustomSize],
   );
 
   // Server-side PDF preview — fetches a single-page sample using the same
