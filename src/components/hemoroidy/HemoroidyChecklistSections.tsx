@@ -78,6 +78,7 @@ const sections: ChecklistSection[] = [
       "Przy podnoszeniu ciężarów — wydychaj powietrze (unikaj próby Valsalvy)",
     ],
     source: "ESCP Guidelines · WHO Physical Activity",
+    ebmId: "activity",
   },
   {
     id: "symptoms",
