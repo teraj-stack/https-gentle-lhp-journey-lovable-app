@@ -1991,7 +1991,7 @@ const AdminSecurityChecklist = () => {
                         id="pdf-custom-h-range"
                         className="text-[10px] text-muted-foreground/80 leading-tight tabular-nums"
                       >
-                        min {CUSTOM_MM_MIN} mm · maks {CUSTOM_MM_MAX} mm
+                        minimum {CUSTOM_MM_MIN} mm · maksimum {CUSTOM_MM_MAX} mm
                       </p>
                       {(() => {
                         const hint = describeFieldHint(pdfCustomHeightMm, "height");
