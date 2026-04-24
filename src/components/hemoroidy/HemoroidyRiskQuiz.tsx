@@ -127,7 +127,7 @@ const tiers: RiskTier[] = [
       { text: "Przy podnoszeniu ciężarów wydychaj powietrze (unikaj próby Valsalvy)", anchor: "movement" },
       { text: "Jeśli pojawi się krwawienie lub guzek — umów konsultację proktologiczną", anchor: "symptoms" },
     ],
-    ctaLabel: "Umów konsultację proktologiczną",
+    ctaLabel: "Umów konsultację",
     ctaHref: "/kontakt",
     ctaInternal: true,
   },
