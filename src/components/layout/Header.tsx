@@ -77,6 +77,8 @@ const wiedzaColumns: MegaColumn[] = [
   {
     title: "Edukacja",
     items: [
+      { label: "Test ryzyka hemoroidów", href: "/dla-pacjenta/quiz-hemoroidy", desc: "Quiz · 5 pytań · 1 minuta" },
+      { label: "EBM hemoroidy", href: "/dla-pacjenta/ebm-hemoroidy", desc: "Czynniki ryzyka i profilaktyka" },
       { label: "Hemoroidy A–Z", href: "/dla-pacjenta/hemoroidy" },
       { label: "Pajączki naczyniowe", href: "/dla-pacjenta/pajaczki" },
       { label: "Profilaktyka żylaków", href: "/dla-pacjenta/profilaktyka-zylakow" },
