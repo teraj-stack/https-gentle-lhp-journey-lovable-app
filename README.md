@@ -252,11 +252,16 @@ Accepted values for `--only`: `missing-required-key`, `placeholder-mismatch`, `u
 #   bash i18n-summary.sh --only all                               # explicit equivalent of default
 #   bash i18n-summary.sh --locales en,de                          # override I18N_ACTIVE_LOCALES for this run
 #   bash i18n-summary.sh --only wrong-type --locales pl           # narrow reason + locale together
+#   bash i18n-summary.sh --out ./artifacts                        # write log + annotations under ./artifacts/
+#   bash i18n-summary.sh --only wrong-type --out "$RUNNER_TEMP/i18n"   # CI-friendly artifact path
 #   bash i18n-summary.sh --list                                   # print reason → test-file table and exit
 set -euo pipefail
 
-LOG=/tmp/i18n-summary.log
-ANN=/tmp/i18n-summary-annotations.txt
+# Defaults — overridden by --out below. The two filenames stay constant so downstream
+# tooling (CI artifact upload, grep recipes in this README) can hard-code them.
+DEFAULT_OUT_DIR="/tmp"
+LOG_NAME="i18n-summary.log"
+ANN_NAME="i18n-summary-annotations.txt"
 
 # All five reasons the validator can emit. Severity in parentheses is informational
 # only — the actual classification comes from WARNING_REASONS in i18nGithubAnnotations.ts.
