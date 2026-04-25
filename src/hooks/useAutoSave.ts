@@ -181,5 +181,5 @@ export const useAutoSave = () => {
     }
   }, []);
 
-  return { enabled, setEnabled: toggle, isRemoteSyncing, remoteSyncTick };
+  return { enabled, setEnabled: toggle, isRemoteSyncing, remoteSyncTick, lastRemoteSyncAt };
 };
