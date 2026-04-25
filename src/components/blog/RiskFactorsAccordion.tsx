@@ -731,6 +731,62 @@ const RiskFactorsAccordion = () => {
         </p>
       </div>
 
+      {/* Filtr źródeł EBM — multi-select chips (OR). Pokazuje tylko czynniki, które mają ≥1 źródło z wybranego dostawcy. */}
+      <div className="mb-4">
+        <div className="flex items-center justify-between gap-2 mb-2">
+          <h3 className="font-sans text-[12.5px] sm:text-sm font-medium text-foreground/85">
+            Filtruj po źródle EBM
+          </h3>
+          {sourceFilter.size > 0 && (
+            <button
+              type="button"
+              onClick={clearSourceFilter}
+              className="inline-flex items-center gap-1 text-[11.5px] sm:text-xs text-muted-foreground hover:text-foreground transition-colors"
+              aria-label="Wyczyść filtr źródeł EBM"
+            >
+              <X className="w-3 h-3" />
+              Wyczyść
+            </button>
+          )}
+        </div>
+        <div className="flex flex-wrap gap-1.5" role="group" aria-label="Filtr źródeł EBM">
+          {EBM_PROVIDERS.map((p) => {
+            const active = sourceFilter.has(p.id);
+            const count = RISK_FACTORS.filter((rf) =>
+              rf.sources.some((s) => getSourceProviders(s).includes(p.id)),
+            ).length;
+            const disabled = count === 0;
+            return (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => !disabled && toggleSourceProvider(p.id)}
+                disabled={disabled}
+                aria-pressed={active}
+                title={`${p.hint} — ${count} ${count === 1 ? "czynnik" : count >= 2 && count <= 4 ? "czynniki" : "czynników"}`}
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11.5px] sm:text-xs font-sans border transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
+                  active
+                    ? "bg-primary/20 border-primary/60 text-primary"
+                    : "bg-background/40 border-border/60 text-muted-foreground hover:text-foreground hover:border-primary/40"
+                }`}
+              >
+                {active && <Check className="w-3 h-3" aria-hidden="true" />}
+                {p.label}
+                <span className="tabular-nums opacity-70">{count}</span>
+              </button>
+            );
+          })}
+        </div>
+        <p className="mt-2 text-[11.5px] sm:text-xs text-muted-foreground" aria-live="polite">
+          {sourceFilter.size === 0
+            ? "Wybierz źródło, aby zobaczyć tylko czynniki oparte na tym wydawcy/bazie."
+            : `Filtr aktywny: ${Array.from(sourceFilter)
+                .map((id) => EBM_PROVIDERS.find((p) => p.id === id)?.label)
+                .filter(Boolean)
+                .join(" + ")} → ${filtered.length} z ${RISK_FACTORS.length} czynników`}
+        </p>
+      </div>
+
       {/* Wyszukiwarka — filtruje po tytule, badge'u i mechanizmie */}
       <div className="mb-4">
         <label htmlFor="risk-factors-search" className="sr-only">
