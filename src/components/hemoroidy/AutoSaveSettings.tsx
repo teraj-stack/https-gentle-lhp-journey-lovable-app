@@ -1,5 +1,6 @@
-import { Save, ShieldCheck, ShieldAlert } from "lucide-react";
+import { Save, ShieldCheck, ShieldAlert, CheckCircle2 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
+import { Button } from "@/components/ui/button";
 import { useAutoSave } from "@/hooks/useAutoSave";
 import { toast } from "@/hooks/use-toast";
 
@@ -9,6 +10,17 @@ interface AutoSaveSettingsProps {
    * Liczone w komponencie nadrzędnym (DiaryFullModule) — tu tylko prezentujemy.
    */
   pendingDraftCount?: number;
+  /**
+   * Callback wywoływany po kliknięciu „Zapisz dzień" w panelu (gdy auto-zapis OFF).
+   * Powinien zapisać draft aktywnej daty do storage'u — logika walidacji
+   * (np. wymóg kompletu odpowiedzi) leży po stronie nadrzędnego komponentu.
+   */
+  onSaveDay?: () => void;
+  /**
+   * Czytelna etykieta aktywnej daty (np. „środa, 23 kwietnia 2026") —
+   * wyświetlana w opisie przycisku, żeby pacjent wiedział, którego dnia dotyczy zapis.
+   */
+  activeDateLabel?: string;
 }
 
 /**
