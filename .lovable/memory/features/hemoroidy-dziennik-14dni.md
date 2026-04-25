@@ -31,3 +31,9 @@ Dziennik 14 dni hemoroidów: anonimowy tracker w przeglądarce.
   - Strip dni z kolorowymi kropkami (low=emerald, medium=primary, high=destructive)
   - „Wyczyść dzień" (per-entry) i „Wyczyść cały dziennik" (AlertDialog) — tylko gdy `showReminderSettings`
 - **Privacy**: brak konta, brak wysyłki na backend, dane czyszczą się razem z localStorage przeglądarki
+- **Edycja wpisów + timestamp aktualizacji** (DiaryFullModule):
+  - Każdy z 14 dni jest pełnoedytowalny (klik dnia w stripie → edytor; klik odpowiedzi/notatki nadpisuje wpis i aktualizuje `updatedAt` w `useDailyDiary`)
+  - W nagłówku stripa hint: ikona Pencil + tekst „Możesz edytować dowolny z 14 dni — kliknij datę, aby otworzyć i poprawić wpis."
+  - Każdy przycisk w stripie ma `title` z pełną datą+godziną aktualizacji (formatUpdatedAt: `25.04.2026, 14:32`) lub „Brak wpisu — kliknij, aby dodać"
+  - Pod kropką poziomu w stripie: kompaktowy timestamp `formatUpdatedAtCompact` (HH:MM dla dziś/wczoraj, `DD.MM HH:MM` dla starszych)
+  - W nagłówku edytora aktywnego dnia: linia z ikoną Clock i pełnym timestampem ostatniej aktualizacji (tylko gdy wpis istnieje w `entries[activeDate]`)
