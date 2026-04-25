@@ -211,6 +211,7 @@ const DiaryFullModule = ({
   );
   const lastSeenUpdatedAtRef = useRef<string | null>(entry.updatedAt ?? null);
   const [nowTick, setNowTick] = useState<number>(() => Date.now());
+  const [showOnlyMissing, setShowOnlyMissing] = useState<boolean>(false);
 
   // Reset checkpointa przy zmianie aktywnego dnia (przełączenie w stripie).
   useEffect(() => {
