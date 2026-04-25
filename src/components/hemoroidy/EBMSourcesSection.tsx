@@ -9,6 +9,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { BookMarked, Download, ExternalLink, Salad, Droplet, Timer, Activity, Stethoscope, ScrollText, AlertCircle, Microscope, Info, Search, X } from "lucide-react";
+import { trackEbmClick } from "@/lib/ebmAnalytics";
 
 const normalize = (s: string): string =>
   s
