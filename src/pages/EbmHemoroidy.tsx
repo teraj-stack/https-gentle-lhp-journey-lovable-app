@@ -396,6 +396,99 @@ const EbmHemoroidy = () => {
                 <KeyPointCard key={p.title} point={p} variant="prevention" />
               ))}
             </div>
+
+            {/* Red flags — when to see a doctor */}
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.2 }}
+              transition={{ duration: 0.6, ease: easeOut }}
+              className="mt-8"
+              id="kiedy-do-lekarza"
+            >
+              <div className="relative overflow-hidden rounded-2xl border border-destructive/30 bg-gradient-to-br from-destructive/10 via-background/40 to-background/40 p-6 sm:p-8">
+                <div className="absolute -right-10 -top-10 w-40 h-40 rounded-full bg-destructive/10 blur-3xl pointer-events-none" aria-hidden="true" />
+                <div className="relative">
+                  <div className="flex items-start gap-4 mb-5">
+                    <div className="w-12 h-12 rounded-xl bg-destructive/15 border border-destructive/30 flex items-center justify-center shrink-0">
+                      <AlertTriangle className="w-5 h-5 text-destructive" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-destructive/10 border border-destructive/30 text-[10px] font-sans uppercase tracking-[0.16em] text-destructive mb-2">
+                        Czerwone flagi
+                      </p>
+                      <h3 className="font-heading text-xl md:text-2xl text-foreground leading-snug mb-1.5">
+                        Kiedy zgłosić się do lekarza?
+                      </h3>
+                      <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
+                        Profilaktyka działa, gdy nie ma jeszcze powikłań. Poniższe objawy wymagają
+                        konsultacji proktologicznej (24–72 h) — nie diagnozuj samodzielnie.
+                      </p>
+                    </div>
+                  </div>
+
+                  <ul className="space-y-2.5 mb-5">
+                    {[
+                      "Krwawienie z odbytu — zwłaszcza ciemna krew, skrzepy, krew zmieszana ze stolcem lub utrzymujące się >2 tygodni.",
+                      "Zmiana rytmu wypróżnień >6 tygodni (naprzemienne biegunki/zaparcia, uczucie niepełnego wypróżnienia).",
+                      "Silny, narastający ból odbytu, gorączka, dreszcze — możliwy ropień okołoodbytniczy (stan nagły).",
+                      "Guzek przy odbycie, który nie cofa się ani nie znika w ciągu 7 dni mimo leczenia zachowawczego.",
+                      "Niewyjaśniona utrata wagi, niedokrwistość, wiek >45 lat lub wywiad rodzinny raka jelita.",
+                    ].map((item, i) => (
+                      <li key={i} className="flex items-start gap-3 text-sm md:text-base text-foreground/90 leading-relaxed">
+                        <span className="mt-2 w-1.5 h-1.5 rounded-full bg-destructive shrink-0" aria-hidden="true" />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+
+                  <div className="rounded-xl border border-border bg-background/40 p-4">
+                    <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground mb-2.5 font-sans">
+                      Wybrane referencje EBM
+                    </p>
+                    <ul className="space-y-1.5">
+                      {[
+                        {
+                          label: "USMSTF 2017 — Colorectal Cancer Screening (Rex et al.)",
+                          url: "https://pubmed.ncbi.nlm.nih.gov/28600072/",
+                        },
+                        {
+                          label: "NICE NG12 — Suspected cancer: recognition and referral",
+                          url: "https://www.nice.org.uk/guidance/ng12",
+                        },
+                        {
+                          label: "ASCRS 2018 — Hemorrhoid Management Guidelines (Davis et al.)",
+                          url: "https://journals.lww.com/dcrjournal/Fulltext/2018/03000/The_American_Society_of_Colon_and_Rectal_Surgeons.7.aspx",
+                        },
+                        {
+                          label: "Pełna kategoria: Diagnostyka różnicowa — bibliografia EBM",
+                          url: "#ebm-diagnosis",
+                          internal: true,
+                        },
+                      ].map((src, i) => (
+                        <li key={i} className="text-xs md:text-sm">
+                          <a
+                            href={src.url}
+                            {...(src.internal
+                              ? {}
+                              : { target: "_blank", rel: "noopener noreferrer" })}
+                            className="text-primary hover:underline inline-flex items-start gap-1.5 leading-snug"
+                          >
+                            <ExternalLink className="w-3 h-3 mt-0.5 shrink-0" />
+                            <span>{src.label}</span>
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <p className="text-xs text-muted-foreground italic mt-4">
+                    W razie obfitego krwawienia, gorączki lub silnego narastającego bólu — zgłoś się
+                    na SOR lub do izby przyjęć chirurgicznej.
+                  </p>
+                </div>
+              </div>
+            </motion.div>
           </div>
 
           {/* Quiz CTA — bridge between risk factors / prevention and bibliography */}
