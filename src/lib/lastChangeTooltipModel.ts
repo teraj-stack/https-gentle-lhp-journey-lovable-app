@@ -43,8 +43,44 @@
  */
 import {
   getLastChangeTooltipContent,
+  resolveLocale,
   type LastChangeTooltipContent,
+  type Locale,
 } from "./lastChangeTooltipContent";
+
+/**
+ * Tłumaczenia literałów linii czasu i kwalifikatora fallbacku w tooltipie
+ * „Ostatnia zmiana". Trzymane LOKALNIE w pliku modelu (nie w
+ * `lastChangeTooltipContent`), bo dotyczą wyłącznie linii czasu — pliki
+ * pozostają sfokusowane: `Content` zna źródło zmiany, `Model` zna składanie
+ * linii czasu.
+ *
+ * Klucze MUSZĄ pokrywać każdą wartość z `Locale`. Przy dodawaniu nowego języka
+ * helper `getTimeLineStrings` rzuci błędem TypeScript, dopóki nie dopiszemy
+ * kompletu — to gwarancja, że żaden język nie zostanie z połowicznym
+ * tłumaczeniem (PL prefiks „Czas:" + EN qualifier itp.).
+ */
+interface TimeLineStrings {
+  /** Prefiks linii czasu (np. „Czas: " / „Time: "). */
+  timePrefix: string;
+  /** Sufiks doklejany do a11y dla fallbacku na etykietę względną. */
+  relativeQualifier: string;
+  /** Native `title` linii czasu, gdy używamy etykiety względnej. */
+  relativeHelpTitle: string;
+}
+
+const TIME_LINE_TRANSLATIONS: Record<Locale, TimeLineStrings> = {
+  pl: {
+    timePrefix: "Czas: ",
+    relativeQualifier: "(etykieta względna)",
+    relativeHelpTitle: "Pełna data niedostępna — pokazujemy etykietę względną.",
+  },
+  en: {
+    timePrefix: "Time: ",
+    relativeQualifier: "(relative label)",
+    relativeHelpTitle: "Full date unavailable — showing a relative label.",
+  },
+};
 
 /**
  * Tryby formatowania wartości czasu dla tooltipa „Ostatnia zmiana".
