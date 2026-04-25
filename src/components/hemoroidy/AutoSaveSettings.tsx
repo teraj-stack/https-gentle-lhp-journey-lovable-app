@@ -32,7 +32,7 @@ interface AutoSaveSettingsProps {
  * żeby przepisać je do storage'u (tę logikę implementuje DiaryFullModule).
  */
 const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }: AutoSaveSettingsProps) => {
-  const { enabled, setEnabled } = useAutoSave();
+  const { enabled, setEnabled, isRemoteSyncing } = useAutoSave();
 
   const handleToggle = (next: boolean) => {
     setEnabled(next);
