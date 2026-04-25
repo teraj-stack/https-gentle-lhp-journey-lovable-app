@@ -21,9 +21,9 @@
  *
  * Keep the type signatures here in lockstep with the script's exports.
  */
-// @ts-expect-error — the .mjs is plain JS with no type declarations of its
-// own; we provide types via the explicit cast below. Node/vitest resolve
-// the import at runtime; tsserver only sees the casted shape.
+// The .mjs is plain JS with no .d.ts; we cast its exports to a typed
+// shape below. Node/vitest resolve the import at runtime; tsserver
+// treats the namespace import as `any` (acceptable — narrowed by cast).
 import * as raw from "../../scripts/autofix-required-translation-keys.mjs";
 
 export type CategorisedPath =
