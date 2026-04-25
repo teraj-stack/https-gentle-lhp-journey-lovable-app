@@ -25,6 +25,48 @@ import {
   useTimeFormatPreference,
   type TimeFormatMode,
 } from "@/hooks/useTimeFormatPreference";
+import {
+  isLastChangeVisible,
+  useLastChangeVisibility,
+  type LastChangeVisibility,
+} from "@/hooks/useLastChangeVisibility";
+
+/**
+ * Etykiety segmented control dla wyboru widoczności „Ostatniej zmiany".
+ * Cztery warianty: Obie / Zdalne / Lokalne / Wyłączone — pozwalają pacjentowi
+ * dopasować, kiedy ma się pojawiać pasek pod Switch'em.
+ */
+const VISIBILITY_OPTIONS: Array<{
+  value: LastChangeVisibility;
+  short: string;
+  label: string;
+  hint: string;
+}> = [
+  {
+    value: "both",
+    short: "Obie",
+    label: "Pokazuj wszystkie zmiany",
+    hint: "Etykieta pojawia się przy każdej zmianie — lokalnej i zdalnej.",
+  },
+  {
+    value: "remote",
+    short: "Zdalne",
+    label: "Tylko synchronizacje z innych kart",
+    hint: "Pokazuj etykietę tylko gdy zmiana przyszła z innej karty.",
+  },
+  {
+    value: "local",
+    short: "Lokalne",
+    label: "Tylko moje kliknięcia w tej karcie",
+    hint: "Pokazuj etykietę tylko gdy to ja przełączyłem Switch.",
+  },
+  {
+    value: "off",
+    short: "Ukryj",
+    label: "Ukryj etykietę",
+    hint: 'Etykieta „Ostatnia zmiana" nie pojawia się wcale.',
+  },
+];
 
 /**
  * Etykiety segmented control dla wyboru formatu „Ostatniej zmiany".
@@ -110,6 +152,15 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
    * przez CustomEvent — patrz `useTimeFormatPreference`.
    */
   const { mode: timeFormatMode, setMode: setTimeFormatMode } = useTimeFormatPreference();
+
+  /**
+   * Preferencja widoczności etykiety „Ostatnia zmiana:" — pacjent może filtrować
+   * wyświetlanie zależnie od źródła zmiany (lokalna / zdalna / obie / ukryj).
+   * Stan persystowany w localStorage i synchronizowany cross-tab.
+   */
+  const { visibility: lastChangeVisibility, setVisibility: setLastChangeVisibility } =
+    useLastChangeVisibility();
+  const showLastChangeLabel = isLastChangeVisible(lastChangeVisibility, lastChangeSource);
 
   /**
    * Symulacja braku BC + sanity check: po włączeniu robimy tymczasowy toggle
@@ -378,7 +429,7 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
               A
             </kbd>
           </p>
-          {lastSyncLabel && (
+          {lastSyncLabel && showLastChangeLabel && (
             <div
               key={lastChangeAt ?? "none"}
               className={`text-[11px] font-sans inline-flex items-center gap-1.5 transition-colors animate-fade-in ${
@@ -470,6 +521,47 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
                     className={`text-[10px] font-sans px-1.5 py-0.5 rounded transition-colors focus:outline-none focus:ring-1 focus:ring-primary/60 ${
                       active
                         ? "bg-emerald-500/20 text-emerald-400 font-medium"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                    }`}
+                  >
+                    {opt.short}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+          {/* Segmented control: kiedy pokazywać etykietę „Ostatnia zmiana".
+              Renderujemy gdy mamy jakąkolwiek historię (lastChangeAt) — także
+              wtedy, gdy aktualna preferencja ukrywa etykietę, żeby user mógł
+              ją z powrotem włączyć bez nurkowania w ustawienia. */}
+          {lastChangeAt !== null && (
+            <div
+              role="radiogroup"
+              aria-label="Widoczność etykiety Ostatnia zmiana"
+              className="inline-flex items-center gap-0.5 rounded-md border border-border/60 bg-muted/30 p-0.5"
+            >
+              {VISIBILITY_OPTIONS.map((opt) => {
+                const active = lastChangeVisibility === opt.value;
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    role="radio"
+                    aria-checked={active}
+                    aria-label={opt.label}
+                    title={opt.hint}
+                    onClick={() => {
+                      if (active) return;
+                      setLastChangeVisibility(opt.value);
+                      toast({
+                        title: `Etykieta: ${opt.short}`,
+                        description: opt.hint,
+                        duration: 1800,
+                      });
+                    }}
+                    className={`text-[10px] font-sans px-1.5 py-0.5 rounded transition-colors focus:outline-none focus:ring-1 focus:ring-primary/60 ${
+                      active
+                        ? "bg-primary/20 text-primary font-medium"
                         : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
                     }`}
                   >
