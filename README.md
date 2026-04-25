@@ -475,7 +475,7 @@ Use this table when writing a fixture: pick a row, mutate the locale string acco
 | **Whitespace-padded identifier** | `"Zmieniono {count} razy"` | `"Changed { count } times"` | `::error … placeholder-mismatch::… is missing placeholder {count}` (the padded form is parsed as literal text) | `error` |
 | **Dotted / digit-leading identifier** | `"Zmieniono {count} razy"` | `"Changed {0} times"` or `"Changed {user.count} times"` | `::error … placeholder-mismatch::… is missing placeholder {count}` (regex rejects digit-leading and dotted forms) | `error` |
 | **Literal brace via Unicode** | `"Wybierz opcję {name}"` | `"Choose option ｛X｝ for {name}"` | (no annotation — `｛` U+FF5B is not a placeholder delimiter) | — |
-| **Optional placeholder syntax** | `"Zmieniono {count} razy"` | `"Changed {count?} times"` | `::error … placeholder-mismatch::… is missing placeholder {count} and has unexpected placeholder {count?}` (no, actually the `?` breaks the identifier regex → degrades to "missing {count}" only) | `error` |
+| **Optional placeholder syntax** | `"Zmieniono {count} razy"` | `"Changed {count?} times"` | `::error … placeholder-mismatch::… is missing placeholder {count}` (the `?` violates the identifier regex, so `{count?}` is parsed as literal text — degrades to a "missing" diagnosis) | `error` |
 
 > **Reading note**: every row above resolves to the **same** `reason=placeholder-mismatch` code with **same** `severity=error`. The differentiation is only in the message body — branch protection rules can therefore key on the single reason code without enumerating sub-types.
 
