@@ -33,6 +33,7 @@ import {
   Link2,
   Copy,
   CalendarClock,
+  Star,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
