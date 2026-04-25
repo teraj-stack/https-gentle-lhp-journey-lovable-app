@@ -98,6 +98,27 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
     });
   };
 
+  const handleSendPing = async () => {
+    if (!isBroadcastSupported) {
+      toast({
+        title: "Test niedostępny",
+        description:
+          "Twoja przeglądarka nie wspiera BroadcastChannel — synchronizacja działa wtedy przez storage event (bez potwierdzenia odbioru).",
+        duration: 4000,
+      });
+      return;
+    }
+    const responses = await sendPing();
+    toast({
+      title: responses.length === 0 ? "Brak odpowiedzi z innych kart" : `Odpowiedziało ${responses.length} kart`,
+      description:
+        responses.length === 0
+          ? "Otwórz tę stronę w drugiej karcie i spróbuj ponownie."
+          : responses.map((r) => `${r.label} (${r.latencyMs} ms)`).join(", "),
+      duration: 4000,
+    });
+  };
+
   const lastSyncLabel = lastRemoteSyncAt !== null ? formatRelativeTime(lastRemoteSyncAt) : null;
   const lastSyncFullDate =
     lastRemoteSyncAt !== null
