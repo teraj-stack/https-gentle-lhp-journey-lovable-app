@@ -208,6 +208,109 @@ const DiaryFullModule = ({
 
   const trend = last14Trend();
 
+  /**
+   * Wrappery setAnswer/setNotes z respektem dla przełącznika auto-zapisu.
+   *
+   * - **Auto-zapis ON (domyślnie)**: zachowanie identyczne jak wcześniej —
+   *   bezpośredni zapis do localStorage przez `useDailyDiary`.
+   * - **Auto-zapis OFF**: zmiana trafia tylko do `draftAnswers`/`draftNotes`
+   *   (lokalny stan komponentu). UI od razu pokazuje zmianę przez merge w `entry`,
+   *   ale storage NIE jest dotykany aż do flushu.
+   *
+   * `setAnswer` zwraca `StorageWriteResult` — dla draftu zawsze `{ ok: true }`
+   * (brak operacji na storage = brak ryzyka błędu).
+   */
+  const setAnswer = useCallback(
+    (date: string, qi: number, oi: number | null) => {
+      if (autoSaveEnabled) return persistSetAnswer(date, qi, oi);
+      setDraftAnswers((prev) => {
+        const dayMap = { ...(prev[date] ?? {}), [qi]: oi };
+        return { ...prev, [date]: dayMap };
+      });
+      return { ok: true } as const;
+    },
+    [autoSaveEnabled, persistSetAnswer],
+  );
+
+  const setNotes = useCallback(
+    (date: string, value: string) => {
+      if (autoSaveEnabled) {
+        persistSetNotes(date, value);
+        return;
+      }
+      setDraftNotes((prev) => ({ ...prev, [date]: value.slice(0, 1000) }));
+    },
+    [autoSaveEnabled, persistSetNotes],
+  );
+
+  /**
+   * Flush draftu do storage'u. Wywoływany z „Zapisz dzień" (gdy auto-zapis OFF)
+   * oraz w `useEffect` po włączeniu auto-zapisu (przeniesienie wszystkich pending zmian).
+   * Czyści draft po pomyślnym zapisie.
+   */
+  const flushDraft = useCallback(
+    (dateFilter?: string) => {
+      const datesToFlush = dateFilter
+        ? [dateFilter]
+        : Array.from(new Set([...Object.keys(draftAnswers), ...Object.keys(draftNotes)]));
+      let firstError: string | null = null;
+      datesToFlush.forEach((d) => {
+        const da = draftAnswers[d];
+        if (da) {
+          for (const [qi, oi] of Object.entries(da)) {
+            const r = persistSetAnswer(d, Number(qi), oi);
+            if (r.ok === false && !firstError) firstError = r.message;
+          }
+        }
+        const dn = draftNotes[d];
+        if (dn !== undefined) persistSetNotes(d, dn);
+      });
+      if (firstError) {
+        toast({
+          variant: "destructive",
+          title: "Nie udało się zapisać wszystkich zmian",
+          description: firstError,
+          duration: 6000,
+        });
+        return false;
+      }
+      // Sukces — czyść draft TYLKO dla flushed dni.
+      setDraftAnswers((prev) => {
+        const next = { ...prev };
+        datesToFlush.forEach((d) => delete next[d]);
+        return next;
+      });
+      setDraftNotes((prev) => {
+        const next = { ...prev };
+        datesToFlush.forEach((d) => delete next[d]);
+        return next;
+      });
+      return true;
+    },
+    [draftAnswers, draftNotes, persistSetAnswer, persistSetNotes],
+  );
+
+  // Auto-flush po włączeniu auto-zapisu — żadne pending zmiany nie giną.
+  useEffect(() => {
+    if (!autoSaveEnabled) return;
+    const hasDraft =
+      Object.keys(draftAnswers).length > 0 || Object.keys(draftNotes).length > 0;
+    if (hasDraft) flushDraft();
+    // celowo bez `flushDraft` w deps — zapobiega pętli (flushDraft zmienia draft state)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoSaveEnabled]);
+
+  // Liczba niezapisanych zmian (do wskaźnika w panelu i w banerze ostrzeżenia).
+  const pendingDraftCount = useMemo(() => {
+    let n = 0;
+    for (const day of Object.values(draftAnswers)) n += Object.keys(day).length;
+    n += Object.keys(draftNotes).length;
+    return n;
+  }, [draftAnswers, draftNotes]);
+
+  const activeDayHasDraft =
+    !!draftAnswers[activeDate] || draftNotes[activeDate] !== undefined;
+
   const completed = entry.answers.filter((a) => a !== null).length;
   const total = HEMOROIDY_QUESTIONS.length;
   const progressPct = Math.round((completed / total) * 100);
