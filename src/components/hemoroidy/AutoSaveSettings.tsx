@@ -1,4 +1,4 @@
-import { Save, ShieldCheck, ShieldAlert, CheckCircle2 } from "lucide-react";
+import { Save, ShieldCheck, ShieldAlert, CheckCircle2, RefreshCw } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { useAutoSave } from "@/hooks/useAutoSave";
