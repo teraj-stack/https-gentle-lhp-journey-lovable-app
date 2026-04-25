@@ -25,6 +25,48 @@ import {
   useTimeFormatPreference,
   type TimeFormatMode,
 } from "@/hooks/useTimeFormatPreference";
+import {
+  isLastChangeVisible,
+  useLastChangeVisibility,
+  type LastChangeVisibility,
+} from "@/hooks/useLastChangeVisibility";
+
+/**
+ * Etykiety segmented control dla wyboru widoczności „Ostatniej zmiany".
+ * Cztery warianty: Obie / Zdalne / Lokalne / Wyłączone — pozwalają pacjentowi
+ * dopasować, kiedy ma się pojawiać pasek pod Switch'em.
+ */
+const VISIBILITY_OPTIONS: Array<{
+  value: LastChangeVisibility;
+  short: string;
+  label: string;
+  hint: string;
+}> = [
+  {
+    value: "both",
+    short: "Obie",
+    label: "Pokazuj wszystkie zmiany",
+    hint: "Etykieta pojawia się przy każdej zmianie — lokalnej i zdalnej.",
+  },
+  {
+    value: "remote",
+    short: "Zdalne",
+    label: "Tylko synchronizacje z innych kart",
+    hint: "Pokazuj etykietę tylko gdy zmiana przyszła z innej karty.",
+  },
+  {
+    value: "local",
+    short: "Lokalne",
+    label: "Tylko moje kliknięcia w tej karcie",
+    hint: "Pokazuj etykietę tylko gdy to ja przełączyłem Switch.",
+  },
+  {
+    value: "off",
+    short: "Ukryj",
+    label: "Ukryj etykietę",
+    hint: "Etykieta „Ostatnia zmiana" nie pojawia się wcale.",
+  },
+];
 
 /**
  * Etykiety segmented control dla wyboru formatu „Ostatniej zmiany".
