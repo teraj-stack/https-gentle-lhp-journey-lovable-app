@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { generateQuizResultPdf } from "@/lib/quizResultPdf";
 import { useQuizHistory } from "@/hooks/useQuizHistory";
+import { useDiaryReminders } from "@/hooks/useDiaryReminders";
 
 type Option = { label: string; points: number };
 type Question = { id: string; q: string; options: Option[] };
@@ -203,6 +204,7 @@ const HemoroidyRiskQuiz = () => {
   const [answers, setAnswers] = useState<number[]>([]);
   const [done, setDone] = useState(false);
   const { addEntry } = useQuizHistory();
+  const { markQuizCompleted } = useDiaryReminders();
 
   const total = questions.length;
   const progress = done ? 100 : Math.round((step / total) * 100);
@@ -253,6 +255,7 @@ const HemoroidyRiskQuiz = () => {
       level: tier.level,
       label: tier.label,
     });
+    markQuizCompleted();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [done]);
 
