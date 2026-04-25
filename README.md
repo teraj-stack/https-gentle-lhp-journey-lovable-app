@@ -101,6 +101,143 @@ Sanity-check the annotations:
 
 Without `GITHUB_ACTIONS=true` the emitter is a no-op, so plain `bunx vitest run` stays clean for normal local development.
 
+### Running the validator on your fixtures — and where to find the output
+
+This section is the **single answer** to "I just pasted a fixture into the locale source — what do I run, and where does the `::error` / `::warning` line actually appear?". Everything below is just locating signal in different surfaces (local terminal, GitHub PR, Actions log, capturable file). The validator itself is always the same vitest invocation.
+
+#### TL;DR — one command, three surfaces
+
+```sh
+GITHUB_ACTIONS=true bunx vitest run \
+  src/lib/i18nRequiredKeys.test.ts \
+  src/lib/i18nContract.test.ts \
+  src/lib/i18nPlaceholders.test.ts 2>&1 | tee /tmp/i18n.log | grep '^::'
+```
+
+After this command, your `::error` / `::warning` lines are findable in **all three** of these places:
+
+| Surface | Where to look | Best for |
+| --- | --- | --- |
+| **Terminal stdout (filtered)** | The `grep '^::'` tail of the pipe above prints only the workflow-command lines | Quick "does my fixture trip the right reason?" check |
+| **Full vitest log** | `/tmp/i18n.log` (saved by `tee`) — open and search for `::error` or your fixture's key path | Reading message body + surrounding test context (stack, `expect` diff) |
+| **GitHub PR diff** (after push) | Inline red ❌ marker on the offending source line in the **Files changed** tab | What reviewers see; clickable jump-to-line |
+
+Without `GITHUB_ACTIONS=true` no `::` lines are emitted at all (the emitter no-ops), so `grep '^::'` will be empty even on a failing test — that's by design, to keep local dev quiet.
+
+#### Step-by-step — local fixture verification
+
+1. **Paste your fixture** into the locale source (`src/lib/lastChangeTooltipContent.ts` or `src/lib/lastChangeTooltipModel.ts`). See the [End-to-end walkthrough](#end-to-end-walkthrough--one-fixture-per-error-type-start-to-finish) for one concrete mutation per reason code.
+
+2. **Pick the narrowest test** that owns the reason you expect (faster, less log noise):
+
+   | Reason | Test file to run |
+   | --- | --- |
+   | `missing-required-key` | `src/lib/i18nRequiredKeys.test.ts` |
+   | `placeholder-mismatch` | `src/lib/i18nPlaceholders.test.ts` |
+   | `undeclared-key`, `wrong-type`, `empty-optional-value` | `src/lib/i18nContract.test.ts` |
+
+   When in doubt or when stacking multiple fixtures, run **all three** (the TL;DR command above).
+
+3. **Run with the annotation emitter on**, capturing the full log and filtering the workflow lines:
+
+   ```sh
+   GITHUB_ACTIONS=true bunx vitest run <test-file> 2>&1 \
+     | tee /tmp/i18n.log \
+     | grep '^::'
+   ```
+
+   - **`GITHUB_ACTIONS=true`** — required, otherwise no `::` lines are ever emitted.
+   - **`2>&1`** — vitest writes annotations to stdout but its own progress to stderr; merge them so `tee` captures both.
+   - **`tee /tmp/i18n.log`** — saves the full log for later inspection (the `grep` discards everything except the workflow lines).
+   - **`grep '^::'`** — keeps only `::error file=…` and `::warning file=…` rows. Anchor on `^::` (start of line) — substrings like `::after` won't match.
+
+4. **Locate output in the captured log**:
+
+   ```sh
+   # Just the annotation lines:
+   grep '^::' /tmp/i18n.log
+
+   # Annotations plus the surrounding 3 lines of vitest context (useful when a
+   # `::error` looks suspicious — the assertion diff is right above it):
+   grep -B 3 '^::' /tmp/i18n.log
+
+   # Filter to a specific reason / locale / file:
+   grep '^::' /tmp/i18n.log | grep 'placeholder-mismatch'
+   grep '^::' /tmp/i18n.log | grep '· en ·'
+   grep '^::' /tmp/i18n.log | grep 'file=src/lib/lastChangeTooltipModel.ts'
+
+   # Count violations grouped by reason (one-liner audit):
+   grep -oE 'reason=[a-z-]+' /tmp/i18n.log | sort | uniq -c | sort -rn
+   ```
+
+5. **Scope locales explicitly** when the fixture targets `de` or `it` (default scope is `pl,en` — fixtures outside that scope are silently skipped):
+
+   ```sh
+   I18N_ACTIVE_LOCALES=pl,en,de,it GITHUB_ACTIONS=true \
+     bunx vitest run src/lib/i18nContract.test.ts 2>&1 | grep '^::'
+   ```
+
+#### Anatomy of one annotation line — what each field means
+
+```
+::error file=src/lib/lastChangeTooltipModel.ts,line=87,title=TIME_LINE [error]%3A en · placeholder-mismatch::TIME_LINE.en.relative.minutesAgo (locale=en, reason=placeholder-mismatch, severity=error) — Locale "en" value "Changed %d minutes ago" is missing placeholder {count}, expected by base locale "pl" ("Zmieniono {count} minut temu") — current: minutesAgo: "Changed %d minutes ago", — Fix: …
+```
+
+| Segment | Meaning | Where to use it |
+| --- | --- | --- |
+| `::error` / `::warning` | Severity prefix; GitHub Actions parses this verbatim | Filter with `grep '^::error'` to fail-only |
+| `file=<path>` | Resolved by `findKeyLine` in `i18nGithubAnnotations.ts` | Click in PR diff to jump; `sed -n "${line}p" <file>` locally |
+| `line=<n>` | 1-based line number of the offending key declaration | The only field that varies between paste positions |
+| `title=…` | Short header shown in the GitHub PR marker bubble | Visible at-a-glance in the **Files changed** view |
+| `locale=<L>` | Which locale tripped the rule | Filter: `grep '· en ·'` or `grep 'locale=en,'` |
+| `reason=<code>` | Stable enum from the validator | Filter: `grep 'reason=placeholder-mismatch'` |
+| `severity=<level>` | `error` (red, fails build) or `warning` (yellow, build green) | Branch protection keys on this |
+| Message body after `—` | Human-readable diff: `expected … current: …` | What reviewers actually read |
+| `current: <line>` | The offending source row, **collapsed if multi-line** | Lets reviewers see the bug without opening the file |
+| `Fix: …` | Hint with the most likely repair command | Usually `npm run i18n:autofix` |
+
+#### Where the output appears in CI (GitHub Actions)
+
+When the same command runs inside the [`i18n-check.yml` workflow](#copy-paste-github-actions-workflow), the **identical** `::error` / `::warning` lines you saw locally surface in three additional places:
+
+| CI surface | What you see | URL pattern |
+| --- | --- | --- |
+| **PR diff — Files changed tab** | Inline red ❌ / yellow ⚠️ marker on the exact `line=N` of `file=…`. Click to expand the message body. | `https://github.com/<org>/<repo>/pull/<n>/files` |
+| **PR Checks tab — Annotations panel** | Grouped list of every annotation, sortable by file/severity. Same marker, easier to scan in bulk. | `https://github.com/<org>/<repo>/pull/<n>/checks` |
+| **Actions run log** | Raw stdout of the vitest job. `::error` / `::warning` lines appear verbatim alongside vitest's own output. Use the search box (top-right of the log viewer) to grep. | `https://github.com/<org>/<repo>/actions/runs/<id>` |
+
+If a marker shows up in the Actions log but **not** in the PR diff, the most common cause is `line=0` (the resolver couldn't find the key) — see [Troubleshooting: `line=` lands on the wrong line](#troubleshooting-line-lands-on-the-wrong-line).
+
+#### Capturing output for paste-into-issue / regression baselines
+
+When you want to attach the validator's verdict to a bug report or freeze it as a baseline:
+
+```sh
+# Just the annotations, sorted + deduped — safe to paste into a GitHub issue:
+GITHUB_ACTIONS=true bunx vitest run src/lib/i18nContract.test.ts 2>&1 \
+  | grep '^::' | sort -u > /tmp/i18n-annotations.txt
+cat /tmp/i18n-annotations.txt
+
+# Full log including vitest assertions — for deep debugging:
+GITHUB_ACTIONS=true bunx vitest run src/lib/i18nContract.test.ts > /tmp/i18n-full.log 2>&1
+less /tmp/i18n-full.log
+
+# Diff your current annotations against a stored baseline (regression check):
+diff -u /tmp/i18n-baseline.txt /tmp/i18n-annotations.txt
+```
+
+#### "I ran the command and got nothing" — quick triage
+
+| Symptom | Most likely cause | Fix |
+| --- | --- | --- |
+| Empty output, exit code `0` | Forgot `GITHUB_ACTIONS=true`, or fixture didn't actually trip a rule | Re-run with the env var; `git diff` to confirm the mutation is in place |
+| Empty output, exit code non-zero | Test failed but emitter was off | Add `GITHUB_ACTIONS=true` |
+| Output for a different locale than expected | Default scope is `pl,en`; your fixture targets `de` / `it` and was skipped | Add `I18N_ACTIVE_LOCALES=pl,en,de` (or `…,it`) |
+| `line=0` in the annotation | Resolver couldn't locate the key (indent style differs from 2-space, or the key is truly absent for `missing-required-key`) | For `missing-required-key`, `line=N` of the locale-block opener is expected; otherwise see [resolver troubleshooting](#troubleshooting-line-lands-on-the-wrong-line) |
+| Multiple annotations for one fixture | Stacked fixtures or one mutation tripped two rules (e.g. missing key + placeholder mismatch on a sibling) | `git checkout src/lib/lastChange*.ts` to reset, then re-paste only one fixture |
+
+For deeper diagnostics, set `I18N_ANNOTATION_DEBUG=1` alongside `GITHUB_ACTIONS=true` to print the resolver's per-annotation decisions to stderr — see [Debug flag](#debug-flag-i18n_annotation_debug1).
+
 ### Copy-paste GitHub Actions workflow
 
 Drop this into `.github/workflows/i18n-check.yml` and it will run on every PR against `main`, post `::error` / `::warning` annotations inline on the diff, and **fail the build** the moment any `::error` is emitted (vitest exits non-zero on test failure, which is what triggers the `::error` lines in the first place — so a non-zero exit and a red ❌ check are equivalent).
