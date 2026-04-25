@@ -127,6 +127,7 @@ const BG_SOFT: [number, number, number] = [248, 245, 235];
 export const exportChecklistPdf = (
   factors: ChecklistFactor[],
   totalAvailable: number,
+  selectedAt?: string | null,
 ): void => {
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   const pageWidth = doc.internal.pageSize.getWidth();
@@ -167,6 +168,15 @@ export const exportChecklistPdf = (
     margin,
     y,
   );
+
+  const selectedAtFmt = formatSelectedAt(selectedAt);
+  if (selectedAtFmt) {
+    y += 5;
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(9);
+    doc.setTextColor(...BRAND_GOLD);
+    doc.text(s(`Data zaznaczenia przez pacjenta: ${selectedAtFmt}`), margin, y);
+  }
 
   /* Intro box */
   y += 6;
