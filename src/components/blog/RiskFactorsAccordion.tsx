@@ -19,6 +19,8 @@ import {
   BookmarkCheck,
   ListChecks,
   Trash2,
+  ChevronsDownUp,
+  ChevronsUpDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -87,7 +89,7 @@ const RISK_FACTORS: RiskFactor[] = [
       {
         label: "ASCRS Clinical Practice Guidelines (2018)",
         url: "https://journals.lww.com/dcrjournal/Fulltext/2018/03000/The_American_Society_of_Colon_and_Rectal_Surgeons.7.aspx",
-        ebmId: "totally-bogus-id",
+        ebmId: "guidelines",
       },
       {
         label: "Garg P., Singh P. (2017) — Adequate fiber and TONE",
@@ -255,6 +257,9 @@ const RiskFactorsAccordion = () => {
   const [query, setQuery] = useState("");
   const nQuery = normalize(query.trim());
 
+  // Otwarte sekcje (tryb ręczny — gdy nie ma aktywnego wyszukiwania)
+  const [openItems, setOpenItems] = useState<string[]>([]);
+
   // Wybrane czynniki — persystencja w localStorage (anonimowo)
   const [selected, setSelected] = useState<string[]>(() => {
     if (typeof window === "undefined") return [];
@@ -295,8 +300,11 @@ const RiskFactorsAccordion = () => {
     });
   }, [nQuery]);
 
-  // Auto-rozwijaj dopasowane karty podczas wyszukiwania
-  const openValues = nQuery ? filtered.map((rf) => rf.id) : undefined;
+  // Auto-rozwijaj dopasowane karty podczas wyszukiwania (tryb wyszukiwania nadpisuje ręczny)
+  const accordionValue = nQuery ? filtered.map((rf) => rf.id) : openItems;
+  const allExpanded = openItems.length === RISK_FACTORS.length;
+  const toggleAll = () =>
+    setOpenItems(allExpanded ? [] : RISK_FACTORS.map((rf) => rf.id));
 
   return (
     <motion.section
@@ -367,6 +375,38 @@ const RiskFactorsAccordion = () => {
         </p>
       </div>
 
+      {/* Pasek akcji: Zwiń / Rozwiń wszystko (ukryty podczas wyszukiwania, które samo rozwija dopasowania) */}
+      {!nQuery && filtered.length > 0 && (
+        <div className="mb-3 flex items-center justify-between gap-2">
+          <span className="text-[11.5px] sm:text-xs text-muted-foreground">
+            {openItems.length === 0
+              ? "Wszystkie sekcje zwinięte"
+              : `Rozwinięte: ${openItems.length} z ${RISK_FACTORS.length}`}
+          </span>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={toggleAll}
+            className="gap-2"
+            aria-expanded={allExpanded}
+            aria-controls="risk-factors-list"
+          >
+            {allExpanded ? (
+              <>
+                <ChevronsDownUp className="w-3.5 h-3.5" />
+                Zwiń wszystko
+              </>
+            ) : (
+              <>
+                <ChevronsUpDown className="w-3.5 h-3.5" />
+                Rozwiń wszystko
+              </>
+            )}
+          </Button>
+        </div>
+      )}
+
       {filtered.length === 0 ? (
         <div className="rounded-xl border border-dashed border-border bg-background/30 px-5 py-8 text-center">
           <p className="text-sm text-muted-foreground">
@@ -376,9 +416,14 @@ const RiskFactorsAccordion = () => {
         </div>
       ) : (
         <Accordion
+          id="risk-factors-list"
           type="multiple"
           className="space-y-3 sm:space-y-2.5"
-          value={openValues}
+          value={accordionValue}
+          onValueChange={(v) => {
+            // Pozwól na ręczne zwijanie tylko gdy nie filtrujemy wyszukiwarką
+            if (!nQuery) setOpenItems(v);
+          }}
         >
           {filtered.map((rf) => {
             const Icon = rf.Icon;
