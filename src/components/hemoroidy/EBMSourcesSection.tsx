@@ -1221,10 +1221,7 @@ const EBMSourcesSection = ({
             </p>
             <button
               type="button"
-              onClick={() => {
-                setQuery("");
-                setActiveCat("all");
-              }}
+              onClick={resetAllFilters}
               className="mt-3 text-sm text-primary hover:underline"
             >
               Wyczyść filtry
