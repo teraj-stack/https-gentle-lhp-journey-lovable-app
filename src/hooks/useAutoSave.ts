@@ -137,6 +137,16 @@ export const useAutoSave = () => {
   const [remoteSyncTick, setRemoteSyncTick] = useState(0);
   const [isRemoteSyncing, setIsRemoteSyncing] = useState(false);
   const [lastRemoteSyncAt, setLastRemoteSyncAt] = useState<number | null>(null);
+  /**
+   * Aktywny transport synchronizacji. „broadcast" = BroadcastChannel działa,
+   * „storage-fallback" = używamy tylko storage event + CustomEvent (np. tryb
+   * prywatny Firefox/Safari, sandbox iframe, lub konstruktor BC rzucił wyjątek).
+   * Stan jest dynamiczny — degradujemy do `storage-fallback`, gdy `postMessage`
+   * zacznie rzucać (kanał padł np. po wybudzeniu tabu z BFCache).
+   */
+  const [transport, setTransport] = useState<"broadcast" | "storage-fallback">(() =>
+    isBrowser() && typeof BroadcastChannel !== "undefined" ? "broadcast" : "storage-fallback",
+  );
 
   /**
    * Stan testu synchronizacji: aktywny pingId (lub null), znacznik wysłania,
@@ -150,6 +160,12 @@ export const useAutoSave = () => {
   }>({ pingId: null, sentAt: null, responses: [], isCollecting: false });
 
   const channelRef = useRef<BroadcastChannel | null>(null);
+  /**
+   * Czy BC został świadomie zdegradowany w runtime — używane, by nie próbować
+   * ponownie `postMessage` w tej sesji (jedna nieudana próba = trwała degradacja
+   * do końca życia hooka; restart strony spróbuje ponownie).
+   */
+  const broadcastDegradedRef = useRef(false);
   const flashTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pingCollectionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   /** Trzymamy aktywny pingId w refie, żeby handler kanału nie musiał być re-bindowany. */
@@ -177,9 +193,23 @@ export const useAutoSave = () => {
 
   // Inicjalizacja BroadcastChannel (jedna na życie hooka).
   useEffect(() => {
-    if (!isBrowser() || typeof BroadcastChannel === "undefined") return;
-    const channel = new BroadcastChannel(CHANNEL_NAME);
+    if (!isBrowser() || typeof BroadcastChannel === "undefined") {
+      // API nieobecne — jedyna ścieżka to storage+CustomEvent fallback (już zarejestrowany w drugim effekcie).
+      setTransport("storage-fallback");
+      return;
+    }
+    let channel: BroadcastChannel;
+    try {
+      // Konstruktor może rzucić w niektórych sandboxach (cross-origin iframe bez allow-same-origin)
+      // oraz w starych wersjach Safari z polifillem. Łapiemy i schodzimy na fallback.
+      channel = new BroadcastChannel(CHANNEL_NAME);
+    } catch {
+      broadcastDegradedRef.current = true;
+      setTransport("storage-fallback");
+      return;
+    }
     channelRef.current = channel;
+    setTransport("broadcast");
 
     const onMessage = (e: MessageEvent<ChannelPayload>) => {
       const data = e.data;
@@ -239,9 +269,24 @@ export const useAutoSave = () => {
       });
     };
     channel.addEventListener("message", onMessage);
+    // Niektóre implementacje (głównie polifille) emitują `messageerror` gdy payload
+    // nie da się zdeserializować — degradujemy zachowawczo, bo nie wiemy, czy następne
+    // wiadomości też nie padną.
+    const onMessageError = () => {
+      broadcastDegradedRef.current = true;
+      setTransport("storage-fallback");
+      try {
+        channel.close();
+      } catch {
+        // pomijamy
+      }
+      channelRef.current = null;
+    };
+    channel.addEventListener("messageerror", onMessageError);
 
     return () => {
       channel.removeEventListener("message", onMessage);
+      channel.removeEventListener("messageerror", onMessageError);
       channel.close();
       channelRef.current = null;
     };
@@ -315,6 +360,9 @@ export const useAutoSave = () => {
     lastAppliedVersionRef.current = version;
 
     setEnabled(next);
+    // Storage write to nasz uniwersalny fallback transport — robimy go ZAWSZE,
+    // niezależnie czy BC działa. Inne karty bez BC dostaną storage event, a karty
+    // z BC zignorują storage (bo dostaną świeższy payload przez kanał z wersją).
     writeStored(next);
 
     const payload: StateBroadcastPayload = {
@@ -324,10 +372,23 @@ export const useAutoSave = () => {
       version,
     };
 
-    try {
-      channelRef.current?.postMessage(payload);
-    } catch {
-      // BroadcastChannel niedostępny — storage event zadziała
+    // Próbujemy BC tylko jeśli kanał istnieje i nie został zdegradowany.
+    if (channelRef.current && !broadcastDegradedRef.current) {
+      try {
+        channelRef.current.postMessage(payload);
+      } catch {
+        // Kanał padł w runtime (np. po wybudzeniu z BFCache) — degradujemy trwale,
+        // żeby kolejne toggle nie traciły czasu na próbę. Storage write powyżej
+        // i CustomEvent poniżej gwarantują, że zmiana i tak doleci do innych kart i komponentów.
+        broadcastDegradedRef.current = true;
+        setTransport("storage-fallback");
+        try {
+          channelRef.current.close();
+        } catch {
+          // pomijamy
+        }
+        channelRef.current = null;
+      }
     }
 
     if (isBrowser()) {
@@ -405,7 +466,15 @@ export const useAutoSave = () => {
     pingState,
     sendPing,
     clearPing,
-    /** Czy BroadcastChannel jest dostępny (niektóre tryby prywatne go nie mają). */
-    isBroadcastSupported: isBrowser() && typeof BroadcastChannel !== "undefined",
+    /**
+     * Czy BroadcastChannel jest aktywnie używany. False, gdy:
+     *  - API nieobecne (np. tryb prywatny Safari w starszych wersjach),
+     *  - konstruktor rzucił wyjątek (np. sandbox iframe),
+     *  - `postMessage` padł w runtime i zdegradowaliśmy do storage fallback.
+     * UI używa tego do pokazania komunikatu „Test synchronizacji niedostępny".
+     */
+    isBroadcastSupported: transport === "broadcast",
+    /** Aktywny transport — przydatne do diagnostyki w UI ustawień. */
+    transport,
   };
 };
