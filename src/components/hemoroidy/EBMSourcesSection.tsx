@@ -878,40 +878,43 @@ const EBMSourcesSection = ({
                     </div>
                   )}
                   <ul className="space-y-3 pt-2 border-t border-border/50">
-                    {cat.matchedItems.map((src, i) => (
-                      <li
-                        key={`${cat.id}-${i}`}
-                        className="text-sm leading-relaxed text-foreground/90"
-                      >
-                        <span className="font-semibold text-foreground">
-                          {src.authors} ({src.year}).
-                        </span>{" "}
-                        {src.title}.{" "}
-                        <em className="text-muted-foreground not-italic">{src.journal}.</em>{" "}
-                        <a
-                          href={src.url}
-                          target="_blank"
-                          rel="noopener noreferrer nofollow external"
-                          referrerPolicy="no-referrer"
-                          onClick={() =>
-                            trackEbmClick({
-                              url: src.url,
-                              label: src.title,
-                              source: "EBMSourcesSection",
-                              kind: "external_source",
-                              ebmId: cat.id,
-                            })
-                          }
-                          aria-label={`${src.title} — otwiera się w nowej karcie`}
-                          title="Otwórz źródło w nowej karcie"
-                          className="text-primary hover:underline inline-flex items-center gap-1 break-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded-sm"
+                    {cat.matchedItems.map((src, i) => {
+                      const meta = classifyLink(src.url, { categoryId: cat.id });
+                      return (
+                        <li
+                          key={`${cat.id}-${i}`}
+                          className="text-sm leading-relaxed text-foreground/90"
                         >
-                          Link
-                          <ExternalLink className="w-3 h-3" aria-hidden="true" />
-                          <span className="sr-only"> (nowa karta)</span>
-                        </a>
-                      </li>
-                    ))}
+                          <span className="font-semibold text-foreground">
+                            {src.authors} ({src.year}).
+                          </span>{" "}
+                          {src.title}.{" "}
+                          <em className="text-muted-foreground not-italic">{src.journal}.</em>{" "}
+                          <a
+                            href={src.url}
+                            target="_blank"
+                            rel="noopener noreferrer nofollow external"
+                            referrerPolicy="no-referrer"
+                            onClick={() =>
+                              trackEbmClick({
+                                url: src.url,
+                                label: src.title,
+                                source: "EBMSourcesSection",
+                                kind: "external_source",
+                                ebmId: cat.id,
+                              })
+                            }
+                            aria-label={`${src.title} — ${meta.longLabel}, otwiera się w nowej karcie`}
+                            title={`${meta.longLabel} — otwiera się w nowej karcie`}
+                            className={`mt-1 inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-sans uppercase tracking-[0.08em] transition-colors hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${linkKindClasses[meta.kind]}`}
+                          >
+                            <span>{meta.label}</span>
+                            <ExternalLink className="w-3 h-3" aria-hidden="true" />
+                            <span className="sr-only"> (nowa karta)</span>
+                          </a>
+                        </li>
+                      );
+                    })}
                   </ul>
                 </AccordionContent>
               </AccordionItem>
