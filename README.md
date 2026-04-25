@@ -283,12 +283,15 @@ ALL_LOCALES=(pl en de it)
 
 ONLY="all"
 LOCALES=""  # empty → use $I18N_ACTIVE_LOCALES if set, else fall back to pl,en,de,it
+OUT_DIR=""  # empty → falls back to $DEFAULT_OUT_DIR (/tmp)
 while [ $# -gt 0 ]; do
   case "$1" in
     --only|-o)    ONLY="${2:-}"; shift 2 ;;
     --only=*)     ONLY="${1#*=}"; shift ;;
     --locales|-L) LOCALES="${2:-}"; shift 2 ;;
     --locales=*)  LOCALES="${1#*=}"; shift ;;
+    --out|-O)     OUT_DIR="${2:-}"; shift 2 ;;
+    --out=*)      OUT_DIR="${1#*=}"; shift ;;
     --list|-l)
       printf '%-24s  %-10s  %s\n' "REASON" "SEVERITY" "TEST FILE (--only value)"
       printf '%-24s  %-10s  %s\n' "------" "--------" "------------------------"
@@ -299,17 +302,43 @@ while [ $# -gt 0 ]; do
         printf '%-24s  %-10s  %s\n' "$r" "warning" "${REASON_TEST[$r]}"
       done
       printf '\nKnown locales (for --locales): %s\n' "${ALL_LOCALES[*]}"
-      printf 'Example: bash i18n-summary.sh --only %s --locales en,de\n' "${ALL_ERROR_REASONS[0]}"
+      printf 'Default output dir (for --out): %s\n' "$DEFAULT_OUT_DIR"
+      printf 'Output filenames: %s, %s\n' "$LOG_NAME" "$ANN_NAME"
+      printf 'Example: bash i18n-summary.sh --only %s --locales en,de --out ./artifacts\n' "${ALL_ERROR_REASONS[0]}"
       exit 0 ;;
     -h|--help)
-      echo "Usage: $0 [--only <reason>[,<reason>…]|all] [--locales <locale>[,<locale>…]] [--list]"
+      echo "Usage: $0 [--only <reason>[,<reason>…]|all] [--locales <locale>[,<locale>…]] [--out <dir>] [--list]"
       echo "Reasons: ${ALL_ERROR_REASONS[*]} ${ALL_WARNING_REASONS[*]} | all"
       echo "Locales: ${ALL_LOCALES[*]} (defaults to \$I18N_ACTIVE_LOCALES, else pl,en,de,it)"
+      echo "Output:  defaults to $DEFAULT_OUT_DIR; --out <dir> writes $LOG_NAME and $ANN_NAME under <dir> (created if missing)"
       echo "Run '$0 --list' for a reason → test-file table."
       exit 0 ;;
     *) echo "Unknown arg: $1" >&2; exit 2 ;;
   esac
 done
+
+# Resolve effective output directory. Precedence: --out flag > $I18N_SUMMARY_OUT env > default.
+# We mkdir -p so callers can pass a fresh CI artifact path without pre-creating it.
+if [ -n "$OUT_DIR" ]; then
+  EFFECTIVE_OUT_DIR="$OUT_DIR"
+  OUT_SOURCE="--out flag"
+elif [ -n "${I18N_SUMMARY_OUT:-}" ]; then
+  EFFECTIVE_OUT_DIR="$I18N_SUMMARY_OUT"
+  OUT_SOURCE="\$I18N_SUMMARY_OUT env"
+else
+  EFFECTIVE_OUT_DIR="$DEFAULT_OUT_DIR"
+  OUT_SOURCE="default"
+fi
+mkdir -p "$EFFECTIVE_OUT_DIR" || {
+  echo "❌ Cannot create output dir: '$EFFECTIVE_OUT_DIR'" >&2
+  exit 2
+}
+if [ ! -w "$EFFECTIVE_OUT_DIR" ]; then
+  echo "❌ Output dir is not writable: '$EFFECTIVE_OUT_DIR'" >&2
+  exit 2
+fi
+LOG="$EFFECTIVE_OUT_DIR/$LOG_NAME"
+ANN="$EFFECTIVE_OUT_DIR/$ANN_NAME"
 
 # Resolve which reasons + which test files to run.
 # `ONLY` may be "all" or a comma-separated list of reasons (e.g. "placeholder-mismatch,wrong-type").
