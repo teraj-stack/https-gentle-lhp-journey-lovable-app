@@ -119,16 +119,10 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
     });
   };
 
-  // Format „2 min temu (14:32)" — relatywny czas + godzina dnia w nawiasie.
-  const lastSyncLabel = (() => {
-    if (lastRemoteSyncAt === null) return null;
-    const relative = formatRelativeTime(lastRemoteSyncAt);
-    const clock = new Date(lastRemoteSyncAt).toLocaleTimeString("pl-PL", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-    return `${relative} (${clock})`;
-  })();
+  // Krótki format „2 min temu" — pełna godzina trafia do tooltipa (lastSyncFullDate),
+  // żeby etykieta wizualnie współgrała z badge'em „Auto-zapis: ON/OFF".
+  const lastSyncLabel =
+    lastRemoteSyncAt !== null ? formatRelativeTime(lastRemoteSyncAt) : null;
   // Pełna data + godzina jako tooltip — pomocna gdy karta wisi długo otwarta.
   const lastSyncFullDate =
     lastRemoteSyncAt !== null
@@ -224,7 +218,7 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
           />
           {lastSyncLabel && (
             <p
-              className={`text-[10px] sm:text-[11px] font-sans text-muted-foreground inline-flex items-center gap-1 transition-colors ${
+              className={`text-[11px] font-sans text-muted-foreground inline-flex items-center gap-1 transition-colors ${
                 isRemoteSyncing ? "text-primary" : ""
               }`}
               title={lastSyncFullDate}
