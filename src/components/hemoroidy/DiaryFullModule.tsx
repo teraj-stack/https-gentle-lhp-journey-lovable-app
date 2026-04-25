@@ -277,6 +277,9 @@ const DiaryFullModule = ({
             </LineChart>
           </ResponsiveContainer>
         </div>
+
+        {/* Wzbogacone statystyki trendu */}
+        <DiaryTrendStats trend={trend} entries={entries} />
       </motion.div>
 
       {/* Day picker — 14-day strip */}
