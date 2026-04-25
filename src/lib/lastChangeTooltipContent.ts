@@ -88,6 +88,8 @@ const TRANSLATIONS: Record<Locale, TranslationEntry> = {
     },
     local: {
       heading: "Lokalna akcja w tej karcie",
+      // Override pierwszoosobowy w aria-label/title (historyczne brzmienie).
+      ariaHeadingOverride: "Moja lokalna akcja w tej karcie",
       description:
         "Sam(a) przełączyłe(a)ś auto-zapis w tej karcie (Switch lub skrót Alt+Shift+A).",
     },
