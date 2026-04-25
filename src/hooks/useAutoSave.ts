@@ -101,6 +101,29 @@ const REMOTE_SYNC_FLASH_MS = 1500;
 /** Czas zbierania odpowiedzi pong na pojedynczy ping (ms). */
 const PING_COLLECTION_WINDOW_MS = 5000;
 
+/**
+ * Monotoniczny licznik wersji w obrębie życia modułu (per zakładka).
+ * Każdy lokalny `toggle()` inkrementuje counter, więc para [Date.now(), counter]
+ * jest unikalna nawet w obrębie tej samej milisekundy.
+ */
+let versionCounter = 0;
+const nextVersion = (): [number, number] => {
+  versionCounter += 1;
+  return [Date.now(), versionCounter];
+};
+
+/**
+ * Porównanie wersji: zwraca >0 gdy `a` jest nowsza, <0 gdy starsza, 0 gdy równa.
+ * Najpierw porównuje timestamp, potem counter (tie-breaker).
+ * Brak wersji (legacy payload) jest traktowany jako [0, 0] — przegrywa z każdą wersjonowaną wiadomością.
+ */
+const compareVersions = (a: [number, number] | undefined, b: [number, number] | undefined): number => {
+  const [ta, ca] = a ?? [0, 0];
+  const [tb, cb] = b ?? [0, 0];
+  if (ta !== tb) return ta - tb;
+  return ca - cb;
+};
+
 export interface PongResponse {
   origin: string;
   label: string;
