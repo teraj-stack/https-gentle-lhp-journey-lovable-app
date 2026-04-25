@@ -562,6 +562,151 @@ describe("AutoSaveSettings — tooltip „Ostatnia zmiana” wybiera nagłówek 
   });
 
   /**
+   * Badge „lokalnie" — kontrakt widoczności i a11y przy dynamicznych zmianach:
+   *
+   * Reguła z `getLastChangeLabelStyle`: `showLocalSuffix = (source === "local")`.
+   * Badge MUSI:
+   *   1) pojawiać się WYŁĄCZNIE dla `source === "local"` — nigdy dla
+   *      `"remote"`, `null`, ani `undefined` (ostrożność: nie udajemy
+   *      pewności, której hook nie potwierdził),
+   *   2) mieć `aria-label` identyczny z `ariaHeading` z `getLastChangeTooltipContent("local")`
+   *      — żeby screen reader czytał ten sam komunikat co tooltip i title
+   *      (single source of truth),
+   *   3) reagować na re-render natychmiast: znikać przy przełączeniu na remote
+   *      i pojawiać się ponownie po powrocie do local (regression guard na
+   *      cache'owanie React albo stale closure).
+   *
+   * Pilnujemy tego osobnym blokiem (nie tylko w „wybiera nagłówek per źródło"),
+   * bo widoczny badge to OSOBNY kanał komunikacji od tooltipa — pacjent na
+   * wzroku rozróżnia źródło po samym badge'u, bez najeżdżania na ikonkę.
+   */
+  describe("badge „lokalnie” — widoczność per source + dynamiczne zmiany", () => {
+    const LOCAL_ARIA_LABEL = "Źródło: Moja lokalna akcja w tej karcie";
+
+    it.each([
+      ["local" as const, true, "musi się renderować"],
+      ["remote" as const, false, "NIE może się renderować (mylące dla pacjenta)"],
+      [null, false, "NIE może się renderować (źródło niepotwierdzone)"],
+      [undefined, false, "NIE może się renderować (źródło niepotwierdzone)"],
+    ])(
+      "source=%s: badge widoczność = %s",
+      (source, shouldExist, _label) => {
+        mockLastChangeSource = source as "remote" | "local" | null | undefined;
+        mockLastChangeAt = FROZEN_NOW;
+
+        renderPanel();
+
+        const badge = screen.queryByText("lokalnie");
+        if (shouldExist) {
+          expect(badge).toBeInTheDocument();
+          expect(badge?.getAttribute("aria-label")).toBe(LOCAL_ARIA_LABEL);
+        } else {
+          expect(badge).not.toBeInTheDocument();
+        }
+      },
+    );
+
+    it("przejście local → remote → local: badge znika i wraca, a aria-label zostaje stabilny", () => {
+      // Realny przepływ: pacjent edytuje (local), potem druga karta synchronizuje
+      // (remote nadpisuje), potem znowu sam edytuje (local). Badge MUSI poprawnie
+      // śledzić każdy przeskok bez „przylepiania się" do poprzedniego stanu.
+      mockLastChangeSource = "local";
+      mockLastChangeAt = FROZEN_NOW;
+      const { rerender } = renderPanel();
+
+      let badge = screen.queryByText("lokalnie");
+      expect(badge).toBeInTheDocument();
+      expect(badge?.getAttribute("aria-label")).toBe(LOCAL_ARIA_LABEL);
+
+      mockLastChangeSource = "remote";
+      mockLastChangeAt = FROZEN_NOW + 1_000;
+      rerender(
+        <TooltipProvider delayDuration={0}>
+          <AutoSaveSettings />
+        </TooltipProvider>,
+      );
+      expect(screen.queryByText("lokalnie")).not.toBeInTheDocument();
+
+      mockLastChangeSource = "local";
+      mockLastChangeAt = FROZEN_NOW + 2_000;
+      rerender(
+        <TooltipProvider delayDuration={0}>
+          <AutoSaveSettings />
+        </TooltipProvider>,
+      );
+      badge = screen.queryByText("lokalnie");
+      expect(badge).toBeInTheDocument();
+      expect(badge?.getAttribute("aria-label")).toBe(LOCAL_ARIA_LABEL);
+    });
+
+    it("przejście local → null (utrata źródła): badge znika i nie zostawia śladu w DOM", () => {
+      // Edge case: hook zresetował `lastChangeSource` do `null` (np. po
+      // czyszczeniu syncHistory). Badge MUSI zniknąć — utrzymanie go byłoby
+      // kłamstwem o pewności źródła. Dodatkowo cała sekcja „Ostatnia zmiana"
+      // przestaje się renderować (bo `isLastChangeVisible(_, null) === false`).
+      mockLastChangeSource = "local";
+      mockLastChangeAt = FROZEN_NOW;
+      const { rerender } = renderPanel();
+      expect(screen.queryByText("lokalnie")).toBeInTheDocument();
+
+      mockLastChangeSource = null;
+      rerender(
+        <TooltipProvider delayDuration={0}>
+          <AutoSaveSettings />
+        </TooltipProvider>,
+      );
+
+      expect(screen.queryByText("lokalnie")).not.toBeInTheDocument();
+      // Pełna anty-regresja: nie zostawiamy ani jednego elementu z aria-label
+      // „Źródło: Moja lokalna akcja w tej karcie" w drzewie po resecie.
+      const lingering = Array.from(
+        document.querySelectorAll<HTMLElement>("[aria-label]"),
+      ).filter((el) => el.getAttribute("aria-label") === LOCAL_ARIA_LABEL);
+      expect(lingering.length).toBe(0);
+    });
+
+    it("badge dla local: aria-label jest spójny z tooltip aria-label (ten sam ariaHeading)", () => {
+      // Single source of truth: badge i tooltip biorą `ariaHeading` z tego
+      // samego helpera (`getLastChangeTooltipContent`). Jeśli ktoś w przyszłości
+      // przez pomyłkę użyłby hardcoded stringu w badge'u, ten test wyłapie
+      // rozjazd między dwoma kanałami a11y.
+      mockLastChangeSource = "local";
+      mockLastChangeAt = FROZEN_NOW;
+      renderPanel();
+
+      const badge = screen.getByText("lokalnie");
+      const badgeAriaLabel = badge.getAttribute("aria-label") ?? "";
+
+      const { container } = findLastChangeTooltip();
+      const tooltipAriaLabel = container.getAttribute("aria-label") ?? "";
+
+      // aria-label badge'a MUSI być pierwszą linią aria-label tooltipa
+      // (tooltip skleja: ariaHeading + description + timeLine przez "\n").
+      expect(tooltipAriaLabel.startsWith(badgeAriaLabel)).toBe(true);
+      expect(badgeAriaLabel).toBe(LOCAL_ARIA_LABEL);
+    });
+
+    it("badge ma niepusty, sensowny aria-label (nie 'undefined'/'null'/whitespace, polskie 'karta')", () => {
+      // Defensywa serializacji: gdyby `tooltipContent.ariaHeading` przyszedł
+      // jako undefined/null (regresja w `getLastChangeTooltipContent`),
+      // badge dostałby `aria-label="undefined"` i screen reader przeczytałby
+      // dosłownie „undefined".
+      mockLastChangeSource = "local";
+      mockLastChangeAt = FROZEN_NOW;
+      renderPanel();
+
+      const badge = screen.getByText("lokalnie");
+      const ariaLabel = badge.getAttribute("aria-label") ?? "";
+
+      expect(ariaLabel.trim().length).toBeGreaterThan(0);
+      expect(ariaLabel).not.toMatch(/\b(undefined|null)\b/);
+      expect(ariaLabel.toLowerCase()).toMatch(/\bkar[ct]/);
+      expect(ariaLabel).not.toMatch(/\btab\b/i);
+    });
+  });
+
+
+  /**
    * Fallback dla niedostępnej pełnej daty (`lastSyncFullDate` puste/null/"—"):
    *
    * Komponent buduje linię czasu jako `tooltipTimeValue = lastSyncFullDate ?? lastSyncLabel`,
