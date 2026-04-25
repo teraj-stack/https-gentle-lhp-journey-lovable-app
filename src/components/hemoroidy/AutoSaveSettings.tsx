@@ -910,6 +910,8 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
           <SyncDiagnosticPanel
             transport={transport}
             degradationInfo={degradationInfo}
+            degradationHistory={degradationHistory}
+            clearDegradationHistory={clearDegradationHistory}
             simulateFallback={simulateFallback}
             isBroadcastSupported={isBroadcastSupported}
             tabLabel={tabLabel}
