@@ -288,6 +288,121 @@ const EBMSourcesSection = ({
   const [forcedOpen, setForcedOpen] = useState<string[]>([]);
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
 
+  // Stan pobierania bibliografii PDF (z determinate progress)
+  type DownloadStatus = "idle" | "downloading" | "success" | "error";
+  const [dlStatus, setDlStatus] = useState<DownloadStatus>("idle");
+  const [dlProgress, setDlProgress] = useState<number>(0); // 0..100, -1 = nieznany rozmiar
+  const [dlBytes, setDlBytes] = useState<{ loaded: number; total: number | null }>({
+    loaded: 0,
+    total: null,
+  });
+  const dlAbortRef = useRef<AbortController | null>(null);
+
+  const formatBytes = (n: number): string => {
+    if (n < 1024) return `${n} B`;
+    if (n < 1024 * 1024) return `${(n / 1024).toFixed(0)} KB`;
+    return `${(n / (1024 * 1024)).toFixed(2)} MB`;
+  };
+
+  const triggerBrowserSave = (blob: Blob, filename: string) => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1500);
+  };
+
+  const handleDownloadPdf = async () => {
+    if (dlStatus === "downloading") return;
+    const filename = "zrodla-EBM-quiz-hemoroidy-CML.pdf";
+    const controller = new AbortController();
+    dlAbortRef.current = controller;
+    setDlStatus("downloading");
+    setDlProgress(0);
+    setDlBytes({ loaded: 0, total: null });
+
+    trackEbmClick({
+      url: PDF_URL,
+      label: "Pobierz PDF (bibliografia EBM)",
+      source: "EBMSourcesSection",
+      kind: "external_source",
+    });
+
+    try {
+      const res = await fetch(PDF_URL, { signal: controller.signal });
+      if (!res.ok || !res.body) {
+        throw new Error(`HTTP ${res.status}`);
+      }
+      const totalHeader = res.headers.get("content-length");
+      const total = totalHeader ? parseInt(totalHeader, 10) : null;
+      setDlBytes({ loaded: 0, total });
+      if (!total) setDlProgress(-1);
+
+      const reader = res.body.getReader();
+      const chunks: Uint8Array[] = [];
+      let loaded = 0;
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        if (value) {
+          chunks.push(value);
+          loaded += value.length;
+          setDlBytes({ loaded, total });
+          if (total) {
+            setDlProgress(Math.min(99, Math.round((loaded / total) * 100)));
+          }
+        }
+      }
+      const blob = new Blob(chunks as BlobPart[], { type: "application/pdf" });
+      triggerBrowserSave(blob, filename);
+      setDlProgress(100);
+      setDlStatus("success");
+      toast.success("Pobrano bibliografię EBM (PDF)", {
+        description: `${formatBytes(loaded)} · zapisano jako ${filename}`,
+        duration: 5000,
+      });
+      // Po 6 s wracamy do stanu idle, żeby przycisk znowu był „świeży"
+      window.setTimeout(() => {
+        setDlStatus((s) => (s === "success" ? "idle" : s));
+        setDlProgress(0);
+        setDlBytes({ loaded: 0, total: null });
+      }, 6000);
+    } catch (err) {
+      if ((err as { name?: string })?.name === "AbortError") {
+        setDlStatus("idle");
+        setDlProgress(0);
+        setDlBytes({ loaded: 0, total: null });
+        toast("Pobieranie anulowane");
+        return;
+      }
+      setDlStatus("error");
+      toast.error("Nie udało się pobrać PDF", {
+        description: "Otwórz plik bezpośrednio w nowej karcie i zapisz ręcznie.",
+        action: {
+          label: "Otwórz w nowej karcie",
+          onClick: () => window.open(PDF_URL, "_blank", "noopener,noreferrer"),
+        },
+        duration: 7000,
+      });
+    } finally {
+      dlAbortRef.current = null;
+    }
+  };
+
+  const cancelDownload = () => {
+    dlAbortRef.current?.abort();
+  };
+
+  // Sprzątanie przy odmontowaniu
+  useEffect(() => {
+    return () => {
+      dlAbortRef.current?.abort();
+    };
+  }, []);
+
   // Open category from URL hash (#ebm-<id>) and scroll + highlight it
   useEffect(() => {
     const applyHash = () => {
