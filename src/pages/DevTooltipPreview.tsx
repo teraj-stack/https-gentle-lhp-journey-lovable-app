@@ -1,22 +1,31 @@
 /**
  * Dev-only strona dla wizualnej regresji tooltipa „Ostatnia zmiana".
  *
- * Renderuje 6 statycznych wariantów side-by-side, każdy z `defaultOpen`,
- * tak żeby Playwright mógł zrobić `toHaveScreenshot` per kafelek bez
- * interakcji (hover/focus). Każdy kafelek dostaje unikalny `data-testid`
- * w postaci `tooltip-variant-{slug}` — spec wizualny używa tego do
- * lokalizacji elementów.
+ * Renderuje 6 statycznych wariantów side-by-side, każdy z `data-testid`,
+ * tak żeby Playwright mógł zrobić `toHaveScreenshot` per kafelek.
  *
- * UWAGI:
- *  - Strona jest świadomie LEKKA — żadnego Layout/Header/Footer, tylko
- *    czyste tło i siatka kafelków. Mniej zmiennych = mniej flaky baseline.
- *  - Wszystkie warianty czytają z `buildLastChangeTooltipModel` (single
- *    source of truth), więc snapshoty wizualne pokrywają faktyczny model,
- *    a nie zaślepkę inline.
- *  - Trasa zarejestrowana w `App.tsx` jako `/dev/tooltip-preview` —
- *    nieindeksowana (poza menu), wyłącznie do testów.
+ * DLACZEGO NIE RADIX TOOLTIP?
+ * ---------------------------
+ * Radix `<Tooltip>` renderuje `<TooltipContent>` przez `Portal` do
+ * `document.body` — popover NIE jest częścią poddrzewa kafelka, więc
+ * `tile.screenshot()` w Playwright NIE złapałby treści tooltipa. Ponadto
+ * Radix dodaje animacje wejścia (fade-in + zoom-in), które destabilizują
+ * pierwszy frame screenshota.
+ *
+ * Zamiast tego renderujemy STATYCZNĄ replikę popovera (`role="tooltip"`,
+ * te same klasy `bg-popover` + `border` co `<TooltipContent>`) inline pod
+ * triggerem. Test wizualny weryfikuje:
+ *   - poprawne odstępy/typografię z `buildLastChangeTooltipModel`,
+ *   - łamanie linii dla `preserve-newlines`,
+ *   - obecność/brak linii „Czas: …" dla wariantów bez danych,
+ *   - parytet PL/EN.
+ *
+ * Test NIE weryfikuje animacji Radix ani pozycjonowania portalu (to
+ * odpowiedzialność biblioteki — pokryta jej własnymi testami).
+ *
+ * Strona jest świadomie LEKKA — żadnego Layout/Header/Footer, tylko czyste
+ * tło i siatka kafelków. Mniej zmiennych = mniej flaky baseline.
  */
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   buildLastChangeTooltipModel,
   type LastChangeTooltipModelInput,
@@ -25,7 +34,7 @@ import {
 interface PreviewVariant {
   /** Slug do `data-testid` (np. „remote-full-pl"). */
   slug: string;
-  /** Krótki tytuł kafelka pokazywany NAD tooltipem (poza screenshotem). */
+  /** Krótki tytuł kafelka pokazywany NAD tooltipem (poza screenshotem mogłoby być, ale i tak włączamy w snapshot). */
   label: string;
   input: LastChangeTooltipModelInput;
 }
@@ -109,47 +118,46 @@ const TooltipVariantTile = ({ variant }: { variant: PreviewVariant }) => {
   return (
     <div
       data-testid={`tooltip-variant-${variant.slug}`}
-      className="flex flex-col items-center gap-3 rounded-lg border border-border bg-card p-6"
+      className="flex flex-col items-stretch gap-3 rounded-lg border border-border bg-card p-6"
     >
       <p className="text-xs font-mono text-muted-foreground">{variant.label}</p>
 
+      {/* Trigger — wizualnie identyczny z `<TooltipTrigger>` w realnym UI. */}
+      <button
+        type="button"
+        aria-label={model.ariaText}
+        title={model.ariaText}
+        className="self-start rounded-md border border-border bg-background px-4 py-2 text-sm"
+      >
+        Ostatnia zmiana
+      </button>
+
       {/*
-        Kontener tooltipa ma stałą szerokość (260px), żeby długie wartości
-        (np. preserve-newlines) konsekwentnie zawijały się tak samo na CI
-        i lokalnie — to eliminuje flaky baseline od auto-sizingu.
+        Statyczna replika popovera. Klasy SKOPIOWANE 1:1 z
+        `src/components/ui/tooltip.tsx` (poza animacjami wejścia, których
+        nie chcemy w screenshocie deterministycznym). Szerokość ograniczona
+        do 260px, żeby zachowanie wrap było identyczne lokalnie i na CI.
       */}
-      <Tooltip defaultOpen>
-        <TooltipTrigger asChild>
-          <button
-            type="button"
-            aria-label={model.ariaText}
-            title={model.ariaText}
-            className="rounded-md border border-border bg-background px-4 py-2 text-sm"
-          >
-            Ostatnia zmiana
-          </button>
-        </TooltipTrigger>
-        <TooltipContent
-          side="bottom"
-          sideOffset={8}
-          className="max-w-[260px] whitespace-pre-line"
-        >
-          <div className="flex flex-col gap-1 text-left">
-            <p className="font-semibold">{model.content.heading}</p>
-            <p className="text-xs text-muted-foreground">
-              {model.content.description}
+      <div
+        role="tooltip"
+        data-testid={`tooltip-content-${variant.slug}`}
+        className="z-50 max-w-[260px] overflow-hidden rounded-md border bg-popover px-3 py-1.5 text-sm text-popover-foreground shadow-md whitespace-pre-line"
+      >
+        <div className="flex flex-col gap-1 text-left">
+          <p className="font-semibold">{model.content.heading}</p>
+          <p className="text-xs text-muted-foreground">
+            {model.content.description}
+          </p>
+          {model.shouldRenderTimeLine && (
+            <p
+              className="text-xs font-mono"
+              title={model.timeLineHelpTitle}
+            >
+              {model.timeLineForView}
             </p>
-            {model.shouldRenderTimeLine && (
-              <p
-                className="text-xs font-mono"
-                title={model.timeLineHelpTitle}
-              >
-                {model.timeLineForView}
-              </p>
-            )}
-          </div>
-        </TooltipContent>
-      </Tooltip>
+          )}
+        </div>
+      </div>
     </div>
   );
 };
@@ -172,11 +180,8 @@ const DevTooltipPreview = () => {
         {/*
           Siatka 3x2 na desktop (>=1024px), 2x3 na tablet, 1x6 na mobile.
           Test wizualny ustawia stały viewport (1280x720) — wymusza układ 3x2.
-          Padding kafelków zapewnia, że TooltipContent (renderowany przez
-          Radix portal) ma miejsce na rozwinięcie się pod triggerem bez
-          nakładania się na sąsiednie kafelki.
         */}
-        <div className="grid gap-12 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
           {VARIANTS.map((variant) => (
             <TooltipVariantTile key={variant.slug} variant={variant} />
           ))}
