@@ -1464,6 +1464,123 @@ npm run i18n:check            # CI-style dry run + per-bucket diff
 
 A scheduled GitHub Actions workflow ([`.github/workflows/i18n-autofix.yml`](.github/workflows/i18n-autofix.yml)) opens a PR automatically when daily drift is detected.
 
+#### `npm run i18n:autofix` walkthrough — files touched & verification
+
+This subsection is the **end-to-end transcript** of running autofix locally: what it scans, which two files it rewrites (and which lines inside them), and the exact commands to confirm the `::error` lines are gone afterwards. Use it whenever the validator reports `missing-required-key` or `undeclared-key` and you want to repair the contract list rather than the locale value.
+
+##### What autofix scans (read-only)
+
+| Source file | Pattern detected | Bucket assigned |
+| --- | --- | --- |
+| `src/lib/lastChangeTooltipModel.ts` | `t.<key>` (top-level access on `TRANSLATIONS[locale]`) | `REQUIRED_TRANSLATION_KEYS.top` |
+| `src/lib/lastChangeTooltipModel.ts` | `variant.<key>` (read directly, no `??` fallback) | `REQUIRED_TRANSLATION_KEYS.variant` |
+| `src/lib/lastChangeTooltipModel.ts` | `variant.<key> ?? <default>` (read with fallback) | `REQUIRED_TRANSLATION_KEYS.variantOptional` |
+| `src/lib/lastChangeTooltipModel.ts` | `tStrings.<key>` (read on `TIME_LINE_TRANSLATIONS[locale]`) | `REQUIRED_TIME_LINE_KEYS` |
+
+Autofix **never** opens the locale data itself (the `pl: { … }`, `en: { … }` branches) — it only updates the **contract lists** that say "these are the keys the builder reads". Locale value drift (`missing-required-key` because a locale forgot to translate a registered key, `wrong-type`, `placeholder-mismatch`, `empty-optional-value`) is **not** autofix's job — those need a human translator.
+
+##### What autofix writes (exactly two locations)
+
+| File | Constant rewritten | Lines affected |
+| --- | --- | --- |
+| `src/lib/lastChangeTooltipContent.ts` | `export const REQUIRED_TRANSLATION_KEYS = { top: [...], variant: [...], variantOptional: [...] } as const satisfies …` | The full `REQUIRED_TRANSLATION_KEYS` block (preserves the surrounding JSDoc + `satisfies` annotation) |
+| `src/lib/lastChangeTooltipModel.ts` | `export const REQUIRED_TIME_LINE_KEYS = [...] as const satisfies …` | The full `REQUIRED_TIME_LINE_KEYS` block (same preservation rules) |
+
+That's it. No other files, no JSX, no tests, no migrations. Each bucket is sorted alphabetically by default for stable diffs (use `-- --preserve-order` to keep manual ordering and only append new keys).
+
+##### Step-by-step walkthrough
+
+```sh
+# 1. Snapshot the current state — useful for rollback and for diff inspection.
+git status
+git diff src/lib/lastChangeTooltipContent.ts src/lib/lastChangeTooltipModel.ts
+# (should be empty if you haven't started yet)
+
+# 2. Confirm the validator currently fails with `missing-required-key` or
+#    `undeclared-key` (these are the two reasons autofix can repair).
+GITHUB_ACTIONS=true bunx vitest run \
+  src/lib/i18nRequiredKeys.test.ts \
+  src/lib/i18nContract.test.ts 2>&1 | grep '^::error' | grep -E 'missing-required-key|undeclared-key'
+# → should print at least one line; if empty, autofix has nothing to do
+
+# 3. Dry-run first — see WHAT would change without writing anything.
+npm run i18n:check
+# → exits 0 when in sync, exits 1 with a per-bucket diff (`+ added`, `- removed`)
+#   when drift is present. Read this output BEFORE letting autofix write.
+
+# 4. Apply the fix.
+npm run i18n:autofix
+# → prints a summary like:
+#   "REQUIRED_TRANSLATION_KEYS: +2 / -0  (added: local.subheading, local.footnote)"
+#   "REQUIRED_TIME_LINE_KEYS:   +0 / -1  (removed: relative.legacyKey)"
+
+# 5. Inspect the diff — should be limited to the two REQUIRED_* declarations.
+git diff src/lib/lastChangeTooltipContent.ts src/lib/lastChangeTooltipModel.ts
+```
+
+Expected diff shape (illustrative):
+
+```diff
+--- a/src/lib/lastChangeTooltipContent.ts
++++ b/src/lib/lastChangeTooltipContent.ts
+@@ — REQUIRED_TRANSLATION_KEYS block ——
+   variant: [
+     "local.description",
+     "local.heading",
++    "local.subheading",
+   ],
+```
+
+If the diff touches anything else (locale branches, JSDoc outside the constant, imports), **stop and revert** — the script's pattern detector probably matched something it shouldn't, and forcing the change will mask a real bug.
+
+##### Verification — confirm the `::error` lines are gone
+
+```sh
+# 6. Re-run the same validator command from step 2.
+GITHUB_ACTIONS=true bunx vitest run \
+  src/lib/i18nRequiredKeys.test.ts \
+  src/lib/i18nContract.test.ts 2>&1 | grep '^::'
+# → should be EMPTY for `missing-required-key` and `undeclared-key`.
+#   Other reasons (placeholder-mismatch, wrong-type, empty-optional-value)
+#   may still appear — those are NOT autofix's responsibility.
+
+# 7. Run the full suite to confirm nothing else regressed.
+GITHUB_ACTIONS=true bunx vitest run \
+  src/lib/i18nRequiredKeys.test.ts \
+  src/lib/i18nContract.test.ts \
+  src/lib/i18nPlaceholders.test.ts; echo "exit=$?"
+# → exit=0 means the contract is clean.
+
+# 8. Commit only the two files autofix touched.
+git add src/lib/lastChangeTooltipContent.ts src/lib/lastChangeTooltipModel.ts
+git commit -m "chore(i18n): autofix REQUIRED_* keys after drift"
+
+# 9. CI-mirror check — the same gate the GitHub workflow uses.
+npm run i18n:check
+# → exit=0 means future PRs won't regress on this drift.
+```
+
+##### Verification cheat sheet — reason × autofix outcome
+
+| Reason | Autofix can repair? | Post-autofix `grep '^::error'` should be… | If still present → root cause |
+| --- | --- | --- | --- |
+| `missing-required-key` | ✅ Yes (when the key is **read by the builder** but missing from `REQUIRED_*`) | Empty for this reason | The locale genuinely doesn't translate a registered key — translator action needed |
+| `undeclared-key` | ✅ Yes (registers the key into `REQUIRED_*`) | Empty for this reason | The key is shipped by a locale but **not** read by the builder — likely a typo in the locale; delete the key instead |
+| `placeholder-mismatch` | ❌ No | Unchanged | Edit the locale value to match the reference's `{name}` set |
+| `wrong-type` | ❌ No | Unchanged | Replace the bad value with the correct TS type in the locale branch |
+| `empty-optional-value` | ❌ No (and it's `::warning` anyway, not `::error`) | Unchanged warning | Translator fills in the empty string, or accept the warning |
+
+##### Rollback
+
+If autofix produced a surprising diff (e.g. removed a key you intentionally kept, or added a name with a typo), revert and re-run with `--preserve-order` to limit churn:
+
+```sh
+git checkout src/lib/lastChangeTooltipContent.ts src/lib/lastChangeTooltipModel.ts
+npm run i18n:autofix -- --preserve-order
+```
+
+If even `--preserve-order` produces wrong output, the bug is in the script's pattern detector — see [`scripts/autofix-required-translation-keys.mjs`](scripts/autofix-required-translation-keys.mjs) docstring (top of file) for the regex extraction rules and how to extend them.
+
 ### `i18n-autofix` workflow — schedule, scope, and PR review
 
 **Workflow**: [`.github/workflows/i18n-autofix.yml`](.github/workflows/i18n-autofix.yml) — also visible in the GitHub **Actions** tab as **“i18n autofix”**.
