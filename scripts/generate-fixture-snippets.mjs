@@ -154,6 +154,27 @@ const loadValidatorContext = async () => {
   const errorLocale = nonRefLocales.includes("en") ? "en" : nonRefLocales[0];
   const warningLocale = nonRefLocales[nonRefLocales.length - 1];
 
+  // Pick a companion key for the same variant block so the snippet shows
+  // *another* required leaf (and the missing-required-key fixture demo
+  // doesn't accidentally render `{ X: ..., X: ... }` when the only sample
+  // key happens to match the placeholder text we'd otherwise hardcode).
+  // Falls back to a generic name when only one variant key exists.
+  const companionVariantKey =
+    requiredTranslation.variant[1] && requiredTranslation.variant[1] !== requiredTranslation.variant[0]
+      ? requiredTranslation.variant[1]
+      : "subtitle";
+
+  // Noise key for the undeclared-key fixture: must be a name that is
+  // GUARANTEED not present in any REQUIRED_TRANSLATION_KEYS bucket, otherwise
+  // the snippet wouldn't actually trip `undeclared-key`.
+  const allRequiredVariantKeys = new Set([
+    ...requiredTranslation.top,
+    ...requiredTranslation.variant,
+    ...requiredTranslation.variantOptional,
+  ]);
+  const noiseCandidates = ["__demo_undeclared", "subheading", "tagline", "kicker"];
+  const noiseKey = noiseCandidates.find((k) => !allRequiredVariantKeys.has(k)) ?? "__undeclared_demo";
+
   return {
     sourceFiles: {
       TRANSLATIONS: "src/lib/lastChangeTooltipContent.ts",
@@ -163,8 +184,10 @@ const loadValidatorContext = async () => {
     referenceLocale: "pl",
     errorLocale,
     warningLocale,
-    sampleVariantKey: requiredTranslation.variant[0], // e.g. "heading"
-    sampleTimeLineKey: requiredTimeLine[0], // e.g. "relative.minutesAgo"
+    sampleVariantKey: requiredTranslation.variant[0], // e.g. "description"
+    companionVariantKey, // e.g. "heading" — guaranteed ≠ sampleVariantKey
+    noiseKey, // guaranteed ∉ REQUIRED_TRANSLATION_KEYS
+    sampleTimeLineKey: requiredTimeLine[0], // e.g. "relativeHelpTitle"
   };
 };
 
