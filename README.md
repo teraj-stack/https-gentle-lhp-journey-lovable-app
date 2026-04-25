@@ -247,6 +247,7 @@ Accepted values for `--only`: `missing-required-key`, `placeholder-mismatch`, `u
 #   bash i18n-summary.sh --only placeholder-mismatch
 #   bash i18n-summary.sh -o wrong-type
 #   bash i18n-summary.sh --only all               # explicit equivalent of default
+#   bash i18n-summary.sh --list                   # print reason → test-file table and exit
 set -euo pipefail
 
 LOG=/tmp/i18n-summary.log
