@@ -68,7 +68,7 @@ export interface VariantEntry {
   shortBadge: string;
 }
 
-interface TranslationEntry {
+export interface TranslationEntry {
   /** Prefiks doklejany do nagłówka w `aria-label`/`title` (np. „Źródło: "). */
   sourcePrefix: string;
   remote: VariantEntry;
