@@ -31,7 +31,7 @@ interface AutoSaveSettingsProps {
  * do tymczasowego draftu w pamięci komponentu — pacjent musi kliknąć „Zapisz dzień",
  * żeby przepisać je do storage'u (tę logikę implementuje DiaryFullModule).
  */
-const AutoSaveSettings = ({ pendingDraftCount = 0 }: AutoSaveSettingsProps) => {
+const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }: AutoSaveSettingsProps) => {
   const { enabled, setEnabled } = useAutoSave();
 
   const handleToggle = (next: boolean) => {
