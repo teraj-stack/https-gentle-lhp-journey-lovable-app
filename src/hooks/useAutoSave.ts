@@ -253,7 +253,90 @@ export interface DegradationHistoryEntry extends DegradationInfo {
 
 /** Maksymalna liczba wpisów w historii degradacji (najstarsze są przycinane). */
 const DEGRADATION_HISTORY_LIMIT = 20;
+/**
+ * Klucz localStorage do persystencji historii degradacji między reloadami.
+ * Wersjonowany (`.v1`), żeby przy zmianie kształtu wpisów móc bezpiecznie
+ * zignorować stare dane (a nie crashować przy parsowaniu).
+ */
+const DEGRADATION_HISTORY_STORAGE_KEY = "cml.autosave.degradation-history.v1";
 let degradationHistoryCounter = 0;
+
+/**
+ * Bezpieczne odczytanie historii degradacji z localStorage. Zwraca pustą tablicę
+ * przy:
+ *  - braku window/localStorage (SSR, tryb prywatny blokujący storage),
+ *  - braku klucza (pierwsze uruchomienie),
+ *  - niepoprawnym JSON (uszkodzone dane — czyścimy przy okazji),
+ *  - nieprawidłowym kształcie (zmieniony schema, stara wersja).
+ *
+ * Walidacja per-wpis: każdy wpis musi mieć `id`, `cause`, `detail`, `at` i
+ * mieścić się w taksonomii `DegradationCause`. Niezgodne wpisy są pomijane,
+ * a nie powodują odrzucenia całej historii — chcemy maksymalnie zachować
+ * kontekst, nawet jeśli pojedynczy wpis jest uszkodzony.
+ */
+const loadDegradationHistoryFromStorage = (): DegradationHistoryEntry[] => {
+  if (!isBrowser()) return [];
+  try {
+    const raw = window.localStorage.getItem(DEGRADATION_HISTORY_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    const validCauses: ReadonlySet<DegradationCause> = new Set([
+      "api-missing",
+      "constructor-exception",
+      "messageerror",
+      "postmessage-failure",
+      "simulation",
+    ]);
+    const entries: DegradationHistoryEntry[] = [];
+    for (const item of parsed) {
+      if (
+        item &&
+        typeof item === "object" &&
+        typeof item.id === "string" &&
+        typeof item.detail === "string" &&
+        typeof item.at === "number" &&
+        validCauses.has(item.cause)
+      ) {
+        entries.push({
+          id: item.id,
+          cause: item.cause,
+          detail: item.detail,
+          at: item.at,
+          errorMessage:
+            typeof item.errorMessage === "string" ? item.errorMessage : undefined,
+        });
+      }
+      if (entries.length >= DEGRADATION_HISTORY_LIMIT) break;
+    }
+    return entries;
+  } catch {
+    // Uszkodzony JSON / brak uprawnień — czyścimy klucz, żeby kolejny load był szybki.
+    try {
+      window.localStorage.removeItem(DEGRADATION_HISTORY_STORAGE_KEY);
+    } catch {
+      // ignoruj — tryb prywatny może blokować nawet remove()
+    }
+    return [];
+  }
+};
+
+/**
+ * Zapisuje historię do localStorage. Cicho ignoruje błędy (tryb prywatny,
+ * przekroczenie quota) — persystencja jest „best-effort", nie krytyczna.
+ */
+const saveDegradationHistoryToStorage = (history: DegradationHistoryEntry[]) => {
+  if (!isBrowser()) return;
+  try {
+    window.localStorage.setItem(
+      DEGRADATION_HISTORY_STORAGE_KEY,
+      JSON.stringify(history),
+    );
+  } catch {
+    // np. QuotaExceededError lub SecurityError w trybie prywatnym
+  }
+};
+
 
 const DEGRADATION_DETAILS: Record<DegradationCause, string> = {
   "api-missing": "BroadcastChannel API nie jest dostępne w tej przeglądarce",
@@ -353,11 +436,25 @@ export const useAutoSave = () => {
    * przy wielu degradacjach w tej samej milisekundzie.
    */
   const [degradationHistory, setDegradationHistory] = useState<DegradationHistoryEntry[]>(() => {
+    // Najpierw wczytaj historię persystowaną w localStorage (kontekst po reloadzie).
+    const persisted = loadDegradationHistoryFromStorage();
+    // Jeśli przeglądarka nie ma BC, dodaj świeży wpis „api-missing" tylko gdy
+    // ostatni persistowany wpis NIE jest już tym samym incydentem — unikamy
+    // duplikatu po reloadzie (każdy reload bez BC inaczej wygenerowałby nowy
+    // wpis o nowym `at`, zaśmiecając historię).
     if (isBrowser() && typeof BroadcastChannel === "undefined") {
+      const last = persisted[0];
+      if (last && last.cause === "api-missing") {
+        return persisted;
+      }
       const initial = buildDegradationInfo("api-missing");
-      return [{ ...initial, id: `deg-${initial.at}-0` }];
+      const entry: DegradationHistoryEntry = {
+        ...initial,
+        id: `deg-${initial.at}-0`,
+      };
+      return [entry, ...persisted].slice(0, DEGRADATION_HISTORY_LIMIT);
     }
-    return [];
+    return persisted;
   });
 
   /**
@@ -382,6 +479,18 @@ export const useAutoSave = () => {
       return [entry, ...prev].slice(0, DEGRADATION_HISTORY_LIMIT);
     });
   }, [degradationInfo]);
+
+  /**
+   * Persystencja historii do localStorage przy każdej zmianie. Pozwala odtworzyć
+   * kontekst incydentów po pełnym reloadzie strony — typowe gdy support prosi
+   * pacjenta o odświeżenie, a chcemy nadal widzieć historię awarii BC sprzed
+   * reloadu, bo inaczej tracimy ślad problemu. Persistujemy też pustą tablicę,
+   * żeby `clearDegradationHistory` przeniósł się po reloadzie.
+   */
+  useEffect(() => {
+    saveDegradationHistoryToStorage(degradationHistory);
+  }, [degradationHistory]);
+
   /**
    * Symulacja braku BroadcastChannel — używana do diagnostyki.
    * Gdy `true`, hook zachowuje się tak, jakby BC nie działał: pomija
