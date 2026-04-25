@@ -2,6 +2,7 @@ import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
+// @ts-expect-error — plain Node ESM script without type declarations
 import { validateEbmAnchors } from "./scripts/validate-ebm-anchors.mjs";
 
 /**
