@@ -155,6 +155,14 @@ export const useAutoSave = () => {
   /** Trzymamy aktywny pingId w refie, żeby handler kanału nie musiał być re-bindowany. */
   const activePingIdRef = useRef<string | null>(null);
   const pingSentAtRef = useRef<number | null>(null);
+  /**
+   * Wersja ostatnio zaaplikowanego stanu (lokalna LUB zdalna). Wiadomości z wersją
+   * mniejszą lub równą są ignorowane jako stale → najnowsza zmiana wygrywa, niezależnie
+   * od kolejności dostarczenia (BroadcastChannel zwykle FIFO, ale storage event może się
+   * przeplatać z CustomEvent w obrębie tej samej karty, a w przyszłości np. SharedWorker
+   * może przyjść spoza kolejki). [0,0] = nic jeszcze nie zaaplikowano.
+   */
+  const lastAppliedVersionRef = useRef<[number, number]>([0, 0]);
 
   const markRemoteSync = useCallback(() => {
     setRemoteSyncTick((n) => n + 1);
