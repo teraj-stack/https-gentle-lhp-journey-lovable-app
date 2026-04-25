@@ -5,6 +5,7 @@ import { BREADCRUMBS_MAP } from "@/lib/breadcrumbsMap";
 import SeoHead from "@/components/shared/SeoHead";
 import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 import HemoroidyRiskQuiz from "@/components/hemoroidy/HemoroidyRiskQuiz";
+import DiaryReminderBanner from "@/components/hemoroidy/DiaryReminderBanner";
 import QuizRetakeModule from "@/components/hemoroidy/QuizRetakeModule";
 import QuizHistorySection from "@/components/hemoroidy/QuizHistorySection";
 import HemoroidyChecklistSections from "@/components/hemoroidy/HemoroidyChecklistSections";
@@ -61,6 +62,11 @@ const QuizHemoroidy = () => {
               W 2 minuty poznasz poziom ryzyka i otrzymasz dopasowane zalecenia oparte na wytycznych ASCRS i ESCP.
             </p>
           </motion.div>
+
+          {/* Reminder banner — visible only when diary is overdue */}
+          <div className="mb-6">
+            <DiaryReminderBanner variant="quiz-page" />
+          </div>
 
           {/* Quiz */}
           <motion.div

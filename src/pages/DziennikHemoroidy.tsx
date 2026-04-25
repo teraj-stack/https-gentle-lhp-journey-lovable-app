@@ -48,6 +48,8 @@ import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 import { useDailyDiary, last14DaysKeys, todayKey } from "@/hooks/useDailyDiary";
 import { HEMOROIDY_QUESTIONS, RiskLevel } from "@/lib/hemoroidyQuizData";
 import { buildDiarySummary, exportDiaryCsv, exportDiaryPdf } from "@/lib/diaryExport";
+import DiaryReminderBanner from "@/components/hemoroidy/DiaryReminderBanner";
+import DiaryReminderSettings from "@/components/hemoroidy/DiaryReminderSettings";
 import { toast } from "@/hooks/use-toast";
 
 const easeOut = [0.16, 1, 0.3, 1] as const;
@@ -203,6 +205,11 @@ const DziennikHemoroidy = () => {
               lokalnie w Twojej przeglądarce — nie wysyłamy ich nigdzie i nie wymagamy konta.
             </p>
           </motion.div>
+
+          {/* Reminder banner — pokazuje przypomnienie o quizie jeśli zaległe */}
+          <div className="mb-6">
+            <DiaryReminderBanner variant="diary-page" />
+          </div>
 
           {/* Trend chart */}
           <motion.div
