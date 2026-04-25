@@ -517,6 +517,7 @@ describe("i18nGithubAnnotations — dedup of identical violations", () => {
       "g2",
     );
     expect(logSpy).toHaveBeenCalledTimes(2);
+  });
 });
 
 /**
