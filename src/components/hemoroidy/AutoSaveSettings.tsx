@@ -80,7 +80,7 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
     isBroadcastSupported,
     syncHistory,
     transport,
-    degradationReason,
+    degradationInfo,
     simulateFallback,
     setSimulateFallback,
   } = useAutoSave();
@@ -342,10 +342,34 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
                 </span>
               )}
             </p>
-            {degradationReason && (
-              <p className="text-[10px] sm:text-[11px] text-muted-foreground/80 mt-1 leading-relaxed italic">
-                Ostatnia przyczyna degradacji: {degradationReason}
-              </p>
+            {degradationInfo && (
+              <div className="mt-1.5 space-y-1">
+                <p className="text-[10px] sm:text-[11px] text-muted-foreground/90 leading-relaxed inline-flex flex-wrap items-center gap-1.5">
+                  <span className="font-sans uppercase tracking-wide text-muted-foreground/70">
+                    Przyczyna:
+                  </span>
+                  <span
+                    className="text-[10px] px-1.5 py-0.5 rounded-md font-mono bg-amber-500/10 text-amber-400 border border-amber-500/30"
+                    title={degradationInfo.detail}
+                  >
+                    {degradationInfo.cause}
+                  </span>
+                  <span className="text-muted-foreground/60 text-[10px]">
+                    · {formatRelativeTime(degradationInfo.at)}
+                  </span>
+                </p>
+                <p className="text-[10px] sm:text-[11px] text-muted-foreground/80 leading-relaxed italic">
+                  {degradationInfo.detail}
+                  {degradationInfo.errorMessage && (
+                    <>
+                      {" — "}
+                      <span className="font-mono not-italic text-muted-foreground/70">
+                        {degradationInfo.errorMessage}
+                      </span>
+                    </>
+                  )}
+                </p>
+              </div>
             )}
             </div>
           </div>
