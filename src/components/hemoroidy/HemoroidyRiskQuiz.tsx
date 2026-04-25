@@ -17,6 +17,8 @@ import {
 import { generateQuizResultPdf } from "@/lib/quizResultPdf";
 import { useQuizHistory } from "@/hooks/useQuizHistory";
 import { useDiaryReminders } from "@/hooks/useDiaryReminders";
+import { useRiskThresholds } from "@/hooks/useRiskThresholds";
+import { getRiskLevelWithThresholds, getRiskRangeWithThresholds } from "@/lib/hemoroidyQuizData";
 
 type Option = { label: string; points: number };
 type Question = { id: string; q: string; options: Option[] };
