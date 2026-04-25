@@ -682,4 +682,3 @@ describe("i18nGithubAnnotations — getSourceLineSnippet on multi-line values", 
     expect(result!.snippet).not.toContain("heading");
   });
 });
-});
