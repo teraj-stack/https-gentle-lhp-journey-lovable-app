@@ -195,6 +195,44 @@ const DiaryFullModule = ({
   );
 
   /**
+   * Komunikat aria-live ogłaszany po wybraniu odpowiedzi quizu — daje natychmiastowe
+   * potwierdzenie wzrostu postępu (czytniki ekranu + użytkownicy widzący toast obok).
+   * Resetowany do pustego stringa przy zmianie aktywnego dnia, by uniknąć echa.
+   */
+  const [answerAnnouncement, setAnswerAnnouncement] = useState<string>("");
+  useEffect(() => {
+    setAnswerAnnouncement("");
+  }, [activeDate]);
+
+  /**
+   * Wrapper na `setAnswer` z mikro-feedbackiem: pokazuje toast „Pytanie X/9 zapisane"
+   * tylko gdy użytkownik **zaznacza** odpowiedź (nie przy odznaczaniu/zmianie zdania).
+   * Liczbę „uzupełnionych po akcji" obliczamy lokalnie, bo `entry.answers` jeszcze nie
+   * odzwierciedla nowego stanu w tym tickne.
+   */
+  const handleAnswerSelect = (qi: number, oi: number) => {
+    const wasAnswered = entry.answers[qi] !== null;
+    const willBeAnswered = !wasAnswered; // toggle: jeśli było null → będzie wybrane
+    setAnswer(activeDate, qi, wasAnswered ? null : oi);
+
+    if (willBeAnswered) {
+      const newCompleted = completed + 1;
+      const isLast = newCompleted === total;
+      const message = isLast
+        ? `Pytanie ${qi + 1} zapisane · komplet ${total}/${total} 🎉`
+        : `Pytanie ${qi + 1} zapisane · postęp ${newCompleted}/${total}`;
+      setAnswerAnnouncement(message);
+      toast({
+        title: isLast ? "Wszystkie pytania uzupełnione" : `Pytanie ${qi + 1}/${total} zapisane`,
+        description: isLast
+          ? `Możesz teraz kliknąć „Zapisz dzień", aby zamknąć wpis.`
+          : `Postęp dnia: ${newCompleted}/${total} (${Math.round((newCompleted / total) * 100)}%).`,
+        duration: 1800,
+      });
+    }
+  };
+
+  /**
    * Auto-zapis edytora dnia (heartbeat 30 s).
    *
    * Kontekst: `setAnswer` / `setNotes` w `useDailyDiary` już piszą do localStorage natychmiast
@@ -745,6 +783,11 @@ const DiaryFullModule = ({
               transition={{ duration: 0.4, ease: easeOut }}
             />
           </div>
+          {/* Dyskretny komunikat dla czytników ekranu — ogłaszany po każdej zaznaczonej
+              odpowiedzi (toast pełni tę samą rolę wizualnie). */}
+          <p className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+            {answerAnnouncement}
+          </p>
         </div>
 
         {/* Filtr „Tylko brakujące" — szybko skupia uwagę na nieuzupełnionych pytaniach.
@@ -821,7 +864,7 @@ const DiaryFullModule = ({
                       <button
                         key={oi}
                         type="button"
-                        onClick={() => setAnswer(activeDate, qi, selected ? null : oi)}
+                        onClick={() => handleAnswerSelect(qi, oi)}
                         className={`text-left rounded-lg border px-3 py-2.5 transition-all text-sm leading-snug ${
                           selected
                             ? "border-primary bg-primary/10 text-foreground"
