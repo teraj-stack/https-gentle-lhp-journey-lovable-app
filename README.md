@@ -101,6 +101,63 @@ Sanity-check the annotations:
 
 Without `GITHUB_ACTIONS=true` the emitter is a no-op, so plain `bunx vitest run` stays clean for normal local development.
 
+### Copy-paste GitHub Actions workflow
+
+Drop this into `.github/workflows/i18n-check.yml` and it will run on every PR against `main`, post `::error` / `::warning` annotations inline on the diff, and **fail the build** the moment any `::error` is emitted (vitest exits non-zero on test failure, which is what triggers the `::error` lines in the first place — so a non-zero exit and a red ❌ check are equivalent).
+
+```yaml
+name: i18n contract
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  i18n-check:
+    name: i18n contract + annotations
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    # GITHUB_ACTIONS=true is set automatically on GitHub-hosted runners, so the
+    # emitter in src/lib/i18nGithubAnnotations.ts activates without extra env.
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify REQUIRED_* lists are in sync
+        run: npm run i18n:check
+
+      - name: Run i18n contract tests (emits PR annotations)
+        # vitest forwards stdout from workers; the `::error` / `::warning`
+        # lines are picked up by the runner and rendered inline on the diff.
+        # Any `::error` ⇒ failing test ⇒ non-zero exit ⇒ red ❌ check on the PR.
+        run: npx vitest run
+          src/lib/i18nRequiredKeys.test.ts
+          src/lib/i18nContract.test.ts
+          src/lib/i18nPlaceholders.test.ts
+          src/lib/i18nGithubAnnotations.test.ts
+```
+
+**How the failure gate works** — there is no extra `grep '::error'` step needed, because:
+
+1. The emitter is only called from inside failing test assertions (`expect(violations).toHaveLength(0)`). No `::error` line can appear unless a test failed.
+2. A failing vitest test ⇒ non-zero process exit ⇒ the `Run i18n contract tests` step is marked failed ⇒ the `i18n-check` job is failed ⇒ the PR check is red and merge is blocked (if branch protection requires this check).
+3. `::warning` lines (currently only `empty-optional-value`) do **not** fail tests — they're informational and the build stays green.
+
+If you ever want to fail the build on `::warning` too, flip the reason in `WARNING_REASONS` (in `src/lib/i18nGithubAnnotations.ts`) — the assertion will then trip and the same chain above takes over. Don't add a `grep`-based gate to the workflow; keep the truth source in the test code.
+
+> **Branch protection**: to actually block merges, go to **Settings → Branches → Branch protection rules → main** and add `i18n contract / i18n contract + annotations` to the list of required status checks.
+
+This repo's actual workflow lives at [`.github/workflows/i18n-check.yml`](.github/workflows/i18n-check.yml) and additionally restricts `paths:` to the i18n-relevant files so unrelated PRs skip the job.
 
 ### Workflow command format
 
