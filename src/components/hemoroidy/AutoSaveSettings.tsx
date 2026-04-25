@@ -1,5 +1,15 @@
 import { useEffect, useState } from "react";
-import { Save, ShieldCheck, ShieldAlert, CheckCircle2, RefreshCw } from "lucide-react";
+import {
+  Save,
+  ShieldCheck,
+  ShieldAlert,
+  CheckCircle2,
+  RefreshCw,
+  Radio,
+  X,
+  Loader2,
+  WifiOff,
+} from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { useAutoSave } from "@/hooks/useAutoSave";
@@ -54,7 +64,17 @@ interface AutoSaveSettingsProps {
  * żeby przepisać je do storage'u (tę logikę implementuje DiaryFullModule).
  */
 const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }: AutoSaveSettingsProps) => {
-  const { enabled, setEnabled, isRemoteSyncing, lastRemoteSyncAt } = useAutoSave();
+  const {
+    enabled,
+    setEnabled,
+    isRemoteSyncing,
+    lastRemoteSyncAt,
+    tabLabel,
+    pingState,
+    sendPing,
+    clearPing,
+    isBroadcastSupported,
+  } = useAutoSave();
   /**
    * Tick używany do auto-odświeżania względnego czasu („X s temu" → „X min temu").
    * Inkrementowany co 15 s tylko gdy mamy zarejestrowaną zdalną synchronizację.
@@ -75,6 +95,27 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
         ? "Każda zmiana odpowiedzi i notatek będzie od razu zapisywana lokalnie."
         : 'Zmiany trafiają tylko do tymczasowego draftu — pamiętaj o kliknięciu „Zapisz dzień".',
       duration: 2400,
+    });
+  };
+
+  const handleSendPing = async () => {
+    if (!isBroadcastSupported) {
+      toast({
+        title: "Test niedostępny",
+        description:
+          "Twoja przeglądarka nie wspiera BroadcastChannel — synchronizacja działa wtedy przez storage event (bez potwierdzenia odbioru).",
+        duration: 4000,
+      });
+      return;
+    }
+    const responses = await sendPing();
+    toast({
+      title: responses.length === 0 ? "Brak odpowiedzi z innych kart" : `Odpowiedziało ${responses.length} kart`,
+      description:
+        responses.length === 0
+          ? "Otwórz tę stronę w drugiej karcie i spróbuj ponownie."
+          : responses.map((r) => `${r.label} (${r.latencyMs} ms)`).join(", "),
+      duration: 4000,
     });
   };
 
@@ -221,6 +262,109 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
           </Button>
         </div>
       )}
+
+      {/* Test synchronizacji — diagnostyczny ping/pong między kartami. */}
+      <div className="mt-4 pt-4 border-t border-border/60">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-xs sm:text-sm font-medium text-foreground inline-flex items-center gap-2">
+              <Radio className="w-3.5 h-3.5 text-primary" aria-hidden="true" />
+              Test synchronizacji
+              <span className="text-[10px] font-normal font-sans px-1.5 py-0.5 rounded-md bg-muted text-muted-foreground border border-border/60">
+                {tabLabel}
+              </span>
+            </p>
+            <p className="text-[11px] sm:text-xs text-muted-foreground mt-1 leading-relaxed">
+              Wyślij sygnał testowy i sprawdź, które inne karty otwarte na tej stronie odpowiedziały. Pomocne, gdy nie masz pewności, że auto-zapis działa we wszystkich oknach.
+            </p>
+          </div>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={handleSendPing}
+            disabled={pingState.isCollecting || !isBroadcastSupported}
+            className="self-start sm:self-auto shrink-0"
+            aria-label="Wyślij sygnał testowy do innych kart"
+          >
+            {pingState.isCollecting ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" aria-hidden="true" />
+                Nasłuchiwanie…
+              </>
+            ) : !isBroadcastSupported ? (
+              <>
+                <WifiOff className="w-4 h-4 mr-2" aria-hidden="true" />
+                Niedostępne
+              </>
+            ) : (
+              <>
+                <Radio className="w-4 h-4 mr-2" aria-hidden="true" />
+                Test synchronizacji
+              </>
+            )}
+          </Button>
+        </div>
+
+        {/* Wyniki testu — widoczne podczas zbierania i przez chwilę po zakończeniu (dopóki user nie zamknie). */}
+        {pingState.pingId !== null && (
+          <div
+            className="mt-3 rounded-xl border border-border/60 bg-muted/30 px-3 py-2.5"
+            role="status"
+            aria-live="polite"
+          >
+            <div className="flex items-center justify-between gap-2 mb-1.5">
+              <p className="text-[11px] font-sans text-muted-foreground inline-flex items-center gap-1.5">
+                {pingState.isCollecting ? (
+                  <>
+                    <Loader2 className="w-3 h-3 animate-spin text-primary" aria-hidden="true" />
+                    Zbieranie odpowiedzi (do 5 s)…
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="w-3 h-3 text-emerald-400" aria-hidden="true" />
+                    Wynik testu — odpowiedziało{" "}
+                    <strong className="text-foreground">{pingState.responses.length}</strong>{" "}
+                    {pingState.responses.length === 1 ? "karta" : pingState.responses.length >= 2 && pingState.responses.length <= 4 ? "karty" : "kart"}
+                  </>
+                )}
+              </p>
+              <button
+                type="button"
+                onClick={clearPing}
+                className="text-muted-foreground hover:text-foreground transition-colors"
+                aria-label="Zamknij wynik testu"
+              >
+                <X className="w-3.5 h-3.5" aria-hidden="true" />
+              </button>
+            </div>
+
+            {pingState.responses.length === 0 ? (
+              !pingState.isCollecting && (
+                <p className="text-[11px] text-muted-foreground italic">
+                  Żadna inna karta nie odpowiedziała. Otwórz tę stronę w drugim oknie i spróbuj ponownie.
+                </p>
+              )
+            ) : (
+              <ul className="flex flex-wrap gap-1.5">
+                {pingState.responses.map((r) => (
+                  <li
+                    key={r.origin}
+                    className="inline-flex items-center gap-1.5 text-[11px] font-sans px-2 py-1 rounded-md bg-emerald-500/10 border border-emerald-500/40 text-emerald-400"
+                    title={`${r.label} — auto-zapis ${r.enabled ? "ON" : "OFF"} — opóźnienie ${r.latencyMs} ms`}
+                  >
+                    <CheckCircle2 className="w-3 h-3" aria-hidden="true" />
+                    <span className="text-foreground font-medium">{r.label}</span>
+                    <span className="text-muted-foreground">
+                      ({r.latencyMs} ms · {r.enabled ? "ON" : "OFF"})
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 };
