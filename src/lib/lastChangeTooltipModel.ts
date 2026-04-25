@@ -177,6 +177,45 @@ export interface LastChangeTooltipModel {
  * eksport do PDF, narrator screen-reader-only) powinien również czytać z tego
  * helpera, żeby uniknąć duplikacji logiki.
  */
+/**
+ * Prefiks linii czasu używany w tooltipie „Ostatnia zmiana".
+ *
+ * SINGLE SOURCE OF TRUTH dla literału „Czas: ". Wcześniej był wpisany
+ * inline w dwóch miejscach helpera (`timeLineForView` i pośrednio
+ * `timeLineForA11y`), co rodziło ryzyko literówki w jednym miejscu
+ * przy refactorze (np. „Czas:  " z podwójną spacją w view i bez w a11y
+ * → screen reader przeczytałby inny tekst niż widzi pacjent).
+ *
+ * Stała + helper `composeTimeLine` zapewniają, że prefiks jest dodawany
+ * DOKŁADNIE RAZ i TYLKO gdy `timeValue` ma sensowną treść po wygładzeniu.
+ */
+export const TIME_LINE_PREFIX = "Czas: ";
+
+/**
+ * Składa linię czasu „Czas: <wartość>" albo zwraca `null`.
+ *
+ * Kontrakt:
+ *  1. Pusty/whitespace-only `timeValue` → `null` (blokada renderowania
+ *     osieroconego prefiksu „Czas: " bez treści).
+ *  2. Prefiks `TIME_LINE_PREFIX` jest dodawany DOKŁADNIE RAZ — funkcja
+ *     defensywnie strzela `String(timeValue).trim()`, więc nawet jeśli
+ *     konsument przekaże już sklejony „Czas: 12:34", nie powstanie
+ *     „Czas: Czas: 12:34" (helper bazuje na surowej wartości, a komponent
+ *     NIE wywołuje composeTimeLine na własną rękę).
+ *  3. Eksportujemy do testów jednostkowych — pozwala odpalić snapshoty
+ *     na pojedynczej funkcji bez budowania pełnego modelu.
+ */
+export const composeTimeLine = (timeValue: string): string | null => {
+  // Defensywnie ignorujemy whitespace-only wartości — `smoothTimeValue`
+  // już je zeruje, ale jeżeli ktoś wywołałby composeTimeLine z surowym
+  // stringiem, ten warunek jest drugą linią obrony przed osieroconym
+  // prefiksem „Czas: " (bez treści) w widocznym tooltipie / aria-label.
+  if (typeof timeValue !== "string" || timeValue.trim().length === 0) {
+    return null;
+  }
+  return `${TIME_LINE_PREFIX}${timeValue}`;
+};
+
 export const buildLastChangeTooltipModel = (
   input: LastChangeTooltipModelInput,
 ): LastChangeTooltipModel => {
@@ -193,14 +232,18 @@ export const buildLastChangeTooltipModel = (
   // Gdy oba są puste — `timeValue` zostaje "" i blokuje renderowanie linii.
   const timeValue = smoothFull.length > 0 ? smoothFull : smoothRelative;
   const isRelativeFallback = smoothFull.length === 0 && smoothRelative.length > 0;
-  const shouldRenderTimeLine = timeValue.length > 0;
 
-  const timeLineForView = shouldRenderTimeLine ? `Czas: ${timeValue}` : null;
-  const timeLineForA11y = !timeLineForView
-    ? null
-    : isRelativeFallback
-      ? `${timeLineForView} (etykieta względna)`
-      : timeLineForView;
+  // composeTimeLine jest JEDYNYM miejscem składania prefiksu „Czas: ".
+  // Zwraca null gdy nie ma treści — dzięki temu shouldRenderTimeLine
+  // jest pochodną tego samego warunku, a nie osobnym sprawdzeniem.
+  const timeLineForView = composeTimeLine(timeValue);
+  const shouldRenderTimeLine = timeLineForView !== null;
+  const timeLineForA11y =
+    timeLineForView === null
+      ? null
+      : isRelativeFallback
+        ? `${timeLineForView} (etykieta względna)`
+        : timeLineForView;
 
   // Sklejanie tekstu a11y — JEDNO miejsce filtrowania pustych linii.
   // `filter(Boolean && trim)` gwarantuje brak "\n\n" i trailing newline.
