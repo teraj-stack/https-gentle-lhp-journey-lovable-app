@@ -57,6 +57,7 @@ const AdminEmailDashboard = lazy(() => import("@/pages/AdminEmailDashboard"));
 const AdminSecurityChecklist = lazy(() => import("@/pages/AdminSecurityChecklist"));
 const AdminScrollTest = lazy(() => import("@/pages/AdminScrollTest"));
 const DevTooltipPreview = lazy(() => import("@/pages/DevTooltipPreview"));
+const DevI18nContract = lazy(() => import("@/pages/DevI18nContract"));
 
 const Unsubscribe = lazy(() => import("@/pages/Unsubscribe"));
 const ReminderOptOut = lazy(() => import("@/pages/ReminderOptOut"));
