@@ -27,6 +27,8 @@ import {
   CheckCircle2,
   Eye,
   EyeOff,
+  FileDown,
+  FileSpreadsheet,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -38,6 +40,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Link } from "react-router-dom";
 import { trackEbmClick } from "@/lib/ebmAnalytics";
+import { exportChecklistCsv, exportChecklistPdf } from "@/lib/checklistExport";
+import { toast } from "@/hooks/use-toast";
 
 /** Polski-friendly normalizer: lowercase + usuwa diakrytyki */
 const normalize = (s: string) =>
@@ -300,6 +304,36 @@ const RiskFactorsAccordion = () => {
     () => selected.map((id) => RISK_FACTORS.find((rf) => rf.id === id)).filter(Boolean) as RiskFactor[],
     [selected],
   );
+
+  const handleExportChecklistPdf = () => {
+    if (selectedFactors.length === 0) {
+      toast({
+        title: "Brak zaznaczonych czynników",
+        description: "Rozwiń akordeon i kliknij „Zapisz moje ryzyko”, aby dodać pozycje.",
+      });
+      return;
+    }
+    exportChecklistPdf(selectedFactors, RISK_FACTORS.length);
+    toast({
+      title: "Pobrano checklistę PDF",
+      description: `${selectedFactors.length} z ${RISK_FACTORS.length} czynników — gotowe do druku.`,
+    });
+  };
+
+  const handleExportChecklistCsv = () => {
+    if (selectedFactors.length === 0) {
+      toast({
+        title: "Brak zaznaczonych czynników",
+        description: "Rozwiń akordeon i kliknij „Zapisz moje ryzyko”, aby dodać pozycje.",
+      });
+      return;
+    }
+    exportChecklistCsv(selectedFactors, RISK_FACTORS.length);
+    toast({
+      title: "Pobrano checklistę CSV",
+      description: "Plik został zapisany w folderze pobranych.",
+    });
+  };
 
   // Przeczytane karty — persystencja w localStorage (anonimowo)
   const [readItems, setReadItems] = useState<string[]>(() => loadStringArray(READ_STORAGE_KEY));
@@ -764,9 +798,34 @@ const RiskFactorsAccordion = () => {
         )}
 
         {selectedFactors.length > 0 && (
-          <p className="mt-4 text-[11.5px] sm:text-xs text-muted-foreground">
-            Pokaż tę listę lekarzowi na konsultacji — ułatwi to dobór profilaktyki i decyzje o leczeniu.
-          </p>
+          <>
+            <div className="mt-5 flex flex-col sm:flex-row gap-2 sm:items-center">
+              <Button
+                type="button"
+                variant="hero"
+                size="sm"
+                onClick={handleExportChecklistPdf}
+                className="gap-2"
+              >
+                <FileDown className="w-4 h-4" />
+                Pobierz moją checklistę (PDF)
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleExportChecklistCsv}
+                className="gap-2"
+              >
+                <FileSpreadsheet className="w-4 h-4" />
+                Pobierz CSV
+              </Button>
+            </div>
+            <p className="mt-3 text-[11.5px] sm:text-xs text-muted-foreground">
+              Pokaż tę listę lekarzowi na konsultacji — ułatwi to dobór profilaktyki i decyzje o leczeniu.
+              PDF zawiera tytuł, krótki opis, mechanizm i źródła EBM dla każdego czynnika.
+            </p>
+          </>
         )}
       </motion.div>
 
