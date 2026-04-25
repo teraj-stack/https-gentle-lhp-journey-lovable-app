@@ -62,7 +62,8 @@ const PLACEHOLDER_PATTERNS: Array<{ name: string; regex: RegExp }> = [
   // może też być w prozie. Wymagamy ALfanumerycznej zawartości bez spacji,
   // żeby nie łapać przypadkowo CSS-owego `{ color: red }` (którego i tak
   // w stringach być nie powinno).
-  { name: "single-curly", regex: /\{[a-zA-Z_][\w]*\}/g },
+  // Akceptujemy zarówno {name}, jak i pozycyjne {0}, {1}.
+  { name: "single-curly", regex: /\{[\w.]+\}/g },
   // printf: %s, %d, %f, %1$s.
   { name: "printf", regex: /%(?:\d+\$)?[sdif]/g },
   // python: %(name)s.
