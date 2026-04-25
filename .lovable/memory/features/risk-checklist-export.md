@@ -16,3 +16,9 @@ type: feature
 - **Reset**: gdy `selected.length === 0` → `removeItem` + state na `null`.
 - **UI**: linia z `<CalendarClock>` + `<time dateTime>` w nagłówku checklisty (kolor `text-primary/80`, format `pl-PL` dzień + miesiąc skrócony + rok + HH:MM).
 - **Eksport**: `exportChecklistPdf` i `exportChecklistCsv` przyjmują 3. opcjonalny parametr `selectedAt?: string | null`. PDF: linia kursywą złotym kolorem pod „Wygenerowano". CSV: dodatkowy wiersz „Data zaznaczenia" w bloku metadanych.
+
+## Wysoki priorytet (gwiazdki)
+- **Storage**: `cml.hemoroidy.risk-factors.priority.v1` (string[]) — niezależny od `selected`. Auto-czyszczenie w useEffect: jeśli czynnik został odznaczony z checklisty, znika też z priorytetów.
+- **UI**: ikona `Star` przy każdym wpisie checklisty (toggle). Aktywny stan = `fill-current` + złoty kolor + dodatkowy badge "PRIORYTET" obok tytułu + akcent karty (`border-primary/60 bg-primary/[0.06] ring-1 ring-primary/20`).
+- **Sortowanie**: `selectedFactors` useMemo sortuje priorytetowe na górę (stable wewnątrz grupy).
+- **Licznik**: w nagłówku obok "X z Y zaznaczonych" pojawia się "· N priorytetów" gdy `priorityCount > 0`.

@@ -33,6 +33,7 @@ import {
   Link2,
   Copy,
   CalendarClock,
+  Star,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -279,6 +280,7 @@ const RISK_FACTORS: RiskFactor[] = [
 
 const STORAGE_KEY = "cml.hemoroidy.risk-factors.selected.v1";
 const READ_STORAGE_KEY = "cml.hemoroidy.risk-factors.read.v1";
+const PRIORITY_STORAGE_KEY = "cml.hemoroidy.risk-factors.priority.v1";
 const TIMESTAMP_STORAGE_KEY = "cml.hemoroidy.risk-factors.selected-at.v1";
 
 const loadStringArray = (key: string): string[] => {
@@ -364,6 +366,26 @@ const RiskFactorsAccordion = () => {
 
   const clearSelected = () => setSelected([]);
 
+  // Wysokie priorytety — osobny storage z gwiazdkami per id
+  const [priorityIds, setPriorityIds] = useState<string[]>(() => loadStringArray(PRIORITY_STORAGE_KEY));
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem(PRIORITY_STORAGE_KEY, JSON.stringify(priorityIds));
+    } catch {
+      /* noop */
+    }
+  }, [priorityIds]);
+
+  // Auto-czyszczenie: jeśli czynnik został odznaczony z checklisty, usuń go też z priorytetów.
+  useEffect(() => {
+    setPriorityIds((prev) => prev.filter((id) => selected.includes(id)));
+  }, [selected]);
+
+  const togglePriority = (id: string) =>
+    setPriorityIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+
   // Restore z URL: ?c=<base64url> — gdy ktoś otworzył link udostępniony przez pacjenta.
   // Robimy MERGE z aktualnym localStorage (nie nadpisujemy "po cichu") + tylko gdy parametr istnieje.
   const location = useLocation();
@@ -389,9 +411,21 @@ const RiskFactorsAccordion = () => {
     });
   }, [location.search, location.pathname, location.hash, navigate]);
 
-  const selectedFactors = useMemo(
-    () => selected.map((id) => RISK_FACTORS.find((rf) => rf.id === id)).filter(Boolean) as RiskFactor[],
-    [selected],
+  // Sortowanie: priorytetowe (gwiazdka) na górze, w obrębie grupy zachowujemy kolejność dodania.
+  const selectedFactors = useMemo(() => {
+    const all = selected
+      .map((id) => RISK_FACTORS.find((rf) => rf.id === id))
+      .filter(Boolean) as RiskFactor[];
+    return [...all].sort((a, b) => {
+      const aPrio = priorityIds.includes(a.id) ? 1 : 0;
+      const bPrio = priorityIds.includes(b.id) ? 1 : 0;
+      return bPrio - aPrio; // priorytety pierwsze
+    });
+  }, [selected, priorityIds]);
+
+  const priorityCount = useMemo(
+    () => selectedFactors.filter((rf) => priorityIds.includes(rf.id)).length,
+    [selectedFactors, priorityIds],
   );
 
   // Dialog share
@@ -872,7 +906,17 @@ const RiskFactorsAccordion = () => {
                 Moja checklista czynników ryzyka
               </h3>
               <p className="text-[11.5px] sm:text-xs text-muted-foreground mt-0.5">
-                Zapisywane lokalnie w przeglądarce (anonimowo). {selectedFactors.length} z {RISK_FACTORS.length} zaznaczonych.
+                Zapisywane lokalnie w przeglądarce (anonimowo). {selectedFactors.length} z {RISK_FACTORS.length} zaznaczonych
+                {priorityCount > 0 && (
+                  <>
+                    {" "}·{" "}
+                    <span className="inline-flex items-center gap-1 text-primary font-medium">
+                      <Star className="w-3 h-3 fill-current" aria-hidden="true" />
+                      {priorityCount} {priorityCount === 1 ? "priorytet" : "priorytetów"}
+                    </span>
+                  </>
+                )}
+                .
               </p>
               {selectedAt && selectedFactors.length > 0 && (
                 <p className="text-[11px] sm:text-[11.5px] text-primary/80 mt-1 inline-flex items-center gap-1.5 font-sans">
@@ -911,30 +955,68 @@ const RiskFactorsAccordion = () => {
           <ul className="mt-4 grid gap-2 sm:grid-cols-2">
             {selectedFactors.map((rf) => {
               const Icon = rf.Icon;
+              const isPriority = priorityIds.includes(rf.id);
               return (
                 <li
                   key={rf.id}
-                  className="flex items-start gap-2.5 rounded-lg border border-border/60 bg-background/60 px-3 py-2.5"
+                  className={`flex items-start gap-2.5 rounded-lg border px-3 py-2.5 transition-colors ${
+                    isPriority
+                      ? "border-primary/60 bg-primary/[0.06] ring-1 ring-primary/20"
+                      : "border-border/60 bg-background/60"
+                  }`}
                 >
-                  <span className="w-7 h-7 rounded-md bg-primary/15 flex items-center justify-center shrink-0 mt-0.5">
+                  <span
+                    className={`w-7 h-7 rounded-md flex items-center justify-center shrink-0 mt-0.5 ${
+                      isPriority ? "bg-primary/25" : "bg-primary/15"
+                    }`}
+                  >
                     <Icon className="w-3.5 h-3.5 text-primary" />
                   </span>
                   <div className="flex-1 min-w-0">
-                    <p className="text-[13.5px] sm:text-sm font-medium text-foreground leading-snug">
+                    <p className="text-[13.5px] sm:text-sm font-medium text-foreground leading-snug flex items-center gap-1.5 flex-wrap">
                       {rf.title}
+                      {isPriority && (
+                        <span className="inline-flex items-center gap-0.5 text-[9.5px] uppercase tracking-[0.12em] font-sans bg-primary/20 text-primary px-1.5 py-0.5 rounded">
+                          <Star className="w-2.5 h-2.5 fill-current" aria-hidden="true" />
+                          Priorytet
+                        </span>
+                      )}
                     </p>
                     <p className="text-[11px] sm:text-[11.5px] text-muted-foreground leading-snug mt-0.5 truncate">
                       {rf.shortBadge}
                     </p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => toggleSelected(rf.id)}
-                    className="p-1 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors shrink-0"
-                    aria-label={`Usuń „${rf.title}" z checklisty`}
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
+                  <div className="flex items-center gap-0.5 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => togglePriority(rf.id)}
+                      className={`p-1 rounded-md transition-colors ${
+                        isPriority
+                          ? "text-primary hover:bg-primary/15"
+                          : "text-muted-foreground hover:text-primary hover:bg-primary/10"
+                      }`}
+                      aria-label={
+                        isPriority
+                          ? `Usuń „${rf.title}" z priorytetów`
+                          : `Oznacz „${rf.title}" jako wysoki priorytet`
+                      }
+                      aria-pressed={isPriority}
+                      title={isPriority ? "Usuń priorytet" : "Oznacz jako wysoki priorytet"}
+                    >
+                      <Star
+                        className={`w-3.5 h-3.5 ${isPriority ? "fill-current" : ""}`}
+                        aria-hidden="true"
+                      />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => toggleSelected(rf.id)}
+                      className="p-1 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                      aria-label={`Usuń „${rf.title}" z checklisty`}
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </li>
               );
             })}
