@@ -35,6 +35,7 @@ import {
   CalendarClock,
   Star,
   ShieldOff,
+  RotateCcw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -62,6 +63,17 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { toast } from "@/hooks/use-toast";
 
 /** Polski-friendly normalizer: lowercase + usuwa diakrytyki */
@@ -636,6 +648,34 @@ const RiskFactorsAccordion = () => {
     setReadItems((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   const clearRead = () => setReadItems([]);
 
+  /**
+   * Reset prywatności i lokalnych preferencji UX.
+   * Czyści: tryb prywatny + przeczytane + priorytet ★ + zapamiętane rozwinięcia.
+   * NIE rusza: zaznaczeń checklisty (`STORAGE_KEY`) ani filtru źródeł EBM —
+   * to "twarde" dane pacjenta, nie preferencje wyświetlania.
+   */
+  const resetUxPreferences = () => {
+    setPrivacyMode(false);
+    setReadItems([]);
+    setPriorityIds([]);
+    setOpenItems([]);
+    if (typeof window !== "undefined") {
+      try {
+        window.localStorage.removeItem(PRIVACY_STORAGE_KEY);
+        window.localStorage.removeItem(READ_STORAGE_KEY);
+        window.localStorage.removeItem(PRIORITY_STORAGE_KEY);
+        window.localStorage.removeItem(OPEN_ITEMS_STORAGE_KEY);
+      } catch {
+        // quota / privacy mode browser — ignorujemy, stan i tak został zresetowany
+      }
+    }
+    toast({
+      title: "Preferencje zresetowane",
+      description:
+        'Wyczyszczono tryb prywatny, oznaczenia „przeczytane", gwiazdki priorytetu i zapamiętane rozwinięcia kart.',
+    });
+  };
+
   // Auto-oznacz jako przeczytane po 1.2 s utrzymanego rozwinięcia (tylko ręczne otwarcie, nie wyszukiwarka)
   useEffect(() => {
     if (nQuery) return;
@@ -969,6 +1009,44 @@ const RiskFactorsAccordion = () => {
                 aria-label="Tryb prywatny — nie zapisuj „przeczytane” w przeglądarce"
               />
             </span>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md border border-border bg-background/40 text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors"
+                  title='Wyzeruj tryb prywatny oraz lokalne dane „przeczytane", „priorytet" i „rozwiń"'
+                  aria-label="Resetuj preferencje wyświetlania kart ryzyka"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>Reset preferencji</span>
+                </button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Zresetować preferencje wyświetlania?</AlertDialogTitle>
+                  <AlertDialogDescription asChild>
+                    <div className="space-y-2">
+                      <p>Tej operacji nie można cofnąć. Wyczyścimy z tej przeglądarki:</p>
+                      <ul className="list-disc pl-5 space-y-1 text-sm">
+                        <li>tryb prywatny (wróci do domyślnego — wyłączony),</li>
+                        <li>oznaczenia „przeczytane" dla wszystkich kart,</li>
+                        <li>gwiazdki „priorytet" przy zaznaczonych czynnikach,</li>
+                        <li>zapamiętane rozwinięcia kart („rozwiń").</li>
+                      </ul>
+                      <p className="text-xs text-muted-foreground pt-1">
+                        Twoje zaznaczenia checklisty i filtr źródeł EBM pozostają nietknięte.
+                      </p>
+                    </div>
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Anuluj</AlertDialogCancel>
+                  <AlertDialogAction onClick={resetUxPreferences}>
+                    Tak, zresetuj
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
           <Button
             type="button"
