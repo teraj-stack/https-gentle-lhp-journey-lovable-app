@@ -42,6 +42,7 @@ import {
 } from "@/hooks/useLastChangeVisibility";
 import { getLastChangeLabelStyle } from "@/lib/lastChangeLabelStyle";
 import { getLastChangeTooltipContent } from "@/lib/lastChangeTooltipContent";
+import { buildLastChangeTooltipModel } from "@/lib/lastChangeTooltipModel";
 
 /**
  * Etykiety segmented control dla wyboru widoczności „Ostatniej zmiany".
