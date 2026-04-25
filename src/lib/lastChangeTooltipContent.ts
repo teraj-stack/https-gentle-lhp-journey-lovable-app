@@ -47,7 +47,7 @@ export const resolveLocale = (raw: string | null | undefined): Locale => {
   return "pl";
 };
 
-interface VariantEntry {
+export interface VariantEntry {
   /** Nagłówek pokazywany w widocznym tooltipie (bez prefiksu). */
   heading: string;
   /**
@@ -68,7 +68,7 @@ interface VariantEntry {
   shortBadge: string;
 }
 
-interface TranslationEntry {
+export interface TranslationEntry {
   /** Prefiks doklejany do nagłówka w `aria-label`/`title` (np. „Źródło: "). */
   sourcePrefix: string;
   remote: VariantEntry;
@@ -162,6 +162,38 @@ const TRANSLATIONS: Record<Locale, TranslationEntry> = {
  * Pozwala iterować w testach po wszystkich wariantach bez duplikowania listy.
  */
 export const SUPPORTED_LOCALES: readonly Locale[] = ["pl", "en", "de", "it"] as const;
+
+/**
+ * SINGLE SOURCE OF TRUTH dla testów kontraktowych: lista kluczy, które
+ * `getLastChangeTooltipContent` (i pośrednio `buildLastChangeTooltipModel`)
+ * RZECZYWIŚCIE czyta z `TRANSLATIONS[locale]`. Każde dodanie nowego pola
+ * konsumowanego przez builder MUSI być dopisane tutaj — wtedy test
+ * `i18nRequiredKeys.test.ts` automatycznie rozszerzy walidację o nowy klucz
+ * dla wszystkich locale.
+ *
+ * Struktura odzwierciedla shape `TranslationEntry`:
+ *   - `top`: klucze na poziomie locale (np. „sourcePrefix"),
+ *   - `variant`: klucze obecne wewnątrz `local` i `remote` (czytane przez
+ *     `getLastChangeTooltipContent` w obu wariantach źródła zmiany),
+ *   - `variantOptional`: klucze opcjonalne (np. `ariaHeadingOverride`) —
+ *     test pozwala na ich brak, ale jeśli SĄ, muszą być niepuste.
+ */
+export const REQUIRED_TRANSLATION_KEYS = {
+  top: ["sourcePrefix"] as const,
+  variant: ["heading", "description", "shortBadge"] as const,
+  variantOptional: ["ariaHeadingOverride"] as const,
+} as const;
+
+/**
+ * Runtime accessor do mapy `TRANSLATIONS` — używany WYŁĄCZNIE w testach
+ * kontraktowych do introspekcji surowych wartości per locale. Komponenty
+ * NIE powinny tego importować — używają `getLastChangeTooltipContent`.
+ *
+ * Zwracamy snapshot (shallow copy), żeby test nie mógł przypadkowo
+ * zmutować źródła prawdy.
+ */
+export const __getRawTranslationsForTesting = (): Record<Locale, TranslationEntry> =>
+  ({ ...TRANSLATIONS });
 
 export interface LastChangeTooltipContent {
   /** Nagłówek pokazywany w TooltipContent (bez prefiksu „Źródło:"). */
