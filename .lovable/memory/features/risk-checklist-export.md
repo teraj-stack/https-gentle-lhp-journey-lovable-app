@@ -28,3 +28,11 @@ type: feature
 - **Helper**: `buildChecklistSummary(ids)` zwraca top kategorie + top mechanizmy z count i share %, plus krótki kontekstowy komentarz dopasowany do dominującego mechanizmu.
 - **UI**: `src/components/blog/ChecklistAutoSummary.tsx` — karta na dole checklisty (po liście, przed przyciskami eksportu) z 2 kolumnami pasków top-3 + komentarz w kursywie. Hidden gdy total = 0.
 - **Brak nowych zależności**: czysty TS + framer-motion + lucide.
+
+## Skrót klawiaturowy Ctrl/⌘+E
+- **Lokalizacja**: useEffect w `RiskFactorsAccordion` z window keydown listenerem.
+- **Mapping**: `Ctrl+E` (Win/Linux) lub `Cmd+E` (macOS) bez Shift/Alt → toggle wszystkich akordeonów (`setOpenItems`).
+- **Bezpieczeństwo**: ignoruje gdy fokus w INPUT/TEXTAREA/SELECT/contenteditable (żeby pisanie litery „e" działało normalnie).
+- **preventDefault** — Ctrl+E w Chrome to focus searchbar; przejmujemy.
+- **Feedback**: toast "Rozwinięto/Zwinięto wszystkie sekcje" + opis ze skrótem.
+- **Tooltip**: przycisk "Rozwiń/Zwiń wszystko" ma `title` z hintem skrótu.
