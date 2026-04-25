@@ -56,6 +56,7 @@ const AdminSystemHealth = lazy(() => import("@/pages/AdminSystemHealth"));
 const AdminEmailDashboard = lazy(() => import("@/pages/AdminEmailDashboard"));
 const AdminSecurityChecklist = lazy(() => import("@/pages/AdminSecurityChecklist"));
 const AdminScrollTest = lazy(() => import("@/pages/AdminScrollTest"));
+const DevTooltipPreview = lazy(() => import("@/pages/DevTooltipPreview"));
 
 const Unsubscribe = lazy(() => import("@/pages/Unsubscribe"));
 const ReminderOptOut = lazy(() => import("@/pages/ReminderOptOut"));
@@ -170,6 +171,7 @@ const App = () => (
             <Route path="/unsubscribe" element={<Unsubscribe />} />
             <Route path="/reminder-opt-out" element={<ReminderOptOut />} />
             <Route path="/booking-action" element={<BookingAction />} />
+            <Route path="/dev/tooltip-preview" element={<DevTooltipPreview />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
