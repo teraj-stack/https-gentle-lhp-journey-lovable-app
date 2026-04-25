@@ -81,7 +81,27 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
     syncHistory,
     transport,
     degradationReason,
+    simulateFallback,
+    setSimulateFallback,
   } = useAutoSave();
+
+  /**
+   * Symulacja braku BC + sanity check: po włączeniu robimy tymczasowy toggle
+   * przełącznika (na bieżącą wartość) i sprawdzamy w historii, czy zmiana
+   * wróciła kanałem fallbackowym. To potwierdza, że storage+CustomEvent wciąż
+   * dostarczają zmiany do innych kart.
+   */
+  const handleSimulateFallback = () => {
+    const next = !simulateFallback;
+    setSimulateFallback(next);
+    toast({
+      title: next ? "Symulacja: BroadcastChannel wyłączony" : "Symulacja zakończona",
+      description: next
+        ? "Transport wymuszony na storage-fallback. Przełącz auto-zapis w innej karcie — synchronizacja powinna działać dalej przez storage event."
+        : "Przywrócono normalny transport BroadcastChannel (jeśli był aktywny).",
+      duration: 4500,
+    });
+  };
   /**
    * Tick używany do auto-odświeżania względnego czasu („X s temu" → „X min temu").
    * Inkrementowany co 15 s tylko gdy mamy zarejestrowaną zdalną synchronizację.
@@ -291,19 +311,20 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
         {/* Status transportu — pokazuje aktywny kanał (broadcast/storage-fallback)
             i ostatnią przyczynę degradacji, jeśli BC padł. */}
         <div
-          className={`mb-3 rounded-xl border px-3 py-2 flex items-start gap-2.5 ${
+          className={`mb-3 rounded-xl border px-3 py-2 flex flex-col sm:flex-row sm:items-start gap-2.5 ${
             transport === "broadcast"
               ? "border-emerald-500/30 bg-emerald-500/5"
               : "border-primary/30 bg-primary/5"
           }`}
           role="status"
         >
-          {transport === "broadcast" ? (
-            <Wifi className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" aria-hidden="true" />
-          ) : (
-            <HardDrive className="w-3.5 h-3.5 text-primary shrink-0 mt-0.5" aria-hidden="true" />
-          )}
-          <div className="min-w-0 flex-1">
+          <div className="flex items-start gap-2.5 min-w-0 flex-1">
+            {transport === "broadcast" ? (
+              <Wifi className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" aria-hidden="true" />
+            ) : (
+              <HardDrive className="w-3.5 h-3.5 text-primary shrink-0 mt-0.5" aria-hidden="true" />
+            )}
+            <div className="min-w-0 flex-1">
             <p className="text-[11px] sm:text-xs font-sans text-muted-foreground inline-flex flex-wrap items-center gap-1.5">
               Transport synchronizacji:
               <span
@@ -315,13 +336,44 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
               >
                 {transport}
               </span>
+              {simulateFallback && (
+                <span className="text-[10px] px-1.5 py-0.5 rounded-md font-sans bg-amber-500/15 text-amber-400 border border-amber-500/40">
+                  symulacja
+                </span>
+              )}
             </p>
             {degradationReason && (
               <p className="text-[10px] sm:text-[11px] text-muted-foreground/80 mt-1 leading-relaxed italic">
                 Ostatnia przyczyna degradacji: {degradationReason}
               </p>
             )}
+            </div>
           </div>
+          <Button
+            type="button"
+            size="sm"
+            variant={simulateFallback ? "default" : "outline"}
+            onClick={handleSimulateFallback}
+            className="shrink-0 self-start"
+            aria-pressed={simulateFallback}
+            aria-label={
+              simulateFallback
+                ? "Wyłącz symulację braku BroadcastChannel"
+                : "Symuluj brak BroadcastChannel i wymuś transport storage-fallback"
+            }
+          >
+            {simulateFallback ? (
+              <>
+                <Wifi className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
+                Przywróć BC
+              </>
+            ) : (
+              <>
+                <WifiOff className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
+                Symuluj brak BC
+              </>
+            )}
+          </Button>
         </div>
 
         {/* Historia ostatnich synchronizacji — kompaktowa lista czas + źródło + wartość.

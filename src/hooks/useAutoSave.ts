@@ -183,6 +183,15 @@ export const useAutoSave = () => {
       ? "BroadcastChannel API nie jest dostępne w tej przeglądarce"
       : null,
   );
+  /**
+   * Symulacja braku BroadcastChannel — używana do diagnostyki.
+   * Gdy `true`, hook zachowuje się tak, jakby BC nie działał: pomija
+   * `postMessage` przy lokalnym toggle i ignoruje przychodzące wiadomości BC,
+   * zostawiając tylko storage event + CustomEvent jako transport.
+   * Reset do `false` natychmiast przywraca BC bez przeładowania strony
+   * (kanał nie jest fizycznie zamykany, więc historia subskrypcji zostaje).
+   */
+  const [simulateFallback, setSimulateFallback] = useState(false);
 
   /**
    * Stan testu synchronizacji: aktywny pingId (lub null), znacznik wysłania,
@@ -202,6 +211,12 @@ export const useAutoSave = () => {
    * do końca życia hooka; restart strony spróbuje ponownie).
    */
   const broadcastDegradedRef = useRef(false);
+  /**
+   * Lustro `simulateFallback` w refie — handler kanału BC żyje w useEffect bez
+   * dependency na flagę (żeby nie re-bindować nasłuchu przy każdej zmianie),
+   * więc czytamy aktualną wartość przez ref.
+   */
+  const simulateFallbackRef = useRef(false);
   const flashTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pingCollectionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   /** Trzymamy aktywny pingId w refie, żeby handler kanału nie musiał być re-bindowany. */
@@ -313,6 +328,10 @@ export const useAutoSave = () => {
       const statePayload = data as StateBroadcastPayload;
       if (typeof statePayload.enabled !== "boolean") return;
       if (statePayload.origin === TAB_ID) return; // ignorujemy echo własnego nadania
+      // Symulacja braku BC — udajemy, że wiadomość nie dotarła kanałem broadcast.
+      // Storage event/CustomEvent (z innej karty) i tak zaktualizują stan, więc test
+      // realnie weryfikuje, czy fallback działa.
+      if (simulateFallbackRef.current) return;
       // Anti-race: ignoruj wiadomości starsze lub równe ostatnio zaaplikowanej wersji.
       if (compareVersions(statePayload.version, lastAppliedVersionRef.current) <= 0) return;
       lastAppliedVersionRef.current = statePayload.version ?? [Date.now(), 0];
@@ -408,6 +427,11 @@ export const useAutoSave = () => {
     };
   }, []);
 
+  // Lustrzane odbicie state→ref dla simulateFallback (handler BC w useEffect).
+  useEffect(() => {
+    simulateFallbackRef.current = simulateFallback;
+  }, [simulateFallback]);
+
   const toggle = useCallback((next: boolean) => {
     // Generujemy nową wersję dla TEJ lokalnej zmiany. Każdy odbiorca (inna instancja
     // tego samego hooka, inna karta, fallback przez storage) zignoruje ją, jeśli
@@ -429,7 +453,9 @@ export const useAutoSave = () => {
     };
 
     // Próbujemy BC tylko jeśli kanał istnieje i nie został zdegradowany.
-    if (channelRef.current && !broadcastDegradedRef.current) {
+    // Symulacja braku BC pomija postMessage — storage write powyżej i CustomEvent
+    // poniżej zostają, więc inne karty i komponenty nadal odbiorą zmianę.
+    if (channelRef.current && !broadcastDegradedRef.current && !simulateFallbackRef.current) {
       try {
         channelRef.current.postMessage(payload);
       } catch {
@@ -513,6 +539,25 @@ export const useAutoSave = () => {
     setPingState({ pingId: null, sentAt: null, responses: [], isCollecting: false });
   }, []);
 
+  /**
+   * Włącza/wyłącza symulację braku BroadcastChannel. Aktualizuje też pochodne pola
+   * (transport, degradationReason), żeby UI od razu pokazało nowy stan.
+   * Wyłączenie symulacji przywraca poprzedni transport — `broadcast` jeśli kanał
+   * nie był wcześniej zdegradowany trwale, inaczej zostaje `storage-fallback`.
+   */
+  const setSimulateFallbackMode = useCallback((next: boolean) => {
+    setSimulateFallback(next);
+    if (next) {
+      setTransport("storage-fallback");
+      setDegradationReason("Symulacja diagnostyczna: BroadcastChannel wyłączony ręcznie");
+    } else if (channelRef.current && !broadcastDegradedRef.current) {
+      // Przywróć BC tylko jeśli kanał nadal istnieje i nie padł w międzyczasie.
+      setTransport("broadcast");
+      setDegradationReason(null);
+    }
+    // Jeśli kanał był trwale zdegradowany, transport i reason zostają — to nie symulacja, tylko realny fallback.
+  }, []);
+
   return {
     enabled,
     setEnabled: toggle,
@@ -537,6 +582,10 @@ export const useAutoSave = () => {
     transport,
     /** Powód degradacji do storage-fallback (lub `null` gdy BC działa). */
     degradationReason,
+    /** Czy obecnie symulujemy brak BC (diagnostycznie wymuszony fallback). */
+    simulateFallback,
+    /** Włącza/wyłącza symulację braku BC bez przeładowania strony. */
+    setSimulateFallback: setSimulateFallbackMode,
     /** Historia ostatnich {HISTORY_LIMIT} zdalnych synchronizacji (najnowsza pierwsza). */
     syncHistory,
   };
