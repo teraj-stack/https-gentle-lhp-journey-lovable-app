@@ -489,39 +489,156 @@ const EBMSourcesSection = ({
         </p>
       </motion.div>
 
-      {/* Download CTA */}
+      {/* Download CTA — z podglądem postępu i komunikatem o zakończeniu */}
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, amount: 0.3 }}
         transition={{ duration: 0.6, ease: easeOut }}
-        className="glass-card rounded-xl p-5 md:p-6 mb-8 flex flex-col sm:flex-row items-start sm:items-center gap-4 border border-primary/20"
+        className="glass-card rounded-xl p-5 md:p-6 mb-8 border border-primary/20"
       >
-        <div className="w-11 h-11 rounded-xl bg-primary/15 flex items-center justify-center shrink-0">
-          <Download className="w-5 h-5 text-primary" />
-        </div>
-        <div className="flex-1">
-          <p className="font-heading text-base md:text-lg text-foreground mb-1">
-            Bibliografia EBM (PDF) — dokładnie te same źródła
-          </p>
-          <p className="text-xs md:text-sm text-muted-foreground leading-relaxed">
-            8 kategorii · 21 referencji z aktywnymi linkami do PubMed, ASCRS, ESCP i Cochrane —
-            1:1 z sekcją poniżej. Do wglądu lekarza lub wydruku.
-          </p>
-        </div>
-        <Button variant="hero" asChild className="shrink-0 w-full sm:w-auto">
-          <a
-            href={PDF_URL}
-            target="_blank"
-            rel="noopener noreferrer nofollow"
-            referrerPolicy="no-referrer"
-            download="zrodla-EBM-quiz-hemoroidy-CML.pdf"
-            aria-label="Pobierz bibliografię EBM w formacie PDF (otwiera się w nowej karcie)"
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+          <div
+            className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
+              dlStatus === "success"
+                ? "bg-primary/20"
+                : dlStatus === "error"
+                  ? "bg-destructive/15"
+                  : "bg-primary/15"
+            }`}
           >
-            <Download className="w-4 h-4 mr-2" aria-hidden="true" />
-            Pobierz PDF (bibliografia)
-          </a>
-        </Button>
+            {dlStatus === "downloading" ? (
+              <Loader2 className="w-5 h-5 text-primary animate-spin" />
+            ) : dlStatus === "success" ? (
+              <CheckCircle2 className="w-5 h-5 text-primary" />
+            ) : dlStatus === "error" ? (
+              <AlertTriangle className="w-5 h-5 text-destructive" />
+            ) : (
+              <Download className="w-5 h-5 text-primary" />
+            )}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="font-heading text-base md:text-lg text-foreground mb-1">
+              Bibliografia EBM (PDF) — dokładnie te same źródła
+            </p>
+            <p className="text-xs md:text-sm text-muted-foreground leading-relaxed">
+              8 kategorii · 21 referencji z aktywnymi linkami do PubMed, ASCRS, ESCP i Cochrane —
+              1:1 z sekcją poniżej. Do wglądu lekarza lub wydruku.
+            </p>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-2 shrink-0 w-full sm:w-auto">
+            {dlStatus === "downloading" ? (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={cancelDownload}
+                className="w-full sm:w-auto"
+                aria-label="Anuluj pobieranie bibliografii EBM"
+              >
+                <X className="w-4 h-4 mr-2" aria-hidden="true" />
+                Anuluj
+              </Button>
+            ) : null}
+            <Button
+              type="button"
+              variant="hero"
+              onClick={handleDownloadPdf}
+              disabled={dlStatus === "downloading"}
+              className="w-full sm:w-auto"
+              aria-label={
+                dlStatus === "downloading"
+                  ? "Trwa pobieranie bibliografii EBM"
+                  : "Pobierz bibliografię EBM w formacie PDF"
+              }
+              aria-busy={dlStatus === "downloading"}
+            >
+              {dlStatus === "downloading" ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" aria-hidden="true" />
+                  Pobieram…
+                </>
+              ) : dlStatus === "success" ? (
+                <>
+                  <CheckCircle2 className="w-4 h-4 mr-2" aria-hidden="true" />
+                  Pobrano — pobierz ponownie
+                </>
+              ) : (
+                <>
+                  <Download className="w-4 h-4 mr-2" aria-hidden="true" />
+                  Pobierz PDF (bibliografia)
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
+
+        {/* Pasek postępu + komunikat o zakończeniu (status region) */}
+        {(dlStatus === "downloading" || dlStatus === "success" || dlStatus === "error") && (
+          <div
+            className="mt-4"
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
+          >
+            {dlStatus === "downloading" && (
+              <>
+                {dlProgress >= 0 ? (
+                  <Progress
+                    value={dlProgress}
+                    className="h-2 bg-muted/40"
+                    aria-label={`Postęp pobierania: ${dlProgress}%`}
+                  />
+                ) : (
+                  <div
+                    className="h-2 w-full overflow-hidden rounded-full bg-muted/40 relative"
+                    aria-label="Pobieranie w toku"
+                  >
+                    <div className="absolute inset-y-0 left-0 w-1/3 bg-primary/70 rounded-full animate-[indeterminate_1.4s_ease_infinite]" />
+                  </div>
+                )}
+                <p className="mt-2 text-xs text-muted-foreground">
+                  {dlProgress >= 0 ? `${dlProgress}% · ` : "Trwa pobieranie · "}
+                  {formatBytes(dlBytes.loaded)}
+                  {dlBytes.total ? ` z ${formatBytes(dlBytes.total)}` : ""}
+                </p>
+              </>
+            )}
+            {dlStatus === "success" && (
+              <div className="flex items-start gap-2 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2.5 text-sm">
+                <CheckCircle2 className="w-4 h-4 text-primary shrink-0 mt-0.5" aria-hidden="true" />
+                <div className="min-w-0">
+                  <p className="text-foreground font-medium">Pobieranie zakończone</p>
+                  <p className="text-xs text-muted-foreground">
+                    Plik <span className="text-foreground/80">zrodla-EBM-quiz-hemoroidy-CML.pdf</span>{" "}
+                    zapisano w folderze pobierania
+                    {dlBytes.loaded > 0 ? ` (${formatBytes(dlBytes.loaded)})` : ""}.
+                  </p>
+                </div>
+              </div>
+            )}
+            {dlStatus === "error" && (
+              <div className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2.5 text-sm">
+                <AlertTriangle className="w-4 h-4 text-destructive shrink-0 mt-0.5" aria-hidden="true" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-foreground font-medium">Pobieranie nie powiodło się</p>
+                  <p className="text-xs text-muted-foreground">
+                    Sprawdź połączenie lub{" "}
+                    <a
+                      href={PDF_URL}
+                      target="_blank"
+                      rel="noopener noreferrer nofollow"
+                      referrerPolicy="no-referrer"
+                      className="text-primary hover:underline"
+                    >
+                      otwórz PDF w nowej karcie
+                    </a>
+                    .
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </motion.div>
 
       {/* Filter & search */}
