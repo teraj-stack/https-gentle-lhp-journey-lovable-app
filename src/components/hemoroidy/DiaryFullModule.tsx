@@ -164,6 +164,20 @@ const DiaryFullModule = ({
   }));
 
   const completedDaysCount = trend.filter((d) => d.score !== null).length;
+  // Dni "zaczęte ale niedokończone" — wpis w localStorage istnieje (notatka lub ≥1 odpowiedź),
+  // ale nie wszystkie 9 pytań ma odpowiedź. Liczymy dla 14-dniowego okna trendu.
+  const partialDaysCount = useMemo(() => {
+    return trend.reduce((acc, d) => {
+      if (d.score !== null) return acc; // complete — już policzony osobno
+      const e = entries[d.date];
+      if (!e) return acc;
+      const hasAnyAnswer = e.answers.some((a) => a !== null);
+      if (hasAnyAnswer || e.notes) return acc + 1;
+      return acc;
+    }, 0);
+  }, [trend, entries]);
+  const totalProgressDays = completedDaysCount + partialDaysCount;
+  const completedPct = Math.round((completedDaysCount / 14) * 100);
   const summary = useMemo(() => buildDiarySummary(trend, entries), [trend, entries]);
   const hasAnyData = completedDaysCount > 0;
 
