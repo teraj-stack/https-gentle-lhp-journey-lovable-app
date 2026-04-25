@@ -117,6 +117,17 @@ export interface LastChangeTooltipModelInput {
    * helper w ogóle nie wyrenderuje linii czasu.
    */
   relativeLabel: string | null | undefined;
+  /**
+   * Tryb formatowania wartości czasu (patrz `TimeValueFormat`).
+   * Domyślnie `"single-space"` — zachowanie historyczne.
+   *
+   * KRYTYCZNE: Tryb jest stosowany JEDNOLICIE do obu kanałów (widoczny
+   * `<TooltipContent>` i `aria-label`/`title`), bo oba czytają to samo
+   * pole `timeValue`. Dzięki temu niemożliwe jest, żeby wizual i a11y
+   * pokazały inaczej sformatowaną wartość czasu — kontrakt egzekwowany
+   * testami parytetu w `lastChangeTooltipModel.test.ts`.
+   */
+  format?: TimeValueFormat;
 }
 
 export interface LastChangeTooltipModel {
