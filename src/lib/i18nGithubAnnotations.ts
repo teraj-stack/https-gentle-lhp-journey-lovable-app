@@ -374,8 +374,10 @@ export const emitGithubAnnotations = (
       }
     }
 
-    const title = `${groupTitle}: ${v.locale} · ${v.reason}`;
-    const messageBits = [`${v.path} (locale=${v.locale}, reason=${v.reason})`];
+    const severity: AnnotationSeverity = v.severity ?? classifyReasonSeverity(v.reason);
+    const sevTag = severity === "warning" ? "warning" : "error";
+    const title = `${groupTitle} [${sevTag}]: ${v.locale} · ${v.reason}`;
+    const messageBits = [`${v.path} (locale=${v.locale}, reason=${v.reason}, severity=${severity})`];
     if (v.detail) messageBits.push(v.detail);
     if (lineHint) messageBits.push(lineHint);
     messageBits.push(
@@ -387,6 +389,7 @@ export const emitGithubAnnotations = (
       line: lineNumber,
       title,
       message: messageBits.join(" — "),
+      severity,
     });
   }
 };
