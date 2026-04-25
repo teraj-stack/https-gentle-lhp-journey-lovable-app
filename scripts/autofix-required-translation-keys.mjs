@@ -617,7 +617,8 @@ const run = () => {
     ...timeLineFromIndexed,
     ...timeLineFromHelper,
   ]);
-  const newTimeLineBlock = renderRequiredTimeLineKeys(sortedArr(timeLineKeys));
+  const orderedTimeLine = orderKeys(currentTimeLine, timeLineKeys);
+  const newTimeLineBlock = renderRequiredTimeLineKeys(orderedTimeLine);
 
   // --- Apply edits ---
   const updatedContent = replaceBlock(
