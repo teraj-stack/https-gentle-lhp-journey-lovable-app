@@ -1672,7 +1672,11 @@ const DiaryFullModule = ({
 
       {/* Auto-zapis: dostępny zawsze (również w wariancie inline na /quiz-hemoroidy)
           — to fundamentalna preferencja zachowania quizu, nie zaawansowana opcja. */}
-      <AutoSaveSettings pendingDraftCount={pendingDraftCount} />
+      <AutoSaveSettings
+        pendingDraftCount={pendingDraftCount}
+        onSaveDay={handleSaveDay}
+        activeDateLabel={formatLongDate(activeDate)}
+      />
 
       {/* Reminder settings + clear all */}
       {showReminderSettings && (
