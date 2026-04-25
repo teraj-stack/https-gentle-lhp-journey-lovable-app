@@ -364,6 +364,26 @@ const RiskFactorsAccordion = () => {
 
   const clearSelected = () => setSelected([]);
 
+  // Wysokie priorytety — osobny storage z gwiazdkami per id
+  const [priorityIds, setPriorityIds] = useState<string[]>(() => loadStringArray(PRIORITY_STORAGE_KEY));
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem(PRIORITY_STORAGE_KEY, JSON.stringify(priorityIds));
+    } catch {
+      /* noop */
+    }
+  }, [priorityIds]);
+
+  // Auto-czyszczenie: jeśli czynnik został odznaczony z checklisty, usuń go też z priorytetów.
+  useEffect(() => {
+    setPriorityIds((prev) => prev.filter((id) => selected.includes(id)));
+  }, [selected]);
+
+  const togglePriority = (id: string) =>
+    setPriorityIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+
   // Restore z URL: ?c=<base64url> — gdy ktoś otworzył link udostępniony przez pacjenta.
   // Robimy MERGE z aktualnym localStorage (nie nadpisujemy "po cichu") + tylko gdy parametr istnieje.
   const location = useLocation();
@@ -389,9 +409,21 @@ const RiskFactorsAccordion = () => {
     });
   }, [location.search, location.pathname, location.hash, navigate]);
 
-  const selectedFactors = useMemo(
-    () => selected.map((id) => RISK_FACTORS.find((rf) => rf.id === id)).filter(Boolean) as RiskFactor[],
-    [selected],
+  // Sortowanie: priorytetowe (gwiazdka) na górze, w obrębie grupy zachowujemy kolejność dodania.
+  const selectedFactors = useMemo(() => {
+    const all = selected
+      .map((id) => RISK_FACTORS.find((rf) => rf.id === id))
+      .filter(Boolean) as RiskFactor[];
+    return [...all].sort((a, b) => {
+      const aPrio = priorityIds.includes(a.id) ? 1 : 0;
+      const bPrio = priorityIds.includes(b.id) ? 1 : 0;
+      return bPrio - aPrio; // priorytety pierwsze
+    });
+  }, [selected, priorityIds]);
+
+  const priorityCount = useMemo(
+    () => selectedFactors.filter((rf) => priorityIds.includes(rf.id)).length,
+    [selectedFactors, priorityIds],
   );
 
   // Dialog share
