@@ -735,6 +735,15 @@ const RiskVsPreventionTable = () => {
                     target="_blank"
                     rel="noopener noreferrer nofollow external"
                     referrerPolicy="no-referrer"
+                    onClick={() =>
+                      trackEbmClick({
+                        url: row.source.url,
+                        label: row.source.label,
+                        source: "RiskVsPreventionTable:desktop",
+                        kind: "external_source",
+                        ebmId: row.source.ebmId,
+                      })
+                    }
                     title="Otwórz źródło w nowej karcie"
                     className="text-primary hover:underline inline-flex items-start gap-1 leading-snug text-[13px]"
                   >
@@ -744,6 +753,15 @@ const RiskVsPreventionTable = () => {
                   {row.source.ebmId && (
                     <Link
                       to={`/dla-pacjenta/ebm-hemoroidy#ebm-${row.source.ebmId}`}
+                      onClick={() =>
+                        trackEbmClick({
+                          url: `/dla-pacjenta/ebm-hemoroidy#ebm-${row.source.ebmId}`,
+                          label: `kategoria bibliografii: ${row.source.ebmId}`,
+                          source: "RiskVsPreventionTable:desktop",
+                          kind: "internal_anchor",
+                          ebmId: row.source.ebmId,
+                        })
+                      }
                       className="block mt-1 text-[11.5px] text-muted-foreground hover:text-primary underline-offset-2 hover:underline"
                     >
                       → kategoria w bibliografii
