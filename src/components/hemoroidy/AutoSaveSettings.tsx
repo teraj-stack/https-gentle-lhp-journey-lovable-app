@@ -28,7 +28,7 @@ const AutoSaveSettings = ({ pendingDraftCount = 0 }: AutoSaveSettingsProps) => {
       title: next ? "Auto-zapis włączony" : "Auto-zapis wyłączony",
       description: next
         ? "Każda zmiana odpowiedzi i notatek będzie od razu zapisywana lokalnie."
-        : "Zmiany trafiają tylko do tymczasowego draftu — pamiętaj o kliknięciu „Zapisz dzień".",
+        : 'Zmiany trafiają tylko do tymczasowego draftu — pamiętaj o kliknięciu „Zapisz dzień".',
       duration: 2400,
     });
   };
