@@ -622,39 +622,127 @@ const DiaryFullModule = ({
           </div>
         </div>
 
+        {/* Mini-mapa pytań — wizualny status każdego z 9. Klik przewija i fokusuje
+            odpowiedni fieldset. Kolory: emerald=odpowiedziane, primary z pulsem=brak. */}
+        <div
+          className="mb-4 rounded-xl border border-border bg-background/40 p-3"
+          aria-label="Status odpowiedzi quizu"
+        >
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+            <p className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground font-sans">
+              Status pytań
+            </p>
+            <p
+              className={`text-[11px] font-sans tabular-nums ${
+                entry.complete ? "text-emerald-500" : "text-muted-foreground"
+              }`}
+              aria-live="polite"
+            >
+              {entry.complete
+                ? `✓ ${total}/${total} — komplet`
+                : `Brakuje: ${missingQuestionNumbers.join(", ")}`}
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-1.5" role="list">
+            {HEMOROIDY_QUESTIONS.map((q, qi) => {
+              const answered = entry.answers[qi] !== null;
+              return (
+                <button
+                  key={q.id}
+                  type="button"
+                  role="listitem"
+                  onClick={() => {
+                    const el = document.getElementById(`diary-q-${activeDate}-${qi}`);
+                    if (el) {
+                      el.scrollIntoView({ behavior: "smooth", block: "center" });
+                      // a11y focus na pierwszą opcję — pacjent może od razu wybrać
+                      const firstOpt = el.querySelector<HTMLButtonElement>("button[type='button']");
+                      firstOpt?.focus({ preventScroll: true });
+                    }
+                  }}
+                  aria-label={`Pytanie ${qi + 1} — ${answered ? "odpowiedziane" : "brak odpowiedzi, kliknij aby przejść"}`}
+                  title={answered ? `Pyt. ${qi + 1}: odpowiedziane` : `Pyt. ${qi + 1}: brak odpowiedzi`}
+                  className={`relative inline-flex items-center justify-center w-8 h-8 rounded-md border text-xs font-sans tabular-nums transition-all ${
+                    answered
+                      ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-500 hover:border-emerald-500"
+                      : "border-primary/50 bg-primary/5 text-primary hover:bg-primary/10"
+                  }`}
+                >
+                  {answered ? <CheckCircle2 className="w-3.5 h-3.5" /> : qi + 1}
+                  {!answered && (
+                    <span
+                      className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-primary animate-pulse"
+                      aria-hidden="true"
+                    />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         {/* Questions */}
         <div className="space-y-5">
-          {HEMOROIDY_QUESTIONS.map((q, qi) => (
-            <fieldset key={q.id} className="rounded-xl border border-border bg-background/40 p-4">
-              <legend className="px-2 -ml-2 text-[11px] uppercase tracking-[0.14em] text-muted-foreground font-sans">
-                Pyt. {qi + 1}/{total}
-              </legend>
-              <p className="font-heading text-base text-foreground mb-3 leading-snug">{q.q}</p>
-              <div className="grid sm:grid-cols-3 gap-2">
-                {q.options.map((opt, oi) => {
-                  const selected = entry.answers[qi] === oi;
-                  return (
-                    <button
-                      key={oi}
-                      type="button"
-                      onClick={() => setAnswer(activeDate, qi, selected ? null : oi)}
-                      className={`text-left rounded-lg border px-3 py-2.5 transition-all text-sm leading-snug ${
-                        selected
-                          ? "border-primary bg-primary/10 text-foreground"
-                          : "border-border bg-background/40 text-foreground/80 hover:border-primary/40"
-                      }`}
-                      aria-pressed={selected}
-                    >
-                      <span className="block">{opt.label}</span>
-                      <span className="block text-[11px] text-muted-foreground mt-1">
-                        {opt.points} pkt
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </fieldset>
-          ))}
+          {HEMOROIDY_QUESTIONS.map((q, qi) => {
+            const isAnswered = entry.answers[qi] !== null;
+            return (
+              <fieldset
+                key={q.id}
+                id={`diary-q-${activeDate}-${qi}`}
+                aria-invalid={!isAnswered}
+                className={`rounded-xl border p-4 transition-colors scroll-mt-32 ${
+                  isAnswered
+                    ? "border-border bg-background/40"
+                    : "border-primary/40 bg-primary/[0.03]"
+                }`}
+              >
+                <legend className="px-2 -ml-2 inline-flex items-center gap-1.5 text-[11px] uppercase tracking-[0.14em] font-sans">
+                  <span className="text-muted-foreground">Pyt. {qi + 1}/{total}</span>
+                  {isAnswered ? (
+                    <span className="inline-flex items-center gap-1 text-emerald-500">
+                      <CheckCircle2 className="w-3 h-3" aria-hidden="true" />
+                      odpowiedziane
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 text-primary">
+                      <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" aria-hidden="true" />
+                      brak odpowiedzi
+                    </span>
+                  )}
+                </legend>
+                <p className="font-heading text-base text-foreground mb-3 leading-snug">{q.q}</p>
+                <div className="grid sm:grid-cols-3 gap-2">
+                  {q.options.map((opt, oi) => {
+                    const selected = entry.answers[qi] === oi;
+                    return (
+                      <button
+                        key={oi}
+                        type="button"
+                        onClick={() => setAnswer(activeDate, qi, selected ? null : oi)}
+                        className={`text-left rounded-lg border px-3 py-2.5 transition-all text-sm leading-snug ${
+                          selected
+                            ? "border-primary bg-primary/10 text-foreground"
+                            : "border-border bg-background/40 text-foreground/80 hover:border-primary/40"
+                        }`}
+                        aria-pressed={selected}
+                      >
+                        <span className="block">{opt.label}</span>
+                        <span className="block text-[11px] text-muted-foreground mt-1">
+                          {opt.points} pkt
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+                {!isAnswered && (
+                  <p className="mt-2 text-[11px] text-primary inline-flex items-center gap-1.5">
+                    <AlertCircle className="w-3 h-3" aria-hidden="true" />
+                    Wybierz jedną z opcji powyżej, aby zaliczyć to pytanie do dziennika dnia.
+                  </p>
+                )}
+              </fieldset>
+            );
+          })}
         </div>
 
         {/* Notes */}
