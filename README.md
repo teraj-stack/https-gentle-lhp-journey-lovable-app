@@ -272,9 +272,21 @@ while [ $# -gt 0 ]; do
   case "$1" in
     --only|-o) ONLY="${2:-}"; shift 2 ;;
     --only=*)  ONLY="${1#*=}"; shift ;;
+    --list|-l)
+      printf '%-24s  %-10s  %s\n' "REASON" "SEVERITY" "TEST FILE (--only value)"
+      printf '%-24s  %-10s  %s\n' "------" "--------" "------------------------"
+      for r in "${ALL_ERROR_REASONS[@]}"; do
+        printf '%-24s  %-10s  %s\n' "$r" "error" "${REASON_TEST[$r]}"
+      done
+      for r in "${ALL_WARNING_REASONS[@]}"; do
+        printf '%-24s  %-10s  %s\n' "$r" "warning" "${REASON_TEST[$r]}"
+      done
+      printf '\nExample: bash i18n-summary.sh --only %s\n' "${ALL_ERROR_REASONS[0]}"
+      exit 0 ;;
     -h|--help)
-      echo "Usage: $0 [--only <reason>|all]"
+      echo "Usage: $0 [--only <reason>|all] [--list]"
       echo "Reasons: ${ALL_ERROR_REASONS[*]} ${ALL_WARNING_REASONS[*]} | all"
+      echo "Run '$0 --list' for a reason → test-file table."
       exit 0 ;;
     *) echo "Unknown arg: $1" >&2; exit 2 ;;
   esac
