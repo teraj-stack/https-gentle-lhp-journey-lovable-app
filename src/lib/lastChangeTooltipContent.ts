@@ -172,6 +172,13 @@ export interface LastChangeTooltipContent {
   ariaHeading: string;
   /** Czy source jest traktowane jako „remote" (do warunkowego stylowania). */
   isRemote: boolean;
+  /**
+   * Krótka, jednowyrazowa etykieta-chip tłumaczona per locale (np. PL
+   * „lokalnie"/„synchron.", EN „local"/„cross-tab"). Komponent powinien
+   * wyświetlać JĄ zamiast hard-codowanego stringa, żeby badge i tooltip
+   * mówiły tym samym językiem.
+   */
+  shortBadge: string;
   /** Locale, w którym zwrócono treść — przydatne dla konsumenta (debug, testy). */
   locale: Locale;
 }
