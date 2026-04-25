@@ -242,6 +242,19 @@ export interface DegradationInfo {
   at: number;
 }
 
+/**
+ * Wpis w historii degradacji = `DegradationInfo` + unikalny `id` (do React `key`).
+ * Trzymamy osobno od `DegradationInfo`, żeby publiczny typ ostatniej degradacji
+ * nie musiał obsługiwać id (informacja techniczna do listy).
+ */
+export interface DegradationHistoryEntry extends DegradationInfo {
+  id: string;
+}
+
+/** Maksymalna liczba wpisów w historii degradacji (najstarsze są przycinane). */
+const DEGRADATION_HISTORY_LIMIT = 20;
+let degradationHistoryCounter = 0;
+
 const DEGRADATION_DETAILS: Record<DegradationCause, string> = {
   "api-missing": "BroadcastChannel API nie jest dostępne w tej przeglądarce",
   "constructor-exception":
@@ -330,6 +343,45 @@ export const useAutoSave = () => {
       ? buildDegradationInfo("api-missing")
       : null,
   );
+  /**
+   * Pełna historia degradacji BroadcastChannel od momentu zamontowania hooka
+   * (najnowsza pierwsza, ograniczona do `DEGRADATION_HISTORY_LIMIT` wpisów).
+   * W przeciwieństwie do `degradationInfo` (tylko ostatnia), historia pozwala
+   * zobaczyć powtarzające się problemy — np. seryjne `messageerror` po wybudzeniu
+   * z BFCache, albo migotanie między `simulation` a real-mode podczas testów.
+   * Każdy wpis ma własny `id`, żeby React mógł go używać jako key bez kolizji
+   * przy wielu degradacjach w tej samej milisekundzie.
+   */
+  const [degradationHistory, setDegradationHistory] = useState<DegradationHistoryEntry[]>(() => {
+    if (isBrowser() && typeof BroadcastChannel === "undefined") {
+      const initial = buildDegradationInfo("api-missing");
+      return [{ ...initial, id: `deg-${initial.at}-0` }];
+    }
+    return [];
+  });
+
+  /**
+   * Każda nowa instancja `degradationInfo` (sygnatura `at + cause`) jest
+   * dopisywana do `degradationHistory`. Używamy `at + cause` zamiast referencji,
+   * bo `buildDegradationInfo` tworzy nowy obiekt nawet dla powtórzeń tej samej
+   * przyczyny — chcemy wtedy zarejestrować osobny incydent. Dedup po
+   * (at, cause) chroni przed podwójnym zapisem przy strict-mode double-render.
+   */
+  useEffect(() => {
+    if (!degradationInfo) return;
+    setDegradationHistory((prev) => {
+      const last = prev[0];
+      if (last && last.at === degradationInfo.at && last.cause === degradationInfo.cause) {
+        return prev; // dedup: ten sam incydent zarejestrowany powtórnie
+      }
+      degradationHistoryCounter += 1;
+      const entry: DegradationHistoryEntry = {
+        ...degradationInfo,
+        id: `deg-${degradationInfo.at}-${degradationHistoryCounter}`,
+      };
+      return [entry, ...prev].slice(0, DEGRADATION_HISTORY_LIMIT);
+    });
+  }, [degradationInfo]);
   /**
    * Symulacja braku BroadcastChannel — używana do diagnostyki.
    * Gdy `true`, hook zachowuje się tak, jakby BC nie działał: pomija
@@ -854,6 +906,16 @@ export const useAutoSave = () => {
     }
   }, []);
 
+  /**
+   * Czyści historię degradacji BroadcastChannel (lista incydentów). Nie kasuje
+   * `degradationInfo` (aktualny status BC) ani transportu — to czysty reset
+   * licznika dla diagnostyki, żeby pacjent mógł zacząć obserwację od zera
+   * (np. po włączeniu/wyłączeniu symulacji fallback).
+   */
+  const clearDegradationHistory = useCallback(() => {
+    setDegradationHistory([]);
+  }, []);
+
   return {
     enabled,
     setEnabled: toggle,
@@ -882,6 +944,15 @@ export const useAutoSave = () => {
      * i znacznik czasu — UI prezentuje kategorię jako badge, a opis jako podpis.
      */
     degradationInfo,
+    /**
+     * Pełna historia degradacji BroadcastChannel (do `DEGRADATION_HISTORY_LIMIT` wpisów,
+     * najnowsza pierwsza). Każdy wpis zawiera kategorię, opis, datownik i opcjonalny
+     * komunikat błędu — UI w panelu diagnostycznym filtruje to po typie i pokazuje
+     * licznik per kategoria oraz datowniki wszystkich incydentów.
+     */
+    degradationHistory,
+    /** Czyści historię degradacji (nie kasuje aktualnego degradationInfo). */
+    clearDegradationHistory,
     /** Czy obecnie symulujemy brak BC (diagnostycznie wymuszony fallback). */
     simulateFallback,
     /** Włącza/wyłącza symulację braku BC bez przeładowania strony. */
