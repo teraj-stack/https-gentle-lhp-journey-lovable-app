@@ -218,9 +218,10 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
           />
           {lastSyncLabel && (
             <p
+              key={lastRemoteSyncAt ?? "none"}
               className={`text-[11px] font-sans text-muted-foreground inline-flex items-center gap-1 transition-colors ${
                 isRemoteSyncing ? "text-primary" : ""
-              }`}
+              } animate-fade-in`}
               title={lastSyncFullDate}
               aria-live="polite"
             >
