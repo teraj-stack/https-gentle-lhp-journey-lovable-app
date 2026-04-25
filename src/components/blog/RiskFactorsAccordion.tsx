@@ -595,26 +595,49 @@ const RiskFactorsAccordion = () => {
                         ? "Ten czynnik trafił do Twojej checklisty na dole."
                         : "Dotyczy Cię? Dodaj do swojej krótkiej checklisty ryzyka."}
                     </p>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant={isSelected ? "default" : "outline"}
-                      onClick={() => toggleSelected(rf.id)}
-                      className="gap-2 self-start sm:self-auto"
-                      aria-pressed={isSelected}
-                    >
-                      {isSelected ? (
-                        <>
-                          <BookmarkCheck className="w-3.5 h-3.5" />
-                          Zapisane — kliknij, aby usunąć
-                        </>
-                      ) : (
-                        <>
-                          <Bookmark className="w-3.5 h-3.5" />
-                          Zapisz moje ryzyko
-                        </>
-                      )}
-                    </Button>
+                    <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => toggleRead(rf.id)}
+                        className="gap-1.5 text-muted-foreground hover:text-foreground"
+                        aria-pressed={isRead}
+                        title={isRead ? "Oznacz jako nieprzeczytane" : "Oznacz jako przeczytane"}
+                      >
+                        {isRead ? (
+                          <>
+                            <EyeOff className="w-3.5 h-3.5" />
+                            Cofnij „przeczytane"
+                          </>
+                        ) : (
+                          <>
+                            <Eye className="w-3.5 h-3.5" />
+                            Oznacz jako przeczytane
+                          </>
+                        )}
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant={isSelected ? "default" : "outline"}
+                        onClick={() => toggleSelected(rf.id)}
+                        className="gap-2"
+                        aria-pressed={isSelected}
+                      >
+                        {isSelected ? (
+                          <>
+                            <BookmarkCheck className="w-3.5 h-3.5" />
+                            Zapisane — kliknij, aby usunąć
+                          </>
+                        ) : (
+                          <>
+                            <Bookmark className="w-3.5 h-3.5" />
+                            Zapisz moje ryzyko
+                          </>
+                        )}
+                      </Button>
+                    </div>
                   </div>
                 </AccordionContent>
               </AccordionItem>
