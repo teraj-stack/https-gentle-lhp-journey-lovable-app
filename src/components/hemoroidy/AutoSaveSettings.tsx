@@ -727,6 +727,53 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
               })}
             </div>
           )}
+          {/* Segmented control: język tooltipa „Ostatnia zmiana" (PL/EN).
+              Persystowany w localStorage przez `useLocalePreference` —
+              przeżywa F5 i synchronizuje się z innymi kartami. Renderowany
+              gdy istnieje cokolwiek do wyświetlenia (lastSyncLabel), bo bez
+              treści tooltipa selektor nie miałby co przełączać. */}
+          {lastSyncLabel && (
+            <div
+              role="radiogroup"
+              aria-label="Język tooltipa Ostatnia zmiana"
+              className="inline-flex items-center gap-0.5 rounded-md border border-border/60 bg-muted/30 p-0.5"
+            >
+              {(
+                [
+                  { value: "pl", short: "PL", label: "Polski", hint: "Tooltip i etykiety po polsku (Czas:, Źródło:)." },
+                  { value: "en", short: "EN", label: "English", hint: "Tooltip and labels in English (Time:, Source:)." },
+                ] as Array<{ value: Locale; short: string; label: string; hint: string }>
+              ).map((opt) => {
+                const active = tooltipLocale === opt.value;
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    role="radio"
+                    aria-checked={active}
+                    aria-label={`Język tooltipa: ${opt.label}`}
+                    title={opt.hint}
+                    onClick={() => {
+                      if (active) return;
+                      setTooltipLocale(opt.value);
+                      toast({
+                        title: `Język: ${opt.short}`,
+                        description: opt.hint,
+                        duration: 1800,
+                      });
+                    }}
+                    className={`text-[10px] font-sans font-medium px-1.5 py-0.5 rounded transition-colors focus:outline-none focus:ring-1 focus:ring-primary/60 ${
+                      active
+                        ? "bg-primary/20 text-primary"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                    }`}
+                  >
+                    {opt.short}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
 
