@@ -21,6 +21,11 @@ import { useAutoSave } from "@/hooks/useAutoSave";
 import { toast } from "@/hooks/use-toast";
 import SyncDiagnosticPanel from "@/components/hemoroidy/SyncDiagnosticPanel";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
   formatTimestamp,
   useTimeFormatPreference,
   type TimeFormatMode,
