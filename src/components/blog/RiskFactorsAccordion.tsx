@@ -496,6 +496,14 @@ const RiskFactorsAccordion = () => {
         Pełna bibliografia z linkami do PubMed, ASCRS, ESCP i Cochrane:{" "}
         <Link
           to="/dla-pacjenta/ebm-hemoroidy#bibliografia"
+          onClick={() =>
+            trackEbmClick({
+              url: "/dla-pacjenta/ebm-hemoroidy#bibliografia",
+              label: "Pełna bibliografia EBM",
+              source: "RiskFactorsAccordion",
+              kind: "internal_anchor",
+            })
+          }
           className="text-primary hover:underline"
         >
           moduł „Źródła EBM" →
