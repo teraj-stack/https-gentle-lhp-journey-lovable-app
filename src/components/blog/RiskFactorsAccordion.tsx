@@ -883,16 +883,26 @@ const RiskFactorsAccordion = () => {
 
         {selectedFactors.length > 0 && (
           <>
-            <div className="mt-5 flex flex-col sm:flex-row gap-2 sm:items-center">
+            <div className="mt-5 flex flex-col sm:flex-row flex-wrap gap-2 sm:items-center">
               <Button
                 type="button"
                 variant="hero"
+                size="sm"
+                onClick={handleOpenShare}
+                className="gap-2"
+              >
+                <Share2 className="w-4 h-4" />
+                Utwórz link do checklisty
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
                 size="sm"
                 onClick={handleExportChecklistPdf}
                 className="gap-2"
               >
                 <FileDown className="w-4 h-4" />
-                Pobierz moją checklistę (PDF)
+                Pobierz PDF
               </Button>
               <Button
                 type="button"
@@ -906,12 +916,117 @@ const RiskFactorsAccordion = () => {
               </Button>
             </div>
             <p className="mt-3 text-[11.5px] sm:text-xs text-muted-foreground">
-              Pokaż tę listę lekarzowi na konsultacji — ułatwi to dobór profilaktyki i decyzje o leczeniu.
-              PDF zawiera tytuł, krótki opis, mechanizm i źródła EBM dla każdego czynnika.
+              Pokaż tę listę lekarzowi: udostępnij link (otworzy ją z tymi samymi zaznaczeniami) lub
+              pobierz PDF/CSV. Wszystko działa offline — nic nie wysyłamy do serwera.
             </p>
           </>
         )}
       </motion.div>
+
+      {/* Dialog: udostępnianie checklisty (link + krótki kod) */}
+      <Dialog open={shareOpen} onOpenChange={setShareOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="font-heading text-xl flex items-center gap-2">
+              <Share2 className="w-5 h-5 text-primary" />
+              Udostępnij swoją checklistę
+            </DialogTitle>
+            <DialogDescription>
+              Twoje {selectedFactors.length}{" "}
+              {selectedFactors.length === 1 ? "zaznaczenie" : "zaznaczeń"} zakodowane w linku.
+              Lekarz po kliknięciu zobaczy dokładnie tę samą listę.
+              <span className="block mt-1 text-[11px] italic">
+                Działa lokalnie — nic nie zapisujemy na serwerze.
+              </span>
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 mt-2">
+            {/* Link */}
+            <div>
+              <label
+                htmlFor="checklist-share-url"
+                className="text-xs font-sans uppercase tracking-[0.14em] text-muted-foreground inline-flex items-center gap-1.5 mb-1.5"
+              >
+                <Link2 className="w-3.5 h-3.5 text-primary" />
+                Pełny link
+              </label>
+              <div className="flex gap-2">
+                <Input
+                  id="checklist-share-url"
+                  readOnly
+                  value={shareUrl}
+                  onFocus={(e) => e.currentTarget.select()}
+                  className="font-mono text-xs"
+                />
+                <Button
+                  type="button"
+                  variant="hero"
+                  size="sm"
+                  onClick={() => handleCopyShare(shareUrl, "url")}
+                  className="gap-1.5 shrink-0"
+                >
+                  {copiedField === "url" ? (
+                    <Check className="w-4 h-4" />
+                  ) : (
+                    <Copy className="w-4 h-4" />
+                  )}
+                  {copiedField === "url" ? "Skopiowano" : "Kopiuj"}
+                </Button>
+              </div>
+              <p className="text-[11px] text-muted-foreground mt-1">
+                Wklej w SMS-ie, e-mailu lub komunikatorze — otworzy stronę z Twoimi zaznaczeniami.
+              </p>
+            </div>
+
+            {/* Krótki kod */}
+            <div className="rounded-lg border border-border bg-muted/30 p-3">
+              <label
+                htmlFor="checklist-share-code"
+                className="text-xs font-sans uppercase tracking-[0.14em] text-muted-foreground mb-1.5 block"
+              >
+                Krótki kod (opcjonalnie)
+              </label>
+              <div className="flex gap-2">
+                <Input
+                  id="checklist-share-code"
+                  readOnly
+                  value={shareCode}
+                  onFocus={(e) => e.currentTarget.select()}
+                  className="font-mono text-sm tracking-wider"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleCopyShare(shareCode, "code")}
+                  className="gap-1.5 shrink-0"
+                >
+                  {copiedField === "code" ? (
+                    <Check className="w-4 h-4" />
+                  ) : (
+                    <Copy className="w-4 h-4" />
+                  )}
+                  {copiedField === "code" ? "OK" : "Kopiuj"}
+                </Button>
+              </div>
+              <p className="text-[11px] text-muted-foreground mt-1.5">
+                Można podyktować ustnie. Lekarz wpisuje go ręcznie w pasku adresu po:{" "}
+                <code className="font-mono text-foreground/80">/dla-pacjenta/hemoroidy?c=</code>
+              </p>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+};
+
+const RiskFactorsAccordionSection = () => {
+  return (
+    <RiskFactorsAccordionInner />
+  );
+};
 
       <RiskVsPreventionTable />
     </motion.section>
