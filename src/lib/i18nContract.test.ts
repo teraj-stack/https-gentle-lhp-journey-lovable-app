@@ -656,3 +656,69 @@ describe("i18n contract — formatViolations self-test", () => {
     expect(formatViolations([])).toBe("");
   });
 });
+
+// ---------------------------------------------------------------------------
+// SELF-TEST — checkStringHygiene wykrywa wszystkie kategorie naruszeń.
+// Bez tego można by przypadkiem zepsuć regex/limity i raport nadal byłby
+// „zielony" mimo realnych problemów w przyszłych tłumaczeniach.
+// ---------------------------------------------------------------------------
+
+describe("i18n contract — checkStringHygiene self-test", () => {
+  it("wykrywa leading/trailing whitespace", () => {
+    const out: Violation[] = [];
+    checkStringHygiene("pl", "test", "  Lokalna akcja w karcie", "heading", out);
+    checkStringHygiene("pl", "test2", "Lokalna akcja w karcie\n", "heading", out);
+    expect(out.map((v) => v.reason)).toEqual(
+      expect.arrayContaining(["leading-whitespace", "trailing-whitespace", "tab-or-newline"]),
+    );
+  });
+
+  it("wykrywa podwójne spacje wewnątrz", () => {
+    const out: Violation[] = [];
+    checkStringHygiene("pl", "test", "Lokalna  akcja w karcie", "heading", out);
+    expect(out.some((v) => v.reason === "double-space")).toBe(true);
+  });
+
+  it("wykrywa przekroczenie max długości per pole", () => {
+    const out: Violation[] = [];
+    const tooLongHeading = "x".repeat(STRING_LIMITS.heading.max + 1);
+    checkStringHygiene("pl", "heading-test", tooLongHeading, "heading", out);
+    const v = out.find((x) => x.reason === "too-long");
+    expect(v).toBeDefined();
+    expect(v?.detail).toContain(`max ${STRING_LIMITS.heading.max}`);
+  });
+
+  it("wykrywa zbyt krótkie wartości (< min)", () => {
+    const out: Violation[] = [];
+    checkStringHygiene("pl", "test", "TBA", "description", out);
+    expect(out.some((v) => v.reason === "too-short")).toBe(true);
+  });
+
+  it("nie raportuje fałszywych pozytywów dla poprawnego stringa", () => {
+    const out: Violation[] = [];
+    checkStringHygiene(
+      "pl",
+      "ok",
+      "Lokalna akcja w tej karcie — zmieniona ręcznie.",
+      "heading",
+      out,
+    );
+    expect(out).toEqual([]);
+  });
+
+  it("każde z aktualnych tłumaczeń przechodzi pełną higienę (regression guard)", () => {
+    // Jeśli ktoś w przyszłości doklei spację na końcu „Quelle: " w heading,
+    // ten test wskaże dokładny locale × pole bez czekania na właściwy
+    // contract test (szybsze sygnały dla developera).
+    const out: Violation[] = [];
+    for (const locale of SUPPORTED_LOCALES) {
+      for (const source of ["local", "remote"] as const) {
+        const c = getLastChangeTooltipContent(source, locale);
+        for (const k of ["heading", "description", "ariaHeading"] as const) {
+          checkStringHygiene(locale, `${k}[${source}]`, c[k], k, out);
+        }
+      }
+    }
+    expect(out, formatViolations(out)).toEqual([]);
+  });
+});
