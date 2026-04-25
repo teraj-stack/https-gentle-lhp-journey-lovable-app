@@ -555,6 +555,7 @@ Sample output for `bash i18n-summary.sh --only wrong-type --locales pl` (single 
   Reasons:    wrong-type
   Locales:    pl   (--locales flag)
   Test files: src/lib/i18nContract.test.ts
+  Output dir: /tmp   (default)
 
 ═══════════════════════════════════════════════════════
   i18n contract — PASS/FAIL summary (filter: wrong-type)
