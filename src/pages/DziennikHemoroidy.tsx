@@ -13,6 +13,10 @@ import {
   Trash2,
   Info,
   TrendingUp,
+  FileDown,
+  FileSpreadsheet,
+  TrendingDown,
+  Minus,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -43,6 +47,8 @@ import SeoHead from "@/components/shared/SeoHead";
 import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 import { useDailyDiary, last14DaysKeys, todayKey } from "@/hooks/useDailyDiary";
 import { HEMOROIDY_QUESTIONS, RiskLevel } from "@/lib/hemoroidyQuizData";
+import { buildDiarySummary, exportDiaryCsv, exportDiaryPdf } from "@/lib/diaryExport";
+import { toast } from "@/hooks/use-toast";
 
 const easeOut = [0.16, 1, 0.3, 1] as const;
 
@@ -94,7 +100,7 @@ const RiskIcon = ({ level }: { level: RiskLevel | null }) => {
 
 const DziennikHemoroidy = () => {
   const trail = BREADCRUMBS_MAP["/dla-pacjenta/dziennik-hemoroidy"];
-  const { getEntry, setAnswer, setNotes, removeEntry, clearAll, last14Trend, maxScore } =
+  const { entries, getEntry, setAnswer, setNotes, removeEntry, clearAll, last14Trend, maxScore } =
     useDailyDiary();
 
   const days = useMemo(() => last14DaysKeys(), []);
@@ -113,6 +119,38 @@ const DziennikHemoroidy = () => {
   }));
 
   const completedDaysCount = trend.filter((d) => d.score !== null).length;
+  const summary = useMemo(() => buildDiarySummary(trend, entries), [trend, entries]);
+  const hasAnyData = completedDaysCount > 0;
+
+  const handleExportCsv = () => {
+    if (!hasAnyData) {
+      toast({
+        title: "Brak danych do eksportu",
+        description: "Wypełnij przynajmniej jeden dzień, aby wyeksportować dziennik.",
+      });
+      return;
+    }
+    exportDiaryCsv(trend, entries, summary);
+    toast({
+      title: "Eksport CSV gotowy",
+      description: "Plik został zapisany w folderze pobranych.",
+    });
+  };
+
+  const handleExportPdf = () => {
+    if (!hasAnyData) {
+      toast({
+        title: "Brak danych do eksportu",
+        description: "Wypełnij przynajmniej jeden dzień, aby wyeksportować dziennik.",
+      });
+      return;
+    }
+    exportDiaryPdf(trend, entries, summary, maxScore);
+    toast({
+      title: "Eksport PDF gotowy",
+      description: "Plik został zapisany w folderze pobranych.",
+    });
+  };
 
   const goPrev = () => {
     const i = days.indexOf(activeDate);
@@ -434,7 +472,111 @@ const DziennikHemoroidy = () => {
             )}
           </motion.div>
 
-          {/* Privacy + clear all */}
+          {/* Export module — PDF + CSV with quick trend summary */}
+          <motion.section
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.2 }}
+            transition={{ duration: 0.6, ease: easeOut }}
+            className="rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/10 via-background/40 to-background/40 p-5 sm:p-6 md:p-8 mb-8"
+            aria-label="Eksport dziennika"
+          >
+            <div className="flex items-start gap-3 mb-5">
+              <div className="w-10 h-10 rounded-xl bg-primary/15 border border-primary/30 flex items-center justify-center shrink-0">
+                <FileDown className="w-5 h-5 text-primary" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[10px] sm:text-xs font-sans uppercase tracking-[0.18em] text-primary mb-1">
+                  Eksport · PDF lub CSV
+                </p>
+                <h2 className="font-heading text-xl md:text-2xl text-foreground leading-tight">
+                  Pobierz dziennik z podsumowaniem trendu
+                </h2>
+                <p className="text-sm text-muted-foreground mt-1.5 leading-relaxed">
+                  Zabierz dziennik na konsultację lub zachowaj kopię. PDF — gotowy do druku z mini-wykresem
+                  i tabelą wpisów. CSV — otwórz w Excelu, by samemu analizować dane.
+                </p>
+              </div>
+            </div>
+
+            {/* Mini trend summary chips */}
+            <div className="flex flex-wrap gap-2 mb-5">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-sans border border-border bg-background/60 text-foreground">
+                <CalendarDays className="w-3.5 h-3.5 text-primary" />
+                Wypełnione: <strong className="font-semibold">{summary.filledDays}/{summary.totalDays}</strong>
+              </span>
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-sans border border-border bg-background/60 text-foreground">
+                Średnia:{" "}
+                <strong className="font-semibold">
+                  {summary.averageScore !== null ? `${summary.averageScore} pkt` : "—"}
+                </strong>
+              </span>
+              {summary.delta !== null && (
+                <span
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-sans border ${
+                    summary.trendDirection === "down"
+                      ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-300"
+                      : summary.trendDirection === "up"
+                      ? "border-destructive/40 bg-destructive/10 text-destructive"
+                      : "border-border bg-muted/40 text-muted-foreground"
+                  }`}
+                >
+                  {summary.trendDirection === "down" ? (
+                    <TrendingDown className="w-3.5 h-3.5" />
+                  ) : summary.trendDirection === "up" ? (
+                    <TrendingUp className="w-3.5 h-3.5" />
+                  ) : (
+                    <Minus className="w-3.5 h-3.5" />
+                  )}
+                  Zmiana: {summary.delta > 0 ? "+" : ""}
+                  {summary.delta} pkt
+                </span>
+              )}
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-sans border border-emerald-500/30 bg-emerald-500/10 text-emerald-300">
+                Niskie: {summary.levelCounts.low}
+              </span>
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-sans border border-primary/30 bg-primary/10 text-primary">
+                Średnie: {summary.levelCounts.medium}
+              </span>
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-sans border border-destructive/30 bg-destructive/10 text-destructive">
+                Wysokie: {summary.levelCounts.high}
+              </span>
+            </div>
+
+            {/* Action buttons */}
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Button
+                size="lg"
+                variant="hero"
+                onClick={handleExportPdf}
+                disabled={!hasAnyData}
+                className="gap-2 h-auto min-h-11 py-2.5 px-5 whitespace-normal"
+              >
+                <FileDown className="w-4 h-4 shrink-0" />
+                Pobierz PDF (z wykresem trendu)
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                onClick={handleExportCsv}
+                disabled={!hasAnyData}
+                className="gap-2 h-auto min-h-11 py-2.5 px-5 whitespace-normal border-primary/40 text-primary hover:bg-primary/10 hover:text-primary"
+              >
+                <FileSpreadsheet className="w-4 h-4 shrink-0" />
+                Pobierz CSV (Excel)
+              </Button>
+            </div>
+
+            {!hasAnyData && (
+              <p className="text-xs text-muted-foreground italic mt-4">
+                Wypełnij przynajmniej jeden dzień, by aktywować eksport.
+              </p>
+            )}
+            <p className="text-[11px] text-muted-foreground italic mt-3">
+              Eksport powstaje lokalnie w przeglądarce — żadne dane nie są wysyłane na serwer.
+            </p>
+          </motion.section>
+
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
