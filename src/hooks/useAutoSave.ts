@@ -302,7 +302,7 @@ export const useAutoSave = () => {
       if (compareVersions(statePayload.version, lastAppliedVersionRef.current) <= 0) return;
       lastAppliedVersionRef.current = statePayload.version ?? [Date.now(), 0];
       setEnabled((prev) => {
-        if (prev !== statePayload.enabled) markRemoteSync();
+        if (prev !== statePayload.enabled) markRemoteSync("broadcast", statePayload.enabled);
         return statePayload.enabled;
       });
     };
@@ -345,7 +345,7 @@ export const useAutoSave = () => {
         const synthetic: [number, number] = [Date.now(), 0];
         if (compareVersions(synthetic, lastAppliedVersionRef.current) <= 0) return prev;
         lastAppliedVersionRef.current = synthetic;
-        markRemoteSync();
+        markRemoteSync("storage", next);
         return next;
       });
     };
@@ -357,7 +357,7 @@ export const useAutoSave = () => {
         if (compareVersions(detail.version, lastAppliedVersionRef.current) <= 0) return;
         lastAppliedVersionRef.current = detail.version ?? [Date.now(), 0];
         setEnabled((prev) => {
-          if (prev !== detail.enabled) markRemoteSync();
+          if (prev !== detail.enabled) markRemoteSync("custom-event", detail.enabled);
           return detail.enabled;
         });
         return;
@@ -369,7 +369,7 @@ export const useAutoSave = () => {
         const synthetic: [number, number] = [Date.now(), 0];
         if (compareVersions(synthetic, lastAppliedVersionRef.current) <= 0) return prev;
         lastAppliedVersionRef.current = synthetic;
-        markRemoteSync();
+        markRemoteSync("custom-event", next);
         return next;
       });
     };
