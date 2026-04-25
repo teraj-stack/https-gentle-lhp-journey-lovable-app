@@ -66,6 +66,29 @@ vi.mock("@/hooks/use-toast", () => ({
   toast: vi.fn(),
 }));
 
+// Mockujemy `formatFullTimestamp`, żeby symulować scenariusze, w których
+// pełna data NIE jest dostępna (zwraca pusty string / null / "—" fallback).
+// W produkcji to się dzieje, gdy `isValidTimestamp` odrzuci wartość
+// (NaN/Infinity/0/ujemna). Komponent ma wtedy spaść na `lastSyncLabel`
+// (etykieta względna), żeby tooltip nigdy nie pokazywał osieroconej linii „Czas: ".
+let mockFullTimestampReturn: string | null | undefined = "DEFAULT_FULL_TIMESTAMP";
+vi.mock("@/hooks/useTimeFormatPreference", async () => {
+  const actual = await vi.importActual<
+    typeof import("@/hooks/useTimeFormatPreference")
+  >("@/hooks/useTimeFormatPreference");
+  return {
+    ...actual,
+    formatFullTimestamp: (ts: number) => {
+      if (mockFullTimestampReturn === "DEFAULT_FULL_TIMESTAMP") {
+        return actual.formatFullTimestamp(ts);
+      }
+      // Świadome rzutowanie: w produkcji helper zawsze zwraca string,
+      // ale tu testujemy obronę komponentu przed null/undefined/"" wyciekiem.
+      return mockFullTimestampReturn as unknown as string;
+    },
+  };
+});
+
 // Import PO `vi.mock`, żeby mocki zostały zaaplikowane.
 import AutoSaveSettings from "./AutoSaveSettings";
 
