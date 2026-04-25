@@ -64,7 +64,17 @@ interface AutoSaveSettingsProps {
  * żeby przepisać je do storage'u (tę logikę implementuje DiaryFullModule).
  */
 const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }: AutoSaveSettingsProps) => {
-  const { enabled, setEnabled, isRemoteSyncing, lastRemoteSyncAt } = useAutoSave();
+  const {
+    enabled,
+    setEnabled,
+    isRemoteSyncing,
+    lastRemoteSyncAt,
+    tabLabel,
+    pingState,
+    sendPing,
+    clearPing,
+    isBroadcastSupported,
+  } = useAutoSave();
   /**
    * Tick używany do auto-odświeżania względnego czasu („X s temu" → „X min temu").
    * Inkrementowany co 15 s tylko gdy mamy zarejestrowaną zdalną synchronizację.
