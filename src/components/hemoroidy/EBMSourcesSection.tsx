@@ -458,6 +458,29 @@ const EBMSourcesSection = ({
   const [forcedOpen, setForcedOpen] = useState<string[]>([]);
   const [yearFilter, setYearFilter] = useState<string>("all"); // "all" | "lt2010" | "2010-2014" | "2015-2019" | "gte2020"
   const [studyTypeFilter, setStudyTypeFilter] = useState<string>("all"); // "all" | StudyType
+
+  // Tryb czytnika / streszczenia EBM
+  type ReaderEntry = {
+    src: Source;
+    categoryId: string;
+    categoryTitle: string;
+    categoryIntro: string;
+    categoryTldr?: string;
+    studyType: StudyType;
+    linkMeta: SourceLinkMeta;
+  };
+  const [readerEntry, setReaderEntry] = useState<ReaderEntry | null>(null);
+
+  const openReader = (entry: ReaderEntry) => {
+    setReaderEntry(entry);
+    trackEbmClick({
+      url: entry.src.url,
+      label: `Tryb czytnika: ${entry.src.title}`,
+      source: "EBMSourcesSection",
+      kind: "external_source",
+      ebmId: entry.categoryId,
+    });
+  };
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
 
   // ===== „Ostatnio otwierane" — historia kliknięć w linki EBM (localStorage) =====
