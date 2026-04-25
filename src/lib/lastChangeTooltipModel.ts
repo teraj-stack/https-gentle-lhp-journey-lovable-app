@@ -523,8 +523,8 @@ export const buildLastChangeTooltipModel = (
   // Dzięki temu nawet gdy konsument świadomie wybierze `preserve-newlines`
   // dla widocznego tooltipa (np. PDF), aria-label dostanie single-line
   // wersję — i to BEZ zmiany kontraktu po stronie wywołującego.
-  const a11ySmoothFull = smoothTimeValue(input.fullDate, "single-space");
-  const a11ySmoothRelative = smoothTimeValue(input.relativeLabel, "single-space");
+  const a11ySmoothFull = smoothTimeValue(validated.fullDate, "single-space");
+  const a11ySmoothRelative = smoothTimeValue(validated.relativeLabel, "single-space");
   const a11yTimeValue = a11ySmoothFull.length > 0 ? a11ySmoothFull : a11ySmoothRelative;
 
   // composeTimeLine jest JEDYNYM miejscem składania prefiksu „Czas:" / „Time:".
