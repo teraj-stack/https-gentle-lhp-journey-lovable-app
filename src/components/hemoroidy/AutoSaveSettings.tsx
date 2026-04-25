@@ -81,7 +81,27 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
     syncHistory,
     transport,
     degradationReason,
+    simulateFallback,
+    setSimulateFallback,
   } = useAutoSave();
+
+  /**
+   * Symulacja braku BC + sanity check: po włączeniu robimy tymczasowy toggle
+   * przełącznika (na bieżącą wartość) i sprawdzamy w historii, czy zmiana
+   * wróciła kanałem fallbackowym. To potwierdza, że storage+CustomEvent wciąż
+   * dostarczają zmiany do innych kart.
+   */
+  const handleSimulateFallback = () => {
+    const next = !simulateFallback;
+    setSimulateFallback(next);
+    toast({
+      title: next ? "Symulacja: BroadcastChannel wyłączony" : "Symulacja zakończona",
+      description: next
+        ? "Transport wymuszony na storage-fallback. Przełącz auto-zapis w innej karcie — synchronizacja powinna działać dalej przez storage event."
+        : "Przywrócono normalny transport BroadcastChannel (jeśli był aktywny).",
+      duration: 4500,
+    });
+  };
   /**
    * Tick używany do auto-odświeżania względnego czasu („X s temu" → „X min temu").
    * Inkrementowany co 15 s tylko gdy mamy zarejestrowaną zdalną synchronizację.
