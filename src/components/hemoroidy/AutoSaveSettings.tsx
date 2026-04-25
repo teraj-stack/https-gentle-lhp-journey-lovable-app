@@ -104,6 +104,40 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
           aria-label="Przełącz auto-zapis odpowiedzi quizu"
         />
       </div>
+
+      {/* Inline „Zapisz dzień" — widoczny TYLKO gdy auto-zapis OFF i jest co zapisać.
+          Pozwala pacjentowi zatwierdzić draft bez przewijania do dołu modułu dziennika. */}
+      {!enabled && onSaveDay && pendingDraftCount > 0 && (
+        <div className="mt-4 pt-4 border-t border-border/60 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+            <span className="text-foreground font-medium">
+              {pendingDraftCount} niezapisan{pendingDraftCount === 1 ? "a zmiana" : "ych zmian"}
+            </span>
+            {activeDateLabel ? (
+              <>
+                {" "}dla dnia <span className="text-foreground font-medium">{activeDateLabel}</span>.
+              </>
+            ) : (
+              "."
+            )}{" "}
+            Zatwierdź wpis, aby trafił do trendu i historii.
+          </p>
+          <Button
+            type="button"
+            size="sm"
+            onClick={onSaveDay}
+            className="self-start sm:self-auto shrink-0"
+            aria-label={
+              activeDateLabel
+                ? `Zapisz draft dnia ${activeDateLabel}`
+                : "Zapisz draft aktywnego dnia"
+            }
+          >
+            <CheckCircle2 className="w-4 h-4 mr-2" aria-hidden="true" />
+            Zapisz dzień
+          </Button>
+        </div>
+      )}
     </div>
   );
 };
