@@ -357,12 +357,52 @@ for r in "${SELECTED_REASONS[@]}"; do
   fi
 done
 
+# Resolve effective locale scope. Precedence: --locales flag > $I18N_ACTIVE_LOCALES env > default.
+# When --locales is passed we validate every entry against ALL_LOCALES and rebuild a clean,
+# de-duplicated, comma-joined string so typos like `--locales en, fr` fail fast instead of
+# silently dropping `fr` inside the test runner.
+if [ -n "$LOCALES" ]; then
+  IFS=',' read -ra RAW_LOCALES <<< "$LOCALES"
+  declare -A SEEN_LOC=()
+  CLEAN_LOCALES=()
+  for raw in "${RAW_LOCALES[@]}"; do
+    l="${raw// /}"
+    [ -z "$l" ] && continue
+    is_known=0
+    for k in "${ALL_LOCALES[@]}"; do
+      [ "$l" = "$k" ] && is_known=1
+    done
+    if [ "$is_known" -eq 0 ]; then
+      echo "❌ Unknown --locales value: '$l'" >&2
+      echo "   Valid: ${ALL_LOCALES[*]}" >&2
+      exit 2
+    fi
+    if [ -z "${SEEN_LOC[$l]:-}" ]; then
+      CLEAN_LOCALES+=("$l")
+      SEEN_LOC[$l]=1
+    fi
+  done
+  if [ ${#CLEAN_LOCALES[@]} -eq 0 ]; then
+    echo "❌ --locales requires at least one locale" >&2
+    exit 2
+  fi
+  EFFECTIVE_LOCALES=$(IFS=','; echo "${CLEAN_LOCALES[*]}")
+  LOCALE_SOURCE="--locales flag"
+elif [ -n "${I18N_ACTIVE_LOCALES:-}" ]; then
+  EFFECTIVE_LOCALES="$I18N_ACTIVE_LOCALES"
+  LOCALE_SOURCE="\$I18N_ACTIVE_LOCALES env"
+else
+  EFFECTIVE_LOCALES="pl,en,de,it"
+  LOCALE_SOURCE="default"
+fi
+
 echo "▶ Running i18n contract tests (filter: $ONLY)…"
 echo "  Reasons:    ${SELECTED_REASONS[*]}"
+echo "  Locales:    $EFFECTIVE_LOCALES   ($LOCALE_SOURCE)"
 echo "  Test files: ${TEST_FILES[*]}"
 # `|| true` — vitest exits non-zero on any failing test; we want to inspect annotations
 # regardless. The final exit code is recomputed from the per-reason counts below.
-GITHUB_ACTIONS=true I18N_ACTIVE_LOCALES="${I18N_ACTIVE_LOCALES:-pl,en,de,it}" \
+GITHUB_ACTIONS=true I18N_ACTIVE_LOCALES="$EFFECTIVE_LOCALES" \
   bunx vitest run "${TEST_FILES[@]}" > "$LOG" 2>&1 || true
 
 # When filtering, keep only annotations for the selected reasons so $ANN and TOTAL match
