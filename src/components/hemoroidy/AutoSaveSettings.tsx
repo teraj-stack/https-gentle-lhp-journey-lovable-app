@@ -530,6 +530,47 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
               })}
             </div>
           )}
+          {/* Segmented control: kiedy pokazywać etykietę „Ostatnia zmiana".
+              Renderujemy gdy mamy jakąkolwiek historię (lastChangeAt) — także
+              wtedy, gdy aktualna preferencja ukrywa etykietę, żeby user mógł
+              ją z powrotem włączyć bez nurkowania w ustawienia. */}
+          {lastChangeAt !== null && (
+            <div
+              role="radiogroup"
+              aria-label="Widoczność etykiety Ostatnia zmiana"
+              className="inline-flex items-center gap-0.5 rounded-md border border-border/60 bg-muted/30 p-0.5"
+            >
+              {VISIBILITY_OPTIONS.map((opt) => {
+                const active = lastChangeVisibility === opt.value;
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    role="radio"
+                    aria-checked={active}
+                    aria-label={opt.label}
+                    title={opt.hint}
+                    onClick={() => {
+                      if (active) return;
+                      setLastChangeVisibility(opt.value);
+                      toast({
+                        title: `Etykieta: ${opt.short}`,
+                        description: opt.hint,
+                        duration: 1800,
+                      });
+                    }}
+                    className={`text-[10px] font-sans px-1.5 py-0.5 rounded transition-colors focus:outline-none focus:ring-1 focus:ring-primary/60 ${
+                      active
+                        ? "bg-primary/20 text-primary font-medium"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                    }`}
+                  >
+                    {opt.short}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
 
