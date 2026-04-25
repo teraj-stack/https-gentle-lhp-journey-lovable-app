@@ -20,27 +20,41 @@ import { Button } from "@/components/ui/button";
 import { useAutoSave } from "@/hooks/useAutoSave";
 import { toast } from "@/hooks/use-toast";
 import SyncDiagnosticPanel from "@/components/hemoroidy/SyncDiagnosticPanel";
+import {
+  formatTimestamp,
+  useTimeFormatPreference,
+  type TimeFormatMode,
+} from "@/hooks/useTimeFormatPreference";
 
 /**
- * Format „przed chwilą" / „X s temu" / „X min temu" / „X h temu" / pełna data.
- * Trzymamy lokalnie, bez date-fns — proste i bez kosztu bundle'u.
+ * Etykiety segmented control dla wyboru formatu „Ostatniej zmiany".
+ * Trzymamy w jednym miejscu, żeby UI i aria-label były spójne.
  */
-const formatRelativeTime = (timestamp: number): string => {
-  const diffSec = Math.max(0, Math.floor((Date.now() - timestamp) / 1000));
-  if (diffSec < 5) return "przed chwilą";
-  if (diffSec < 60) return `${diffSec} s temu`;
-  const diffMin = Math.floor(diffSec / 60);
-  if (diffMin < 60) return `${diffMin} min temu`;
-  const diffH = Math.floor(diffMin / 60);
-  if (diffH < 24) return `${diffH} h temu`;
-  // >24h — pełna data + godzina (rzadki edge-case dla długo otwartej karty)
-  return new Date(timestamp).toLocaleString("pl-PL", {
-    day: "2-digit",
-    month: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-};
+const TIME_FORMAT_OPTIONS: Array<{
+  value: TimeFormatMode;
+  short: string;
+  label: string;
+  hint: string;
+}> = [
+  {
+    value: "relative",
+    short: "Względny",
+    label: "Format względny",
+    hint: "np. „2 min temu" — odświeżany automatycznie co 15 s.",
+  },
+  {
+    value: "clock",
+    short: "Godzina",
+    label: "Sama godzina",
+    hint: "HH:MM:SS — kompaktowo, bez daty.",
+  },
+  {
+    value: "full",
+    short: "Pełna",
+    label: "Pełna data i godzina",
+    hint: "Dzień, miesiąc, rok i godzina — do długo otwartych kart.",
+  },
+];
 
 interface AutoSaveSettingsProps {
   /**
