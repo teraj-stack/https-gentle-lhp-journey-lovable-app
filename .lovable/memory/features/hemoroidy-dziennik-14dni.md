@@ -42,3 +42,10 @@ Dziennik 14 dni hemoroidów: anonimowy tracker w przeglądarce.
   - Liczniki w nagłówku: Ukończone (emerald), Częściowe (primary, gdy >0 — wpis istnieje z ≥1 odp. lub notatką ale niekomplet), Pozostało (`14 - totalProgressDays`)
   - Status aktywnego dnia (chip pod paskiem): `completed/total pól quizu` z ikoną CheckCircle2 (entry.complete) lub CircleDashed (incomplete) i kolorem emerald/primary/muted
   - `partialDaysCount` liczone w `useMemo` z `[trend, entries]` — aktualizuje się po każdej zmianie auto-zapisu
+- **Konfigurowalne progi ryzyka** (`useRiskThresholds`, panel `RiskThresholdsSettings`):
+  - Storage `cml.hemoroidy.risk-thresholds.v1` (`{lowMax, mediumMax}`), domyślne `{8, 17}`. Walidacja `sanitizeRiskThresholds` (0 ≤ low < medium ≤ maxScore-1).
+  - `hemoroidyQuizData.ts` eksportuje `getRiskLevelWithThresholds` / `getRiskRangeWithThresholds`. Stare `getRiskLevel`/`getRiskRange` używają DEFAULT (back-compat).
+  - `useDailyDiary` przelicza `level/label` w `useMemo([rawEntries, thresholds])` — storage trzyma raw answers, derived liczone w locie. Zmiana progów natychmiast aktualizuje cały wykres/legendy.
+  - Sync między tabami: custom event `cml:risk-thresholds-updated` + natywny `storage`.
+  - Panel z 2 sliderami (low/medium) + podgląd 3 stref + reset do default; widoczny w DiaryFullModule gdy `showReminderSettings` (pełna strona dziennika).
+  - HemoroidyRiskQuiz używa `getRiskLevelWithThresholds` + `getRiskRangeWithThresholds`; `tier.range` zastąpione zmienną `tierRange`.
