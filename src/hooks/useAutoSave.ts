@@ -251,9 +251,16 @@ export const useAutoSave = () => {
 
     const onStorage = (e: StorageEvent) => {
       if (e.key !== STORAGE_KEY && e.key !== null) return;
+      // storage event nie niesie payloadu z `version` — używamy ogólnej heurystyki:
+      // nadaj nową wersję na podstawie aktualnego zegara, ale tylko jeśli wartość faktycznie się zmieniła.
+      // To wystarczy bo storage event w tej samej karcie nigdy nie wystrzeli — to zawsze inny tab.
       const next = readStored();
       setEnabled((prev) => {
-        if (prev !== next) markRemoteSync();
+        if (prev === next) return prev;
+        const synthetic: [number, number] = [Date.now(), 0];
+        if (compareVersions(synthetic, lastAppliedVersionRef.current) <= 0) return prev;
+        lastAppliedVersionRef.current = synthetic;
+        markRemoteSync();
         return next;
       });
     };
@@ -261,13 +268,21 @@ export const useAutoSave = () => {
       const detail = (e as CustomEvent<StateBroadcastPayload | undefined>).detail;
       if (detail && typeof detail.enabled === "boolean") {
         if (detail.origin === TAB_ID) return;
+        // Anti-race: ten sam check co dla BroadcastChannel.
+        if (compareVersions(detail.version, lastAppliedVersionRef.current) <= 0) return;
+        lastAppliedVersionRef.current = detail.version ?? [Date.now(), 0];
         setEnabled(detail.enabled);
         markRemoteSync();
         return;
       }
+      // Bez payloadu (back-compat) — fallback na re-read przez storage-style logikę.
       const next = readStored();
       setEnabled((prev) => {
-        if (prev !== next) markRemoteSync();
+        if (prev === next) return prev;
+        const synthetic: [number, number] = [Date.now(), 0];
+        if (compareVersions(synthetic, lastAppliedVersionRef.current) <= 0) return prev;
+        lastAppliedVersionRef.current = synthetic;
+        markRemoteSync();
         return next;
       });
     };
