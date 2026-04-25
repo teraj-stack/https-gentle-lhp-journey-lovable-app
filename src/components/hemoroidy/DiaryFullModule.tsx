@@ -783,6 +783,11 @@ const DiaryFullModule = ({
               transition={{ duration: 0.4, ease: easeOut }}
             />
           </div>
+          {/* Dyskretny komunikat dla czytników ekranu — ogłaszany po każdej zaznaczonej
+              odpowiedzi (toast pełni tę samą rolę wizualnie). */}
+          <p className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+            {answerAnnouncement}
+          </p>
         </div>
 
         {/* Filtr „Tylko brakujące" — szybko skupia uwagę na nieuzupełnionych pytaniach.
