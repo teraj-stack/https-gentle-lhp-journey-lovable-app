@@ -137,7 +137,13 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
       : undefined;
 
   return (
-    <div className="glass-card rounded-2xl p-4 sm:p-5 mb-6">
+    <div
+      className={`glass-card rounded-2xl p-4 sm:p-5 mb-6 transition-shadow duration-500 ${
+        isRemoteSyncing
+          ? "ring-2 ring-emerald-400/50 shadow-[0_0_24px_hsl(152_70%_50%/0.25)]"
+          : "ring-0 shadow-none"
+      }`}
+    >
       <div className="flex items-start sm:items-center justify-between gap-4 flex-col sm:flex-row">
         <div className="flex items-start gap-3 min-w-0">
           <div
