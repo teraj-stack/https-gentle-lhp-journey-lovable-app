@@ -563,8 +563,56 @@ const RiskFactorsAccordion = () => {
   // Auto-rozwijaj dopasowane karty podczas wyszukiwania (tryb wyszukiwania nadpisuje ręczny)
   const accordionValue = nQuery ? filtered.map((rf) => rf.id) : openItems;
   const allExpanded = openItems.length === RISK_FACTORS.length;
+
+  // Stagger helper: stopniowo buduje/usuwa wpisy z `openItems` po 1 na 40ms,
+  // żeby bulk expand/collapse wyglądał jak fala zamiast jednoczesnego skoku.
+  // Anuluje poprzednią sekwencję (bookkeeping w `staggerTimersRef`) i respektuje
+  // `prefers-reduced-motion: reduce` — wtedy ustawia stan natychmiast.
+  const staggerTimersRef = useRef<number[]>([]);
+  const STAGGER_STEP_MS = 40;
+  const cancelStagger = () => {
+    staggerTimersRef.current.forEach((id) => window.clearTimeout(id));
+    staggerTimersRef.current = [];
+  };
+  useEffect(() => () => cancelStagger(), []);
+  const setOpenItemsStaggered = (target: string[]) => {
+    cancelStagger();
+    if (typeof window === "undefined") {
+      setOpenItems(target);
+      return;
+    }
+    const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    if (reduced) {
+      setOpenItems(target);
+      return;
+    }
+    // Kolejność stała wg RISK_FACTORS (od góry w dół) — dla expand i collapse jednakowa.
+    const ordered = RISK_FACTORS.map((rf) => rf.id).filter((id) => target.includes(id));
+    // Snapshot startu — diff vs target wykonujemy krokowo.
+    const startSet = new Set(openItems);
+    const targetSet = new Set(ordered);
+    const toAdd = ordered.filter((id) => !startSet.has(id));
+    // Collapse od dołu (od ostatniego do pierwszego) wygląda naturalniej (fala zamykania w górę).
+    const toRemove = Array.from(startSet).filter((id) => !targetSet.has(id));
+    const removeOrdered = RISK_FACTORS
+      .map((rf) => rf.id)
+      .filter((id) => toRemove.includes(id))
+      .reverse();
+    const steps = [...removeOrdered.map((id) => ({ kind: "remove" as const, id })),
+                   ...toAdd.map((id) => ({ kind: "add" as const, id }))];
+    steps.forEach((step, i) => {
+      const tid = window.setTimeout(() => {
+        setOpenItems((prev) => {
+          if (step.kind === "add") return prev.includes(step.id) ? prev : [...prev, step.id];
+          return prev.filter((x) => x !== step.id);
+        });
+      }, i * STAGGER_STEP_MS);
+      staggerTimersRef.current.push(tid);
+    });
+  };
+
   const toggleAll = () =>
-    setOpenItems(allExpanded ? [] : RISK_FACTORS.map((rf) => rf.id));
+    setOpenItemsStaggered(allExpanded ? [] : RISK_FACTORS.map((rf) => rf.id));
 
   // Skrót klawiaturowy: Ctrl+E (Win/Linux) lub Cmd+E (macOS) — rozwiń/zwiń wszystkie sekcje.
   // Ignorujemy gdy fokus jest w polu tekstowym (input/textarea/contenteditable),
@@ -586,7 +634,7 @@ const RiskFactorsAccordion = () => {
       e.preventDefault();
       // Sczytujemy aktualny stan ze stanu komponentu — zamknięcie idzie po toggleAll
       const willExpand = openItems.length !== RISK_FACTORS.length;
-      setOpenItems(willExpand ? RISK_FACTORS.map((rf) => rf.id) : []);
+      setOpenItemsStaggered(willExpand ? RISK_FACTORS.map((rf) => rf.id) : []);
       toast({
         title: willExpand ? "Rozwinięto wszystkie sekcje" : "Zwinięto wszystkie sekcje",
         description: `Skrót: ${navigator.platform.toLowerCase().includes("mac") ? "⌘" : "Ctrl"}+E`,
@@ -687,7 +735,7 @@ const RiskFactorsAccordion = () => {
             size="sm"
             variant="outline"
             onClick={() => {
-              setOpenItems(filtered.map((rf) => rf.id));
+              setOpenItemsStaggered(filtered.map((rf) => rf.id));
               setQuery("");
               toast({
                 title: "Rozwinięto dopasowane sekcje",
