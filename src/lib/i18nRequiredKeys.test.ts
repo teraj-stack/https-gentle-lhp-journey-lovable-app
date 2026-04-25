@@ -58,6 +58,7 @@ import {
   REQUIRED_TIME_LINE_KEYS,
   __getRawTimeLineTranslationsForTesting,
 } from "./lastChangeTooltipModel";
+import { emitGithubAnnotations } from "./i18nGithubAnnotations";
 
 // ---------------------------------------------------------------------------
 // VIOLATION REPORT — ten sam wzorzec co w sąsiednich kontraktach i18n.
