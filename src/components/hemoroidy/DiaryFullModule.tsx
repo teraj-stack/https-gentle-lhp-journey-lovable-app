@@ -708,6 +708,45 @@ const DiaryFullModule = ({
           )}
         </div>
 
+        {/* Procentowy pasek postępu pytań — uzupełnia mini-mapę o liczbową informację
+            zwrotną (X/9 + %). Kolor zmienia się na emerald po komplecie. */}
+        <div
+          className="mb-4 rounded-xl border border-border bg-background/40 px-3 py-2.5"
+          aria-label="Postęp uzupełniania pytań"
+        >
+          <div className="flex items-center justify-between gap-3 mb-1.5">
+            <p className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground font-sans">
+              Postęp pytań
+            </p>
+            <p
+              className={`text-xs font-sans tabular-nums ${
+                entry.complete ? "text-emerald-500" : "text-foreground/80"
+              }`}
+              aria-live="polite"
+            >
+              <span className="font-semibold">{completed}/{total}</span>
+              <span className="text-muted-foreground"> uzupełnione</span>
+              <span className="mx-2 text-muted-foreground">·</span>
+              <span className="font-semibold">{progressPct}%</span>
+            </p>
+          </div>
+          <div
+            className="h-2 rounded-full bg-muted overflow-hidden"
+            role="progressbar"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={progressPct}
+            aria-valuetext={`${completed} z ${total} pytań uzupełnione (${progressPct}%)`}
+          >
+            <motion.div
+              className={`h-full ${entry.complete ? "bg-emerald-500" : "bg-primary"}`}
+              initial={false}
+              animate={{ width: `${progressPct}%` }}
+              transition={{ duration: 0.4, ease: easeOut }}
+            />
+          </div>
+        </div>
+
         {/* Filtr „Tylko brakujące" — szybko skupia uwagę na nieuzupełnionych pytaniach.
             Auto-wyłącza się gdy quiz jest kompletny (nie ma czego ukrywać). */}
         {missingQuestionNumbers.length > 0 && (
