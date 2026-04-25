@@ -260,11 +260,9 @@ describe("i18nGithubAnnotations — line hint embedded in CI annotations", () =>
     );
     expect(logSpy).toHaveBeenCalledTimes(1);
     const out = String(logSpy.mock.calls[0][0]);
-    // `expected (from \`pl\`):` is in the message body (URL-encoded
-    // backticks survive as-is, but `:` becomes %3A in the data section).
-    expect(out).toContain("expected");
-    expect(out).toContain("pl");
-    expect(out).toMatch(/heading%3A/);
+    // Hint shape: `expected (from \`pl\`): heading: "..."`
+    expect(out).toContain("expected (from `pl`):");
+    expect(out).toContain("heading:");
   });
 
   it("falls back to a TODO template when PL also lacks the key", () => {
