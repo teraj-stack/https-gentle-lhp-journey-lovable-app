@@ -114,6 +114,33 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
     return () => clearInterval(interval);
   }, [lastRemoteSyncAt]);
 
+  /**
+   * Toast informujący o zdalnej synchronizacji — odpala się gdy `lastRemoteSyncAt`
+   * zmieni się NA NOWĄ wartość (czyli realnie przyszła zmiana z innej karty
+   * lub fallbackowego storage event'u). Pomijamy mount initial: jeśli komponent
+   * zamontuje się z już istniejącym `lastRemoteSyncAt` (np. user właśnie wszedł
+   * na podstronę po wcześniejszej synchronizacji), nie pokazujemy starego eventu.
+   */
+  const lastToastedSyncAtRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (lastRemoteSyncAt === null) return;
+    // Pierwszy render po mount: ustaw baseline i nie pokazuj toasta dla starego eventu.
+    if (lastToastedSyncAtRef.current === null) {
+      lastToastedSyncAtRef.current = lastRemoteSyncAt;
+      return;
+    }
+    if (lastRemoteSyncAt === lastToastedSyncAtRef.current) return;
+    lastToastedSyncAtRef.current = lastRemoteSyncAt;
+    toast({
+      title: "Zsynchronizowano z inną kartą",
+      description: `Auto-zapis: ${enabled ? "ON" : "OFF"} — zmiana zastosowana lokalnie.`,
+      duration: 2200,
+    });
+    // Świadomie zależność tylko od `lastRemoteSyncAt` — `enabled` czytamy aktualne
+    // przez closure tej samej tury renderu (i tak w toście jest snapshot, nie subskrypcja).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lastRemoteSyncAt]);
+
   const handleToggle = (next: boolean) => {
     setEnabled(next);
     toast({
