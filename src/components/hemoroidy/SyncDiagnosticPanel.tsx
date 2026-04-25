@@ -447,9 +447,30 @@ const SyncDiagnosticPanel = ({
               {degradationInfo.errorMessage}
             </p>
           )}
-          <p className="mt-1.5 text-[10px] text-muted-foreground/60">
-            Wykryto: {formatRelative(degradationInfo.at)}
-          </p>
+          <div className="mt-1.5 flex items-center justify-between gap-2 flex-wrap">
+            <p className="text-[10px] text-muted-foreground/60">
+              Wykryto: {formatRelative(degradationInfo.at)}
+            </p>
+            <button
+              type="button"
+              onClick={handleCopyDegradation}
+              className="inline-flex items-center gap-1 text-[10px] font-sans px-1.5 py-0.5 rounded-md border border-amber-500/40 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 transition-colors focus:outline-none focus:ring-1 focus:ring-amber-400/60"
+              aria-label="Skopiuj szczegóły ostatniej degradacji BroadcastChannel do schowka"
+              title="Kopiuje cause, detail, errorMessage i timestamp w czytelnym formacie tekstowym"
+            >
+              {degradationCopied ? (
+                <>
+                  <ClipboardCheck className="w-3 h-3" aria-hidden="true" />
+                  Skopiowano
+                </>
+              ) : (
+                <>
+                  <Copy className="w-3 h-3" aria-hidden="true" />
+                  Kopiuj degradację
+                </>
+              )}
+            </button>
+          </div>
         </div>
       )}
 
