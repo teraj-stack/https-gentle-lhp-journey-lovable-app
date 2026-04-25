@@ -254,6 +254,19 @@ const RISK_FACTORS: RiskFactor[] = [
 ];
 
 const STORAGE_KEY = "cml.hemoroidy.risk-factors.selected.v1";
+const READ_STORAGE_KEY = "cml.hemoroidy.risk-factors.read.v1";
+
+const loadStringArray = (key: string): string[] => {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(key);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.filter((x): x is string => typeof x === "string") : [];
+  } catch {
+    return [];
+  }
+};
 
 const RiskFactorsAccordion = () => {
   const [query, setQuery] = useState("");
