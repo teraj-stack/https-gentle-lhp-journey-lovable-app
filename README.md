@@ -570,6 +570,33 @@ Sample output for `bash i18n-summary.sh --only wrong-type --locales pl` (single 
 ✅ Overall: PASS — no error-severity violations for filter 'wrong-type'.
 ```
 
+Sample output for `bash i18n-summary.sh --only placeholder-mismatch --out ./artifacts` (custom output dir — useful in CI so the log + annotations end up under your job's artifact path and survive the runner teardown):
+
+```
+▶ Running i18n contract tests (filter: placeholder-mismatch)…
+  Reasons:    placeholder-mismatch
+  Locales:    pl,en,de,it   (default)
+  Test files: src/lib/i18nPlaceholders.test.ts
+  Output dir: ./artifacts   (--out flag)
+
+═══════════════════════════════════════════════════════
+  i18n contract — PASS/FAIL summary (filter: placeholder-mismatch)
+═══════════════════════════════════════════════════════
+  REASON                     SEVERITY   VERDICT
+  ---------------------------------------------------
+  placeholder-mismatch       error      ❌ FAIL (1)
+  ---------------------------------------------------
+  TOTAL ANNOTATIONS          —          1
+═══════════════════════════════════════════════════════
+
+  Full log:        ./artifacts/i18n-summary.log
+  Annotations:     ./artifacts/i18n-summary-annotations.txt
+
+❌ Overall: FAIL — 1 error-severity violation(s) for 'placeholder-mismatch'. See ./artifacts/i18n-summary-annotations.txt.
+```
+
+The directory is created with `mkdir -p` (relative or absolute paths both work), and the script aborts with exit code `2` if creation fails or the directory isn't writable. Filenames inside the dir are fixed (`i18n-summary.log` and `i18n-summary-annotations.txt`) so CI artifact-upload steps and the grep recipes elsewhere in this README can hard-code them — only the parent dir changes.
+
 Sample output (clean repo — no drift):
 
 ```
