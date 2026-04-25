@@ -41,8 +41,11 @@ import {
   type LastChangeVisibility,
 } from "@/hooks/useLastChangeVisibility";
 import { getLastChangeLabelStyle } from "@/lib/lastChangeLabelStyle";
-import { getLastChangeTooltipContent } from "@/lib/lastChangeTooltipContent";
-import { buildLastChangeTooltipModel } from "@/lib/lastChangeTooltipModel";
+import { type Locale } from "@/lib/lastChangeTooltipContent";
+import {
+  buildLastChangeTooltipModel,
+  type TimeValueFormat,
+} from "@/lib/lastChangeTooltipModel";
 
 /**
  * Etykiety segmented control dla wyboru widoczności „Ostatniej zmiany".
@@ -225,6 +228,32 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
    * (wizualny tooltip + dane dla screen readera) bez czekania na realny edge case.
    */
   const [demoHideFullDate, setDemoHideFullDate] = useState(false);
+  /**
+   * Live preview tooltipa — dodatkowe kontrolki, które pacjent/audytor a11y
+   * może przełączać na żywo, żeby zobaczyć WSZYSTKIE warianty wynikowego
+   * `buildLastChangeTooltipModel` w jednym miejscu, bez potrzeby zmuszania
+   * realnych zdarzeń auto-zapisu.
+   *
+   *  - `previewFormat` — `TimeValueFormat` przekazywany do helpera.
+   *    Pozwala porównać wpływ trybu „single-space"/„compact"/„preserve-newlines"
+   *    na widoczny tooltip i ariaText (parytet view↔a11y jest wymuszony
+   *    w samym helperze).
+   *  - `previewLocale` — PL/EN. Pokazuje na żywo, jak zmienia się prefiks
+   *    linii czasu (Czas:/Time:), kwalifikator fallbacku, helpTitle i
+   *    nagłówek/opis źródła.
+   *  - `previewRelativeOverride` — opcjonalny tekst zastępujący domyślne
+   *    `formatTimestamp(demoAt, …)` w roli `relativeLabel`. Ułatwia testowanie
+   *    edge case'ów (np. wartość z newline'em, multiple spaces, pusty string)
+   *    bez czekania na konkretny upływ czasu.
+   *
+   * Wszystkie kontrolki działają niezależnie od `demoSource`/`demoHideFullDate`
+   * — zmiana którejkolwiek z nich natychmiast przeliczy podgląd, więc pacjent
+   * widzi efekt 1:1.
+   */
+  const [previewFormat, setPreviewFormat] = useState<TimeValueFormat>("single-space");
+  const [previewLocale, setPreviewLocale] = useState<Locale>("pl");
+  const [previewRelativeOverride, setPreviewRelativeOverride] = useState<string>("");
+
   const handleDemoSelect = (source: "remote" | "local") => {
     setDemoSource(source);
     setDemoAt(Date.now());
@@ -770,35 +799,154 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
               : "Symuluj: brak pełnej daty"}
           </Button>
 
+          {/*
+           * LIVE PREVIEW — kontrolki przełączające warianty wejścia helpera
+           * `buildLastChangeTooltipModel`. Pacjent/audytor a11y może na żywo
+           * zobaczyć, jak każda kombinacja (source × format × locale × pełna
+           * data × custom relative) wpływa na:
+           *  - widoczny tooltip (heading, description, linia czasu),
+           *  - `ariaText` trafiający do screen readera,
+           *  - `timeLineHelpTitle` jako native `title` linii czasu.
+           *
+           * Wszystkie panele poniżej czytają z TEGO SAMEGO modelu, więc każda
+           * niespójność = bug w helperze, nie w demo.
+           */}
+          {demoSource !== null && (
+            <div
+              className="rounded-xl border border-dashed border-primary/40 bg-primary/5 px-3 py-3 space-y-3"
+              role="group"
+              aria-label="Kontrolki podglądu tooltipa Ostatnia zmiana"
+            >
+              <p className="text-[10px] uppercase tracking-wider font-sans text-primary/80">
+                Live preview — przełącz parametry helpera
+              </p>
+
+              {/* Format wartości czasu (TimeValueFormat). */}
+              <div>
+                <p className="text-[10px] font-sans text-muted-foreground mb-1">
+                  Format wartości czasu (smoothTimeValue)
+                </p>
+                <div
+                  role="radiogroup"
+                  aria-label="Tryb formatowania wartości czasu w podglądzie"
+                  className="inline-flex flex-wrap items-center gap-0.5 rounded-md border border-border/60 bg-muted/30 p-0.5"
+                >
+                  {(
+                    [
+                      { value: "single-space", label: "single-space (default)", short: "single" },
+                      { value: "compact", label: "compact (zwarte separatory)", short: "compact" },
+                      { value: "preserve-newlines", label: "preserve-newlines (PDF)", short: "newlines" },
+                    ] as Array<{ value: TimeValueFormat; label: string; short: string }>
+                  ).map((opt) => {
+                    const active = previewFormat === opt.value;
+                    return (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        role="radio"
+                        aria-checked={active}
+                        aria-label={`Format: ${opt.label}`}
+                        onClick={() => setPreviewFormat(opt.value)}
+                        className={`text-[10px] font-mono px-1.5 py-0.5 rounded transition-colors focus:outline-none focus:ring-1 focus:ring-primary/60 ${
+                          active
+                            ? "bg-primary/20 text-primary font-medium"
+                            : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                        }`}
+                      >
+                        {opt.short}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Locale (PL/EN). */}
+              <div>
+                <p className="text-[10px] font-sans text-muted-foreground mb-1">
+                  Język tooltipa (locale)
+                </p>
+                <div
+                  role="radiogroup"
+                  aria-label="Język tooltipa w podglądzie"
+                  className="inline-flex items-center gap-0.5 rounded-md border border-border/60 bg-muted/30 p-0.5"
+                >
+                  {(["pl", "en"] as const).map((loc) => {
+                    const active = previewLocale === loc;
+                    return (
+                      <button
+                        key={loc}
+                        type="button"
+                        role="radio"
+                        aria-checked={active}
+                        aria-label={`Locale: ${loc.toUpperCase()}`}
+                        onClick={() => setPreviewLocale(loc)}
+                        className={`text-[10px] font-mono uppercase px-2 py-0.5 rounded transition-colors focus:outline-none focus:ring-1 focus:ring-primary/60 ${
+                          active
+                            ? "bg-primary/20 text-primary font-medium"
+                            : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                        }`}
+                      >
+                        {loc}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Custom relative label (opcjonalny override). */}
+              <div>
+                <label
+                  htmlFor="preview-relative-override"
+                  className="text-[10px] font-sans text-muted-foreground mb-1 block"
+                >
+                  Custom relativeLabel (override) — pusty = używaj formatTimestamp
+                </label>
+                <input
+                  id="preview-relative-override"
+                  type="text"
+                  value={previewRelativeOverride}
+                  onChange={(e) => setPreviewRelativeOverride(e.target.value)}
+                  placeholder="np. 2 minuty temu / 2 minutes ago / wieloliniowa\nwartość"
+                  className="w-full text-[10px] font-mono px-2 py-1 rounded-md border border-border/60 bg-background/60 text-foreground focus:outline-none focus:ring-1 focus:ring-primary/60"
+                />
+              </div>
+            </div>
+          )}
+
           {demoSource !== null && demoAt !== null && (() => {
-            // Generujemy podgląd dokładnie tymi samymi helperami, których używa główna
-            // etykieta — `getLastChangeTooltipContent` (treść tooltipa + aria),
-            // `getLastChangeLabelStyle` (kolory ikony/tekstu/badge'a) oraz formatery czasu.
-            // Dzięki temu „demo" 1:1 odzwierciedla rzeczywisty wygląd po zdarzeniu.
-            const demoTooltip = getLastChangeTooltipContent(demoSource);
+            // SINGLE SOURCE OF TRUTH dla podglądu = `buildLastChangeTooltipModel`.
+            // Komponent TYLKO czyta pola modelu — nie składa „Czas: ${…}" inline.
+            // Zgodne z `mem://features/tooltip-last-change-model`.
             const demoStyle = getLastChangeLabelStyle(demoSource, /* isRemoteSyncing */ false);
-            const demoRelative = formatTimestamp(demoAt, timeFormatMode);
-            // Pełna data: gdy toggle „brak pełnej daty" jest aktywny, wymuszamy
-            // pusty string — komponent musi spaść na `demoRelative` i dokleić
-            // kwalifikator a11y, dokładnie jak w produkcyjnej etykiecie.
+            const demoRelativeFromTimestamp = formatTimestamp(demoAt, timeFormatMode);
+            // Custom relative override ma pierwszeństwo — pacjent może wpisać
+            // wartość z newline'em/multiple spaces, żeby zobaczyć efekt
+            // smoothTimeValue dla każdego z trzech trybów format.
+            const effectiveRelative =
+              previewRelativeOverride.trim().length > 0
+                ? previewRelativeOverride
+                : demoRelativeFromTimestamp;
             const demoFull = demoHideFullDate ? "" : formatFullTimestamp(demoAt);
+
+            const previewModel = buildLastChangeTooltipModel({
+              source: demoSource,
+              fullDate: demoFull,
+              relativeLabel: effectiveRelative,
+              format: previewFormat,
+              locale: previewLocale,
+            });
+            const {
+              content: previewContent,
+              ariaText: previewAriaText,
+              timeValue: previewTimeValue,
+              shouldRenderTimeLine: previewShouldRenderTimeLine,
+              timeLineForView: previewTimeLineForView,
+              timeLineForA11y: previewTimeLineForA11y,
+              timeLineHelpTitle: previewTimeLineHelpTitle,
+              isRelativeFallback: previewIsRelativeFallback,
+            } = previewModel;
             const isDemoRemote = demoSource === "remote";
-            // Replikujemy logikę składania aria-label z głównej etykiety, żeby
-            // podgląd pokazał pacjentowi/audytorowi DOKŁADNIE ten string, który
-            // dostaje screen reader. Jakakolwiek rozbieżność = bug w demo.
-            const demoTimeValue = demoFull.trim().length > 0 ? demoFull : demoRelative;
-            const demoIsRelativeFallback =
-              demoFull.trim().length === 0 && demoRelative.trim().length > 0;
-            const demoTimeLine = demoTimeValue
-              ? `Czas: ${demoTimeValue}${demoIsRelativeFallback ? " (etykieta względna)" : ""}`
-              : null;
-            const demoAriaLabel = [
-              demoTooltip.ariaHeading,
-              demoTooltip.description,
-              demoTimeLine,
-            ]
-              .filter((line): line is string => Boolean(line && line.trim()))
-              .join("\n");
+
             return (
               <div
                 className="rounded-xl border border-border/60 bg-muted/20 px-3 py-3 space-y-2"
@@ -812,6 +960,11 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
                       tryb: brak pełnej daty
                     </span>
                   )}
+                  {previewIsRelativeFallback && (
+                    <span className="ml-2 inline-flex items-center px-1.5 py-0.5 text-[9px] uppercase tracking-wider font-mono rounded-md border border-amber-500/40 bg-amber-500/10 text-amber-300 align-middle normal-case">
+                      fallback: relative
+                    </span>
+                  )}
                 </p>
                 <div
                   className={`text-[11px] font-sans inline-flex items-center gap-1.5 ${demoStyle.containerClass}`}
@@ -819,11 +972,11 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
                   <RefreshCw className={`w-3 h-3 ${demoStyle.iconClass}`} aria-hidden="true" />
                   <span>
                     Ostatnia zmiana:{" "}
-                    <strong className={demoStyle.strongClass}>{demoRelative}</strong>
+                    <strong className={demoStyle.strongClass}>{demoRelativeFromTimestamp}</strong>
                     {demoStyle.showLocalSuffix && (
                       <span
                         className="ml-1.5 inline-flex items-center px-1.5 py-0.5 text-[10px] uppercase tracking-wider font-mono rounded-md border border-border/60 bg-muted/40 text-foreground/80 align-middle"
-                        aria-label={demoTooltip.ariaHeading}
+                        aria-label={previewContent.ariaHeading}
                       >
                         lokalnie
                       </span>
@@ -840,64 +993,92 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
                       isDemoRemote ? "text-emerald-400" : "text-foreground"
                     }`}
                   >
-                    {demoTooltip.heading}
+                    {previewContent.heading}
                   </p>
                   <p className="text-[11px] text-muted-foreground leading-snug">
-                    {demoTooltip.description}
+                    {previewContent.description}
                   </p>
                   {/*
-                   * Linia czasu w podglądzie tooltipa.
-                   *  - Tryb normalny: pełna data (np. „24 kwietnia 2026, 12:34:56").
-                   *  - Tryb „brak pełnej daty": fallback na etykietę względną
-                   *    (np. „2 minuty temu") z dodatkowym wskazaniem charakteru
-                   *    wartości — bursztynowa ramka + sufiks „(etykieta względna)".
-                   *    Bursztynowy kolor = ostrzegawczy znacznik degradacji,
-                   *    NIE error — bo to wciąż czytelna informacja, tylko mniej precyzyjna.
+                   * Linia czasu w podglądzie tooltipa — RENDEROWANA TYLKO gdy
+                   * helper tak zdecyduje (`shouldRenderTimeLine`). Tekst pochodzi
+                   * z `timeLineForView` (pełen, łącznie z prefiksem „Czas:" /
+                   * „Time:") — komponent NIE dokleja prefiksu samodzielnie.
                    */}
-                  {demoHideFullDate ? (
+                  {previewShouldRenderTimeLine && (
                     <p
-                      className="text-[10px] text-amber-300 font-mono rounded border border-amber-500/30 bg-amber-500/5 px-1.5 py-1"
-                      title="Pełna data niedostępna — pokazujemy etykietę względną zamiast precyzyjnego stempla."
+                      className={`text-[10px] font-mono whitespace-pre-line ${
+                        previewIsRelativeFallback
+                          ? "text-amber-300 rounded border border-amber-500/30 bg-amber-500/5 px-1.5 py-1"
+                          : "text-muted-foreground/80"
+                      }`}
+                      title={previewTimeLineHelpTitle}
                     >
-                      Czas: {demoRelative}{" "}
-                      <span className="text-amber-200/70">(etykieta względna)</span>
-                    </p>
-                  ) : (
-                    <p className="text-[10px] text-muted-foreground/80 font-mono">
-                      Czas: {demoFull}
+                      {previewTimeLineForView}
                     </p>
                   )}
                 </div>
 
                 {/*
-                 * Podgląd dokładnego stringu, który trafia do `aria-label` triggera
-                 * tooltipa i `title` (fallback dla touch). Wyświetlamy w pre-bloku
-                 * z `whitespace-pre-line`, żeby pacjent/audytor a11y zobaczył
-                 * formatowanie 1:1 — w tym kwalifikator „(etykieta względna)" w
-                 * trybie fallback.
+                 * Live raw-data panel — surowe pola modelu trafiające do JSX.
+                 * Pozwala pacjentowi/audytorowi zobaczyć BYTEWISE, co dostaje
+                 * widoczny kanał vs aria-label/title. Każde pole ma ten sam
+                 * fundament (`timeValue`), więc parytet jest gwarantowany.
+                 */}
+                <div className="rounded-lg border border-border/40 bg-background/40 px-2.5 py-2 space-y-1.5">
+                  <p className="text-[10px] uppercase tracking-wider font-sans text-muted-foreground/70">
+                    Surowe pola modelu (live)
+                  </p>
+                  <dl className="text-[10px] font-mono leading-snug grid grid-cols-[auto_1fr] gap-x-2 gap-y-1">
+                    <dt className="text-muted-foreground/70">timeValue</dt>
+                    <dd className="text-foreground/90 break-all whitespace-pre-line">
+                      {previewTimeValue || <span className="text-muted-foreground/50 italic">(empty)</span>}
+                    </dd>
+                    <dt className="text-muted-foreground/70">timeLineForView</dt>
+                    <dd className="text-foreground/90 break-all whitespace-pre-line">
+                      {previewTimeLineForView ?? (
+                        <span className="text-muted-foreground/50 italic">null</span>
+                      )}
+                    </dd>
+                    <dt className="text-muted-foreground/70">timeLineForA11y</dt>
+                    <dd className="text-foreground/90 break-all whitespace-pre-line">
+                      {previewTimeLineForA11y ?? (
+                        <span className="text-muted-foreground/50 italic">null</span>
+                      )}
+                    </dd>
+                    <dt className="text-muted-foreground/70">timeLineHelpTitle</dt>
+                    <dd className="text-foreground/90 break-all whitespace-pre-line">
+                      {previewTimeLineHelpTitle ?? (
+                        <span className="text-muted-foreground/50 italic">undefined</span>
+                      )}
+                    </dd>
+                  </dl>
+                </div>
+
+                {/*
+                 * ariaText — DOKŁADNY string trafiający do `aria-label` triggera
+                 * tooltipa i `title` (fallback dla touch). `whitespace-pre-line`
+                 * pokazuje formatowanie 1:1, w tym kwalifikator „(etykieta
+                 * względna)" / „(relative label)" w trybie fallback.
                  */}
                 <div className="rounded-lg border border-border/40 bg-background/40 px-2.5 py-2 space-y-1">
                   <p className="text-[10px] uppercase tracking-wider font-sans text-muted-foreground/70">
-                    Dane dla screen readera (aria-label / title)
+                    ariaText (aria-label / title triggera)
                   </p>
                   <pre
                     className={`text-[10px] font-mono whitespace-pre-line leading-snug ${
-                      demoHideFullDate ? "text-amber-200" : "text-muted-foreground"
+                      previewIsRelativeFallback ? "text-amber-200" : "text-muted-foreground"
                     }`}
                     aria-label="Podgląd stringu aria-label triggera tooltipa"
                   >
-                    {demoAriaLabel}
+                    {previewAriaText}
                   </pre>
                 </div>
 
                 <p className="text-[10px] text-muted-foreground/70 italic leading-relaxed">
                   To jest tylko podgląd — realne zdarzenia auto-zapisu pojawią się w mini-historii i etykiecie powyżej.
-                  {demoHideFullDate && (
-                    <>
-                      {" "}Przełącznik „brak pełnej daty" pokazuje, jak komponent
-                      degraduje się gracefully, gdy formatter nie zwróci precyzyjnego stempla.
-                    </>
-                  )}
+                  Wszystkie panele czytają z `buildLastChangeTooltipModel` —
+                  jeśli widzisz rozjazd między widocznym tooltipem a ariaText,
+                  to bug w helperze, nie w demo.
                 </p>
               </div>
             );
