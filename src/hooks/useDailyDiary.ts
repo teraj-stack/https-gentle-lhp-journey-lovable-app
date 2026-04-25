@@ -146,11 +146,12 @@ const emptyEntry = (date: string): DiaryEntry => {
 };
 
 export const useDailyDiary = () => {
-  const [entries, setEntries] = useState<Record<string, DiaryEntry>>(() => readStorage());
+  const [rawEntries, setRawEntries] = useState<Record<string, DiaryEntry>>(() => readStorage());
+  const { thresholds } = useRiskThresholds();
 
   useEffect(() => {
     if (!isBrowser()) return;
-    const handler = () => setEntries(readStorage());
+    const handler = () => setRawEntries(readStorage());
     window.addEventListener("storage", handler);
     window.addEventListener("cml:diary-updated", handler);
     return () => {
@@ -158,6 +159,17 @@ export const useDailyDiary = () => {
       window.removeEventListener("cml:diary-updated", handler);
     };
   }, []);
+
+  // Reaktywnie przelicz derived (level/label) względem aktualnych progów pacjenta.
+  // Dzięki temu zmiana progów w panelu ustawień natychmiast aktualizuje legendy/wykres
+  // bez konieczności przepisywania storage'u (storage trzyma raw answers, nie derived).
+  const entries = useMemo(() => {
+    const out: Record<string, DiaryEntry> = {};
+    for (const [date, e] of Object.entries(rawEntries)) {
+      out[date] = { ...e, ...computeDerived(e.answers, thresholds) };
+    }
+    return out;
+  }, [rawEntries, thresholds]);
 
   const getEntry = useCallback(
     (date: string): DiaryEntry => entries[date] ?? emptyEntry(date),
@@ -174,12 +186,12 @@ export const useDailyDiary = () => {
       date,
       answers,
       updatedAt: new Date().toISOString(),
-      ...computeDerived(answers),
+      ...computeDerived(answers, thresholds),
     };
     const next = { ...current, [date]: updated };
     writeStorage(next);
-    setEntries(next);
-  }, []);
+    setRawEntries(next);
+  }, [thresholds]);
 
   const setNotes = useCallback((date: string, notes: string) => {
     const current = readStorage();
@@ -191,7 +203,7 @@ export const useDailyDiary = () => {
     };
     const next = { ...current, [date]: updated };
     writeStorage(next);
-    setEntries(next);
+    setRawEntries(next);
   }, []);
 
   const removeEntry = useCallback((date: string) => {
@@ -200,15 +212,15 @@ export const useDailyDiary = () => {
     const next = { ...current };
     delete next[date];
     writeStorage(next);
-    setEntries(next);
+    setRawEntries(next);
   }, []);
 
   const clearAll = useCallback(() => {
     writeStorage({});
-    setEntries({});
+    setRawEntries({});
   }, []);
 
-  /** Trend ostatnich 14 dni (z dziurami: dni bez wpisu = null) */
+  /** Trend ostatnich 14 dni (z dziurami: dni bez wpisu = null). Level liczony pod aktualne progi. */
   const last14Trend = useCallback(
     (today: Date = new Date()) =>
       last14DaysKeys(today).map((date) => {
@@ -233,5 +245,6 @@ export const useDailyDiary = () => {
     last14Trend,
     todayKey,
     maxScore: HEMOROIDY_QUIZ_MAX_SCORE,
+    thresholds,
   };
 };
