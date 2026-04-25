@@ -138,6 +138,202 @@ export const smoothTimeValue = (
   return singleSpace;
 };
 
+/**
+ * Lista dozwolonych wartości pola `source` — używana zarówno w runtime
+ * walidacji (`validateLastChangeTooltipInput`), jak i jako dokumentacja
+ * dla konsumentów (TS i JSDoc). Zmiana tej listy wymusza aktualizację typu
+ * `LastChangeTooltipModelInput["source"]` oraz `getLastChangeTooltipContent`.
+ */
+const VALID_SOURCES = ["remote", "local"] as const;
+type ValidSource = (typeof VALID_SOURCES)[number];
+
+const VALID_FORMATS: readonly TimeValueFormat[] = [
+  "single-space",
+  "compact",
+  "preserve-newlines",
+] as const;
+
+/**
+ * Powód, dla którego pole zostało odrzucone i zastąpione bezpiecznym
+ * fallbackiem przez `validateLastChangeTooltipInput`. Eksportujemy, żeby
+ * konsumenci (testy, dev-only debug overlay) mogli rozróżnić przyczynę.
+ */
+export type ValidationIssueCode =
+  | "input-not-object"
+  | "source-invalid-type"
+  | "source-invalid-value"
+  | "fullDate-invalid-type"
+  | "relativeLabel-invalid-type"
+  | "format-invalid-type"
+  | "format-invalid-value"
+  | "locale-invalid-type";
+
+export interface ValidationIssue {
+  field: "input" | "source" | "fullDate" | "relativeLabel" | "format" | "locale";
+  code: ValidationIssueCode;
+  /** Krótka, ludzka diagnoza — przydatna w dev console / testach. */
+  message: string;
+}
+
+export interface ValidatedTooltipInput {
+  source: ValidSource | null;
+  fullDate: string | null;
+  relativeLabel: string | null;
+  format: TimeValueFormat;
+  locale: Locale | string;
+}
+
+export interface ValidationResult {
+  value: ValidatedTooltipInput;
+  issues: ValidationIssue[];
+}
+
+/**
+ * Bezpieczny, defensywny fallback używany gdy całe wejście jest niepoprawne
+ * (np. `null`, `undefined`, prymityw, tablica). Renderuje tooltip „local"
+ * BEZ linii czasu — model wciąż jest spójny i kompletny.
+ */
+const SAFE_FALLBACK_INPUT: ValidatedTooltipInput = {
+  source: null,
+  fullDate: null,
+  relativeLabel: null,
+  format: "single-space",
+  locale: "pl",
+};
+
+/**
+ * Sprawdza, czy `value` jest tzw. plain object (record) — odrzuca tablice,
+ * funkcje, prymitywy. Tylko taki kształt może bezpiecznie nieść pola wejścia.
+ */
+const isPlainObjectLike = (value: unknown): value is Record<string, unknown> => {
+  if (value === null || typeof value !== "object") return false;
+  if (Array.isArray(value)) return false;
+  return true;
+};
+
+/**
+ * Waliduje i koercuje wejście do `buildLastChangeTooltipModel`.
+ *
+ * KONTRAKT:
+ *  - NIGDY nie rzuca wyjątku — UI pozostaje stabilny nawet dla wejścia z bug-a
+ *    (np. nieoczekiwany kształt z hooka `useDailyDiary` po regresji).
+ *  - Każde pole o niepoprawnym typie/wartości jest zastępowane bezpieczną
+ *    domyślną wartością (`null` dla danych, „single-space" dla formatu,
+ *    „pl" dla locale).
+ *  - Wszystkie odrzucenia trafiają do `issues` — pozwala to dev-only overlay
+ *    czy testom regresji wykryć, że konsument przesłał niepoprawne wejście.
+ *
+ * Eksport publiczny — używany wewnętrznie przez `buildLastChangeTooltipModel`,
+ * ale również dostępny dla testów jednostkowych i ewentualnych konsumentów,
+ * którzy chcą zwalidować wejście przed wywołaniem buildera (np. dev console
+ * warning w trybie deweloperskim).
+ */
+export const validateLastChangeTooltipInput = (
+  raw: unknown,
+): ValidationResult => {
+  const issues: ValidationIssue[] = [];
+
+  if (!isPlainObjectLike(raw)) {
+    issues.push({
+      field: "input",
+      code: "input-not-object",
+      message: `Oczekiwano obiektu wejścia, otrzymano ${raw === null ? "null" : Array.isArray(raw) ? "array" : typeof raw}.`,
+    });
+    return { value: { ...SAFE_FALLBACK_INPUT }, issues };
+  }
+
+  // source: null/undefined → null (traktowane jak „local"), string z whitelisty → ok,
+  // cokolwiek innego → null + issue.
+  let source: ValidSource | null = null;
+  if (raw.source === null || raw.source === undefined) {
+    source = null;
+  } else if (typeof raw.source !== "string") {
+    issues.push({
+      field: "source",
+      code: "source-invalid-type",
+      message: `Pole 'source' musi być stringiem 'remote'|'local' lub null, otrzymano ${typeof raw.source}.`,
+    });
+  } else if ((VALID_SOURCES as readonly string[]).includes(raw.source)) {
+    source = raw.source as ValidSource;
+  } else {
+    issues.push({
+      field: "source",
+      code: "source-invalid-value",
+      message: `Pole 'source' ma niedozwoloną wartość '${raw.source}' — dozwolone: ${VALID_SOURCES.join(", ")}.`,
+    });
+  }
+
+  // fullDate / relativeLabel: dozwolone są string | null | undefined.
+  // Wszystko inne (number, object, boolean, array) → null + issue.
+  // Pusty string lub whitespace przepuszczamy — `smoothTimeValue` poradzi
+  // sobie z tym jako „brak treści" (zwróci "").
+  let fullDate: string | null = null;
+  if (raw.fullDate === null || raw.fullDate === undefined) {
+    fullDate = null;
+  } else if (typeof raw.fullDate === "string") {
+    fullDate = raw.fullDate;
+  } else {
+    issues.push({
+      field: "fullDate",
+      code: "fullDate-invalid-type",
+      message: `Pole 'fullDate' musi być stringiem lub null, otrzymano ${typeof raw.fullDate}.`,
+    });
+  }
+
+  let relativeLabel: string | null = null;
+  if (raw.relativeLabel === null || raw.relativeLabel === undefined) {
+    relativeLabel = null;
+  } else if (typeof raw.relativeLabel === "string") {
+    relativeLabel = raw.relativeLabel;
+  } else {
+    issues.push({
+      field: "relativeLabel",
+      code: "relativeLabel-invalid-type",
+      message: `Pole 'relativeLabel' musi być stringiem lub null, otrzymano ${typeof raw.relativeLabel}.`,
+    });
+  }
+
+  // format: undefined → default, string z whitelisty → ok, inne → default + issue.
+  let format: TimeValueFormat = "single-space";
+  if (raw.format === undefined) {
+    format = "single-space";
+  } else if (typeof raw.format !== "string") {
+    issues.push({
+      field: "format",
+      code: "format-invalid-type",
+      message: `Pole 'format' musi być stringiem TimeValueFormat lub undefined, otrzymano ${typeof raw.format}.`,
+    });
+  } else if ((VALID_FORMATS as readonly string[]).includes(raw.format)) {
+    format = raw.format as TimeValueFormat;
+  } else {
+    issues.push({
+      field: "format",
+      code: "format-invalid-value",
+      message: `Pole 'format' ma niedozwoloną wartość '${raw.format}' — dozwolone: ${VALID_FORMATS.join(", ")}.`,
+    });
+  }
+
+  // locale: undefined/null → "pl", string → przekazujemy do resolveLocale
+  // (nieznane języki i tak fallbackują do „pl"), inne typy → "pl" + issue.
+  let locale: Locale | string = "pl";
+  if (raw.locale === undefined || raw.locale === null) {
+    locale = "pl";
+  } else if (typeof raw.locale === "string") {
+    locale = raw.locale;
+  } else {
+    issues.push({
+      field: "locale",
+      code: "locale-invalid-type",
+      message: `Pole 'locale' musi być stringiem lub undefined, otrzymano ${typeof raw.locale}.`,
+    });
+  }
+
+  return {
+    value: { source, fullDate, relativeLabel, format, locale },
+    issues,
+  };
+};
+
 export interface LastChangeTooltipModelInput {
   /** Źródło zmiany — patrz `getLastChangeTooltipContent`. */
   source: "remote" | "local" | null;
