@@ -738,29 +738,72 @@ const DiaryFullModule = ({
               );
             })}
           </div>
-          {/* Skok do pierwszego brakującego pytania — szybka nawigacja klawiaturą i myszką */}
-          {missingQuestionNumbers.length > 0 && (
-            <div className="mt-3 flex justify-end">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  const firstMissing = missingQuestionNumbers[0]; // 1-indexed
-                  const qi = firstMissing - 1;
-                  const el = document.getElementById(`diary-q-${activeDate}-${qi}`);
-                  if (el) {
-                    el.scrollIntoView({ behavior: "smooth", block: "center" });
-                    const firstOpt = el.querySelector<HTMLButtonElement>("button[type='button']");
-                    firstOpt?.focus({ preventScroll: true });
-                  }
-                }}
-                aria-label={`Przejdź do pierwszego brakującego pytania — pytanie ${missingQuestionNumbers[0]}`}
-                className="h-8 text-xs border-primary/40 text-primary hover:bg-primary/10 hover:text-primary"
-              >
-                <ArrowDownToLine className="w-3.5 h-3.5 mr-1.5" />
-                Przejdź do pyt. {missingQuestionNumbers[0]}
-              </Button>
+          {/* Akcje pod mini-mapą: po lewej destrukcyjny reset odpowiedzi quizu (z dialogiem
+              potwierdzenia, bo to nieodwracalne dla danego dnia), po prawej skok do
+              pierwszego brakującego pytania — szybka nawigacja klawiaturą i myszką. */}
+          {(completed > 0 || missingQuestionNumbers.length > 0) && (
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+              {completed > 0 ? (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                      aria-label={`Wyczyść zapisane odpowiedzi quizu dla dnia ${formatLongDate(activeDate)}`}
+                    >
+                      <Trash2 className="w-3.5 h-3.5 mr-1.5" />
+                      Wyczyść zapisane odpowiedzi
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Wyczyścić zapisane odpowiedzi?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Wszystkie {completed} z {total} odpowiedzi quizu na dzień{" "}
+                        <span className="text-foreground font-medium">{formatLongDate(activeDate)}</span>{" "}
+                        zostaną usunięte z pamięci przeglądarki (localStorage). Notatki tego dnia
+                        pozostaną nietknięte. Operacji nie można cofnąć.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Anuluj</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={clearAnswers}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        <Trash2 className="w-3.5 h-3.5 mr-1.5" />
+                        Wyczyść odpowiedzi
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              ) : (
+                <span />
+              )}
+              {missingQuestionNumbers.length > 0 && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const firstMissing = missingQuestionNumbers[0]; // 1-indexed
+                    const qi = firstMissing - 1;
+                    const el = document.getElementById(`diary-q-${activeDate}-${qi}`);
+                    if (el) {
+                      el.scrollIntoView({ behavior: "smooth", block: "center" });
+                      const firstOpt = el.querySelector<HTMLButtonElement>("button[type='button']");
+                      firstOpt?.focus({ preventScroll: true });
+                    }
+                  }}
+                  aria-label={`Przejdź do pierwszego brakującego pytania — pytanie ${missingQuestionNumbers[0]}`}
+                  className="h-8 text-xs border-primary/40 text-primary hover:bg-primary/10 hover:text-primary"
+                >
+                  <ArrowDownToLine className="w-3.5 h-3.5 mr-1.5" />
+                  Przejdź do pyt. {missingQuestionNumbers[0]}
+                </Button>
+              )}
             </div>
           )}
         </div>
