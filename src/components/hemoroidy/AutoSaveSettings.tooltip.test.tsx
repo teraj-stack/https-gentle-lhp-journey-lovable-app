@@ -29,8 +29,11 @@ import { render, screen, cleanup } from "@testing-library/react";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 // Wartości stanu zwracane przez mock — zmieniamy między testami, żeby
-// jeden mock obsłużył oba scenariusze (remote/local) bez resetu modułu.
-let mockLastChangeSource: "remote" | "local" | null = null;
+// jeden mock obsłużył oba scenariusze (remote/local/null/undefined) bez resetu modułu.
+// Typ rozszerzony o `undefined`, żeby symulować runtime'owy stan, w którym
+// hook jeszcze nie zdążył ustawić `lastChangeSource` (np. tuż po mount,
+// przed pierwszym storage/BroadcastChannel eventem).
+let mockLastChangeSource: "remote" | "local" | null | undefined = null;
 let mockLastChangeAt: number | null = null;
 let mockEnabled = true;
 
@@ -229,5 +232,128 @@ describe("AutoSaveSettings — tooltip „Ostatnia zmiana” wybiera nagłówek 
 
       unmount();
     }
+  });
+
+  /**
+   * Fallback dla nieustalonego źródła (`null` / `undefined`):
+   *
+   * `isLastChangeVisible(visibility, source)` defensywnie zwraca `false`, gdy
+   * `source === null`. To celowy fallback bezpieczeństwa: dopóki hook nie
+   * potwierdzi pochodzenia zmiany (remote vs local), etykieta „Ostatnia zmiana"
+   * NIE renderuje się wcale — bo jakikolwiek nagłówek byłby zgadywaniem
+   * (a fałszywe „Synchronizacja między kartami" wprowadzałoby pacjenta w błąd
+   * o tym, gdzie powstała zmiana). To jest „poprawny fallback nagłówka":
+   * brak triggera tooltipa zamiast triggera z niepewnym aria-label.
+   *
+   * Te testy pilnują kontraktu, żeby przyszłe zmiany hooka/komponentu nie
+   * przepuściły np. „Źródło: undefined" do screen readera albo nie pokazały
+   * badge'a „lokalnie" tylko dlatego, że `source !== "remote"`.
+   */
+  describe("fallback dla lastChangeSource=null/undefined", () => {
+    it("source=null + lastChangeAt=valid: etykieta i badge nie renderują się", () => {
+      // Klasyczny fresh mount: timestamp już istnieje (np. z poprzedniej sesji
+      // przeczytany z localStorage), ale hook nie zdążył jeszcze zaklasyfikować
+      // źródła. Etykieta MUSI być ukryta — bo nie wiemy, czy to zmiana zdalna
+      // czy lokalna, więc aria-label byłby kłamstwem.
+      mockLastChangeSource = null;
+      mockLastChangeAt = FROZEN_NOW;
+
+      renderPanel();
+
+      // Brak triggera tooltipa z prefiksem „Źródło: ".
+      const triggers = Array.from(
+        document.querySelectorAll<HTMLElement>('span[tabindex="0"][title]'),
+      );
+      const sourceTrigger = triggers.find((el) =>
+        (el.getAttribute("title") ?? "").startsWith("Źródło: "),
+      );
+      expect(sourceTrigger).toBeUndefined();
+
+      // Badge „lokalnie" też nie istnieje — nie udajemy lokalnej akcji,
+      // gdy źródło jest niepotwierdzone.
+      expect(screen.queryByText("lokalnie")).not.toBeInTheDocument();
+
+      // Globalne anty-regresje: nigdzie w DOM nie wycieka stringified `null`/`undefined`
+      // („Źródło: null", „Źródło: undefined") — to byłaby wpadka serializacyjna.
+      expect(document.body.textContent ?? "").not.toMatch(/Źródło:\s*(null|undefined)/i);
+    });
+
+    it("source=undefined + lastChangeAt=valid: tooltip i badge spadają na bezpieczny wariant LOCAL", () => {
+      // Asymetria z `null`: `isLastChangeVisible` ma early-return tylko na
+      // `source === null`, więc `undefined` przechodzi dalej i przy domyślnym
+      // visibility=`both` etykieta JEST widoczna. W tej sytuacji nagłówek
+      // musi spaść na bezpieczny wariant lokalny — nigdy nie udajemy
+      // „Synchronizacji między kartami", bo to byłoby kłamstwo o pochodzeniu
+      // zmiany. Odpowiada za to defensywny fallback w `getLastChangeTooltipContent`
+      // (wszystko ≠ "remote" → wariant local), który tu właśnie weryfikujemy
+      // end-to-end z DOM.
+      mockLastChangeSource = undefined;
+      mockLastChangeAt = FROZEN_NOW;
+
+      renderPanel();
+
+      const { trigger, container } = findLastChangeTooltip();
+      const ariaLabel = container.getAttribute("aria-label") ?? "";
+      const title = trigger.getAttribute("title") ?? "";
+
+      // Fallback nagłówka: wariant lokalny, NIGDY remote.
+      expect(ariaLabel.startsWith("Źródło: Moja lokalna akcja w tej karcie")).toBe(true);
+      expect(title.startsWith("Źródło: Moja lokalna akcja w tej karcie")).toBe(true);
+      expect(ariaLabel).not.toContain("Synchronizacja między kartami");
+      expect(title).not.toContain("Synchronizacja między kartami");
+
+      // Anty-regresja serializacji: nigdy do DOM nie wycieka „undefined"/„null"
+      // jako część etykiety źródła.
+      expect(document.body.textContent ?? "").not.toMatch(/Źródło:\s*(null|undefined)/i);
+
+      // Badge „lokalnie" celowo NIE pojawia się dla `undefined` — `getLastChangeLabelStyle`
+      // ma `showLocalSuffix: source === "local"`, więc tylko twardo potwierdzone
+      // lokalne źródło dostaje widoczny badge. To kolejna warstwa ostrożności:
+      // tooltip mówi „lokalna" jako bezpieczny fallback dla screen readera,
+      // ale wizualny badge nie udaje pewności, której nie mamy.
+      expect(screen.queryByText("lokalnie")).not.toBeInTheDocument();
+    });
+
+    it("source=null + lastChangeAt=null: cała sekcja „Ostatnia zmiana” nie renderuje się", () => {
+      // Stan początkowy zaraz po pierwszym mount, zanim cokolwiek się
+      // wydarzyło. Brak timestampu → `lastSyncLabel` jest null → cały
+      // blok JSX pod `lastSyncLabel && showLastChangeLabel && (…)` jest
+      // zwarty na false. Pilnujemy, żeby do DOM nie wyciekł żaden ślad
+      // „Ostatnia zmiana:" (label) ani „Źródło:" (tooltip).
+      mockLastChangeSource = null;
+      mockLastChangeAt = null;
+
+      renderPanel();
+
+      expect(screen.queryByText(/Ostatnia zmiana:/)).not.toBeInTheDocument();
+      expect(document.body.textContent ?? "").not.toContain("Źródło: ");
+      expect(screen.queryByText("lokalnie")).not.toBeInTheDocument();
+    });
+
+    it("przejście null → 'remote' (re-render) ujawnia tooltip z właściwym nagłówkiem", () => {
+      // Realistyczny przepływ: mount z `source=null` (etykieta ukryta),
+      // potem hook ustala źródło na „remote" (np. po pierwszym storage event).
+      // Tooltip MUSI pojawić się od razu z poprawnym aria-label, a nie
+      // zostać w trybie ukrytym z poprzedniego renderu.
+      mockLastChangeSource = null;
+      mockLastChangeAt = null;
+      const { rerender } = renderPanel();
+
+      // Pre-warunek: nic nie ma.
+      expect(document.body.textContent ?? "").not.toContain("Źródło: ");
+
+      // Hook „dowiaduje się" o zdalnej zmianie.
+      mockLastChangeSource = "remote";
+      mockLastChangeAt = FROZEN_NOW;
+      rerender(
+        <TooltipProvider delayDuration={0}>
+          <AutoSaveSettings />
+        </TooltipProvider>,
+      );
+
+      const { container } = findLastChangeTooltip();
+      const ariaLabel = container.getAttribute("aria-label") ?? "";
+      expect(ariaLabel.startsWith("Źródło: Synchronizacja między kartami")).toBe(true);
+    });
   });
 });
