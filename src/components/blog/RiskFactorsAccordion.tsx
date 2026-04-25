@@ -681,6 +681,7 @@ const RiskFactorsAccordion = () => {
             className="gap-2"
             aria-expanded={allExpanded}
             aria-controls="risk-factors-list"
+            title={`Skrót: Ctrl/⌘ + E — ${allExpanded ? "zwiń" : "rozwiń"} wszystkie`}
           >
             {allExpanded ? (
               <>
