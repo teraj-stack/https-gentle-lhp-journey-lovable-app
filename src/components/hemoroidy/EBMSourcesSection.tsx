@@ -17,7 +17,14 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { BookMarked, Download, ExternalLink, Salad, Droplet, Timer, Activity, Stethoscope, ScrollText, AlertCircle, Microscope, Info, Search, X, Loader2, CheckCircle2, AlertTriangle, History, Trash2 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { BookMarked, Download, ExternalLink, Salad, Droplet, Timer, Activity, Stethoscope, ScrollText, AlertCircle, Microscope, Info, Search, X, Loader2, CheckCircle2, AlertTriangle, History, Trash2, BookOpen } from "lucide-react";
 import { trackEbmClick } from "@/lib/ebmAnalytics";
 
 const normalize = (s: string): string =>
