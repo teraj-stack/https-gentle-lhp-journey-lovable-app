@@ -85,6 +85,117 @@ const FILTER_CAUSES: readonly DegradationCause[] = [
 ];
 
 /**
+ * Mapa kategorii degradacji → krótki opis „co to zwykle oznacza" + lista sugerowanych
+ * kroków diagnostycznych. Używana w aktualnym alercie degradacji oraz w wyniku
+ * ręcznego testu BC, żeby pacjent/support widzieli od razu kontekst i akcje.
+ *
+ * Treść celowo skoncentrowana na realnych przyczynach w przeglądarkach (sandbox
+ * iframe, tryb prywatny, cross-origin), nie na żargonie technicznym.
+ *
+ * Uwaga: `simulation` to akcja diagnostyczna, nie awaria — pokazujemy ją tylko
+ * w kontekście „test", bez listy kroków „naprawczych".
+ */
+const DEGRADATION_GUIDANCE: Record<
+  DegradationCause,
+  { meaning: string; steps: string[] }
+> = {
+  "api-missing": {
+    meaning:
+      "Przeglądarka nie udostępnia obiektu BroadcastChannel. Najczęściej stara wersja Safari, WebView bez wsparcia lub bardzo restrykcyjny tryb prywatny.",
+    steps: [
+      "Zaktualizuj przeglądarkę do najnowszej wersji.",
+      "Wyjdź z trybu prywatnego/incognito.",
+      "Sprawdź na innym urządzeniu — fallback storage i tak działa, ale wolniej.",
+    ],
+  },
+  "constructor-exception": {
+    meaning:
+      "Próba utworzenia kanału rzuciła wyjątek — typowo strona jest osadzona w sandboksowanym iframe lub w kontekście cross-origin bez uprawnień same-origin.",
+    steps: [
+      "Otwórz stronę bezpośrednio (nie przez iframe podglądu).",
+      "Sprawdź atrybut sandbox iframe — wymagany flag allow-same-origin.",
+      "Wyłącz rozszerzenia blokujące storage/cookies (np. agresywne anty-tracking).",
+    ],
+  },
+  messageerror: {
+    meaning:
+      "Kanał istnieje, ale nie potrafił zdeserializować przychodzącej wiadomości. Zwykle inna karta wysłała payload niezgodny z aktualną wersją appki (po deployu).",
+    steps: [
+      "Odśwież wszystkie otwarte karty tej strony (Ctrl+Shift+R).",
+      "Wyczyść cache Service Workera, jeśli używasz PWA.",
+      "Jeśli błąd wraca — zgłoś z raportem (przycisk „Kopiuj raport”).",
+    ],
+  },
+  "postmessage-failure": {
+    meaning:
+      "Konstruktor się powiódł, ale postMessage rzucił wyjątek. Najczęściej przeglądarka odcięła kanał z powodu polityki prywatności (storage partitioning, ITP) lub przekroczenia limitu.",
+    steps: [
+      "Sprawdź ustawienia prywatności przeglądarki (blokowanie cross-site storage).",
+      "Wyłącz tryb prywatny lub rozszerzenia czyszczące storage.",
+      "Sprawdź konsolę przeglądarki — błąd zwykle ma więcej kontekstu niż samo postMessage.",
+    ],
+  },
+  simulation: {
+    meaning:
+      "Tryb diagnostyczny wymuszony ręcznie — BC został celowo wyłączony, żeby zobaczyć zachowanie fallbacku storage. To NIE jest awaria.",
+    steps: [
+      "Wyłącz przełącznik „Symuluj fallback” w ustawieniach diagnostycznych, żeby wrócić do BC.",
+    ],
+  },
+};
+
+/**
+ * Reużywalny blok „Co to oznacza + sugerowane kroki" dla danej kategorii degradacji.
+ * Wyciągnięty osobno, bo używamy go w dwóch miejscach (alert aktualnej degradacji
+ * oraz wynik ręcznego testu BC) i chcemy spójną prezentację.
+ *
+ * Tonalność wizualna (amber vs neutralna) regulowana propsem `tone`, żeby pasował
+ * zarówno do alertu (amber) jak i do bloku testu (neutralny przy ok=true wariancie).
+ */
+const DegradationGuidance = ({
+  cause,
+  tone = "amber",
+}: {
+  cause: DegradationCause;
+  tone?: "amber" | "neutral";
+}) => {
+  const guidance = DEGRADATION_GUIDANCE[cause];
+  if (!guidance) return null;
+  const headingClass =
+    tone === "amber" ? "text-amber-300" : "text-foreground/90";
+  const bulletClass =
+    tone === "amber" ? "text-amber-400/80" : "text-muted-foreground/70";
+  return (
+    <div className="mt-2 rounded-md border border-border/40 bg-background/40 px-2.5 py-2">
+      <p className={`text-[10px] uppercase tracking-wider font-sans ${headingClass} mb-1`}>
+        Co to zwykle oznacza
+      </p>
+      <p className="text-[11px] text-muted-foreground leading-relaxed">
+        {guidance.meaning}
+      </p>
+      {guidance.steps.length > 0 && (
+        <>
+          <p className={`mt-2 text-[10px] uppercase tracking-wider font-sans ${headingClass} mb-1`}>
+            Sugerowane kroki
+          </p>
+          <ul className="space-y-0.5 text-[11px] text-muted-foreground leading-relaxed">
+            {guidance.steps.map((step, i) => (
+              <li key={i} className="flex gap-1.5">
+                <span className={`shrink-0 ${bulletClass}`} aria-hidden="true">
+                  →
+                </span>
+                <span>{step}</span>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+    </div>
+  );
+};
+
+
+/**
  * Wykrywanie środowiska runtime — używamy do checklisty "co jest dostępne".
  * Lazy: wykonywane raz po mount, bo te API nie zmieniają się w trakcie sesji.
  */
@@ -579,6 +690,7 @@ const SyncDiagnosticPanel = ({
               )}
             </button>
           </div>
+          <DegradationGuidance cause={degradationInfo.cause} tone="amber" />
         </div>
       )}
 
@@ -646,6 +758,9 @@ const SyncDiagnosticPanel = ({
             <p className="mt-1 text-[10px] text-muted-foreground/60">
               Test: {formatTime(bcTestResult.at)} ({formatRelative(bcTestResult.at)})
             </p>
+            {!bcTestResult.ok && bcTestResult.cause && (
+              <DegradationGuidance cause={bcTestResult.cause} tone="amber" />
+            )}
           </div>
         )}
       </div>
