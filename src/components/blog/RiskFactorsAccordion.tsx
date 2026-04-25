@@ -276,17 +276,7 @@ const RiskFactorsAccordion = () => {
   const [openItems, setOpenItems] = useState<string[]>([]);
 
   // Wybrane czynniki — persystencja w localStorage (anonimowo)
-  const [selected, setSelected] = useState<string[]>(() => {
-    if (typeof window === "undefined") return [];
-    try {
-      const raw = window.localStorage.getItem(STORAGE_KEY);
-      if (!raw) return [];
-      const parsed = JSON.parse(raw);
-      return Array.isArray(parsed) ? parsed.filter((x): x is string => typeof x === "string") : [];
-    } catch {
-      return [];
-    }
-  });
+  const [selected, setSelected] = useState<string[]>(() => loadStringArray(STORAGE_KEY));
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -306,6 +296,35 @@ const RiskFactorsAccordion = () => {
     () => selected.map((id) => RISK_FACTORS.find((rf) => rf.id === id)).filter(Boolean) as RiskFactor[],
     [selected],
   );
+
+  // Przeczytane karty — persystencja w localStorage (anonimowo)
+  const [readItems, setReadItems] = useState<string[]>(() => loadStringArray(READ_STORAGE_KEY));
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem(READ_STORAGE_KEY, JSON.stringify(readItems));
+    } catch {
+      /* noop */
+    }
+  }, [readItems]);
+
+  const markRead = (id: string) =>
+    setReadItems((prev) => (prev.includes(id) ? prev : [...prev, id]));
+  const toggleRead = (id: string) =>
+    setReadItems((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  const clearRead = () => setReadItems([]);
+
+  // Auto-oznacz jako przeczytane po 1.2 s utrzymanego rozwinięcia (tylko ręczne otwarcie, nie wyszukiwarka)
+  useEffect(() => {
+    if (nQuery) return;
+    if (openItems.length === 0) return;
+    const timers = openItems
+      .filter((id) => !readItems.includes(id))
+      .map((id) => window.setTimeout(() => markRead(id), 1200));
+    return () => timers.forEach((t) => window.clearTimeout(t));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openItems, nQuery]);
 
   const filtered = useMemo(() => {
     if (!nQuery) return RISK_FACTORS;
