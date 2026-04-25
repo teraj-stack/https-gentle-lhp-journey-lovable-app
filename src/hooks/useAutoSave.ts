@@ -436,11 +436,25 @@ export const useAutoSave = () => {
    * przy wielu degradacjach w tej samej milisekundzie.
    */
   const [degradationHistory, setDegradationHistory] = useState<DegradationHistoryEntry[]>(() => {
+    // Najpierw wczytaj historię persystowaną w localStorage (kontekst po reloadzie).
+    const persisted = loadDegradationHistoryFromStorage();
+    // Jeśli przeglądarka nie ma BC, dodaj świeży wpis „api-missing" tylko gdy
+    // ostatni persistowany wpis NIE jest już tym samym incydentem — unikamy
+    // duplikatu po reloadzie (każdy reload bez BC inaczej wygenerowałby nowy
+    // wpis o nowym `at`, zaśmiecając historię).
     if (isBrowser() && typeof BroadcastChannel === "undefined") {
+      const last = persisted[0];
+      if (last && last.cause === "api-missing") {
+        return persisted;
+      }
       const initial = buildDegradationInfo("api-missing");
-      return [{ ...initial, id: `deg-${initial.at}-0` }];
+      const entry: DegradationHistoryEntry = {
+        ...initial,
+        id: `deg-${initial.at}-0`,
+      };
+      return [entry, ...persisted].slice(0, DEGRADATION_HISTORY_LIMIT);
     }
-    return [];
+    return persisted;
   });
 
   /**
@@ -465,6 +479,18 @@ export const useAutoSave = () => {
       return [entry, ...prev].slice(0, DEGRADATION_HISTORY_LIMIT);
     });
   }, [degradationInfo]);
+
+  /**
+   * Persystencja historii do localStorage przy każdej zmianie. Pozwala odtworzyć
+   * kontekst incydentów po pełnym reloadzie strony — typowe gdy support prosi
+   * pacjenta o odświeżenie, a chcemy nadal widzieć historię awarii BC sprzed
+   * reloadu, bo inaczej tracimy ślad problemu. Persistujemy też pustą tablicę,
+   * żeby `clearDegradationHistory` przeniósł się po reloadzie.
+   */
+  useEffect(() => {
+    saveDegradationHistoryToStorage(degradationHistory);
+  }, [degradationHistory]);
+
   /**
    * Symulacja braku BroadcastChannel — używana do diagnostyki.
    * Gdy `true`, hook zachowuje się tak, jakby BC nie działał: pomija
