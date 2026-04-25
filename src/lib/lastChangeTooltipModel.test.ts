@@ -16,6 +16,7 @@ import { describe, it, expect } from "vitest";
 import {
   buildLastChangeTooltipModel,
   smoothTimeValue,
+  type TimeValueFormat,
 } from "./lastChangeTooltipModel";
 
 describe("smoothTimeValue — wygładzanie wartości czasu", () => {
