@@ -242,7 +242,7 @@ const HemoroidyRiskQuiz = () => {
       score,
       maxScore,
       tierLabel: tier.label,
-      tierRange: tier.range,
+      tierRange,
       headline: tier.headline,
       recommendations: tier.recommendations.slice(0, 5),
       showUrgent: tier.showUrgent,
