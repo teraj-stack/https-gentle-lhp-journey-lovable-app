@@ -556,10 +556,29 @@ const run = () => {
     [...variantAll].filter((k) => !variantOptional.has(k)),
   );
 
+  // Parse the CURRENT on-disk lists up-front so we can either re-sort
+  // (default mode) or merge while preserving existing order
+  // (`--preserve-order`). Doing this before render keeps the two modes
+  // sharing the same downstream pipeline.
+  const currentTranslations = parseCurrentTranslationKeys(contentSrc);
+  const currentTimeLine = parseCurrentTimeLineKeys(modelSrc);
+
+  // `orderKeys` is the only place that branches on PRESERVE_ORDER — every
+  // other site below just consumes its (already-ordered) output.
+  const orderKeys = (current, next) =>
+    PRESERVE_ORDER ? mergePreservingOrder(current, next) : sortedArr(next);
+
+  const orderedTop = orderKeys(currentTranslations.top, topReads);
+  const orderedVariant = orderKeys(currentTranslations.variant, variantRequired);
+  const orderedVariantOptional = orderKeys(
+    currentTranslations.variantOptional,
+    variantOptional,
+  );
+
   const newTranslationBlock = renderRequiredTranslationKeys({
-    top: sortedArr(topReads),
-    variant: sortedArr(variantRequired),
-    variantOptional: sortedArr(variantOptional),
+    top: orderedTop,
+    variant: orderedVariant,
+    variantOptional: orderedVariantOptional,
   });
 
   // ─── TIME_LINE_TRANSLATIONS (model file) ───────────────────────────────────
