@@ -195,6 +195,25 @@ const DiaryFullModule = ({
   );
 
   /**
+   * Czyści wszystkie odpowiedzi quizu w aktywnym dniu (notatki zostają nietknięte).
+   * Każda odpowiedź jest zerowana przez setAnswer(..., null), co od razu nadpisuje
+   * localStorage przez hook useDailyDiary i emituje event "cml:diary-updated".
+   */
+  const clearAnswers = () => {
+    const hadAnswers = entry.answers.some((a) => a !== null);
+    if (!hadAnswers) return;
+    entry.answers.forEach((a, qi) => {
+      if (a !== null) setAnswer(activeDate, qi, null);
+    });
+    setAnswerAnnouncement(`Wyczyszczono wszystkie odpowiedzi quizu (${total} pytań).`);
+    toast({
+      title: "Odpowiedzi wyczyszczone",
+      description: `Pola ${total} pytań zostały zresetowane. Notatki dnia pozostały bez zmian.`,
+      duration: 2200,
+    });
+  };
+
+  /**
    * Komunikat aria-live ogłaszany po wybraniu odpowiedzi quizu — daje natychmiastowe
    * potwierdzenie wzrostu postępu (czytniki ekranu + użytkownicy widzący toast obok).
    * Resetowany do pustego stringa przy zmianie aktywnego dnia, by uniknąć echa.
