@@ -461,7 +461,7 @@ const RiskFactorsAccordion = () => {
       });
       return;
     }
-    exportChecklistCsv(selectedFactors, RISK_FACTORS.length);
+    exportChecklistCsv(selectedFactors, RISK_FACTORS.length, selectedAt);
     toast({
       title: "Pobrano checklistę CSV",
       description: "Plik został zapisany w folderze pobranych.",
