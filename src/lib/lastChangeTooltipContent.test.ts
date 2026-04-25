@@ -142,11 +142,12 @@ describe("spójność języka — wszystkie user-facing stringi używają «kart
           ).not.toMatch(pattern);
         }
         // Pozytywny check: skoro wspominamy o miejscu zmiany, MUSI pojawić się
-        // polskie słowo „kart" (kart/karta/karty/kartami/kartach).
+        // polskie słowo z rdzenia „kart-/karc-" (karta/karty/kartami/karcie/kartach).
+        // Uwaga: po polsku „karta" w miejscowniku to „karcie" — stąd alternatywa [ct].
         expect(
           value.toLowerCase(),
           `Pole „${field}" powinno używać polskiego słowa „karta": „${value}"`,
-        ).toMatch(/\bkart/);
+        ).toMatch(/\bkar[ct]/);
       }
     });
   }
