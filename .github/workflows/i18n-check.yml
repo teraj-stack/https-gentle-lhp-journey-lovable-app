@@ -13,6 +13,8 @@ on:
     paths:
       - "src/lib/lastChangeTooltipContent.ts"
       - "src/lib/lastChangeTooltipModel.ts"
+      - "src/lib/i18n*.test.ts"
+      - "src/lib/i18nGithubAnnotations.ts"
       - "scripts/autofix-required-translation-keys.mjs"
       - "package.json"
       - ".github/workflows/i18n-check.yml"
@@ -25,6 +27,10 @@ jobs:
     name: REQUIRED_* keys in sync
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    # GITHUB_ACTIONS=true is set automatically by GitHub-hosted runners.
+    # The i18n test suite uses it as a feature flag to emit `::error file=...`
+    # workflow commands so each violation appears as an inline annotation on
+    # the PR diff (see src/lib/i18nGithubAnnotations.ts).
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -34,5 +40,14 @@ jobs:
         with:
           node-version: "20"
 
+      - name: Install dependencies
+        run: npm ci
+
       - name: Verify REQUIRED_* lists match builder usage
         run: npm run i18n:check
+
+      - name: Run i18n contract tests (with PR annotations on failure)
+        # vitest forwards stdout from worker → main; the `::error` lines
+        # emitted by formatViolations() are picked up by the runner and
+        # rendered as inline annotations + checks-summary entries.
+        run: npx vitest run src/lib/i18nContract.test.ts src/lib/i18nRequiredKeys.test.ts src/lib/i18nPlaceholders.test.ts src/lib/i18nGithubAnnotations.test.ts
