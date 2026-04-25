@@ -30,6 +30,9 @@ import {
   collectTranslatorCallKeys,
   collectOptionalVariantReads,
   categoriseHelperPath,
+  parseCurrentTranslationKeys,
+  parseCurrentTimeLineKeys,
+  diffKeys,
 } from "./autofixScannerShim";
 
 describe("autofix scanner — collectDotMemberReads", () => {
@@ -184,5 +187,91 @@ describe("autofix scanner — categoriseHelperPath", () => {
   it("rejects multi-segment paths in timeLine scope", () => {
     const r = categoriseHelperPath("foo.bar", "timeLine");
     expect(r.bucket).toBe("ignored");
+  });
+});
+
+describe("autofix scanner — parseCurrentTranslationKeys", () => {
+  it("extracts top/variant/variantOptional from a real-shaped declaration", () => {
+    const src = `
+      // preamble
+      export const REQUIRED_TRANSLATION_KEYS = {
+        top: ["sourcePrefix"] as const,
+        variant: ["description", "heading", "shortBadge"] as const,
+        variantOptional: ["ariaHeadingOverride"] as const,
+      } as const;
+      // trailer
+    `;
+    expect(parseCurrentTranslationKeys(src)).toEqual({
+      top: ["sourcePrefix"],
+      variant: ["description", "heading", "shortBadge"],
+      variantOptional: ["ariaHeadingOverride"],
+    });
+  });
+
+  it("returns empty buckets when the declaration is missing", () => {
+    expect(parseCurrentTranslationKeys("// nothing here")).toEqual({
+      top: [],
+      variant: [],
+      variantOptional: [],
+    });
+  });
+
+  it("handles empty arrays without throwing", () => {
+    const src = `export const REQUIRED_TRANSLATION_KEYS = {
+      top: [] as const,
+      variant: [] as const,
+      variantOptional: [] as const,
+    } as const;`;
+    expect(parseCurrentTranslationKeys(src)).toEqual({
+      top: [],
+      variant: [],
+      variantOptional: [],
+    });
+  });
+});
+
+describe("autofix scanner — parseCurrentTimeLineKeys", () => {
+  it("extracts the array entries", () => {
+    const src = `export const REQUIRED_TIME_LINE_KEYS = [
+      "relativeHelpTitle",
+      "relativeQualifier",
+      "timePrefix",
+    ] as const satisfies ReadonlyArray<keyof TimeLineStrings>;`;
+    expect(parseCurrentTimeLineKeys(src)).toEqual([
+      "relativeHelpTitle",
+      "relativeQualifier",
+      "timePrefix",
+    ]);
+  });
+
+  it("returns [] when missing", () => {
+    expect(parseCurrentTimeLineKeys("")).toEqual([]);
+  });
+});
+
+describe("autofix scanner — diffKeys", () => {
+  it("reports nothing when current and next are equal (order-independent)", () => {
+    expect(diffKeys(["b", "a"], ["a", "b"])).toEqual({ added: [], removed: [] });
+  });
+
+  it("flags purely added keys, sorted", () => {
+    expect(diffKeys(["a"], ["a", "c", "b"])).toEqual({
+      added: ["b", "c"],
+      removed: [],
+    });
+  });
+
+  it("flags purely removed keys, sorted", () => {
+    expect(diffKeys(["c", "b", "a"], ["a"])).toEqual({
+      added: [],
+      removed: ["b", "c"],
+    });
+  });
+
+  it("flags simultaneous add/remove", () => {
+    expect(diffKeys(["heading", "shortBadge"], ["heading", "description"])).toEqual({
+      added: ["description"],
+      removed: ["shortBadge"],
+    });
   });
 });
