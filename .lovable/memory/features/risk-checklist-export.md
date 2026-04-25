@@ -53,3 +53,11 @@ type: feature
 - Bookkeeping przez `staggerTimersRef` (cancel poprzedniej sekwencji przy nowym wywołaniu i przy unmount).
 - `prefers-reduced-motion: reduce` → natychmiastowy `setOpenItems(target)` bez staggera.
 - Używane w 3 miejscach: `toggleAll` (przycisk Rozwiń/Zwiń wszystko), Ctrl/⌘+E, "Rozwiń tylko dopasowane". Pojedyncze klikanie w `AccordionTrigger` zostaje na natywnym `animate-accordion-down/up` z Radix.
+
+## Filtr źródeł EBM (multi-select chips)
+- 5 providerów: Cochrane, PubMed, ASCRS, ESCP, Czasopisma (LWW/Wiley) — detekcja po `url` (host) z fallbackiem na `label`. Helper `getSourceProviders(source)` + `factorHasProvider(rf, set)`.
+- Provider to ortogonalna oś względem `ebmId` (kategoria merytoryczna fiber/hydration/...) — `ebmId` nie jest reużywany.
+- Stan: `sourceFilter: Set<EbmProvider>`. Logika OR (zaznaczenie wielu = ≥1 dopasowanie).
+- Łączy się z wyszukiwaniem (AND między filtrem providera a `nQuery`); aktywny filtr providera również auto-rozwija dopasowane karty (`filterActive` w `accordionValue`).
+- Guardy autosave openItems + auto-mark-read pomijają tryb filtra (analogicznie jak nQuery), żeby filtr nie nadpisywał zapisanej rozwinięcia ani nie oznaczał kart jako przeczytane bez intencji.
+- Chipy pokazują licznik czynników per provider; chip z `count === 0` jest disabled.
