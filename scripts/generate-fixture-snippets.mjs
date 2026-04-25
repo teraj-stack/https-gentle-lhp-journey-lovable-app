@@ -73,21 +73,27 @@ const readExport = async (relPath, exportName) => {
 
 /**
  * Strip TypeScript-only syntax from a value RHS so JSON.parse can take it:
- *  - `as const` suffix
+ *  - inline AND trailing `as const` suffixes (any depth)
  *  - trailing commas inside arrays/objects
  *  - single-quoted strings → double-quoted
- *  - bare identifier object keys → quoted (we don't have any in the inputs
- *    we read here, but defensive cheap normalisation)
+ *  - bare identifier object keys → quoted (JSON requires string keys)
+ *  - line comments (`// …`) — none in our inputs today, but cheap insurance
  */
 const tsValueToJson = (raw) => {
-  let s = raw.replace(/\s+as\s+const\s*$/, "");
+  let s = raw;
+  // Drop ALL `as const` occurrences (inline like `["x"] as const,` and trailing).
+  s = s.replace(/\s+as\s+const\b/g, "");
+  // Strip line comments. Naive but safe here — our inputs are simple literals.
+  s = s.replace(/\/\/[^\n]*/g, "");
   // Drop trailing commas in arrays/objects: `,]` → `]`, `,}` → `}`
   s = s.replace(/,(\s*[\]}])/g, "$1");
-  // Convert single-quoted string literals to double-quoted (JSON requirement)
+  // Convert single-quoted string literals to double-quoted.
   s = s.replace(/'([^'\\]*(?:\\.[^'\\]*)*)'/g, (_, inner) => {
-    // Re-escape any embedded double quotes that were safe inside single quotes.
     return `"${inner.replace(/"/g, '\\"')}"`;
   });
+  // Quote bare-identifier object keys: `{ top: …, variant: … }` →
+  // `{ "top": …, "variant": … }`. Skip ones already quoted.
+  s = s.replace(/([{,]\s*)([A-Za-z_$][A-Za-z0-9_$]*)(\s*:)/g, '$1"$2"$3');
   return s;
 };
 
