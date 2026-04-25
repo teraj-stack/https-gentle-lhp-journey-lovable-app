@@ -20,27 +20,41 @@ import { Button } from "@/components/ui/button";
 import { useAutoSave } from "@/hooks/useAutoSave";
 import { toast } from "@/hooks/use-toast";
 import SyncDiagnosticPanel from "@/components/hemoroidy/SyncDiagnosticPanel";
+import {
+  formatTimestamp,
+  useTimeFormatPreference,
+  type TimeFormatMode,
+} from "@/hooks/useTimeFormatPreference";
 
 /**
- * Format „przed chwilą" / „X s temu" / „X min temu" / „X h temu" / pełna data.
- * Trzymamy lokalnie, bez date-fns — proste i bez kosztu bundle'u.
+ * Etykiety segmented control dla wyboru formatu „Ostatniej zmiany".
+ * Trzymamy w jednym miejscu, żeby UI i aria-label były spójne.
  */
-const formatRelativeTime = (timestamp: number): string => {
-  const diffSec = Math.max(0, Math.floor((Date.now() - timestamp) / 1000));
-  if (diffSec < 5) return "przed chwilą";
-  if (diffSec < 60) return `${diffSec} s temu`;
-  const diffMin = Math.floor(diffSec / 60);
-  if (diffMin < 60) return `${diffMin} min temu`;
-  const diffH = Math.floor(diffMin / 60);
-  if (diffH < 24) return `${diffH} h temu`;
-  // >24h — pełna data + godzina (rzadki edge-case dla długo otwartej karty)
-  return new Date(timestamp).toLocaleString("pl-PL", {
-    day: "2-digit",
-    month: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-};
+const TIME_FORMAT_OPTIONS: Array<{
+  value: TimeFormatMode;
+  short: string;
+  label: string;
+  hint: string;
+}> = [
+  {
+    value: "relative",
+    short: "Względny",
+    label: "Format względny",
+    hint: "np. 2 min temu — odświeżany automatycznie co 15 s.",
+  },
+  {
+    value: "clock",
+    short: "Godzina",
+    label: "Sama godzina",
+    hint: "HH:MM:SS — kompaktowo, bez daty.",
+  },
+  {
+    value: "full",
+    short: "Pełna",
+    label: "Pełna data i godzina",
+    hint: "Dzień, miesiąc, rok i godzina — do długo otwartych kart.",
+  },
+];
 
 interface AutoSaveSettingsProps {
   /**
@@ -89,6 +103,13 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
   } = useAutoSave();
 
   /**
+   * Preferencja formatu czasu dla etykiet typu „Ostatnia zmiana".
+   * Przechowywana w localStorage i synchronizowana między instancjami panelu
+   * przez CustomEvent — patrz `useTimeFormatPreference`.
+   */
+  const { mode: timeFormatMode, setMode: setTimeFormatMode } = useTimeFormatPreference();
+
+  /**
    * Symulacja braku BC + sanity check: po włączeniu robimy tymczasowy toggle
    * przełącznika (na bieżącą wartość) i sprawdzamy w historii, czy zmiana
    * wróciła kanałem fallbackowym. To potwierdza, że storage+CustomEvent wciąż
@@ -106,16 +127,20 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
     });
   };
   /**
-   * Tick używany do auto-odświeżania względnego czasu („X s temu" → „X min temu").
-   * Inkrementowany co 15 s tylko gdy mamy zarejestrowaną zdalną synchronizację.
+   * Tick używany do auto-odświeżania etykiet czasu. Częstotliwość zależy od trybu:
+   *  - `relative` — co 15 s (granulacja minutowa wystarcza),
+   *  - `clock`    — co 1 s (chcemy widzieć aktualizację sekund),
+   *  - `full`     — brak ticka (data nie zmienia się szybko, wystarczy render na zmianę).
    */
   const [, setNowTick] = useState(0);
 
   useEffect(() => {
     if (lastRemoteSyncAt === null) return;
-    const interval = setInterval(() => setNowTick((n) => n + 1), 15_000);
+    if (timeFormatMode === "full") return;
+    const intervalMs = timeFormatMode === "clock" ? 1_000 : 15_000;
+    const interval = setInterval(() => setNowTick((n) => n + 1), intervalMs);
     return () => clearInterval(interval);
-  }, [lastRemoteSyncAt]);
+  }, [lastRemoteSyncAt, timeFormatMode]);
 
   /**
    * Toast informujący o zdalnej synchronizacji — odpala się gdy `lastRemoteSyncAt`
@@ -226,10 +251,11 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
     });
   };
 
-  // Krótki format „2 min temu" — pełna godzina trafia do tooltipa (lastSyncFullDate),
-  // żeby etykieta wizualnie współgrała z badge'em „Auto-zapis: ON/OFF".
+  // Etykieta „Ostatnia zmiana" honoruje wybrany przez użytkownika tryb formatu
+  // (relative / clock / full). Pełna data trafia do tooltipa zawsze — pacjent ma
+  // dostęp do dokładnego czasu nawet gdy w UI widzi „2 min temu".
   const lastSyncLabel =
-    lastRemoteSyncAt !== null ? formatRelativeTime(lastRemoteSyncAt) : null;
+    lastRemoteSyncAt !== null ? formatTimestamp(lastRemoteSyncAt, timeFormatMode) : null;
   // Pełna data + godzina jako tooltip — pomocna gdy karta wisi długo otwarta.
   const lastSyncFullDate =
     lastRemoteSyncAt !== null
@@ -384,6 +410,46 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
               </button>
             </div>
           )}
+          {/* Segmented control: wybór formatu czasu dla etykiety „Ostatnia zmiana".
+              Renderowany TYLKO gdy mamy co etykietować — nowa karta bez synchronizacji
+              nie potrzebuje przełącznika, który nic by nie zmieniał wizualnie. */}
+          {lastSyncLabel && (
+            <div
+              role="radiogroup"
+              aria-label="Format wyświetlanego czasu Ostatniej zmiany"
+              className="inline-flex items-center gap-0.5 rounded-md border border-border/60 bg-muted/30 p-0.5"
+            >
+              {TIME_FORMAT_OPTIONS.map((opt) => {
+                const active = timeFormatMode === opt.value;
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    role="radio"
+                    aria-checked={active}
+                    aria-label={opt.label}
+                    title={opt.hint}
+                    onClick={() => {
+                      if (active) return;
+                      setTimeFormatMode(opt.value);
+                      toast({
+                        title: `Format czasu: ${opt.short}`,
+                        description: opt.hint,
+                        duration: 1800,
+                      });
+                    }}
+                    className={`text-[10px] font-sans px-1.5 py-0.5 rounded transition-colors focus:outline-none focus:ring-1 focus:ring-primary/60 ${
+                      active
+                        ? "bg-emerald-500/20 text-emerald-400 font-medium"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                    }`}
+                  >
+                    {opt.short}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
 
@@ -470,7 +536,7 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
                     {degradationInfo.cause}
                   </span>
                   <span className="text-muted-foreground/60 text-[10px]">
-                    · {formatRelativeTime(degradationInfo.at)}
+                    · {formatTimestamp(degradationInfo.at, timeFormatMode)}
                   </span>
                 </p>
                 <p className="text-[10px] sm:text-[11px] text-muted-foreground/80 leading-relaxed italic">
