@@ -45,17 +45,26 @@ export const resolveLocale = (raw: string | null | undefined): Locale => {
   return "pl";
 };
 
+interface VariantEntry {
+  /** Nagłówek pokazywany w widocznym tooltipie (bez prefiksu). */
+  heading: string;
+  /**
+   * Opcjonalny override nagłówka dla `aria-label`/`title` — używamy gdy
+   * brzmienie naturalne dla screen readera różni się od widocznej etykiety.
+   * Np. PL „local" → widoczne „Lokalna akcja w tej karcie",
+   * a w aria-label wolimy „Moja lokalna akcja w tej karcie", żeby user
+   * niewidomy słyszał pierwszoosobowo, że to JEGO zmiana, a nie czyjaś.
+   * Gdy `undefined`, używamy `heading`.
+   */
+  ariaHeadingOverride?: string;
+  description: string;
+}
+
 interface TranslationEntry {
   /** Prefiks doklejany do nagłówka w `aria-label`/`title` (np. „Źródło: "). */
   sourcePrefix: string;
-  remote: {
-    heading: string;
-    description: string;
-  };
-  local: {
-    heading: string;
-    description: string;
-  };
+  remote: VariantEntry;
+  local: VariantEntry;
 }
 
 /**
