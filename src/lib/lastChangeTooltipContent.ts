@@ -149,7 +149,7 @@ export const getLastChangeTooltipContent = (
   return {
     isRemote,
     heading: variant.heading,
-    ariaHeading: `${t.sourcePrefix}${variant.heading}`,
+    ariaHeading: `${t.sourcePrefix}${variant.ariaHeadingOverride ?? variant.heading}`,
     description: variant.description,
     locale: resolved,
   };
