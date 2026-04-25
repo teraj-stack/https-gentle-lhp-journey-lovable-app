@@ -546,11 +546,20 @@ const run = () => {
   }
 };
 
-try {
-  run();
-} catch (err) {
-  console.error(
-    `[autofix-required-translation-keys] ERROR: ${err instanceof Error ? err.message : String(err)}`,
-  );
-  process.exit(2);
+// Only execute when run as the entry-point script. When this module is
+// imported (e.g. by unit tests that exercise the individual detectors),
+// `run()` must NOT fire — it would attempt to write source files during
+// vitest collection.
+const isEntryPoint =
+  import.meta.url === `file://${process.argv[1]}` ||
+  import.meta.url.endsWith(process.argv[1] ?? "");
+if (isEntryPoint) {
+  try {
+    run();
+  } catch (err) {
+    console.error(
+      `[autofix-required-translation-keys] ERROR: ${err instanceof Error ? err.message : String(err)}`,
+    );
+    process.exit(2);
+  }
 }
