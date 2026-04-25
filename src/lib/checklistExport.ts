@@ -31,6 +31,19 @@ const formatToday = (): string =>
     year: "numeric",
   });
 
+const formatSelectedAt = (iso: string | null | undefined): string => {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleString("pl-PL", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
 const triggerDownload = (blob: Blob, fileName: string) => {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -54,12 +67,17 @@ const csvEscape = (value: unknown): string => {
 export const exportChecklistCsv = (
   factors: ChecklistFactor[],
   totalAvailable: number,
+  selectedAt?: string | null,
 ): void => {
   const sep = ";";
   const rows: string[] = [];
 
   rows.push("# Moja checklista czynnikow ryzyka — hemoroidy");
   rows.push(["Wygenerowano", formatToday()].map(csvEscape).join(sep));
+  const selectedAtFmt = formatSelectedAt(selectedAt);
+  if (selectedAtFmt) {
+    rows.push(["Data zaznaczenia", selectedAtFmt].map(csvEscape).join(sep));
+  }
   rows.push(
     ["Zaznaczone", `${factors.length}/${totalAvailable}`].map(csvEscape).join(sep),
   );
@@ -109,6 +127,7 @@ const BG_SOFT: [number, number, number] = [248, 245, 235];
 export const exportChecklistPdf = (
   factors: ChecklistFactor[],
   totalAvailable: number,
+  selectedAt?: string | null,
 ): void => {
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   const pageWidth = doc.internal.pageSize.getWidth();
@@ -149,6 +168,15 @@ export const exportChecklistPdf = (
     margin,
     y,
   );
+
+  const selectedAtFmt = formatSelectedAt(selectedAt);
+  if (selectedAtFmt) {
+    y += 5;
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(9);
+    doc.setTextColor(...BRAND_GOLD);
+    doc.text(s(`Data zaznaczenia przez pacjenta: ${selectedAtFmt}`), margin, y);
+  }
 
   /* Intro box */
   y += 6;

@@ -10,3 +10,9 @@ type: feature
 - **Przyciski**: variant="hero" (PDF) + variant="outline" (CSV) — pojawiają się tylko gdy `selectedFactors.length > 0`. Pusty stan → toast "Brak zaznaczonych czynników"
 - **Nazwa pliku**: `cml-checklista-ryzyka-hemoroidy-YYYY-MM-DD.{pdf,csv}`
 - **Storage**: lista zaznaczeń w localStorage `cml.hemoroidy.risk-checklist.v1` (anonimowo, bez backendu)
+
+## Data zaznaczenia (timestamp)
+- **Storage**: `cml.hemoroidy.risk-factors.selected-at.v1` (ISO string) — aktualizowany w useEffect na zmianę `selected`, z `useRef` jako flagą first-render (żeby restore z localStorage NIE nadpisywał istniejącego timestampu).
+- **Reset**: gdy `selected.length === 0` → `removeItem` + state na `null`.
+- **UI**: linia z `<CalendarClock>` + `<time dateTime>` w nagłówku checklisty (kolor `text-primary/80`, format `pl-PL` dzień + miesiąc skrócony + rok + HH:MM).
+- **Eksport**: `exportChecklistPdf` i `exportChecklistCsv` przyjmują 3. opcjonalny parametr `selectedAt?: string | null`. PDF: linia kursywą złotym kolorem pod „Wygenerowano". CSV: dodatkowy wiersz „Data zaznaczenia" w bloku metadanych.

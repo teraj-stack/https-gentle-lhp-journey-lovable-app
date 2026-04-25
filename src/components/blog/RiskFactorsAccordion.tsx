@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertTriangle,
   Salad,
@@ -32,6 +32,7 @@ import {
   Share2,
   Link2,
   Copy,
+  CalendarClock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -278,6 +279,7 @@ const RISK_FACTORS: RiskFactor[] = [
 
 const STORAGE_KEY = "cml.hemoroidy.risk-factors.selected.v1";
 const READ_STORAGE_KEY = "cml.hemoroidy.risk-factors.read.v1";
+const TIMESTAMP_STORAGE_KEY = "cml.hemoroidy.risk-factors.selected-at.v1";
 
 const loadStringArray = (key: string): string[] => {
   if (typeof window === "undefined") return [];
@@ -291,6 +293,33 @@ const loadStringArray = (key: string): string[] => {
   }
 };
 
+const loadTimestamp = (): string | null => {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(TIMESTAMP_STORAGE_KEY);
+    if (!raw) return null;
+    // Walidacja ISO date
+    const d = new Date(raw);
+    return Number.isNaN(d.getTime()) ? null : raw;
+  } catch {
+    return null;
+  }
+};
+
+/** Format: "23 kwi 2026, 14:32" */
+const formatSelectedAt = (iso: string | null): string => {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleString("pl-PL", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
 const RiskFactorsAccordion = () => {
   const [query, setQuery] = useState("");
   const nQuery = normalize(query.trim());
@@ -300,11 +329,31 @@ const RiskFactorsAccordion = () => {
 
   // Wybrane czynniki — persystencja w localStorage (anonimowo)
   const [selected, setSelected] = useState<string[]>(() => loadStringArray(STORAGE_KEY));
+  // Data ostatniej modyfikacji checklisty (ISO). null = jeszcze nigdy nie zapisano.
+  const [selectedAt, setSelectedAt] = useState<string | null>(() => loadTimestamp());
+  // Flaga „pierwszy render” — żeby wczytanie z localStorage nie nadpisywało istniejącego timestampu.
+  const isFirstRenderRef = useRef(true);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
     try {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(selected));
+    } catch {
+      /* noop */
+    }
+    // Aktualizuj timestamp TYLKO przy realnej zmianie (nie przy pierwszym mount/restore).
+    if (isFirstRenderRef.current) {
+      isFirstRenderRef.current = false;
+      return;
+    }
+    const nowIso = new Date().toISOString();
+    setSelectedAt(selected.length === 0 ? null : nowIso);
+    try {
+      if (selected.length === 0) {
+        window.localStorage.removeItem(TIMESTAMP_STORAGE_KEY);
+      } else {
+        window.localStorage.setItem(TIMESTAMP_STORAGE_KEY, nowIso);
+      }
     } catch {
       /* noop */
     }
@@ -397,7 +446,7 @@ const RiskFactorsAccordion = () => {
       });
       return;
     }
-    exportChecklistPdf(selectedFactors, RISK_FACTORS.length);
+    exportChecklistPdf(selectedFactors, RISK_FACTORS.length, selectedAt);
     toast({
       title: "Pobrano checklistę PDF",
       description: `${selectedFactors.length} z ${RISK_FACTORS.length} czynników — gotowe do druku.`,
@@ -412,7 +461,7 @@ const RiskFactorsAccordion = () => {
       });
       return;
     }
-    exportChecklistCsv(selectedFactors, RISK_FACTORS.length);
+    exportChecklistCsv(selectedFactors, RISK_FACTORS.length, selectedAt);
     toast({
       title: "Pobrano checklistę CSV",
       description: "Plik został zapisany w folderze pobranych.",
@@ -825,6 +874,17 @@ const RiskFactorsAccordion = () => {
               <p className="text-[11.5px] sm:text-xs text-muted-foreground mt-0.5">
                 Zapisywane lokalnie w przeglądarce (anonimowo). {selectedFactors.length} z {RISK_FACTORS.length} zaznaczonych.
               </p>
+              {selectedAt && selectedFactors.length > 0 && (
+                <p className="text-[11px] sm:text-[11.5px] text-primary/80 mt-1 inline-flex items-center gap-1.5 font-sans">
+                  <CalendarClock className="w-3 h-3 sm:w-3.5 sm:h-3.5" aria-hidden="true" />
+                  <span>
+                    Data zaznaczenia:{" "}
+                    <time dateTime={selectedAt} className="font-medium text-foreground">
+                      {formatSelectedAt(selectedAt)}
+                    </time>
+                  </span>
+                </p>
+              )}
             </div>
           </div>
           {selectedFactors.length > 0 && (
