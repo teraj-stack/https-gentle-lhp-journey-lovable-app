@@ -262,3 +262,13 @@
     animation: none !important;
   }
 }
+
+/* Indeterminate progress (gdy serwer nie zwraca Content-Length) */
+@keyframes indeterminate {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(400%);
+  }
+}
