@@ -230,7 +230,7 @@ describe("getLastChangeTooltipContent — odporność na nietypowe wartości sou
     [{ kind: "remote" }, "obiekt z polem kind"],
     [["remote"], "tablica ze stringiem"],
     [Symbol("remote"), "Symbol"],
-  ])("typ %s (%s) → fallback lokalny", (badSource) => {
+  ])("typ %s (%s) → fallback lokalny", (badSource, _label) => {
     const content = getLastChangeTooltipContent(
       badSource as unknown as "remote" | "local" | null,
     );
