@@ -9,6 +9,10 @@ import {
   X,
   Loader2,
   WifiOff,
+  History,
+  Wifi,
+  HardDrive,
+  Layers,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
@@ -74,6 +78,7 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
     sendPing,
     clearPing,
     isBroadcastSupported,
+    syncHistory,
   } = useAutoSave();
   /**
    * Tick używany do auto-odświeżania względnego czasu („X s temu" → „X min temu").
