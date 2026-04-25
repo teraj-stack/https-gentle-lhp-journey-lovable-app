@@ -859,7 +859,7 @@ const DiaryFullModule = ({
                       <button
                         key={oi}
                         type="button"
-                        onClick={() => setAnswer(activeDate, qi, selected ? null : oi)}
+                        onClick={() => handleAnswerSelect(qi, oi)}
                         className={`text-left rounded-lg border px-3 py-2.5 transition-all text-sm leading-snug ${
                           selected
                             ? "border-primary bg-primary/10 text-foreground"
