@@ -46,6 +46,8 @@ import { Input } from "@/components/ui/input";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { trackEbmClick } from "@/lib/ebmAnalytics";
 import { exportChecklistCsv, exportChecklistPdf } from "@/lib/checklistExport";
+import { buildChecklistSummary } from "@/lib/checklistSummary";
+import ChecklistAutoSummary from "@/components/blog/ChecklistAutoSummary";
 import {
   buildChecklistShareUrl,
   buildChecklistShortCode,
