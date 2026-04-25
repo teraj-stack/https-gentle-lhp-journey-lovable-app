@@ -241,6 +241,8 @@ Accepted values for `--only`: `missing-required-key`, `placeholder-mismatch`, `u
 
 **Locale scope (`--locales <locale>[,<locale>…]`):** pass `--locales` (alias `-L`) to override the locale scope **just for this run** without exporting `I18N_ACTIVE_LOCALES` in your shell. Accepted values: `pl`, `en`, `de`, `it` (mirrors `SUPPORTED_LOCALES` in `src/lib/i18nActiveLocales.ts`); commas are tolerated with stray whitespace and duplicates are de-duplicated. Precedence: `--locales` flag > `$I18N_ACTIVE_LOCALES` env > built-in default `pl,en,de,it`. The resolved scope and its source (`--locales flag` / `$I18N_ACTIVE_LOCALES env` / `default`) are printed on the `Locales:` echo line so PR reviewers can see exactly what the run was scoped to. Combine freely with `--only`, e.g. `bash i18n-summary.sh --only wrong-type --locales pl` to verify a single Polish fixture in ~3s.
 
+**Output dir (`--out <dir>`):** by default the script writes its full vitest log to `/tmp/i18n-summary.log` and the de-duplicated annotations to `/tmp/i18n-summary-annotations.txt` — fine locally, but ephemeral on CI runners. Pass `--out <dir>` (alias `-O`, `--out=<dir>` form supported) to redirect both files into a directory of your choice; the script `mkdir -p`s it, aborts with exit `2` if creation/writing fails, and echoes the resolved path + source on a new `Output dir:` line. Filenames stay constant (`i18n-summary.log`, `i18n-summary-annotations.txt`) so CI artifact-upload steps can hard-code them. Precedence: `--out` flag > `$I18N_SUMMARY_OUT` env > default `/tmp`. Common patterns: `--out ./artifacts` for a local run you want to keep across `git clean`, `--out "$RUNNER_TEMP/i18n"` paired with `actions/upload-artifact` to ship the logs as a downloadable PR artifact.
+
 ```sh
 #!/usr/bin/env bash
 # i18n-summary.sh — run i18n contract tests and print a per-reason PASS/FAIL summary.
@@ -252,11 +254,16 @@ Accepted values for `--only`: `missing-required-key`, `placeholder-mismatch`, `u
 #   bash i18n-summary.sh --only all                               # explicit equivalent of default
 #   bash i18n-summary.sh --locales en,de                          # override I18N_ACTIVE_LOCALES for this run
 #   bash i18n-summary.sh --only wrong-type --locales pl           # narrow reason + locale together
+#   bash i18n-summary.sh --out ./artifacts                        # write log + annotations under ./artifacts/
+#   bash i18n-summary.sh --only wrong-type --out "$RUNNER_TEMP/i18n"   # CI-friendly artifact path
 #   bash i18n-summary.sh --list                                   # print reason → test-file table and exit
 set -euo pipefail
 
-LOG=/tmp/i18n-summary.log
-ANN=/tmp/i18n-summary-annotations.txt
+# Defaults — overridden by --out below. The two filenames stay constant so downstream
+# tooling (CI artifact upload, grep recipes in this README) can hard-code them.
+DEFAULT_OUT_DIR="/tmp"
+LOG_NAME="i18n-summary.log"
+ANN_NAME="i18n-summary-annotations.txt"
 
 # All five reasons the validator can emit. Severity in parentheses is informational
 # only — the actual classification comes from WARNING_REASONS in i18nGithubAnnotations.ts.
@@ -278,12 +285,15 @@ ALL_LOCALES=(pl en de it)
 
 ONLY="all"
 LOCALES=""  # empty → use $I18N_ACTIVE_LOCALES if set, else fall back to pl,en,de,it
+OUT_DIR=""  # empty → falls back to $DEFAULT_OUT_DIR (/tmp)
 while [ $# -gt 0 ]; do
   case "$1" in
     --only|-o)    ONLY="${2:-}"; shift 2 ;;
     --only=*)     ONLY="${1#*=}"; shift ;;
     --locales|-L) LOCALES="${2:-}"; shift 2 ;;
     --locales=*)  LOCALES="${1#*=}"; shift ;;
+    --out|-O)     OUT_DIR="${2:-}"; shift 2 ;;
+    --out=*)      OUT_DIR="${1#*=}"; shift ;;
     --list|-l)
       printf '%-24s  %-10s  %s\n' "REASON" "SEVERITY" "TEST FILE (--only value)"
       printf '%-24s  %-10s  %s\n' "------" "--------" "------------------------"
@@ -294,17 +304,43 @@ while [ $# -gt 0 ]; do
         printf '%-24s  %-10s  %s\n' "$r" "warning" "${REASON_TEST[$r]}"
       done
       printf '\nKnown locales (for --locales): %s\n' "${ALL_LOCALES[*]}"
-      printf 'Example: bash i18n-summary.sh --only %s --locales en,de\n' "${ALL_ERROR_REASONS[0]}"
+      printf 'Default output dir (for --out): %s\n' "$DEFAULT_OUT_DIR"
+      printf 'Output filenames: %s, %s\n' "$LOG_NAME" "$ANN_NAME"
+      printf 'Example: bash i18n-summary.sh --only %s --locales en,de --out ./artifacts\n' "${ALL_ERROR_REASONS[0]}"
       exit 0 ;;
     -h|--help)
-      echo "Usage: $0 [--only <reason>[,<reason>…]|all] [--locales <locale>[,<locale>…]] [--list]"
+      echo "Usage: $0 [--only <reason>[,<reason>…]|all] [--locales <locale>[,<locale>…]] [--out <dir>] [--list]"
       echo "Reasons: ${ALL_ERROR_REASONS[*]} ${ALL_WARNING_REASONS[*]} | all"
       echo "Locales: ${ALL_LOCALES[*]} (defaults to \$I18N_ACTIVE_LOCALES, else pl,en,de,it)"
+      echo "Output:  defaults to $DEFAULT_OUT_DIR; --out <dir> writes $LOG_NAME and $ANN_NAME under <dir> (created if missing)"
       echo "Run '$0 --list' for a reason → test-file table."
       exit 0 ;;
     *) echo "Unknown arg: $1" >&2; exit 2 ;;
   esac
 done
+
+# Resolve effective output directory. Precedence: --out flag > $I18N_SUMMARY_OUT env > default.
+# We mkdir -p so callers can pass a fresh CI artifact path without pre-creating it.
+if [ -n "$OUT_DIR" ]; then
+  EFFECTIVE_OUT_DIR="$OUT_DIR"
+  OUT_SOURCE="--out flag"
+elif [ -n "${I18N_SUMMARY_OUT:-}" ]; then
+  EFFECTIVE_OUT_DIR="$I18N_SUMMARY_OUT"
+  OUT_SOURCE="\$I18N_SUMMARY_OUT env"
+else
+  EFFECTIVE_OUT_DIR="$DEFAULT_OUT_DIR"
+  OUT_SOURCE="default"
+fi
+mkdir -p "$EFFECTIVE_OUT_DIR" || {
+  echo "❌ Cannot create output dir: '$EFFECTIVE_OUT_DIR'" >&2
+  exit 2
+}
+if [ ! -w "$EFFECTIVE_OUT_DIR" ]; then
+  echo "❌ Output dir is not writable: '$EFFECTIVE_OUT_DIR'" >&2
+  exit 2
+fi
+LOG="$EFFECTIVE_OUT_DIR/$LOG_NAME"
+ANN="$EFFECTIVE_OUT_DIR/$ANN_NAME"
 
 # Resolve which reasons + which test files to run.
 # `ONLY` may be "all" or a comma-separated list of reasons (e.g. "placeholder-mismatch,wrong-type").
@@ -402,6 +438,7 @@ echo "▶ Running i18n contract tests (filter: $ONLY)…"
 echo "  Reasons:    ${SELECTED_REASONS[*]}"
 echo "  Locales:    $EFFECTIVE_LOCALES   ($LOCALE_SOURCE)"
 echo "  Test files: ${TEST_FILES[*]}"
+echo "  Output dir: $EFFECTIVE_OUT_DIR   ($OUT_SOURCE)"
 # `|| true` — vitest exits non-zero on any failing test; we want to inspect annotations
 # regardless. The final exit code is recomputed from the per-reason counts below.
 GITHUB_ACTIONS=true I18N_ACTIVE_LOCALES="$EFFECTIVE_LOCALES" \
@@ -473,6 +510,7 @@ Sample output for `bash i18n-summary.sh --only placeholder-mismatch` after pasti
   Reasons:    placeholder-mismatch
   Locales:    pl,en,de,it   (default)
   Test files: src/lib/i18nPlaceholders.test.ts
+  Output dir: /tmp   (default)
 
 ═══════════════════════════════════════════════════════
   i18n contract — PASS/FAIL summary (filter: placeholder-mismatch)
@@ -494,6 +532,7 @@ Sample output for `bash i18n-summary.sh --only placeholder-mismatch,wrong-type` 
   Reasons:    placeholder-mismatch wrong-type
   Locales:    pl,en,de,it   (default)
   Test files: src/lib/i18nPlaceholders.test.ts src/lib/i18nContract.test.ts
+  Output dir: /tmp   (default)
 
 ═══════════════════════════════════════════════════════
   i18n contract — PASS/FAIL summary (filter: placeholder-mismatch,wrong-type)
@@ -518,6 +557,7 @@ Sample output for `bash i18n-summary.sh --only wrong-type --locales pl` (single 
   Reasons:    wrong-type
   Locales:    pl   (--locales flag)
   Test files: src/lib/i18nContract.test.ts
+  Output dir: /tmp   (default)
 
 ═══════════════════════════════════════════════════════
   i18n contract — PASS/FAIL summary (filter: wrong-type)
@@ -531,6 +571,33 @@ Sample output for `bash i18n-summary.sh --only wrong-type --locales pl` (single 
 
 ✅ Overall: PASS — no error-severity violations for filter 'wrong-type'.
 ```
+
+Sample output for `bash i18n-summary.sh --only placeholder-mismatch --out ./artifacts` (custom output dir — useful in CI so the log + annotations end up under your job's artifact path and survive the runner teardown):
+
+```
+▶ Running i18n contract tests (filter: placeholder-mismatch)…
+  Reasons:    placeholder-mismatch
+  Locales:    pl,en,de,it   (default)
+  Test files: src/lib/i18nPlaceholders.test.ts
+  Output dir: ./artifacts   (--out flag)
+
+═══════════════════════════════════════════════════════
+  i18n contract — PASS/FAIL summary (filter: placeholder-mismatch)
+═══════════════════════════════════════════════════════
+  REASON                     SEVERITY   VERDICT
+  ---------------------------------------------------
+  placeholder-mismatch       error      ❌ FAIL (1)
+  ---------------------------------------------------
+  TOTAL ANNOTATIONS          —          1
+═══════════════════════════════════════════════════════
+
+  Full log:        ./artifacts/i18n-summary.log
+  Annotations:     ./artifacts/i18n-summary-annotations.txt
+
+❌ Overall: FAIL — 1 error-severity violation(s) for 'placeholder-mismatch'. See ./artifacts/i18n-summary-annotations.txt.
+```
+
+The directory is created with `mkdir -p` (relative or absolute paths both work), and the script aborts with exit code `2` if creation fails or the directory isn't writable. Filenames inside the dir are fixed (`i18n-summary.log` and `i18n-summary-annotations.txt`) so CI artifact-upload steps and the grep recipes elsewhere in this README can hard-code them — only the parent dir changes.
 
 Sample output (clean repo — no drift):
 
@@ -583,7 +650,8 @@ Sample output (after pasting fixtures #2 + #4 + #5 from the [End-to-end walkthro
 - **Exit code** — `0` iff every error-severity reason is `PASS`. `empty-optional-value` (the only warning reason) **never** flips the verdict, matching the in-CI behaviour where warnings stay green.
 - **Dedup** — `sort -u` collapses duplicate annotations (a stacked fixture can trip the same key in multiple tests). Counts are post-dedup, so the table mirrors what reviewers actually see in the PR diff.
 - **Multi-reason filter** — `--only a,b,c` runs the **union** of owning test files (so `--only placeholder-mismatch,wrong-type` runs both `i18nPlaceholders.test.ts` and `i18nContract.test.ts`), then narrows the annotations file to `reason=(a|b|c)` before counting. Each selected reason gets its own row, and the overall verdict fails iff any selected **error-severity** reason has hits — adding `empty-optional-value` to the list never flips the verdict.
-- **Wire into CI** — drop the script into `scripts/`, add a `"i18n:summary": "bash scripts/i18n-summary.sh"` entry to `package.json`, and call it from `.github/workflows/i18n-check.yml` for a compact summary line in the Actions log alongside the existing inline annotations.
+- **Output dir** — defaults to `/tmp` (`i18n-summary.log` + `i18n-summary-annotations.txt`). Override per-run with `--out ./artifacts` or per-shell with `I18N_SUMMARY_OUT=./artifacts bash i18n-summary.sh`. Precedence is `--out` > env > default; the resolved path + source is echoed on the `Output dir:` line. The script `mkdir -p`s the target and refuses to run if it can't create or write to it (exit `2`). Filenames are intentionally fixed so downstream tooling — CI artifact upload, the grep recipes earlier in this README — can hard-code them; only the parent dir varies.
+- **Wire into CI** — drop the script into `scripts/`, add a `"i18n:summary": "bash scripts/i18n-summary.sh"` entry to `package.json`, and call it from `.github/workflows/i18n-check.yml` for a compact summary line in the Actions log alongside the existing inline annotations. For artifact preservation across runs, pair it with `--out "$RUNNER_TEMP/i18n"` followed by `- uses: actions/upload-artifact@v4` pointing at the same path.
 
 #### Listing all available fixture error types
 
