@@ -231,7 +231,9 @@ const HemoroidyRiskQuiz = () => {
     (sum, q) => sum + Math.max(...q.options.map((o) => o.points)),
     0
   );
-  const tier = getTier(score);
+  const tierLevel = getRiskLevelWithThresholds(score, thresholds);
+  const tier = getTierForLevel(tierLevel);
+  const tierRange = getRiskRangeWithThresholds(tierLevel, thresholds);
   const TierIcon = tier.Icon;
   const current = questions[step];
 
