@@ -71,6 +71,7 @@ import {
   composeTimeLine,
   buildLastChangeTooltipModel,
 } from "./lastChangeTooltipModel";
+import { emitGithubAnnotations } from "./i18nGithubAnnotations";
 
 // Mapa oczekiwanych prefiksów źródła per locale — sanity-check, że
 // `ariaHeading` faktycznie zaczyna się znanym prefiksem (nie domyślnym PL
