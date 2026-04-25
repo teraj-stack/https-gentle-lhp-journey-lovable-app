@@ -475,7 +475,7 @@ const RiskFactorsAccordion = () => {
         <Accordion
           id="risk-factors-list"
           type="multiple"
-          className="space-y-3 sm:space-y-2.5"
+          className="space-y-3 sm:space-y-2.5 md:space-y-3 lg:space-y-2.5"
           value={accordionValue}
           onValueChange={(v) => {
             // Pozwól na ręczne zwijanie tylko gdy nie filtrujemy wyszukiwarką
