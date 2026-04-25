@@ -328,11 +328,31 @@ const RiskFactorsAccordion = () => {
 
   // Wybrane czynniki — persystencja w localStorage (anonimowo)
   const [selected, setSelected] = useState<string[]>(() => loadStringArray(STORAGE_KEY));
+  // Data ostatniej modyfikacji checklisty (ISO). null = jeszcze nigdy nie zapisano.
+  const [selectedAt, setSelectedAt] = useState<string | null>(() => loadTimestamp());
+  // Flaga „pierwszy render” — żeby wczytanie z localStorage nie nadpisywało istniejącego timestampu.
+  const isFirstRenderRef = useRef(true);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
     try {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(selected));
+    } catch {
+      /* noop */
+    }
+    // Aktualizuj timestamp TYLKO przy realnej zmianie (nie przy pierwszym mount/restore).
+    if (isFirstRenderRef.current) {
+      isFirstRenderRef.current = false;
+      return;
+    }
+    const nowIso = new Date().toISOString();
+    setSelectedAt(selected.length === 0 ? null : nowIso);
+    try {
+      if (selected.length === 0) {
+        window.localStorage.removeItem(TIMESTAMP_STORAGE_KEY);
+      } else {
+        window.localStorage.setItem(TIMESTAMP_STORAGE_KEY, nowIso);
+      }
     } catch {
       /* noop */
     }
