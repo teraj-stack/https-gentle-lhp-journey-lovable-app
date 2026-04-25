@@ -758,6 +758,9 @@ const SyncDiagnosticPanel = ({
             <p className="mt-1 text-[10px] text-muted-foreground/60">
               Test: {formatTime(bcTestResult.at)} ({formatRelative(bcTestResult.at)})
             </p>
+            {!bcTestResult.ok && bcTestResult.cause && (
+              <DegradationGuidance cause={bcTestResult.cause} tone="amber" />
+            )}
           </div>
         )}
       </div>
