@@ -634,7 +634,7 @@ const RiskFactorsAccordion = () => {
       e.preventDefault();
       // Sczytujemy aktualny stan ze stanu komponentu — zamknięcie idzie po toggleAll
       const willExpand = openItems.length !== RISK_FACTORS.length;
-      setOpenItems(willExpand ? RISK_FACTORS.map((rf) => rf.id) : []);
+      setOpenItemsStaggered(willExpand ? RISK_FACTORS.map((rf) => rf.id) : []);
       toast({
         title: willExpand ? "Rozwinięto wszystkie sekcje" : "Zwinięto wszystkie sekcje",
         description: `Skrót: ${navigator.platform.toLowerCase().includes("mac") ? "⌘" : "Ctrl"}+E`,
