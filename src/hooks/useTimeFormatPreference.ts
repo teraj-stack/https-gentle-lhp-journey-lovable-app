@@ -33,32 +33,70 @@ const readStored = (): TimeFormatMode => {
 };
 
 /**
+ * Sprawdza, czy `timestamp` jest sensowną liczbą ms epoch — odrzuca:
+ *  - typy inne niż `number` (string z `JSON.parse` mógł być błędnie zdeserializowany),
+ *  - `NaN` / `Infinity` (np. `Date.parse("nieparsowalne")` zwraca `NaN`),
+ *  - wartości <= 0 (epoch=0 to 1970, traktujemy jak placeholder „brak danych").
+ *
+ * Dzięki temu helpery `formatTimestamp` / `formatFullTimestamp` zawsze zwracają
+ * przewidywalny string, a UI nie musi duplikować checków przed wywołaniem.
+ */
+export const isValidTimestamp = (timestamp: unknown): timestamp is number =>
+  typeof timestamp === "number" && Number.isFinite(timestamp) && timestamp > 0;
+
+/**
+ * Stabilny fallback pokazywany wszędzie tam, gdzie timestamp jest niepoprawny
+ * (NaN, ujemny, brak). Lepszy niż „Invalid Date" z `toLocaleString`, bo nie
+ * wystraszy pacjenta i jest natychmiast czytelny w panelu diagnostycznym.
+ */
+export const TIMESTAMP_FALLBACK_LABEL = "—";
+
+/**
+ * Ujednolicony długi format daty + godziny (np. „24 kwietnia 2026, 12:34:56").
+ * Używany wszędzie, gdzie wcześniej żył inline `toLocaleString` — dzięki temu
+ * tooltipy, diagnostyka i historia mają identyczny zapis.
+ */
+export const formatFullTimestamp = (timestamp: number): string => {
+  if (!isValidTimestamp(timestamp)) return TIMESTAMP_FALLBACK_LABEL;
+  return new Date(timestamp).toLocaleString("pl-PL", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
+};
+
+/**
  * Renderuje timestamp wg wybranego trybu. Funkcja jest pure (bez side-effectów),
  * więc można ją wołać z dowolnego komponentu — UI sam decyduje, czy chce
  * auto-odświeżać przez tick (relevantne tylko dla `relative`).
+ *
+ * Walidacja:
+ *  - niepoprawny `timestamp` (NaN/ujemny/0/typ ≠ number) → `TIMESTAMP_FALLBACK_LABEL`,
+ *  - niepoprawny `mode` → traktujemy jak `relative` (bezpieczny default),
+ *  - timestamp z PRZYSZŁOŚCI (zegar użytkownika cofnięty) → w trybie relative
+ *    pokazujemy „przed chwilą" zamiast ujemnych „—5 s temu", w trybach clock/full
+ *    pokazujemy normalnie (data jest poprawna, tylko zegar lokalny się rozjechał).
  */
 export const formatTimestamp = (
   timestamp: number,
   mode: TimeFormatMode,
 ): string => {
-  if (mode === "clock") {
+  if (!isValidTimestamp(timestamp)) return TIMESTAMP_FALLBACK_LABEL;
+  const safeMode: TimeFormatMode = isValidMode(mode) ? mode : DEFAULT_MODE;
+  if (safeMode === "clock") {
     return new Date(timestamp).toLocaleTimeString("pl-PL", {
       hour: "2-digit",
       minute: "2-digit",
       second: "2-digit",
     });
   }
-  if (mode === "full") {
-    return new Date(timestamp).toLocaleString("pl-PL", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-    });
+  if (safeMode === "full") {
+    return formatFullTimestamp(timestamp);
   }
-  // mode === "relative"
+  // safeMode === "relative" — clamp do 0, żeby cofnięty zegar nie dawał ujemnych etykiet.
   const diffSec = Math.max(0, Math.floor((Date.now() - timestamp) / 1000));
   if (diffSec < 5) return "przed chwilą";
   if (diffSec < 60) return `${diffSec} s temu`;
