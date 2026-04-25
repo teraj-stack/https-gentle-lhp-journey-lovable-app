@@ -29,6 +29,9 @@ import {
   EyeOff,
   FileDown,
   FileSpreadsheet,
+  Share2,
+  Link2,
+  Copy,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
