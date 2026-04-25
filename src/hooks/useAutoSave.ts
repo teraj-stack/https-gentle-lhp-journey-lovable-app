@@ -331,6 +331,22 @@ export const useAutoSave = () => {
       : null,
   );
   /**
+   * Pełna historia degradacji BroadcastChannel od momentu zamontowania hooka
+   * (najnowsza pierwsza, ograniczona do `DEGRADATION_HISTORY_LIMIT` wpisów).
+   * W przeciwieństwie do `degradationInfo` (tylko ostatnia), historia pozwala
+   * zobaczyć powtarzające się problemy — np. seryjne `messageerror` po wybudzeniu
+   * z BFCache, albo migotanie między `simulation` a real-mode podczas testów.
+   * Każdy wpis ma własny `id`, żeby React mógł go używać jako key bez kolizji
+   * przy wielu degradacjach w tej samej milisekundzie.
+   */
+  const [degradationHistory, setDegradationHistory] = useState<DegradationHistoryEntry[]>(() => {
+    if (isBrowser() && typeof BroadcastChannel === "undefined") {
+      const initial = buildDegradationInfo("api-missing");
+      return [{ ...initial, id: `deg-${initial.at}-0` }];
+    }
+    return [];
+  });
+  /**
    * Symulacja braku BroadcastChannel — używana do diagnostyki.
    * Gdy `true`, hook zachowuje się tak, jakby BC nie działał: pomija
    * `postMessage` przy lokalnym toggle i ignoruje przychodzące wiadomości BC,
