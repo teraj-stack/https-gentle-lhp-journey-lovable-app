@@ -623,3 +623,5 @@ export const __findKeyLineForTesting = findKeyLine;
 export const __stripTopPrefixForTesting = stripTopPrefix;
 export const __getSourceLineSnippetForTesting = getSourceLineSnippet;
 export const __buildExpectedLineHintForTesting = buildExpectedLineHint;
+export const __isMultiLineValueOpenerForTesting = isMultiLineValueOpener;
+export const __assembleMultiLineSnippetForTesting = assembleMultiLineSnippet;
