@@ -882,6 +882,25 @@ describe("i18n — obsługa języków PL/EN w tooltipie Ostatnia zmiana", () => 
     });
   });
 
+  describe("composeTimeLine — DE/IT", () => {
+    it("DE: 'composeTimeLine(\"12:34\", \"de\")' → 'Zeit: 12:34'", () => {
+      expect(composeTimeLine("12:34", "de")).toBe("Zeit: 12:34");
+      expect(composeTimeLine("12:34", "de-DE")).toBe("Zeit: 12:34");
+    });
+
+    it("IT: 'composeTimeLine(\"12:34\", \"it\")' → 'Ora: 12:34'", () => {
+      expect(composeTimeLine("12:34", "it")).toBe("Ora: 12:34");
+      expect(composeTimeLine("12:34", "it-IT")).toBe("Ora: 12:34");
+    });
+
+    it("DE/IT: pusty/whitespace → null", () => {
+      for (const locale of ["de", "it", "de-AT", "it-CH"]) {
+        expect(composeTimeLine("", locale)).toBeNull();
+        expect(composeTimeLine("   ", locale)).toBeNull();
+      }
+    });
+  });
+
   describe("composeTimeLine z parametrem locale", () => {
     it("PL: 'composeTimeLine(\"12:34\", \"pl\")' → 'Czas: 12:34'", () => {
       expect(composeTimeLine("12:34", "pl")).toBe("Czas: 12:34");
