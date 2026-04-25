@@ -576,11 +576,11 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
                     <p className="text-[11px] text-muted-foreground leading-snug">
                       {tooltipContent.description}
                     </p>
-                    {tooltipTimeValue && tooltipTimeValue.trim().length > 0 && (
+                    {tooltipTimeValue.length > 0 && (
                       <p
                         className="text-[10px] text-muted-foreground/80 font-mono"
                         title={
-                          hasUsableFullDate
+                          smoothFullDate.length > 0
                             ? undefined
                             : "Pełna data niedostępna — pokazujemy etykietę względną."
                         }
