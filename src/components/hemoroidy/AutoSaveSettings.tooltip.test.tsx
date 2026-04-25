@@ -140,8 +140,8 @@ describe("AutoSaveSettings — tooltip „Ostatnia zmiana” wybiera nagłówek 
 
     renderPanel();
 
-    const trigger = findTriggerByLabel();
-    const ariaLabel = trigger.getAttribute("aria-label") ?? "";
+    const { trigger, container } = findLastChangeTooltip();
+    const ariaLabel = container.getAttribute("aria-label") ?? "";
     const title = trigger.getAttribute("title") ?? "";
 
     // Pierwsza linia obu atrybutów MUSI deklarować zdalne źródło.
@@ -160,8 +160,8 @@ describe("AutoSaveSettings — tooltip „Ostatnia zmiana” wybiera nagłówek 
 
     renderPanel();
 
-    const trigger = findTriggerByLabel();
-    const ariaLabel = trigger.getAttribute("aria-label") ?? "";
+    const { trigger, container } = findLastChangeTooltip();
+    const ariaLabel = container.getAttribute("aria-label") ?? "";
     const title = trigger.getAttribute("title") ?? "";
 
     expect(ariaLabel.startsWith("Źródło: Moja lokalna akcja w tej karcie")).toBe(true);
@@ -187,8 +187,8 @@ describe("AutoSaveSettings — tooltip „Ostatnia zmiana” wybiera nagłówek 
     mockLastChangeAt = FROZEN_NOW;
     const { rerender } = renderPanel();
 
-    let trigger = findTriggerByLabel();
-    expect(trigger.getAttribute("aria-label") ?? "").toContain(
+    let { trigger, container } = findLastChangeTooltip();
+    expect(container.getAttribute("aria-label") ?? "").toContain(
       "Synchronizacja między kartami",
     );
 
@@ -202,8 +202,8 @@ describe("AutoSaveSettings — tooltip „Ostatnia zmiana” wybiera nagłówek 
       </TooltipProvider>,
     );
 
-    trigger = findTriggerByLabel();
-    const ariaLabel = trigger.getAttribute("aria-label") ?? "";
+    ({ trigger, container } = findLastChangeTooltip());
+    const ariaLabel = container.getAttribute("aria-label") ?? "";
     expect(ariaLabel).toContain("Moja lokalna akcja w tej karcie");
     expect(ariaLabel).not.toContain("Synchronizacja między kartami");
   });
@@ -218,8 +218,8 @@ describe("AutoSaveSettings — tooltip „Ostatnia zmiana” wybiera nagłówek 
       mockLastChangeAt = FROZEN_NOW;
       const { unmount } = renderPanel();
 
-      const trigger = findTriggerByLabel();
-      const ariaLabel = trigger.getAttribute("aria-label") ?? "";
+      const { trigger, container } = findLastChangeTooltip();
+      const ariaLabel = container.getAttribute("aria-label") ?? "";
 
       // Nie pojawia się anglicyzm „tab” ani jego pochodne.
       expect(ariaLabel).not.toMatch(/\btab\b/i);
