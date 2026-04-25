@@ -955,30 +955,68 @@ const RiskFactorsAccordion = () => {
           <ul className="mt-4 grid gap-2 sm:grid-cols-2">
             {selectedFactors.map((rf) => {
               const Icon = rf.Icon;
+              const isPriority = priorityIds.includes(rf.id);
               return (
                 <li
                   key={rf.id}
-                  className="flex items-start gap-2.5 rounded-lg border border-border/60 bg-background/60 px-3 py-2.5"
+                  className={`flex items-start gap-2.5 rounded-lg border px-3 py-2.5 transition-colors ${
+                    isPriority
+                      ? "border-primary/60 bg-primary/[0.06] ring-1 ring-primary/20"
+                      : "border-border/60 bg-background/60"
+                  }`}
                 >
-                  <span className="w-7 h-7 rounded-md bg-primary/15 flex items-center justify-center shrink-0 mt-0.5">
+                  <span
+                    className={`w-7 h-7 rounded-md flex items-center justify-center shrink-0 mt-0.5 ${
+                      isPriority ? "bg-primary/25" : "bg-primary/15"
+                    }`}
+                  >
                     <Icon className="w-3.5 h-3.5 text-primary" />
                   </span>
                   <div className="flex-1 min-w-0">
-                    <p className="text-[13.5px] sm:text-sm font-medium text-foreground leading-snug">
+                    <p className="text-[13.5px] sm:text-sm font-medium text-foreground leading-snug flex items-center gap-1.5 flex-wrap">
                       {rf.title}
+                      {isPriority && (
+                        <span className="inline-flex items-center gap-0.5 text-[9.5px] uppercase tracking-[0.12em] font-sans bg-primary/20 text-primary px-1.5 py-0.5 rounded">
+                          <Star className="w-2.5 h-2.5 fill-current" aria-hidden="true" />
+                          Priorytet
+                        </span>
+                      )}
                     </p>
                     <p className="text-[11px] sm:text-[11.5px] text-muted-foreground leading-snug mt-0.5 truncate">
                       {rf.shortBadge}
                     </p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => toggleSelected(rf.id)}
-                    className="p-1 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors shrink-0"
-                    aria-label={`Usuń „${rf.title}" z checklisty`}
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
+                  <div className="flex items-center gap-0.5 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => togglePriority(rf.id)}
+                      className={`p-1 rounded-md transition-colors ${
+                        isPriority
+                          ? "text-primary hover:bg-primary/15"
+                          : "text-muted-foreground hover:text-primary hover:bg-primary/10"
+                      }`}
+                      aria-label={
+                        isPriority
+                          ? `Usuń „${rf.title}" z priorytetów`
+                          : `Oznacz „${rf.title}" jako wysoki priorytet`
+                      }
+                      aria-pressed={isPriority}
+                      title={isPriority ? "Usuń priorytet" : "Oznacz jako wysoki priorytet"}
+                    >
+                      <Star
+                        className={`w-3.5 h-3.5 ${isPriority ? "fill-current" : ""}`}
+                        aria-hidden="true"
+                      />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => toggleSelected(rf.id)}
+                      className="p-1 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                      aria-label={`Usuń „${rf.title}" z checklisty`}
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </li>
               );
             })}
