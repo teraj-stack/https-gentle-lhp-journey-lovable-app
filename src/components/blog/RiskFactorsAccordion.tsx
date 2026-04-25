@@ -368,7 +368,7 @@ const RiskFactorsAccordion = () => {
         title: field === "url" ? "Skopiowano link" : "Skopiowano kod",
         description: field === "url"
           ? "Wklej w wiadomości do lekarza — otworzy listę z Twoimi zaznaczeniami."
-          : "Możesz go podyktować lub wpisać po znaku „?c=" w adresie strony.",
+          : 'Możesz go podyktować lub wpisać po znaku "?c=" w adresie strony.',
       });
     } catch {
       toast({
