@@ -604,16 +604,21 @@ const RiskFactorsAccordion = () => {
   }, [openItems, nQuery]);
 
   const filtered = useMemo(() => {
-    if (!nQuery) return RISK_FACTORS;
-    return RISK_FACTORS.filter((rf) => {
+    const base = sourceFilter.size === 0
+      ? RISK_FACTORS
+      : RISK_FACTORS.filter((rf) => factorHasProvider(rf, sourceFilter));
+    if (!nQuery) return base;
+    return base.filter((rf) => {
       const sourcesText = rf.sources.map((s) => s.label).join(" ");
       const haystack = normalize(`${rf.title} ${rf.shortBadge} ${rf.body} ${sourcesText}`);
       return haystack.includes(nQuery);
     });
-  }, [nQuery]);
+  }, [nQuery, sourceFilter]);
 
-  // Auto-rozwijaj dopasowane karty podczas wyszukiwania (tryb wyszukiwania nadpisuje ręczny)
-  const accordionValue = nQuery ? filtered.map((rf) => rf.id) : openItems;
+  // Auto-rozwijaj dopasowane karty gdy aktywne wyszukiwanie LUB filtr źródeł EBM —
+  // dla obu trybów `accordionValue` nadpisuje ręczny `openItems`, żeby wynik był od razu widoczny.
+  const filterActive = nQuery.length > 0 || sourceFilter.size > 0;
+  const accordionValue = filterActive ? filtered.map((rf) => rf.id) : openItems;
   const allExpanded = openItems.length === RISK_FACTORS.length;
 
   // Stagger helper: stopniowo buduje/usuwa wpisy z `openItems` po 1 na 40ms,
