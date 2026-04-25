@@ -142,7 +142,11 @@ type ViolationReason =
   | "wrong-suffix"
   | "missing-qualifier-parens"
   | "too-short"
-  | "orphan-prefix";
+  | "orphan-prefix"
+  | "leading-whitespace"
+  | "trailing-whitespace"
+  | "double-space"
+  | "tab-or-newline";
 
 interface Violation {
   locale: Locale;
