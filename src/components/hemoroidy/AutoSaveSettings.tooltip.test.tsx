@@ -29,8 +29,11 @@ import { render, screen, cleanup } from "@testing-library/react";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 // Wartości stanu zwracane przez mock — zmieniamy między testami, żeby
-// jeden mock obsłużył oba scenariusze (remote/local) bez resetu modułu.
-let mockLastChangeSource: "remote" | "local" | null = null;
+// jeden mock obsłużył oba scenariusze (remote/local/null/undefined) bez resetu modułu.
+// Typ rozszerzony o `undefined`, żeby symulować runtime'owy stan, w którym
+// hook jeszcze nie zdążył ustawić `lastChangeSource` (np. tuż po mount,
+// przed pierwszym storage/BroadcastChannel eventem).
+let mockLastChangeSource: "remote" | "local" | null | undefined = null;
 let mockLastChangeAt: number | null = null;
 let mockEnabled = true;
 
