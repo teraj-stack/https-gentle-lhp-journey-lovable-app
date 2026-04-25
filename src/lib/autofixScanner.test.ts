@@ -30,7 +30,7 @@ import {
   collectTranslatorCallKeys,
   collectOptionalVariantReads,
   categoriseHelperPath,
-} from "../scripts/autofix-required-translation-keys.mjs";
+} from "./autofixScannerShim";
 
 describe("autofix scanner — collectDotMemberReads", () => {
   it("captures simple <alias>.<key> reads", () => {
