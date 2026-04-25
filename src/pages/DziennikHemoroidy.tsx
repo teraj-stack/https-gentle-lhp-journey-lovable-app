@@ -1,0 +1,529 @@
+import { useMemo, useState } from "react";
+import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
+import {
+  CalendarDays,
+  ChevronLeft,
+  ChevronRight,
+  Sparkles,
+  ShieldCheck,
+  AlertTriangle,
+  AlertOctagon,
+  NotebookPen,
+  Trash2,
+  Info,
+  TrendingUp,
+} from "lucide-react";
+import {
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ReferenceLine,
+} from "recharts";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import Breadcrumbs from "@/components/layout/Breadcrumbs";
+import { BREADCRUMBS_MAP } from "@/lib/breadcrumbsMap";
+import SeoHead from "@/components/shared/SeoHead";
+import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
+import { useDailyDiary, last14DaysKeys, todayKey } from "@/hooks/useDailyDiary";
+import { HEMOROIDY_QUESTIONS, RiskLevel } from "@/lib/hemoroidyQuizData";
+
+const easeOut = [0.16, 1, 0.3, 1] as const;
+
+const formatDayLabel = (key: string): string => {
+  const [, m, d] = key.split("-");
+  return `${d}.${m}`;
+};
+
+const formatLongDate = (key: string): string => {
+  const [y, m, d] = key.split("-");
+  const date = new Date(Number(y), Number(m) - 1, Number(d));
+  return date.toLocaleDateString("pl-PL", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  });
+};
+
+const RISK_COLORS: Record<RiskLevel, string> = {
+  low: "text-emerald-400",
+  medium: "text-primary",
+  high: "text-destructive",
+};
+
+const RISK_DOT_BG: Record<RiskLevel, string> = {
+  low: "bg-emerald-500",
+  medium: "bg-primary",
+  high: "bg-destructive",
+};
+
+const RISK_BORDER: Record<RiskLevel, string> = {
+  low: "border-emerald-500/40",
+  medium: "border-primary/40",
+  high: "border-destructive/40",
+};
+
+const RISK_BG: Record<RiskLevel, string> = {
+  low: "bg-emerald-500/10",
+  medium: "bg-primary/10",
+  high: "bg-destructive/10",
+};
+
+const RiskIcon = ({ level }: { level: RiskLevel | null }) => {
+  if (level === "low") return <ShieldCheck className="w-4 h-4 text-emerald-400" />;
+  if (level === "medium") return <AlertTriangle className="w-4 h-4 text-primary" />;
+  if (level === "high") return <AlertOctagon className="w-4 h-4 text-destructive" />;
+  return <Info className="w-4 h-4 text-muted-foreground" />;
+};
+
+const DziennikHemoroidy = () => {
+  const trail = BREADCRUMBS_MAP["/dla-pacjenta/dziennik-hemoroidy"];
+  const { getEntry, setAnswer, setNotes, removeEntry, clearAll, last14Trend, maxScore } =
+    useDailyDiary();
+
+  const days = useMemo(() => last14DaysKeys(), []);
+  const [activeDate, setActiveDate] = useState<string>(todayKey());
+  const entry = getEntry(activeDate);
+  const trend = last14Trend();
+
+  const completed = entry.answers.filter((a) => a !== null).length;
+  const total = HEMOROIDY_QUESTIONS.length;
+  const progressPct = Math.round((completed / total) * 100);
+
+  const chartData = trend.map((d) => ({
+    day: formatDayLabel(d.date),
+    score: d.score,
+    level: d.level,
+  }));
+
+  const completedDaysCount = trend.filter((d) => d.score !== null).length;
+
+  const goPrev = () => {
+    const i = days.indexOf(activeDate);
+    if (i > 0) setActiveDate(days[i - 1]);
+  };
+  const goNext = () => {
+    const i = days.indexOf(activeDate);
+    if (i >= 0 && i < days.length - 1) setActiveDate(days[i + 1]);
+  };
+
+  return (
+    <>
+      <SeoHead
+        title="Dziennik 14 dni — hemoroidy | śledź trend ryzyka | CML"
+        description="14-dniowy dziennik objawów i nawyków: codzienny quiz 9 pytań, miejsce na notatki, wykres trendu ryzyka. Dane zapisywane lokalnie w Twojej przeglądarce — bez konta i logowania."
+        path="/dla-pacjenta/dziennik-hemoroidy"
+      />
+      <MedicalWebPageSchema
+        name="Dziennik 14 dni — hemoroidy"
+        description="Interaktywny dziennik 14 dni do śledzenia objawów hemoroidów i czynników stylu życia. Codziennie quiz 9 pytań + notatki + wizualizacja trendu ryzyka."
+        path="/dla-pacjenta/dziennik-hemoroidy"
+      />
+
+      <section className="pt-32 pb-16 md:pt-40 md:pb-24 px-4 md:px-8 relative overflow-hidden">
+        <div
+          className="absolute inset-0 bg-gradient-to-b from-primary/5 via-transparent to-transparent pointer-events-none"
+          aria-hidden="true"
+        />
+        <div className="max-w-5xl mx-auto relative">
+          {trail && <Breadcrumbs items={trail} className="mb-8" />}
+
+          {/* Hero */}
+          <motion.div
+            initial={{ opacity: 0, y: 24, filter: "blur(4px)" }}
+            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+            transition={{ duration: 0.7, ease: easeOut }}
+            className="text-center mb-10"
+          >
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/30 mb-5">
+              <CalendarDays className="w-3.5 h-3.5 text-primary" />
+              <span className="text-xs font-sans uppercase tracking-[0.18em] text-primary">
+                14-dniowy dziennik · prywatnie w przeglądarce
+              </span>
+            </div>
+            <h1 className="font-heading text-3xl md:text-5xl text-foreground mb-4 leading-[1.1]">
+              Twój <em className="text-primary not-italic">dziennik 14 dni</em>
+            </h1>
+            <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+              Codzienny quiz 9 pytań, miejsce na notatki i wykres trendu ryzyka. Dane są zapisywane
+              lokalnie w Twojej przeglądarce — nie wysyłamy ich nigdzie i nie wymagamy konta.
+            </p>
+          </motion.div>
+
+          {/* Trend chart */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.2 }}
+            transition={{ duration: 0.6, ease: easeOut }}
+            className="glass-card rounded-2xl p-5 sm:p-6 md:p-8 mb-8"
+          >
+            <div className="flex items-start justify-between gap-4 mb-4 flex-wrap">
+              <div>
+                <h2 className="font-heading text-xl md:text-2xl text-foreground mb-1 inline-flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5 text-primary" />
+                  Trend ryzyka — 14 dni
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  {completedDaysCount === 0
+                    ? "Zacznij wpis na dziś, aby zobaczyć trend."
+                    : `Wypełniono ${completedDaysCount}/14 dni. Im niżej linia, tym lepsze nawyki.`}
+                </p>
+              </div>
+              <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500" /> Niskie ≤8
+                </span>
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-primary" /> Średnie 9–17
+                </span>
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-destructive" /> Wysokie 18+
+                </span>
+              </div>
+            </div>
+
+            <div className="h-56 sm:h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+                  <XAxis
+                    dataKey="day"
+                    stroke="hsl(var(--muted-foreground))"
+                    fontSize={11}
+                    tickLine={false}
+                  />
+                  <YAxis
+                    domain={[0, maxScore]}
+                    stroke="hsl(var(--muted-foreground))"
+                    fontSize={11}
+                    tickLine={false}
+                    width={32}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "hsl(var(--background))",
+                      border: "1px solid hsl(var(--border))",
+                      borderRadius: 8,
+                      fontSize: 12,
+                    }}
+                    formatter={(value: number | null) =>
+                      value === null ? ["—", "Brak wpisu"] : [`${value} pkt`, "Wynik"]
+                    }
+                  />
+                  <ReferenceLine y={8.5} stroke="hsl(var(--primary))" strokeDasharray="3 3" opacity={0.4} />
+                  <ReferenceLine
+                    y={17.5}
+                    stroke="hsl(var(--destructive))"
+                    strokeDasharray="3 3"
+                    opacity={0.4}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="score"
+                    stroke="hsl(var(--primary))"
+                    strokeWidth={2.5}
+                    dot={{ r: 4, strokeWidth: 2 }}
+                    activeDot={{ r: 6 }}
+                    connectNulls
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </motion.div>
+
+          {/* Day picker — 14-day strip */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.2 }}
+            transition={{ duration: 0.6, ease: easeOut }}
+            className="mb-6"
+          >
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="font-heading text-lg text-foreground">Wybierz dzień</h2>
+              <div className="flex items-center gap-1">
+                <Button variant="ghost" size="icon" onClick={goPrev} aria-label="Poprzedni dzień">
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+                <Button variant="ghost" size="icon" onClick={goNext} aria-label="Następny dzień">
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+            <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1 snap-x">
+              {days.map((d) => {
+                const e = getEntry(d);
+                const active = d === activeDate;
+                const dot = e.complete && e.level ? RISK_DOT_BG[e.level] : "bg-muted";
+                return (
+                  <button
+                    key={d}
+                    type="button"
+                    onClick={() => setActiveDate(d)}
+                    className={`shrink-0 snap-start w-14 sm:w-16 rounded-xl border px-2 py-2.5 transition-all text-center ${
+                      active
+                        ? "border-primary bg-primary/10"
+                        : "border-border bg-background/40 hover:border-primary/40"
+                    }`}
+                  >
+                    <p className="text-[10px] uppercase tracking-[0.1em] text-muted-foreground font-sans">
+                      {formatDayLabel(d)}
+                    </p>
+                    <p
+                      className={`font-heading text-base mt-0.5 ${
+                        active ? "text-primary" : "text-foreground"
+                      }`}
+                    >
+                      {d === todayKey() ? "dziś" : ""}
+                    </p>
+                    <span
+                      className={`inline-block mt-1 w-2 h-2 rounded-full ${dot}`}
+                      aria-hidden="true"
+                    />
+                  </button>
+                );
+              })}
+            </div>
+          </motion.div>
+
+          {/* Active day editor */}
+          <motion.div
+            key={activeDate}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, ease: easeOut }}
+            className="glass-card rounded-2xl p-5 sm:p-6 md:p-8 mb-8"
+          >
+            <div className="flex items-start justify-between gap-3 flex-wrap mb-5">
+              <div>
+                <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground font-sans mb-1">
+                  Wpis na dzień
+                </p>
+                <h3 className="font-heading text-xl md:text-2xl text-foreground capitalize">
+                  {formatLongDate(activeDate)}
+                </h3>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {completed}/{total} pytań • {entry.score} pkt {entry.complete && entry.label && (
+                    <span className={`font-sans uppercase tracking-[0.1em] ${RISK_COLORS[entry.level!]}`}>
+                      · {entry.label}
+                    </span>
+                  )}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <RiskIcon level={entry.complete ? entry.level : null} />
+                {(entry.answers.some((a) => a !== null) || entry.notes) && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => removeEntry(activeDate)}
+                    className="text-muted-foreground hover:text-destructive"
+                  >
+                    <Trash2 className="w-3.5 h-3.5 mr-1.5" />
+                    Wyczyść dzień
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            {/* Progress */}
+            <div className="mb-6">
+              <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                <motion.div
+                  className="h-full bg-primary"
+                  initial={false}
+                  animate={{ width: `${progressPct}%` }}
+                  transition={{ duration: 0.4, ease: easeOut }}
+                />
+              </div>
+            </div>
+
+            {/* Questions */}
+            <div className="space-y-5">
+              {HEMOROIDY_QUESTIONS.map((q, qi) => (
+                <fieldset key={q.id} className="rounded-xl border border-border bg-background/40 p-4">
+                  <legend className="px-2 -ml-2 text-[11px] uppercase tracking-[0.14em] text-muted-foreground font-sans">
+                    Pyt. {qi + 1}/{total}
+                  </legend>
+                  <p className="font-heading text-base text-foreground mb-3 leading-snug">{q.q}</p>
+                  <div className="grid sm:grid-cols-3 gap-2">
+                    {q.options.map((opt, oi) => {
+                      const selected = entry.answers[qi] === oi;
+                      return (
+                        <button
+                          key={oi}
+                          type="button"
+                          onClick={() => setAnswer(activeDate, qi, selected ? null : oi)}
+                          className={`text-left rounded-lg border px-3 py-2.5 transition-all text-sm leading-snug ${
+                            selected
+                              ? "border-primary bg-primary/10 text-foreground"
+                              : "border-border bg-background/40 text-foreground/80 hover:border-primary/40"
+                          }`}
+                          aria-pressed={selected}
+                        >
+                          <span className="block">{opt.label}</span>
+                          <span className="block text-[11px] text-muted-foreground mt-1">
+                            {opt.points} pkt
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </fieldset>
+              ))}
+            </div>
+
+            {/* Notes */}
+            <div className="mt-6">
+              <label
+                htmlFor="diary-notes"
+                className="block font-heading text-base text-foreground mb-2 inline-flex items-center gap-2"
+              >
+                <NotebookPen className="w-4 h-4 text-primary" />
+                Notatki dnia (opcjonalnie)
+              </label>
+              <Textarea
+                id="diary-notes"
+                value={entry.notes}
+                onChange={(e) => setNotes(activeDate, e.target.value)}
+                placeholder="Co dziś jadłeś/aś, samopoczucie, leki, objawy, sytuacje stresowe… (max 1000 znaków)"
+                maxLength={1000}
+                rows={4}
+                className="resize-none"
+              />
+              <p className="text-[11px] text-muted-foreground mt-1.5 text-right">
+                {entry.notes.length}/1000
+              </p>
+            </div>
+
+            {/* Result summary */}
+            {entry.complete && entry.level && (
+              <div
+                className={`mt-6 rounded-xl border ${RISK_BORDER[entry.level]} ${RISK_BG[entry.level]} p-4`}
+              >
+                <div className="flex items-start gap-3">
+                  <RiskIcon level={entry.level} />
+                  <div className="flex-1">
+                    <p className={`font-heading text-base ${RISK_COLORS[entry.level]}`}>
+                      {entry.label} — {entry.score}/{maxScore} pkt
+                    </p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Wynik dnia został zapisany w trendzie. Wracaj jutro o tej samej porze, aby
+                      utrzymać rytm.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </motion.div>
+
+          {/* Privacy + clear all */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.2 }}
+            transition={{ duration: 0.6, ease: easeOut }}
+            className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 rounded-xl border border-border bg-background/40 p-4 sm:p-5 mb-12"
+          >
+            <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed max-w-2xl">
+              <Info className="inline w-3.5 h-3.5 mr-1 -mt-0.5 text-primary" />
+              Wszystkie wpisy są zapisywane lokalnie w pamięci Twojej przeglądarki
+              (<code>localStorage</code>). Wyczyszczenie danych przeglądarki usunie też dziennik.
+            </p>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline" size="sm" className="shrink-0">
+                  <Trash2 className="w-3.5 h-3.5 mr-1.5" />
+                  Wyczyść cały dziennik
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Usunąć wszystkie wpisy?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Tej operacji nie można cofnąć. Wszystkie 14 dni wpisów i notatek zostaną trwale
+                    usunięte z tej przeglądarki.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Anuluj</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() => clearAll()}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    Usuń wszystko
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </motion.div>
+
+          {/* Related links */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.2 }}
+            transition={{ duration: 0.6, ease: easeOut }}
+            className="grid md:grid-cols-3 gap-4"
+          >
+            <Link
+              to="/dla-pacjenta/quiz-hemoroidy"
+              className="group rounded-xl border border-border bg-background/40 hover:bg-primary/5 hover:border-primary/40 p-5 transition-all"
+            >
+              <Sparkles className="w-5 h-5 text-primary mb-2.5" />
+              <p className="font-heading text-foreground mb-1 group-hover:text-primary transition-colors">
+                Jednorazowy test ryzyka
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Pełny quiz 9 pytań z dopasowanymi zaleceniami EBM.
+              </p>
+            </Link>
+            <Link
+              to="/dla-pacjenta/ebm-hemoroidy"
+              className="group rounded-xl border border-border bg-background/40 hover:bg-primary/5 hover:border-primary/40 p-5 transition-all"
+            >
+              <ShieldCheck className="w-5 h-5 text-primary mb-2.5" />
+              <p className="font-heading text-foreground mb-1 group-hover:text-primary transition-colors">
+                Profilaktyka — 6 filarów EBM
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Co realnie chroni i kiedy zgłosić się do lekarza.
+              </p>
+            </Link>
+            <Link
+              to="/dla-pacjenta/hemoroidy"
+              className="group rounded-xl border border-border bg-background/40 hover:bg-primary/5 hover:border-primary/40 p-5 transition-all"
+            >
+              <NotebookPen className="w-5 h-5 text-primary mb-2.5" />
+              <p className="font-heading text-foreground mb-1 group-hover:text-primary transition-colors">
+                Hemoroidy od A do Z
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Pełny przewodnik po objawach, stopniach i metodach.
+              </p>
+            </Link>
+          </motion.div>
+        </div>
+      </section>
+    </>
+  );
+};
+
+export default DziennikHemoroidy;
