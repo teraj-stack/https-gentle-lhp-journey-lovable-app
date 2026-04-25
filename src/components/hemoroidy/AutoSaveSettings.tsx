@@ -228,6 +228,32 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
    * (wizualny tooltip + dane dla screen readera) bez czekania na realny edge case.
    */
   const [demoHideFullDate, setDemoHideFullDate] = useState(false);
+  /**
+   * Live preview tooltipa — dodatkowe kontrolki, które pacjent/audytor a11y
+   * może przełączać na żywo, żeby zobaczyć WSZYSTKIE warianty wynikowego
+   * `buildLastChangeTooltipModel` w jednym miejscu, bez potrzeby zmuszania
+   * realnych zdarzeń auto-zapisu.
+   *
+   *  - `previewFormat` — `TimeValueFormat` przekazywany do helpera.
+   *    Pozwala porównać wpływ trybu „single-space"/„compact"/„preserve-newlines"
+   *    na widoczny tooltip i ariaText (parytet view↔a11y jest wymuszony
+   *    w samym helperze).
+   *  - `previewLocale` — PL/EN. Pokazuje na żywo, jak zmienia się prefiks
+   *    linii czasu (Czas:/Time:), kwalifikator fallbacku, helpTitle i
+   *    nagłówek/opis źródła.
+   *  - `previewRelativeOverride` — opcjonalny tekst zastępujący domyślne
+   *    `formatTimestamp(demoAt, …)` w roli `relativeLabel`. Ułatwia testowanie
+   *    edge case'ów (np. wartość z newline'em, multiple spaces, pusty string)
+   *    bez czekania na konkretny upływ czasu.
+   *
+   * Wszystkie kontrolki działają niezależnie od `demoSource`/`demoHideFullDate`
+   * — zmiana którejkolwiek z nich natychmiast przeliczy podgląd, więc pacjent
+   * widzi efekt 1:1.
+   */
+  const [previewFormat, setPreviewFormat] = useState<TimeValueFormat>("single-space");
+  const [previewLocale, setPreviewLocale] = useState<Locale>("pl");
+  const [previewRelativeOverride, setPreviewRelativeOverride] = useState<string>("");
+
   const handleDemoSelect = (source: "remote" | "local") => {
     setDemoSource(source);
     setDemoAt(Date.now());
