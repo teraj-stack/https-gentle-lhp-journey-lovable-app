@@ -745,6 +745,7 @@ const DiaryFullModule = ({
       {/* Reminder settings + clear all */}
       {showReminderSettings && (
         <>
+          <RiskThresholdsSettings />
           <DiaryReminderSettings />
           <motion.div
             initial={{ opacity: 0, y: 16 }}
