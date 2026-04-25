@@ -13,6 +13,7 @@ import {
   Wifi,
   HardDrive,
   Layers,
+  Activity,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
