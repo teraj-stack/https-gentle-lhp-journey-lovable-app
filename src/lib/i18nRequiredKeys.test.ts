@@ -132,7 +132,7 @@ const checkVariantEntry = (
   // Wymagane klucze.
   for (const k of REQUIRED_TRANSLATION_KEYS.variant) {
     const path = `TRANSLATIONS.${variantName}.${k}`;
-    const value = (variant as Record<string, unknown>)[k];
+    const value = (variant as unknown as Record<string, unknown>)[k];
     if (value === undefined || value === null) {
       out.push({ locale, path, reason: "missing-required-key" });
       continue;
@@ -159,7 +159,7 @@ const checkVariantEntry = (
   // Opcjonalne klucze — dozwolone że ich nie ma, ale jeśli są, muszą być niepuste.
   for (const k of REQUIRED_TRANSLATION_KEYS.variantOptional) {
     const path = `TRANSLATIONS.${variantName}.${k}`;
-    const value = (variant as Record<string, unknown>)[k];
+    const value = (variant as unknown as Record<string, unknown>)[k];
     if (value === undefined) continue; // opcjonalny — OK.
     if (typeof value !== "string") {
       out.push({
@@ -218,7 +218,7 @@ const checkTopLevelTranslation = (
 
   for (const k of REQUIRED_TRANSLATION_KEYS.top) {
     const path = `TRANSLATIONS.${k}`;
-    const value = (entry as Record<string, unknown>)[k];
+    const value = (entry as unknown as Record<string, unknown>)[k];
     if (value === undefined || value === null) {
       out.push({ locale, path, reason: "missing-required-key" });
       continue;
