@@ -471,6 +471,7 @@ Sample output for `bash i18n-summary.sh --only placeholder-mismatch` after pasti
 ```
 ▶ Running i18n contract tests (filter: placeholder-mismatch)…
   Reasons:    placeholder-mismatch
+  Locales:    pl,en,de,it   (default)
   Test files: src/lib/i18nPlaceholders.test.ts
 
 ═══════════════════════════════════════════════════════
