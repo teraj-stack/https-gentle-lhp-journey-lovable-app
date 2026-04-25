@@ -152,6 +152,7 @@ describe("AutoSaveSettings — tooltip „Ostatnia zmiana” wybiera nagłówek 
     mockLastChangeSource = null;
     mockLastChangeAt = null;
     mockEnabled = true;
+    mockFullTimestampReturn = "DEFAULT_FULL_TIMESTAMP";
     window.localStorage.clear();
   });
 
