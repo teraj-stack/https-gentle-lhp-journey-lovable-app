@@ -25,6 +25,8 @@ import {
   emitGithubAnnotations,
   __findKeyLineForTesting,
   __stripTopPrefixForTesting,
+  __getSourceLineSnippetForTesting,
+  __buildExpectedLineHintForTesting,
 } from "./i18nGithubAnnotations";
 
 const ROOT = process.cwd();
