@@ -352,7 +352,7 @@ const COMPARISON_ROWS: Row[] = [
   },
   {
     risk: "Długie siedzenie na toalecie + smartfon",
-    prevention: "Zasada „3 minut": jeśli nie ma efektu — wstań i wróć później",
+    prevention: 'Zasada „3 minut”: jeśli nie ma efektu — wstań i wróć później',
     source: {
       label: "Garg P., Singh P. (2017) — TONE technique",
       url: "https://pubmed.ncbi.nlm.nih.gov/28206729/",
