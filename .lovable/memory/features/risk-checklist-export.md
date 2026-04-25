@@ -61,3 +61,10 @@ type: feature
 - Łączy się z wyszukiwaniem (AND między filtrem providera a `nQuery`); aktywny filtr providera również auto-rozwija dopasowane karty (`filterActive` w `accordionValue`).
 - Guardy autosave openItems + auto-mark-read pomijają tryb filtra (analogicznie jak nQuery), żeby filtr nie nadpisywał zapisanej rozwinięcia ani nie oznaczał kart jako przeczytane bez intencji.
 - Chipy pokazują licznik czynników per provider; chip z `count === 0` jest disabled.
+
+## Tryb prywatny dla „przeczytane"
+- Storage key: `cml.hemoroidy.risk-factors.privacy.v1` ("0"/"1"). Sama preferencja jest persystowana — przeżywa refresh.
+- Gdy ON: `useEffect` autosave `readItems` zwraca wcześniej (`if (privacyMode) return`) i dodatkowo `removeItem(READ_STORAGE_KEY)` — czyści historyczne dane.
+- Lazy init `readItems` sprawdza preferencję zanim wczyta z localStorage — żeby przy włączonym privacy nie pokazywać starej historii po refreshu.
+- Włączenie z UI dodatkowo robi `setReadItems([])` (clear w pamięci) + toast z wyjaśnieniem. Wyłączenie też daje toast.
+- Switch w toolbarze obok licznika "Przeczytane" (zawsze widoczny gdy `!nQuery && filtered.length > 0`).
