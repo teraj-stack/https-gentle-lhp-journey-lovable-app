@@ -386,7 +386,11 @@ const RiskFactorsAccordion = () => {
         <Accordion
           type="multiple"
           className="space-y-3 sm:space-y-2.5"
-          value={openValues}
+          value={accordionValue}
+          onValueChange={(v) => {
+            // Pozwól na ręczne zwijanie tylko gdy nie filtrujemy wyszukiwarką
+            if (!nQuery) setOpenItems(v);
+          }}
         >
           {filtered.map((rf) => {
             const Icon = rf.Icon;
