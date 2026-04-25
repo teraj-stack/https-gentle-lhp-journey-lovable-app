@@ -60,6 +60,12 @@ interface VariantEntry {
    */
   ariaHeadingOverride?: string;
   description: string;
+  /**
+   * Krótka etykieta-chip (1 słowo) pokazywana w UI obok timestampu — np. PL
+   * „lokalnie" / „synchron.", EN „local" / „cross-tab". Musi być spójna z
+   * locale tooltipa, żeby badge i nagłówek tooltipa mówiły tym samym językiem.
+   */
+  shortBadge: string;
 }
 
 interface TranslationEntry {
@@ -87,6 +93,7 @@ const TRANSLATIONS: Record<Locale, TranslationEntry> = {
       heading: "Synchronizacja między kartami",
       description:
         "Zmiana auto-zapisu przyszła z innej otwartej karty (BroadcastChannel lub storage).",
+      shortBadge: "synchron.",
     },
     local: {
       heading: "Lokalna akcja w tej karcie",
@@ -94,6 +101,7 @@ const TRANSLATIONS: Record<Locale, TranslationEntry> = {
       ariaHeadingOverride: "Moja lokalna akcja w tej karcie",
       description:
         "Sam(a) przełączyłe(a)ś auto-zapis w tej karcie (Switch lub skrót Alt+Shift+A).",
+      shortBadge: "lokalnie",
     },
   },
   en: {
@@ -102,6 +110,7 @@ const TRANSLATIONS: Record<Locale, TranslationEntry> = {
       heading: "Cross-tab synchronization",
       description:
         "The auto-save change came from another open tab (BroadcastChannel or storage).",
+      shortBadge: "cross-tab",
     },
     local: {
       heading: "Local action in this tab",
@@ -109,6 +118,7 @@ const TRANSLATIONS: Record<Locale, TranslationEntry> = {
       ariaHeadingOverride: "My local action in this tab",
       description:
         "You toggled auto-save in this tab (Switch or Alt+Shift+A shortcut).",
+      shortBadge: "local",
     },
   },
   de: {
@@ -117,6 +127,7 @@ const TRANSLATIONS: Record<Locale, TranslationEntry> = {
       heading: "Tab-übergreifende Synchronisation",
       description:
         "Die Auto-Speichern-Änderung kam aus einem anderen geöffneten Tab (BroadcastChannel oder Storage).",
+      shortBadge: "tab-sync",
     },
     local: {
       heading: "Lokale Aktion in diesem Tab",
@@ -124,6 +135,7 @@ const TRANSLATIONS: Record<Locale, TranslationEntry> = {
       ariaHeadingOverride: "Meine lokale Aktion in diesem Tab",
       description:
         "Sie haben Auto-Speichern in diesem Tab umgeschaltet (Switch oder Tastenkürzel Alt+Umschalt+A).",
+      shortBadge: "lokal",
     },
   },
   it: {
@@ -132,6 +144,7 @@ const TRANSLATIONS: Record<Locale, TranslationEntry> = {
       heading: "Sincronizzazione tra schede",
       description:
         "La modifica del salvataggio automatico è arrivata da un'altra scheda aperta (BroadcastChannel o storage).",
+      shortBadge: "tra-schede",
     },
     local: {
       heading: "Azione locale in questa scheda",
@@ -139,6 +152,7 @@ const TRANSLATIONS: Record<Locale, TranslationEntry> = {
       ariaHeadingOverride: "La mia azione locale in questa scheda",
       description:
         "Hai attivato/disattivato il salvataggio automatico in questa scheda (Switch o scorciatoia Alt+Maiusc+A).",
+      shortBadge: "locale",
     },
   },
 };
@@ -158,6 +172,13 @@ export interface LastChangeTooltipContent {
   ariaHeading: string;
   /** Czy source jest traktowane jako „remote" (do warunkowego stylowania). */
   isRemote: boolean;
+  /**
+   * Krótka, jednowyrazowa etykieta-chip tłumaczona per locale (np. PL
+   * „lokalnie"/„synchron.", EN „local"/„cross-tab"). Komponent powinien
+   * wyświetlać JĄ zamiast hard-codowanego stringa, żeby badge i tooltip
+   * mówiły tym samym językiem.
+   */
+  shortBadge: string;
   /** Locale, w którym zwrócono treść — przydatne dla konsumenta (debug, testy). */
   locale: Locale;
 }
@@ -183,6 +204,7 @@ export const getLastChangeTooltipContent = (
     heading: variant.heading,
     ariaHeading: `${t.sourcePrefix}${variant.ariaHeadingOverride ?? variant.heading}`,
     description: variant.description,
+    shortBadge: variant.shortBadge,
     locale: resolved,
   };
 };

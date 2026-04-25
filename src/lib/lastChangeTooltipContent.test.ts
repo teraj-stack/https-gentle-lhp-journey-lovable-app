@@ -14,7 +14,7 @@
  * i `title` (fallback dla touch).
  */
 import { describe, it, expect } from "vitest";
-import { getLastChangeTooltipContent } from "./lastChangeTooltipContent";
+import { getLastChangeTooltipContent, SUPPORTED_LOCALES } from "./lastChangeTooltipContent";
 
 const buildTooltipText = (
   source: "remote" | "local" | null,
@@ -277,5 +277,53 @@ describe("getLastChangeTooltipContent — odporność na nietypowe wartości sou
       expect(content.description.length).toBeGreaterThan(0);
       expect(typeof content.isRemote).toBe("boolean");
     }
+  });
+});
+
+describe("getLastChangeTooltipContent — shortBadge per locale", () => {
+  // Każdy locale ma OSOBNY krótki chip dla local i remote — żeby badge w UI
+  // mówił tym samym językiem co tooltip i nigdy nie wracał do hard-codowanego
+  // PL „lokalnie" gdy user wybrał EN/DE/IT.
+  const expected: Record<
+    "pl" | "en" | "de" | "it",
+    { local: string; remote: string }
+  > = {
+    pl: { local: "lokalnie", remote: "synchron." },
+    en: { local: "local", remote: "cross-tab" },
+    de: { local: "lokal", remote: "tab-sync" },
+    it: { local: "locale", remote: "tra-schede" },
+  };
+
+  for (const [locale, { local, remote }] of Object.entries(expected)) {
+    it(`zwraca poprawny shortBadge dla locale=${locale}`, () => {
+      const localContent = getLastChangeTooltipContent("local", locale);
+      const remoteContent = getLastChangeTooltipContent("remote", locale);
+      expect(localContent.shortBadge).toBe(local);
+      expect(remoteContent.shortBadge).toBe(remote);
+      expect(localContent.shortBadge.trim()).toBe(localContent.shortBadge);
+      expect(remoteContent.shortBadge.trim()).toBe(remoteContent.shortBadge);
+      expect(localContent.shortBadge.length).toBeGreaterThan(0);
+      expect(remoteContent.shortBadge.length).toBeGreaterThan(0);
+    });
+  }
+
+  it("local i remote shortBadge są RÓŻNE w każdym locale", () => {
+    for (const locale of SUPPORTED_LOCALES) {
+      const local = getLastChangeTooltipContent("local", locale).shortBadge;
+      const remote = getLastChangeTooltipContent("remote", locale).shortBadge;
+      expect(local).not.toBe(remote);
+    }
+  });
+
+  it("BCP-47 z regionem (de-AT, it-CH, en-GB, pl-PL) → primary subtag", () => {
+    expect(getLastChangeTooltipContent("local", "de-AT").shortBadge).toBe("lokal");
+    expect(getLastChangeTooltipContent("local", "it-CH").shortBadge).toBe("locale");
+    expect(getLastChangeTooltipContent("local", "en-GB").shortBadge).toBe("local");
+    expect(getLastChangeTooltipContent("local", "pl-PL").shortBadge).toBe("lokalnie");
+  });
+
+  it("nieznany locale → fallback do PL shortBadge", () => {
+    expect(getLastChangeTooltipContent("local", "klingon").shortBadge).toBe("lokalnie");
+    expect(getLastChangeTooltipContent("remote", "ja-JP").shortBadge).toBe("synchron.");
   });
 });
