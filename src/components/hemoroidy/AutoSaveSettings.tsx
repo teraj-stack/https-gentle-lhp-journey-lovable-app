@@ -46,6 +46,7 @@ import {
   buildLastChangeTooltipModel,
   type TimeValueFormat,
 } from "@/lib/lastChangeTooltipModel";
+import { useLocalePreference } from "@/hooks/useLocalePreference";
 
 /**
  * Etykiety segmented control dla wyboru widoczności „Ostatniej zmiany".
