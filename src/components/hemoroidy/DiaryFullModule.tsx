@@ -52,6 +52,7 @@ import DiaryReminderBanner from "@/components/hemoroidy/DiaryReminderBanner";
 import DiaryReminderSettings from "@/components/hemoroidy/DiaryReminderSettings";
 import RiskThresholdsSettings from "@/components/hemoroidy/RiskThresholdsSettings";
 import DiaryTrendStats from "@/components/hemoroidy/DiaryTrendStats";
+import DiaryTrendSummary from "@/components/hemoroidy/DiaryTrendSummary";
 import DiaryWeeklySummary from "@/components/hemoroidy/DiaryWeeklySummary";
 import { toast } from "@/hooks/use-toast";
 
@@ -395,6 +396,9 @@ const DiaryFullModule = ({
             </LineChart>
           </ResponsiveContainer>
         </div>
+
+        {/* Auto-werdykt: kierunek trendu + najważniejszy dzień zmiany */}
+        <DiaryTrendSummary trend={trend} entries={entries} />
 
         {/* Wzbogacone statystyki trendu */}
         <DiaryTrendStats trend={trend} entries={entries} />

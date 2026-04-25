@@ -8,12 +8,16 @@ Dziennik 14 dni hemoroidów: anonimowy tracker w przeglądarce.
 
 - **Reusable component**: `src/components/hemoroidy/DiaryFullModule.tsx`
   - Props: `reminderVariant` ("diary-page" | "quiz-page"), `showReminderSettings`, `showExport`
-  - Zawiera: trend chart + **panel statystyk trendu** (`DiaryTrendStats.tsx`) + **auto-podsumowanie tygodniowe** (`DiaryWeeklySummary.tsx`: Tydzień 1 = dni 1-7, Tydzień 2 = dni 8-14, średnia, dominujący poziom, rozkład N/Ś/W, delta + komentarz narracyjny EBM zależny od kierunku zmiany), day picker (14-dniowy strip), edytor dnia (quiz 9 pytań + notatki), **przycisk „Zapisz dzień"** (variant `hero`, ikona Save/CheckCircle2 zależnie od completeness, toast potwierdzający), opcjonalnie eksport PDF/CSV i ustawienia przypomnień + clear all
+  - Zawiera: trend chart + **auto-werdykt trendu** (`DiaryTrendSummary.tsx`: regresja liniowa po wypełnionych dniach → spadek/utrzymanie/wzrost + najważniejszy dzień zmiany vs średnia poprzedzających) + **panel statystyk trendu** (`DiaryTrendStats.tsx`) + **auto-podsumowanie tygodniowe** (`DiaryWeeklySummary.tsx`: Tydzień 1 = dni 1-7, Tydzień 2 = dni 8-14, średnia, dominujący poziom, rozkład N/Ś/W, delta + komentarz narracyjny EBM zależny od kierunku zmiany), day picker (14-dniowy strip), edytor dnia (quiz 9 pytań + notatki), **przycisk „Zapisz dzień"** (variant `hero`, ikona Save/CheckCircle2 zależnie od completeness, toast potwierdzający), opcjonalnie eksport PDF/CSV i ustawienia przypomnień + clear all
   - Auto-zapis po każdej zmianie (writeStorage), przycisk daje pacjentowi jawne potwierdzenie
 - **Statystyki trendu** (`DiaryTrendStats.tsx`):
   - Tydzień vs poprzedni: średnia ostatnich 7d minus średnia poprzednich 7d → kolor emerald (poprawa) / destructive (regres) / muted (flat lub n/a)
   - Najdłuższa seria niskiego ryzyka: liczy consecutive `level==='low'`, luki (brak wpisu) NIE przerywają serii
   - Spójność: `filled/totalDays * 100%`
+- **Auto-werdykt trendu** (`DiaryTrendSummary.tsx`):
+  - Wymaga ≥2 wypełnionych dni; mniej → komunikat-zachęta.
+  - Kierunek: regresja liniowa (least squares) na (idx, score) wypełnionych dni → slope pkt/dzień. Progi: `<-0.3` spadek (emerald), `>0.3` wzrost (destructive), inaczej utrzymanie (muted). Pokazuje też prognozę 14-dniową (`slope*(n-1)`).
+  - Najważniejszy dzień zmiany: dla każdego wypełnionego dnia liczy `score − avg(poprzednich)`, wymaga ≥2 dni bazowych i `|delta|≥3 pkt`. Bierze maks `|delta|` (najmocniejszy odchył). Karta z datą długą (weekday + dzień + miesiąc), ikoną ↘/↗, deltą i scorem; jeśli wpis ma notatkę — cytuje fragment (line-clamp-2).
 - **Auto-podsumowanie tygodniowe** (`DiaryWeeklySummary.tsx`):
   - Dwie karty Tydzień 1/Tydzień 2 (slice 0-7 / 7-14 z trend), każda kolorowana wg dominującego poziomu (low=emerald, medium=primary, high=destructive)
   - Komentarz generowany przez `buildCommentary()` na podstawie delty: brak danych / start / poprawa (z wzrostem dni low) / stabilnie (|delta|<0.5) / regres (z dodatkowymi dniami high) — wszystkie z mikro-poradami EBM (błonnik 25-35g, woda 1.5-2l, max 3 min na toalecie)
