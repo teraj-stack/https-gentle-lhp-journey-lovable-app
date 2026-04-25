@@ -12,6 +12,7 @@ import {
   Info,
   TrendingUp,
   FileDown,
+  FileJson,
   FileSpreadsheet,
   TrendingDown,
   Minus,
