@@ -497,7 +497,7 @@ const DiaryFullModule = ({
     let firstError: string | null = null;
     payload.answers.forEach((a, qi) => {
       const result = setAnswer(payload.date, qi, a);
-      if (!result.ok && !firstError) firstError = result.message;
+      if (result.ok === false && !firstError) firstError = result.message;
     });
     if (firstError) {
       toast({
@@ -532,7 +532,7 @@ const DiaryFullModule = ({
     reader.onload = () => {
       const text = typeof reader.result === "string" ? reader.result : "";
       const result = parseImportedDayJson(text);
-      if (!result.ok) {
+      if (result.ok === false) {
         toast({
           variant: "destructive",
           title: "Nieprawidłowy plik",
