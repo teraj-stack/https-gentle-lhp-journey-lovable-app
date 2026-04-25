@@ -479,7 +479,7 @@ function checkCompositionArtifacts(
         key: "ariaText.line",
         reason: "double-space-artifact",
         got: line,
-        detail: "prefix „X: " plus dodatkowa spacja w value",
+        detail: "prefix 'X: ' plus dodatkowa spacja w value",
       });
     }
     // „Source: ”/„Czas: ” na końcu linii bez następującej treści.
