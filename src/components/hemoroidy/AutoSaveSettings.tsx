@@ -319,20 +319,20 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
   // ale kolor zielony rezerwujemy WYŁĄCZNIE dla zdalnej synchronizacji
   // (`lastChangeSource === "remote"`) — lokalne kliknięcia używają neutralnego koloru,
   // żeby nie sugerować, że właśnie coś przyszło z innej karty.
-  const lastSyncLabel =
-    lastChangeAt !== null ? formatTimestamp(lastChangeAt, timeFormatMode) : null;
+  //
+  // Walidacja `lastChangeAt` przez `isValidTimestamp` chroni przed degradacją
+  // do „Invalid Date" / NaN, gdyby kiedyś hook zwrócił 0 / niepoprawny payload —
+  // wtedy nie pokazujemy etykiety wcale (zamiast paska ze śmieciem).
+  const hasValidChangeAt = isValidTimestamp(lastChangeAt);
+  const lastSyncLabel = hasValidChangeAt
+    ? formatTimestamp(lastChangeAt as number, timeFormatMode)
+    : null;
   // Pełna data + godzina jako tooltip — pomocna gdy karta wisi długo otwarta.
-  const lastSyncFullDate =
-    lastChangeAt !== null
-      ? new Date(lastChangeAt).toLocaleString("pl-PL", {
-          day: "2-digit",
-          month: "long",
-          year: "numeric",
-          hour: "2-digit",
-          minute: "2-digit",
-          second: "2-digit",
-        })
-      : undefined;
+  // Korzystamy ze wspólnego helpera `formatFullTimestamp`, żeby format był
+  // identyczny we wszystkich miejscach (tooltip, mini-historia, diagnostyka).
+  const lastSyncFullDate = hasValidChangeAt
+    ? formatFullTimestamp(lastChangeAt as number)
+    : undefined;
   const isRemoteChange = lastChangeSource === "remote";
   // Pure helper sterujący kolorami etykiety — pokryty testami w lastChangeLabelStyle.test.ts.
   const labelStyle = getLastChangeLabelStyle(lastChangeSource, isRemoteSyncing);
