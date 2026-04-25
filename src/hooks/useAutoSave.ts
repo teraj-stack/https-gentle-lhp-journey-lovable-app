@@ -100,6 +100,42 @@ interface PongPayload {
 
 type ChannelPayload = StateBroadcastPayload | PingPayload | PongPayload;
 
+/**
+ * Payload zapisywany w `PROBE_KEY` przez inicjatora storage-pinga
+ * oraz w `PROBE_ECHO_KEY` przez każdą kartę odpowiadającą.
+ * Schemat jest celowo płaski (string→prymityw), żeby JSON.parse w handlerze
+ * storage event był taniem i bezpiecznie failował na przypadkowych wartościach.
+ */
+interface StorageProbePayload {
+  pingId: string;
+  origin: string;
+  label: string;
+  enabled: boolean;
+  /** Kiedy inicjator wysłał probe (ms epoch) — używane do liczenia latencji round-trip. */
+  sentAt: number;
+  /** Kiedy responder odebrał probe (ms epoch) — wypełniane tylko w echu. */
+  receivedAt?: number;
+}
+
+const safeParseProbe = (raw: string | null): StorageProbePayload | null => {
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as StorageProbePayload;
+    if (
+      typeof parsed?.pingId !== "string" ||
+      typeof parsed?.origin !== "string" ||
+      typeof parsed?.label !== "string" ||
+      typeof parsed?.enabled !== "boolean" ||
+      typeof parsed?.sentAt !== "number"
+    ) {
+      return null;
+    }
+    return parsed;
+  } catch {
+    return null;
+  }
+};
+
 /** Identyfikator instancji karty — generowany raz przy ładowaniu modułu. */
 const TAB_ID =
   isBrowser() && "crypto" in window && "randomUUID" in window.crypto
