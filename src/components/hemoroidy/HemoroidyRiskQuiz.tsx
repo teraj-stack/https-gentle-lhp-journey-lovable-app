@@ -342,7 +342,7 @@ const HemoroidyRiskQuiz = () => {
                 <TierIcon className={`w-7 h-7 ${tier.color} shrink-0 mt-0.5`} />
                 <div className="min-w-0">
                   <p className="text-[10px] sm:text-xs font-sans uppercase tracking-[0.14em] sm:tracking-[0.18em] text-muted-foreground">
-                    Twój wynik · {score} pkt · {tier.range}
+                    Twój wynik · {score} pkt · {tierRange}
                   </p>
                   <h3 className={`font-heading text-2xl md:text-3xl ${tier.color} leading-tight`}>
                     {tier.label}
