@@ -102,14 +102,17 @@ const pickSourceFile = (path: string): string => {
  * Best-effort: locate the line number where `key` is declared inside the
  * `locale` block of the given source file.
  *
- * Strategy:
- *  1. Find the line that starts the locale block — looks for `  pl: {`
- *     (with leading whitespace + colon + opening brace, the canonical
- *     object-literal-key declaration).
- *  2. From there, scan forward until brace depth returns to its starting
- *     value (= end of block) and look for `<key>:` along the way.
- *  3. If `key` contains a dot (e.g. `local.heading`), recurse: first
- *     locate the `local: {` sub-block within the locale, then the key.
+ * Strategy (indentation-based — robust for prettier-formatted object literals)
+ * ----------------------------------------------------------------------------
+ *  1. Find the line declaring the locale block (e.g. `  pl: {`). Capture
+ *     its leading-indent width.
+ *  2. For each segment in the dotted key, scan forward from the previous
+ *     match looking for a line whose leading-indent is EXACTLY one level
+ *     deeper than the parent (parent indent + 2 spaces — codebase
+ *     convention) AND whose first non-whitespace token is `<segment>:`.
+ *     Stop the scan if we hit a line dedented back to the parent's indent
+ *     (= we left the parent block).
+ *  3. The last segment's match line is the result.
  *
  * Returns 1-based line number, or null if not found.
  */
@@ -118,55 +121,49 @@ const findKeyLine = (
   locale: string,
   dottedKey: string,
 ): number | null => {
-  // Find locale block start. Anchor: leading whitespace + locale + ": {"
-  const localeRe = new RegExp(`^\\s*${locale}\\s*:\\s*{`);
-  let blockStart = -1;
+  const indentOf = (line: string): number => {
+    const m = line.match(/^( *)/);
+    return m ? m[1].length : 0;
+  };
+  const isKeyDecl = (line: string, key: string): boolean => {
+    const re = new RegExp(`^\\s*"?${key}"?\\s*:`);
+    return re.test(line);
+  };
+
+  // Step 1: find locale block start.
+  let parentLine = -1;
+  let parentIndent = -1;
   for (let i = 0; i < lines.length; i++) {
-    if (localeRe.test(lines[i])) {
-      blockStart = i;
+    if (isKeyDecl(lines[i], locale)) {
+      parentLine = i;
+      parentIndent = indentOf(lines[i]);
       break;
     }
   }
-  if (blockStart === -1) return null;
+  if (parentLine === -1) return null;
 
-  // Walk segments of the dotted key, descending into sub-blocks.
+  // Step 2: descend through each segment.
   const segments = dottedKey.split(".");
-  let cursor = blockStart;
-  let depthAtCursor = 0; // brace depth relative to start of current block
+  let cursor = parentLine;
+  let curParentIndent = parentIndent;
 
   for (let s = 0; s < segments.length; s++) {
     const seg = segments[s];
     const isLast = s === segments.length - 1;
-    const segRe = new RegExp(`^\\s*"?${seg}"?\\s*:`);
-
-    // Scan forward from cursor for the segment, tracking brace depth so we
-    // don't step out of the current scope.
     let found = -1;
-    let depth = depthAtCursor;
-    // Count opening brace on the cursor line itself (first iteration: locale
-    // block's `{` opens depth 1; subsequent iterations: sub-block start).
-    for (let i = cursor; i < lines.length; i++) {
-      const line = lines[i];
-      if (i > cursor) {
-        // Adjust depth based on braces in this line BEFORE matching, so a
-        // closing `}` at start of line takes us out of scope cleanly.
-        const opens = (line.match(/{/g) || []).length;
-        const closes = (line.match(/}/g) || []).length;
-        if (closes > opens && depth + opens - closes < depthAtCursor) {
-          // Exited the block we were searching in.
-          break;
-        }
-        depth += opens - closes;
-      } else {
-        // On the cursor line, count its braces to set initial depth.
-        const opens = (line.match(/{/g) || []).length;
-        const closes = (line.match(/}/g) || []).length;
-        depth = depthAtCursor + opens - closes;
-      }
 
-      // Match key at the current depth (relative to block start).
-      // We want keys directly inside the current block, not nested deeper.
-      if (segRe.test(line) && depth === depthAtCursor + 1) {
+    for (let i = cursor + 1; i < lines.length; i++) {
+      const line = lines[i];
+      const trimmed = line.trim();
+      if (trimmed.length === 0) continue; // blank
+      const indent = indentOf(line);
+      // Left the parent block (line is dedented to parent or shallower).
+      if (indent <= curParentIndent) break;
+      // Match only at the immediate child level — anything deeper is a
+      // grandchild (e.g. inside `local: { … }`) and should be skipped.
+      // Codebase convention: 2-space indent step.
+      if (indent !== curParentIndent + 2) continue;
+      if (isKeyDecl(line, seg)) {
         found = i;
         break;
       }
@@ -174,10 +171,9 @@ const findKeyLine = (
     if (found === -1) return null;
     if (isLast) return found + 1; // 1-based
 
-    // Descend into sub-block: cursor moves to the line that opens the
-    // sub-block (which is the matched line itself, since shape is `seg: {`).
+    // Descend: this matched line opens the next sub-block.
     cursor = found;
-    depthAtCursor += 1;
+    curParentIndent = indentOf(lines[found]);
   }
   return null;
 };
