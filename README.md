@@ -226,6 +226,133 @@ less /tmp/i18n-full.log
 diff -u /tmp/i18n-baseline.txt /tmp/i18n-annotations.txt
 ```
 
+#### One-shot PASS/FAIL summary by error type
+
+Copy-paste this into your terminal (or save as `scripts/i18n-summary.sh` and `chmod +x`). It runs all three i18n contract tests, captures `::error` / `::warning` annotations, and prints a per-reason PASS/FAIL count plus an overall verdict. Exit code is `0` only when **every** error-severity reason has zero hits.
+
+```sh
+#!/usr/bin/env bash
+# i18n-summary.sh — run all i18n contract tests and print a per-reason PASS/FAIL summary.
+# Usage: bash i18n-summary.sh   (or paste directly into a terminal)
+set -euo pipefail
+
+LOG=/tmp/i18n-summary.log
+ANN=/tmp/i18n-summary-annotations.txt
+
+# All five reasons the validator can emit. Severity in parentheses is informational
+# only — the actual classification comes from WARNING_REASONS in i18nGithubAnnotations.ts.
+ERROR_REASONS=(missing-required-key placeholder-mismatch undeclared-key wrong-type)
+WARNING_REASONS=(empty-optional-value)
+
+echo "▶ Running i18n contract tests (this takes ~10s)…"
+# `|| true` — vitest exits non-zero on any failing test; we want to inspect annotations
+# regardless. The final exit code is recomputed from the per-reason counts below.
+GITHUB_ACTIONS=true I18N_ACTIVE_LOCALES="${I18N_ACTIVE_LOCALES:-pl,en,de,it}" \
+  bunx vitest run \
+    src/lib/i18nRequiredKeys.test.ts \
+    src/lib/i18nContract.test.ts \
+    src/lib/i18nPlaceholders.test.ts \
+    > "$LOG" 2>&1 || true
+
+grep '^::' "$LOG" | sort -u > "$ANN" || true
+TOTAL=$(wc -l < "$ANN" | tr -d ' ')
+
+echo
+echo "═══════════════════════════════════════════════════════"
+echo "  i18n contract — PASS/FAIL summary by reason"
+echo "═══════════════════════════════════════════════════════"
+printf "  %-26s %-10s %s\n" "REASON" "SEVERITY" "VERDICT"
+echo "  ---------------------------------------------------"
+
+FAIL_COUNT=0
+for reason in "${ERROR_REASONS[@]}"; do
+  hits=$(grep -c "reason=$reason" "$ANN" || true)
+  if [ "$hits" -eq 0 ]; then
+    printf "  %-26s %-10s ✅ PASS\n" "$reason" "error"
+  else
+    printf "  %-26s %-10s ❌ FAIL (%d)\n" "$reason" "error" "$hits"
+    FAIL_COUNT=$((FAIL_COUNT + hits))
+  fi
+done
+
+for reason in "${WARNING_REASONS[@]}"; do
+  hits=$(grep -c "reason=$reason" "$ANN" || true)
+  if [ "$hits" -eq 0 ]; then
+    printf "  %-26s %-10s ✅ PASS\n" "$reason" "warning"
+  else
+    printf "  %-26s %-10s ⚠️  WARN (%d)\n" "$reason" "warning" "$hits"
+  fi
+done
+
+echo "  ---------------------------------------------------"
+printf "  %-26s %-10s %s\n" "TOTAL ANNOTATIONS" "—" "$TOTAL"
+echo "═══════════════════════════════════════════════════════"
+echo
+echo "  Full log:        $LOG"
+echo "  Annotations:     $ANN"
+echo
+
+if [ "$FAIL_COUNT" -eq 0 ]; then
+  echo "✅ Overall: PASS — no error-severity violations."
+  exit 0
+else
+  echo "❌ Overall: FAIL — $FAIL_COUNT error-severity violation(s). See $ANN for details."
+  exit 1
+fi
+```
+
+Sample output (clean repo — no drift):
+
+```
+▶ Running i18n contract tests (this takes ~10s)…
+
+═══════════════════════════════════════════════════════
+  i18n contract — PASS/FAIL summary by reason
+═══════════════════════════════════════════════════════
+  REASON                     SEVERITY   VERDICT
+  ---------------------------------------------------
+  missing-required-key       error      ✅ PASS
+  placeholder-mismatch       error      ✅ PASS
+  undeclared-key             error      ✅ PASS
+  wrong-type                 error      ✅ PASS
+  empty-optional-value       warning    ✅ PASS
+  ---------------------------------------------------
+  TOTAL ANNOTATIONS          —          0
+═══════════════════════════════════════════════════════
+
+  Full log:        /tmp/i18n-summary.log
+  Annotations:     /tmp/i18n-summary-annotations.txt
+
+✅ Overall: PASS — no error-severity violations.
+```
+
+Sample output (after pasting fixtures #2 + #4 + #5 from the [End-to-end walkthrough](#end-to-end-walkthrough--one-fixture-per-error-type-start-to-finish)):
+
+```
+═══════════════════════════════════════════════════════
+  i18n contract — PASS/FAIL summary by reason
+═══════════════════════════════════════════════════════
+  REASON                     SEVERITY   VERDICT
+  ---------------------------------------------------
+  missing-required-key       error      ✅ PASS
+  placeholder-mismatch       error      ❌ FAIL (1)
+  undeclared-key             error      ✅ PASS
+  wrong-type                 error      ❌ FAIL (1)
+  empty-optional-value       warning    ⚠️  WARN (1)
+  ---------------------------------------------------
+  TOTAL ANNOTATIONS          —          3
+═══════════════════════════════════════════════════════
+
+❌ Overall: FAIL — 2 error-severity violation(s). See /tmp/i18n-summary-annotations.txt for details.
+```
+
+**Notes on behaviour**
+
+- **Locale scope** — defaults to `pl,en,de,it` so all five fixture types are in scope. Override with `I18N_ACTIVE_LOCALES=pl,en bash i18n-summary.sh` to mimic the default CI scope.
+- **Exit code** — `0` iff every error-severity reason is `PASS`. `empty-optional-value` (the only warning reason) **never** flips the verdict, matching the in-CI behaviour where warnings stay green.
+- **Dedup** — `sort -u` collapses duplicate annotations (a stacked fixture can trip the same key in multiple tests). Counts are post-dedup, so the table mirrors what reviewers actually see in the PR diff.
+- **Wire into CI** — drop the script into `scripts/`, add a `"i18n:summary": "bash scripts/i18n-summary.sh"` entry to `package.json`, and call it from `.github/workflows/i18n-check.yml` for a compact summary line in the Actions log alongside the existing inline annotations.
+
 #### "I ran the command and got nothing" — quick triage
 
 | Symptom | Most likely cause | Fix |
