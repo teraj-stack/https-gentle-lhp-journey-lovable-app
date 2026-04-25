@@ -429,7 +429,7 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
               A
             </kbd>
           </p>
-          {lastSyncLabel && (
+          {lastSyncLabel && showLastChangeLabel && (
             <div
               key={lastChangeAt ?? "none"}
               className={`text-[11px] font-sans inline-flex items-center gap-1.5 transition-colors animate-fade-in ${
