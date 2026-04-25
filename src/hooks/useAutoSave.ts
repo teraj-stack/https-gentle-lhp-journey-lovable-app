@@ -230,6 +230,9 @@ export const useAutoSave = () => {
       const statePayload = data as StateBroadcastPayload;
       if (typeof statePayload.enabled !== "boolean") return;
       if (statePayload.origin === TAB_ID) return; // ignorujemy echo własnego nadania
+      // Anti-race: ignoruj wiadomości starsze lub równe ostatnio zaaplikowanej wersji.
+      if (compareVersions(statePayload.version, lastAppliedVersionRef.current) <= 0) return;
+      lastAppliedVersionRef.current = statePayload.version ?? [Date.now(), 0];
       setEnabled(statePayload.enabled);
       markRemoteSync();
     };
