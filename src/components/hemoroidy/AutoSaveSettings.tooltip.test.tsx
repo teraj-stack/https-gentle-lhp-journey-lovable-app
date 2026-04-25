@@ -1,5 +1,5 @@
 /**
- * Test integracyjny: `AutoSaveSettings` — tooltip „Ostatnia zmiana" pokazuje
+ * Test integracyjny: `AutoSaveSettings` — tooltip „Ostatnia zmiana” pokazuje
  * właściwy nagłówek źródła zarówno w widzialnej etykiecie/badge'u, jak i w
  * `aria-label` (oraz natywnym `title` jako fallbacku dla touch).
  *
@@ -9,7 +9,7 @@
  *    BEZ stymulowania BroadcastChannel/storage (w jsdom BC nie istnieje,
  *    a sterowanie przez storage event jest nondeterministyczne).
  *  - Weryfikujemy DOM po renderze:
- *      a) badge „lokalnie" pojawia się WYŁĄCZNIE dla local (regression guard
+ *      a) badge „lokalnie” pojawia się WYŁĄCZNIE dla local (regression guard
  *         na to, że zielony akcent nigdy nie zostanie błędnie pokazany dla
  *         remote, ani odwrotnie),
  *      b) `aria-label` triggera tooltipa zaczyna się od właściwego prefiksu
@@ -17,7 +17,7 @@
  *         i high-contrast mode, więc MUSI być spójna z wybranym źródłem,
  *      c) `title` triggera (fallback dla touch) zawiera ten sam prefiks,
  *      d) kontrakt cross-language: stringi user-facing używają polskiego
- *         „karta/karcie", nigdy anglicyzmu „tab".
+ *         „karta/karcie”, nigdy anglicyzmu „tab”.
  *
  * Świadomie NIE testujemy otwarcia popovera Radix przez hover — w jsdom
  * portal + delayDuration są kruche i powodują flakiness. Treść popovera
@@ -77,12 +77,12 @@ const renderPanel = () =>
 
 /**
  * Trigger tooltipa to span z `cursor-help` i `tabIndex=0` zawierający
- * tekst „Ostatnia zmiana:". Wybieramy go po roli "generic" + `title` >
- * pewniej: po obecności tekstu „Ostatnia zmiana:" i poszukujemy
+ * tekst „Ostatnia zmiana:”. Wybieramy go po roli "generic" + `title` >
+ * pewniej: po obecności tekstu „Ostatnia zmiana:” i poszukujemy
  * najbliższego rodzica z `title` i `aria-label`.
  */
 const findTriggerByLabel = (): HTMLElement => {
-  // Trigger ma w sobie tekst „Ostatnia zmiana:". `getByText` z funkcją
+  // Trigger ma w sobie tekst „Ostatnia zmiana:”. `getByText` z funkcją
   // matchera obsługuje rozbity tekst (interpunkcja + <strong>).
   const labelNode = screen.getByText((_, node) => {
     if (!node) return false;
@@ -100,11 +100,11 @@ const findTriggerByLabel = (): HTMLElement => {
   return current;
 };
 
-describe("AutoSaveSettings — tooltip „Ostatnia zmiana" wybiera nagłówek per źródło", () => {
+describe("AutoSaveSettings — tooltip „Ostatnia zmiana” wybiera nagłówek per źródło", () => {
   beforeEach(() => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date(FROZEN_NOW));
-    // Reset stanu mocka przed każdym testem — defaultowo „brak zmiany".
+    // Reset stanu mocka przed każdym testem — defaultowo „brak zmiany”.
     mockLastChangeSource = null;
     mockLastChangeAt = null;
     mockEnabled = true;
@@ -116,7 +116,7 @@ describe("AutoSaveSettings — tooltip „Ostatnia zmiana" wybiera nagłówek pe
     vi.useRealTimers();
   });
 
-  it("dla source='remote' aria-label i title zawierają „Synchronizacja między kartami", () => {
+  it("dla source='remote' aria-label i title zawierają „Synchronizacja między kartami”, () => {
     mockLastChangeSource = "remote";
     mockLastChangeAt = FROZEN_NOW;
 
@@ -132,11 +132,11 @@ describe("AutoSaveSettings — tooltip „Ostatnia zmiana" wybiera nagłówek pe
     // Anty-regresja: nigdy nie miesza wariantów.
     expect(ariaLabel).not.toContain("Lokalna akcja w tej karcie");
     expect(title).not.toContain("Lokalna akcja w tej karcie");
-    // Badge „lokalnie" jest WYŁĄCZNIE dla local — przy remote nie istnieje.
+    // Badge „lokalnie” jest WYŁĄCZNIE dla local — przy remote nie istnieje.
     expect(screen.queryByText("lokalnie")).not.toBeInTheDocument();
   });
 
-  it("dla source='local' aria-label i title zawierają „Moja lokalna akcja w tej karcie", () => {
+  it("dla source='local' aria-label i title zawierają „Moja lokalna akcja w tej karcie”, () => {
     mockLastChangeSource = "local";
     mockLastChangeAt = FROZEN_NOW;
 
@@ -151,7 +151,7 @@ describe("AutoSaveSettings — tooltip „Ostatnia zmiana" wybiera nagłówek pe
     expect(ariaLabel).not.toContain("Synchronizacja między kartami");
     expect(title).not.toContain("Synchronizacja między kartami");
 
-    // Widzialny badge „lokalnie" musi się pokazać (visible regression guard
+    // Widzialny badge „lokalnie” musi się pokazać (visible regression guard
     // na styl + ml-1.5 spacing). aria-label badge'a też musi mówić o źródle.
     const badge = screen.getByText("lokalnie");
     expect(badge).toBeInTheDocument();
@@ -190,9 +190,9 @@ describe("AutoSaveSettings — tooltip „Ostatnia zmiana" wybiera nagłówek pe
     expect(ariaLabel).not.toContain("Synchronizacja między kartami");
   });
 
-  it("aria-label NIGDY nie używa anglicyzmu „tab" — zawsze polskie „karta/karcie", () => {
+  it("aria-label NIGDY nie używa anglicyzmu „tab” — zawsze polskie „karta/karcie”, () => {
     // Reguła z `mem://design/ui-language-tab-vs-karta`: cały interfejs po
-    // polsku mówi „karta", nigdy „tab"/„cross-tab"/„local-tab". Test pilnuje,
+    // polsku mówi „karta”, nigdy „tab”/„cross-tab”/„local-tab”. Test pilnuje,
     // żeby copy w aria-label triggera było zgodne z badge'em i tooltipem
     // (wszystko korzysta z `getLastChangeTooltipContent`).
     for (const source of ["remote", "local"] as const) {
@@ -203,10 +203,10 @@ describe("AutoSaveSettings — tooltip „Ostatnia zmiana" wybiera nagłówek pe
       const trigger = findTriggerByLabel();
       const ariaLabel = trigger.getAttribute("aria-label") ?? "";
 
-      // Nie pojawia się anglicyzm „tab" ani jego pochodne.
+      // Nie pojawia się anglicyzm „tab” ani jego pochodne.
       expect(ariaLabel).not.toMatch(/\btab\b/i);
       expect(ariaLabel).not.toMatch(/cross-tab|within-tab|local-tab/i);
-      // Pojawia się polski rdzeń „kart-/karc-" (karta/karty/kartami/karcie).
+      // Pojawia się polski rdzeń „kart-/karc-” (karta/karty/kartami/karcie).
       expect(ariaLabel.toLowerCase()).toMatch(/\bkar[ct]/);
 
       unmount();
