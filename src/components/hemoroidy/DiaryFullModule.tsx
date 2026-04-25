@@ -161,12 +161,51 @@ const DiaryFullModule = ({
   showReminderSettings = true,
   showExport = true,
 }: DiaryFullModuleProps) => {
-  const { entries, getEntry, setAnswer, setNotes, removeEntry, clearAll, last14Trend, maxScore, thresholds } =
-    useDailyDiary();
+  const {
+    entries,
+    getEntry,
+    setAnswer: persistSetAnswer,
+    setNotes: persistSetNotes,
+    removeEntry,
+    clearAll,
+    last14Trend,
+    maxScore,
+    thresholds,
+  } = useDailyDiary();
+
+  const { enabled: autoSaveEnabled } = useAutoSave();
 
   const days = useMemo(() => last14DaysKeys(), []);
   const [activeDate, setActiveDate] = useState<string>(todayKey());
-  const entry = getEntry(activeDate);
+
+  /**
+   * Draft overlay — używany TYLKO gdy auto-zapis jest WYŁĄCZONY.
+   * Mapa dnia → częściowy `DiaryEntry` z lokalnymi zmianami pacjenta, które jeszcze
+   * NIE trafiły do storage. Po włączeniu auto-zapisu lub po kliknięciu „Zapisz dzień"
+   * cały draft jest flushowany do storage przez `flushDraft()`.
+   *
+   * Trzymamy też `Set<number>` indeksów pytań, gdzie pacjent celowo cofnął odpowiedź
+   * (żeby odróżnić „pole puste w drafcie = brak edycji" od „pole celowo wyczyszczone").
+   */
+  const [draftAnswers, setDraftAnswers] = useState<Record<string, Record<number, number | null>>>({});
+  const [draftNotes, setDraftNotes] = useState<Record<string, string>>({});
+
+  // Merguje storage'owy entry z draftem (jeśli istnieje) — tak by UI od razu pokazywało zmiany.
+  const baseEntry = getEntry(activeDate);
+  const entry = useMemo(() => {
+    const da = draftAnswers[activeDate];
+    const dn = draftNotes[activeDate];
+    if (!da && dn === undefined) return baseEntry;
+    const mergedAnswers = baseEntry.answers.map((a, i) =>
+      da && i in da ? da[i] : a,
+    );
+    return {
+      ...baseEntry,
+      answers: mergedAnswers,
+      notes: dn !== undefined ? dn : baseEntry.notes,
+    };
+  }, [baseEntry, draftAnswers, draftNotes, activeDate]);
+
   const trend = last14Trend();
 
   const completed = entry.answers.filter((a) => a !== null).length;
