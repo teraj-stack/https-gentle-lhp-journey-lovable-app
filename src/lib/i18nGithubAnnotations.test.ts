@@ -23,6 +23,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import {
   emitGithubAnnotations,
+  classifyReasonSeverity,
   __findKeyLineForTesting,
   __stripTopPrefixForTesting,
   __getSourceLineSnippetForTesting,
