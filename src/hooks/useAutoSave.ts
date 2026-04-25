@@ -362,6 +362,13 @@ export const useAutoSave = () => {
    * może przyjść spoza kolejki). [0,0] = nic jeszcze nie zaaplikowano.
    */
   const lastAppliedVersionRef = useRef<[number, number]>([0, 0]);
+  /**
+   * Lustro `transport` w refie — `sendPing` jest stabilnym callbackiem (deps: []),
+   * a chcemy w nim odczytać AKTUALNY transport bez wymuszania re-bindu nasłuchów.
+   */
+  const transportRef = useRef<"broadcast" | "storage-fallback">(
+    isBrowser() && typeof BroadcastChannel !== "undefined" ? "broadcast" : "storage-fallback",
+  );
 
   const markRemoteSync = useCallback(
     (source: SyncHistoryEntry["source"], enabledValue: boolean) => {
