@@ -1059,11 +1059,14 @@ describe("ariaText guard — brak pustych linii i osieroconych prefiksów", () =
    * Helper asercji — rzuca jeżeli `ariaText` narusza inwarianty.
    * Współdzielony przez wszystkie scenariusze tej sekcji.
    */
+  const ALL_TIME_PREFIXES = ["Czas: ", "Time: ", "Zeit: ", "Ora: "] as const;
+  type AnyTimePrefix = (typeof ALL_TIME_PREFIXES)[number];
+
   const assertAriaTextInvariants = (
     ariaText: string,
     {
       expectedTimePrefix,
-    }: { expectedTimePrefix: "Czas: " | "Time: " | null },
+    }: { expectedTimePrefix: AnyTimePrefix | null },
   ) => {
     // 1. Brak pustych linii (\n\n lub \n   \n).
     expect(ariaText, "ariaText nie może mieć pustych linii").not.toMatch(/\n\s*\n/);
@@ -1080,8 +1083,8 @@ describe("ariaText guard — brak pustych linii i osieroconych prefiksów", () =
       ).toBeGreaterThan(0);
     }
 
-    // 4. Brak osieroconego prefiksu „Czas: " / „Time: ".
-    for (const prefix of ["Czas: ", "Time: "] as const) {
+    // 4. Brak osieroconego prefiksu w żadnym wspieranym języku.
+    for (const prefix of ALL_TIME_PREFIXES) {
       for (const [idx, line] of lines.entries()) {
         expect(
           line.trim() === prefix.trim(),
