@@ -182,8 +182,12 @@ export const buildLastChangeTooltipModel = (
 ): LastChangeTooltipModel => {
   const content = getLastChangeTooltipContent(input.source);
 
-  const smoothFull = smoothTimeValue(input.fullDate);
-  const smoothRelative = smoothTimeValue(input.relativeLabel);
+  // Tryb formatowania jest STOSOWANY RAZ — oba kanały (view + a11y) czytają
+  // wynikowy `timeValue`, więc niemożliwe jest rozjechanie się formatu między
+  // widocznym tooltipem a aria-label/title.
+  const format: TimeValueFormat = input.format ?? "single-space";
+  const smoothFull = smoothTimeValue(input.fullDate, format);
+  const smoothRelative = smoothTimeValue(input.relativeLabel, format);
 
   // Wybór wartości czasu: full preferowane, relative jako fallback.
   // Gdy oba są puste — `timeValue` zostaje "" i blokuje renderowanie linii.
