@@ -30,6 +30,7 @@ import {
   useLastChangeVisibility,
   type LastChangeVisibility,
 } from "@/hooks/useLastChangeVisibility";
+import { getLastChangeLabelStyle } from "@/lib/lastChangeLabelStyle";
 
 /**
  * Etykiety segmented control dla wyboru widoczności „Ostatniej zmiany".
