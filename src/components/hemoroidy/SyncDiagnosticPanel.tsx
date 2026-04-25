@@ -140,6 +140,8 @@ const formatRelative = (timestamp: number): string => {
 const SyncDiagnosticPanel = ({
   transport,
   degradationInfo,
+  degradationHistory,
+  clearDegradationHistory,
   simulateFallback,
   isBroadcastSupported,
   tabLabel,
@@ -149,6 +151,41 @@ const SyncDiagnosticPanel = ({
 }: SyncDiagnosticPanelProps) => {
   const [env] = useState(() => detectEnvironment());
   const [copied, setCopied] = useState(false);
+  /**
+   * Aktywne filtry typów degradacji. `null` = pokaż wszystkie. Set zamiast
+   * tablicy, żeby toggle był O(1) i porównania w mapie były czytelne.
+   * `simulation` celowo nie jest w UI filtrów (to akcja diagnostyczna usera,
+   * nie awaria) — ale jeśli pojawi się w historii, dalej jest liczona w „Razem".
+   */
+  const [activeFilters, setActiveFilters] = useState<Set<DegradationCause>>(new Set());
+
+  /** Liczniki per kategoria — zliczamy z pełnej historii, niezależnie od filtra. */
+  const counts = useMemo(() => {
+    const acc: Record<DegradationCause, number> = {
+      "api-missing": 0,
+      "constructor-exception": 0,
+      messageerror: 0,
+      "postmessage-failure": 0,
+      simulation: 0,
+    };
+    for (const entry of degradationHistory) acc[entry.cause] += 1;
+    return acc;
+  }, [degradationHistory]);
+
+  /** Lista po zastosowaniu filtra (jeśli pusty filter set → pokaż wszystkie). */
+  const visibleHistory = useMemo(() => {
+    if (activeFilters.size === 0) return degradationHistory;
+    return degradationHistory.filter((entry) => activeFilters.has(entry.cause));
+  }, [degradationHistory, activeFilters]);
+
+  const toggleFilter = (cause: DegradationCause) => {
+    setActiveFilters((prev) => {
+      const next = new Set(prev);
+      if (next.has(cause)) next.delete(cause);
+      else next.add(cause);
+      return next;
+    });
+  };
 
   // Auto-refresh względnych etykiet czasu co 15 s, ale tylko gdy mamy co odświeżać.
   const [, setTick] = useState(0);
