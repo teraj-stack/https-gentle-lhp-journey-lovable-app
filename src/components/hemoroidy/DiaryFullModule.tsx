@@ -49,7 +49,13 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useDailyDiary, last14DaysKeys, todayKey } from "@/hooks/useDailyDiary";
 import { HEMOROIDY_QUESTIONS, RiskLevel } from "@/lib/hemoroidyQuizData";
-import { buildDiarySummary, exportDiaryCsv, exportDiaryPdf } from "@/lib/diaryExport";
+import {
+  buildDiarySummary,
+  exportDiaryCsv,
+  exportDiaryPdf,
+  exportSingleDayJson,
+  exportSingleDayPdf,
+} from "@/lib/diaryExport";
 import DiaryReminderBanner from "@/components/hemoroidy/DiaryReminderBanner";
 import DiaryReminderSettings from "@/components/hemoroidy/DiaryReminderSettings";
 import RiskThresholdsSettings from "@/components/hemoroidy/RiskThresholdsSettings";
