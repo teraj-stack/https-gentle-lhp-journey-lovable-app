@@ -93,6 +93,7 @@ describe("i18nGithubAnnotations — emitGithubAnnotations", () => {
   let logSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
+    __resetAnnotationDedupForTesting();
     logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
   });
   afterEach(() => {
@@ -209,6 +210,7 @@ describe("i18nGithubAnnotations — line hint embedded in CI annotations", () =>
   let logSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
+    __resetAnnotationDedupForTesting();
     process.env.GITHUB_ACTIONS = "true";
     logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
   });
