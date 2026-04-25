@@ -392,25 +392,39 @@ describe("i18n placeholder parity — dynamic values appear exactly N times in a
         });
       }
 
-      // qualifier → 1.
-      const qualifierMatch = aria.match(/\([^)]+\)/g) ?? [];
-      if (qualifierMatch.length === 0) {
+      // qualifier → dokładnie 1. Liczymy DOKŁADNY string z buildera, NIE
+      // regexem na nawiasach (description sama je zawiera w niektórych locale).
+      const qualifier = deriveQualifierForLocale(locale);
+      if (qualifier.length === 0) {
         violations.push({
           locale,
           scenario: "relative-fallback",
           key: "relativeQualifier",
           reason: "qualifier-missing-in-fallback",
           got: aria,
+          detail: "deriveQualifierForLocale zwrócił pusty string — sprawdź TIME_LINE_TRANSLATIONS",
         });
-      } else if (qualifierMatch.length > 1) {
-        violations.push({
-          locale,
-          scenario: "relative-fallback",
-          key: "relativeQualifier",
-          reason: "qualifier-duplicated-in-fallback",
-          got: aria,
-          detail: `count=${qualifierMatch.length} (${qualifierMatch.join(", ")})`,
-        });
+      } else {
+        const cQual = countOccurrences(aria, qualifier);
+        if (cQual === 0) {
+          violations.push({
+            locale,
+            scenario: "relative-fallback",
+            key: "relativeQualifier",
+            reason: "qualifier-missing-in-fallback",
+            got: aria,
+            detail: `qualifier="${qualifier}" expected 1×, found 0`,
+          });
+        } else if (cQual > 1) {
+          violations.push({
+            locale,
+            scenario: "relative-fallback",
+            key: "relativeQualifier",
+            reason: "qualifier-duplicated-in-fallback",
+            got: aria,
+            detail: `qualifier="${qualifier}" count=${cQual}`,
+          });
+        }
       }
 
       checkCompositionArtifacts(locale, "relative-fallback", aria, violations);
