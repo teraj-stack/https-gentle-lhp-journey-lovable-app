@@ -74,6 +74,7 @@ const readExport = async (relPath, exportName) => {
 /**
  * Strip TypeScript-only syntax from a value RHS so JSON.parse can take it:
  *  - inline AND trailing `as const` suffixes (any depth)
+ *  - `satisfies <Type>` clauses (TS 4.9+) including generic type args
  *  - trailing commas inside arrays/objects
  *  - single-quoted strings → double-quoted
  *  - bare identifier object keys → quoted (JSON requires string keys)
@@ -83,6 +84,10 @@ const tsValueToJson = (raw) => {
   let s = raw;
   // Drop ALL `as const` occurrences (inline like `["x"] as const,` and trailing).
   s = s.replace(/\s+as\s+const\b/g, "");
+  // Drop `satisfies <Type>` — match the keyword and consume everything that
+  // looks like a TS type expression (idents, `<…>`, `[]`, `|`, `&`, `.`, spaces)
+  // until we hit a JSON-structural char (`,`, `}`, `]`) or end-of-string.
+  s = s.replace(/\s+satisfies\s+[A-Za-z_$][\w$.<>|&\[\] ]*/g, "");
   // Strip line comments. Naive but safe here — our inputs are simple literals.
   s = s.replace(/\/\/[^\n]*/g, "");
   // Drop trailing commas in arrays/objects: `,]` → `]`, `,}` → `}`
