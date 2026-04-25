@@ -24,6 +24,20 @@ import { useCallback, useEffect, useRef, useState } from "react";
 const STORAGE_KEY = "cml.hemoroidy.autosave.v1";
 const EVENT_NAME = "cml:autosave-updated";
 const CHANNEL_NAME = "cml-autosave";
+/**
+ * Klucze storage używane do testu synchronizacji w trybie storage-fallback.
+ * Mechanizm: inicjator zapisuje JSON-payload w `PROBE_KEY` (nie wystrzeli to
+ * `storage` eventu w jego własnej karcie — to z założenia, bo nas nie interesuje
+ * własne echo). Inne karty widzą event, deserializują payload i odpowiadają
+ * wpisem w `PROBE_ECHO_KEY` z tym samym `pingId`. Inicjator zbiera echa
+ * przez okno PING_COLLECTION_WINDOW_MS — identycznie jak BC pong, tylko
+ * przez storage. To pozwala mierzyć latencję storage round-trip i policzyć
+ * aktywne karty nawet bez BroadcastChannel.
+ *
+ * Wartości są krótkotrwałe (czyszczone po użyciu/timeout) — nie rośnie storage.
+ */
+const PROBE_KEY = "cml.autosave.probe.v1";
+const PROBE_ECHO_KEY = "cml.autosave.probe-echo.v1";
 
 const isBrowser = () => typeof window !== "undefined";
 
@@ -86,6 +100,42 @@ interface PongPayload {
 
 type ChannelPayload = StateBroadcastPayload | PingPayload | PongPayload;
 
+/**
+ * Payload zapisywany w `PROBE_KEY` przez inicjatora storage-pinga
+ * oraz w `PROBE_ECHO_KEY` przez każdą kartę odpowiadającą.
+ * Schemat jest celowo płaski (string→prymityw), żeby JSON.parse w handlerze
+ * storage event był taniem i bezpiecznie failował na przypadkowych wartościach.
+ */
+interface StorageProbePayload {
+  pingId: string;
+  origin: string;
+  label: string;
+  enabled: boolean;
+  /** Kiedy inicjator wysłał probe (ms epoch) — używane do liczenia latencji round-trip. */
+  sentAt: number;
+  /** Kiedy responder odebrał probe (ms epoch) — wypełniane tylko w echu. */
+  receivedAt?: number;
+}
+
+const safeParseProbe = (raw: string | null): StorageProbePayload | null => {
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as StorageProbePayload;
+    if (
+      typeof parsed?.pingId !== "string" ||
+      typeof parsed?.origin !== "string" ||
+      typeof parsed?.label !== "string" ||
+      typeof parsed?.enabled !== "boolean" ||
+      typeof parsed?.sentAt !== "number"
+    ) {
+      return null;
+    }
+    return parsed;
+  } catch {
+    return null;
+  }
+};
+
 /** Identyfikator instancji karty — generowany raz przy ładowaniu modułu. */
 const TAB_ID =
   isBrowser() && "crypto" in window && "randomUUID" in window.crypto
@@ -130,6 +180,12 @@ export interface PongResponse {
   enabled: boolean;
   /** Latencja od wysłania ping do otrzymania pong (ms). */
   latencyMs: number;
+  /**
+   * Kanał, którym przyszła odpowiedź. „broadcast" = klasyczny BC pong,
+   * „storage" = round-trip przez localStorage probe (używany gdy BC niedostępny).
+   * Pole jest opcjonalne dla back-compat — UI traktuje brak jako „broadcast".
+   */
+  via?: "broadcast" | "storage";
 }
 
 /**
@@ -278,7 +334,13 @@ export const useAutoSave = () => {
     sentAt: number | null;
     responses: PongResponse[];
     isCollecting: boolean;
-  }>({ pingId: null, sentAt: null, responses: [], isCollecting: false });
+    /**
+     * Strategia użyta przy bieżącym/ostatnim teście — `broadcast` korzysta z BC ping/pong,
+     * `storage` z round-tripu przez localStorage. UI pokazuje to jako podpis pod wynikiem,
+     * żeby pacjent wiedział, czym dokładnie zmierzono spójność kart.
+     */
+    strategy: "broadcast" | "storage" | null;
+  }>({ pingId: null, sentAt: null, responses: [], isCollecting: false, strategy: null });
 
   const channelRef = useRef<BroadcastChannel | null>(null);
   /**
@@ -306,6 +368,13 @@ export const useAutoSave = () => {
    * może przyjść spoza kolejki). [0,0] = nic jeszcze nie zaaplikowano.
    */
   const lastAppliedVersionRef = useRef<[number, number]>([0, 0]);
+  /**
+   * Lustro `transport` w refie — `sendPing` jest stabilnym callbackiem (deps: []),
+   * a chcemy w nim odczytać AKTUALNY transport bez wymuszania re-bindu nasłuchów.
+   */
+  const transportRef = useRef<"broadcast" | "storage-fallback">(
+    isBrowser() && typeof BroadcastChannel !== "undefined" ? "broadcast" : "storage-fallback",
+  );
 
   const markRemoteSync = useCallback(
     (source: SyncHistoryEntry["source"], enabledValue: boolean) => {
@@ -445,6 +514,61 @@ export const useAutoSave = () => {
     if (!isBrowser()) return;
 
     const onStorage = (e: StorageEvent) => {
+      // Storage-probe: inna karta wysłała probe — odpowiedz echem (zapis w PROBE_ECHO_KEY).
+      if (e.key === PROBE_KEY) {
+        const probe = safeParseProbe(e.newValue);
+        if (!probe || probe.origin === TAB_ID) return; // własne probe albo śmieciowy payload
+        const echo: StorageProbePayload = {
+          pingId: probe.pingId,
+          origin: TAB_ID,
+          label: TAB_LABEL,
+          enabled: readStored(),
+          sentAt: probe.sentAt,
+          receivedAt: Date.now(),
+        };
+        try {
+          // Dodajemy nonce do wartości, żeby kolejne echa do tego samego pingId
+          // od różnych kart NA PEWNO triggerowały storage event (zmiana wartości).
+          // Bez nonce dwie karty z identycznym TAB_LABEL/enabled mogłyby nadpisać
+          // wartością binarnie identyczną — wtedy storage event nie wystrzeli
+          // u inicjatora i odpowiedź by zniknęła.
+          window.localStorage.setItem(
+            PROBE_ECHO_KEY,
+            JSON.stringify({ ...echo, _nonce: Math.random().toString(36).slice(2) }),
+          );
+        } catch {
+          // brak miejsca / tryb prywatny — pomijamy, inicjator i tak dostanie timeout
+        }
+        return;
+      }
+
+      // Storage-probe echo: dotarła odpowiedź na nasz aktywny ping.
+      if (e.key === PROBE_ECHO_KEY) {
+        const echo = safeParseProbe(e.newValue);
+        if (!echo) return;
+        if (echo.origin === TAB_ID) return; // własne echo (nie powinno wystrzelić, ale safety net)
+        if (echo.pingId !== activePingIdRef.current) return; // echo na stary ping — ignoruj
+        const sentAt = pingSentAtRef.current ?? echo.sentAt;
+        const latencyMs = Math.max(0, Date.now() - sentAt);
+        setPingState((prev) => {
+          if (prev.responses.some((r) => r.origin === echo.origin)) return prev;
+          return {
+            ...prev,
+            responses: [
+              ...prev.responses,
+              {
+                origin: echo.origin,
+                label: echo.label,
+                enabled: echo.enabled,
+                latencyMs,
+                via: "storage",
+              },
+            ],
+          };
+        });
+        return;
+      }
+
       if (e.key !== STORAGE_KEY && e.key !== null) return;
       // storage event nie niesie payloadu z `version` — używamy ogólnej heurystyki:
       // nadaj nową wersję na podstawie aktualnego zegara, ale tylko jeśli wartość faktycznie się zmieniła.
@@ -505,6 +629,11 @@ export const useAutoSave = () => {
     simulateFallbackRef.current = simulateFallback;
   }, [simulateFallback]);
 
+  // Lustro `transport` w refie — używane przez `sendPing` do wyboru strategii bez re-bindu.
+  useEffect(() => {
+    transportRef.current = transport;
+  }, [transport]);
+
   const toggle = useCallback((next: boolean) => {
     // Generujemy nową wersję dla TEJ lokalnej zmiany. Każdy odbiorca (inna instancja
     // tego samego hooka, inna karta, fallback przez storage) zignoruje ją, jeśli
@@ -559,6 +688,13 @@ export const useAutoSave = () => {
   /**
    * Wyślij ping diagnostyczny i zacznij zbierać pongi przez PING_COLLECTION_WINDOW_MS.
    * Zwraca Promise rozwiązany listą odpowiedzi (po zamknięciu okna).
+   *
+   * Strategia jest wybierana automatycznie wg aktywnego transportu:
+   *  - `broadcast` (BC działa) — klasyczny ping/pong przez BroadcastChannel.
+   *  - `storage-fallback` (BC niedostępny lub symulacja) — round-trip przez
+   *    localStorage: zapisujemy probe w PROBE_KEY, inne karty odpisują w PROBE_ECHO_KEY.
+   *    Mierzona metryka pozostaje ta sama (latencja round-trip + lista origins),
+   *    więc UI nie musi rozróżniać przypadków poza zwykłą etykietą strategii.
    */
   const sendPing = useCallback((): Promise<PongResponse[]> => {
     const pingId =
@@ -566,23 +702,47 @@ export const useAutoSave = () => {
         ? window.crypto.randomUUID()
         : `ping-${Math.random().toString(36).slice(2)}-${Date.now()}`;
     const sentAt = Date.now();
+    // Wybór strategii — czytamy z refa, żeby nie wymuszać re-bindu callbacka przy zmianie transportu.
+    // Symulacja braku BC zmienia `transport` na storage-fallback, więc trafi tu naturalnie.
+    const strategy: "broadcast" | "storage" =
+      transportRef.current === "broadcast" ? "broadcast" : "storage";
 
     activePingIdRef.current = pingId;
     pingSentAtRef.current = sentAt;
-    setPingState({ pingId, sentAt, responses: [], isCollecting: true });
+    setPingState({ pingId, sentAt, responses: [], isCollecting: true, strategy });
 
-    const ping: PingPayload = {
-      kind: "ping",
-      pingId,
-      origin: TAB_ID,
-      label: TAB_LABEL,
-      sentAt,
-    };
-
-    try {
-      channelRef.current?.postMessage(ping);
-    } catch {
-      // kanał niedostępny — Promise rozwiąże się pustą listą po timeout
+    if (strategy === "broadcast") {
+      const ping: PingPayload = {
+        kind: "ping",
+        pingId,
+        origin: TAB_ID,
+        label: TAB_LABEL,
+        sentAt,
+      };
+      try {
+        channelRef.current?.postMessage(ping);
+      } catch {
+        // kanał niedostępny — Promise rozwiąże się pustą listą po timeout
+      }
+    } else {
+      // Storage probe — zapis w PROBE_KEY wystrzeli `storage` event TYLKO w innych kartach
+      // (W3C: storage event nie wraca do nadawcy), więc nie ma ryzyka echa we własnej karcie.
+      const probe: StorageProbePayload = {
+        pingId,
+        origin: TAB_ID,
+        label: TAB_LABEL,
+        enabled: readStored(),
+        sentAt,
+      };
+      try {
+        // Nonce gwarantuje, że dwa kolejne pingi (z tym samym wynikiem) wciąż triggerują storage event.
+        window.localStorage.setItem(
+          PROBE_KEY,
+          JSON.stringify({ ...probe, _nonce: Math.random().toString(36).slice(2) }),
+        );
+      } catch {
+        // brak miejsca / tryb prywatny — Promise rozwiąże się pustą listą po timeout
+      }
     }
 
     return new Promise((resolve) => {
@@ -595,6 +755,16 @@ export const useAutoSave = () => {
           return { ...prev, isCollecting: false };
         });
         pingCollectionTimeoutRef.current = null;
+        // Sprzątanie kluczy storage probe — żeby nie zostawiać śmieci w localStorage.
+        // Robimy to TYLKO gdy używaliśmy strategii storage; dla BC nie ma czego sprzątać.
+        if (strategy === "storage" && isBrowser()) {
+          try {
+            window.localStorage.removeItem(PROBE_KEY);
+            window.localStorage.removeItem(PROBE_ECHO_KEY);
+          } catch {
+            // pomijamy
+          }
+        }
       }, PING_COLLECTION_WINDOW_MS);
     });
   }, []);
@@ -607,7 +777,16 @@ export const useAutoSave = () => {
     }
     activePingIdRef.current = null;
     pingSentAtRef.current = null;
-    setPingState({ pingId: null, sentAt: null, responses: [], isCollecting: false });
+    setPingState({ pingId: null, sentAt: null, responses: [], isCollecting: false, strategy: null });
+    // Posprzątaj storage probe keys także przy ręcznym zamknięciu wyniku.
+    if (isBrowser()) {
+      try {
+        window.localStorage.removeItem(PROBE_KEY);
+        window.localStorage.removeItem(PROBE_ECHO_KEY);
+      } catch {
+        // pomijamy
+      }
+    }
   }, []);
 
   /**

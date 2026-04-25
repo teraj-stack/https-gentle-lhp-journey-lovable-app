@@ -126,21 +126,21 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
   };
 
   const handleSendPing = async () => {
-    if (!isBroadcastSupported) {
-      toast({
-        title: "Test niedostępny",
-        description:
-          "Twoja przeglądarka nie wspiera BroadcastChannel — synchronizacja działa wtedy przez storage event (bez potwierdzenia odbioru).",
-        duration: 4000,
-      });
-      return;
-    }
+    // Test działa zawsze — w trybie storage-fallback używamy round-tripu przez localStorage
+    // (odpowiedzi liczone tak samo jak BC pong, tylko etykietowane jako „storage").
+    const usingStorage = !isBroadcastSupported;
     const responses = await sendPing();
+    const transportLabel = usingStorage ? " (storage round-trip)" : "";
     toast({
-      title: responses.length === 0 ? "Brak odpowiedzi z innych kart" : `Odpowiedziało ${responses.length} kart`,
+      title:
+        responses.length === 0
+          ? `Brak odpowiedzi z innych kart${transportLabel}`
+          : `Odpowiedziało ${responses.length} kart${transportLabel}`,
       description:
         responses.length === 0
-          ? "Otwórz tę stronę w drugiej karcie i spróbuj ponownie."
+          ? usingStorage
+            ? "Otwórz tę stronę w drugiej karcie — odpowiedź dotrze przez storage event (zwykle 50–300 ms wolniej niż BroadcastChannel)."
+            : "Otwórz tę stronę w drugiej karcie i spróbuj ponownie."
           : responses.map((r) => `${r.label} (${r.latencyMs} ms)`).join(", "),
       duration: 4000,
     });
@@ -474,9 +474,13 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
             size="sm"
             variant="outline"
             onClick={handleSendPing}
-            disabled={pingState.isCollecting || !isBroadcastSupported}
+            disabled={pingState.isCollecting}
             className="self-start sm:self-auto shrink-0"
-            aria-label="Wyślij sygnał testowy do innych kart"
+            aria-label={
+              isBroadcastSupported
+                ? "Wyślij sygnał testowy do innych kart przez BroadcastChannel"
+                : "Wyślij sygnał testowy do innych kart przez localStorage (round-trip)"
+            }
           >
             {pingState.isCollecting ? (
               <>
@@ -485,8 +489,8 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
               </>
             ) : !isBroadcastSupported ? (
               <>
-                <WifiOff className="w-4 h-4 mr-2" aria-hidden="true" />
-                Niedostępne
+                <HardDrive className="w-4 h-4 mr-2" aria-hidden="true" />
+                Test (storage)
               </>
             ) : (
               <>
@@ -517,6 +521,22 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
                     Wynik testu — odpowiedziało{" "}
                     <strong className="text-foreground">{pingState.responses.length}</strong>{" "}
                     {pingState.responses.length === 1 ? "karta" : pingState.responses.length >= 2 && pingState.responses.length <= 4 ? "karty" : "kart"}
+                    {pingState.strategy && (
+                      <span
+                        className={`ml-1 text-[10px] px-1.5 py-0.5 rounded-md font-mono border ${
+                          pingState.strategy === "broadcast"
+                            ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
+                            : "bg-primary/10 text-primary border-primary/30"
+                        }`}
+                        title={
+                          pingState.strategy === "broadcast"
+                            ? "Test wykonany przez BroadcastChannel ping/pong"
+                            : "Test wykonany przez round-trip localStorage (BC niedostępny)"
+                        }
+                      >
+                        {pingState.strategy === "broadcast" ? "BC ping/pong" : "Storage round-trip"}
+                      </span>
+                    )}
                   </>
                 )}
               </p>
