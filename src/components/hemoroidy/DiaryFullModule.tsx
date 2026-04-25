@@ -1670,10 +1670,13 @@ const DiaryFullModule = ({
         </motion.section>
       )}
 
+      {/* Auto-zapis: dostępny zawsze (również w wariancie inline na /quiz-hemoroidy)
+          — to fundamentalna preferencja zachowania quizu, nie zaawansowana opcja. */}
+      <AutoSaveSettings pendingDraftCount={pendingDraftCount} />
+
       {/* Reminder settings + clear all */}
       {showReminderSettings && (
         <>
-          <AutoSaveSettings pendingDraftCount={pendingDraftCount} />
           <RiskThresholdsSettings />
           <DiaryReminderSettings />
           <motion.div
