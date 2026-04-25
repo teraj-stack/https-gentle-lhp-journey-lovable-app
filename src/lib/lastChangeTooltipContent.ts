@@ -47,7 +47,7 @@ export const resolveLocale = (raw: string | null | undefined): Locale => {
   return "pl";
 };
 
-interface VariantEntry {
+export interface VariantEntry {
   /** Nagłówek pokazywany w widocznym tooltipie (bez prefiksu). */
   heading: string;
   /**
