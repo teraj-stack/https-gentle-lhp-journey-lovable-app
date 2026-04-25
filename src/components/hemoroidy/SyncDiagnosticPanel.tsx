@@ -165,6 +165,27 @@ const SyncDiagnosticPanel = ({
    * potwierdzenia bez kolizji wizualnej.
    */
   const [degradationCopied, setDegradationCopied] = useState(false);
+  /**
+   * Wynik ostatniego ręcznego testu BroadcastChannel uruchomionego z UI panelu.
+   * Test jest **niezależny** od głównego kanału hooka — tworzy ad-hoc instancję
+   * `BroadcastChannel`, próbuje raz wysłać `postMessage`, mierzy outcome i od razu
+   * zamyka kanał. Dzięki temu można sprawdzić aktualną dostępność BC bez wpływu
+   * na stan auto-zapisu czy historię degradacji hooka.
+   *
+   * `cause` używa tej samej taksonomii co `DegradationInfo`, żeby UI mógł reusować
+   * te same etykiety (`DEGRADATION_LABELS`).
+   */
+  const [bcTestResult, setBcTestResult] = useState<
+    | null
+    | {
+        ok: boolean;
+        at: number;
+        cause?: DegradationCause;
+        detail: string;
+        errorMessage?: string;
+      }
+  >(null);
+  const [bcTestRunning, setBcTestRunning] = useState(false);
 
   /** Liczniki per kategoria — zliczamy z pełnej historii, niezależnie od filtra. */
   const counts = useMemo(() => {
