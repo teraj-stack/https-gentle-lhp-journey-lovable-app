@@ -124,8 +124,40 @@ interface Violation {
   detail?: string;
 }
 
+/**
+ * Map a placeholder-test `Violation.key` to the path convention used by
+ * `emitGithubAnnotations`. Placeholder violations are about RUNTIME
+ * composition (ariaText etc.), so they typically reference variant.* keys
+ * (`heading`, `description`) — point those at the TRANSLATIONS source so
+ * reviewers land near the offending strings.
+ */
+const normalizeKeyToPath = (key: string): string => {
+  if (key.startsWith("timeLine.")) return `TIME_LINE.${key.slice("timeLine.".length)}`;
+  if (key.startsWith("remote.") || key.startsWith("local.")) return `TRANSLATIONS.${key}`;
+  // Bare key like "heading" or "description" — best-effort, point at the
+  // top-level locale block; reviewer can scroll to the exact variant.
+  return `TRANSLATIONS.${key}`;
+};
+
 const formatViolations = (violations: Violation[]): string => {
   if (violations.length === 0) return "";
+  // Mirror violations to GitHub Actions inline annotations (no-op locally).
+  emitGithubAnnotations(
+    violations.map((v) => ({
+      locale: v.locale,
+      path: normalizeKeyToPath(v.key),
+      reason: v.reason,
+      detail: [
+        `scenario=${v.scenario}`,
+        v.expected !== undefined ? `expected=${JSON.stringify(v.expected)}` : null,
+        v.got !== undefined ? `got=${JSON.stringify(v.got)}` : null,
+        v.detail ?? null,
+      ]
+        .filter(Boolean)
+        .join(" "),
+    })),
+    "i18n placeholders",
+  );
   const localesAffected = new Set(violations.map((v) => v.locale));
   const header = `❌ i18n placeholder/value violations (${violations.length} issue(s) across ${localesAffected.size} locale(s)):`;
   const sorted = [...violations].sort((a, b) => {
