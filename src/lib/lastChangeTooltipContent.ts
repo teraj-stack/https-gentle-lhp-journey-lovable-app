@@ -24,7 +24,7 @@
  *   - `locale` poza wspieraną listą → `"pl"` (defensywnie — np. user agent
  *     z egzotycznym tagiem nie wywróci tooltipa).
  */
-export type Locale = "pl" | "en";
+export type Locale = "pl" | "en" | "de" | "it";
 
 /**
  * Bezpieczny resolver locale — używamy w `buildLastChangeTooltipModel` oraz
