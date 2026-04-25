@@ -71,6 +71,11 @@ export const useAutoSave = () => {
    * synchronizacji. Używany do warunkowego pulsu badge „Auto-zapis: ON/OFF".
    */
   const [isRemoteSyncing, setIsRemoteSyncing] = useState(false);
+  /**
+   * Znacznik czasu (epoch ms) ostatniej zdalnej synchronizacji. `null` przed pierwszym zdarzeniem.
+   * Konsumenci mogą sformatować go jako relatywny czas („przed chwilą", „2 min temu").
+   */
+  const [lastRemoteSyncAt, setLastRemoteSyncAt] = useState<number | null>(null);
   const channelRef = useRef<BroadcastChannel | null>(null);
   const flashTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -78,6 +83,7 @@ export const useAutoSave = () => {
   const markRemoteSync = useCallback(() => {
     setRemoteSyncTick((n) => n + 1);
     setIsRemoteSyncing(true);
+    setLastRemoteSyncAt(Date.now());
     if (flashTimeoutRef.current) clearTimeout(flashTimeoutRef.current);
     flashTimeoutRef.current = setTimeout(() => {
       setIsRemoteSyncing(false);
@@ -175,5 +181,5 @@ export const useAutoSave = () => {
     }
   }, []);
 
-  return { enabled, setEnabled: toggle, isRemoteSyncing, remoteSyncTick };
+  return { enabled, setEnabled: toggle, isRemoteSyncing, remoteSyncTick, lastRemoteSyncAt };
 };

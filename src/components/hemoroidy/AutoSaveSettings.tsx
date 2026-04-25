@@ -1,8 +1,30 @@
+import { useEffect, useState } from "react";
 import { Save, ShieldCheck, ShieldAlert, CheckCircle2, RefreshCw } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { useAutoSave } from "@/hooks/useAutoSave";
 import { toast } from "@/hooks/use-toast";
+
+/**
+ * Format „przed chwilą" / „X s temu" / „X min temu" / „X h temu" / pełna data.
+ * Trzymamy lokalnie, bez date-fns — proste i bez kosztu bundle'u.
+ */
+const formatRelativeTime = (timestamp: number): string => {
+  const diffSec = Math.max(0, Math.floor((Date.now() - timestamp) / 1000));
+  if (diffSec < 5) return "przed chwilą";
+  if (diffSec < 60) return `${diffSec} s temu`;
+  const diffMin = Math.floor(diffSec / 60);
+  if (diffMin < 60) return `${diffMin} min temu`;
+  const diffH = Math.floor(diffMin / 60);
+  if (diffH < 24) return `${diffH} h temu`;
+  // >24h — pełna data + godzina (rzadki edge-case dla długo otwartej karty)
+  return new Date(timestamp).toLocaleString("pl-PL", {
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
 
 interface AutoSaveSettingsProps {
   /**
@@ -32,7 +54,18 @@ interface AutoSaveSettingsProps {
  * żeby przepisać je do storage'u (tę logikę implementuje DiaryFullModule).
  */
 const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }: AutoSaveSettingsProps) => {
-  const { enabled, setEnabled, isRemoteSyncing } = useAutoSave();
+  const { enabled, setEnabled, isRemoteSyncing, lastRemoteSyncAt } = useAutoSave();
+  /**
+   * Tick używany do auto-odświeżania względnego czasu („X s temu" → „X min temu").
+   * Inkrementowany co 15 s tylko gdy mamy zarejestrowaną zdalną synchronizację.
+   */
+  const [, setNowTick] = useState(0);
+
+  useEffect(() => {
+    if (lastRemoteSyncAt === null) return;
+    const interval = setInterval(() => setNowTick((n) => n + 1), 15_000);
+    return () => clearInterval(interval);
+  }, [lastRemoteSyncAt]);
 
   const handleToggle = (next: boolean) => {
     setEnabled(next);
@@ -44,6 +77,19 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
       duration: 2400,
     });
   };
+
+  const lastSyncLabel = lastRemoteSyncAt !== null ? formatRelativeTime(lastRemoteSyncAt) : null;
+  const lastSyncFullDate =
+    lastRemoteSyncAt !== null
+      ? new Date(lastRemoteSyncAt).toLocaleString("pl-PL", {
+          day: "2-digit",
+          month: "long",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+        })
+      : undefined;
 
   return (
     <div className="glass-card rounded-2xl p-4 sm:p-5 mb-6">
@@ -95,6 +141,23 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
                 </span>
               )}
             </label>
+            {lastSyncLabel && (
+              <p
+                className={`text-[11px] font-sans text-muted-foreground mt-1 inline-flex items-center gap-1 transition-colors ${
+                  isRemoteSyncing ? "text-primary" : ""
+                }`}
+                title={lastSyncFullDate}
+                aria-live="polite"
+              >
+                <RefreshCw
+                  className={`w-3 h-3 ${isRemoteSyncing ? "animate-spin text-primary" : ""}`}
+                  aria-hidden="true"
+                />
+                <span>
+                  Ostatnia zmiana z innej karty: <strong className="text-foreground">{lastSyncLabel}</strong>
+                </span>
+              </p>
+            )}
             <p className="text-xs sm:text-sm text-muted-foreground mt-1 leading-relaxed">
               {enabled ? (
                 <span className="inline-flex items-start gap-1.5">
