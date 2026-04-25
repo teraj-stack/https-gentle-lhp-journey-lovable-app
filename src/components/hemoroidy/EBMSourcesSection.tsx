@@ -5,6 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Accordion,
   AccordionContent,
   AccordionItem,
@@ -108,6 +115,75 @@ const linkKindClasses: Record<SourceLinkKind, string> = {
   guidelines: "bg-primary/15 text-primary border-primary/40",
   journal: "bg-muted/40 text-foreground/80 border-border",
   external: "bg-muted/30 text-muted-foreground border-border",
+};
+
+/**
+ * Klasyfikacja typu badania na podstawie tytułu / czasopisma — używana w filtrach
+ * „Typ badania" w module „Źródła i badania".
+ */
+type StudyType =
+  | "guideline"
+  | "systematic_review"
+  | "meta_analysis"
+  | "rct"
+  | "cohort"
+  | "review"
+  | "other";
+
+const STUDY_TYPE_LABEL: Record<StudyType, string> = {
+  guideline: "Wytyczne kliniczne",
+  systematic_review: "Przegląd systematyczny",
+  meta_analysis: "Meta-analiza",
+  rct: "RCT (badanie randomizowane)",
+  cohort: "Badanie kohortowe / obserwacyjne",
+  review: "Przegląd narracyjny",
+  other: "Inne / oryginalne",
+};
+
+const classifyStudyType = (
+  src: { title: string; journal: string },
+  categoryId?: string,
+): StudyType => {
+  const t = `${src.title} ${src.journal}`.toLowerCase();
+  if (
+    t.includes("guideline") ||
+    t.includes("clinical practice guideline") ||
+    t.includes("recommendations") ||
+    t.includes("task force") ||
+    categoryId === "guidelines"
+  ) {
+    return "guideline";
+  }
+  if (t.includes("cochrane") || t.includes("systematic review")) {
+    return "systematic_review";
+  }
+  if (t.includes("meta-analysis") || t.includes("meta analysis")) {
+    return "meta_analysis";
+  }
+  if (
+    t.includes("randomized") ||
+    t.includes("randomised") ||
+    t.includes("rct") ||
+    t.includes("double-blind") ||
+    t.includes("double blind") ||
+    t.includes("trial")
+  ) {
+    return "rct";
+  }
+  if (
+    t.includes("cohort") ||
+    t.includes("case-control") ||
+    t.includes("observational") ||
+    t.includes("cross-sectional") ||
+    t.includes("screening colonoscopy") ||
+    t.includes("risk factors")
+  ) {
+    return "cohort";
+  }
+  if (t.includes("review")) {
+    return "review";
+  }
+  return "other";
 };
 
 type Source = {
@@ -373,6 +449,8 @@ const EBMSourcesSection = ({
   const [activeCat, setActiveCat] = useState<string>("all");
   const [query, setQuery] = useState<string>("");
   const [forcedOpen, setForcedOpen] = useState<string[]>([]);
+  const [yearFilter, setYearFilter] = useState<string>("all"); // "all" | "lt2010" | "2010-2014" | "2015-2019" | "gte2020"
+  const [studyTypeFilter, setStudyTypeFilter] = useState<string>("all"); // "all" | StudyType
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
 
   // ===== „Ostatnio otwierane" — historia kliknięć w linki EBM (localStorage) =====
@@ -607,36 +685,85 @@ const EBMSourcesSection = ({
     return () => window.clearTimeout(t);
   }, [highlightedId]);
 
+  // Helper: czy rok publikacji pasuje do wybranego zakresu?
+  const yearMatches = (yearStr: string): boolean => {
+    if (yearFilter === "all") return true;
+    const y = parseInt(yearStr, 10);
+    if (Number.isNaN(y)) return false;
+    switch (yearFilter) {
+      case "lt2010":
+        return y < 2010;
+      case "2010-2014":
+        return y >= 2010 && y <= 2014;
+      case "2015-2019":
+        return y >= 2015 && y <= 2019;
+      case "gte2020":
+        return y >= 2020;
+      default:
+        return true;
+    }
+  };
+
+  const studyTypeMatches = (src: Source, categoryId: string): boolean => {
+    if (studyTypeFilter === "all") return true;
+    return classifyStudyType(src, categoryId) === studyTypeFilter;
+  };
+
+  // Dostępne typy badań w aktualnym zbiorze (do dynamicznego budowania selecta)
+  const availableStudyTypes = useMemo(() => {
+    const set = new Set<StudyType>();
+    baseCats.forEach((c) => c.items.forEach((s) => set.add(classifyStudyType(s, c.id))));
+    return set;
+  }, [baseCats]);
+
   const filtered = useMemo(() => {
     const q = normalize(query.trim());
     const byCat = activeCat === "all" ? baseCats : baseCats.filter((c) => c.id === activeCat);
-    if (q.length < 2) {
-      return byCat.map((c) => ({ ...c, matchedItems: c.items }));
-    }
     return byCat
       .map((c) => {
-        const catHit =
-          normalize(c.title).includes(q) || normalize(c.intro).includes(q);
-        const matchedItems = c.items.filter((s) => {
+        const passesQuery = (s: Source): boolean => {
+          if (q.length < 2) return true;
           const haystack = normalize(
             `${s.authors} ${s.year} ${s.title} ${s.journal}`,
           );
           return haystack.includes(q);
-        });
-        if (catHit) return { ...c, matchedItems: c.items };
+        };
+        const catTextHit =
+          q.length >= 2 &&
+          (normalize(c.title).includes(q) || normalize(c.intro).includes(q));
+
+        // Najpierw filtr query (z uwzględnieniem catTextHit), potem rok + typ.
+        const queryFiltered = catTextHit ? c.items : c.items.filter(passesQuery);
+        const matchedItems = queryFiltered.filter(
+          (s) => yearMatches(s.year) && studyTypeMatches(s, c.id),
+        );
+
         if (matchedItems.length > 0) return { ...c, matchedItems };
         return null;
       })
       .filter((c): c is Category & { matchedItems: Source[] } => c !== null);
-  }, [baseCats, activeCat, query]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [baseCats, activeCat, query, yearFilter, studyTypeFilter]);
 
   const totalMatches = filtered.reduce((sum, c) => sum + c.matchedItems.length, 0);
-  const isFiltering = query.trim().length >= 2 || activeCat !== "all";
+  const isFiltering =
+    query.trim().length >= 2 ||
+    activeCat !== "all" ||
+    yearFilter !== "all" ||
+    studyTypeFilter !== "all";
   const computedOpen = isFiltering ? filtered.map((c) => c.id) : [];
   const openValues =
     isFiltering || forcedOpen.length > 0
       ? Array.from(new Set([...computedOpen, ...forcedOpen]))
       : undefined;
+
+  const resetAllFilters = () => {
+    setQuery("");
+    setActiveCat("all");
+    setYearFilter("all");
+    setStudyTypeFilter("all");
+  };
+
 
   return (
     <section className="max-w-3xl mx-auto" aria-labelledby="ebm-sources-heading">
@@ -993,6 +1120,72 @@ const EBMSourcesSection = ({
           })}
         </div>
 
+        {/* Filtry zaawansowane: Rok publikacji + Typ badania */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <div className="flex flex-col gap-1">
+            <label
+              htmlFor="ebm-year-filter"
+              className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground/80 font-sans"
+            >
+              Rok publikacji
+            </label>
+            <Select value={yearFilter} onValueChange={setYearFilter}>
+              <SelectTrigger
+                id="ebm-year-filter"
+                className="h-9 bg-background/40 border-border text-sm focus:ring-primary"
+                aria-label="Filtruj według roku publikacji"
+              >
+                <SelectValue placeholder="Wszystkie lata" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Wszystkie lata</SelectItem>
+                <SelectItem value="gte2020">2020 i nowsze</SelectItem>
+                <SelectItem value="2015-2019">2015 – 2019</SelectItem>
+                <SelectItem value="2010-2014">2010 – 2014</SelectItem>
+                <SelectItem value="lt2010">Przed 2010</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label
+              htmlFor="ebm-study-type-filter"
+              className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground/80 font-sans"
+            >
+              Typ badania
+            </label>
+            <Select value={studyTypeFilter} onValueChange={setStudyTypeFilter}>
+              <SelectTrigger
+                id="ebm-study-type-filter"
+                className="h-9 bg-background/40 border-border text-sm focus:ring-primary"
+                aria-label="Filtruj według typu badania"
+              >
+                <SelectValue placeholder="Wszystkie typy" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Wszystkie typy</SelectItem>
+                {(
+                  [
+                    "guideline",
+                    "systematic_review",
+                    "meta_analysis",
+                    "rct",
+                    "cohort",
+                    "review",
+                    "other",
+                  ] as StudyType[]
+                )
+                  .filter((t) => availableStudyTypes.has(t))
+                  .map((t) => (
+                    <SelectItem key={t} value={t}>
+                      {STUDY_TYPE_LABEL[t]}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
         {isFiltering && (
           <p className="text-xs text-muted-foreground" aria-live="polite">
             Znaleziono <span className="text-foreground font-medium">{totalMatches}</span>{" "}
@@ -1005,10 +1198,7 @@ const EBMSourcesSection = ({
             )}
             <button
               type="button"
-              onClick={() => {
-                setQuery("");
-                setActiveCat("all");
-              }}
+              onClick={resetAllFilters}
               className="ml-2 text-primary hover:underline"
             >
               Wyczyść filtry
@@ -1031,10 +1221,7 @@ const EBMSourcesSection = ({
             </p>
             <button
               type="button"
-              onClick={() => {
-                setQuery("");
-                setActiveCat("all");
-              }}
+              onClick={resetAllFilters}
               className="mt-3 text-sm text-primary hover:underline"
             >
               Wyczyść filtry
