@@ -688,7 +688,7 @@ const DiaryFullModule = ({
             onClick={handleSaveDay}
             disabled={!entry.complete}
             aria-disabled={!entry.complete}
-            aria-describedby="save-day-hint"
+            aria-describedby="save-day-hint save-day-autosave"
             title={
               entry.complete
                 ? "Zapisz dzień jako kompletny wpis"
@@ -706,17 +706,46 @@ const DiaryFullModule = ({
               {completed}/{total}
             </span>
           </Button>
-          <p
-            id="save-day-hint"
-            className={`text-xs leading-relaxed ${
-              entry.complete ? "text-emerald-500" : "text-muted-foreground italic"
-            }`}
-            aria-live="polite"
-          >
-            {entry.complete
-              ? "✓ Komplet odpowiedzi — możesz zatwierdzić dzień. Każda zmiana zapisuje się też automatycznie."
-              : `Aby zapisać dzień, odpowiedz na wszystkie ${total} pytania quizu. Brakuje jeszcze: ${total - completed}.`}
-          </p>
+          <div className="flex-1 flex flex-col gap-1">
+            <p
+              id="save-day-hint"
+              className={`text-xs leading-relaxed ${
+                entry.complete ? "text-emerald-500" : "text-muted-foreground italic"
+              }`}
+              aria-live="polite"
+            >
+              {entry.complete
+                ? "✓ Komplet odpowiedzi — możesz zatwierdzić dzień. Każda zmiana zapisuje się też automatycznie."
+                : `Aby zapisać dzień, odpowiedz na wszystkie ${total} pytania quizu. Brakuje jeszcze: ${total - completed}.`}
+            </p>
+            {/* Status auto-zapisu (heartbeat 30s). Pokazujemy tylko gdy istnieje wpis dla aktywnego dnia. */}
+            {entry.updatedAt && (
+              <p
+                id="save-day-autosave"
+                className="text-[11px] font-sans inline-flex items-center gap-1.5 text-muted-foreground tabular-nums"
+                aria-live="polite"
+                title={`Ostatni auto-zapis: ${formatUpdatedAt(lastAutosaveAt ?? entry.updatedAt)}`}
+              >
+                <Clock className="w-3 h-3" aria-hidden="true" />
+                {pendingChanges ? (
+                  <>
+                    <span className="inline-flex items-center gap-1 text-primary">
+                      <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" aria-hidden="true" />
+                      Niezapisane zmiany…
+                    </span>
+                    <span className="text-muted-foreground/70">
+                      · auto-zapis co 30 s · ostatnio: {lastAutosaveRelative ?? "—"}
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-emerald-500">Auto-zapis aktywny</span>
+                    <span>· ostatnio: {lastAutosaveRelative ?? "—"}</span>
+                  </>
+                )}
+              </p>
+            )}
+          </div>
         </div>
 
         {/* Result summary */}
