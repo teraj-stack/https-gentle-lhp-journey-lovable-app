@@ -232,10 +232,10 @@ describe("i18nGithubAnnotations — line hint embedded in CI annotations", () =>
     );
     expect(logSpy).toHaveBeenCalledTimes(1);
     const out = String(logSpy.mock.calls[0][0]);
-    expect(out).toContain("current"); // hint label present (escaped colon → `current%3A`)
-    // The trimmed source line must appear (URL-encoded `:` becomes %3A and
-    // newline impossible since trimmed is single-line).
-    expect(out).toMatch(/heading%3A/);
+    // The "current: <line>" hint must appear verbatim in the data section
+    // (`:` is NOT in the percent-encoded set for data values, only for the
+    // property segment that holds title/file).
+    expect(out).toContain("current: heading:");
   });
 
   it("includes `expected (from \\`pl\\`): <line>` for a key MISSING in the failing locale", () => {
