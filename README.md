@@ -248,6 +248,8 @@ Accepted values for `--only`: `missing-required-key`, `placeholder-mismatch`, `u
 #   bash i18n-summary.sh -o wrong-type
 #   bash i18n-summary.sh --only placeholder-mismatch,wrong-type   # multiple reasons (comma-joined)
 #   bash i18n-summary.sh --only all                               # explicit equivalent of default
+#   bash i18n-summary.sh --locales en,de                          # override I18N_ACTIVE_LOCALES for this run
+#   bash i18n-summary.sh --only wrong-type --locales pl           # narrow reason + locale together
 #   bash i18n-summary.sh --list                                   # print reason → test-file table and exit
 set -euo pipefail
 
