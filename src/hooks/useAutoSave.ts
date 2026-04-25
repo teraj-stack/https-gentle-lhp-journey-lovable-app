@@ -190,9 +190,14 @@ export interface PongResponse {
 
 /**
  * Pojedynczy wpis w historii synchronizacji — pokazywany w panelu ustawień jako
- * lista ostatnich N zmian. Źródło wskazuje, którym kanałem przyszła wiadomość:
- * BroadcastChannel (główny), storage event (cross-tab fallback) lub CustomEvent
- * (within-tab, gdy jest wiele instancji hooka w jednej karcie).
+ * lista ostatnich N zmian. Źródło wskazuje, skąd przyszła zmiana:
+ *  - `broadcast` — BroadcastChannel z innej karty (główny kanał),
+ *  - `storage` — storage event (cross-tab fallback dla starszych przeglądarek),
+ *  - `custom-event` — CustomEvent w obrębie tej samej karty (gdy żyje kilka
+ *    instancji hooka jednocześnie),
+ *  - `local` — ręczne kliknięcie Switch / skrót Alt+Shift+A w TEJ karcie.
+ *    Dzięki temu mini-historia pokazuje pełen kontekst (lokalnie/zdalnie),
+ *    a nie tylko echa synchronizacji.
  */
 export interface SyncHistoryEntry {
   /** Unikalny id wpisu — używany jako React key (timestamp + counter wystarczy, brak kolizji w obrębie jednej sesji). */
@@ -202,10 +207,11 @@ export interface SyncHistoryEntry {
   /** Wartość, którą ustawiono po synchronizacji. */
   enabled: boolean;
   /** Źródło sygnału. */
-  source: "broadcast" | "storage" | "custom-event";
+  source: "broadcast" | "storage" | "custom-event" | "local";
 }
 
-const HISTORY_LIMIT = 5;
+/** Maksymalna liczba wpisów w mini-historii (najstarsze są przycinane). */
+const HISTORY_LIMIT = 8;
 let historyCounter = 0;
 
 /**
@@ -824,8 +830,20 @@ export const useAutoSave = () => {
     // Lokalna ręczna zmiana — etykieta „Ostatnia zmiana" wraca do neutralnego koloru,
     // żeby zielony akcent rezerwować WYŁĄCZNIE dla potwierdzonej synchronizacji
     // przyszłej z innej karty (lub innej instancji hooka).
+    const localAt = Date.now();
     setLastChangeSource("local");
-    setLastChangeAt(Date.now());
+    setLastChangeAt(localAt);
+    // Wpis w mini-historii — pacjent widzi nie tylko zdalne synchronizacje, lecz także
+    // własne kliknięcia z dokładnym timestampem. Bez tego historia wyglądała na pustą,
+    // gdy ktoś pracował tylko w jednej karcie.
+    historyCounter += 1;
+    const localEntry: SyncHistoryEntry = {
+      id: `${localAt}-${historyCounter}`,
+      at: localAt,
+      enabled: next,
+      source: "local",
+    };
+    setSyncHistory((prev) => [localEntry, ...prev].slice(0, HISTORY_LIMIT));
     // Storage write to nasz uniwersalny fallback transport — robimy go ZAWSZE,
     // niezależnie czy BC działa. Inne karty bez BC dostaną storage event, a karty
     // z BC zignorują storage (bo dostaną świeższy payload przez kanał z wersją).
