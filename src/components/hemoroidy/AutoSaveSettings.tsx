@@ -346,9 +346,9 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
             </kbd>
           </p>
           {lastSyncLabel && (
-            <p
+            <div
               key={lastRemoteSyncAt ?? "none"}
-              className={`text-[11px] font-sans inline-flex items-center gap-1 transition-colors animate-fade-in ${
+              className={`text-[11px] font-sans inline-flex items-center gap-1.5 transition-colors animate-fade-in ${
                 isRemoteSyncing ? "text-emerald-400" : "text-emerald-500/80"
               }`}
               title={`Zmiana auto-zapisu wykryta przez synchronizację z inną kartą${
@@ -363,7 +363,23 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
               <span>
                 Ostatnia zmiana: <strong className="text-emerald-400">{lastSyncLabel}</strong>
               </span>
-            </p>
+              <button
+                type="button"
+                onClick={() => {
+                  clearSyncHistory();
+                  toast({
+                    title: "Historia synchronizacji wyczyszczona",
+                    description: "Etykieta „Ostatnia zmiana" zniknie do następnej synchronizacji z innej karty.",
+                    duration: 2000,
+                  });
+                }}
+                className="ml-0.5 p-0.5 rounded-md text-muted-foreground/70 hover:text-foreground hover:bg-muted/60 transition-colors focus:outline-none focus:ring-1 focus:ring-emerald-400/60"
+                aria-label="Wyczyść historię synchronizacji „Ostatnia zmiana"
+                title="Wyczyść historię synchronizacji"
+              >
+                <X className="w-3 h-3" aria-hidden="true" />
+              </button>
+            </div>
           )}
         </div>
       </div>
