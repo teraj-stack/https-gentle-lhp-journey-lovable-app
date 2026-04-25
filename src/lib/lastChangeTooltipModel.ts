@@ -285,7 +285,15 @@ export const composeTimeLine = (
 export const buildLastChangeTooltipModel = (
   input: LastChangeTooltipModelInput,
 ): LastChangeTooltipModel => {
-  const content = getLastChangeTooltipContent(input.source);
+  // Resolved locale jest STOSOWANY JEDNOLICIE: te same tłumaczenia trafiają
+  // do `content` (heading/description/ariaHeading), prefiksu linii czasu,
+  // sufiksu fallbacku i `timeLineHelpTitle`. Niemożliwe jest, żeby kanały
+  // się rozjechały na warstwie języka (np. PL prefiks „Czas:" + EN nagłówek).
+  const resolvedLocale = resolveLocale(
+    typeof input.locale === "string" ? input.locale : "pl",
+  );
+  const content = getLastChangeTooltipContent(input.source, resolvedLocale);
+  const tStrings = TIME_LINE_TRANSLATIONS[resolvedLocale];
 
   // Tryb formatowania jest STOSOWANY RAZ — oba kanały (view + a11y) czytają
   // wynikowy `timeValue`, więc niemożliwe jest rozjechanie się formatu między
@@ -299,16 +307,16 @@ export const buildLastChangeTooltipModel = (
   const timeValue = smoothFull.length > 0 ? smoothFull : smoothRelative;
   const isRelativeFallback = smoothFull.length === 0 && smoothRelative.length > 0;
 
-  // composeTimeLine jest JEDYNYM miejscem składania prefiksu „Czas: ".
+  // composeTimeLine jest JEDYNYM miejscem składania prefiksu „Czas:" / „Time:".
   // Zwraca null gdy nie ma treści — dzięki temu shouldRenderTimeLine
   // jest pochodną tego samego warunku, a nie osobnym sprawdzeniem.
-  const timeLineForView = composeTimeLine(timeValue);
+  const timeLineForView = composeTimeLine(timeValue, resolvedLocale);
   const shouldRenderTimeLine = timeLineForView !== null;
   const timeLineForA11y =
     timeLineForView === null
       ? null
       : isRelativeFallback
-        ? `${timeLineForView} (etykieta względna)`
+        ? `${timeLineForView} ${tStrings.relativeQualifier}`
         : timeLineForView;
 
   // Sklejanie tekstu a11y — JEDNO miejsce filtrowania pustych linii.
@@ -319,7 +327,7 @@ export const buildLastChangeTooltipModel = (
 
   const timeLineHelpTitle =
     shouldRenderTimeLine && isRelativeFallback
-      ? "Pełna data niedostępna — pokazujemy etykietę względną."
+      ? tStrings.relativeHelpTitle
       : undefined;
 
   return {
