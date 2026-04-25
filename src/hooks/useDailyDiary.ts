@@ -59,7 +59,8 @@ export const last14DaysKeys = (today: Date = new Date()): string[] => {
 };
 
 const computeDerived = (
-  answers: (number | null)[]
+  answers: (number | null)[],
+  thresholds: RiskThresholds = DEFAULT_RISK_THRESHOLDS,
 ): Pick<DiaryEntry, "score" | "maxScore" | "complete" | "level" | "label"> => {
   const complete = answers.every((a) => a !== null && a >= 0);
   const score = answers.reduce<number>((sum, a, i) => {
@@ -76,7 +77,7 @@ const computeDerived = (
       label: null,
     };
   }
-  const level = getRiskLevel(score);
+  const level = getRiskLevelWithThresholds(score, thresholds);
   return {
     score,
     maxScore: HEMOROIDY_QUIZ_MAX_SCORE,
