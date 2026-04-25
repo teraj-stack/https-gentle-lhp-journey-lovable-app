@@ -14,6 +14,8 @@ import {
   HardDrive,
   Layers,
   Activity,
+  Lightbulb,
+  MousePointerClick,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
@@ -197,6 +199,25 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
    *  - `full`     — brak ticka (data nie zmienia się szybko, wystarczy render na zmianę).
    */
   const [, setNowTick] = useState(0);
+
+  /**
+   * Stan podglądu dla sekcji „Co oznacza synchronizacja między kartami vs lokalna akcja".
+   * Trzymany WYŁĄCZNIE lokalnie w komponencie — nie modyfikuje realnego `useAutoSave`,
+   * nie wywołuje toast'ów ani nie wpływa na storage. To czysty edukacyjny preview, który
+   * pokazuje, jak wygląda etykieta + tooltip + badge dla każdego ze źródeł zmiany.
+   *  - `null`   — sekcja schowana, żaden przycisk nie był jeszcze klikany,
+   *  - `remote` — symulacja przyjścia zmiany z innej karty (BroadcastChannel/storage),
+   *  - `local`  — symulacja ręcznego kliknięcia Switch / skrótu Alt+Shift+A w tej karcie.
+   * Razem z `demoAt` (timestamp wyboru) pozwala wygenerować realistyczne etykiety
+   * używając tych samych helperów co reszta panelu — dzięki temu user widzi 1:1,
+   * co go czeka, a nie schematyczny mock.
+   */
+  const [demoSource, setDemoSource] = useState<"remote" | "local" | null>(null);
+  const [demoAt, setDemoAt] = useState<number | null>(null);
+  const handleDemoSelect = (source: "remote" | "local") => {
+    setDemoSource(source);
+    setDemoAt(Date.now());
+  };
 
   useEffect(() => {
     if (lastRemoteSyncAt === null) return;
@@ -632,6 +653,126 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
           )}
         </div>
       </div>
+
+      {/* Sekcja edukacyjna: „Co oznacza synchronizacja między kartami vs lokalna akcja".
+          Schowana w `<details>`, otwierana na życzenie pacjenta. Zawiera dwa przyciski
+          symulujące każde ze źródeł zmiany — po kliknięciu pokazujemy realistyczny
+          podgląd etykiety + tooltipa + badge dokładnie takich, jakie wygenerowałby
+          realny event z `useAutoSave`. Stan jest LOKALNY (nie modyfikuje storage,
+          nie wywołuje toast'ów, nie wpływa na auto-zapis), dzięki czemu pacjent może
+          bezpiecznie eksperymentować bez efektów ubocznych. Helpery (`getLastChangeTooltipContent`,
+          `getLastChangeLabelStyle`, `formatTimestamp`, `formatFullTimestamp`) są
+          identyczne jak w głównej etykiecie — zero rozjazdu między „demo" a realem. */}
+      <details className="mt-4 pt-4 border-t border-border/60 group">
+        <summary className="cursor-pointer list-none inline-flex items-center gap-2 text-xs sm:text-sm font-medium text-foreground hover:text-primary transition-colors">
+          <Lightbulb className="w-3.5 h-3.5 text-primary" aria-hidden="true" />
+          <span>
+            Co oznacza synchronizacja między kartami vs lokalna akcja?
+          </span>
+          <span className="ml-auto text-muted-foreground/60 group-open:rotate-180 transition-transform">▾</span>
+        </summary>
+        <div className="mt-3 space-y-3">
+          <p className="text-[11px] sm:text-xs text-muted-foreground leading-relaxed">
+            Etykieta „Ostatnia zmiana" pokazuje, skąd przyszło ostatnie przełączenie auto-zapisu.
+            Kliknij jeden z przycisków poniżej, żeby zobaczyć dokładny podgląd etykiety, tooltipa
+            i kolorystyki — bez wpływu na realny stan auto-zapisu.
+          </p>
+
+          <div
+            className="grid sm:grid-cols-2 gap-2"
+            role="group"
+            aria-label="Symulacja źródła zmiany dla podglądu etykiety Ostatnia zmiana"
+          >
+            <Button
+              type="button"
+              size="sm"
+              variant={demoSource === "remote" ? "default" : "outline"}
+              onClick={() => handleDemoSelect("remote")}
+              aria-pressed={demoSource === "remote"}
+              aria-label="Symuluj synchronizację między kartami (BroadcastChannel/storage)"
+              className="justify-start"
+            >
+              <Wifi className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
+              Symuluj: zmiana z innej karty
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={demoSource === "local" ? "default" : "outline"}
+              onClick={() => handleDemoSelect("local")}
+              aria-pressed={demoSource === "local"}
+              aria-label="Symuluj lokalną akcję w tej karcie (Switch lub skrót Alt+Shift+A)"
+              className="justify-start"
+            >
+              <MousePointerClick className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
+              Symuluj: moja lokalna akcja
+            </Button>
+          </div>
+
+          {demoSource !== null && demoAt !== null && (() => {
+            // Generujemy podgląd dokładnie tymi samymi helperami, których używa główna
+            // etykieta — `getLastChangeTooltipContent` (treść tooltipa + aria),
+            // `getLastChangeLabelStyle` (kolory ikony/tekstu/badge'a) oraz formatery czasu.
+            // Dzięki temu „demo" 1:1 odzwierciedla rzeczywisty wygląd po zdarzeniu.
+            const demoTooltip = getLastChangeTooltipContent(demoSource);
+            const demoStyle = getLastChangeLabelStyle(demoSource, /* isRemoteSyncing */ false);
+            const demoRelative = formatTimestamp(demoAt, timeFormatMode);
+            const demoFull = formatFullTimestamp(demoAt);
+            const isDemoRemote = demoSource === "remote";
+            return (
+              <div
+                className="rounded-xl border border-border/60 bg-muted/20 px-3 py-3 space-y-2"
+                role="status"
+                aria-live="polite"
+              >
+                <p className="text-[10px] uppercase tracking-wider font-sans text-muted-foreground/70">
+                  Podgląd etykiety
+                </p>
+                <div
+                  className={`text-[11px] font-sans inline-flex items-center gap-1.5 ${demoStyle.containerClass}`}
+                >
+                  <RefreshCw className={`w-3 h-3 ${demoStyle.iconClass}`} aria-hidden="true" />
+                  <span>
+                    Ostatnia zmiana:{" "}
+                    <strong className={demoStyle.strongClass}>{demoRelative}</strong>
+                    {demoStyle.showLocalSuffix && (
+                      <span
+                        className="ml-1.5 inline-flex items-center px-1.5 py-0.5 text-[10px] uppercase tracking-wider font-mono rounded-md border border-border/60 bg-muted/40 text-foreground/80 align-middle"
+                        aria-label={demoTooltip.ariaHeading}
+                      >
+                        lokalnie
+                      </span>
+                    )}
+                  </span>
+                </div>
+
+                <div className="rounded-lg border border-border/40 bg-background/40 px-2.5 py-2 space-y-1">
+                  <p className="text-[10px] uppercase tracking-wider font-sans text-muted-foreground/70">
+                    Tooltip i opis źródła
+                  </p>
+                  <p
+                    className={`text-xs font-semibold ${
+                      isDemoRemote ? "text-emerald-400" : "text-foreground"
+                    }`}
+                  >
+                    {demoTooltip.heading}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground leading-snug">
+                    {demoTooltip.description}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground/80 font-mono">
+                    {demoFull}
+                  </p>
+                </div>
+
+                <p className="text-[10px] text-muted-foreground/70 italic leading-relaxed">
+                  To jest tylko podgląd — realne zdarzenia auto-zapisu pojawią się w mini-historii i etykiecie powyżej.
+                </p>
+              </div>
+            );
+          })()}
+        </div>
+      </details>
 
       {/* Inline „Zapisz dzień" — widoczny TYLKO gdy auto-zapis OFF i jest co zapisać.
           Pozwala pacjentowi zatwierdzić draft bez przewijania do dołu modułu dziennika. */}
