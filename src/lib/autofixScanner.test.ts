@@ -276,3 +276,46 @@ describe("autofix scanner — diffKeys", () => {
     });
   });
 });
+
+describe("autofix scanner — mergePreservingOrder", () => {
+  it("returns the existing order when next is identical to current", () => {
+    expect(mergePreservingOrder(["b", "a", "c"], ["a", "b", "c"])).toEqual([
+      "b",
+      "a",
+      "c",
+    ]);
+  });
+
+  it("drops keys that are no longer in next, preserving order of survivors", () => {
+    expect(mergePreservingOrder(["heading", "shortBadge", "old"], ["heading", "shortBadge"])).toEqual([
+      "heading",
+      "shortBadge",
+    ]);
+  });
+
+  it("appends new keys at the tail, sorted alphabetically", () => {
+    expect(
+      mergePreservingOrder(["heading"], ["heading", "zeta", "alpha", "mid"]),
+    ).toEqual(["heading", "alpha", "mid", "zeta"]);
+  });
+
+  it("accepts a Set as the next argument (parity with the script's call site)", () => {
+    expect(
+      mergePreservingOrder(["b", "a"], new Set(["a", "b", "c"])),
+    ).toEqual(["b", "a", "c"]);
+  });
+
+  it("starts from sorted output when current is empty", () => {
+    expect(mergePreservingOrder([], ["c", "a", "b"])).toEqual(["a", "b", "c"]);
+  });
+
+  it("is idempotent: feeding its own output back yields the same array", () => {
+    const first = mergePreservingOrder(["b", "a"], ["a", "b", "c", "d"]);
+    const second = mergePreservingOrder(first, new Set(first));
+    expect(second).toEqual(first);
+  });
+
+  it("dedupes if `current` accidentally contains repeats", () => {
+    expect(mergePreservingOrder(["a", "a", "b"], ["a", "b"])).toEqual(["a", "b"]);
+  });
+});
