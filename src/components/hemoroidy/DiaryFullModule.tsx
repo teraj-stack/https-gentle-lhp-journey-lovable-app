@@ -708,10 +708,47 @@ const DiaryFullModule = ({
           )}
         </div>
 
+        {/* Filtr „Tylko brakujące" — szybko skupia uwagę na nieuzupełnionych pytaniach.
+            Auto-wyłącza się gdy quiz jest kompletny (nie ma czego ukrywać). */}
+        {missingQuestionNumbers.length > 0 && (
+          <div className="mb-4 flex items-center justify-between gap-3 rounded-xl border border-border bg-background/40 px-3 py-2">
+            <label
+              htmlFor={`diary-only-missing-${activeDate}`}
+              className="text-xs font-sans text-foreground/80 inline-flex items-center gap-2 cursor-pointer select-none"
+            >
+              <AlertCircle className="w-3.5 h-3.5 text-primary" aria-hidden="true" />
+              Tylko brakujące pytania
+              <span className="text-muted-foreground tabular-nums">
+                ({missingQuestionNumbers.length}/{total})
+              </span>
+            </label>
+            <button
+              id={`diary-only-missing-${activeDate}`}
+              type="button"
+              role="switch"
+              aria-checked={showOnlyMissing}
+              onClick={() => setShowOnlyMissing((v) => !v)}
+              className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+                showOnlyMissing ? "bg-primary" : "bg-muted"
+              }`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-background shadow transition-transform ${
+                  showOnlyMissing ? "translate-x-[18px]" : "translate-x-0.5"
+                }`}
+              />
+              <span className="sr-only">
+                {showOnlyMissing ? "Wyłącz filtr" : "Pokaż tylko brakujące"}
+              </span>
+            </button>
+          </div>
+        )}
+
         {/* Questions */}
         <div className="space-y-5">
           {HEMOROIDY_QUESTIONS.map((q, qi) => {
             const isAnswered = entry.answers[qi] !== null;
+            if (showOnlyMissing && isAnswered) return null;
             return (
               <fieldset
                 key={q.id}
@@ -770,6 +807,14 @@ const DiaryFullModule = ({
               </fieldset>
             );
           })}
+          {showOnlyMissing && missingQuestionNumbers.length === 0 && (
+            <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-5 text-center">
+              <CheckCircle2 className="w-6 h-6 text-emerald-500 mx-auto mb-2" aria-hidden="true" />
+              <p className="font-heading text-sm text-foreground">
+                Wszystkie pytania uzupełnione — możesz wyłączyć filtr.
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Notes */}
