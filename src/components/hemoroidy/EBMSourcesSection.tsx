@@ -117,6 +117,75 @@ const linkKindClasses: Record<SourceLinkKind, string> = {
   external: "bg-muted/30 text-muted-foreground border-border",
 };
 
+/**
+ * Klasyfikacja typu badania na podstawie tytułu / czasopisma — używana w filtrach
+ * „Typ badania" w module „Źródła i badania".
+ */
+type StudyType =
+  | "guideline"
+  | "systematic_review"
+  | "meta_analysis"
+  | "rct"
+  | "cohort"
+  | "review"
+  | "other";
+
+const STUDY_TYPE_LABEL: Record<StudyType, string> = {
+  guideline: "Wytyczne kliniczne",
+  systematic_review: "Przegląd systematyczny",
+  meta_analysis: "Meta-analiza",
+  rct: "RCT (badanie randomizowane)",
+  cohort: "Badanie kohortowe / obserwacyjne",
+  review: "Przegląd narracyjny",
+  other: "Inne / oryginalne",
+};
+
+const classifyStudyType = (
+  src: { title: string; journal: string },
+  categoryId?: string,
+): StudyType => {
+  const t = `${src.title} ${src.journal}`.toLowerCase();
+  if (
+    t.includes("guideline") ||
+    t.includes("clinical practice guideline") ||
+    t.includes("recommendations") ||
+    t.includes("task force") ||
+    categoryId === "guidelines"
+  ) {
+    return "guideline";
+  }
+  if (t.includes("cochrane") || t.includes("systematic review")) {
+    return "systematic_review";
+  }
+  if (t.includes("meta-analysis") || t.includes("meta analysis")) {
+    return "meta_analysis";
+  }
+  if (
+    t.includes("randomized") ||
+    t.includes("randomised") ||
+    t.includes("rct") ||
+    t.includes("double-blind") ||
+    t.includes("double blind") ||
+    t.includes("trial")
+  ) {
+    return "rct";
+  }
+  if (
+    t.includes("cohort") ||
+    t.includes("case-control") ||
+    t.includes("observational") ||
+    t.includes("cross-sectional") ||
+    t.includes("screening colonoscopy") ||
+    t.includes("risk factors")
+  ) {
+    return "cohort";
+  }
+  if (t.includes("review")) {
+    return "review";
+  }
+  return "other";
+};
+
 type Source = {
   authors: string;
   year: string;
