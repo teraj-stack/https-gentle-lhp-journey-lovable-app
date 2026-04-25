@@ -131,7 +131,7 @@ const ALIAS_BOUNDARY = "(?<![\\w$.])";
  * #1 — Dot member reads: `<alias>.<key>`.
  * Original detector, unchanged in semantics.
  */
-const collectDotMemberReads = (source, alias) => {
+export const collectDotMemberReads = (source, alias) => {
   const re = new RegExp(`${ALIAS_BOUNDARY}${alias}\\.(${IDENT})`, "g");
   const found = new Set();
   for (const m of source.matchAll(re)) found.add(m[1]);
@@ -143,7 +143,7 @@ const collectDotMemberReads = (source, alias) => {
  * `` `key` `` (template literal, only when it has no `${}` interpolation).
  * Returns the un-quoted identifier.
  */
-const collectBracketLiteralReads = (source, alias) => {
+export const collectBracketLiteralReads = (source, alias) => {
   // Match either single, double, or backtick-quoted SIMPLE literal (no
   // interpolation, no escapes inside the key — those would imply non-static
   // keys and we explicitly skip them).
@@ -167,7 +167,7 @@ const collectBracketLiteralReads = (source, alias) => {
  * Returns an array of dotted-path strings (e.g. `"sourcePrefix"`,
  * `"local.heading"`) — the caller categorises them.
  */
-const collectIndexedMapReads = (source, mapName) => {
+export const collectIndexedMapReads = (source, mapName) => {
   // After the `[...]` we accept zero or more `.<ident>` or `["literal"]`
   // segments. Only the FIRST tail segment is required (otherwise a bare
   // `TRANSLATIONS[locale]` is a sub-object access we don't care about).
@@ -203,7 +203,7 @@ const collectIndexedMapReads = (source, mapName) => {
  * coverage. The detector ignores call-sites where the literal is empty or
  * looks like a sentence (contains spaces) so test/debug strings don't leak in.
  */
-const collectTranslatorCallKeys = (source, helperNames) => {
+export const collectTranslatorCallKeys = (source, helperNames) => {
   if (helperNames.length === 0) return new Set();
   const helpersAlt = helperNames
     .map((n) => n.replace(/[$]/g, "\\$"))
@@ -237,7 +237,7 @@ const collectTranslatorCallKeys = (source, helperNames) => {
  *   - translator call form: $t("local.key") ?? …  (when arg is `local.X` /
  *     `remote.X`, the `X` segment is the variant key)
  */
-const collectOptionalVariantReads = (source) => {
+export const collectOptionalVariantReads = (source) => {
   const found = new Set();
   // a) variant.X ??
   for (const m of source.matchAll(
@@ -328,7 +328,7 @@ const replaceBlock = (source, startMarker, endMarker, replacement) => {
  * why a translator call didn't end up in the REQUIRED_* lists (and decide
  * whether to extend the categorizer).
  */
-const categoriseHelperPath = (path, scope) => {
+export const categoriseHelperPath = (path, scope) => {
   const parts = path.split(".");
   if (scope === "timeLine") {
     if (parts.length === 1) return { bucket: "timeLine", key: parts[0] };
