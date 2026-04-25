@@ -12,7 +12,7 @@
  * add the matching signature here as well.
  */
 
-declare module "../../scripts/autofix-required-translation-keys.mjs" {
+declare module "../scripts/autofix-required-translation-keys.mjs" {
   export type CategorisedPath =
     | { bucket: "top"; key: string }
     | { bucket: "variant"; key: string }
