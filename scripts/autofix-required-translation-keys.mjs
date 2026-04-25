@@ -170,7 +170,17 @@ const run = () => {
   });
 
   // --- TIME_LINE_TRANSLATIONS (model file) ---
-  const timeLineKeys = collectMemberReads(modelSrc, "tStrings");
+  // The builder reads time-line strings via two patterns:
+  //   1. Local alias `tStrings.<key>` after `const tStrings = TIME_LINE_TRANSLATIONS[locale]`
+  //   2. Direct indexed access `TIME_LINE_TRANSLATIONS[…].<key>` (e.g. in
+  //      the standalone `getTimeLinePrefix` helper that does not bind a local alias).
+  // We union both to avoid missing keys consumed only via the inline form.
+  const timeLineKeys = new Set([
+    ...collectMemberReads(modelSrc, "tStrings"),
+    ...[...modelSrc.matchAll(/TIME_LINE_TRANSLATIONS\[[^\]]+\]\.([a-zA-Z_$][\w$]*)/g)].map(
+      (m) => m[1],
+    ),
+  ]);
   const newTimeLineBlock = renderRequiredTimeLineKeys(sortedArr(timeLineKeys));
 
   // --- Apply edits ---
