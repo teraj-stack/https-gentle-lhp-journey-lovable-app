@@ -251,10 +251,11 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
     });
   };
 
-  // Krótki format „2 min temu" — pełna godzina trafia do tooltipa (lastSyncFullDate),
-  // żeby etykieta wizualnie współgrała z badge'em „Auto-zapis: ON/OFF".
+  // Etykieta „Ostatnia zmiana" honoruje wybrany przez użytkownika tryb formatu
+  // (relative / clock / full). Pełna data trafia do tooltipa zawsze — pacjent ma
+  // dostęp do dokładnego czasu nawet gdy w UI widzi „2 min temu".
   const lastSyncLabel =
-    lastRemoteSyncAt !== null ? formatRelativeTime(lastRemoteSyncAt) : null;
+    lastRemoteSyncAt !== null ? formatTimestamp(lastRemoteSyncAt, timeFormatMode) : null;
   // Pełna data + godzina jako tooltip — pomocna gdy karta wisi długo otwarta.
   const lastSyncFullDate =
     lastRemoteSyncAt !== null
