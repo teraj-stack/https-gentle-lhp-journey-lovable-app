@@ -278,6 +278,7 @@ const RISK_FACTORS: RiskFactor[] = [
 
 const STORAGE_KEY = "cml.hemoroidy.risk-factors.selected.v1";
 const READ_STORAGE_KEY = "cml.hemoroidy.risk-factors.read.v1";
+const TIMESTAMP_STORAGE_KEY = "cml.hemoroidy.risk-factors.selected-at.v1";
 
 const loadStringArray = (key: string): string[] => {
   if (typeof window === "undefined") return [];
@@ -289,6 +290,33 @@ const loadStringArray = (key: string): string[] => {
   } catch {
     return [];
   }
+};
+
+const loadTimestamp = (): string | null => {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(TIMESTAMP_STORAGE_KEY);
+    if (!raw) return null;
+    // Walidacja ISO date
+    const d = new Date(raw);
+    return Number.isNaN(d.getTime()) ? null : raw;
+  } catch {
+    return null;
+  }
+};
+
+/** Format: "23 kwi 2026, 14:32" */
+const formatSelectedAt = (iso: string | null): string => {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleString("pl-PL", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 };
 
 const RiskFactorsAccordion = () => {
