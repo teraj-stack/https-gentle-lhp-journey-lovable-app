@@ -311,19 +311,20 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
         {/* Status transportu — pokazuje aktywny kanał (broadcast/storage-fallback)
             i ostatnią przyczynę degradacji, jeśli BC padł. */}
         <div
-          className={`mb-3 rounded-xl border px-3 py-2 flex items-start gap-2.5 ${
+          className={`mb-3 rounded-xl border px-3 py-2 flex flex-col sm:flex-row sm:items-start gap-2.5 ${
             transport === "broadcast"
               ? "border-emerald-500/30 bg-emerald-500/5"
               : "border-primary/30 bg-primary/5"
           }`}
           role="status"
         >
-          {transport === "broadcast" ? (
-            <Wifi className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" aria-hidden="true" />
-          ) : (
-            <HardDrive className="w-3.5 h-3.5 text-primary shrink-0 mt-0.5" aria-hidden="true" />
-          )}
-          <div className="min-w-0 flex-1">
+          <div className="flex items-start gap-2.5 min-w-0 flex-1">
+            {transport === "broadcast" ? (
+              <Wifi className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" aria-hidden="true" />
+            ) : (
+              <HardDrive className="w-3.5 h-3.5 text-primary shrink-0 mt-0.5" aria-hidden="true" />
+            )}
+            <div className="min-w-0 flex-1">
             <p className="text-[11px] sm:text-xs font-sans text-muted-foreground inline-flex flex-wrap items-center gap-1.5">
               Transport synchronizacji:
               <span
@@ -346,6 +347,7 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
                 Ostatnia przyczyna degradacji: {degradationReason}
               </p>
             )}
+            </div>
           </div>
           <Button
             type="button"
