@@ -409,6 +409,123 @@ const SyncDiagnosticPanel = ({
         </div>
       )}
 
+      {/* Historia degradacji — licznik per typ + filtr + lista z datownikami.
+          Renderujemy zawsze gdy mamy >0 wpisów, niezależnie od aktualnego
+          `degradationInfo` (incydenty mogły wystąpić, a kanał potem wstał). */}
+      {degradationHistory.length > 0 && (
+        <div className="mb-4 rounded-xl border border-border/60 bg-muted/20 px-3 py-2.5">
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <p className="text-[10px] uppercase tracking-wider font-sans text-muted-foreground/70 inline-flex items-center gap-1.5">
+              <History className="w-3 h-3" aria-hidden="true" />
+              Historia degradacji ({degradationHistory.length})
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                clearDegradationHistory();
+                setActiveFilters(new Set());
+                toast({
+                  title: "Historia degradacji wyczyszczona",
+                  description: "Liczniki resetują się do zera. Aktualny status BC zostaje.",
+                  duration: 1800,
+                });
+              }}
+              className="text-[10px] font-sans text-muted-foreground/70 hover:text-foreground inline-flex items-center gap-1 px-1.5 py-0.5 rounded hover:bg-muted/60 focus:outline-none focus:ring-1 focus:ring-primary/60 transition-colors"
+              aria-label="Wyczyść historię degradacji"
+              title="Wyczyść historię degradacji"
+            >
+              <Trash2 className="w-3 h-3" aria-hidden="true" />
+              Wyczyść
+            </button>
+          </div>
+
+          {/* Pasek filtrów: badge per kategoria z licznikiem. Klik = toggle.
+              Aktywny filtr = pierścień + tło, brak filtrów = neutralny outline. */}
+          <div
+            role="group"
+            aria-label="Filtry typów degradacji"
+            className="flex flex-wrap gap-1.5 mb-2.5"
+          >
+            {FILTER_CAUSES.map((cause) => {
+              const count = counts[cause];
+              const active = activeFilters.has(cause);
+              const disabled = count === 0;
+              return (
+                <button
+                  key={cause}
+                  type="button"
+                  onClick={() => {
+                    if (disabled) return;
+                    toggleFilter(cause);
+                  }}
+                  disabled={disabled}
+                  aria-pressed={active}
+                  title={
+                    disabled
+                      ? `${DEGRADATION_LABELS[cause]} — brak incydentów`
+                      : `Filtruj: ${DEGRADATION_LABELS[cause]} (${count})`
+                  }
+                  className={`text-[10px] font-mono px-1.5 py-0.5 rounded-md border transition-colors focus:outline-none focus:ring-1 focus:ring-primary/60 ${
+                    disabled
+                      ? "border-border/40 text-muted-foreground/40 cursor-not-allowed"
+                      : active
+                        ? "border-amber-500/60 bg-amber-500/15 text-amber-300"
+                        : "border-border/60 text-muted-foreground hover:text-foreground hover:bg-muted/40"
+                  }`}
+                >
+                  {DEGRADATION_LABELS[cause]}
+                  <span className="ml-1 opacity-80">({count})</span>
+                </button>
+              );
+            })}
+            {activeFilters.size > 0 && (
+              <button
+                type="button"
+                onClick={() => setActiveFilters(new Set())}
+                className="text-[10px] font-sans text-muted-foreground hover:text-foreground px-1.5 py-0.5 rounded-md hover:bg-muted/40 focus:outline-none focus:ring-1 focus:ring-primary/60 transition-colors"
+                aria-label="Wyczyść filtry"
+              >
+                Pokaż wszystkie
+              </button>
+            )}
+          </div>
+
+          {/* Lista wpisów (najnowsza pierwsza). Każdy wpis ma datownik, kategorię i opis. */}
+          {visibleHistory.length === 0 ? (
+            <p className="text-[11px] text-muted-foreground italic">
+              Brak incydentów pasujących do wybranych filtrów.
+            </p>
+          ) : (
+            <ul className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+              {visibleHistory.map((entry) => (
+                <li
+                  key={entry.id}
+                  className="flex items-start gap-2 text-[11px] leading-snug"
+                >
+                  <span
+                    className="font-mono text-muted-foreground/70 shrink-0 tabular-nums"
+                    title={new Date(entry.at).toLocaleString("pl-PL")}
+                  >
+                    {formatTime(entry.at)}
+                  </span>
+                  <span className="font-mono text-amber-400/90 shrink-0 px-1 rounded bg-amber-500/10">
+                    {DEGRADATION_LABELS[entry.cause]}
+                  </span>
+                  <span className="text-muted-foreground/90 break-words">
+                    {entry.detail}
+                    {entry.errorMessage && (
+                      <span className="block text-[10px] font-mono text-muted-foreground/60 mt-0.5 break-all">
+                        {entry.errorMessage}
+                      </span>
+                    )}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+
       {/* Checklista środowiska — co jest dostępne w tej przeglądarce. */}
       <div className="mb-4">
         <p className="text-[10px] uppercase tracking-wider font-sans text-muted-foreground/70 mb-2">
