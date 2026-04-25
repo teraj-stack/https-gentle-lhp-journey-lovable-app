@@ -79,6 +79,8 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
     clearPing,
     isBroadcastSupported,
     syncHistory,
+    transport,
+    degradationReason,
   } = useAutoSave();
   /**
    * Tick używany do auto-odświeżania względnego czasu („X s temu" → „X min temu").
@@ -286,6 +288,42 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
 
       {/* Test synchronizacji — diagnostyczny ping/pong między kartami. */}
       <div className="mt-4 pt-4 border-t border-border/60">
+        {/* Status transportu — pokazuje aktywny kanał (broadcast/storage-fallback)
+            i ostatnią przyczynę degradacji, jeśli BC padł. */}
+        <div
+          className={`mb-3 rounded-xl border px-3 py-2 flex items-start gap-2.5 ${
+            transport === "broadcast"
+              ? "border-emerald-500/30 bg-emerald-500/5"
+              : "border-primary/30 bg-primary/5"
+          }`}
+          role="status"
+        >
+          {transport === "broadcast" ? (
+            <Wifi className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" aria-hidden="true" />
+          ) : (
+            <HardDrive className="w-3.5 h-3.5 text-primary shrink-0 mt-0.5" aria-hidden="true" />
+          )}
+          <div className="min-w-0 flex-1">
+            <p className="text-[11px] sm:text-xs font-sans text-muted-foreground inline-flex flex-wrap items-center gap-1.5">
+              Transport synchronizacji:
+              <span
+                className={`text-[10px] px-1.5 py-0.5 rounded-md font-mono border ${
+                  transport === "broadcast"
+                    ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/40"
+                    : "bg-primary/15 text-primary border-primary/40"
+                }`}
+              >
+                {transport}
+              </span>
+            </p>
+            {degradationReason && (
+              <p className="text-[10px] sm:text-[11px] text-muted-foreground/80 mt-1 leading-relaxed italic">
+                Ostatnia przyczyna degradacji: {degradationReason}
+              </p>
+            )}
+          </div>
+        </div>
+
         {/* Historia ostatnich synchronizacji — kompaktowa lista czas + źródło + wartość.
             Renderowana TYLKO gdy mamy co pokazać, żeby nie zaśmiecać pustej karty. */}
         {syncHistory.length > 0 && (

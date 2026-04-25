@@ -173,6 +173,16 @@ export const useAutoSave = () => {
   const [transport, setTransport] = useState<"broadcast" | "storage-fallback">(() =>
     isBrowser() && typeof BroadcastChannel !== "undefined" ? "broadcast" : "storage-fallback",
   );
+  /**
+   * Ostatnia przyczyna zejścia na storage-fallback (lub `null`, gdy BC działa od początku).
+   * Pole jest informacyjne — wyświetlane w panelu ustawień obok statusu transportu,
+   * pomaga zdiagnozować, dlaczego kanał padł (tryb prywatny? sandbox? wybudzenie z BFCache?).
+   */
+  const [degradationReason, setDegradationReason] = useState<string | null>(() =>
+    isBrowser() && typeof BroadcastChannel === "undefined"
+      ? "BroadcastChannel API nie jest dostępne w tej przeglądarce"
+      : null,
+  );
 
   /**
    * Stan testu synchronizacji: aktywny pingId (lub null), znacznik wysłania,
@@ -234,6 +244,7 @@ export const useAutoSave = () => {
     if (!isBrowser() || typeof BroadcastChannel === "undefined") {
       // API nieobecne — jedyna ścieżka to storage+CustomEvent fallback (już zarejestrowany w drugim effekcie).
       setTransport("storage-fallback");
+      setDegradationReason("BroadcastChannel API nie jest dostępne w tej przeglądarce");
       return;
     }
     let channel: BroadcastChannel;
@@ -244,10 +255,14 @@ export const useAutoSave = () => {
     } catch {
       broadcastDegradedRef.current = true;
       setTransport("storage-fallback");
+      setDegradationReason(
+        "Konstruktor BroadcastChannel rzucił wyjątek (możliwy sandbox iframe lub tryb prywatny)",
+      );
       return;
     }
     channelRef.current = channel;
     setTransport("broadcast");
+    setDegradationReason(null);
 
     const onMessage = (e: MessageEvent<ChannelPayload>) => {
       const data = e.data;
@@ -313,6 +328,9 @@ export const useAutoSave = () => {
     const onMessageError = () => {
       broadcastDegradedRef.current = true;
       setTransport("storage-fallback");
+      setDegradationReason(
+        "Kanał BroadcastChannel zwrócił błąd deserializacji wiadomości (messageerror)",
+      );
       try {
         channel.close();
       } catch {
@@ -420,6 +438,9 @@ export const useAutoSave = () => {
         // i CustomEvent poniżej gwarantują, że zmiana i tak doleci do innych kart i komponentów.
         broadcastDegradedRef.current = true;
         setTransport("storage-fallback");
+        setDegradationReason(
+          "postMessage rzucił wyjątek w runtime (kanał zamknięty, możliwe wybudzenie z BFCache)",
+        );
         try {
           channelRef.current.close();
         } catch {
@@ -514,6 +535,8 @@ export const useAutoSave = () => {
     isBroadcastSupported: transport === "broadcast",
     /** Aktywny transport — przydatne do diagnostyki w UI ustawień. */
     transport,
+    /** Powód degradacji do storage-fallback (lub `null` gdy BC działa). */
+    degradationReason,
     /** Historia ostatnich {HISTORY_LIMIT} zdalnych synchronizacji (najnowsza pierwsza). */
     syncHistory,
   };
