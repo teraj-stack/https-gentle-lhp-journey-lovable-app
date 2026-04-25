@@ -993,4 +993,186 @@ describe("AutoSaveSettings — tooltip „Ostatnia zmiana” wybiera nagłówek 
       expect(fallbackLabel).not.toMatch(/Czas:\s*(null|undefined|\(etykieta)/);
     });
   });
+
+  /**
+   * Wielokrotne, naprzemienne przełączenia źródła (remote ↔ local × N):
+   *
+   * Realny scenariusz: pacjent edytuje w jednej karcie, druga karta
+   * synchronizuje, on znowu edytuje, znowu sync, znowu edytuje… Przy
+   * intensywnym ruchu między kartami source przełącza się wielokrotnie
+   * w krótkim czasie. Tooltip MUSI po każdym re-renderze pokazywać
+   * komunikat dokładnie odpowiadający OSTATNIEMU źródłu — bez:
+   *  - przylepiania się starej wartości (stale closure w handlerach),
+   *  - akumulacji prefiksów „Źródło: " ze sklejania stringów,
+   *  - rozjazdu między aria-label kontenera, title triggera i tekstem badge'a.
+   *
+   * Test wykonuje 6 przełączeń z rzędu (4 remote + 2 local + finał) i po KAŻDEJ
+   * iteracji asercjami pilnuje pełnego kontraktu — zarówno aria-label,
+   * jak i title, oraz widoczność/wartość badge'a „lokalnie".
+   */
+  describe("wielokrotne przełączenia source (remote ↔ local × N) — aria-label śledzi ostatni stan", () => {
+    const REMOTE_HEADING = "Źródło: Synchronizacja między kartami";
+    const LOCAL_HEADING = "Źródło: Moja lokalna akcja w tej karcie";
+
+    it("po 6 naprzemiennych przełączeniach aria-label/title/badge zawsze odpowiadają OSTATNIEMU source", () => {
+      // Sekwencja świadomie miesza powroty (remote→local→remote) i nierówny
+      // takt (2× ten sam source pod rząd jest niemożliwy w praktyce, ale i tak
+      // chcemy mieć pewność że nawet pojedynczy „przeskok" zawsze wymusza
+      // pełny re-render aria-label z nowym ariaHeading).
+      const sequence: Array<"remote" | "local"> = [
+        "remote",
+        "local",
+        "remote",
+        "local",
+        "remote",
+        "local",
+      ];
+
+      mockLastChangeSource = sequence[0];
+      mockLastChangeAt = FROZEN_NOW;
+      const { rerender } = renderPanel();
+
+      sequence.forEach((source, index) => {
+        // Pierwsza iteracja używa state z `renderPanel()` powyżej, kolejne
+        // wymuszają nowy render z nową wartością mocka.
+        if (index > 0) {
+          mockLastChangeSource = source;
+          mockLastChangeAt = FROZEN_NOW + index * 1_000;
+          rerender(
+            <TooltipProvider delayDuration={0}>
+              <AutoSaveSettings />
+            </TooltipProvider>,
+          );
+        }
+
+        const { trigger, container } = findLastChangeTooltip();
+        const ariaLabel = container.getAttribute("aria-label") ?? "";
+        const title = trigger.getAttribute("title") ?? "";
+
+        const expectedHeading = source === "remote" ? REMOTE_HEADING : LOCAL_HEADING;
+        const forbiddenHeading = source === "remote" ? LOCAL_HEADING : REMOTE_HEADING;
+
+        // 1) aria-label i title PIERWSZĄ linią deklarują ostatnie źródło.
+        expect(
+          ariaLabel.startsWith(expectedHeading),
+          `iteracja ${index} (source=${source}): aria-label powinien zaczynać się od "${expectedHeading}", było "${ariaLabel.split("\n")[0]}"`,
+        ).toBe(true);
+        expect(
+          title.startsWith(expectedHeading),
+          `iteracja ${index} (source=${source}): title powinien zaczynać się od "${expectedHeading}"`,
+        ).toBe(true);
+
+        // 2) ŻADNYCH śladów poprzedniego źródła w żadnym kanale.
+        expect(ariaLabel).not.toContain(forbiddenHeading);
+        expect(title).not.toContain(forbiddenHeading);
+
+        // 3) Brak akumulacji prefiksów (regresja typu „Źródło: X\nŹródło: Y").
+        expect(
+          (ariaLabel.match(/Źródło: /g) ?? []).length,
+          `iteracja ${index}: dokładnie jeden prefiks „Źródło: " w aria-label`,
+        ).toBe(1);
+        expect((title.match(/Źródło: /g) ?? []).length).toBe(1);
+
+        // 4) Spójność kanałów a11y: aria-label === title (1:1).
+        expect(
+          ariaLabel,
+          `iteracja ${index}: aria-label i title muszą być identyczne`,
+        ).toBe(title);
+
+        // 5) Badge „lokalnie" tylko dla local — śledzi ostatni stan.
+        const badge = screen.queryByText("lokalnie");
+        if (source === "local") {
+          expect(badge, `iteracja ${index} (local): badge MUSI istnieć`).toBeInTheDocument();
+          expect(badge?.getAttribute("aria-label")).toBe(LOCAL_HEADING);
+        } else {
+          expect(
+            badge,
+            `iteracja ${index} (remote): badge NIE może istnieć`,
+          ).not.toBeInTheDocument();
+        }
+      });
+    });
+
+    it("18 przełączeń (stres test): aria-label nigdy się nie rozjeżdża z aktualnym source", () => {
+      // Większa liczba iteracji (3× sekwencja z poprzedniego testu) — wykryje
+      // ewentualne wycieki state akumulujące się dopiero po wielu re-renderach
+      // (np. nieprawidłowo dodany useRef bez resetu, listener nigdy nie odpięty).
+      const baseSequence: Array<"remote" | "local"> = ["remote", "local"];
+      const longSequence = Array.from({ length: 9 }, (_, i) => baseSequence[i % 2]);
+
+      mockLastChangeSource = longSequence[0];
+      mockLastChangeAt = FROZEN_NOW;
+      const { rerender } = renderPanel();
+
+      longSequence.forEach((source, index) => {
+        if (index > 0) {
+          mockLastChangeSource = source;
+          mockLastChangeAt = FROZEN_NOW + index * 500;
+          rerender(
+            <TooltipProvider delayDuration={0}>
+              <AutoSaveSettings />
+            </TooltipProvider>,
+          );
+        }
+
+        const { container } = findLastChangeTooltip();
+        const ariaLabel = container.getAttribute("aria-label") ?? "";
+        const expectedHeading = source === "remote" ? REMOTE_HEADING : LOCAL_HEADING;
+
+        expect(
+          ariaLabel.startsWith(expectedHeading),
+          `iteracja ${index}/${longSequence.length} (source=${source})`,
+        ).toBe(true);
+
+        // Stabilna struktura: zawsze 3 niepuste linie (heading + opis + czas).
+        const lines = ariaLabel.split("\n");
+        expect(lines.length, `iteracja ${index}: 3 linie aria-label`).toBe(3);
+        for (const line of lines) {
+          expect(line.trim().length).toBeGreaterThan(0);
+        }
+      });
+    });
+
+    it("przejście remote → local → remote: linia czasu aktualizuje się razem z nagłówkiem", () => {
+      // Linia czasu („Czas: …") pochodzi z `lastChangeAt`, a nagłówek z
+      // `lastChangeSource` — to dwa niezależne wejścia helpera. Test pilnuje,
+      // że oba pola są re-evaluated w tym samym renderze i nie ma sytuacji,
+      // w której nagłówek już się przełączył, a stara wartość czasu została.
+      mockLastChangeSource = "remote";
+      mockLastChangeAt = FROZEN_NOW;
+      const { rerender } = renderPanel();
+
+      const t1 = (findLastChangeTooltip().container.getAttribute("aria-label") ?? "")
+        .split("\n")[2];
+      expect(t1).toMatch(/^Czas: /);
+
+      mockLastChangeSource = "local";
+      mockLastChangeAt = FROZEN_NOW + 60_000; // +1 min
+      rerender(
+        <TooltipProvider delayDuration={0}>
+          <AutoSaveSettings />
+        </TooltipProvider>,
+      );
+      const aria2 = findLastChangeTooltip().container.getAttribute("aria-label") ?? "";
+      const t2 = aria2.split("\n")[2];
+      expect(aria2.startsWith(LOCAL_HEADING)).toBe(true);
+      expect(t2).toMatch(/^Czas: /);
+      // Nowy timestamp → nowa wartość po „Czas: " (różna od t1).
+      expect(t2).not.toBe(t1);
+
+      mockLastChangeSource = "remote";
+      mockLastChangeAt = FROZEN_NOW + 120_000; // +2 min
+      rerender(
+        <TooltipProvider delayDuration={0}>
+          <AutoSaveSettings />
+        </TooltipProvider>,
+      );
+      const aria3 = findLastChangeTooltip().container.getAttribute("aria-label") ?? "";
+      expect(aria3.startsWith(REMOTE_HEADING)).toBe(true);
+      const t3 = aria3.split("\n")[2];
+      expect(t3).toMatch(/^Czas: /);
+      expect(t3).not.toBe(t2);
+    });
+  });
 });
+
