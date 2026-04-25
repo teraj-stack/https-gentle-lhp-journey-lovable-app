@@ -268,6 +268,105 @@ export const collectOptionalVariantReads = (source) => {
 const sortedArr = (set) => [...set].sort((a, b) => a.localeCompare(b));
 
 // ---------------------------------------------------------------------------
+// Diff helpers — print a per-bucket added/removed report so a developer
+// running `--check` immediately sees WHAT drifted, not just THAT it did.
+// Without this, the only feedback was "files would change" + a dump of the
+// new desired list — leaving the maintainer to eyeball the difference.
+// ---------------------------------------------------------------------------
+
+/**
+ * Extract the comma-separated string-literal entries from a substring like
+ *   `["foo", "bar"] as const`   or   `[]`.
+ * Returns the keys in declaration order. Used to parse the EXISTING
+ * REQUIRED_* declarations directly from source so the diff reflects what
+ * is actually committed (not a re-imported module that might be cached).
+ */
+const parseLiteralArray = (raw) => {
+  const out = [];
+  const re = /["']([^"'\\]+)["']/g;
+  let m;
+  while ((m = re.exec(raw)) !== null) out.push(m[1]);
+  return out;
+};
+
+/**
+ * Parse the current REQUIRED_TRANSLATION_KEYS object from the content file.
+ * Returns `{ top, variant, variantOptional }` as arrays of strings.
+ * Missing buckets default to `[]` so a malformed file still diffs cleanly.
+ */
+export const parseCurrentTranslationKeys = (source) => {
+  const blockMatch = source.match(
+    /export const REQUIRED_TRANSLATION_KEYS\s*=\s*\{([\s\S]*?)\}\s*as const;/,
+  );
+  if (!blockMatch) return { top: [], variant: [], variantOptional: [] };
+  const body = blockMatch[1];
+  const pick = (name) => {
+    const re = new RegExp(`${name}\\s*:\\s*(\\[[\\s\\S]*?\\])`);
+    const m = body.match(re);
+    return m ? parseLiteralArray(m[1]) : [];
+  };
+  return {
+    top: pick("top"),
+    variant: pick("variant"),
+    variantOptional: pick("variantOptional"),
+  };
+};
+
+/** Parse the current REQUIRED_TIME_LINE_KEYS array from the model file. */
+export const parseCurrentTimeLineKeys = (source) => {
+  const m = source.match(
+    /export const REQUIRED_TIME_LINE_KEYS\s*=\s*(\[[\s\S]*?\])\s*as const satisfies/,
+  );
+  return m ? parseLiteralArray(m[1]) : [];
+};
+
+/**
+ * Compute `{ added, removed }` between two key lists. Order-independent;
+ * outputs are sorted for stable, scannable diffs. Exported for unit tests.
+ */
+export const diffKeys = (current, next) => {
+  const cur = new Set(current);
+  const nxt = new Set(next);
+  const added = [...nxt].filter((k) => !cur.has(k)).sort((a, b) => a.localeCompare(b));
+  const removed = [...cur].filter((k) => !nxt.has(k)).sort((a, b) => a.localeCompare(b));
+  return { added, removed };
+};
+
+/**
+ * Format a single bucket's diff as human-readable lines. Returns `null`
+ * when there are no changes (caller filters those out so the summary only
+ * lists buckets that actually moved).
+ */
+const formatBucketDiff = (label, diff) => {
+  if (diff.added.length === 0 && diff.removed.length === 0) return null;
+  const lines = [`  ${label}:`];
+  for (const k of diff.added) lines.push(`    + ${k}`);
+  for (const k of diff.removed) lines.push(`    - ${k}`);
+  return lines.join("\n");
+};
+
+/**
+ * Emit the per-bucket diff report. Always logs SOMETHING so the operator
+ * has a clear signal even when nothing changed (vs. silently exiting and
+ * leaving them to wonder whether the script ran).
+ */
+const printDiffReport = (translationDiffs, timeLineDiff) => {
+  const blocks = [
+    formatBucketDiff("top", translationDiffs.top),
+    formatBucketDiff("variant", translationDiffs.variant),
+    formatBucketDiff("variantOptional", translationDiffs.variantOptional),
+    formatBucketDiff("timeLine", timeLineDiff),
+  ].filter(Boolean);
+
+  console.log("\n[autofix-required-translation-keys] per-bucket diff:");
+  if (blocks.length === 0) {
+    console.log("  (no changes — every bucket is already in sync)");
+    return;
+  }
+  for (const b of blocks) console.log(b);
+};
+
+// ---------------------------------------------------------------------------
 // Code generators
 // ---------------------------------------------------------------------------
 
