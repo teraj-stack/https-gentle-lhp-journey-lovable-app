@@ -467,27 +467,48 @@ const RiskFactorsAccordion = () => {
           {filtered.map((rf) => {
             const Icon = rf.Icon;
             const isSelected = selected.includes(rf.id);
+            const isRead = readItems.includes(rf.id);
             return (
               <AccordionItem
                 key={rf.id}
                 value={rf.id}
                 data-selected={isSelected}
-                className="rounded-xl border border-border bg-background/40 overflow-hidden data-[state=open]:border-primary/40 data-[state=open]:bg-primary/5 data-[selected=true]:border-primary/60 data-[selected=true]:bg-primary/[0.07] transition-colors"
+                data-read={isRead}
+                className="rounded-xl border border-border bg-background/40 overflow-hidden data-[state=open]:border-primary/40 data-[state=open]:bg-primary/5 data-[selected=true]:border-primary/60 data-[selected=true]:bg-primary/[0.07] data-[read=true]:border-primary/30 transition-colors"
               >
                 <AccordionTrigger className="px-3.5 sm:px-5 py-4 sm:py-3.5 hover:no-underline group text-left gap-2">
                   <div className="flex items-start sm:items-center gap-3 sm:gap-3 flex-1 min-w-0">
-                    <span className="w-10 h-10 sm:w-9 sm:h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 group-data-[state=open]:bg-primary/20 transition-colors mt-0.5 sm:mt-0">
+                    <span className="relative w-10 h-10 sm:w-9 sm:h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 group-data-[state=open]:bg-primary/20 transition-colors mt-0.5 sm:mt-0">
                       <Icon className="w-4 h-4 text-primary" />
+                      {isRead && (
+                        <span
+                          className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-sm ring-1 ring-background"
+                          aria-hidden="true"
+                        >
+                          <Check className="w-2.5 h-2.5" strokeWidth={3} />
+                        </span>
+                      )}
                     </span>
                     <div className="flex-1 min-w-0 flex flex-col gap-1.5">
-                      <p className="font-heading text-[15px] sm:text-base md:text-lg text-foreground leading-snug">
+                      <p className={`font-heading text-[15px] sm:text-base md:text-lg leading-snug ${isRead ? "text-foreground/70" : "text-foreground"}`}>
                         <Highlight text={rf.title} query={query} />
+                        {isRead && (
+                          <span className="sr-only"> (przeczytane)</span>
+                        )}
                       </p>
-                      <span className="inline-flex w-fit max-w-full items-center px-2 py-0.5 rounded-md text-[10.5px] sm:text-[11px] font-sans uppercase tracking-[0.06em] bg-destructive/10 text-destructive border border-destructive/25 leading-snug">
-                        <span className="truncate">
-                          <Highlight text={rf.shortBadge} query={query} />
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <span className="inline-flex w-fit max-w-full items-center px-2 py-0.5 rounded-md text-[10.5px] sm:text-[11px] font-sans uppercase tracking-[0.06em] bg-destructive/10 text-destructive border border-destructive/25 leading-snug">
+                          <span className="truncate">
+                            <Highlight text={rf.shortBadge} query={query} />
+                          </span>
                         </span>
-                      </span>
+                        {isRead && (
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] sm:text-[10.5px] font-sans uppercase tracking-[0.08em] bg-primary/10 text-primary border border-primary/30 leading-snug">
+                            <CheckCircle2 className="w-2.5 h-2.5" />
+                            Przeczytane
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </AccordionTrigger>
