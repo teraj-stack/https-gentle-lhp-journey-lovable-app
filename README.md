@@ -270,11 +270,18 @@ declare -A REASON_TEST=(
   [empty-optional-value]="src/lib/i18nContract.test.ts"
 )
 
+# Locales the validator currently supports (mirrors SUPPORTED_LOCALES in
+# src/lib/i18nActiveLocales.ts). Used to validate --locales values early.
+ALL_LOCALES=(pl en de it)
+
 ONLY="all"
+LOCALES=""  # empty → use $I18N_ACTIVE_LOCALES if set, else fall back to pl,en,de,it
 while [ $# -gt 0 ]; do
   case "$1" in
-    --only|-o) ONLY="${2:-}"; shift 2 ;;
-    --only=*)  ONLY="${1#*=}"; shift ;;
+    --only|-o)    ONLY="${2:-}"; shift 2 ;;
+    --only=*)     ONLY="${1#*=}"; shift ;;
+    --locales|-L) LOCALES="${2:-}"; shift 2 ;;
+    --locales=*)  LOCALES="${1#*=}"; shift ;;
     --list|-l)
       printf '%-24s  %-10s  %s\n' "REASON" "SEVERITY" "TEST FILE (--only value)"
       printf '%-24s  %-10s  %s\n' "------" "--------" "------------------------"
@@ -284,11 +291,13 @@ while [ $# -gt 0 ]; do
       for r in "${ALL_WARNING_REASONS[@]}"; do
         printf '%-24s  %-10s  %s\n' "$r" "warning" "${REASON_TEST[$r]}"
       done
-      printf '\nExample: bash i18n-summary.sh --only %s\n' "${ALL_ERROR_REASONS[0]}"
+      printf '\nKnown locales (for --locales): %s\n' "${ALL_LOCALES[*]}"
+      printf 'Example: bash i18n-summary.sh --only %s --locales en,de\n' "${ALL_ERROR_REASONS[0]}"
       exit 0 ;;
     -h|--help)
-      echo "Usage: $0 [--only <reason>|all] [--list]"
+      echo "Usage: $0 [--only <reason>[,<reason>…]|all] [--locales <locale>[,<locale>…]] [--list]"
       echo "Reasons: ${ALL_ERROR_REASONS[*]} ${ALL_WARNING_REASONS[*]} | all"
+      echo "Locales: ${ALL_LOCALES[*]} (defaults to \$I18N_ACTIVE_LOCALES, else pl,en,de,it)"
       echo "Run '$0 --list' for a reason → test-file table."
       exit 0 ;;
     *) echo "Unknown arg: $1" >&2; exit 2 ;;
