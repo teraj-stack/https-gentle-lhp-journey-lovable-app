@@ -325,9 +325,61 @@ const formatSelectedAt = (iso: string | null): string => {
   });
 };
 
+/**
+ * Mapowanie źródła EBM (label + url) na "providera" — wydawcę/bazę dowodów.
+ * Używane przez przełącznik filtra źródeł EBM w UI.
+ *
+ * Dlaczego po url-host + label, a nie po `ebmId`:
+ * `ebmId` koduje kategorię merytoryczną (fiber/hydration/...), a nie wydawcę.
+ * Provider to ortogonalna oś — jedno źródło może być z PubMed, ale dotyczyć fiber.
+ */
+type EbmProvider = "cochrane" | "pubmed" | "ascrs" | "escp" | "journal";
+
+const EBM_PROVIDERS: { id: EbmProvider; label: string; hint: string }[] = [
+  { id: "cochrane", label: "Cochrane", hint: "Cochrane Systematic Reviews" },
+  { id: "pubmed", label: "PubMed", hint: "Indeksowane w PubMed/NCBI" },
+  { id: "ascrs", label: "ASCRS", hint: "American Society of Colon & Rectal Surgeons" },
+  { id: "escp", label: "ESCP", hint: "European Society of Coloproctology" },
+  { id: "journal", label: "Czasopisma", hint: "LWW, Wiley i inne wydawnictwa naukowe" },
+];
+
+const getSourceProviders = (source: RiskSource): EbmProvider[] => {
+  const providers = new Set<EbmProvider>();
+  const url = source.url.toLowerCase();
+  const label = source.label.toLowerCase();
+  // Cochrane — najjaśniejszy sygnał: host cochranelibrary.com lub słowo w label.
+  if (url.includes("cochranelibrary.com") || label.includes("cochrane")) providers.add("cochrane");
+  // PubMed/NCBI — host pubmed.ncbi.nlm.nih.gov lub ncbi.nlm.nih.gov (nie pokrywa cochrane bo tam host inny).
+  if (url.includes("pubmed.ncbi.nlm.nih.gov") || url.includes("ncbi.nlm.nih.gov")) providers.add("pubmed");
+  // ASCRS / ESCP — wytyczne towarzystw, rozpoznawane po label (zawsze podpisane skrótem).
+  if (label.includes("ascrs")) providers.add("ascrs");
+  if (label.includes("escp")) providers.add("escp");
+  // Czasopisma naukowe (publishers) — LWW, Wiley.
+  if (url.includes("journals.lww.com") || url.includes("onlinelibrary.wiley.com")) providers.add("journal");
+  return Array.from(providers);
+};
+
+const factorHasProvider = (rf: RiskFactor, providers: Set<EbmProvider>): boolean => {
+  if (providers.size === 0) return true;
+  return rf.sources.some((s) => getSourceProviders(s).some((p) => providers.has(p)));
+};
+
 const RiskFactorsAccordion = () => {
   const [query, setQuery] = useState("");
   const nQuery = normalize(query.trim());
+
+  // Filtr po wydawcy/bazie EBM (multi-select OR). Pusty Set = pokaż wszystko.
+  // Logika OR: zaznaczenie Cochrane + PubMed pokazuje czynniki które mają ≥1 źródło z któregokolwiek.
+  const [sourceFilter, setSourceFilter] = useState<Set<EbmProvider>>(() => new Set());
+  const toggleSourceProvider = (id: EbmProvider) => {
+    setSourceFilter((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+  const clearSourceFilter = () => setSourceFilter(new Set());
 
   // Otwarte sekcje (tryb ręczny — gdy nie ma aktywnego wyszukiwania)
   // Persystencja w localStorage: pamiętamy stan rozwinięcia między sesjami.
@@ -342,12 +394,13 @@ const RiskFactorsAccordion = () => {
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (nQuery) return;
+    if (sourceFilter.size > 0) return; // tryb filtra nadpisuje accordionValue → nie zapisujemy
     try {
       window.localStorage.setItem(OPEN_ITEMS_STORAGE_KEY, JSON.stringify(openItems));
     } catch {
       /* noop */
     }
-  }, [openItems, nQuery]);
+  }, [openItems, nQuery, sourceFilter]);
 
   // Wybrane czynniki — persystencja w localStorage (anonimowo)
   const [selected, setSelected] = useState<string[]>(() => loadStringArray(STORAGE_KEY));
@@ -543,25 +596,31 @@ const RiskFactorsAccordion = () => {
   // Auto-oznacz jako przeczytane po 1.2 s utrzymanego rozwinięcia (tylko ręczne otwarcie, nie wyszukiwarka)
   useEffect(() => {
     if (nQuery) return;
+    if (sourceFilter.size > 0) return; // auto-rozwinięcie z filtra ≠ świadome czytanie
     if (openItems.length === 0) return;
     const timers = openItems
       .filter((id) => !readItems.includes(id))
       .map((id) => window.setTimeout(() => markRead(id), 1200));
     return () => timers.forEach((t) => window.clearTimeout(t));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [openItems, nQuery]);
+  }, [openItems, nQuery, sourceFilter]);
 
   const filtered = useMemo(() => {
-    if (!nQuery) return RISK_FACTORS;
-    return RISK_FACTORS.filter((rf) => {
+    const base = sourceFilter.size === 0
+      ? RISK_FACTORS
+      : RISK_FACTORS.filter((rf) => factorHasProvider(rf, sourceFilter));
+    if (!nQuery) return base;
+    return base.filter((rf) => {
       const sourcesText = rf.sources.map((s) => s.label).join(" ");
       const haystack = normalize(`${rf.title} ${rf.shortBadge} ${rf.body} ${sourcesText}`);
       return haystack.includes(nQuery);
     });
-  }, [nQuery]);
+  }, [nQuery, sourceFilter]);
 
-  // Auto-rozwijaj dopasowane karty podczas wyszukiwania (tryb wyszukiwania nadpisuje ręczny)
-  const accordionValue = nQuery ? filtered.map((rf) => rf.id) : openItems;
+  // Auto-rozwijaj dopasowane karty gdy aktywne wyszukiwanie LUB filtr źródeł EBM —
+  // dla obu trybów `accordionValue` nadpisuje ręczny `openItems`, żeby wynik był od razu widoczny.
+  const filterActive = nQuery.length > 0 || sourceFilter.size > 0;
+  const accordionValue = filterActive ? filtered.map((rf) => rf.id) : openItems;
   const allExpanded = openItems.length === RISK_FACTORS.length;
 
   // Stagger helper: stopniowo buduje/usuwa wpisy z `openItems` po 1 na 40ms,
@@ -669,6 +728,62 @@ const RiskFactorsAccordion = () => {
         <p className="text-sm md:text-base text-muted-foreground leading-relaxed max-w-2xl">
           Rozwiń kategorię, aby zobaczyć mechanizm i przejść do konkretnych badań w module
           „Źródła EBM" na dole artykułu lub do pełnej bibliografii.
+        </p>
+      </div>
+
+      {/* Filtr źródeł EBM — multi-select chips (OR). Pokazuje tylko czynniki, które mają ≥1 źródło z wybranego dostawcy. */}
+      <div className="mb-4">
+        <div className="flex items-center justify-between gap-2 mb-2">
+          <h3 className="font-sans text-[12.5px] sm:text-sm font-medium text-foreground/85">
+            Filtruj po źródle EBM
+          </h3>
+          {sourceFilter.size > 0 && (
+            <button
+              type="button"
+              onClick={clearSourceFilter}
+              className="inline-flex items-center gap-1 text-[11.5px] sm:text-xs text-muted-foreground hover:text-foreground transition-colors"
+              aria-label="Wyczyść filtr źródeł EBM"
+            >
+              <X className="w-3 h-3" />
+              Wyczyść
+            </button>
+          )}
+        </div>
+        <div className="flex flex-wrap gap-1.5" role="group" aria-label="Filtr źródeł EBM">
+          {EBM_PROVIDERS.map((p) => {
+            const active = sourceFilter.has(p.id);
+            const count = RISK_FACTORS.filter((rf) =>
+              rf.sources.some((s) => getSourceProviders(s).includes(p.id)),
+            ).length;
+            const disabled = count === 0;
+            return (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => !disabled && toggleSourceProvider(p.id)}
+                disabled={disabled}
+                aria-pressed={active}
+                title={`${p.hint} — ${count} ${count === 1 ? "czynnik" : count >= 2 && count <= 4 ? "czynniki" : "czynników"}`}
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11.5px] sm:text-xs font-sans border transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
+                  active
+                    ? "bg-primary/20 border-primary/60 text-primary"
+                    : "bg-background/40 border-border/60 text-muted-foreground hover:text-foreground hover:border-primary/40"
+                }`}
+              >
+                {active && <Check className="w-3 h-3" aria-hidden="true" />}
+                {p.label}
+                <span className="tabular-nums opacity-70">{count}</span>
+              </button>
+            );
+          })}
+        </div>
+        <p className="mt-2 text-[11.5px] sm:text-xs text-muted-foreground" aria-live="polite">
+          {sourceFilter.size === 0
+            ? "Wybierz źródło, aby zobaczyć tylko czynniki oparte na tym wydawcy/bazie."
+            : `Filtr aktywny: ${Array.from(sourceFilter)
+                .map((id) => EBM_PROVIDERS.find((p) => p.id === id)?.label)
+                .filter(Boolean)
+                .join(" + ")} → ${filtered.length} z ${RISK_FACTORS.length} czynników`}
         </p>
       </div>
 
