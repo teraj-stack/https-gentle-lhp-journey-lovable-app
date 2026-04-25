@@ -13,6 +13,10 @@ import {
   Trash2,
   Info,
   TrendingUp,
+  FileDown,
+  FileSpreadsheet,
+  TrendingDown,
+  Minus,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -43,6 +47,8 @@ import SeoHead from "@/components/shared/SeoHead";
 import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 import { useDailyDiary, last14DaysKeys, todayKey } from "@/hooks/useDailyDiary";
 import { HEMOROIDY_QUESTIONS, RiskLevel } from "@/lib/hemoroidyQuizData";
+import { buildDiarySummary, exportDiaryCsv, exportDiaryPdf } from "@/lib/diaryExport";
+import { toast } from "@/hooks/use-toast";
 
 const easeOut = [0.16, 1, 0.3, 1] as const;
 
