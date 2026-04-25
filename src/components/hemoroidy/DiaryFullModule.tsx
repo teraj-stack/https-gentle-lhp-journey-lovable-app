@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import {
   CalendarDays,
@@ -66,6 +66,8 @@ import RiskThresholdsSettings from "@/components/hemoroidy/RiskThresholdsSetting
 import DiaryTrendStats from "@/components/hemoroidy/DiaryTrendStats";
 import DiaryTrendSummary from "@/components/hemoroidy/DiaryTrendSummary";
 import DiaryWeeklySummary from "@/components/hemoroidy/DiaryWeeklySummary";
+import AutoSaveSettings from "@/components/hemoroidy/AutoSaveSettings";
+import { useAutoSave } from "@/hooks/useAutoSave";
 import { toast } from "@/hooks/use-toast";
 
 const easeOut = [0.16, 1, 0.3, 1] as const;
@@ -159,13 +161,155 @@ const DiaryFullModule = ({
   showReminderSettings = true,
   showExport = true,
 }: DiaryFullModuleProps) => {
-  const { entries, getEntry, setAnswer, setNotes, removeEntry, clearAll, last14Trend, maxScore, thresholds } =
-    useDailyDiary();
+  const {
+    entries,
+    getEntry,
+    setAnswer: persistSetAnswer,
+    setNotes: persistSetNotes,
+    removeEntry,
+    clearAll,
+    last14Trend,
+    maxScore,
+    thresholds,
+  } = useDailyDiary();
+
+  const { enabled: autoSaveEnabled } = useAutoSave();
 
   const days = useMemo(() => last14DaysKeys(), []);
   const [activeDate, setActiveDate] = useState<string>(todayKey());
-  const entry = getEntry(activeDate);
+
+  /**
+   * Draft overlay — używany TYLKO gdy auto-zapis jest WYŁĄCZONY.
+   * Mapa dnia → częściowy `DiaryEntry` z lokalnymi zmianami pacjenta, które jeszcze
+   * NIE trafiły do storage. Po włączeniu auto-zapisu lub po kliknięciu „Zapisz dzień"
+   * cały draft jest flushowany do storage przez `flushDraft()`.
+   *
+   * Trzymamy też `Set<number>` indeksów pytań, gdzie pacjent celowo cofnął odpowiedź
+   * (żeby odróżnić „pole puste w drafcie = brak edycji" od „pole celowo wyczyszczone").
+   */
+  const [draftAnswers, setDraftAnswers] = useState<Record<string, Record<number, number | null>>>({});
+  const [draftNotes, setDraftNotes] = useState<Record<string, string>>({});
+
+  // Merguje storage'owy entry z draftem (jeśli istnieje) — tak by UI od razu pokazywało zmiany.
+  const baseEntry = getEntry(activeDate);
+  const entry = useMemo(() => {
+    const da = draftAnswers[activeDate];
+    const dn = draftNotes[activeDate];
+    if (!da && dn === undefined) return baseEntry;
+    const mergedAnswers = baseEntry.answers.map((a, i) =>
+      da && i in da ? da[i] : a,
+    );
+    return {
+      ...baseEntry,
+      answers: mergedAnswers,
+      notes: dn !== undefined ? dn : baseEntry.notes,
+    };
+  }, [baseEntry, draftAnswers, draftNotes, activeDate]);
+
   const trend = last14Trend();
+
+  /**
+   * Wrappery setAnswer/setNotes z respektem dla przełącznika auto-zapisu.
+   *
+   * - **Auto-zapis ON (domyślnie)**: zachowanie identyczne jak wcześniej —
+   *   bezpośredni zapis do localStorage przez `useDailyDiary`.
+   * - **Auto-zapis OFF**: zmiana trafia tylko do `draftAnswers`/`draftNotes`
+   *   (lokalny stan komponentu). UI od razu pokazuje zmianę przez merge w `entry`,
+   *   ale storage NIE jest dotykany aż do flushu.
+   *
+   * `setAnswer` zwraca `StorageWriteResult` — dla draftu zawsze `{ ok: true }`
+   * (brak operacji na storage = brak ryzyka błędu).
+   */
+  const setAnswer = useCallback(
+    (date: string, qi: number, oi: number | null) => {
+      if (autoSaveEnabled) return persistSetAnswer(date, qi, oi);
+      setDraftAnswers((prev) => {
+        const dayMap = { ...(prev[date] ?? {}), [qi]: oi };
+        return { ...prev, [date]: dayMap };
+      });
+      return { ok: true } as const;
+    },
+    [autoSaveEnabled, persistSetAnswer],
+  );
+
+  const setNotes = useCallback(
+    (date: string, value: string) => {
+      if (autoSaveEnabled) {
+        persistSetNotes(date, value);
+        return;
+      }
+      setDraftNotes((prev) => ({ ...prev, [date]: value.slice(0, 1000) }));
+    },
+    [autoSaveEnabled, persistSetNotes],
+  );
+
+  /**
+   * Flush draftu do storage'u. Wywoływany z „Zapisz dzień" (gdy auto-zapis OFF)
+   * oraz w `useEffect` po włączeniu auto-zapisu (przeniesienie wszystkich pending zmian).
+   * Czyści draft po pomyślnym zapisie.
+   */
+  const flushDraft = useCallback(
+    (dateFilter?: string) => {
+      const datesToFlush = dateFilter
+        ? [dateFilter]
+        : Array.from(new Set([...Object.keys(draftAnswers), ...Object.keys(draftNotes)]));
+      let firstError: string | null = null;
+      datesToFlush.forEach((d) => {
+        const da = draftAnswers[d];
+        if (da) {
+          for (const [qi, oi] of Object.entries(da)) {
+            const r = persistSetAnswer(d, Number(qi), oi);
+            if (r.ok === false && !firstError) firstError = r.message;
+          }
+        }
+        const dn = draftNotes[d];
+        if (dn !== undefined) persistSetNotes(d, dn);
+      });
+      if (firstError) {
+        toast({
+          variant: "destructive",
+          title: "Nie udało się zapisać wszystkich zmian",
+          description: firstError,
+          duration: 6000,
+        });
+        return false;
+      }
+      // Sukces — czyść draft TYLKO dla flushed dni.
+      setDraftAnswers((prev) => {
+        const next = { ...prev };
+        datesToFlush.forEach((d) => delete next[d]);
+        return next;
+      });
+      setDraftNotes((prev) => {
+        const next = { ...prev };
+        datesToFlush.forEach((d) => delete next[d]);
+        return next;
+      });
+      return true;
+    },
+    [draftAnswers, draftNotes, persistSetAnswer, persistSetNotes],
+  );
+
+  // Auto-flush po włączeniu auto-zapisu — żadne pending zmiany nie giną.
+  useEffect(() => {
+    if (!autoSaveEnabled) return;
+    const hasDraft =
+      Object.keys(draftAnswers).length > 0 || Object.keys(draftNotes).length > 0;
+    if (hasDraft) flushDraft();
+    // celowo bez `flushDraft` w deps — zapobiega pętli (flushDraft zmienia draft state)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoSaveEnabled]);
+
+  // Liczba niezapisanych zmian (do wskaźnika w panelu i w banerze ostrzeżenia).
+  const pendingDraftCount = useMemo(() => {
+    let n = 0;
+    for (const day of Object.values(draftAnswers)) n += Object.keys(day).length;
+    n += Object.keys(draftNotes).length;
+    return n;
+  }, [draftAnswers, draftNotes]);
+
+  const activeDayHasDraft =
+    !!draftAnswers[activeDate] || draftNotes[activeDate] !== undefined;
 
   const completed = entry.answers.filter((a) => a !== null).length;
   const total = HEMOROIDY_QUESTIONS.length;
@@ -390,6 +534,12 @@ const DiaryFullModule = ({
             : `Brakuje ${missingCount} ${missingCount === 1 ? "odpowiedzi" : "odpowiedzi"} (pytanie ${preview}${more}). Komplet ${total}/${total} jest wymagany do zatwierdzenia dnia.`,
       });
       return;
+    }
+    // Auto-zapis OFF + draft aktywnego dnia → flush PRZED ogłoszeniem sukcesu.
+    // Bez tego „Zapisano dzień" byłoby kłamstwem (zmiany żyją tylko w stanie komponentu).
+    if (!autoSaveEnabled && activeDayHasDraft) {
+      const ok = flushDraft(activeDate);
+      if (!ok) return;
     }
     // Manualne potwierdzenie też domyka heartbeat → checkpoint = teraz.
     if (entry.updatedAt) {
@@ -1519,6 +1669,10 @@ const DiaryFullModule = ({
           </p>
         </motion.section>
       )}
+
+      {/* Auto-zapis: dostępny zawsze (również w wariancie inline na /quiz-hemoroidy)
+          — to fundamentalna preferencja zachowania quizu, nie zaawansowana opcja. */}
+      <AutoSaveSettings pendingDraftCount={pendingDraftCount} />
 
       {/* Reminder settings + clear all */}
       {showReminderSettings && (

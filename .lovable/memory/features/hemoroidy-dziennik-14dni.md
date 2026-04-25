@@ -58,3 +58,9 @@ Dziennik 14 dni hemoroidów: anonimowy tracker w przeglądarce.
   - Sync między tabami: custom event `cml:risk-thresholds-updated` + natywny `storage`.
   - Panel z 2 sliderami (low/medium) + podgląd 3 stref + reset do default; widoczny w DiaryFullModule gdy `showReminderSettings` (pełna strona dziennika).
   - HemoroidyRiskQuiz używa `getRiskLevelWithThresholds` + `getRiskRangeWithThresholds`; `tier.range` zastąpione zmienną `tierRange`.
+- **Przełącznik auto-zapisu** (`useAutoSave` + `AutoSaveSettings`):
+  - Storage `cml.hemoroidy.autosave.v1` ("on" | "off"), domyślnie ON. Sync tabów: `cml:autosave-updated` + natywny `storage`.
+  - Panel `AutoSaveSettings` (Switch + opis stanu + licznik niezapisanych zmian) renderowany W KAŻDYM wariancie DiaryFullModule (poza gate'em `showReminderSettings`) — to fundamentalna preferencja, nie ustawienia zaawansowane. Widoczny też na inline'owym osadzeniu w `/quiz-hemoroidy`.
+  - DiaryFullModule wrappuje `setAnswer`/`setNotes`: gdy auto-zapis OFF → zmiany trafiają do lokalnego draftu (`draftAnswers: Record<date, Record<qi, oi|null>>`, `draftNotes: Record<date, string>`), `entry` w UI to merge `baseEntry + draft` (instant feedback). Gdy ON → bezpośredni zapis do localStorage przez `useDailyDiary` (back-compat).
+  - `flushDraft(date?)`: zapisuje pending zmiany do storage i czyści draft. Wywoływany w `handleSaveDay` (gdy OFF + draft aktywnego dnia), oraz auto w useEffect gdy pacjent włączy auto-zapis (żadne pending zmiany nie giną).
+
