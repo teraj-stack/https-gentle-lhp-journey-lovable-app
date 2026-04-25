@@ -305,6 +305,36 @@ const RiskFactorsAccordion = () => {
     [selected],
   );
 
+  const handleExportChecklistPdf = () => {
+    if (selectedFactors.length === 0) {
+      toast({
+        title: "Brak zaznaczonych czynników",
+        description: "Rozwiń akordeon i kliknij „Zapisz moje ryzyko”, aby dodać pozycje.",
+      });
+      return;
+    }
+    exportChecklistPdf(selectedFactors, RISK_FACTORS.length);
+    toast({
+      title: "Pobrano checklistę PDF",
+      description: `${selectedFactors.length} z ${RISK_FACTORS.length} czynników — gotowe do druku.`,
+    });
+  };
+
+  const handleExportChecklistCsv = () => {
+    if (selectedFactors.length === 0) {
+      toast({
+        title: "Brak zaznaczonych czynników",
+        description: "Rozwiń akordeon i kliknij „Zapisz moje ryzyko”, aby dodać pozycje.",
+      });
+      return;
+    }
+    exportChecklistCsv(selectedFactors, RISK_FACTORS.length);
+    toast({
+      title: "Pobrano checklistę CSV",
+      description: "Plik został zapisany w folderze pobranych.",
+    });
+  };
+
   // Przeczytane karty — persystencja w localStorage (anonimowo)
   const [readItems, setReadItems] = useState<string[]>(() => loadStringArray(READ_STORAGE_KEY));
 
