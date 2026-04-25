@@ -152,6 +152,79 @@ export interface SyncHistoryEntry {
 const HISTORY_LIMIT = 5;
 let historyCounter = 0;
 
+/**
+ * Kategoria przyczyny degradacji BroadcastChannel → storage-fallback.
+ * Każda wartość mapuje 1:1 na konkretne miejsce w kodzie, w którym wykrywamy
+ * problem — dzięki temu UI może pokazać krótki tag, a logi konsoli pozwalają
+ * jednoznacznie zlokalizować źródło.
+ *
+ *  - `api-missing`           — `typeof BroadcastChannel === "undefined"` (stare przeglądarki, niektóre sandboxy).
+ *  - `constructor-exception` — `new BroadcastChannel(...)` rzucił wyjątek (cross-origin iframe bez allow-same-origin, polifille).
+ *  - `messageerror`          — kanał wyemitował `messageerror` (niedeserializowalny payload).
+ *  - `postmessage-failure`   — `postMessage` rzucił w runtime (kanał zamknięty np. po wybudzeniu z BFCache).
+ *  - `simulation`            — diagnostyczne wymuszenie fallbacku przez UI (przycisk „Symuluj brak BC").
+ */
+export type DegradationCause =
+  | "api-missing"
+  | "constructor-exception"
+  | "messageerror"
+  | "postmessage-failure"
+  | "simulation";
+
+/**
+ * Szczegóły ostatniej degradacji BC. Trzymamy zarówno kategorię (do badge'a w UI),
+ * czytelny opis (do tooltipa/podpisu) oraz znacznik czasu. `errorMessage` zawiera
+ * surową treść wyjątku/eventu — przydatne przy debugowaniu wieloprzyczynowych awarii.
+ */
+export interface DegradationInfo {
+  cause: DegradationCause;
+  /** Krótkie zdanie po polsku — bez stack trace, bez surowych nazw klas. */
+  detail: string;
+  /** Surowy komunikat błędu (gdy mamy obiekt Error). */
+  errorMessage?: string;
+  /** Kiedy wystąpiła degradacja (ms epoch). */
+  at: number;
+}
+
+const DEGRADATION_DETAILS: Record<DegradationCause, string> = {
+  "api-missing": "BroadcastChannel API nie jest dostępne w tej przeglądarce",
+  "constructor-exception":
+    "Konstruktor BroadcastChannel rzucił wyjątek (możliwy sandbox iframe lub tryb prywatny)",
+  messageerror:
+    "Kanał BroadcastChannel zwrócił błąd deserializacji wiadomości (messageerror)",
+  "postmessage-failure":
+    "postMessage rzucił wyjątek w runtime (kanał zamknięty, możliwe wybudzenie z BFCache)",
+  simulation: "Symulacja diagnostyczna: BroadcastChannel wyłączony ręcznie",
+};
+
+/**
+ * Ujednolicony helper — buduje obiekt `DegradationInfo` i loguje go do konsoli
+ * (`console.warn` z prefiksem), żeby wystąpienia były łatwe do wyłapania w DevTools
+ * niezależnie od stanu UI. Komunikaty są stabilne (te same kategorie/teksty),
+ * dzięki czemu można je grepować w logach produkcyjnych.
+ */
+const buildDegradationInfo = (
+  cause: DegradationCause,
+  error?: unknown,
+): DegradationInfo => {
+  const info: DegradationInfo = {
+    cause,
+    detail: DEGRADATION_DETAILS[cause],
+    at: Date.now(),
+    errorMessage:
+      error instanceof Error
+        ? error.message
+        : typeof error === "string"
+          ? error
+          : undefined,
+  };
+  if (isBrowser()) {
+    // eslint-disable-next-line no-console
+    console.warn("[useAutoSave] BroadcastChannel degradation:", info, error ?? "");
+  }
+  return info;
+};
+
 export const useAutoSave = () => {
   const [enabled, setEnabled] = useState<boolean>(() => readStored());
   const [remoteSyncTick, setRemoteSyncTick] = useState(0);
@@ -177,10 +250,13 @@ export const useAutoSave = () => {
    * Ostatnia przyczyna zejścia na storage-fallback (lub `null`, gdy BC działa od początku).
    * Pole jest informacyjne — wyświetlane w panelu ustawień obok statusu transportu,
    * pomaga zdiagnozować, dlaczego kanał padł (tryb prywatny? sandbox? wybudzenie z BFCache?).
+   * Zawiera kategorię (`cause`), czytelny opis (`detail`), surowy komunikat błędu
+   * (`errorMessage` jeśli był) i znacznik czasu — wszystkie pola są również wpisywane
+   * do `console.warn`, żeby debugowanie produkcji było możliwe bez UI.
    */
-  const [degradationReason, setDegradationReason] = useState<string | null>(() =>
+  const [degradationInfo, setDegradationInfo] = useState<DegradationInfo | null>(() =>
     isBrowser() && typeof BroadcastChannel === "undefined"
-      ? "BroadcastChannel API nie jest dostępne w tej przeglądarce"
+      ? buildDegradationInfo("api-missing")
       : null,
   );
   /**
@@ -259,7 +335,7 @@ export const useAutoSave = () => {
     if (!isBrowser() || typeof BroadcastChannel === "undefined") {
       // API nieobecne — jedyna ścieżka to storage+CustomEvent fallback (już zarejestrowany w drugim effekcie).
       setTransport("storage-fallback");
-      setDegradationReason("BroadcastChannel API nie jest dostępne w tej przeglądarce");
+      setDegradationInfo(buildDegradationInfo("api-missing"));
       return;
     }
     let channel: BroadcastChannel;
@@ -267,17 +343,15 @@ export const useAutoSave = () => {
       // Konstruktor może rzucić w niektórych sandboxach (cross-origin iframe bez allow-same-origin)
       // oraz w starych wersjach Safari z polifillem. Łapiemy i schodzimy na fallback.
       channel = new BroadcastChannel(CHANNEL_NAME);
-    } catch {
+    } catch (err) {
       broadcastDegradedRef.current = true;
       setTransport("storage-fallback");
-      setDegradationReason(
-        "Konstruktor BroadcastChannel rzucił wyjątek (możliwy sandbox iframe lub tryb prywatny)",
-      );
+      setDegradationInfo(buildDegradationInfo("constructor-exception", err));
       return;
     }
     channelRef.current = channel;
     setTransport("broadcast");
-    setDegradationReason(null);
+    setDegradationInfo(null);
 
     const onMessage = (e: MessageEvent<ChannelPayload>) => {
       const data = e.data;
@@ -344,12 +418,11 @@ export const useAutoSave = () => {
     // Niektóre implementacje (głównie polifille) emitują `messageerror` gdy payload
     // nie da się zdeserializować — degradujemy zachowawczo, bo nie wiemy, czy następne
     // wiadomości też nie padną.
-    const onMessageError = () => {
+    const onMessageError = (event: Event) => {
       broadcastDegradedRef.current = true;
       setTransport("storage-fallback");
-      setDegradationReason(
-        "Kanał BroadcastChannel zwrócił błąd deserializacji wiadomości (messageerror)",
-      );
+      // Surowy event nie ma czytelnego `.message`, ale logujemy go dla pełnego kontekstu.
+      setDegradationInfo(buildDegradationInfo("messageerror", event));
       try {
         channel.close();
       } catch {
