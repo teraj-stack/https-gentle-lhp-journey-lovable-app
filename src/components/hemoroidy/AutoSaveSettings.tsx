@@ -432,15 +432,30 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
               A
             </kbd>
           </p>
-          {lastSyncLabel && showLastChangeLabel && (
+          {lastSyncLabel && showLastChangeLabel && (() => {
+            // Tooltip rozdzielamy na trzy linie: jednoznaczna etykieta źródła
+            // („Synchronizacja…" vs „Lokalna akcja…"), opis kontekstu, pełna data.
+            // Dzięki temu nawet bez kolorów (screen reader, high-contrast mode)
+            // widać, skąd przyszła zmiana. To samo idzie do `aria-label`.
+            const sourceHeading = isRemoteChange
+              ? "Źródło: Synchronizacja między kartami"
+              : "Źródło: Moja lokalna akcja w tej karcie";
+            const sourceDescription = isRemoteChange
+              ? "Zmiana auto-zapisu przyszła z innej otwartej karty (BroadcastChannel lub storage)."
+              : "Sam(a) przełączyłe(a)ś auto-zapis w tej karcie (Switch lub skrót Alt+Shift+A).";
+            const tooltipText = [
+              sourceHeading,
+              sourceDescription,
+              lastSyncFullDate ? `Czas: ${lastSyncFullDate}` : null,
+            ]
+              .filter(Boolean)
+              .join("\n");
+            return (
             <div
               key={lastChangeAt ?? "none"}
               className={`text-[11px] font-sans inline-flex items-center gap-1.5 transition-colors animate-fade-in ${labelStyle.containerClass}`}
-              title={`${
-                isRemoteChange
-                  ? "Zmiana auto-zapisu wykryta przez synchronizację z inną kartą"
-                  : "Twoja lokalna zmiana auto-zapisu w tej karcie"
-              }${lastSyncFullDate ? ` — ${lastSyncFullDate}` : ""}`}
+              title={tooltipText}
+              aria-label={tooltipText}
               aria-live="polite"
             >
               <RefreshCw
