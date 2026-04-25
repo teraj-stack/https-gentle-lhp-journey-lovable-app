@@ -76,28 +76,25 @@ const renderPanel = () =>
   );
 
 /**
- * Trigger tooltipa to span z `cursor-help` i `tabIndex=0` zawierający
- * tekst „Ostatnia zmiana:”. Wybieramy go po roli "generic" + `title` >
- * pewniej: po obecności tekstu „Ostatnia zmiana:” i poszukujemy
- * najbliższego rodzica z `title` i `aria-label`.
+ * Trigger tooltipa to span z `title` zaczynającym się od „Źródło: " i
+ * `tabIndex=0`. Wybieramy go po unikalnym prefiksie atrybutu `title` —
+ * to jedyna stabilna kotwica, bo tekst „Ostatnia zmiana:" istnieje też
+ * w przodkach (textContent propaguje w górę DOM, więc `getByText` po
+ * matcherze trafiałby kilka węzłów na raz).
  */
 const findTriggerByLabel = (): HTMLElement => {
-  // Trigger ma w sobie tekst „Ostatnia zmiana:”. `getByText` z funkcją
-  // matchera obsługuje rozbity tekst (interpunkcja + <strong>).
-  const labelNode = screen.getByText((_, node) => {
-    if (!node) return false;
-    const text = node.textContent ?? "";
-    return text.startsWith("Ostatnia zmiana:");
-  });
-  // Trigger to span z tabIndex=0 i title — wspinamy się od tekstu.
-  let current: HTMLElement | null = labelNode as HTMLElement;
-  while (current && !current.hasAttribute("title")) {
-    current = current.parentElement;
+  const candidates = Array.from(
+    document.querySelectorAll<HTMLElement>('span[tabindex="0"][title]'),
+  );
+  const trigger = candidates.find((el) =>
+    (el.getAttribute("title") ?? "").startsWith("Źródło: "),
+  );
+  if (!trigger) {
+    throw new Error(
+      "Nie znaleziono triggera tooltipa (span[tabindex=0][title^='Źródło: '])",
+    );
   }
-  if (!current) {
-    throw new Error("Nie znaleziono triggera tooltipa z atrybutem title");
-  }
-  return current;
+  return trigger;
 };
 
 describe("AutoSaveSettings — tooltip „Ostatnia zmiana” wybiera nagłówek per źródło", () => {
