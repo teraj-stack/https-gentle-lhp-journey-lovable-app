@@ -19,7 +19,9 @@ import {
   getTimeLinePrefix,
   smoothTimeValue,
   TIME_LINE_PREFIX,
+  validateLastChangeTooltipInput,
   type TimeValueFormat,
+  type ValidationIssueCode,
 } from "./lastChangeTooltipModel";
 import { resolveLocale, SUPPORTED_LOCALES } from "./lastChangeTooltipContent";
 
@@ -1256,3 +1258,261 @@ describe("ariaText guard — brak pustych linii i osieroconych prefiksów", () =
   });
 });
 
+
+describe("validateLastChangeTooltipInput — walidacja wejścia helpera", () => {
+  /**
+   * Kontrakt, który ten suite egzekwuje:
+   *  1. Walidator NIGDY nie rzuca — UI musi pozostać stabilny dla każdego
+   *     możliwego wejścia (null, undefined, prymityw, tablica, obiekt z
+   *     polami złych typów).
+   *  2. Każde odrzucenie pola jest raportowane jako issue z konkretnym
+   *     `code`/`field` — pozwala dev-overlay/testom wykryć regresję
+   *     konsumenta (np. hook zwraca `Date` zamiast string).
+   *  3. Dla każdego niepoprawnego wejścia `buildLastChangeTooltipModel`
+   *     zwraca KOMPLETNY, spójny model — bez `undefined`/`NaN`/exception
+   *     w żadnym polu.
+   */
+
+  describe("całe wejście niepoprawnego typu — bezpieczny fallback", () => {
+    it.each([
+      ["null", null],
+      ["undefined", undefined],
+      ["string", "remote"],
+      ["number", 42],
+      ["boolean", true],
+      ["array", ["remote"]],
+      ["function", () => {}],
+    ])("%s → fallback do { source:null, fullDate:null, ... } + issue 'input-not-object'", (_label, raw) => {
+      const result = validateLastChangeTooltipInput(raw);
+      expect(result.value).toEqual({
+        source: null,
+        fullDate: null,
+        relativeLabel: null,
+        format: "single-space",
+        locale: "pl",
+      });
+      expect(result.issues).toHaveLength(1);
+      expect(result.issues[0].field).toBe("input");
+      expect(result.issues[0].code).toBe("input-not-object");
+    });
+
+    it("nawet dla null nie rzuca i model buildera jest kompletny", () => {
+      expect(() => buildLastChangeTooltipModel(null as never)).not.toThrow();
+      const model = buildLastChangeTooltipModel(null as never);
+      // Pełny zestaw pól — żadne `undefined` poza opcjonalnym timeLineHelpTitle.
+      expect(model.content).toBeDefined();
+      expect(model.content.locale).toBe("pl");
+      expect(model.timeValue).toBe("");
+      expect(model.shouldRenderTimeLine).toBe(false);
+      expect(model.timeLineForView).toBeNull();
+      expect(model.timeLineForA11y).toBeNull();
+      expect(model.ariaText.length).toBeGreaterThan(0);
+      expect(model.ariaText).not.toContain("undefined");
+      expect(model.ariaText).not.toContain("null");
+    });
+  });
+
+  describe("pole 'source' — walidacja typu i wartości", () => {
+    it("akceptuje 'remote', 'local', null, undefined", () => {
+      expect(validateLastChangeTooltipInput({ source: "remote" }).issues).toHaveLength(0);
+      expect(validateLastChangeTooltipInput({ source: "local" }).issues).toHaveLength(0);
+      expect(validateLastChangeTooltipInput({ source: null }).issues).toHaveLength(0);
+      expect(validateLastChangeTooltipInput({ source: undefined }).issues).toHaveLength(0);
+    });
+
+    it.each([
+      ["number", 1, "source-invalid-type"],
+      ["boolean", true, "source-invalid-type"],
+      ["object", {}, "source-invalid-type"],
+      ["array", [], "source-invalid-type"],
+      ["nieznany string 'REMOTE'", "REMOTE", "source-invalid-value"],
+      ["nieznany string ''", "", "source-invalid-value"],
+      ["nieznany string 'unknown'", "unknown", "source-invalid-value"],
+    ])("%s → fallback null + issue '%s'", (_l, source, expectedCode) => {
+      const result = validateLastChangeTooltipInput({ source });
+      expect(result.value.source).toBeNull();
+      expect(result.issues.some((i) => i.field === "source" && i.code === expectedCode)).toBe(true);
+    });
+  });
+
+  describe("pole 'fullDate' / 'relativeLabel' — walidacja typu", () => {
+    it("akceptuje string, null, undefined (w tym pusty string)", () => {
+      expect(validateLastChangeTooltipInput({ fullDate: "abc", relativeLabel: "x" }).issues).toHaveLength(0);
+      expect(validateLastChangeTooltipInput({ fullDate: "", relativeLabel: "" }).issues).toHaveLength(0);
+      expect(validateLastChangeTooltipInput({ fullDate: null, relativeLabel: null }).issues).toHaveLength(0);
+    });
+
+    it.each([
+      ["number", 1234567890],
+      ["boolean", false],
+      ["object Date-like", { toISOString: () => "x" }],
+      ["array", ["2026-04-24"]],
+      ["NaN", Number.NaN],
+    ])("fullDate jako %s → null + issue", (_l, fullDate) => {
+      const result = validateLastChangeTooltipInput({ fullDate });
+      expect(result.value.fullDate).toBeNull();
+      expect(result.issues.some((i) => i.field === "fullDate" && i.code === "fullDate-invalid-type")).toBe(true);
+    });
+
+    it.each([
+      ["number", 999],
+      ["boolean", true],
+      ["object", {}],
+      ["array", []],
+    ])("relativeLabel jako %s → null + issue", (_l, relativeLabel) => {
+      const result = validateLastChangeTooltipInput({ relativeLabel });
+      expect(result.value.relativeLabel).toBeNull();
+      expect(result.issues.some((i) => i.field === "relativeLabel" && i.code === "relativeLabel-invalid-type")).toBe(true);
+    });
+  });
+
+  describe("pole 'format' — walidacja typu i wartości", () => {
+    it("akceptuje wszystkie TimeValueFormat oraz undefined", () => {
+      const formats: TimeValueFormat[] = ["single-space", "compact", "preserve-newlines"];
+      for (const format of formats) {
+        const result = validateLastChangeTooltipInput({ format });
+        expect(result.value.format).toBe(format);
+        expect(result.issues).toHaveLength(0);
+      }
+      expect(validateLastChangeTooltipInput({ format: undefined }).value.format).toBe("single-space");
+    });
+
+    it.each([
+      ["number", 1, "format-invalid-type"],
+      ["boolean", false, "format-invalid-type"],
+      ["object", {}, "format-invalid-type"],
+      ["null", null, "format-invalid-type"],
+      ["nieznany string 'pretty'", "pretty", "format-invalid-value"],
+      ["nieznany string ''", "", "format-invalid-value"],
+      ["case-mismatch 'Compact'", "Compact", "format-invalid-value"],
+    ])("%s → fallback 'single-space' + issue '%s'", (_l, format, expectedCode) => {
+      const result = validateLastChangeTooltipInput({ format });
+      expect(result.value.format).toBe("single-space");
+      expect(result.issues.some((i) => i.field === "format" && i.code === expectedCode)).toBe(true);
+    });
+  });
+
+  describe("pole 'locale' — walidacja typu (resolveLocale dba o nieznane języki)", () => {
+    it("akceptuje string, null, undefined", () => {
+      expect(validateLastChangeTooltipInput({ locale: "pl" }).issues).toHaveLength(0);
+      expect(validateLastChangeTooltipInput({ locale: "en-US" }).issues).toHaveLength(0);
+      expect(validateLastChangeTooltipInput({ locale: "klingon" }).issues).toHaveLength(0);
+      expect(validateLastChangeTooltipInput({ locale: null }).issues).toHaveLength(0);
+      expect(validateLastChangeTooltipInput({ locale: undefined }).issues).toHaveLength(0);
+    });
+
+    it.each([
+      ["number", 42],
+      ["boolean", true],
+      ["object", { lang: "pl" }],
+      ["array", ["pl"]],
+    ])("%s → fallback 'pl' + issue", (_l, locale) => {
+      const result = validateLastChangeTooltipInput({ locale });
+      expect(result.value.locale).toBe("pl");
+      expect(result.issues.some((i) => i.field === "locale" && i.code === "locale-invalid-type")).toBe(true);
+    });
+  });
+
+  describe("integracja: buildLastChangeTooltipModel z niepoprawnymi polami", () => {
+    /**
+     * Najtwardszy kontrakt: nawet gdy KAŻDE pole jest złego typu, builder
+     * ZWRACA SPÓJNY MODEL (bez throw, bez NaN/undefined w wartościach,
+     * z bezpiecznym ariaText i bez osieroconego prefiksu „Czas: ").
+     */
+    it("wszystkie pola złego typu → kompletny, bezpieczny model", () => {
+      const evil = {
+        source: 123,
+        fullDate: { iso: "2026-04-24" },
+        relativeLabel: ["a", "b"],
+        format: "FANCY",
+        locale: 999,
+      } as unknown as Parameters<typeof buildLastChangeTooltipModel>[0];
+
+      expect(() => buildLastChangeTooltipModel(evil)).not.toThrow();
+      const model = buildLastChangeTooltipModel(evil);
+
+      expect(model.content.locale).toBe("pl");
+      expect(model.content.isRemote).toBe(false);
+      expect(model.timeValue).toBe("");
+      expect(model.shouldRenderTimeLine).toBe(false);
+      expect(model.timeLineForView).toBeNull();
+      expect(model.timeLineForA11y).toBeNull();
+      expect(model.timeLineHelpTitle).toBeUndefined();
+      expect(model.ariaText).not.toContain("Czas: \n");
+      expect(model.ariaText).not.toMatch(/Czas:\s*$/);
+      expect(model.ariaText).not.toMatch(/\n\s*\n/);
+      expect(model.ariaText).not.toContain("undefined");
+      expect(model.ariaText).not.toContain("[object Object]");
+      expect(model.ariaText).not.toContain("NaN");
+    });
+
+    it("częściowo poprawne wejście (source ok, fullDate=number) → model używa relativeLabel", () => {
+      const model = buildLastChangeTooltipModel({
+        source: "remote",
+        fullDate: 1234 as unknown as string,
+        relativeLabel: "2 minuty temu",
+      });
+      expect(model.content.isRemote).toBe(true);
+      expect(model.timeValue).toBe("2 minuty temu");
+      expect(model.isRelativeFallback).toBe(true);
+      expect(model.timeLineForView).toBe("Czas: 2 minuty temu");
+      expect(model.timeLineForA11y).toBe("Czas: 2 minuty temu (etykieta względna)");
+    });
+
+    it("source niepoprawny string (np. 'REMOTE') → traktowany jak local", () => {
+      const model = buildLastChangeTooltipModel({
+        source: "REMOTE" as unknown as "remote",
+        fullDate: "24 kwietnia 2026, 12:34",
+        relativeLabel: null,
+      });
+      expect(model.content.isRemote).toBe(false);
+      expect(model.timeValue).toBe("24 kwietnia 2026, 12:34");
+      expect(model.shouldRenderTimeLine).toBe(true);
+    });
+
+    it("ariaText pozostaje bezpieczny (single-line, brak osieroconego prefiksu) dla wszystkich edge cases", () => {
+      const cases: Array<Parameters<typeof buildLastChangeTooltipModel>[0]> = [
+        null as never,
+        undefined as never,
+        {} as never,
+        { source: 1 } as never,
+        { source: "remote", fullDate: 0 as unknown as string, relativeLabel: 0 as unknown as string },
+        { source: "local", fullDate: null, relativeLabel: undefined, format: "BAD" as never, locale: 7 as never },
+      ];
+      for (const input of cases) {
+        const model = buildLastChangeTooltipModel(input);
+        expect(model.ariaText).not.toMatch(/Czas:\s*$/);
+        expect(model.ariaText).not.toMatch(/Time:\s*$/);
+        expect(model.ariaText).not.toMatch(/\n\s*\n/);
+        expect(model.ariaText.startsWith("\n")).toBe(false);
+        expect(model.ariaText.endsWith("\n")).toBe(false);
+        expect(model.ariaText).not.toContain("undefined");
+        expect(model.ariaText).not.toContain("[object Object]");
+      }
+    });
+  });
+
+  describe("issue codes — wszystkie wartości typu są reachable", () => {
+    /**
+     * Meta-test: każda wartość `ValidationIssueCode` MUSI być produkowalna
+     * przez walidator. Zapewnia, że nie zostawimy w typie martwego kodu po
+     * refactorze.
+     */
+    it("każdy ValidationIssueCode jest produkowalny przez konkretne wejście", () => {
+      const samples: Array<[ValidationIssueCode, unknown]> = [
+        ["input-not-object", null],
+        ["source-invalid-type", { source: 1 }],
+        ["source-invalid-value", { source: "nope" }],
+        ["fullDate-invalid-type", { fullDate: 1 }],
+        ["relativeLabel-invalid-type", { relativeLabel: 1 }],
+        ["format-invalid-type", { format: 1 }],
+        ["format-invalid-value", { format: "nope" }],
+        ["locale-invalid-type", { locale: 1 }],
+      ];
+      for (const [code, raw] of samples) {
+        const result = validateLastChangeTooltipInput(raw);
+        expect(result.issues.some((i) => i.code === code)).toBe(true);
+      }
+    });
+  });
+});
