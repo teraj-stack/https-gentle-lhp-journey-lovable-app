@@ -548,6 +548,36 @@ const RiskFactorsAccordion = () => {
   const toggleAll = () =>
     setOpenItems(allExpanded ? [] : RISK_FACTORS.map((rf) => rf.id));
 
+  // Skrót klawiaturowy: Ctrl+E (Win/Linux) lub Cmd+E (macOS) — rozwiń/zwiń wszystkie sekcje.
+  // Ignorujemy gdy fokus jest w polu tekstowym (input/textarea/contenteditable),
+  // żeby nie kolidować z normalnym pisaniem litery „e".
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const isTextInput = (target: EventTarget | null): boolean => {
+      if (!(target instanceof HTMLElement)) return false;
+      const tag = target.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return true;
+      if (target.isContentEditable) return true;
+      return false;
+    };
+    const handler = (e: KeyboardEvent) => {
+      if (!(e.ctrlKey || e.metaKey)) return;
+      if (e.shiftKey || e.altKey) return;
+      if (e.key !== "e" && e.key !== "E") return;
+      if (isTextInput(e.target)) return;
+      e.preventDefault();
+      // Sczytujemy aktualny stan ze stanu komponentu — zamknięcie idzie po toggleAll
+      const willExpand = openItems.length !== RISK_FACTORS.length;
+      setOpenItems(willExpand ? RISK_FACTORS.map((rf) => rf.id) : []);
+      toast({
+        title: willExpand ? "Rozwinięto wszystkie sekcje" : "Zwinięto wszystkie sekcje",
+        description: `Skrót: ${navigator.platform.toLowerCase().includes("mac") ? "⌘" : "Ctrl"}+E`,
+      });
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [openItems]);
+
   return (
     <motion.section
       initial={{ opacity: 0, y: 16 }}
