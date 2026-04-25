@@ -733,6 +733,82 @@ describe("AutoSaveSettings — tooltip „Ostatnia zmiana” wybiera nagłówek 
       expect(lines[2]).toMatch(/^Czas: \S+/);
     });
 
+    /**
+     * Test integracyjny: brak `lastChangeAt` (timestamp niedostępny).
+     *
+     * Scenariusz: hook ustawił `lastChangeSource` (np. po pierwszym
+     * BroadcastChannel evencie wiemy, że to remote), ale `lastChangeAt`
+     * jest `null` — np. event przyszedł bez payloadu z czasem, albo
+     * `isValidTimestamp` odrzucił wartość (NaN/Infinity/0). Komponent
+     * MUSI wtedy zachować się defensywnie: cała sekcja „Ostatnia zmiana"
+     * nie renderuje się (bo `lastSyncLabel && showLastChangeLabel` jest
+     * false), a w DOM nie ma triggera tooltipa, badge'a ani osieroconej
+     * linii „Czas: ".
+     *
+     * Pilnujemy tego osobnym testem (a nie tylko w bloku „fallback dla
+     * source=null"), bo `lastChangeAt=null` jest niezależną osią awarii
+     * od `source=null` — i każda kombinacja musi być bezpieczna dla
+     * screen readera (nie wycieka „undefined"/„null"/pusta linia).
+     */
+    it.each([
+      ["remote" as const, "Synchronizacja"],
+      ["local" as const, "lokalna akcja"],
+      [null, "null source"],
+      [undefined, "undefined source"],
+    ])(
+      "lastChangeAt=null + source=%s (%s): brak triggera tooltipa, brak osieroconych linii w DOM",
+      (source, _label) => {
+        mockLastChangeSource = source as "remote" | "local" | null | undefined;
+        mockLastChangeAt = null;
+        // Formatter celowo zwraca pusty string — gdyby komponent przez
+        // pomyłkę wyrenderował sekcję mimo braku timestampu, to wykryjemy
+        // wyciek typu „Czas: " bez wartości.
+        mockFullTimestampReturn = "";
+
+        renderPanel();
+
+        // 1) Brak triggera tooltipa „Źródło: …" w DOM.
+        const triggers = Array.from(
+          document.querySelectorAll<HTMLElement>('span[tabindex="0"][title]'),
+        );
+        const sourceTrigger = triggers.find((el) =>
+          (el.getAttribute("title") ?? "").startsWith("Źródło: "),
+        );
+        expect(sourceTrigger).toBeUndefined();
+
+        // 2) Brak labela „Ostatnia zmiana:" oraz badge'a „lokalnie".
+        expect(screen.queryByText(/Ostatnia zmiana:/)).not.toBeInTheDocument();
+        expect(screen.queryByText("lokalnie")).not.toBeInTheDocument();
+
+        // 3) Anty-regresja: nigdzie w DOM nie wycieka osierocone „Czas: "
+        //    bez wartości, ani „Czas: null/undefined", ani stringified
+        //    „Źródło: null/undefined".
+        const bodyText = document.body.textContent ?? "";
+        expect(bodyText).not.toMatch(/Czas:\s*$/m);
+        expect(bodyText).not.toMatch(/Czas:\s*(null|undefined)/i);
+        expect(bodyText).not.toMatch(/Źródło:\s*(null|undefined)/i);
+
+        // 4) Wszystkie aria-label, jakie istnieją w drzewie, muszą być
+        //    niepuste i nie zawierać „Czas: " bez wartości ani pustych linii.
+        //    To globalna anty-regresja na wypadek, gdyby jakiś inny komponent
+        //    (np. badge degradacji) wyciekł złą serializacją.
+        const allAriaLabels = Array.from(
+          document.querySelectorAll<HTMLElement>("[aria-label]"),
+        ).map((el) => el.getAttribute("aria-label") ?? "");
+        for (const label of allAriaLabels) {
+          // Niepusty, jeśli istnieje.
+          expect(label.trim().length).toBeGreaterThan(0);
+          // Brak osieroconego „Czas: " bez wartości.
+          expect(label).not.toMatch(/Czas:\s*$/m);
+          // Brak pustych linii w środku.
+          expect(label).not.toMatch(/\n\s*\n/);
+          // Brak trailing/leading newline.
+          expect(label.endsWith("\n")).toBe(false);
+          expect(label.startsWith("\n")).toBe(false);
+        }
+      },
+    );
+
     it("aria-label dokleja '(etykieta względna)' TYLKO przy fallbacku — pełna data idzie bez sufiksu", () => {
       // Asymetryczna obecność kwalifikatora: chronimy screen reader przed
       // myleniem precyzyjnej daty z przybliżeniem. Gdy mamy pełny stempel
