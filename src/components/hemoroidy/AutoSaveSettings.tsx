@@ -254,14 +254,16 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
   };
 
   // Etykieta „Ostatnia zmiana" honoruje wybrany przez użytkownika tryb formatu
-  // (relative / clock / full). Pełna data trafia do tooltipa zawsze — pacjent ma
-  // dostęp do dokładnego czasu nawet gdy w UI widzi „2 min temu".
+  // (relative / clock / full). Pokazujemy ją dla KAŻDEJ zmiany (lokalnej i zdalnej),
+  // ale kolor zielony rezerwujemy WYŁĄCZNIE dla zdalnej synchronizacji
+  // (`lastChangeSource === "remote"`) — lokalne kliknięcia używają neutralnego koloru,
+  // żeby nie sugerować, że właśnie coś przyszło z innej karty.
   const lastSyncLabel =
-    lastRemoteSyncAt !== null ? formatTimestamp(lastRemoteSyncAt, timeFormatMode) : null;
+    lastChangeAt !== null ? formatTimestamp(lastChangeAt, timeFormatMode) : null;
   // Pełna data + godzina jako tooltip — pomocna gdy karta wisi długo otwarta.
   const lastSyncFullDate =
-    lastRemoteSyncAt !== null
-      ? new Date(lastRemoteSyncAt).toLocaleString("pl-PL", {
+    lastChangeAt !== null
+      ? new Date(lastChangeAt).toLocaleString("pl-PL", {
           day: "2-digit",
           month: "long",
           year: "numeric",
@@ -270,6 +272,7 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
           second: "2-digit",
         })
       : undefined;
+  const isRemoteChange = lastChangeSource === "remote";
 
   return (
     <div
