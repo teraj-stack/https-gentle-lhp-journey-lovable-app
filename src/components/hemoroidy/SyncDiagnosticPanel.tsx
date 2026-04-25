@@ -123,7 +123,7 @@ const DEGRADATION_GUIDANCE: Record<
     steps: [
       "Odśwież wszystkie otwarte karty tej strony (Ctrl+Shift+R).",
       "Wyczyść cache Service Workera, jeśli używasz PWA.",
-      "Jeśli błąd wraca — zgłoś z raportem (przycisk „Kopiuj raport").",
+      "Jeśli błąd wraca — zgłoś z raportem (przycisk „Kopiuj raport”).",
     ],
   },
   "postmessage-failure": {
