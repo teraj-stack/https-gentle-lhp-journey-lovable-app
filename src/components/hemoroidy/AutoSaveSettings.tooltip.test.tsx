@@ -76,17 +76,29 @@ const renderPanel = () =>
   );
 
 /**
- * Trigger tooltipa to span z `title` zaczynającym się od „Źródło: " i
- * `tabIndex=0`. Wybieramy go po unikalnym prefiksie atrybutu `title` —
- * to jedyna stabilna kotwica, bo tekst „Ostatnia zmiana:" istnieje też
- * w przodkach (textContent propaguje w górę DOM, więc `getByText` po
- * matcherze trafiałby kilka węzłów na raz).
+ * Lokalizuje trigger tooltipa + zewnętrzny kontener z `aria-label`.
+ * Komponent renderuje strukturę:
+ *   <div aria-label={tooltipText} aria-live="polite" key={lastChangeAt}>
+ *     <Tooltip>
+ *       <TooltipTrigger asChild>
+ *         <span title={tooltipText} tabIndex={0} class="cursor-help …">
+ *           …
+ *         </span>
+ *       </TooltipTrigger>
+ *     </Tooltip>
+ *     <button …/>
+ *   </div>
+ *
+ * `title` siedzi na samym triggerze (span), `aria-label` na zewnętrznym `div`
+ * (wraz z `aria-live="polite"` — to pojedyncza, deklarująca źródło etykieta
+ * dla screen readera, nie zduplikowana z triggerem). Zwracamy obie referencje,
+ * żeby asercje sięgały po właściwy atrybut z właściwego węzła.
  */
-const findTriggerByLabel = (): HTMLElement => {
-  const candidates = Array.from(
+const findLastChangeTooltip = (): { trigger: HTMLElement; container: HTMLElement } => {
+  const triggers = Array.from(
     document.querySelectorAll<HTMLElement>('span[tabindex="0"][title]'),
   );
-  const trigger = candidates.find((el) =>
+  const trigger = triggers.find((el) =>
     (el.getAttribute("title") ?? "").startsWith("Źródło: "),
   );
   if (!trigger) {
@@ -94,7 +106,16 @@ const findTriggerByLabel = (): HTMLElement => {
       "Nie znaleziono triggera tooltipa (span[tabindex=0][title^='Źródło: '])",
     );
   }
-  return trigger;
+  // Wspinamy się do najbliższego elementu z aria-label — to jest kontener
+  // owijający Tooltipa.
+  let container: HTMLElement | null = trigger.parentElement;
+  while (container && !container.hasAttribute("aria-label")) {
+    container = container.parentElement;
+  }
+  if (!container) {
+    throw new Error("Nie znaleziono kontenera z aria-label otaczającego trigger");
+  }
+  return { trigger, container };
 };
 
 describe("AutoSaveSettings — tooltip „Ostatnia zmiana” wybiera nagłówek per źródło", () => {
