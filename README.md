@@ -228,12 +228,25 @@ diff -u /tmp/i18n-baseline.txt /tmp/i18n-annotations.txt
 
 #### One-shot PASS/FAIL summary by error type
 
-Copy-paste this into your terminal (or save as `scripts/i18n-summary.sh` and `chmod +x`). It runs all three i18n contract tests, captures `::error` / `::warning` annotations, and prints a per-reason PASS/FAIL count plus an overall verdict. Exit code is `0` only when **every** error-severity reason has zero hits.
+Copy-paste this into your terminal (or save as `scripts/i18n-summary.sh` and `chmod +x`). It runs the i18n contract tests, captures `::error` / `::warning` annotations, and prints a per-reason PASS/FAIL count plus an overall verdict. Exit code is `0` only when **every** selected error-severity reason has zero hits.
+
+**Filter mode (`--only <reason>`):** pass `--only <reason>` (or `-o <reason>`) to narrow execution to a single fixture error type. The script then:
+
+1. Runs **only** the test file that owns that reason (skipping the other two — saves ~6s).
+2. Filters the annotations file to just that reason.
+3. Prints a one-row summary table for that reason.
+4. Returns exit code `0`/`1` based on that reason alone (warnings never fail).
+
+Accepted values for `--only`: `missing-required-key`, `placeholder-mismatch`, `undeclared-key`, `wrong-type`, `empty-optional-value`. Use `--only all` (the default) to run the full suite.
 
 ```sh
 #!/usr/bin/env bash
-# i18n-summary.sh — run all i18n contract tests and print a per-reason PASS/FAIL summary.
-# Usage: bash i18n-summary.sh   (or paste directly into a terminal)
+# i18n-summary.sh — run i18n contract tests and print a per-reason PASS/FAIL summary.
+# Usage:
+#   bash i18n-summary.sh                          # run all reasons (default)
+#   bash i18n-summary.sh --only placeholder-mismatch
+#   bash i18n-summary.sh -o wrong-type
+#   bash i18n-summary.sh --only all               # explicit equivalent of default
 set -euo pipefail
 
 LOG=/tmp/i18n-summary.log
@@ -241,25 +254,81 @@ ANN=/tmp/i18n-summary-annotations.txt
 
 # All five reasons the validator can emit. Severity in parentheses is informational
 # only — the actual classification comes from WARNING_REASONS in i18nGithubAnnotations.ts.
-ERROR_REASONS=(missing-required-key placeholder-mismatch undeclared-key wrong-type)
-WARNING_REASONS=(empty-optional-value)
+ALL_ERROR_REASONS=(missing-required-key placeholder-mismatch undeclared-key wrong-type)
+ALL_WARNING_REASONS=(empty-optional-value)
 
-echo "▶ Running i18n contract tests (this takes ~10s)…"
+# reason → owning test file (mirrors the "owned by" lines in the End-to-end walkthrough).
+declare -A REASON_TEST=(
+  [missing-required-key]="src/lib/i18nRequiredKeys.test.ts"
+  [placeholder-mismatch]="src/lib/i18nPlaceholders.test.ts"
+  [undeclared-key]="src/lib/i18nContract.test.ts"
+  [wrong-type]="src/lib/i18nContract.test.ts"
+  [empty-optional-value]="src/lib/i18nContract.test.ts"
+)
+
+ONLY="all"
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --only|-o) ONLY="${2:-}"; shift 2 ;;
+    --only=*)  ONLY="${1#*=}"; shift ;;
+    -h|--help)
+      echo "Usage: $0 [--only <reason>|all]"
+      echo "Reasons: ${ALL_ERROR_REASONS[*]} ${ALL_WARNING_REASONS[*]} | all"
+      exit 0 ;;
+    *) echo "Unknown arg: $1" >&2; exit 2 ;;
+  esac
+done
+
+# Resolve which reasons + which test files to run.
+if [ "$ONLY" = "all" ]; then
+  ERROR_REASONS=("${ALL_ERROR_REASONS[@]}")
+  WARNING_REASONS=("${ALL_WARNING_REASONS[@]}")
+  TEST_FILES=(
+    src/lib/i18nRequiredKeys.test.ts
+    src/lib/i18nContract.test.ts
+    src/lib/i18nPlaceholders.test.ts
+  )
+else
+  if [ -z "${REASON_TEST[$ONLY]:-}" ]; then
+    echo "❌ Unknown --only reason: '$ONLY'" >&2
+    echo "   Valid: ${ALL_ERROR_REASONS[*]} ${ALL_WARNING_REASONS[*]} all" >&2
+    exit 2
+  fi
+  TEST_FILES=("${REASON_TEST[$ONLY]}")
+  # Classify the chosen reason as error or warning for the summary table.
+  ERROR_REASONS=()
+  WARNING_REASONS=()
+  for r in "${ALL_WARNING_REASONS[@]}"; do
+    [ "$r" = "$ONLY" ] && WARNING_REASONS=("$ONLY")
+  done
+  if [ ${#WARNING_REASONS[@]} -eq 0 ]; then
+    ERROR_REASONS=("$ONLY")
+  fi
+fi
+
+echo "▶ Running i18n contract tests (filter: $ONLY)…"
+echo "  Test files: ${TEST_FILES[*]}"
 # `|| true` — vitest exits non-zero on any failing test; we want to inspect annotations
 # regardless. The final exit code is recomputed from the per-reason counts below.
 GITHUB_ACTIONS=true I18N_ACTIVE_LOCALES="${I18N_ACTIVE_LOCALES:-pl,en,de,it}" \
-  bunx vitest run \
-    src/lib/i18nRequiredKeys.test.ts \
-    src/lib/i18nContract.test.ts \
-    src/lib/i18nPlaceholders.test.ts \
-    > "$LOG" 2>&1 || true
+  bunx vitest run "${TEST_FILES[@]}" > "$LOG" 2>&1 || true
 
-grep '^::' "$LOG" | sort -u > "$ANN" || true
+# When filtering, keep only annotations for the chosen reason so $ANN and TOTAL match
+# what the table reports. In `all` mode, keep every annotation.
+if [ "$ONLY" = "all" ]; then
+  grep '^::' "$LOG" | sort -u > "$ANN" || true
+else
+  grep '^::' "$LOG" | grep "reason=$ONLY" | sort -u > "$ANN" || true
+fi
 TOTAL=$(wc -l < "$ANN" | tr -d ' ')
 
 echo
 echo "═══════════════════════════════════════════════════════"
-echo "  i18n contract — PASS/FAIL summary by reason"
+if [ "$ONLY" = "all" ]; then
+  echo "  i18n contract — PASS/FAIL summary by reason"
+else
+  echo "  i18n contract — PASS/FAIL summary (filter: $ONLY)"
+fi
 echo "═══════════════════════════════════════════════════════"
 printf "  %-26s %-10s %s\n" "REASON" "SEVERITY" "VERDICT"
 echo "  ---------------------------------------------------"
@@ -293,12 +362,31 @@ echo "  Annotations:     $ANN"
 echo
 
 if [ "$FAIL_COUNT" -eq 0 ]; then
-  echo "✅ Overall: PASS — no error-severity violations."
+  echo "✅ Overall: PASS — no error-severity violations for filter '$ONLY'."
   exit 0
 else
-  echo "❌ Overall: FAIL — $FAIL_COUNT error-severity violation(s). See $ANN for details."
+  echo "❌ Overall: FAIL — $FAIL_COUNT error-severity violation(s) for '$ONLY'. See $ANN."
   exit 1
 fi
+```
+
+Sample output for `bash i18n-summary.sh --only placeholder-mismatch` after pasting fixture #2:
+
+```
+▶ Running i18n contract tests (filter: placeholder-mismatch)…
+  Test files: src/lib/i18nPlaceholders.test.ts
+
+═══════════════════════════════════════════════════════
+  i18n contract — PASS/FAIL summary (filter: placeholder-mismatch)
+═══════════════════════════════════════════════════════
+  REASON                     SEVERITY   VERDICT
+  ---------------------------------------------------
+  placeholder-mismatch       error      ❌ FAIL (1)
+  ---------------------------------------------------
+  TOTAL ANNOTATIONS          —          1
+═══════════════════════════════════════════════════════
+
+❌ Overall: FAIL — 1 error-severity violation(s) for 'placeholder-mismatch'. See /tmp/i18n-summary-annotations.txt.
 ```
 
 Sample output (clean repo — no drift):
