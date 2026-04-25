@@ -100,6 +100,8 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
     simulateFallback,
     setSimulateFallback,
     clearSyncHistory,
+    lastChangeSource,
+    lastChangeAt,
   } = useAutoSave();
 
   /**
