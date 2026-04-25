@@ -1243,11 +1243,15 @@ describe("ariaText guard — brak pustych linii i osieroconych prefiksów", () =
                   format,
                 });
 
-                const expectedPrefix = !model.shouldRenderTimeLine
+                const expectedPrefix: AnyTimePrefix | null = !model.shouldRenderTimeLine
                   ? null
                   : locale === "en"
                     ? "Time: "
-                    : "Czas: ";
+                    : locale === "de"
+                      ? "Zeit: "
+                      : locale === "it"
+                        ? "Ora: "
+                        : "Czas: ";
 
                 assertAriaTextInvariants(model.ariaText, {
                   expectedTimePrefix: expectedPrefix,
