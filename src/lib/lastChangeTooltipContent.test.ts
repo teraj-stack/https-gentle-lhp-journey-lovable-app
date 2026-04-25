@@ -14,7 +14,7 @@
  * i `title` (fallback dla touch).
  */
 import { describe, it, expect } from "vitest";
-import { getLastChangeTooltipContent } from "./lastChangeTooltipContent";
+import { getLastChangeTooltipContent, SUPPORTED_LOCALES } from "./lastChangeTooltipContent";
 
 const buildTooltipText = (
   source: "remote" | "local" | null,
