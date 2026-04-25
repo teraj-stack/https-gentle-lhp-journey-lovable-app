@@ -60,6 +60,12 @@ interface VariantEntry {
    */
   ariaHeadingOverride?: string;
   description: string;
+  /**
+   * Krótka etykieta-chip (1 słowo) pokazywana w UI obok timestampu — np. PL
+   * „lokalnie" / „synchron.", EN „local" / „cross-tab". Musi być spójna z
+   * locale tooltipa, żeby badge i nagłówek tooltipa mówiły tym samym językiem.
+   */
+  shortBadge: string;
 }
 
 interface TranslationEntry {
