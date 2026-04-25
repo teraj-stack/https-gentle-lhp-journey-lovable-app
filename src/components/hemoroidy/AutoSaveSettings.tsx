@@ -410,6 +410,46 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
               </button>
             </div>
           )}
+          {/* Segmented control: wybór formatu czasu dla etykiety „Ostatnia zmiana".
+              Renderowany TYLKO gdy mamy co etykietować — nowa karta bez synchronizacji
+              nie potrzebuje przełącznika, który nic by nie zmieniał wizualnie. */}
+          {lastSyncLabel && (
+            <div
+              role="radiogroup"
+              aria-label="Format wyświetlanego czasu Ostatniej zmiany"
+              className="inline-flex items-center gap-0.5 rounded-md border border-border/60 bg-muted/30 p-0.5"
+            >
+              {TIME_FORMAT_OPTIONS.map((opt) => {
+                const active = timeFormatMode === opt.value;
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    role="radio"
+                    aria-checked={active}
+                    aria-label={opt.label}
+                    title={opt.hint}
+                    onClick={() => {
+                      if (active) return;
+                      setTimeFormatMode(opt.value);
+                      toast({
+                        title: `Format czasu: ${opt.short}`,
+                        description: opt.hint,
+                        duration: 1800,
+                      });
+                    }}
+                    className={`text-[10px] font-sans px-1.5 py-0.5 rounded transition-colors focus:outline-none focus:ring-1 focus:ring-primary/60 ${
+                      active
+                        ? "bg-emerald-500/20 text-emerald-400 font-medium"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                    }`}
+                  >
+                    {opt.short}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
 
