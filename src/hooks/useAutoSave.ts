@@ -211,6 +211,12 @@ export const useAutoSave = () => {
    * do końca życia hooka; restart strony spróbuje ponownie).
    */
   const broadcastDegradedRef = useRef(false);
+  /**
+   * Lustro `simulateFallback` w refie — handler kanału BC żyje w useEffect bez
+   * dependency na flagę (żeby nie re-bindować nasłuchu przy każdej zmianie),
+   * więc czytamy aktualną wartość przez ref.
+   */
+  const simulateFallbackRef = useRef(false);
   const flashTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pingCollectionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   /** Trzymamy aktywny pingId w refie, żeby handler kanału nie musiał być re-bindowany. */
