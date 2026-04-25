@@ -162,8 +162,36 @@ interface Violation {
   detail?: string;
 }
 
+/**
+ * Map a `Violation.key` to the `path` convention expected by
+ * `emitGithubAnnotations` (TRANSLATIONS.* / TIME_LINE.*). Best-effort —
+ * unknown shapes (e.g. synthetic keys like `ariaHeading[local]` from
+ * derived assertions) fall back to the raw key, which still produces a
+ * meaningful annotation pointing at the source file's locale block.
+ */
+const normalizeKeyToPath = (key: string): string => {
+  if (key.startsWith("timeLine.")) return `TIME_LINE.${key.slice("timeLine.".length)}`;
+  if (key.startsWith("remote.") || key.startsWith("local.")) return `TRANSLATIONS.${key}`;
+  // Top-level (e.g. "sourcePrefix") or synthetic — leave under TRANSLATIONS.
+  return `TRANSLATIONS.${key}`;
+};
+
 const formatViolations = (violations: Violation[]): string => {
   if (violations.length === 0) return "";
+  // Mirror the formatted message as inline GitHub Actions annotations so
+  // each violation lands on the exact source line in the PR diff. No-op
+  // outside CI (`GITHUB_ACTIONS !== "true"`) — local runs stay quiet.
+  emitGithubAnnotations(
+    violations.map((v) => ({
+      locale: v.locale,
+      path: normalizeKeyToPath(v.key),
+      reason: v.reason,
+      detail: [v.expected !== undefined ? `expected=${JSON.stringify(v.expected)}` : null, v.got !== undefined ? `got=${JSON.stringify(v.got)}` : null, v.detail ?? null]
+        .filter(Boolean)
+        .join(" "),
+    })),
+    "i18n contract",
+  );
   const localesAffected = new Set(violations.map((v) => v.locale));
   const header = `❌ i18n contract violations (${violations.length} issue(s) across ${localesAffected.size} locale(s)):`;
 
