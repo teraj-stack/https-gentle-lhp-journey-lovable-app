@@ -100,7 +100,7 @@ const RiskIcon = ({ level }: { level: RiskLevel | null }) => {
 
 const DziennikHemoroidy = () => {
   const trail = BREADCRUMBS_MAP["/dla-pacjenta/dziennik-hemoroidy"];
-  const { getEntry, setAnswer, setNotes, removeEntry, clearAll, last14Trend, maxScore } =
+  const { entries, getEntry, setAnswer, setNotes, removeEntry, clearAll, last14Trend, maxScore } =
     useDailyDiary();
 
   const days = useMemo(() => last14DaysKeys(), []);
@@ -119,6 +119,38 @@ const DziennikHemoroidy = () => {
   }));
 
   const completedDaysCount = trend.filter((d) => d.score !== null).length;
+  const summary = useMemo(() => buildDiarySummary(trend, entries), [trend, entries]);
+  const hasAnyData = completedDaysCount > 0;
+
+  const handleExportCsv = () => {
+    if (!hasAnyData) {
+      toast({
+        title: "Brak danych do eksportu",
+        description: "Wypełnij przynajmniej jeden dzień, aby wyeksportować dziennik.",
+      });
+      return;
+    }
+    exportDiaryCsv(trend, entries, summary);
+    toast({
+      title: "Eksport CSV gotowy",
+      description: "Plik został zapisany w folderze pobranych.",
+    });
+  };
+
+  const handleExportPdf = () => {
+    if (!hasAnyData) {
+      toast({
+        title: "Brak danych do eksportu",
+        description: "Wypełnij przynajmniej jeden dzień, aby wyeksportować dziennik.",
+      });
+      return;
+    }
+    exportDiaryPdf(trend, entries, summary, maxScore);
+    toast({
+      title: "Eksport PDF gotowy",
+      description: "Plik został zapisany w folderze pobranych.",
+    });
+  };
 
   const goPrev = () => {
     const i = days.indexOf(activeDate);
