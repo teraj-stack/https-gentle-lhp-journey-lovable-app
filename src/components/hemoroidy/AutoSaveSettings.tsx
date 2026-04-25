@@ -325,7 +325,25 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
             checked={enabled}
             onCheckedChange={handleToggle}
             aria-label="Przełącz auto-zapis odpowiedzi quizu"
+            aria-keyshortcuts="Alt+Shift+A"
           />
+          <p
+            className="text-[10px] font-sans text-muted-foreground/80 inline-flex items-center gap-1"
+            title="Naciśnij Alt+Shift+A, aby przełączyć auto-zapis (działa też do testowania synchronizacji między kartami)."
+          >
+            Skrót:{" "}
+            <kbd className="px-1 py-0.5 rounded border border-border/60 bg-muted text-foreground/90 font-mono text-[10px] leading-none">
+              Alt
+            </kbd>
+            <span aria-hidden="true">+</span>
+            <kbd className="px-1 py-0.5 rounded border border-border/60 bg-muted text-foreground/90 font-mono text-[10px] leading-none">
+              Shift
+            </kbd>
+            <span aria-hidden="true">+</span>
+            <kbd className="px-1 py-0.5 rounded border border-border/60 bg-muted text-foreground/90 font-mono text-[10px] leading-none">
+              A
+            </kbd>
+          </p>
           {lastSyncLabel && (
             <p
               key={lastRemoteSyncAt ?? "none"}
