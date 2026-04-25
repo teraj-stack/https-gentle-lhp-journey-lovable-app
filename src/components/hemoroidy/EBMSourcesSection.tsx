@@ -1,14 +1,16 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Progress } from "@/components/ui/progress";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { BookMarked, Download, ExternalLink, Salad, Droplet, Timer, Activity, Stethoscope, ScrollText, AlertCircle, Microscope, Info, Search, X } from "lucide-react";
+import { BookMarked, Download, ExternalLink, Salad, Droplet, Timer, Activity, Stethoscope, ScrollText, AlertCircle, Microscope, Info, Search, X, Loader2, CheckCircle2, AlertTriangle } from "lucide-react";
 import { trackEbmClick } from "@/lib/ebmAnalytics";
 
 const normalize = (s: string): string =>
