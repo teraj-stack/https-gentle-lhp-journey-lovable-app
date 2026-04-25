@@ -416,12 +416,30 @@ const RiskFactorsAccordion = () => {
 
       {/* Pasek akcji: Zwiń / Rozwiń wszystko (ukryty podczas wyszukiwania, które samo rozwija dopasowania) */}
       {!nQuery && filtered.length > 0 && (
-        <div className="mb-3 flex items-center justify-between gap-2">
-          <span className="text-[11.5px] sm:text-xs text-muted-foreground">
-            {openItems.length === 0
-              ? "Wszystkie sekcje zwinięte"
-              : `Rozwinięte: ${openItems.length} z ${RISK_FACTORS.length}`}
-          </span>
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11.5px] sm:text-xs text-muted-foreground">
+            <span>
+              {openItems.length === 0
+                ? "Wszystkie sekcje zwinięte"
+                : `Rozwinięte: ${openItems.length} z ${RISK_FACTORS.length}`}
+            </span>
+            {readItems.length > 0 && (
+              <span className="inline-flex items-center gap-1.5">
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-primary/10 text-primary border border-primary/30">
+                  <CheckCircle2 className="w-3 h-3" />
+                  Przeczytane: {readItems.length}/{RISK_FACTORS.length}
+                </span>
+                <button
+                  type="button"
+                  onClick={clearRead}
+                  className="text-muted-foreground hover:text-foreground underline-offset-2 hover:underline"
+                  aria-label="Wyczyść oznaczenia „przeczytane” dla wszystkich kart"
+                >
+                  wyczyść
+                </button>
+              </span>
+            )}
+          </div>
           <Button
             type="button"
             size="sm"
