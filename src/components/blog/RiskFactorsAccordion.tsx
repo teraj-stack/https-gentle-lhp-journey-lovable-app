@@ -1009,6 +1009,44 @@ const RiskFactorsAccordion = () => {
                 aria-label="Tryb prywatny — nie zapisuj „przeczytane” w przeglądarce"
               />
             </span>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md border border-border bg-background/40 text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors"
+                  title='Wyzeruj tryb prywatny oraz lokalne dane „przeczytane", „priorytet" i „rozwiń"'
+                  aria-label="Resetuj preferencje wyświetlania kart ryzyka"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>Reset preferencji</span>
+                </button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Zresetować preferencje wyświetlania?</AlertDialogTitle>
+                  <AlertDialogDescription asChild>
+                    <div className="space-y-2">
+                      <p>Tej operacji nie można cofnąć. Wyczyścimy z tej przeglądarki:</p>
+                      <ul className="list-disc pl-5 space-y-1 text-sm">
+                        <li>tryb prywatny (wróci do domyślnego — wyłączony),</li>
+                        <li>oznaczenia „przeczytane" dla wszystkich kart,</li>
+                        <li>gwiazdki „priorytet" przy zaznaczonych czynnikach,</li>
+                        <li>zapamiętane rozwinięcia kart („rozwiń").</li>
+                      </ul>
+                      <p className="text-xs text-muted-foreground pt-1">
+                        Twoje zaznaczenia checklisty i filtr źródeł EBM pozostają nietknięte.
+                      </p>
+                    </div>
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Anuluj</AlertDialogCancel>
+                  <AlertDialogAction onClick={resetUxPreferences}>
+                    Tak, zresetuj
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
           <Button
             type="button"
