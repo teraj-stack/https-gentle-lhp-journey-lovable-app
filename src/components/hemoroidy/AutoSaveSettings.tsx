@@ -1,5 +1,15 @@
 import { useEffect, useState } from "react";
-import { Save, ShieldCheck, ShieldAlert, CheckCircle2, RefreshCw } from "lucide-react";
+import {
+  Save,
+  ShieldCheck,
+  ShieldAlert,
+  CheckCircle2,
+  RefreshCw,
+  Radio,
+  X,
+  Loader2,
+  WifiOff,
+} from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { useAutoSave } from "@/hooks/useAutoSave";
