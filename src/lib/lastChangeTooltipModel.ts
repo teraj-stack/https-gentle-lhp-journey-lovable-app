@@ -43,8 +43,44 @@
  */
 import {
   getLastChangeTooltipContent,
+  resolveLocale,
   type LastChangeTooltipContent,
+  type Locale,
 } from "./lastChangeTooltipContent";
+
+/**
+ * Tłumaczenia literałów linii czasu i kwalifikatora fallbacku w tooltipie
+ * „Ostatnia zmiana". Trzymane LOKALNIE w pliku modelu (nie w
+ * `lastChangeTooltipContent`), bo dotyczą wyłącznie linii czasu — pliki
+ * pozostają sfokusowane: `Content` zna źródło zmiany, `Model` zna składanie
+ * linii czasu.
+ *
+ * Klucze MUSZĄ pokrywać każdą wartość z `Locale`. Przy dodawaniu nowego języka
+ * helper `getTimeLineStrings` rzuci błędem TypeScript, dopóki nie dopiszemy
+ * kompletu — to gwarancja, że żaden język nie zostanie z połowicznym
+ * tłumaczeniem (PL prefiks „Czas:" + EN qualifier itp.).
+ */
+interface TimeLineStrings {
+  /** Prefiks linii czasu (np. „Czas: " / „Time: "). */
+  timePrefix: string;
+  /** Sufiks doklejany do a11y dla fallbacku na etykietę względną. */
+  relativeQualifier: string;
+  /** Native `title` linii czasu, gdy używamy etykiety względnej. */
+  relativeHelpTitle: string;
+}
+
+const TIME_LINE_TRANSLATIONS: Record<Locale, TimeLineStrings> = {
+  pl: {
+    timePrefix: "Czas: ",
+    relativeQualifier: "(etykieta względna)",
+    relativeHelpTitle: "Pełna data niedostępna — pokazujemy etykietę względną.",
+  },
+  en: {
+    timePrefix: "Time: ",
+    relativeQualifier: "(relative label)",
+    relativeHelpTitle: "Full date unavailable — showing a relative label.",
+  },
+};
 
 /**
  * Tryby formatowania wartości czasu dla tooltipa „Ostatnia zmiana".
@@ -128,6 +164,21 @@ export interface LastChangeTooltipModelInput {
    * testami parytetu w `lastChangeTooltipModel.test.ts`.
    */
   format?: TimeValueFormat;
+  /**
+   * Język tooltipa (PL/EN). DOMYŚLNIE „pl" — zachowuje wsteczną
+   * kompatybilność (wszystkie istniejące wywołania bez `locale` działają
+   * jak dotąd po polsku).
+   *
+   * Akceptuje też pełne tagi BCP-47 (np. „pl-PL", „en-US") — zostaną
+   * zresolwowane przez `resolveLocale`. Nieznane języki → fallback „pl".
+   *
+   * Locale steruje:
+   *   - prefiksem linii czasu („Czas: " vs „Time: "),
+   *   - sufiksem fallbacku w a11y („(etykieta względna)" vs „(relative label)"),
+   *   - native `title` wyjaśniającym fallback,
+   *   - nagłówkiem/opisem źródła z `getLastChangeTooltipContent`.
+   */
+  locale?: Locale | string;
 }
 
 export interface LastChangeTooltipModel {
@@ -189,37 +240,60 @@ export interface LastChangeTooltipModel {
  * Stała + helper `composeTimeLine` zapewniają, że prefiks jest dodawany
  * DOKŁADNIE RAZ i TYLKO gdy `timeValue` ma sensowną treść po wygładzeniu.
  */
-export const TIME_LINE_PREFIX = "Czas: ";
+/**
+ * Polski prefiks linii czasu — eksport zachowany dla wstecznej
+ * kompatybilności (testy, ewentualni zewnętrzni konsumenci).
+ *
+ * Po wprowadzeniu i18n wartości prefiksów żyją w `TIME_LINE_TRANSLATIONS`.
+ * Dla innych języków używamy `getTimeLinePrefix(locale)`.
+ */
+export const TIME_LINE_PREFIX = TIME_LINE_TRANSLATIONS.pl.timePrefix;
 
 /**
- * Składa linię czasu „Czas: <wartość>" albo zwraca `null`.
+ * Zwraca prefiks linii czasu („Czas: " / „Time: ") dla wybranego locale.
+ *
+ * Eksport publiczny — pozwala konsumentom (np. testom snapshotów,
+ * komponentom kontroli a11y) sprawdzić poprawny prefiks bez sięgania do
+ * wewnętrznej mapy tłumaczeń.
+ */
+export const getTimeLinePrefix = (locale: Locale | string = "pl"): string =>
+  TIME_LINE_TRANSLATIONS[resolveLocale(typeof locale === "string" ? locale : "pl")].timePrefix;
+
+/**
+ * Składa linię czasu „Czas: <wartość>" / „Time: <value>" albo zwraca `null`.
  *
  * Kontrakt:
  *  1. Pusty/whitespace-only `timeValue` → `null` (blokada renderowania
- *     osieroconego prefiksu „Czas: " bez treści).
- *  2. Prefiks `TIME_LINE_PREFIX` jest dodawany DOKŁADNIE RAZ — funkcja
- *     defensywnie strzela `String(timeValue).trim()`, więc nawet jeśli
- *     konsument przekaże już sklejony „Czas: 12:34", nie powstanie
- *     „Czas: Czas: 12:34" (helper bazuje na surowej wartości, a komponent
- *     NIE wywołuje composeTimeLine na własną rękę).
- *  3. Eksportujemy do testów jednostkowych — pozwala odpalić snapshoty
+ *     osieroconego prefiksu bez treści).
+ *  2. Prefiks jest dodawany DOKŁADNIE RAZ — funkcja defensywnie sprawdza
+ *     `typeof string` + `trim()`, więc nie powstanie podwójny prefiks.
+ *  3. Drugi parametr `locale` jest opcjonalny i DOMYŚLNIE „pl" — istniejące
+ *     wywołania `composeTimeLine(value)` bez locale zwracają „Czas: …".
+ *  4. Eksportujemy do testów jednostkowych — pozwala odpalić snapshoty
  *     na pojedynczej funkcji bez budowania pełnego modelu.
  */
-export const composeTimeLine = (timeValue: string): string | null => {
-  // Defensywnie ignorujemy whitespace-only wartości — `smoothTimeValue`
-  // już je zeruje, ale jeżeli ktoś wywołałby composeTimeLine z surowym
-  // stringiem, ten warunek jest drugą linią obrony przed osieroconym
-  // prefiksem „Czas: " (bez treści) w widocznym tooltipie / aria-label.
+export const composeTimeLine = (
+  timeValue: string,
+  locale: Locale | string = "pl",
+): string | null => {
   if (typeof timeValue !== "string" || timeValue.trim().length === 0) {
     return null;
   }
-  return `${TIME_LINE_PREFIX}${timeValue}`;
+  return `${getTimeLinePrefix(locale)}${timeValue}`;
 };
 
 export const buildLastChangeTooltipModel = (
   input: LastChangeTooltipModelInput,
 ): LastChangeTooltipModel => {
-  const content = getLastChangeTooltipContent(input.source);
+  // Resolved locale jest STOSOWANY JEDNOLICIE: te same tłumaczenia trafiają
+  // do `content` (heading/description/ariaHeading), prefiksu linii czasu,
+  // sufiksu fallbacku i `timeLineHelpTitle`. Niemożliwe jest, żeby kanały
+  // się rozjechały na warstwie języka (np. PL prefiks „Czas:" + EN nagłówek).
+  const resolvedLocale = resolveLocale(
+    typeof input.locale === "string" ? input.locale : "pl",
+  );
+  const content = getLastChangeTooltipContent(input.source, resolvedLocale);
+  const tStrings = TIME_LINE_TRANSLATIONS[resolvedLocale];
 
   // Tryb formatowania jest STOSOWANY RAZ — oba kanały (view + a11y) czytają
   // wynikowy `timeValue`, więc niemożliwe jest rozjechanie się formatu między
@@ -233,16 +307,16 @@ export const buildLastChangeTooltipModel = (
   const timeValue = smoothFull.length > 0 ? smoothFull : smoothRelative;
   const isRelativeFallback = smoothFull.length === 0 && smoothRelative.length > 0;
 
-  // composeTimeLine jest JEDYNYM miejscem składania prefiksu „Czas: ".
+  // composeTimeLine jest JEDYNYM miejscem składania prefiksu „Czas:" / „Time:".
   // Zwraca null gdy nie ma treści — dzięki temu shouldRenderTimeLine
   // jest pochodną tego samego warunku, a nie osobnym sprawdzeniem.
-  const timeLineForView = composeTimeLine(timeValue);
+  const timeLineForView = composeTimeLine(timeValue, resolvedLocale);
   const shouldRenderTimeLine = timeLineForView !== null;
   const timeLineForA11y =
     timeLineForView === null
       ? null
       : isRelativeFallback
-        ? `${timeLineForView} (etykieta względna)`
+        ? `${timeLineForView} ${tStrings.relativeQualifier}`
         : timeLineForView;
 
   // Sklejanie tekstu a11y — JEDNO miejsce filtrowania pustych linii.
@@ -253,7 +327,7 @@ export const buildLastChangeTooltipModel = (
 
   const timeLineHelpTitle =
     shouldRenderTimeLine && isRelativeFallback
-      ? "Pełna data niedostępna — pokazujemy etykietę względną."
+      ? tStrings.relativeHelpTitle
       : undefined;
 
   return {
