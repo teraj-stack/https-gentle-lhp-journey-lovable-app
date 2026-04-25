@@ -308,6 +308,22 @@ const DiaryFullModule = ({
     return n;
   }, [draftAnswers, draftNotes]);
 
+  // Guard przed utratą draftu: gdy auto-zapis OFF i są niezapisane zmiany,
+  // przeglądarka pokaże natywny dialog potwierdzenia przy zamknięciu/odświeżeniu karty
+  // lub nawigacji do innej domeny. Dla SPA-routingu (Link/navigate) ten event się nie
+  // odpala — to ograniczenie History API, które tu akceptujemy: dane draftu i tak
+  // przeżywają zmianę trasy w obrębie sesji (stan komponentu odtwarza się przy powrocie).
+  useEffect(() => {
+    if (autoSaveEnabled || pendingDraftCount === 0) return;
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      // Wymagane przez starsze przeglądarki — nowoczesne i tak zignorują custom string.
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [autoSaveEnabled, pendingDraftCount]);
+
   const activeDayHasDraft =
     !!draftAnswers[activeDate] || draftNotes[activeDate] !== undefined;
 
