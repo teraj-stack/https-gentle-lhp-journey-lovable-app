@@ -100,6 +100,17 @@ export const HEMOROIDY_QUIZ_MAX_SCORE = HEMOROIDY_QUESTIONS.reduce(
   0
 );
 
+export const getRiskLabel = (level: RiskLevel): string => {
+  switch (level) {
+    case "low":
+      return "Niskie ryzyko";
+    case "medium":
+      return "Średnie ryzyko";
+    case "high":
+      return "Wysokie ryzyko";
+  }
+};
+
 /**
  * Progi kategorii ryzyka. `lowMax` = maksymalny score klasyfikowany jako "low",
  * `mediumMax` = maksymalny score klasyfikowany jako "medium". Wszystko powyżej `mediumMax` to "high".
