@@ -507,6 +507,30 @@ const RiskFactorsAccordion = () => {
                         </li>
                       ))}
                     </ul>
+                    {(() => {
+                      const primaryEbm = rf.sources.find((s) => s.ebmId)?.ebmId;
+                      if (!primaryEbm) return null;
+                      return (
+                        <Link
+                          to={`/dla-pacjenta/ebm-hemoroidy#ebm-${primaryEbm}`}
+                          onClick={() =>
+                            trackEbmClick({
+                              url: `/dla-pacjenta/ebm-hemoroidy#ebm-${primaryEbm}`,
+                              label: `Przejdź do bibliografii: ${primaryEbm}`,
+                              source: "RiskFactorsAccordion",
+                              kind: "internal_anchor",
+                              ebmId: primaryEbm,
+                            })
+                          }
+                          className="mt-3 inline-flex items-center gap-1.5 text-[12px] sm:text-xs font-sans uppercase tracking-[0.08em] text-primary hover:text-primary/80 underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded-sm w-fit"
+                          aria-label="Przejdź do odpowiedniej kategorii w pełnej bibliografii EBM"
+                        >
+                          <BookMarked className="w-3.5 h-3.5" aria-hidden="true" />
+                          Przejdź do bibliografii
+                          <ArrowRight className="w-3 h-3" aria-hidden="true" />
+                        </Link>
+                      );
+                    })()}
                   </div>
                   <div className="mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                     <p className="text-[11.5px] sm:text-xs text-muted-foreground">
