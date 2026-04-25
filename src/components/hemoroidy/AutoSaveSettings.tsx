@@ -14,6 +14,8 @@ import {
   HardDrive,
   Layers,
   Activity,
+  Lightbulb,
+  MousePointerClick,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
