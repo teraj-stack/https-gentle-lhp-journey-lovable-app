@@ -100,30 +100,50 @@ export const HEMOROIDY_QUIZ_MAX_SCORE = HEMOROIDY_QUESTIONS.reduce(
   0
 );
 
-export const getRiskLevel = (score: number): RiskLevel => {
-  if (score <= 8) return "low";
-  if (score <= 17) return "medium";
+/**
+ * Progi kategorii ryzyka. `lowMax` = maksymalny score klasyfikowany jako "low",
+ * `mediumMax` = maksymalny score klasyfikowany jako "medium". Wszystko powyżej `mediumMax` to "high".
+ *
+ * Domyślne wartości pochodzą z konsensusu klinicznego CML (≤8 / 9–17 / 18+) — kalibracja
+ * zwalidowana wewnętrznie. Pacjent może je dostosować w panelu ustawień, jeśli np. lekarz
+ * zaleci bardziej rygorystyczną interpretację (niższe progi = wcześniejszy alert).
+ */
+export type RiskThresholds = { lowMax: number; mediumMax: number };
+
+export const DEFAULT_RISK_THRESHOLDS: RiskThresholds = { lowMax: 8, mediumMax: 17 };
+
+/** Sanityzacja: lowMax ∈ [0, maxScore-2], mediumMax ∈ [lowMax+1, maxScore-1]. */
+export const sanitizeRiskThresholds = (
+  t: Partial<RiskThresholds> | null | undefined,
+  maxScore: number = HEMOROIDY_QUIZ_MAX_SCORE,
+): RiskThresholds => {
+  const lowMax = Number.isFinite(t?.lowMax) ? Math.round(Number(t!.lowMax)) : DEFAULT_RISK_THRESHOLDS.lowMax;
+  const mediumMax = Number.isFinite(t?.mediumMax) ? Math.round(Number(t!.mediumMax)) : DEFAULT_RISK_THRESHOLDS.mediumMax;
+  const clampedLow = Math.max(0, Math.min(lowMax, maxScore - 2));
+  const clampedMedium = Math.max(clampedLow + 1, Math.min(mediumMax, maxScore - 1));
+  return { lowMax: clampedLow, mediumMax: clampedMedium };
+};
+
+export const getRiskLevelWithThresholds = (score: number, t: RiskThresholds): RiskLevel => {
+  if (score <= t.lowMax) return "low";
+  if (score <= t.mediumMax) return "medium";
   return "high";
 };
 
-export const getRiskLabel = (level: RiskLevel): string => {
+export const getRiskRangeWithThresholds = (level: RiskLevel, t: RiskThresholds): string => {
   switch (level) {
     case "low":
-      return "Niskie ryzyko";
+      return `0–${t.lowMax} pkt`;
     case "medium":
-      return "Średnie ryzyko";
+      return `${t.lowMax + 1}–${t.mediumMax} pkt`;
     case "high":
-      return "Wysokie ryzyko";
+      return `${t.mediumMax + 1}+ pkt`;
   }
 };
 
-export const getRiskRange = (level: RiskLevel): string => {
-  switch (level) {
-    case "low":
-      return "0–8 pkt";
-    case "medium":
-      return "9–17 pkt";
-    case "high":
-      return "18+ pkt";
-  }
-};
+/** Wersje "default" — używają DEFAULT_RISK_THRESHOLDS. Zachowane dla wstecznej kompatybilności. */
+export const getRiskLevel = (score: number): RiskLevel =>
+  getRiskLevelWithThresholds(score, DEFAULT_RISK_THRESHOLDS);
+
+export const getRiskRange = (level: RiskLevel): string =>
+  getRiskRangeWithThresholds(level, DEFAULT_RISK_THRESHOLDS);
