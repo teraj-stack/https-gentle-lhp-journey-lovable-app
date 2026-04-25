@@ -245,6 +245,75 @@ const DiaryFullModule = ({
         <DiaryReminderBanner variant={reminderVariant} />
       </div>
 
+      {/* Wskaźnik postępu — ile z 14 dni ukończono + status quizu na aktywnym dniu.
+          „Ukończony dzień" = wszystkie 9 pytań quizu mają odpowiedź (entry.complete).
+          „Częściowy" = ≥1 odpowiedź lub notatka, ale brak kompletu. */}
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.2 }}
+        transition={{ duration: 0.5, ease: easeOut }}
+        className="glass-card rounded-2xl p-4 sm:p-5 mb-6"
+        aria-label="Postęp wypełniania dziennika"
+      >
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-primary" aria-hidden="true" />
+            <h3 className="font-sans text-sm sm:text-base font-medium text-foreground">
+              Postęp 14-dniowy
+            </h3>
+          </div>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11.5px] sm:text-xs text-muted-foreground">
+            <span className="inline-flex items-center gap-1.5">
+              <CheckCircle2 className="w-3 h-3 text-emerald-500" aria-hidden="true" />
+              Ukończone: <strong className="font-semibold text-foreground tabular-nums">{completedDaysCount}/14</strong>
+            </span>
+            {partialDaysCount > 0 && (
+              <span className="inline-flex items-center gap-1.5">
+                <CircleDashed className="w-3 h-3 text-primary" aria-hidden="true" />
+                Częściowe: <strong className="font-semibold text-foreground tabular-nums">{partialDaysCount}</strong>
+              </span>
+            )}
+            <span className="inline-flex items-center gap-1.5">
+              <CalendarDays className="w-3 h-3" aria-hidden="true" />
+              Pozostało: <strong className="font-semibold text-foreground tabular-nums">{14 - totalProgressDays}</strong>
+            </span>
+          </div>
+        </div>
+        <Progress
+          value={completedPct}
+          className="h-2"
+          aria-label={`Ukończono ${completedDaysCount} z 14 dni (${completedPct}%)`}
+        />
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-[11.5px] sm:text-xs">
+          <span className="text-muted-foreground">
+            {completedDaysCount === 0
+              ? "Zacznij od dzisiaj — odpowiedz na wszystkie 9 pytań, aby zaliczyć dzień."
+              : completedDaysCount === 14
+                ? "Komplet 14 dni! Świetnie — masz pełny obraz trendu."
+                : `${completedPct}% drogi za Tobą. Dni „częściowe" trzeba dokończyć, aby weszły do trendu.`}
+          </span>
+          <span
+            className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md border tabular-nums font-sans ${
+              entry.complete
+                ? "bg-emerald-500/10 border-emerald-500/40 text-emerald-600"
+                : completed > 0
+                  ? "bg-primary/10 border-primary/40 text-primary"
+                  : "bg-muted/40 border-border text-muted-foreground"
+            }`}
+            aria-live="polite"
+            title={entry.complete ? "Wszystkie 9 pytań quizu zapisane" : `Brakuje ${total - completed} odpowiedzi`}
+          >
+            {entry.complete ? (
+              <CheckCircle2 className="w-3 h-3" aria-hidden="true" />
+            ) : (
+              <CircleDashed className="w-3 h-3" aria-hidden="true" />
+            )}
+            Aktywny dzień: {completed}/{total} pól quizu
+          </span>
+        </div>
+      </motion.div>
+
       {/* Trend chart */}
       <motion.div
         initial={{ opacity: 0, y: 16 }}
