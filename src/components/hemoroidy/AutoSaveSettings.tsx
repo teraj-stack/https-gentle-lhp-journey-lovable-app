@@ -759,19 +759,20 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
           </Button>
         </div>
 
-        {/* Historia ostatnich synchronizacji — kompaktowa lista czas + źródło + wartość.
-            Renderowana TYLKO gdy mamy co pokazać, żeby nie zaśmiecać pustej karty. */}
+        {/* Mini-historia ostatnich zdarzeń: lokalne kliknięcia + zdalne synchronizacje
+            z dokładnym timestampem. Pokazujemy do HISTORY_LIMIT wpisów (najnowsze pierwsze),
+            żeby pacjent widział kontekst „kiedy co się działo" bez zaśmiecania panelu. */}
         {syncHistory.length > 0 && (
           <details className="mb-4 rounded-xl border border-border/60 bg-muted/20 px-3 py-2 group">
             <summary className="cursor-pointer list-none inline-flex items-center gap-2 text-[11px] sm:text-xs font-sans text-muted-foreground hover:text-foreground transition-colors">
               <History className="w-3.5 h-3.5 text-emerald-400" aria-hidden="true" />
               <span>
-                Historia synchronizacji{" "}
+                Mini-historia zdarzeń{" "}
                 <strong className="text-foreground">({syncHistory.length})</strong>
               </span>
               <span className="text-muted-foreground/60 ml-auto group-open:rotate-180 transition-transform">▾</span>
             </summary>
-            <ul className="mt-2 space-y-1" aria-label="Lista ostatnich synchronizacji między kartami">
+            <ul className="mt-2 space-y-1" aria-label="Lista ostatnich zdarzeń auto-zapisu (lokalnych i zdalnych)">
               {syncHistory.map((entry) => {
                 const time = new Date(entry.at).toLocaleTimeString("pl-PL", {
                   hour: "2-digit",
@@ -780,10 +781,32 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
                 });
                 const sourceMeta =
                   entry.source === "broadcast"
-                    ? { Icon: Wifi, label: "BroadcastChannel", short: "BC" }
+                    ? {
+                        Icon: Wifi,
+                        label: "Zdalna synchronizacja przez BroadcastChannel",
+                        short: "BC",
+                        isLocal: false,
+                      }
                     : entry.source === "storage"
-                      ? { Icon: HardDrive, label: "storage event (fallback)", short: "Storage" }
-                      : { Icon: Layers, label: "CustomEvent (ta sama karta)", short: "Local" };
+                      ? {
+                          Icon: HardDrive,
+                          label: "Zdalna synchronizacja przez storage event (fallback)",
+                          short: "Storage",
+                          isLocal: false,
+                        }
+                      : entry.source === "custom-event"
+                        ? {
+                            Icon: Layers,
+                            label: "Zdalna synchronizacja w obrębie tej karty (CustomEvent)",
+                            short: "Local-tab",
+                            isLocal: false,
+                          }
+                        : {
+                            Icon: Activity,
+                            label: "Lokalna akcja w tej karcie (Switch lub skrót Alt+Shift+A)",
+                            short: "Lokalnie",
+                            isLocal: true,
+                          };
                 const SourceIcon = sourceMeta.Icon;
                 return (
                   <li
@@ -792,7 +815,13 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
                     title={`${time} — ${sourceMeta.label} — auto-zapis ${entry.enabled ? "ON" : "OFF"}`}
                   >
                     <span className="font-mono text-foreground/80 shrink-0 tabular-nums">{time}</span>
-                    <span className="inline-flex items-center gap-1 shrink-0 px-1.5 py-0.5 rounded-md bg-muted text-muted-foreground border border-border/60">
+                    <span
+                      className={`inline-flex items-center gap-1 shrink-0 px-1.5 py-0.5 rounded-md border ${
+                        sourceMeta.isLocal
+                          ? "bg-primary/10 text-primary border-primary/30"
+                          : "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
+                      }`}
+                    >
                       <SourceIcon className="w-3 h-3" aria-hidden="true" />
                       {sourceMeta.short}
                     </span>
@@ -810,7 +839,7 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
               })}
             </ul>
             <p className="mt-2 text-[10px] text-muted-foreground/70 italic leading-relaxed">
-              Pokazujemy do 5 ostatnich aktualizacji odebranych z innych kart lub z fallbacku storage.
+              Pokazujemy do 8 ostatnich zdarzeń: lokalnych kliknięć w tej karcie oraz zdalnych synchronizacji z innych kart / fallbacku storage.
             </p>
           </details>
         )}
