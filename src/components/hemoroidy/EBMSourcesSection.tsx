@@ -384,10 +384,12 @@ const EBMSourcesSection = ({
           <a
             href={PDF_URL}
             target="_blank"
-            rel="noopener noreferrer"
+            rel="noopener noreferrer nofollow"
+            referrerPolicy="no-referrer"
             download="zrodla-EBM-quiz-hemoroidy-CML.pdf"
+            aria-label="Pobierz bibliografię EBM w formacie PDF (otwiera się w nowej karcie)"
           >
-            <Download className="w-4 h-4 mr-2" />
+            <Download className="w-4 h-4 mr-2" aria-hidden="true" />
             Pobierz PDF (bibliografia)
           </a>
         </Button>
