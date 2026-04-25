@@ -32,6 +32,11 @@ export type CategorisedPath =
   | { bucket: "timeLine"; key: string }
   | { bucket: "ignored"; reason: string };
 
+export interface KeyDiff {
+  added: string[];
+  removed: string[];
+}
+
 interface AutofixScannerExports {
   collectDotMemberReads: (source: string, alias: string) => Set<string>;
   collectBracketLiteralReads: (source: string, alias: string) => Set<string>;
@@ -45,6 +50,16 @@ interface AutofixScannerExports {
     path: string,
     scope: "translations" | "timeLine",
   ) => CategorisedPath;
+  parseCurrentTranslationKeys: (source: string) => {
+    top: string[];
+    variant: string[];
+    variantOptional: string[];
+  };
+  parseCurrentTimeLineKeys: (source: string) => string[];
+  diffKeys: (
+    current: ReadonlyArray<string>,
+    next: ReadonlyArray<string>,
+  ) => KeyDiff;
 }
 
 const typed = raw as unknown as AutofixScannerExports;
@@ -56,4 +71,7 @@ export const {
   collectTranslatorCallKeys,
   collectOptionalVariantReads,
   categoriseHelperPath,
+  parseCurrentTranslationKeys,
+  parseCurrentTimeLineKeys,
+  diffKeys,
 } = typed;
