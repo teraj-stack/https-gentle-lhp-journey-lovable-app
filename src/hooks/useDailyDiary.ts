@@ -124,13 +124,45 @@ const readStorage = (): Record<string, DiaryEntry> => {
   }
 };
 
-const writeStorage = (entries: Record<string, DiaryEntry>) => {
-  if (!isBrowser()) return;
+/**
+ * Wynik próby zapisu do localStorage.
+ * `ok=false` zwykle oznacza QuotaExceededError lub tryb prywatny przeglądarki —
+ * UI powinien wtedy pokazać błąd z instrukcją (np. zwolnij miejsce lub wyłącz tryb prywatny).
+ */
+export type StorageWriteResult =
+  | { ok: true }
+  | { ok: false; reason: "quota" | "unavailable" | "unknown"; message: string };
+
+const writeStorage = (entries: Record<string, DiaryEntry>): StorageWriteResult => {
+  if (!isBrowser()) {
+    return { ok: false, reason: "unavailable", message: "Pamięć przeglądarki niedostępna." };
+  }
   try {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
     window.dispatchEvent(new CustomEvent("cml:diary-updated"));
-  } catch {
-    // quota exceeded etc.
+    return { ok: true };
+  } catch (err) {
+    const isQuota =
+      err instanceof DOMException &&
+      // Cross-browser nazwy błędów limitu pamięci
+      (err.name === "QuotaExceededError" ||
+        err.name === "NS_ERROR_DOM_QUOTA_REACHED" ||
+        err.code === 22 ||
+        err.code === 1014);
+    if (isQuota) {
+      return {
+        ok: false,
+        reason: "quota",
+        message:
+          "Brak miejsca w pamięci przeglądarki. Usuń stare dane (np. wyczyść inne dni dziennika) lub zwolnij miejsce w ustawieniach przeglądarki.",
+      };
+    }
+    return {
+      ok: false,
+      reason: "unknown",
+      message:
+        "Nie udało się zapisać odpowiedzi. Sprawdź, czy nie używasz trybu prywatnego, lub odśwież stronę i spróbuj ponownie.",
+    };
   }
 };
 
@@ -176,22 +208,28 @@ export const useDailyDiary = () => {
     [entries]
   );
 
-  const setAnswer = useCallback((date: string, questionIndex: number, optionIndex: number | null) => {
-    const current = readStorage();
-    const existing = current[date] ?? emptyEntry(date);
-    const answers = existing.answers.slice();
-    answers[questionIndex] = optionIndex;
-    const updated: DiaryEntry = {
-      ...existing,
-      date,
-      answers,
-      updatedAt: new Date().toISOString(),
-      ...computeDerived(answers, thresholds),
-    };
-    const next = { ...current, [date]: updated };
-    writeStorage(next);
-    setRawEntries(next);
-  }, [thresholds]);
+  const setAnswer = useCallback(
+    (date: string, questionIndex: number, optionIndex: number | null): StorageWriteResult => {
+      const current = readStorage();
+      const existing = current[date] ?? emptyEntry(date);
+      const answers = existing.answers.slice();
+      answers[questionIndex] = optionIndex;
+      const updated: DiaryEntry = {
+        ...existing,
+        date,
+        answers,
+        updatedAt: new Date().toISOString(),
+        ...computeDerived(answers, thresholds),
+      };
+      const next = { ...current, [date]: updated };
+      const result = writeStorage(next);
+      // Aktualizuj state TYLKO jeśli zapis się udał — w przeciwnym razie UI
+      // pozostaje zgodny z faktycznym stanem storage (uniknięcie iluzji zapisu).
+      if (result.ok) setRawEntries(next);
+      return result;
+    },
+    [thresholds],
+  );
 
   const setNotes = useCallback((date: string, notes: string) => {
     const current = readStorage();
