@@ -66,6 +66,10 @@ interface AutofixScannerExports {
     current: ReadonlyArray<string>,
     next: ReadonlyArray<string>,
   ) => KeyDiff;
+  mergePreservingOrder: (
+    current: ReadonlyArray<string>,
+    next: ReadonlyArray<string> | ReadonlySet<string>,
+  ) => string[];
   renderRequiredTranslationKeys: (buckets: TranslationBuckets) => string;
   renderRequiredTimeLineKeys: (keys: ReadonlyArray<string>) => string;
 }
@@ -82,6 +86,7 @@ export const {
   parseCurrentTranslationKeys,
   parseCurrentTimeLineKeys,
   diffKeys,
+  mergePreservingOrder,
   renderRequiredTranslationKeys,
   renderRequiredTimeLineKeys,
 } = typed;
