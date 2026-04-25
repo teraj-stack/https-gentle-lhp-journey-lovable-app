@@ -306,13 +306,12 @@ describe("AutoSaveSettings — tooltip „Ostatnia zmiana” wybiera nagłówek 
       // jako część etykiety źródła.
       expect(document.body.textContent ?? "").not.toMatch(/Źródło:\s*(null|undefined)/i);
 
-      // Badge „lokalnie" pokazuje się — wariant lokalny ma `showLocalSuffix=true`
-      // (analogicznie do twardego source="local"), bo `getLastChangeLabelStyle`
-      // też defaultuje do local dla każdego source ≠ "remote".
-      const badge = screen.getByText("lokalnie");
-      expect(badge.getAttribute("aria-label")).toBe(
-        "Źródło: Moja lokalna akcja w tej karcie",
-      );
+      // Badge „lokalnie" celowo NIE pojawia się dla `undefined` — `getLastChangeLabelStyle`
+      // ma `showLocalSuffix: source === "local"`, więc tylko twardo potwierdzone
+      // lokalne źródło dostaje widoczny badge. To kolejna warstwa ostrożności:
+      // tooltip mówi „lokalna" jako bezpieczny fallback dla screen readera,
+      // ale wizualny badge nie udaje pewności, której nie mamy.
+      expect(screen.queryByText("lokalnie")).not.toBeInTheDocument();
     });
 
     it("source=null + lastChangeAt=null: cała sekcja „Ostatnia zmiana” nie renderuje się", () => {
