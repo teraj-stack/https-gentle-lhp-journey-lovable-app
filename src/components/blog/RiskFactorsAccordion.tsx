@@ -46,6 +46,8 @@ import { Input } from "@/components/ui/input";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { trackEbmClick } from "@/lib/ebmAnalytics";
 import { exportChecklistCsv, exportChecklistPdf } from "@/lib/checklistExport";
+import { buildChecklistSummary } from "@/lib/checklistSummary";
+import ChecklistAutoSummary from "@/components/blog/ChecklistAutoSummary";
 import {
   buildChecklistShareUrl,
   buildChecklistShortCode,
@@ -428,7 +430,7 @@ const RiskFactorsAccordion = () => {
     [selectedFactors, priorityIds],
   );
 
-  // Dialog share
+  const checklistSummary = useMemo(() => buildChecklistSummary(selected), [selected]);
   const [shareOpen, setShareOpen] = useState(false);
   const [copiedField, setCopiedField] = useState<"url" | "code" | null>(null);
 
@@ -1022,6 +1024,8 @@ const RiskFactorsAccordion = () => {
             })}
           </ul>
         )}
+
+        <ChecklistAutoSummary summary={checklistSummary} />
 
         {selectedFactors.length > 0 && (
           <>
