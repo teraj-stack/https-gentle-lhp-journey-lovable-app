@@ -336,13 +336,13 @@ const DiaryFullModule = ({
           </div>
           <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
             <span className="inline-flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-500" /> Niskie ≤8
+              <span className="w-2 h-2 rounded-full bg-emerald-500" /> Niskie ≤{thresholds.lowMax}
             </span>
             <span className="inline-flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-primary" /> Średnie 9–17
+              <span className="w-2 h-2 rounded-full bg-primary" /> Średnie {thresholds.lowMax + 1}–{thresholds.mediumMax}
             </span>
             <span className="inline-flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-destructive" /> Wysokie 18+
+              <span className="w-2 h-2 rounded-full bg-destructive" /> Wysokie {thresholds.mediumMax + 1}+
             </span>
           </div>
         </div>
