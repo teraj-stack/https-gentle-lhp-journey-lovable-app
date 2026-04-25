@@ -69,6 +69,35 @@ const formatLongDate = (key: string): string => {
   });
 };
 
+/** "25.04.2026, 14:32" — pełna data i godzina ostatniej aktualizacji */
+const formatUpdatedAt = (iso: string | undefined): string => {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleString("pl-PL", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
+/** "dziś 14:32" / "wczoraj 09:10" / "23.04 18:00" — kompaktowo do tooltipa */
+const formatUpdatedAtCompact = (iso: string | undefined): string => {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const time = d.toLocaleTimeString("pl-PL", { hour: "2-digit", minute: "2-digit" });
+  const dayKey = todayKey(d);
+  const today = todayKey();
+  if (dayKey === today) return `dziś ${time}`;
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  if (dayKey === todayKey(yesterday)) return `wczoraj ${time}`;
+  return `${d.toLocaleDateString("pl-PL", { day: "2-digit", month: "2-digit" })} ${time}`;
+};
+
 const RISK_COLORS: Record<RiskLevel, string> = {
   low: "text-emerald-400",
   medium: "text-primary",
