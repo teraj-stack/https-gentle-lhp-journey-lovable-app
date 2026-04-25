@@ -535,6 +535,12 @@ const DiaryFullModule = ({
       });
       return;
     }
+    // Auto-zapis OFF + draft aktywnego dnia → flush PRZED ogłoszeniem sukcesu.
+    // Bez tego „Zapisano dzień" byłoby kłamstwem (zmiany żyją tylko w stanie komponentu).
+    if (!autoSaveEnabled && activeDayHasDraft) {
+      const ok = flushDraft(activeDate);
+      if (!ok) return;
+    }
     // Manualne potwierdzenie też domyka heartbeat → checkpoint = teraz.
     if (entry.updatedAt) {
       lastSeenUpdatedAtRef.current = entry.updatedAt;
