@@ -195,6 +195,16 @@ const DiaryFullModule = ({
   );
 
   /**
+   * Komunikat aria-live ogłaszany po wybraniu odpowiedzi quizu — daje natychmiastowe
+   * potwierdzenie wzrostu postępu (czytniki ekranu + użytkownicy widzący toast obok).
+   * Resetowany do pustego stringa przy zmianie aktywnego dnia, by uniknąć echa.
+   */
+  const [answerAnnouncement, setAnswerAnnouncement] = useState<string>("");
+  useEffect(() => {
+    setAnswerAnnouncement("");
+  }, [activeDate]);
+
+  /**
    * Czyści wszystkie odpowiedzi quizu w aktywnym dniu (notatki zostają nietknięte).
    * Każda odpowiedź jest zerowana przez setAnswer(..., null), co od razu nadpisuje
    * localStorage przez hook useDailyDiary i emituje event "cml:diary-updated".
@@ -212,16 +222,6 @@ const DiaryFullModule = ({
       duration: 2200,
     });
   };
-
-  /**
-   * Komunikat aria-live ogłaszany po wybraniu odpowiedzi quizu — daje natychmiastowe
-   * potwierdzenie wzrostu postępu (czytniki ekranu + użytkownicy widzący toast obok).
-   * Resetowany do pustego stringa przy zmianie aktywnego dnia, by uniknąć echa.
-   */
-  const [answerAnnouncement, setAnswerAnnouncement] = useState<string>("");
-  useEffect(() => {
-    setAnswerAnnouncement("");
-  }, [activeDate]);
 
   /**
    * Wrapper na `setAnswer` z mikro-feedbackiem: pokazuje toast „Pytanie X/9 zapisane"
