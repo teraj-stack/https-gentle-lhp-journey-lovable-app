@@ -12,6 +12,7 @@ import {
   Info,
   TrendingUp,
   FileDown,
+  FileJson,
   FileSpreadsheet,
   TrendingDown,
   Minus,
@@ -49,7 +50,13 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useDailyDiary, last14DaysKeys, todayKey } from "@/hooks/useDailyDiary";
 import { HEMOROIDY_QUESTIONS, RiskLevel } from "@/lib/hemoroidyQuizData";
-import { buildDiarySummary, exportDiaryCsv, exportDiaryPdf } from "@/lib/diaryExport";
+import {
+  buildDiarySummary,
+  exportDiaryCsv,
+  exportDiaryPdf,
+  exportSingleDayJson,
+  exportSingleDayPdf,
+} from "@/lib/diaryExport";
 import DiaryReminderBanner from "@/components/hemoroidy/DiaryReminderBanner";
 import DiaryReminderSettings from "@/components/hemoroidy/DiaryReminderSettings";
 import RiskThresholdsSettings from "@/components/hemoroidy/RiskThresholdsSettings";
@@ -422,6 +429,48 @@ const DiaryFullModule = ({
     });
   };
 
+  /**
+   * Eksport pojedynczego dnia (aktywnego). Dwa formaty:
+   *  • JSON — surowe dane do archiwizacji / importu w przyszłości
+   *  • PDF — wersja do druku / zabrania na konsultację
+   * Aktywne tylko gdy dzień ma ≥1 odpowiedź lub notatkę (inaczej eksport pustki).
+   */
+  const dayHasContent = entry.answers.some((a) => a !== null) || !!entry.notes?.trim();
+
+  const handleExportDayJson = () => {
+    if (!dayHasContent) return;
+    try {
+      exportSingleDayJson(entry);
+      toast({
+        title: "Eksport JSON gotowy",
+        description: `Wpis z dnia ${formatLongDate(activeDate)} został pobrany.`,
+      });
+    } catch {
+      toast({
+        variant: "destructive",
+        title: "Nie udało się wyeksportować pliku",
+        description: "Spróbuj ponownie lub odśwież stronę.",
+      });
+    }
+  };
+
+  const handleExportDayPdf = () => {
+    if (!dayHasContent) return;
+    try {
+      exportSingleDayPdf(entry);
+      toast({
+        title: "Eksport PDF gotowy",
+        description: `Wpis z dnia ${formatLongDate(activeDate)} został pobrany.`,
+      });
+    } catch {
+      toast({
+        variant: "destructive",
+        title: "Nie udało się wygenerować PDF",
+        description: "Spróbuj ponownie lub odśwież stronę.",
+      });
+    }
+  };
+
   const goPrev = () => {
     const i = days.indexOf(activeDate);
     if (i > 0) setActiveDate(days[i - 1]);
@@ -717,6 +766,39 @@ const DiaryFullModule = ({
             )}
           </div>
         </div>
+
+        {/* Pasek eksportu pojedynczego dnia — JSON (archiwum / re-import) lub PDF
+            (do druku / na konsultację). Aktywny gdy dzień ma jakąkolwiek treść. */}
+        {dayHasContent && (
+          <div className="mb-5 rounded-xl border border-primary/25 bg-primary/[0.04] px-3 py-2.5 flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-1.5 text-[11px] uppercase tracking-[0.14em] text-primary font-sans mr-auto">
+              <FileDown className="w-3.5 h-3.5" aria-hidden="true" />
+              Eksport tego dnia
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleExportDayPdf}
+              className="h-8 text-xs border-primary/40 text-primary hover:bg-primary/10 hover:text-primary"
+              aria-label={`Pobierz wpis z dnia ${formatLongDate(activeDate)} jako PDF`}
+            >
+              <FileDown className="w-3.5 h-3.5 mr-1.5" />
+              PDF
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleExportDayJson}
+              className="h-8 text-xs border-primary/40 text-primary hover:bg-primary/10 hover:text-primary"
+              aria-label={`Pobierz wpis z dnia ${formatLongDate(activeDate)} jako JSON`}
+            >
+              <FileJson className="w-3.5 h-3.5 mr-1.5" />
+              JSON
+            </Button>
+          </div>
+        )}
 
         {/* Progress */}
         <div className="mb-6">

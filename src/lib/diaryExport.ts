@@ -616,3 +616,245 @@ export const exportDiaryPdf = (
   const stamp = new Date().toISOString().slice(0, 10);
   doc.save(`cml-dziennik-hemoroidy-${stamp}.pdf`);
 };
+
+/* ---------- Eksport pojedynczego dnia (JSON + PDF) ---------- */
+
+/**
+ * Czytelny snapshot odpowiedzi quizu z jednego dnia. Zawiera nie tylko surowe indeksy
+ * (pole `answers`), ale też pełny opis każdego pytania, wybranej opcji i punktów —
+ * dzięki temu plik jest samowystarczalny (lekarz może go odczytać bez znajomości aplikacji).
+ */
+export const exportSingleDayJson = (entry: DiaryEntry): void => {
+  const payload = {
+    schema: "cml.hemoroidy.diary.day.v1",
+    exportedAt: new Date().toISOString(),
+    source: "CML — Centrum Medycyny Laserowej (mcml.pl)",
+    date: entry.date,
+    score: entry.score,
+    maxScore: entry.maxScore,
+    complete: entry.complete,
+    riskLevel: entry.level,
+    riskLabel: entry.complete && entry.level ? RISK_LABEL[entry.level] : null,
+    updatedAt: entry.updatedAt,
+    notes: entry.notes ?? "",
+    answers: HEMOROIDY_QUESTIONS.map((q, i) => {
+      const idx = entry.answers[i];
+      const opt = idx !== null && idx !== undefined ? q.options[idx] : null;
+      return {
+        questionIndex: i,
+        questionId: q.id,
+        question: q.q,
+        selectedOptionIndex: idx,
+        selectedOption: opt ? opt.label : null,
+        points: opt ? opt.points : null,
+      };
+    }),
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {
+    type: "application/json;charset=utf-8",
+  });
+  triggerDownload(blob, `cml-dziennik-hemoroidy-${entry.date}.json`);
+};
+
+/**
+ * Jednostronicowy PDF z odpowiedziami z konkretnego dnia — do druku/zabrania na konsultację.
+ * Layout: nagłówek brand → karta wyniku (kolor poziomu ryzyka) → lista 9 pytań z wybraną
+ * opcją i punktacją → notatki → disclaimer.
+ */
+export const exportSingleDayPdf = (entry: DiaryEntry): void => {
+  const doc = new jsPDF({ unit: "mm", format: "a4" });
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const margin = 16;
+  const contentWidth = pageWidth - margin * 2;
+  let y = margin;
+
+  const ensureSpace = (needed: number) => {
+    if (y + needed > pageHeight - 18) {
+      doc.addPage();
+      y = margin;
+    }
+  };
+
+  /* Header band */
+  doc.setFillColor(...BRAND_GOLD);
+  doc.rect(0, 0, pageWidth, 8, "F");
+
+  y = margin + 4;
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+  doc.setTextColor(...BRAND_GOLD);
+  doc.text(s("CML — Centrum Medycyny Laserowej"), margin, y);
+
+  y += 9;
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(18);
+  doc.setTextColor(...TEXT_DARK);
+  doc.text(s("Dziennik hemoroidów — wpis z dnia"), margin, y);
+
+  y += 6;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(11);
+  doc.setTextColor(...TEXT_DARK);
+  doc.text(s(formatDayPL(entry.date)), margin, y);
+
+  y += 5;
+  doc.setFontSize(9);
+  doc.setTextColor(...TEXT_MUTED);
+  const exportedAt = new Date().toLocaleString("pl-PL", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  doc.text(s(`Wygenerowano: ${exportedAt}`), margin, y);
+
+  /* Result card */
+  y += 6;
+  const cardH = 26;
+  const lvlColor = entry.complete && entry.level ? colorForLevel(entry.level) : ([200, 200, 200] as [number, number, number]);
+  doc.setFillColor(...BG_SOFT);
+  doc.setDrawColor(...lvlColor);
+  doc.setLineWidth(0.6);
+  doc.roundedRect(margin, y, contentWidth, cardH, 3, 3, "FD");
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(11);
+  doc.setTextColor(...BRAND_GOLD);
+  doc.text(s("WYNIK QUIZU"), margin + 5, y + 7);
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(22);
+  doc.setTextColor(...TEXT_DARK);
+  doc.text(`${entry.score} / ${entry.maxScore}`, margin + 5, y + 18);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  doc.setTextColor(...TEXT_MUTED);
+  doc.text(s("punktów"), margin + 5, y + 23);
+
+  // Right side — risk level + completeness
+  const rightX = margin + contentWidth - 5;
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+  doc.setTextColor(...lvlColor);
+  const riskText =
+    entry.complete && entry.level
+      ? `Ryzyko: ${RISK_LABEL[entry.level].toUpperCase()}`
+      : "Wpis niekompletny";
+  doc.text(s(riskText), rightX, y + 10, { align: "right" });
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  doc.setTextColor(...TEXT_MUTED);
+  const answered = entry.answers.filter((a) => a !== null).length;
+  doc.text(
+    s(`Odpowiedzi: ${answered}/${entry.answers.length}`),
+    rightX,
+    y + 16,
+    { align: "right" },
+  );
+  doc.text(
+    s(`Aktualizacja: ${new Date(entry.updatedAt).toLocaleString("pl-PL")}`),
+    rightX,
+    y + 21,
+    { align: "right" },
+  );
+
+  y += cardH + 6;
+
+  /* Answers list */
+  ensureSpace(10);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(11);
+  doc.setTextColor(...TEXT_DARK);
+  doc.text(s("Odpowiedzi (9 pytań)"), margin, y);
+  y += 5;
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+
+  HEMOROIDY_QUESTIONS.forEach((q, i) => {
+    const idx = entry.answers[i];
+    const opt = idx !== null && idx !== undefined ? q.options[idx] : null;
+    const qLines = doc.splitTextToSize(s(`${i + 1}. ${q.q}`), contentWidth - 4);
+    const aText = opt
+      ? s(`→ ${opt.label}  (${opt.points} pkt)`)
+      : s("→ brak odpowiedzi");
+    const aLines = doc.splitTextToSize(aText, contentWidth - 8);
+    const blockH = qLines.length * 4 + aLines.length * 4 + 4;
+
+    ensureSpace(blockH + 2);
+
+    if (i % 2 === 0) {
+      doc.setFillColor(252, 250, 245);
+      doc.rect(margin, y, contentWidth, blockH, "F");
+    }
+
+    doc.setTextColor(...TEXT_DARK);
+    doc.setFont("helvetica", "bold");
+    doc.text(qLines, margin + 2, y + 4);
+
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(...(opt ? TEXT_DARK : TEXT_MUTED));
+    doc.text(aLines, margin + 6, y + 4 + qLines.length * 4);
+
+    y += blockH;
+  });
+
+  /* Notes */
+  y += 4;
+  ensureSpace(20);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(11);
+  doc.setTextColor(...TEXT_DARK);
+  doc.text(s("Notatki dnia"), margin, y);
+  y += 5;
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10);
+  const notesRaw = entry.notes?.trim() ?? "";
+  if (notesRaw) {
+    doc.setTextColor(...TEXT_DARK);
+    const noteLines = doc.splitTextToSize(s(notesRaw), contentWidth - 4);
+    ensureSpace(noteLines.length * 4 + 4);
+    doc.text(noteLines, margin + 2, y);
+    y += noteLines.length * 4 + 2;
+  } else {
+    doc.setTextColor(...TEXT_MUTED);
+    doc.setFont("helvetica", "italic");
+    doc.text(s("(brak notatek)"), margin + 2, y);
+    y += 5;
+  }
+
+  /* Disclaimer */
+  y += 4;
+  ensureSpace(20);
+  doc.setFont("helvetica", "italic");
+  doc.setFontSize(9);
+  doc.setTextColor(...TEXT_MUTED);
+  const disc = doc.splitTextToSize(
+    s(
+      "Dokument edukacyjny CML — nie zastępuje konsultacji lekarskiej. Każde krwawienie z odbytu lub utrzymujące się objawy wymagają oceny proktologa. Źródła EBM: ASCRS, ESCP.",
+    ),
+    contentWidth,
+  );
+  doc.text(disc, margin, y);
+
+  /* Footer */
+  const pageCount = doc.getNumberOfPages();
+  for (let p = 1; p <= pageCount; p++) {
+    doc.setPage(p);
+    const fy = pageHeight - 10;
+    doc.setDrawColor(...BRAND_GOLD);
+    doc.setLineWidth(0.3);
+    doc.line(margin, fy - 3, pageWidth - margin, fy - 3);
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(8);
+    doc.setTextColor(...TEXT_MUTED);
+    doc.text(s("CML — mcml.pl"), margin, fy);
+    doc.text(s(`Strona ${p} / ${pageCount}`), pageWidth - margin, fy, { align: "right" });
+  }
+
+  doc.save(`cml-dziennik-hemoroidy-${entry.date}.pdf`);
+};
