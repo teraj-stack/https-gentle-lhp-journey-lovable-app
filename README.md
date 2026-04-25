@@ -141,6 +141,56 @@ Before / after example for a title containing all four hot chars (`Missing key: 
 
 The helpers `escapeProperty` and `escapeData` in `src/lib/i18nGithubAnnotations.ts` implement exactly this table — reach for them instead of hand-rolling escapes.
 
+#### Supported locale value formats
+
+Locale values in `src/lib/lastChangeTooltipContent.ts` and `lastChangeTooltipModel.ts` may be written in any of the formats below. The annotation resolver normalizes them to a **single-line snippet** in the message body, while `line=` always points at the **key declaration line** (the row where `keyName:` appears) — never at a continuation line.
+
+| Format | Example source | How the message is encoded |
+| --- | --- | --- |
+| **Single-line string** | `heading: "Last change",` | Value copied verbatim into the message; only `%`, `\r`, `\n` get percent-encoded (`escapeData`). |
+| **Single-line with literal escapes** | `hint: "Line 1\nLine 2",` | The string `\n` you wrote is a real newline in the JS value → emitted as `%0A` so the PR popover renders two lines. `\t` → tab (literal in body). `\\` → single backslash. |
+| **Single-line with quotes** | `label: "He said \"hi\"",` | Quotes are unescaped to literal `"` in the message body; no extra encoding needed. |
+| **Multi-line template literal** | <code>body: \`Line 1<br>Line 2\`,</code> | `assembleMultiLineSnippet` walks forward tracking backtick balance, collapses internal whitespace runs to a single space, and emits one line. Embedded literal newlines become a single space — they do **not** become `%0A`. Use `\n` inside a double-quoted string if you want a rendered line break. |
+| **Multi-line array** | `tags: [\n  "a",\n  "b",\n],` | Bracket/brace/paren balance is tracked; the assembler stops on the matching `]` + terminator. The collapsed form (e.g. `[ "a", "b", ]`) appears in the message. |
+| **Multi-line object** | `meta: {\n  k: "v",\n},` | Same as array — brace balance terminates the walk. |
+| **Concatenated strings** | `text: "part 1 " +\n  "part 2",` | Trailing `+` marks the line as a continuation; the assembler keeps walking until a balanced terminator on a non-continuation line. |
+| **Colon-only opener** | `nested:\n  { … }` | Treated as a multi-line opener; walk continues into the next line's `{`. |
+
+Caps and safety:
+
+- **Length cap**: assembled snippets are truncated at `MAX_SNIPPET_LEN = 200` chars with a trailing `…`. Long template literals won't blow up the workflow log.
+- **Safety stop**: if balance never closes (malformed source), the walk stops at the next dedent below the key's indentation — the snippet is whatever was collected so far.
+- **Final encoding**: whatever the assembler produces is fed through `escapeData`, so any real `\n` / `\r` / `%` that survived the collapse step is percent-encoded before hitting stdout.
+
+Worked example — multi-line template literal:
+
+```ts
+// source (lastChangeTooltipContent.ts, line 87)
+hint: `Open the diary,
+       then tap "Last change"
+       to review history.`,
+```
+
+Produces (note: line=87 points at the `hint:` row, embedded newlines collapsed to spaces, no `%0A`):
+
+```text
+::error file=src/lib/lastChangeTooltipContent.ts,line=87,title=TRANSLATIONS [error]%3A en · placeholder-mismatch::Locale "en" value "Open the diary, then tap \"Last change\" to review history." is missing placeholder {count}.
+```
+
+Worked example — escaped `\n` inside a single-line string:
+
+```ts
+hint: "Open the diary.\nThen tap \"Last change\".",
+```
+
+Produces (note: `\n` → `%0A` → renders as a real line break in the PR popover):
+
+```text
+::error file=src/lib/lastChangeTooltipContent.ts,line=87,title=…::Locale "en" value "Open the diary.%0AThen tap \"Last change\"." …
+```
+
+**Rule of thumb**: if you want a rendered line break in the PR annotation, write `\n` in a double-quoted string. If you write a literal newline (template literal or multi-line array/object), the assembler will collapse it to a space.
+
 #### Concrete examples
 
 Copy-paste-ready stdout lines as the emitter would print them in CI. Useful when writing new tests or eyeballing a workflow log.
