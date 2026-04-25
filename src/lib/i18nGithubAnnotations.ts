@@ -336,6 +336,47 @@ const buildExpectedLineHint = (
  * The `groupTitle` is used to prefix annotation titles so the GH UI shows
  * which contract test produced each error (e.g. "i18n required keys").
  */
+/**
+ * Module-level dedup index keyed by `${locale}::${path}::${reason}`.
+ *
+ * Why module-level (cross-call)?
+ * ------------------------------
+ * The three i18n contract tests (i18nRequiredKeys, i18nContract,
+ * i18nPlaceholders) overlap on shape — e.g. an entirely-missing key may
+ * be flagged by BOTH the required-keys test and the contract test. Without
+ * dedup, the same line in the GitHub PR would receive 2-3 identical
+ * annotations, drowning the reviewer in noise and making it look like
+ * there are 3× more bugs than there actually are.
+ *
+ * Strategy: first-emitter-wins. The first call that emits a violation
+ * also records the originating `groupTitle` so subsequent calls that hit
+ * the same `(locale, path, reason)` triple are silent. This is correct
+ * even when later calls carry a different `detail` string — the
+ * underlying bug is the same line in the same file; one annotation per
+ * line is the goal.
+ *
+ * Vitest workers: each worker process has its own module instance, so
+ * the seen-set scope is per-worker. In CI we run the contract tests
+ * serially in one worker (vitest's default for small suites), which is
+ * exactly the scope where dedup matters most. If a project later
+ * fans out to multiple workers, the worst case is one duplicate per
+ * worker — still a meaningful reduction over the un-deduped baseline.
+ */
+const seenAnnotations = new Map<string, string>();
+
+const dedupKeyOf = (v: AnnotatableViolation): string =>
+  `${v.locale}::${v.path}::${v.reason}`;
+
+/**
+ * Test-only: clear the cross-call dedup index. Production code never
+ * needs to call this — the index lives for the lifetime of the worker
+ * process, which is the lifetime of one CI run. Tests need it to keep
+ * each `it(...)` block independent.
+ */
+export const __resetAnnotationDedupForTesting = (): void => {
+  seenAnnotations.clear();
+};
+
 export const emitGithubAnnotations = (
   violations: ReadonlyArray<AnnotatableViolation>,
   groupTitle: string,
@@ -343,7 +384,26 @@ export const emitGithubAnnotations = (
   if (violations.length === 0) return;
   if (process.env.GITHUB_ACTIONS !== "true") return;
 
+  // Step 1: in-call dedup — collapse identical entries within this single
+  // batch first (cheaper than going through file resolution N times for
+  // the same key, and keeps the cross-call index pristine).
+  const inCallSeen = new Set<string>();
+  const uniqueViolations: AnnotatableViolation[] = [];
   for (const v of violations) {
+    const key = dedupKeyOf(v);
+    if (inCallSeen.has(key)) continue;
+    inCallSeen.add(key);
+    uniqueViolations.push(v);
+  }
+
+  for (const v of uniqueViolations) {
+    // Step 2: cross-call dedup — skip if a previous group already
+    // emitted this exact violation. Reviewers see a single annotation
+    // per problem regardless of how many tests detect it.
+    const key = dedupKeyOf(v);
+    if (seenAnnotations.has(key)) continue;
+    seenAnnotations.set(key, groupTitle);
+
     const file = pickSourceFile(v.path);
     const lines = readSourceLines(file);
     let lineNumber: number | undefined;
