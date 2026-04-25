@@ -23,6 +23,10 @@ import {
   Trash2,
   ChevronsDownUp,
   ChevronsUpDown,
+  Check,
+  CheckCircle2,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -254,6 +258,19 @@ const RISK_FACTORS: RiskFactor[] = [
 ];
 
 const STORAGE_KEY = "cml.hemoroidy.risk-factors.selected.v1";
+const READ_STORAGE_KEY = "cml.hemoroidy.risk-factors.read.v1";
+
+const loadStringArray = (key: string): string[] => {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(key);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.filter((x): x is string => typeof x === "string") : [];
+  } catch {
+    return [];
+  }
+};
 
 const RiskFactorsAccordion = () => {
   const [query, setQuery] = useState("");
@@ -263,17 +280,7 @@ const RiskFactorsAccordion = () => {
   const [openItems, setOpenItems] = useState<string[]>([]);
 
   // Wybrane czynniki — persystencja w localStorage (anonimowo)
-  const [selected, setSelected] = useState<string[]>(() => {
-    if (typeof window === "undefined") return [];
-    try {
-      const raw = window.localStorage.getItem(STORAGE_KEY);
-      if (!raw) return [];
-      const parsed = JSON.parse(raw);
-      return Array.isArray(parsed) ? parsed.filter((x): x is string => typeof x === "string") : [];
-    } catch {
-      return [];
-    }
-  });
+  const [selected, setSelected] = useState<string[]>(() => loadStringArray(STORAGE_KEY));
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -293,6 +300,35 @@ const RiskFactorsAccordion = () => {
     () => selected.map((id) => RISK_FACTORS.find((rf) => rf.id === id)).filter(Boolean) as RiskFactor[],
     [selected],
   );
+
+  // Przeczytane karty — persystencja w localStorage (anonimowo)
+  const [readItems, setReadItems] = useState<string[]>(() => loadStringArray(READ_STORAGE_KEY));
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem(READ_STORAGE_KEY, JSON.stringify(readItems));
+    } catch {
+      /* noop */
+    }
+  }, [readItems]);
+
+  const markRead = (id: string) =>
+    setReadItems((prev) => (prev.includes(id) ? prev : [...prev, id]));
+  const toggleRead = (id: string) =>
+    setReadItems((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  const clearRead = () => setReadItems([]);
+
+  // Auto-oznacz jako przeczytane po 1.2 s utrzymanego rozwinięcia (tylko ręczne otwarcie, nie wyszukiwarka)
+  useEffect(() => {
+    if (nQuery) return;
+    if (openItems.length === 0) return;
+    const timers = openItems
+      .filter((id) => !readItems.includes(id))
+      .map((id) => window.setTimeout(() => markRead(id), 1200));
+    return () => timers.forEach((t) => window.clearTimeout(t));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openItems, nQuery]);
 
   const filtered = useMemo(() => {
     if (!nQuery) return RISK_FACTORS;
@@ -380,12 +416,30 @@ const RiskFactorsAccordion = () => {
 
       {/* Pasek akcji: Zwiń / Rozwiń wszystko (ukryty podczas wyszukiwania, które samo rozwija dopasowania) */}
       {!nQuery && filtered.length > 0 && (
-        <div className="mb-3 flex items-center justify-between gap-2">
-          <span className="text-[11.5px] sm:text-xs text-muted-foreground">
-            {openItems.length === 0
-              ? "Wszystkie sekcje zwinięte"
-              : `Rozwinięte: ${openItems.length} z ${RISK_FACTORS.length}`}
-          </span>
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11.5px] sm:text-xs text-muted-foreground">
+            <span>
+              {openItems.length === 0
+                ? "Wszystkie sekcje zwinięte"
+                : `Rozwinięte: ${openItems.length} z ${RISK_FACTORS.length}`}
+            </span>
+            {readItems.length > 0 && (
+              <span className="inline-flex items-center gap-1.5">
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-primary/10 text-primary border border-primary/30">
+                  <CheckCircle2 className="w-3 h-3" />
+                  Przeczytane: {readItems.length}/{RISK_FACTORS.length}
+                </span>
+                <button
+                  type="button"
+                  onClick={clearRead}
+                  className="text-muted-foreground hover:text-foreground underline-offset-2 hover:underline"
+                  aria-label="Wyczyść oznaczenia „przeczytane” dla wszystkich kart"
+                >
+                  wyczyść
+                </button>
+              </span>
+            )}
+          </div>
           <Button
             type="button"
             size="sm"
@@ -431,27 +485,48 @@ const RiskFactorsAccordion = () => {
           {filtered.map((rf) => {
             const Icon = rf.Icon;
             const isSelected = selected.includes(rf.id);
+            const isRead = readItems.includes(rf.id);
             return (
               <AccordionItem
                 key={rf.id}
                 value={rf.id}
                 data-selected={isSelected}
-                className="rounded-xl border border-border bg-background/40 overflow-hidden data-[state=open]:border-primary/40 data-[state=open]:bg-primary/5 data-[selected=true]:border-primary/60 data-[selected=true]:bg-primary/[0.07] transition-colors"
+                data-read={isRead}
+                className="rounded-xl border border-border bg-background/40 overflow-hidden data-[state=open]:border-primary/40 data-[state=open]:bg-primary/5 data-[selected=true]:border-primary/60 data-[selected=true]:bg-primary/[0.07] data-[read=true]:border-primary/30 transition-colors"
               >
                 <AccordionTrigger className="px-3.5 sm:px-5 py-4 sm:py-3.5 hover:no-underline group text-left gap-2">
                   <div className="flex items-start sm:items-center gap-3 sm:gap-3 flex-1 min-w-0">
-                    <span className="w-10 h-10 sm:w-9 sm:h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 group-data-[state=open]:bg-primary/20 transition-colors mt-0.5 sm:mt-0">
+                    <span className="relative w-10 h-10 sm:w-9 sm:h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 group-data-[state=open]:bg-primary/20 transition-colors mt-0.5 sm:mt-0">
                       <Icon className="w-4 h-4 text-primary" />
+                      {isRead && (
+                        <span
+                          className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-sm ring-1 ring-background"
+                          aria-hidden="true"
+                        >
+                          <Check className="w-2.5 h-2.5" strokeWidth={3} />
+                        </span>
+                      )}
                     </span>
                     <div className="flex-1 min-w-0 flex flex-col gap-1.5">
-                      <p className="font-heading text-[15px] sm:text-base md:text-lg text-foreground leading-snug">
+                      <p className={`font-heading text-[15px] sm:text-base md:text-lg leading-snug ${isRead ? "text-foreground/70" : "text-foreground"}`}>
                         <Highlight text={rf.title} query={query} />
+                        {isRead && (
+                          <span className="sr-only"> (przeczytane)</span>
+                        )}
                       </p>
-                      <span className="inline-flex w-fit max-w-full items-center px-2 py-0.5 rounded-md text-[10.5px] sm:text-[11px] font-sans uppercase tracking-[0.06em] bg-destructive/10 text-destructive border border-destructive/25 leading-snug">
-                        <span className="truncate">
-                          <Highlight text={rf.shortBadge} query={query} />
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <span className="inline-flex w-fit max-w-full items-center px-2 py-0.5 rounded-md text-[10.5px] sm:text-[11px] font-sans uppercase tracking-[0.06em] bg-destructive/10 text-destructive border border-destructive/25 leading-snug">
+                          <span className="truncate">
+                            <Highlight text={rf.shortBadge} query={query} />
+                          </span>
                         </span>
-                      </span>
+                        {isRead && (
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] sm:text-[10.5px] font-sans uppercase tracking-[0.08em] bg-primary/10 text-primary border border-primary/30 leading-snug">
+                            <CheckCircle2 className="w-2.5 h-2.5" />
+                            Przeczytane
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </AccordionTrigger>
@@ -538,26 +613,49 @@ const RiskFactorsAccordion = () => {
                         ? "Ten czynnik trafił do Twojej checklisty na dole."
                         : "Dotyczy Cię? Dodaj do swojej krótkiej checklisty ryzyka."}
                     </p>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant={isSelected ? "default" : "outline"}
-                      onClick={() => toggleSelected(rf.id)}
-                      className="gap-2 self-start sm:self-auto"
-                      aria-pressed={isSelected}
-                    >
-                      {isSelected ? (
-                        <>
-                          <BookmarkCheck className="w-3.5 h-3.5" />
-                          Zapisane — kliknij, aby usunąć
-                        </>
-                      ) : (
-                        <>
-                          <Bookmark className="w-3.5 h-3.5" />
-                          Zapisz moje ryzyko
-                        </>
-                      )}
-                    </Button>
+                    <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => toggleRead(rf.id)}
+                        className="gap-1.5 text-muted-foreground hover:text-foreground"
+                        aria-pressed={isRead}
+                        title={isRead ? "Oznacz jako nieprzeczytane" : "Oznacz jako przeczytane"}
+                      >
+                        {isRead ? (
+                          <>
+                            <EyeOff className="w-3.5 h-3.5" />
+                            Cofnij „przeczytane"
+                          </>
+                        ) : (
+                          <>
+                            <Eye className="w-3.5 h-3.5" />
+                            Oznacz jako przeczytane
+                          </>
+                        )}
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant={isSelected ? "default" : "outline"}
+                        onClick={() => toggleSelected(rf.id)}
+                        className="gap-2"
+                        aria-pressed={isSelected}
+                      >
+                        {isSelected ? (
+                          <>
+                            <BookmarkCheck className="w-3.5 h-3.5" />
+                            Zapisane — kliknij, aby usunąć
+                          </>
+                        ) : (
+                          <>
+                            <Bookmark className="w-3.5 h-3.5" />
+                            Zapisz moje ryzyko
+                          </>
+                        )}
+                      </Button>
+                    </div>
                   </div>
                 </AccordionContent>
               </AccordionItem>
