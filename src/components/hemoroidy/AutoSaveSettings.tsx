@@ -521,6 +521,22 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
                     Wynik testu — odpowiedziało{" "}
                     <strong className="text-foreground">{pingState.responses.length}</strong>{" "}
                     {pingState.responses.length === 1 ? "karta" : pingState.responses.length >= 2 && pingState.responses.length <= 4 ? "karty" : "kart"}
+                    {pingState.strategy && (
+                      <span
+                        className={`ml-1 text-[10px] px-1.5 py-0.5 rounded-md font-mono border ${
+                          pingState.strategy === "broadcast"
+                            ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
+                            : "bg-primary/10 text-primary border-primary/30"
+                        }`}
+                        title={
+                          pingState.strategy === "broadcast"
+                            ? "Test wykonany przez BroadcastChannel ping/pong"
+                            : "Test wykonany przez round-trip localStorage (BC niedostępny)"
+                        }
+                      >
+                        {pingState.strategy === "broadcast" ? "BC ping/pong" : "Storage round-trip"}
+                      </span>
+                    )}
                   </>
                 )}
               </p>
