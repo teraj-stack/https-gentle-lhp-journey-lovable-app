@@ -66,6 +66,8 @@ import RiskThresholdsSettings from "@/components/hemoroidy/RiskThresholdsSetting
 import DiaryTrendStats from "@/components/hemoroidy/DiaryTrendStats";
 import DiaryTrendSummary from "@/components/hemoroidy/DiaryTrendSummary";
 import DiaryWeeklySummary from "@/components/hemoroidy/DiaryWeeklySummary";
+import AutoSaveSettings from "@/components/hemoroidy/AutoSaveSettings";
+import { useAutoSave } from "@/hooks/useAutoSave";
 import { toast } from "@/hooks/use-toast";
 
 const easeOut = [0.16, 1, 0.3, 1] as const;
