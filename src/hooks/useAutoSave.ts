@@ -233,8 +233,10 @@ export const useAutoSave = () => {
       // Anti-race: ignoruj wiadomości starsze lub równe ostatnio zaaplikowanej wersji.
       if (compareVersions(statePayload.version, lastAppliedVersionRef.current) <= 0) return;
       lastAppliedVersionRef.current = statePayload.version ?? [Date.now(), 0];
-      setEnabled(statePayload.enabled);
-      markRemoteSync();
+      setEnabled((prev) => {
+        if (prev !== statePayload.enabled) markRemoteSync();
+        return statePayload.enabled;
+      });
     };
     channel.addEventListener("message", onMessage);
 
@@ -271,8 +273,10 @@ export const useAutoSave = () => {
         // Anti-race: ten sam check co dla BroadcastChannel.
         if (compareVersions(detail.version, lastAppliedVersionRef.current) <= 0) return;
         lastAppliedVersionRef.current = detail.version ?? [Date.now(), 0];
-        setEnabled(detail.enabled);
-        markRemoteSync();
+        setEnabled((prev) => {
+          if (prev !== detail.enabled) markRemoteSync();
+          return detail.enabled;
+        });
         return;
       }
       // Bez payloadu (back-compat) — fallback na re-read przez storage-style logikę.
