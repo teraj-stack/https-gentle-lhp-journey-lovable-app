@@ -48,6 +48,7 @@ import {
   type Locale,
 } from "./lastChangeTooltipContent";
 import { buildLastChangeTooltipModel } from "./lastChangeTooltipModel";
+import { emitGithubAnnotations } from "./i18nGithubAnnotations";
 
 // ---------------------------------------------------------------------------
 // PLACEHOLDER PATTERN DETECTION
