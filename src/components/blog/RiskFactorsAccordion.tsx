@@ -647,6 +647,44 @@ const RiskFactorsAccordion = () => {
         </p>
       </div>
 
+      {/* Pasek wyników wyszukiwania — widoczny licznik + akcja „rozwiń tylko dopasowane" */}
+      {nQuery && filtered.length > 0 && (
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-primary/30 bg-primary/[0.05] px-3 py-2">
+          <div className="flex items-center gap-2 text-[12.5px] sm:text-sm">
+            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-primary/15 text-primary border border-primary/40 font-sans font-medium tabular-nums">
+              <Search className="w-3 h-3" aria-hidden="true" />
+              {filtered.length}/{RISK_FACTORS.length}
+            </span>
+            <span className="text-muted-foreground">
+              {filtered.length === 1
+                ? "dopasowany czynnik dla"
+                : filtered.length < 5
+                  ? "dopasowane czynniki dla"
+                  : "dopasowanych czynników dla"}{" "}
+              <span className="text-foreground font-medium">„{query}"</span>
+            </span>
+          </div>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              setOpenItems(filtered.map((rf) => rf.id));
+              setQuery("");
+              toast({
+                title: "Rozwinięto dopasowane sekcje",
+                description: `${filtered.length} ${filtered.length === 1 ? "sekcja jest" : "sekcji jest"} otwarta. Pozostałe zwinięto.`,
+              });
+            }}
+            className="gap-2"
+            title="Zapisuje dopasowania jako rozwinięte i czyści wyszukiwanie"
+          >
+            <ChevronsUpDown className="w-3.5 h-3.5" />
+            Rozwiń tylko dopasowane
+          </Button>
+        </div>
+      )}
+
       {/* Pasek akcji: Zwiń / Rozwiń wszystko (ukryty podczas wyszukiwania, które samo rozwija dopasowania) */}
       {!nQuery && filtered.length > 0 && (
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
