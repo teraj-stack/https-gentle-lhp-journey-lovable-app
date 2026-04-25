@@ -24,6 +24,20 @@ import { useCallback, useEffect, useRef, useState } from "react";
 const STORAGE_KEY = "cml.hemoroidy.autosave.v1";
 const EVENT_NAME = "cml:autosave-updated";
 const CHANNEL_NAME = "cml-autosave";
+/**
+ * Klucze storage używane do testu synchronizacji w trybie storage-fallback.
+ * Mechanizm: inicjator zapisuje JSON-payload w `PROBE_KEY` (nie wystrzeli to
+ * `storage` eventu w jego własnej karcie — to z założenia, bo nas nie interesuje
+ * własne echo). Inne karty widzą event, deserializują payload i odpowiadają
+ * wpisem w `PROBE_ECHO_KEY` z tym samym `pingId`. Inicjator zbiera echa
+ * przez okno PING_COLLECTION_WINDOW_MS — identycznie jak BC pong, tylko
+ * przez storage. To pozwala mierzyć latencję storage round-trip i policzyć
+ * aktywne karty nawet bez BroadcastChannel.
+ *
+ * Wartości są krótkotrwałe (czyszczone po użyciu/timeout) — nie rośnie storage.
+ */
+const PROBE_KEY = "cml.autosave.probe.v1";
+const PROBE_ECHO_KEY = "cml.autosave.probe-echo.v1";
 
 const isBrowser = () => typeof window !== "undefined";
 
@@ -130,6 +144,12 @@ export interface PongResponse {
   enabled: boolean;
   /** Latencja od wysłania ping do otrzymania pong (ms). */
   latencyMs: number;
+  /**
+   * Kanał, którym przyszła odpowiedź. „broadcast" = klasyczny BC pong,
+   * „storage" = round-trip przez localStorage probe (używany gdy BC niedostępny).
+   * Pole jest opcjonalne dla back-compat — UI traktuje brak jako „broadcast".
+   */
+  via?: "broadcast" | "storage";
 }
 
 /**
