@@ -222,7 +222,9 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
               className={`text-[11px] font-sans text-muted-foreground inline-flex items-center gap-1 transition-colors ${
                 isRemoteSyncing ? "text-primary" : ""
               } animate-fade-in`}
-              title={lastSyncFullDate}
+              title={`Zmiana auto-zapisu wykryta przez synchronizację z inną kartą${
+                lastSyncFullDate ? ` — ${lastSyncFullDate}` : ""
+              }`}
               aria-live="polite"
             >
               <RefreshCw
