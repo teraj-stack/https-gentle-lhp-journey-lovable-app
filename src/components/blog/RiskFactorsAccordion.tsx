@@ -798,9 +798,34 @@ const RiskFactorsAccordion = () => {
         )}
 
         {selectedFactors.length > 0 && (
-          <p className="mt-4 text-[11.5px] sm:text-xs text-muted-foreground">
-            Pokaż tę listę lekarzowi na konsultacji — ułatwi to dobór profilaktyki i decyzje o leczeniu.
-          </p>
+          <>
+            <div className="mt-5 flex flex-col sm:flex-row gap-2 sm:items-center">
+              <Button
+                type="button"
+                variant="hero"
+                size="sm"
+                onClick={handleExportChecklistPdf}
+                className="gap-2"
+              >
+                <FileDown className="w-4 h-4" />
+                Pobierz moją checklistę (PDF)
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleExportChecklistCsv}
+                className="gap-2"
+              >
+                <FileSpreadsheet className="w-4 h-4" />
+                Pobierz CSV
+              </Button>
+            </div>
+            <p className="mt-3 text-[11.5px] sm:text-xs text-muted-foreground">
+              Pokaż tę listę lekarzowi na konsultacji — ułatwi to dobór profilaktyki i decyzje o leczeniu.
+              PDF zawiera tytuł, krótki opis, mechanizm i źródła EBM dla każdego czynnika.
+            </p>
+          </>
         )}
       </motion.div>
 
