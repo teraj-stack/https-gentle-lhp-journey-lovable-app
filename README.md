@@ -508,6 +508,7 @@ Sample output for `bash i18n-summary.sh --only placeholder-mismatch` after pasti
   Reasons:    placeholder-mismatch
   Locales:    pl,en,de,it   (default)
   Test files: src/lib/i18nPlaceholders.test.ts
+  Output dir: /tmp   (default)
 
 ═══════════════════════════════════════════════════════
   i18n contract — PASS/FAIL summary (filter: placeholder-mismatch)
