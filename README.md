@@ -949,6 +949,245 @@ After running any fixture command, verify:
 
 If any of points 1–4 don't match, jump to [Troubleshooting: `line=` lands on the wrong line](#troubleshooting-line-lands-on-the-wrong-line) — that walks through the resolver edge cases.
 
+#### End-to-end walkthrough — one fixture per error type, start to finish
+
+This subsection is the **single self-contained transcript** of running the validator against every reason code the system can emit. It is intentionally redundant with the per-fixture sections above — the goal here is to give a reviewer or new contributor **one** scrollable block they can read top-to-bottom (or paste into a terminal step-by-step) without cross-referencing.
+
+Layout per error type:
+1. **Setup** — `git checkout` the source files to a clean baseline.
+2. **Apply** — paste the exact mutation (literal source diff you can eyeball).
+3. **Run** — the narrowest vitest invocation that owns the reason.
+4. **Expected output** — verbatim `::error` / `::warning` line. Only `line=N` varies (depends on where you pasted) — every other byte is stable.
+5. **Cleanup** — restore the file before moving on.
+
+> Reference baseline: `pl` is the source of truth, all keys are listed in `REQUIRED_TRANSLATION_KEYS` (or `REQUIRED_TIME_LINE_KEYS`), and `en` is in the active scope by default (`I18N_ACTIVE_LOCALES` defaults to `pl,en`). For fixtures targeting `de` or `it`, prepend `I18N_ACTIVE_LOCALES=pl,en,de` (or `…,it`) to the run command.
+
+---
+
+##### E2E #1 — `missing-required-key` (`::error`)
+
+A required key declared in `REQUIRED_TRANSLATION_KEYS` is **absent** from a non-reference locale.
+
+**Setup** (clean baseline):
+```sh
+git checkout src/lib/lastChangeTooltipContent.ts
+```
+
+**Input mutation** — open `src/lib/lastChangeTooltipContent.ts`, find the `en:` branch of the translations export, and **delete** the `description` line so the `en.local` block looks like:
+
+```ts
+// src/lib/lastChangeTooltipContent.ts (en branch only — pl untouched)
+en: {
+  local: {
+    heading: "Last change",
+    // ⛔ description: "Open the diary…"  ← DELETE THIS LINE
+  },
+  sourcePrefix: "Source: ",
+},
+```
+
+**Run**:
+```sh
+GITHUB_ACTIONS=true bunx vitest run src/lib/i18nRequiredKeys.test.ts 2>&1 | grep '^::'
+```
+
+**Expected output** (one line; `<L>` = the line number of `en: {`, since the missing key has no row to point at):
+```text
+::error file=src/lib/lastChangeTooltipContent.ts,line=<L>,title=TRANSLATIONS [error]%3A en · missing-required-key::TRANSLATIONS.en.local.description (locale=en, reason=missing-required-key, severity=error) — Locale "en" is missing required key "local.description" — expected (from `pl`): description: "Otwórz dziennik, dotknij „Ostatnia zmiana", aby zobaczyć historię.", — Fix: update the locale entry in the indicated file, or run `npm run i18n:autofix` if REQUIRED_* keys drifted.
+```
+
+**Cleanup**:
+```sh
+git checkout src/lib/lastChangeTooltipContent.ts
+```
+
+---
+
+##### E2E #2 — `placeholder-mismatch` (`::error`)
+
+A non-reference locale's value uses a **different placeholder set** than the reference. Triggered by missing / renamed / extra / forbidden-alternate placeholders (see the [mismatch cheat sheet](#placeholder-matching-rules-precise-spec) above). This walkthrough uses the **forbidden-alternate** flavour (`%d` instead of `{count}`) because it's the most common real-world drift after copy-paste from a printf-style codebase.
+
+**Setup**:
+```sh
+git checkout src/lib/lastChangeTooltipModel.ts
+```
+
+**Input mutation** — in `src/lib/lastChangeTooltipModel.ts`, change the `en.relative.minutesAgo` value:
+
+```ts
+// src/lib/lastChangeTooltipModel.ts (en branch only — pl: "Zmieniono {count} minut temu" untouched)
+en: {
+  relative: {
+    minutesAgo: "Changed %d minutes ago", // ⛔ was: "Changed {count} minutes ago"
+  },
+},
+```
+
+**Run**:
+```sh
+GITHUB_ACTIONS=true bunx vitest run src/lib/i18nPlaceholders.test.ts 2>&1 | grep '^::'
+```
+
+**Expected output** (one line; `<L>` = the line of the mutated `minutesAgo:` row in `en`):
+```text
+::error file=src/lib/lastChangeTooltipModel.ts,line=<L>,title=TIME_LINE [error]%3A en · placeholder-mismatch::TIME_LINE.en.relative.minutesAgo (locale=en, reason=placeholder-mismatch, severity=error) — Locale "en" value "Changed %d minutes ago" is missing placeholder {count}, expected by base locale "pl" ("Zmieniono {count} minut temu") — current: minutesAgo: "Changed %d minutes ago", — Fix: update the locale entry in the indicated file, or run `npm run i18n:autofix` if REQUIRED_* keys drifted.
+```
+
+The `current: …` segment quotes the offending row verbatim (with trailing comma) so reviewers see `%d` directly without opening the file.
+
+**Cleanup**:
+```sh
+git checkout src/lib/lastChangeTooltipModel.ts
+```
+
+---
+
+##### E2E #3 — `undeclared-key` (`::error`)
+
+A locale **ships a key** that isn't in `REQUIRED_TRANSLATION_KEYS` (forgotten autofix run, typo, or stale key after a rename).
+
+**Setup**:
+```sh
+git checkout src/lib/lastChangeTooltipContent.ts
+```
+
+**Input mutation** — add `subheading: "(uncategorised)",` to `en.local` (do **not** add it to `pl` and do **not** run `i18n:autofix`):
+
+```ts
+// src/lib/lastChangeTooltipContent.ts
+en: {
+  local: {
+    heading: "Last change",
+    description: "Open the diary…",
+    subheading: "(uncategorised)", // ⛔ NEW — not in REQUIRED_TRANSLATION_KEYS
+  },
+  sourcePrefix: "Source: ",
+},
+```
+
+**Run**:
+```sh
+GITHUB_ACTIONS=true bunx vitest run src/lib/i18nContract.test.ts 2>&1 | grep '^::'
+```
+
+**Expected output** (one line; `<L>` = the line of the new `subheading:` row):
+```text
+::error file=src/lib/lastChangeTooltipContent.ts,line=<L>,title=TRANSLATIONS [error]%3A en · undeclared-key::TRANSLATIONS.en.local.subheading (locale=en, reason=undeclared-key, severity=error) — Locale "en" ships key "local.subheading" not present in REQUIRED_TRANSLATION_KEYS — current: subheading: "(uncategorised)", — Fix: update the locale entry in the indicated file, or run `npm run i18n:autofix` if REQUIRED_* keys drifted.
+```
+
+**Cleanup**:
+```sh
+git checkout src/lib/lastChangeTooltipContent.ts
+```
+
+---
+
+##### E2E #4 — `empty-optional-value` (`::warning`, build stays green)
+
+A key listed in `REQUIRED_TRANSLATION_KEYS.variantOptional` (or `REQUIRED_TIME_LINE_KEYS.variantOptional`) ships an **empty string** in a non-reference locale. This is the **only** reason currently in `WARNING_REASONS` — exit code stays `0`.
+
+**Setup** (this fixture targets `de`, which is not in default scope — include it explicitly):
+```sh
+git checkout src/lib/lastChangeTooltipModel.ts
+```
+
+**Input mutation** — add a `de` branch with an empty `relativeHelpTitle`:
+
+```ts
+// src/lib/lastChangeTooltipModel.ts
+de: {
+  relative: {
+    relativeHelpTitle: "", // ⚠️ empty optional → ::warning, not ::error
+  },
+},
+```
+
+**Run** (note `I18N_ACTIVE_LOCALES` includes `de`):
+```sh
+I18N_ACTIVE_LOCALES=pl,en,de GITHUB_ACTIONS=true \
+  bunx vitest run src/lib/i18nContract.test.ts 2>&1 | grep '^::'
+```
+
+**Expected output** (one line — `::warning`, not `::error`):
+```text
+::warning file=src/lib/lastChangeTooltipModel.ts,line=<L>,title=TIME_LINE [warning]%3A de · empty-optional-value::TIME_LINE.de.relative.relativeHelpTitle (locale=de, reason=empty-optional-value, severity=warning) — Locale "de" key "relative.relativeHelpTitle" is empty — current: relativeHelpTitle: "", — Fix: update the locale entry in the indicated file, or run `npm run i18n:autofix` if REQUIRED_* keys drifted.
+```
+
+**Verify build is green** (warnings don't fail the build):
+```sh
+I18N_ACTIVE_LOCALES=pl,en,de GITHUB_ACTIONS=true \
+  bunx vitest run src/lib/i18nContract.test.ts; echo "exit=$?"
+# → exit=0
+```
+
+**Cleanup**:
+```sh
+git checkout src/lib/lastChangeTooltipModel.ts
+```
+
+---
+
+##### E2E #5 — `wrong-type` (`::error`)
+
+A locale ships a value of the wrong **TypeScript type** (e.g. number where a string is required). Caught at runtime by the contract test (the `as unknown as string` cast bypasses TS but not the test).
+
+**Setup**:
+```sh
+git checkout src/lib/lastChangeTooltipContent.ts
+```
+
+**Input mutation** — replace `it.local.heading`'s string with a number cast:
+
+```ts
+// src/lib/lastChangeTooltipContent.ts
+it: {
+  local: {
+    heading: 42 as unknown as string, // ⛔ number where string expected
+    description: "Apri il diario…",
+  },
+  sourcePrefix: "Origine: ",
+},
+```
+
+**Run** (include `it` in scope):
+```sh
+I18N_ACTIVE_LOCALES=pl,en,it GITHUB_ACTIONS=true \
+  bunx vitest run src/lib/i18nContract.test.ts 2>&1 | grep '^::'
+```
+
+**Expected output** (one line; `current: …` is the **collapsed multi-line snippet** — proves the assembler handles inline `{ … }` wrappers):
+```text
+::error file=src/lib/lastChangeTooltipContent.ts,line=<L>,title=TRANSLATIONS [error]%3A it · wrong-type::TRANSLATIONS.it.local.heading (locale=it, reason=wrong-type, severity=error) — Locale "it" key "local.heading" expected string, got number (42) — current: local: { heading: 42 as unknown as string, description: "Apri il diario…" }, — Fix: update the locale entry in the indicated file, or run `npm run i18n:autofix` if REQUIRED_* keys drifted.
+```
+
+**Cleanup**:
+```sh
+git checkout src/lib/lastChangeTooltipContent.ts
+```
+
+---
+
+##### Summary — all five reasons at a glance
+
+| # | Reason | Severity | Owning test | Exit code | Sample fragment of message body |
+| --- | --- | --- | --- | --- | --- |
+| 1 | `missing-required-key` | `::error` | `i18nRequiredKeys.test.ts` | non-zero | `is missing required key "local.description"` |
+| 2 | `placeholder-mismatch` | `::error` | `i18nPlaceholders.test.ts` | non-zero | `is missing placeholder {count}, expected by base locale "pl"` |
+| 3 | `undeclared-key` | `::error` | `i18nContract.test.ts` | non-zero | `ships key "local.subheading" not present in REQUIRED_TRANSLATION_KEYS` |
+| 4 | `empty-optional-value` | `::warning` | `i18nContract.test.ts` | **0** (green) | `key "relative.relativeHelpTitle" is empty` |
+| 5 | `wrong-type` | `::error` | `i18nContract.test.ts` | non-zero | `expected string, got number (42)` |
+
+To run **every** fixture's owning test in a single shot (e.g. when you've stacked multiple fixtures while exploring):
+
+```sh
+I18N_ACTIVE_LOCALES=pl,en,de,it GITHUB_ACTIONS=true bunx vitest run \
+  src/lib/i18nRequiredKeys.test.ts \
+  src/lib/i18nContract.test.ts \
+  src/lib/i18nPlaceholders.test.ts 2>&1 | grep '^::' | sort -u
+```
+
+`sort -u` deduplicates if the same key trips multiple tests (rare but possible — e.g. a missing key plus a placeholder mismatch on a sibling).
+
 
 ### Source line resolution
 
