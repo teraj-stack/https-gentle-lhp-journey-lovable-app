@@ -1,0 +1,144 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`buildLastChangeTooltipModel — pełny model tooltipa > snapshoty pełnego modelu dla wariantów wejścia > [1] remote + pełna data — happy path 1`] = `
+{
+  "ariaText": "Źródło: Synchronizacja między kartami
+Zmiana auto-zapisu przyszła z innej otwartej karty (BroadcastChannel lub storage).
+Czas: 24 kwietnia 2026, 12:34:56",
+  "content": {
+    "ariaHeading": "Źródło: Synchronizacja między kartami",
+    "description": "Zmiana auto-zapisu przyszła z innej otwartej karty (BroadcastChannel lub storage).",
+    "heading": "Synchronizacja między kartami",
+    "isRemote": true,
+  },
+  "isRelativeFallback": false,
+  "shouldRenderTimeLine": true,
+  "timeLineForA11y": "Czas: 24 kwietnia 2026, 12:34:56",
+  "timeLineForView": "Czas: 24 kwietnia 2026, 12:34:56",
+  "timeLineHelpTitle": undefined,
+  "timeValue": "24 kwietnia 2026, 12:34:56",
+}
+`;
+
+exports[`buildLastChangeTooltipModel — pełny model tooltipa > snapshoty pełnego modelu dla wariantów wejścia > [2] local + pełna data — lokalny nagłówek + brak kwalifikatora a11y 1`] = `
+{
+  "ariaText": "Źródło: Moja lokalna akcja w tej karcie
+Sam(a) przełączyłe(a)ś auto-zapis w tej karcie (Switch lub skrót Alt+Shift+A).
+Czas: 24 kwietnia 2026, 12:34:56",
+  "content": {
+    "ariaHeading": "Źródło: Moja lokalna akcja w tej karcie",
+    "description": "Sam(a) przełączyłe(a)ś auto-zapis w tej karcie (Switch lub skrót Alt+Shift+A).",
+    "heading": "Lokalna akcja w tej karcie",
+    "isRemote": false,
+  },
+  "isRelativeFallback": false,
+  "shouldRenderTimeLine": true,
+  "timeLineForA11y": "Czas: 24 kwietnia 2026, 12:34:56",
+  "timeLineForView": "Czas: 24 kwietnia 2026, 12:34:56",
+  "timeLineHelpTitle": undefined,
+  "timeValue": "24 kwietnia 2026, 12:34:56",
+}
+`;
+
+exports[`buildLastChangeTooltipModel — pełny model tooltipa > snapshoty pełnego modelu dla wariantów wejścia > [3] fallback na relativeLabel — full=whitespace, sufiks „(etykieta względna)” w a11y 1`] = `
+{
+  "ariaText": "Źródło: Synchronizacja między kartami
+Zmiana auto-zapisu przyszła z innej otwartej karty (BroadcastChannel lub storage).
+Czas: 5 sekund temu (etykieta względna)",
+  "content": {
+    "ariaHeading": "Źródło: Synchronizacja między kartami",
+    "description": "Zmiana auto-zapisu przyszła z innej otwartej karty (BroadcastChannel lub storage).",
+    "heading": "Synchronizacja między kartami",
+    "isRemote": true,
+  },
+  "isRelativeFallback": true,
+  "shouldRenderTimeLine": true,
+  "timeLineForA11y": "Czas: 5 sekund temu (etykieta względna)",
+  "timeLineForView": "Czas: 5 sekund temu",
+  "timeLineHelpTitle": "Pełna data niedostępna — pokazujemy etykietę względną.",
+  "timeValue": "5 sekund temu",
+}
+`;
+
+exports[`buildLastChangeTooltipModel — pełny model tooltipa > snapshoty pełnego modelu dla wariantów wejścia > [4] brak danych (null + null) — ariaText 2-liniowy, brak „Czas:” 1`] = `
+{
+  "ariaText": "Źródło: Moja lokalna akcja w tej karcie
+Sam(a) przełączyłe(a)ś auto-zapis w tej karcie (Switch lub skrót Alt+Shift+A).",
+  "content": {
+    "ariaHeading": "Źródło: Moja lokalna akcja w tej karcie",
+    "description": "Sam(a) przełączyłe(a)ś auto-zapis w tej karcie (Switch lub skrót Alt+Shift+A).",
+    "heading": "Lokalna akcja w tej karcie",
+    "isRemote": false,
+  },
+  "isRelativeFallback": false,
+  "shouldRenderTimeLine": false,
+  "timeLineForA11y": null,
+  "timeLineForView": null,
+  "timeLineHelpTitle": undefined,
+  "timeValue": "",
+}
+`;
+
+exports[`buildLastChangeTooltipModel — pełny model tooltipa > snapshoty pełnego modelu dla wariantów wejścia > [5] source=null + dane — nagłówek lokalny jako bezpieczny fallback 1`] = `
+{
+  "ariaText": "Źródło: Moja lokalna akcja w tej karcie
+Sam(a) przełączyłe(a)ś auto-zapis w tej karcie (Switch lub skrót Alt+Shift+A).
+Czas: 24 kwietnia 2026, 12:34:56",
+  "content": {
+    "ariaHeading": "Źródło: Moja lokalna akcja w tej karcie",
+    "description": "Sam(a) przełączyłe(a)ś auto-zapis w tej karcie (Switch lub skrót Alt+Shift+A).",
+    "heading": "Lokalna akcja w tej karcie",
+    "isRemote": false,
+  },
+  "isRelativeFallback": false,
+  "shouldRenderTimeLine": true,
+  "timeLineForA11y": "Czas: 24 kwietnia 2026, 12:34:56",
+  "timeLineForView": "Czas: 24 kwietnia 2026, 12:34:56",
+  "timeLineHelpTitle": undefined,
+  "timeValue": "24 kwietnia 2026, 12:34:56",
+}
+`;
+
+exports[`buildLastChangeTooltipModel — pełny model tooltipa > snapshoty pełnego modelu dla wariantów wejścia > [6] format='compact' — zwarte separatory wokół \`,\` i \`:\` 1`] = `
+{
+  "ariaText": "Źródło: Synchronizacja między kartami
+Zmiana auto-zapisu przyszła z innej otwartej karty (BroadcastChannel lub storage).
+Czas: 24 kwietnia 2026, 12: 34: 56",
+  "content": {
+    "ariaHeading": "Źródło: Synchronizacja między kartami",
+    "description": "Zmiana auto-zapisu przyszła z innej otwartej karty (BroadcastChannel lub storage).",
+    "heading": "Synchronizacja między kartami",
+    "isRemote": true,
+  },
+  "isRelativeFallback": false,
+  "shouldRenderTimeLine": true,
+  "timeLineForA11y": "Czas: 24 kwietnia 2026, 12: 34: 56",
+  "timeLineForView": "Czas: 24 kwietnia 2026, 12: 34: 56",
+  "timeLineHelpTitle": undefined,
+  "timeValue": "24 kwietnia 2026, 12: 34: 56",
+}
+`;
+
+exports[`buildLastChangeTooltipModel — pełny model tooltipa > snapshoty pełnego modelu dla wariantów wejścia > [7] format='preserve-newlines' — wieloliniowa wartość czasu zachowana 1`] = `
+{
+  "ariaText": "Źródło: Moja lokalna akcja w tej karcie
+Sam(a) przełączyłe(a)ś auto-zapis w tej karcie (Switch lub skrót Alt+Shift+A).
+Czas: 24 kwietnia 2026
+12:34:56",
+  "content": {
+    "ariaHeading": "Źródło: Moja lokalna akcja w tej karcie",
+    "description": "Sam(a) przełączyłe(a)ś auto-zapis w tej karcie (Switch lub skrót Alt+Shift+A).",
+    "heading": "Lokalna akcja w tej karcie",
+    "isRemote": false,
+  },
+  "isRelativeFallback": false,
+  "shouldRenderTimeLine": true,
+  "timeLineForA11y": "Czas: 24 kwietnia 2026
+12:34:56",
+  "timeLineForView": "Czas: 24 kwietnia 2026
+12:34:56",
+  "timeLineHelpTitle": undefined,
+  "timeValue": "24 kwietnia 2026
+12:34:56",
+}
+`;
