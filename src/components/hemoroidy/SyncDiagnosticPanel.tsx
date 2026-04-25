@@ -12,6 +12,7 @@ import {
   ClipboardCheck,
   History,
   Trash2,
+  Zap,
 } from "lucide-react";
 import type {
   DegradationCause,
