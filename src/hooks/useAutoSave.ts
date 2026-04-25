@@ -535,6 +535,8 @@ export const useAutoSave = () => {
     isBroadcastSupported: transport === "broadcast",
     /** Aktywny transport — przydatne do diagnostyki w UI ustawień. */
     transport,
+    /** Powód degradacji do storage-fallback (lub `null` gdy BC działa). */
+    degradationReason,
     /** Historia ostatnich {HISTORY_LIMIT} zdalnych synchronizacji (najnowsza pierwsza). */
     syncHistory,
   };
