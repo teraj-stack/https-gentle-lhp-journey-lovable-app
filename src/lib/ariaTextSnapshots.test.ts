@@ -121,7 +121,9 @@ const collectMissingKeys = (): MissingKeyReport[] => {
   }
 
   for (const locale of SUPPORTED_LOCALES) {
-    const tl = timeLine[locale] as Record<string, unknown> | undefined;
+    const tl = timeLine[locale] as unknown as
+      | Record<string, unknown>
+      | undefined;
     if (!tl) {
       out.push({
         map: "TIME_LINE_TRANSLATIONS",
