@@ -470,8 +470,16 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
                   {lastSyncLabel}
                 </strong>
                 {labelStyle.showLocalSuffix && (
-                  <span className="ml-1 text-[10px] text-muted-foreground/70 font-sans">
-                    (lokalnie)
+                  // Wyraźny badge „(lokalnie)" — border + tło + uppercase + font-mono,
+                  // żeby pacjent natychmiast widział, że to JEGO zmiana w tej karcie,
+                  // a nie sync z innej karty (dla którego cała etykieta świeci na zielono).
+                  // Celowo neutralna paleta (muted), bo zielony rezerwujemy dla remote.
+                  <span
+                    className="ml-1.5 inline-flex items-center px-1.5 py-0.5 text-[10px] uppercase tracking-wider font-mono rounded-md border border-border/60 bg-muted/40 text-foreground/80 align-middle"
+                    title="Ta zmiana pochodzi z TEJ karty (Switch lub skrót Alt+Shift+A), a nie z synchronizacji między kartami."
+                    aria-label="Źródło: lokalna zmiana w tej karcie"
+                  >
+                    lokalnie
                   </span>
                 )}
               </span>
