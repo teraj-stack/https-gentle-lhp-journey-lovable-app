@@ -67,12 +67,17 @@ const csvEscape = (value: unknown): string => {
 export const exportChecklistCsv = (
   factors: ChecklistFactor[],
   totalAvailable: number,
+  selectedAt?: string | null,
 ): void => {
   const sep = ";";
   const rows: string[] = [];
 
   rows.push("# Moja checklista czynnikow ryzyka — hemoroidy");
   rows.push(["Wygenerowano", formatToday()].map(csvEscape).join(sep));
+  const selectedAtFmt = formatSelectedAt(selectedAt);
+  if (selectedAtFmt) {
+    rows.push(["Data zaznaczenia", selectedAtFmt].map(csvEscape).join(sep));
+  }
   rows.push(
     ["Zaznaczone", `${factors.length}/${totalAvailable}`].map(csvEscape).join(sep),
   );
