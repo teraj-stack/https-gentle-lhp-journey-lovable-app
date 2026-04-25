@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
   Salad,
@@ -15,7 +15,12 @@ import {
   BookOpen,
   Search,
   X,
+  Bookmark,
+  BookmarkCheck,
+  ListChecks,
+  Trash2,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   Accordion,
   AccordionContent,
@@ -243,9 +248,43 @@ const RISK_FACTORS: RiskFactor[] = [
   },
 ];
 
+const STORAGE_KEY = "cml.hemoroidy.risk-factors.selected.v1";
+
 const RiskFactorsAccordion = () => {
   const [query, setQuery] = useState("");
   const nQuery = normalize(query.trim());
+
+  // Wybrane czynniki — persystencja w localStorage (anonimowo)
+  const [selected, setSelected] = useState<string[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const raw = window.localStorage.getItem(STORAGE_KEY);
+      if (!raw) return [];
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed.filter((x): x is string => typeof x === "string") : [];
+    } catch {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(selected));
+    } catch {
+      /* noop */
+    }
+  }, [selected]);
+
+  const toggleSelected = (id: string) =>
+    setSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+
+  const clearSelected = () => setSelected([]);
+
+  const selectedFactors = useMemo(
+    () => selected.map((id) => RISK_FACTORS.find((rf) => rf.id === id)).filter(Boolean) as RiskFactor[],
+    [selected],
+  );
 
   const filtered = useMemo(() => {
     if (!nQuery) return RISK_FACTORS;
@@ -342,11 +381,13 @@ const RiskFactorsAccordion = () => {
         >
           {filtered.map((rf) => {
             const Icon = rf.Icon;
+            const isSelected = selected.includes(rf.id);
             return (
               <AccordionItem
                 key={rf.id}
                 value={rf.id}
-                className="rounded-xl border border-border bg-background/40 overflow-hidden data-[state=open]:border-primary/40 data-[state=open]:bg-primary/5 transition-colors"
+                data-selected={isSelected}
+                className="rounded-xl border border-border bg-background/40 overflow-hidden data-[state=open]:border-primary/40 data-[state=open]:bg-primary/5 data-[selected=true]:border-primary/60 data-[selected=true]:bg-primary/[0.07] transition-colors"
               >
                 <AccordionTrigger className="px-3.5 sm:px-5 py-4 sm:py-3.5 hover:no-underline group text-left gap-2">
                   <div className="flex items-start sm:items-center gap-3 sm:gap-3 flex-1 min-w-0">
@@ -398,6 +439,33 @@ const RiskFactorsAccordion = () => {
                       ))}
                     </ul>
                   </div>
+                  <div className="mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                    <p className="text-[11.5px] sm:text-xs text-muted-foreground">
+                      {isSelected
+                        ? "Ten czynnik trafił do Twojej checklisty na dole."
+                        : "Dotyczy Cię? Dodaj do swojej krótkiej checklisty ryzyka."}
+                    </p>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={isSelected ? "default" : "outline"}
+                      onClick={() => toggleSelected(rf.id)}
+                      className="gap-2 self-start sm:self-auto"
+                      aria-pressed={isSelected}
+                    >
+                      {isSelected ? (
+                        <>
+                          <BookmarkCheck className="w-3.5 h-3.5" />
+                          Zapisane — kliknij, aby usunąć
+                        </>
+                      ) : (
+                        <>
+                          <Bookmark className="w-3.5 h-3.5" />
+                          Zapisz moje ryzyko
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 </AccordionContent>
               </AccordionItem>
             );
@@ -414,6 +482,91 @@ const RiskFactorsAccordion = () => {
           moduł „Źródła EBM" →
         </Link>
       </div>
+
+      {/* Moja checklista czynników ryzyka */}
+      <motion.div
+        layout
+        id="moja-checklista-ryzyka"
+        className="mt-8 rounded-2xl border border-primary/30 bg-primary/[0.04] p-4 sm:p-5"
+        aria-labelledby="moja-checklista-heading"
+      >
+        <div className="flex items-start sm:items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <span className="w-9 h-9 rounded-lg bg-primary/15 flex items-center justify-center shrink-0">
+              <ListChecks className="w-4 h-4 text-primary" />
+            </span>
+            <div className="min-w-0">
+              <h3
+                id="moja-checklista-heading"
+                className="font-heading text-base sm:text-lg text-foreground leading-tight"
+              >
+                Moja checklista czynników ryzyka
+              </h3>
+              <p className="text-[11.5px] sm:text-xs text-muted-foreground mt-0.5">
+                Zapisywane lokalnie w przeglądarce (anonimowo). {selectedFactors.length} z {RISK_FACTORS.length} zaznaczonych.
+              </p>
+            </div>
+          </div>
+          {selectedFactors.length > 0 && (
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              onClick={clearSelected}
+              className="gap-1.5 text-muted-foreground hover:text-destructive"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              Wyczyść
+            </Button>
+          )}
+        </div>
+
+        {selectedFactors.length === 0 ? (
+          <p className="mt-3 text-sm text-muted-foreground italic">
+            Nic jeszcze nie zaznaczono. Rozwiń dowolny akordeon powyżej i kliknij{" "}
+            <span className="not-italic font-medium text-foreground">„Zapisz moje ryzyko”</span>,
+            aby zbudować swoją krótką listę.
+          </p>
+        ) : (
+          <ul className="mt-4 grid gap-2 sm:grid-cols-2">
+            {selectedFactors.map((rf) => {
+              const Icon = rf.Icon;
+              return (
+                <li
+                  key={rf.id}
+                  className="flex items-start gap-2.5 rounded-lg border border-border/60 bg-background/60 px-3 py-2.5"
+                >
+                  <span className="w-7 h-7 rounded-md bg-primary/15 flex items-center justify-center shrink-0 mt-0.5">
+                    <Icon className="w-3.5 h-3.5 text-primary" />
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[13.5px] sm:text-sm font-medium text-foreground leading-snug">
+                      {rf.title}
+                    </p>
+                    <p className="text-[11px] sm:text-[11.5px] text-muted-foreground leading-snug mt-0.5 truncate">
+                      {rf.shortBadge}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => toggleSelected(rf.id)}
+                    className="p-1 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors shrink-0"
+                    aria-label={`Usuń „${rf.title}" z checklisty`}
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+
+        {selectedFactors.length > 0 && (
+          <p className="mt-4 text-[11.5px] sm:text-xs text-muted-foreground">
+            Pokaż tę listę lekarzowi na konsultacji — ułatwi to dobór profilaktyki i decyzje o leczeniu.
+          </p>
+        )}
+      </motion.div>
 
       <RiskVsPreventionTable />
     </motion.section>
