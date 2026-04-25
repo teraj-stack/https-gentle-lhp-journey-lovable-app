@@ -208,22 +208,28 @@ export const useDailyDiary = () => {
     [entries]
   );
 
-  const setAnswer = useCallback((date: string, questionIndex: number, optionIndex: number | null) => {
-    const current = readStorage();
-    const existing = current[date] ?? emptyEntry(date);
-    const answers = existing.answers.slice();
-    answers[questionIndex] = optionIndex;
-    const updated: DiaryEntry = {
-      ...existing,
-      date,
-      answers,
-      updatedAt: new Date().toISOString(),
-      ...computeDerived(answers, thresholds),
-    };
-    const next = { ...current, [date]: updated };
-    writeStorage(next);
-    setRawEntries(next);
-  }, [thresholds]);
+  const setAnswer = useCallback(
+    (date: string, questionIndex: number, optionIndex: number | null): StorageWriteResult => {
+      const current = readStorage();
+      const existing = current[date] ?? emptyEntry(date);
+      const answers = existing.answers.slice();
+      answers[questionIndex] = optionIndex;
+      const updated: DiaryEntry = {
+        ...existing,
+        date,
+        answers,
+        updatedAt: new Date().toISOString(),
+        ...computeDerived(answers, thresholds),
+      };
+      const next = { ...current, [date]: updated };
+      const result = writeStorage(next);
+      // Aktualizuj state TYLKO jeśli zapis się udał — w przeciwnym razie UI
+      // pozostaje zgodny z faktycznym stanem storage (uniknięcie iluzji zapisu).
+      if (result.ok) setRawEntries(next);
+      return result;
+    },
+    [thresholds],
+  );
 
   const setNotes = useCallback((date: string, notes: string) => {
     const current = readStorage();
