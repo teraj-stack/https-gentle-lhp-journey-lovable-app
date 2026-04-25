@@ -415,9 +415,12 @@ const assembleMultiLineSnippet = (
 ): string => {
   const startLine = lines[startIdx] ?? "";
   const startIndent = (startLine.match(/^( *)/)?.[1].length) ?? 0;
-  // Track delimiter balance starting from the key line. The key declaration
-  // itself (`heading:`) has no opener — the opener begins after the colon.
-  let backtickOpen = (countUnescaped(stripTrailingLineComment(startLine), "`") % 2) === 1;
+  // Track delimiter balance starting from the key line. Depths begin at
+  // zero; `updateDepths(startLine)` then walks the key line's RHS so that
+  // any opener (backtick, `[`, `{`, `(`) is reflected before we step
+  // forward. Important: only call updateDepths ONCE per line — it's a
+  // mutating accumulator, not an idempotent setter.
+  let backtickOpen = false;
   let bracketDepth = 0;
   let braceDepth = 0;
   let parenDepth = 0;
