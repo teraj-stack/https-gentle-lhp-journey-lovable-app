@@ -727,13 +727,13 @@ These TypeScript snippets are paste-into-source ready against `src/lib/lastChang
 // (Pedagogical shape — the real export is __getRawTranslationsForTesting().)
 const TRANSLATIONS = {
   pl: {
-    local: { description: "<reference value>", description: "…" },
+    local: { description: "<reference value>", heading: "…" },
     sourcePrefix: "Źródło: ",
   },
   en: {
     // ⛔ `local.description` is required but absent — emitter points at the
     //    `en: {` line because the key isn't there to point at.
-    local: { description: "…" },
+    local: { heading: "…" },
     sourcePrefix: "Source: ",
   },
 } as const;
@@ -757,7 +757,7 @@ const TIME_LINE = {
 } as const;
 ```
 
-**3. Reproduces `::error … undeclared-key`** — `en` ships a key that isn't in `REQUIRED_TRANSLATION_KEYS` (so other locales aren't required to translate it — usually a typo or a forgotten autofix run):
+**3. Reproduces `::error … undeclared-key`** — `en` ships a key (`__demo_undeclared`) that isn't in `REQUIRED_TRANSLATION_KEYS` (so other locales aren't required to translate it — usually a typo or a forgotten autofix run):
 
 ```ts
 // src/lib/lastChangeTooltipContent.ts
@@ -766,9 +766,9 @@ const TRANSLATIONS = {
   en: {
     local: {
       description: "<translated value>",
-      // ⛔ `subheading` is not in REQUIRED_TRANSLATION_KEYS — drift signal.
+      // ⛔ `__demo_undeclared` is not in REQUIRED_TRANSLATION_KEYS — drift signal.
       //    Fix: `npm run i18n:autofix` to register it, or delete it.
-      subheading: "(uncategorised)",
+      __demo_undeclared: "(uncategorised)",
     },
   },
 } as const;
