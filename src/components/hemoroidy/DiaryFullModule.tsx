@@ -283,6 +283,9 @@ const DiaryFullModule = ({
         <DiaryTrendStats trend={trend} entries={entries} />
       </motion.div>
 
+      {/* Auto-podsumowanie tygodniowe (Tydzień 1 vs Tydzień 2) */}
+      <DiaryWeeklySummary trend={trend} entries={entries} />
+
       {/* Day picker — 14-day strip */}
       <motion.div
         initial={{ opacity: 0, y: 16 }}
