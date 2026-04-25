@@ -514,5 +514,7 @@ export const useAutoSave = () => {
     isBroadcastSupported: transport === "broadcast",
     /** Aktywny transport — przydatne do diagnostyki w UI ustawień. */
     transport,
+    /** Historia ostatnich {HISTORY_LIMIT} zdalnych synchronizacji (najnowsza pierwsza). */
+    syncHistory,
   };
 };
