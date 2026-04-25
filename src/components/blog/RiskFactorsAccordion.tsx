@@ -648,6 +648,34 @@ const RiskFactorsAccordion = () => {
     setReadItems((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   const clearRead = () => setReadItems([]);
 
+  /**
+   * Reset prywatności i lokalnych preferencji UX.
+   * Czyści: tryb prywatny + przeczytane + priorytet ★ + zapamiętane rozwinięcia.
+   * NIE rusza: zaznaczeń checklisty (`STORAGE_KEY`) ani filtru źródeł EBM —
+   * to "twarde" dane pacjenta, nie preferencje wyświetlania.
+   */
+  const resetUxPreferences = () => {
+    setPrivacyMode(false);
+    setReadItems([]);
+    setPriorityIds([]);
+    setOpenItems([]);
+    if (typeof window !== "undefined") {
+      try {
+        window.localStorage.removeItem(PRIVACY_STORAGE_KEY);
+        window.localStorage.removeItem(READ_STORAGE_KEY);
+        window.localStorage.removeItem(PRIORITY_STORAGE_KEY);
+        window.localStorage.removeItem(OPEN_ITEMS_STORAGE_KEY);
+      } catch {
+        // quota / privacy mode browser — ignorujemy, stan i tak został zresetowany
+      }
+    }
+    toast({
+      title: "Preferencje zresetowane",
+      description:
+        'Wyczyszczono tryb prywatny, oznaczenia „przeczytane", gwiazdki priorytetu i zapamiętane rozwinięcia kart.',
+    });
+  };
+
   // Auto-oznacz jako przeczytane po 1.2 s utrzymanego rozwinięcia (tylko ręczne otwarcie, nie wyszukiwarka)
   useEffect(() => {
     if (nQuery) return;
