@@ -23,6 +23,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import {
   emitGithubAnnotations,
+  classifyReasonSeverity,
   __findKeyLineForTesting,
   __stripTopPrefixForTesting,
   __getSourceLineSnippetForTesting,
@@ -279,5 +280,125 @@ describe("i18nGithubAnnotations — line hint embedded in CI annotations", () =>
     const out = String(logSpy.mock.calls[0][0]);
     expect(out).toContain("notInAnyLocale");
     expect(out).toContain("TODO");
+  });
+});
+
+describe("i18nGithubAnnotations — severity classification", () => {
+  it("classifies empty-optional-value as warning", () => {
+    expect(classifyReasonSeverity("empty-optional-value")).toBe("warning");
+  });
+
+  it("classifies all other known reasons as error (build-failing)", () => {
+    for (const reason of [
+      "missing-required-key",
+      "empty-required-value",
+      "wrong-type",
+      "undeclared-key",
+      "placeholder-mismatch",
+      "value-missing-in-aria",
+      "duplicate-across-variants",
+      "completely-novel-reason",
+    ]) {
+      expect(classifyReasonSeverity(reason)).toBe("error");
+    }
+  });
+});
+
+describe("i18nGithubAnnotations — severity emission in CI", () => {
+  const originalEnv = process.env.GITHUB_ACTIONS;
+  let logSpy: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    process.env.GITHUB_ACTIONS = "true";
+    logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+  });
+  afterEach(() => {
+    logSpy.mockRestore();
+    if (originalEnv === undefined) delete process.env.GITHUB_ACTIONS;
+    else process.env.GITHUB_ACTIONS = originalEnv;
+  });
+
+  it("emits ::warning (not ::error) for empty-optional-value", () => {
+    emitGithubAnnotations(
+      [
+        {
+          locale: "en",
+          path: "TRANSLATIONS.local.heading",
+          reason: "empty-optional-value",
+        },
+      ],
+      "i18n required keys",
+    );
+    expect(logSpy).toHaveBeenCalledTimes(1);
+    const out = String(logSpy.mock.calls[0][0]);
+    expect(out.startsWith("::warning ")).toBe(true);
+    expect(out.startsWith("::error ")).toBe(false);
+    // Title and message must surface the severity for human reviewers.
+    expect(out).toContain("[warning]");
+    expect(out).toContain("severity=warning");
+  });
+
+  it("emits ::error for required-key violations", () => {
+    emitGithubAnnotations(
+      [
+        {
+          locale: "en",
+          path: "TRANSLATIONS.local.heading",
+          reason: "missing-required-key",
+        },
+      ],
+      "i18n required keys",
+    );
+    const out = String(logSpy.mock.calls[0][0]);
+    expect(out.startsWith("::error ")).toBe(true);
+    expect(out).toContain("[error]");
+    expect(out).toContain("severity=error");
+  });
+
+  it("respects an explicit per-violation severity override (escalate to error)", () => {
+    emitGithubAnnotations(
+      [
+        {
+          locale: "en",
+          path: "TRANSLATIONS.local.heading",
+          reason: "empty-optional-value", // would default to warning
+          severity: "error", // explicit escalation
+        },
+      ],
+      "i18n required keys",
+    );
+    const out = String(logSpy.mock.calls[0][0]);
+    expect(out.startsWith("::error ")).toBe(true);
+    expect(out).toContain("severity=error");
+  });
+
+  it("respects an explicit per-violation severity override (de-escalate to warning)", () => {
+    emitGithubAnnotations(
+      [
+        {
+          locale: "en",
+          path: "TRANSLATIONS.local.heading",
+          reason: "missing-required-key", // would default to error
+          severity: "warning", // explicit de-escalation
+        },
+      ],
+      "i18n required keys",
+    );
+    const out = String(logSpy.mock.calls[0][0]);
+    expect(out.startsWith("::warning ")).toBe(true);
+  });
+
+  it("emits mixed batch — one ::error and one ::warning — in the same run", () => {
+    emitGithubAnnotations(
+      [
+        { locale: "pl", path: "TRANSLATIONS.local.heading", reason: "missing-required-key" },
+        { locale: "en", path: "TRANSLATIONS.local.heading", reason: "empty-optional-value" },
+      ],
+      "i18n required keys",
+    );
+    expect(logSpy).toHaveBeenCalledTimes(2);
+    const lines = logSpy.mock.calls.map((c) => String(c[0]));
+    expect(lines[0].startsWith("::error ")).toBe(true);
+    expect(lines[1].startsWith("::warning ")).toBe(true);
   });
 });
