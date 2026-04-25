@@ -29,6 +29,9 @@ import {
   EyeOff,
   FileDown,
   FileSpreadsheet,
+  Share2,
+  Link2,
+  Copy,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -38,9 +41,21 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Input } from "@/components/ui/input";
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { trackEbmClick } from "@/lib/ebmAnalytics";
 import { exportChecklistCsv, exportChecklistPdf } from "@/lib/checklistExport";
+import {
+  buildChecklistShareUrl,
+  buildChecklistShortCode,
+  decodeChecklist,
+} from "@/lib/checklistShare";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
 
 /** Polski-friendly normalizer: lowercase + usuwa diakrytyki */
@@ -300,10 +315,79 @@ const RiskFactorsAccordion = () => {
 
   const clearSelected = () => setSelected([]);
 
+  // Restore z URL: ?c=<base64url> — gdy ktoś otworzył link udostępniony przez pacjenta.
+  // Robimy MERGE z aktualnym localStorage (nie nadpisujemy "po cichu") + tylko gdy parametr istnieje.
+  const location = useLocation();
+  const navigate = useNavigate();
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(location.search);
+    const code = params.get("c");
+    if (!code) return;
+    const ids = decodeChecklist(code);
+    if (ids.length === 0) return;
+    setSelected((prev) => Array.from(new Set([...prev, ...ids])));
+    // Usuń parametr z URL (zachowaj hash) — żeby nie zaśmiecać i nie re-aplikować.
+    params.delete("c");
+    const cleanSearch = params.toString();
+    navigate(
+      { pathname: location.pathname, search: cleanSearch ? `?${cleanSearch}` : "", hash: location.hash || "#moja-checklista-ryzyka" },
+      { replace: true },
+    );
+    toast({
+      title: "Wczytano udostępnioną checklistę",
+      description: `Dodano ${ids.length} czynników do Twojej listy.`,
+    });
+  }, [location.search, location.pathname, location.hash, navigate]);
+
   const selectedFactors = useMemo(
     () => selected.map((id) => RISK_FACTORS.find((rf) => rf.id === id)).filter(Boolean) as RiskFactor[],
     [selected],
   );
+
+  // Dialog share
+  const [shareOpen, setShareOpen] = useState(false);
+  const [copiedField, setCopiedField] = useState<"url" | "code" | null>(null);
+
+  const shareUrl = useMemo(
+    () => (selectedFactors.length ? buildChecklistShareUrl(selected) : ""),
+    [selected, selectedFactors.length],
+  );
+  const shareCode = useMemo(
+    () => (selectedFactors.length ? buildChecklistShortCode(selected) : ""),
+    [selected, selectedFactors.length],
+  );
+
+  const handleCopyShare = async (value: string, field: "url" | "code") => {
+    if (!value) return;
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopiedField(field);
+      setTimeout(() => setCopiedField(null), 2000);
+      toast({
+        title: field === "url" ? "Skopiowano link" : "Skopiowano kod",
+        description: field === "url"
+          ? "Wklej w wiadomości do lekarza — otworzy listę z Twoimi zaznaczeniami."
+          : 'Możesz go podyktować lub wpisać po znaku "?c=" w adresie strony.',
+      });
+    } catch {
+      toast({
+        title: "Nie udało się skopiować",
+        description: "Zaznacz tekst ręcznie i skopiuj (Ctrl/Cmd+C).",
+      });
+    }
+  };
+
+  const handleOpenShare = () => {
+    if (selectedFactors.length === 0) {
+      toast({
+        title: "Brak zaznaczonych czynników",
+        description: "Najpierw zaznacz czynniki w akordeonach powyżej.",
+      });
+      return;
+    }
+    setShareOpen(true);
+  };
 
   const handleExportChecklistPdf = () => {
     if (selectedFactors.length === 0) {
@@ -799,16 +883,26 @@ const RiskFactorsAccordion = () => {
 
         {selectedFactors.length > 0 && (
           <>
-            <div className="mt-5 flex flex-col sm:flex-row gap-2 sm:items-center">
+            <div className="mt-5 flex flex-col sm:flex-row flex-wrap gap-2 sm:items-center">
               <Button
                 type="button"
                 variant="hero"
+                size="sm"
+                onClick={handleOpenShare}
+                className="gap-2"
+              >
+                <Share2 className="w-4 h-4" />
+                Utwórz link do checklisty
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
                 size="sm"
                 onClick={handleExportChecklistPdf}
                 className="gap-2"
               >
                 <FileDown className="w-4 h-4" />
-                Pobierz moją checklistę (PDF)
+                Pobierz PDF
               </Button>
               <Button
                 type="button"
@@ -822,12 +916,108 @@ const RiskFactorsAccordion = () => {
               </Button>
             </div>
             <p className="mt-3 text-[11.5px] sm:text-xs text-muted-foreground">
-              Pokaż tę listę lekarzowi na konsultacji — ułatwi to dobór profilaktyki i decyzje o leczeniu.
-              PDF zawiera tytuł, krótki opis, mechanizm i źródła EBM dla każdego czynnika.
+              Pokaż tę listę lekarzowi: udostępnij link (otworzy ją z tymi samymi zaznaczeniami) lub
+              pobierz PDF/CSV. Wszystko działa offline — nic nie wysyłamy do serwera.
             </p>
           </>
         )}
       </motion.div>
+
+      {/* Dialog: udostępnianie checklisty (link + krótki kod) */}
+      <Dialog open={shareOpen} onOpenChange={setShareOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="font-heading text-xl flex items-center gap-2">
+              <Share2 className="w-5 h-5 text-primary" />
+              Udostępnij swoją checklistę
+            </DialogTitle>
+            <DialogDescription>
+              Twoje {selectedFactors.length}{" "}
+              {selectedFactors.length === 1 ? "zaznaczenie" : "zaznaczeń"} zakodowane w linku.
+              Lekarz po kliknięciu zobaczy dokładnie tę samą listę.
+              <span className="block mt-1 text-[11px] italic">
+                Działa lokalnie — nic nie zapisujemy na serwerze.
+              </span>
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 mt-2">
+            {/* Link */}
+            <div>
+              <label
+                htmlFor="checklist-share-url"
+                className="text-xs font-sans uppercase tracking-[0.14em] text-muted-foreground inline-flex items-center gap-1.5 mb-1.5"
+              >
+                <Link2 className="w-3.5 h-3.5 text-primary" />
+                Pełny link
+              </label>
+              <div className="flex gap-2">
+                <Input
+                  id="checklist-share-url"
+                  readOnly
+                  value={shareUrl}
+                  onFocus={(e) => e.currentTarget.select()}
+                  className="font-mono text-xs"
+                />
+                <Button
+                  type="button"
+                  variant="hero"
+                  size="sm"
+                  onClick={() => handleCopyShare(shareUrl, "url")}
+                  className="gap-1.5 shrink-0"
+                >
+                  {copiedField === "url" ? (
+                    <Check className="w-4 h-4" />
+                  ) : (
+                    <Copy className="w-4 h-4" />
+                  )}
+                  {copiedField === "url" ? "Skopiowano" : "Kopiuj"}
+                </Button>
+              </div>
+              <p className="text-[11px] text-muted-foreground mt-1">
+                Wklej w SMS-ie, e-mailu lub komunikatorze — otworzy stronę z Twoimi zaznaczeniami.
+              </p>
+            </div>
+
+            {/* Krótki kod */}
+            <div className="rounded-lg border border-border bg-muted/30 p-3">
+              <label
+                htmlFor="checklist-share-code"
+                className="text-xs font-sans uppercase tracking-[0.14em] text-muted-foreground mb-1.5 block"
+              >
+                Krótki kod (opcjonalnie)
+              </label>
+              <div className="flex gap-2">
+                <Input
+                  id="checklist-share-code"
+                  readOnly
+                  value={shareCode}
+                  onFocus={(e) => e.currentTarget.select()}
+                  className="font-mono text-sm tracking-wider"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleCopyShare(shareCode, "code")}
+                  className="gap-1.5 shrink-0"
+                >
+                  {copiedField === "code" ? (
+                    <Check className="w-4 h-4" />
+                  ) : (
+                    <Copy className="w-4 h-4" />
+                  )}
+                  {copiedField === "code" ? "OK" : "Kopiuj"}
+                </Button>
+              </div>
+              <p className="text-[11px] text-muted-foreground mt-1.5">
+                Można podyktować ustnie. Lekarz wpisuje go ręcznie w pasku adresu po:{" "}
+                <code className="font-mono text-foreground/80">/dla-pacjenta/hemoroidy?c=</code>
+              </p>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <RiskVsPreventionTable />
     </motion.section>
