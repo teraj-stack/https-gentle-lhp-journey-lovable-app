@@ -474,7 +474,88 @@ const DiaryFullModule = ({
     }
   };
 
-  const goPrev = () => {
+  /**
+   * Import wpisu z pliku JSON (eksport pojedynczego dnia, schema `cml.hemoroidy.diary.day.v1`).
+   * Plik jest parsowany w przeglądarce — dane nie są nigdzie wysyłane.
+   *
+   * Flow:
+   *  1. Klik „Importuj" → hidden `<input type="file">` otwiera picker
+   *  2. Po wyborze pliku: walidacja przez `parseImportedDayJson`
+   *  3. Jeśli plik ma datę różną od `activeDate` LUB wpis na docelowy dzień już istnieje
+   *     z jakąkolwiek treścią → pokaż AlertDialog z potwierdzeniem
+   *  4. Po potwierdzeniu: nadpisz odpowiedzi (per pytanie) + notatki, przełącz na dzień z pliku
+   */
+  const importFileRef = useRef<HTMLInputElement | null>(null);
+  const [pendingImport, setPendingImport] = useState<ImportedDayPayload | null>(null);
+
+  const applyImport = (payload: ImportedDayPayload) => {
+    // Najpierw notatki (jeśli są), potem każda odpowiedź — wszystko trafia do localStorage
+    // przez te same wrappery co normalna edycja, więc trend/wykres aktualizują się natychmiast.
+    if (payload.notes) {
+      setNotes(payload.date, payload.notes);
+    }
+    let firstError: string | null = null;
+    payload.answers.forEach((a, qi) => {
+      const result = setAnswer(payload.date, qi, a);
+      if (!result.ok && !firstError) firstError = result.message;
+    });
+    if (firstError) {
+      toast({
+        variant: "destructive",
+        title: "Import nie powiódł się w pełni",
+        description: firstError,
+        duration: 6000,
+      });
+      return;
+    }
+    if (payload.date !== activeDate) {
+      // Przełącz strip na dzień z pliku, by pacjent od razu zobaczył efekt importu.
+      setActiveDate(payload.date);
+    }
+    const filledCount = payload.answers.filter((a) => a !== null).length;
+    toast({
+      title: "Wpis zaimportowany ✓",
+      description: `Dzień ${formatLongDate(payload.date)} — ${filledCount}/${HEMOROIDY_QUESTIONS.length} odpowiedzi${payload.notes ? " + notatki" : ""}.`,
+    });
+    setAnswerAnnouncement(`Zaimportowano wpis z dnia ${formatLongDate(payload.date)}.`);
+  };
+
+  const handleImportFile = (file: File) => {
+    const reader = new FileReader();
+    reader.onerror = () => {
+      toast({
+        variant: "destructive",
+        title: "Nie udało się odczytać pliku",
+        description: "Spróbuj ponownie lub wybierz inny plik JSON.",
+      });
+    };
+    reader.onload = () => {
+      const text = typeof reader.result === "string" ? reader.result : "";
+      const result = parseImportedDayJson(text);
+      if (!result.ok) {
+        toast({
+          variant: "destructive",
+          title: "Nieprawidłowy plik",
+          description: result.message,
+          duration: 6000,
+        });
+        return;
+      }
+      // Czy nadpisujemy istniejący wpis lub zmieniamy aktywny dzień?
+      const targetExisting = entries[result.payload.date];
+      const targetHasContent =
+        !!targetExisting &&
+        (targetExisting.answers.some((a) => a !== null) || !!targetExisting.notes?.trim());
+      if (targetHasContent || result.payload.date !== activeDate) {
+        setPendingImport(result.payload);
+      } else {
+        applyImport(result.payload);
+      }
+    };
+    reader.readAsText(file);
+  };
+
+
     const i = days.indexOf(activeDate);
     if (i > 0) setActiveDate(days[i - 1]);
   };
