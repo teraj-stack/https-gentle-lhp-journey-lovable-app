@@ -1,11 +1,14 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   HEMOROIDY_QUESTIONS,
   HEMOROIDY_QUIZ_MAX_SCORE,
   RiskLevel,
+  RiskThresholds,
   getRiskLabel,
-  getRiskLevel,
+  getRiskLevelWithThresholds,
+  DEFAULT_RISK_THRESHOLDS,
 } from "@/lib/hemoroidyQuizData";
+import { useRiskThresholds } from "@/hooks/useRiskThresholds";
 
 /**
  * 14-dniowy dziennik objawów + quizu hemoroidów.
