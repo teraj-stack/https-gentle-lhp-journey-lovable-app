@@ -325,6 +325,45 @@ const formatSelectedAt = (iso: string | null): string => {
   });
 };
 
+/**
+ * Mapowanie źródła EBM (label + url) na "providera" — wydawcę/bazę dowodów.
+ * Używane przez przełącznik filtra źródeł EBM w UI.
+ *
+ * Dlaczego po url-host + label, a nie po `ebmId`:
+ * `ebmId` koduje kategorię merytoryczną (fiber/hydration/...), a nie wydawcę.
+ * Provider to ortogonalna oś — jedno źródło może być z PubMed, ale dotyczyć fiber.
+ */
+type EbmProvider = "cochrane" | "pubmed" | "ascrs" | "escp" | "journal";
+
+const EBM_PROVIDERS: { id: EbmProvider; label: string; hint: string }[] = [
+  { id: "cochrane", label: "Cochrane", hint: "Cochrane Systematic Reviews" },
+  { id: "pubmed", label: "PubMed", hint: "Indeksowane w PubMed/NCBI" },
+  { id: "ascrs", label: "ASCRS", hint: "American Society of Colon & Rectal Surgeons" },
+  { id: "escp", label: "ESCP", hint: "European Society of Coloproctology" },
+  { id: "journal", label: "Czasopisma", hint: "LWW, Wiley i inne wydawnictwa naukowe" },
+];
+
+const getSourceProviders = (source: RiskSource): EbmProvider[] => {
+  const providers = new Set<EbmProvider>();
+  const url = source.url.toLowerCase();
+  const label = source.label.toLowerCase();
+  // Cochrane — najjaśniejszy sygnał: host cochranelibrary.com lub słowo w label.
+  if (url.includes("cochranelibrary.com") || label.includes("cochrane")) providers.add("cochrane");
+  // PubMed/NCBI — host pubmed.ncbi.nlm.nih.gov lub ncbi.nlm.nih.gov (nie pokrywa cochrane bo tam host inny).
+  if (url.includes("pubmed.ncbi.nlm.nih.gov") || url.includes("ncbi.nlm.nih.gov")) providers.add("pubmed");
+  // ASCRS / ESCP — wytyczne towarzystw, rozpoznawane po label (zawsze podpisane skrótem).
+  if (label.includes("ascrs")) providers.add("ascrs");
+  if (label.includes("escp")) providers.add("escp");
+  // Czasopisma naukowe (publishers) — LWW, Wiley.
+  if (url.includes("journals.lww.com") || url.includes("onlinelibrary.wiley.com")) providers.add("journal");
+  return Array.from(providers);
+};
+
+const factorHasProvider = (rf: RiskFactor, providers: Set<EbmProvider>): boolean => {
+  if (providers.size === 0) return true;
+  return rf.sources.some((s) => getSourceProviders(s).some((p) => providers.has(p)));
+};
+
 const RiskFactorsAccordion = () => {
   const [query, setQuery] = useState("");
   const nQuery = normalize(query.trim());
