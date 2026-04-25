@@ -13,6 +13,8 @@ import {
   Activity,
   ExternalLink,
   BookOpen,
+  BookMarked,
+  ArrowRight,
   Search,
   X,
   Bookmark,
