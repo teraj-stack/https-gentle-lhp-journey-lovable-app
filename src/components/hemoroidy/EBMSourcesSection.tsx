@@ -816,6 +816,124 @@ const EBMSourcesSection = ({
         )}
       </motion.div>
 
+      {/* Ostatnio otwierane (localStorage) — widoczne tylko gdy są wpisy */}
+      {recents.length > 0 && (
+        <motion.section
+          initial={{ opacity: 0, y: 12 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.2 }}
+          transition={{ duration: 0.5, ease: easeOut }}
+          aria-labelledby="ebm-recents-heading"
+          className="mb-6 rounded-xl border border-border bg-background/40 p-4 sm:p-5"
+        >
+          <div className="flex items-start sm:items-center justify-between gap-3 mb-3 flex-wrap">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-8 h-8 rounded-lg bg-primary/15 flex items-center justify-center shrink-0">
+                <History className="w-4 h-4 text-primary" aria-hidden="true" />
+              </div>
+              <div className="min-w-0">
+                <h3
+                  id="ebm-recents-heading"
+                  className="font-heading text-base md:text-lg text-foreground leading-tight"
+                >
+                  Ostatnio otwierane
+                </h3>
+                <p className="text-[11px] text-muted-foreground">
+                  Twoje {recents.length === 1 ? "ostatnie kliknięcie" : `ostatnie ${recents.length} kliknięć`} w linki EBM · zapisane lokalnie w przeglądarce
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={clearRecents}
+              className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[11px] font-sans uppercase tracking-[0.08em] text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+              aria-label="Wyczyść historię ostatnio otwieranych źródeł"
+            >
+              <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
+              Wyczyść
+            </button>
+          </div>
+
+          <ul className="space-y-2">
+            {recents.map((r) => (
+              <li
+                key={r.url}
+                className="group flex items-start gap-2 rounded-lg border border-border/60 bg-background/30 px-3 py-2.5 hover:border-primary/40 hover:bg-background/60 transition-colors"
+              >
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                    <span
+                      className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-sans uppercase tracking-[0.08em] ${linkKindClasses[r.linkKind]}`}
+                    >
+                      {r.linkLabel}
+                    </span>
+                    <span className="text-[10px] uppercase tracking-[0.08em] text-muted-foreground/80">
+                      {r.categoryTitle}
+                    </span>
+                    <span className="text-[10px] text-muted-foreground/70" aria-hidden="true">
+                      ·
+                    </span>
+                    <time
+                      dateTime={new Date(r.openedAt).toISOString()}
+                      className="text-[10px] text-muted-foreground/80"
+                    >
+                      {formatRelative(r.openedAt)}
+                    </time>
+                  </div>
+                  <a
+                    href={r.url}
+                    target="_blank"
+                    rel="noopener noreferrer nofollow external"
+                    referrerPolicy="no-referrer"
+                    onClick={() => {
+                      trackEbmClick({
+                        url: r.url,
+                        label: r.title,
+                        source: "EBMSourcesSection",
+                        kind: "external_source",
+                        ebmId: r.categoryId,
+                      });
+                      recordRecent({
+                        url: r.url,
+                        title: r.title,
+                        journal: r.journal,
+                        authors: r.authors,
+                        year: r.year,
+                        categoryId: r.categoryId,
+                        categoryTitle: r.categoryTitle,
+                        linkLabel: r.linkLabel,
+                        linkKind: r.linkKind,
+                      });
+                    }}
+                    className="block text-sm text-foreground hover:text-primary transition-colors leading-snug focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded-sm"
+                    aria-label={`${r.title} — otwórz ponownie w nowej karcie`}
+                    title="Otwórz ponownie w nowej karcie"
+                  >
+                    <span className="font-medium">
+                      {r.authors} ({r.year}).
+                    </span>{" "}
+                    {r.title}
+                    <ExternalLink className="inline-block w-3 h-3 ml-1 -mt-0.5 text-muted-foreground" aria-hidden="true" />
+                  </a>
+                  <p className="text-[11px] text-muted-foreground/80 truncate">
+                    {r.journal}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => removeRecent(r.url)}
+                  aria-label={`Usuń z historii: ${r.title}`}
+                  title="Usuń z historii"
+                  className="shrink-0 w-7 h-7 rounded-md flex items-center justify-center text-muted-foreground/70 hover:text-destructive hover:bg-destructive/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </li>
+            ))}
+          </ul>
+        </motion.section>
+      )}
+
       {/* Filter & search */}
       <motion.div
         initial={{ opacity: 0, y: 12 }}
