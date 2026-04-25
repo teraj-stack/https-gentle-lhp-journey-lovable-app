@@ -15,7 +15,9 @@
 import { describe, it, expect } from "vitest";
 import {
   buildLastChangeTooltipModel,
+  composeTimeLine,
   smoothTimeValue,
+  TIME_LINE_PREFIX,
   type TimeValueFormat,
 } from "./lastChangeTooltipModel";
 
