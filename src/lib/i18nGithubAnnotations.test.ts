@@ -171,3 +171,115 @@ describe("i18nGithubAnnotations — emitGithubAnnotations", () => {
     expect(titleMatch![1]).not.toContain(":");
   });
 });
+
+describe("i18nGithubAnnotations — line snippet enrichment", () => {
+  const CONTENT_PATH = resolve(process.cwd(), "src/lib/lastChangeTooltipContent.ts");
+  const contentLines = readFileSync(CONTENT_PATH, "utf8").split("\n");
+
+  it("returns the trimmed source line + 1-based line number for a present key", () => {
+    const got = __getSourceLineSnippetForTesting(contentLines, "pl", "local.heading");
+    expect(got).not.toBeNull();
+    expect(got!.snippet).toMatch(/^heading:/);
+    expect(got!.lineNumber).toBeGreaterThan(0);
+    expect(contentLines[got!.lineNumber - 1].trim()).toBe(got!.snippet);
+  });
+
+  it("returns null for an absent key", () => {
+    expect(
+      __getSourceLineSnippetForTesting(contentLines, "pl", "local.thisDoesNotExist"),
+    ).toBeNull();
+  });
+
+  it("buildExpectedLineHint surfaces the reference-locale (pl) line for a missing key", () => {
+    const hint = __buildExpectedLineHintForTesting(contentLines, "local.heading");
+    expect(hint).toContain("expected (from `pl`):");
+    expect(hint).toContain("heading:");
+  });
+
+  it("buildExpectedLineHint falls back to a TODO template when reference locale also lacks the key", () => {
+    const hint = __buildExpectedLineHintForTesting(contentLines, "local.brandNewKey");
+    expect(hint).toContain('"brandNewKey": "<TODO: translate>"');
+  });
+});
+
+describe("i18nGithubAnnotations — line hint embedded in CI annotations", () => {
+  const originalEnv = process.env.GITHUB_ACTIONS;
+  let logSpy: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    process.env.GITHUB_ACTIONS = "true";
+    logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+  });
+  afterEach(() => {
+    logSpy.mockRestore();
+    if (originalEnv === undefined) delete process.env.GITHUB_ACTIONS;
+    else process.env.GITHUB_ACTIONS = originalEnv;
+  });
+
+  it("includes `current: <line>` for a key that EXISTS in the failing locale (e.g. empty value)", () => {
+    // PL.local.heading is a present key — even though the test reason is
+    // synthetic, the emitter's job is to surface the actual on-disk line.
+    emitGithubAnnotations(
+      [
+        {
+          locale: "pl",
+          path: "TRANSLATIONS.local.heading",
+          reason: "empty-required-value",
+          detail: "value=\"\"",
+        },
+      ],
+      "i18n required keys",
+    );
+    expect(logSpy).toHaveBeenCalledTimes(1);
+    const out = String(logSpy.mock.calls[0][0]);
+    expect(out).toContain("current"); // hint label present (escaped colon → `current%3A`)
+    // The trimmed source line must appear (URL-encoded `:` becomes %3A and
+    // newline impossible since trimmed is single-line).
+    expect(out).toMatch(/heading%3A/);
+  });
+
+  it("includes `expected (from \\`pl\\`): <line>` for a key MISSING in the failing locale", () => {
+    // Use a genuinely-likely-missing locale variation: the de/it locales
+    // may lack `ariaHeadingOverride` (it's an OPTIONAL key). For a pure
+    // unit test we simulate "missing" by picking a locale that doesn't
+    // declare it — `en` actually does declare it, so we fabricate a
+    // missing scenario by querying for a key that PL has but the test
+    // pretends some other locale lacks. The annotation only consults the
+    // FAILING locale's lines via findKeyLine; if not found, it falls back
+    // to PL's reference line. We trigger that path with a non-existent
+    // locale name:
+    emitGithubAnnotations(
+      [
+        {
+          locale: "xx", // bogus locale → no match → fall back to PL ref line
+          path: "TRANSLATIONS.local.heading",
+          reason: "missing-required-key",
+        },
+      ],
+      "i18n required keys",
+    );
+    expect(logSpy).toHaveBeenCalledTimes(1);
+    const out = String(logSpy.mock.calls[0][0]);
+    // `expected (from \`pl\`):` is in the message body (URL-encoded
+    // backticks survive as-is, but `:` becomes %3A in the data section).
+    expect(out).toContain("expected");
+    expect(out).toContain("pl");
+    expect(out).toMatch(/heading%3A/);
+  });
+
+  it("falls back to a TODO template when PL also lacks the key", () => {
+    emitGithubAnnotations(
+      [
+        {
+          locale: "xx",
+          path: "TRANSLATIONS.local.notInAnyLocale",
+          reason: "missing-required-key",
+        },
+      ],
+      "test",
+    );
+    const out = String(logSpy.mock.calls[0][0]);
+    expect(out).toContain("notInAnyLocale");
+    expect(out).toContain("TODO");
+  });
+});
