@@ -183,21 +183,36 @@ const DiaryFullModule = ({
   const summary = useMemo(() => buildDiarySummary(trend, entries), [trend, entries]);
   const hasAnyData = completedDaysCount > 0;
 
+  // Lista numerów (1-based) pytań bez odpowiedzi — używana w walidacji i w hincie pod CTA.
+  const missingQuestionNumbers = useMemo(
+    () =>
+      entry.answers
+        .map((a, i) => (a === null ? i + 1 : null))
+        .filter((n): n is number => n !== null),
+    [entry.answers],
+  );
+
   const handleSaveDay = () => {
-    if (completed === 0 && !entry.notes) {
+    // Walidacja: wymaga kompletu 9/9 odpowiedzi przed potwierdzeniem dnia.
+    // Auto-zapis postępu działa cały czas (setAnswer/setNotes), ale „Zapisz dzień"
+    // to świadome zatwierdzenie kompletnego wpisu — ma znaczenie dla trendu.
+    if (!entry.complete) {
+      const missingCount = total - completed;
+      const preview = missingQuestionNumbers.slice(0, 5).join(", ");
+      const more = missingQuestionNumbers.length > 5 ? "…" : "";
       toast({
-        title: "Brak danych do zapisania",
-        description: "Odpowiedz na przynajmniej jedno pytanie lub dodaj notatkę.",
+        variant: "destructive",
+        title: `Uzupełnij wszystkie ${total} pytania quizu`,
+        description:
+          missingCount === total
+            ? `Aby zapisać dzień, odpowiedz na wszystkie ${total} pytania.`
+            : `Brakuje ${missingCount} ${missingCount === 1 ? "odpowiedzi" : "odpowiedzi"} (pytanie ${preview}${more}). Komplet ${total}/${total} jest wymagany do zatwierdzenia dnia.`,
       });
       return;
     }
-    // Auto-zapis już zadziałał (każda zmiana setAnswer/setNotes pisze do localStorage).
-    // Ten przycisk daje pacjentowi pewność i jasne potwierdzenie.
     toast({
-      title: entry.complete ? "Zapisano dzień ✓" : "Zapisano postęp",
-      description: entry.complete
-        ? `Dziennik zaktualizowany — ${entry.score}/${maxScore} pkt${entry.label ? ` (${entry.label.toLowerCase()})` : ""}.`
-        : `Wypełniono ${completed}/${total} pytań. Wróć później, aby uzupełnić resztę.`,
+      title: "Zapisano dzień ✓",
+      description: `Dziennik zaktualizowany — ${entry.score}/${maxScore} pkt${entry.label ? ` (${entry.label.toLowerCase()})` : ""}.`,
     });
   };
 
