@@ -474,9 +474,13 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
             size="sm"
             variant="outline"
             onClick={handleSendPing}
-            disabled={pingState.isCollecting || !isBroadcastSupported}
+            disabled={pingState.isCollecting}
             className="self-start sm:self-auto shrink-0"
-            aria-label="Wyślij sygnał testowy do innych kart"
+            aria-label={
+              isBroadcastSupported
+                ? "Wyślij sygnał testowy do innych kart przez BroadcastChannel"
+                : "Wyślij sygnał testowy do innych kart przez localStorage (round-trip)"
+            }
           >
             {pingState.isCollecting ? (
               <>
@@ -485,8 +489,8 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
               </>
             ) : !isBroadcastSupported ? (
               <>
-                <WifiOff className="w-4 h-4 mr-2" aria-hidden="true" />
-                Niedostępne
+                <HardDrive className="w-4 h-4 mr-2" aria-hidden="true" />
+                Test (storage)
               </>
             ) : (
               <>
