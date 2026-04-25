@@ -389,7 +389,7 @@ describe("AutoSaveSettings — tooltip „Ostatnia zmiana” wybiera nagłówek 
         "Synchronizacja między kartami",
       ],
     ])(
-      "source='%s': aria-label i title zawierają TYLKO „%s", nigdy „%s"",
+      "source='%s': aria-label i title zawierają TYLKO `%s`, nigdy `%s`",
       (source, expectedHeading, forbiddenHeading) => {
         mockLastChangeSource = source;
         mockLastChangeAt = FROZEN_NOW;
