@@ -475,19 +475,28 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
             const tooltipContent = getLastChangeTooltipContent(lastChangeSource);
             // Linia czasu w tooltipie: preferujemy pełną datę (`lastSyncFullDate`),
             // ale gdy z jakiegoś powodu nie udało się jej zbudować (np. timestamp
-            // odrzucony przez `isValidTimestamp` w środku formatera), spadamy na
-            // względną etykietę (`lastSyncLabel`) — zawsze coś sensownego, nigdy
-            // pusta linia ani „Czas: " bez wartości. Brak `lastSyncLabel` nie
-            // wystąpi, bo cały blok jest gardowany przez `lastSyncLabel && …`.
-            const tooltipTimeValue = lastSyncFullDate ?? lastSyncLabel;
+            // odrzucony przez `isValidTimestamp` w środku formatera, pusty string
+            // albo same białe znaki), spadamy na względną etykietę (`lastSyncLabel`).
+            // UWAGA: używamy testu na niepuste-po-trim, NIE `??`/`||`, bo nullish
+            // coalescing przepuści pusty string „" oraz „   " (truthy w JS),
+            // co dałoby osierocone „Czas: " w aria-label. Strict trim eliminuje
+            // wszystkie warianty pustki: null, undefined, "", "   ", "\n".
+            const hasUsableFullDate =
+              typeof lastSyncFullDate === "string" && lastSyncFullDate.trim().length > 0;
+            const tooltipTimeValue = hasUsableFullDate ? lastSyncFullDate : lastSyncLabel;
             // Składamy `tooltipText` (aria-label + native `title` fallback) bez
             // pustych linii: każda część jest dodawana TYLKO gdy ma realną treść,
             // a `filter(Boolean)` na końcu odsiewa ewentualne `null`/puste stringi.
-            // Gwarantuje to, że join("\n") nigdy nie wyprodukuje "\n\n" ani trailing newline.
+            // Dodatkowo trim na linii „Czas: …" pilnuje, że wartość po dwukropku
+            // jest niepusta (defensywa przed regresją w przyszłym formaterze).
+            const timeLine =
+              tooltipTimeValue && tooltipTimeValue.trim().length > 0
+                ? `Czas: ${tooltipTimeValue.trim()}`
+                : null;
             const tooltipText = [
               tooltipContent.ariaHeading,
               tooltipContent.description,
-              tooltipTimeValue ? `Czas: ${tooltipTimeValue}` : null,
+              timeLine,
             ]
               .filter((line): line is string => Boolean(line && line.trim()))
               .join("\n");
