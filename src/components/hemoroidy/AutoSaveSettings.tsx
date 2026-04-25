@@ -1,8 +1,30 @@
+import { useEffect, useState } from "react";
 import { Save, ShieldCheck, ShieldAlert, CheckCircle2, RefreshCw } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { useAutoSave } from "@/hooks/useAutoSave";
 import { toast } from "@/hooks/use-toast";
+
+/**
+ * Format „przed chwilą" / „X s temu" / „X min temu" / „X h temu" / pełna data.
+ * Trzymamy lokalnie, bez date-fns — proste i bez kosztu bundle'u.
+ */
+const formatRelativeTime = (timestamp: number): string => {
+  const diffSec = Math.max(0, Math.floor((Date.now() - timestamp) / 1000));
+  if (diffSec < 5) return "przed chwilą";
+  if (diffSec < 60) return `${diffSec} s temu`;
+  const diffMin = Math.floor(diffSec / 60);
+  if (diffMin < 60) return `${diffMin} min temu`;
+  const diffH = Math.floor(diffMin / 60);
+  if (diffH < 24) return `${diffH} h temu`;
+  // >24h — pełna data + godzina (rzadki edge-case dla długo otwartej karty)
+  return new Date(timestamp).toLocaleString("pl-PL", {
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
 
 interface AutoSaveSettingsProps {
   /**
