@@ -60,7 +60,7 @@ import {
  * kompletu — to gwarancja, że żaden język nie zostanie z połowicznym
  * tłumaczeniem (PL prefiks „Czas:" + EN qualifier itp.).
  */
-interface TimeLineStrings {
+export interface TimeLineStrings {
   /** Prefiks linii czasu (np. „Czas: " / „Time: "). */
   timePrefix: string;
   /** Sufiks doklejany do a11y dla fallbacku na etykietę względną. */
@@ -91,6 +91,27 @@ const TIME_LINE_TRANSLATIONS: Record<Locale, TimeLineStrings> = {
     relativeHelpTitle: "Data completa non disponibile — viene mostrata un'etichetta relativa.",
   },
 };
+
+/**
+ * SINGLE SOURCE OF TRUTH dla testów kontraktowych: lista kluczy, które
+ * `buildLastChangeTooltipModel` RZECZYWIŚCIE czyta z `TIME_LINE_TRANSLATIONS`.
+ * Każde dodanie nowego pola konsumowanego przez builder MUSI być dopisane
+ * tutaj — wtedy `i18nRequiredKeys.test.ts` automatycznie obejmie nowy klucz
+ * dla wszystkich locale.
+ */
+export const REQUIRED_TIME_LINE_KEYS = [
+  "timePrefix",
+  "relativeQualifier",
+  "relativeHelpTitle",
+] as const satisfies ReadonlyArray<keyof TimeLineStrings>;
+
+/**
+ * Runtime accessor do mapy `TIME_LINE_TRANSLATIONS` — tylko do testów
+ * kontraktowych. Komponenty NIE powinny tego importować — używają
+ * `getTimeLinePrefix` / `buildLastChangeTooltipModel`.
+ */
+export const __getRawTimeLineTranslationsForTesting = (): Record<Locale, TimeLineStrings> =>
+  ({ ...TIME_LINE_TRANSLATIONS });
 
 /**
  * Tryby formatowania wartości czasu dla tooltipa „Ostatnia zmiana".
