@@ -215,12 +215,31 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
             </p>
           </div>
         </div>
-        <Switch
-          id="autosave-toggle"
-          checked={enabled}
-          onCheckedChange={handleToggle}
-          aria-label="Przełącz auto-zapis odpowiedzi quizu"
-        />
+        <div className="flex flex-col items-end gap-1.5 shrink-0">
+          <Switch
+            id="autosave-toggle"
+            checked={enabled}
+            onCheckedChange={handleToggle}
+            aria-label="Przełącz auto-zapis odpowiedzi quizu"
+          />
+          {lastSyncLabel && (
+            <p
+              className={`text-[10px] sm:text-[11px] font-sans text-muted-foreground inline-flex items-center gap-1 transition-colors ${
+                isRemoteSyncing ? "text-primary" : ""
+              }`}
+              title={lastSyncFullDate}
+              aria-live="polite"
+            >
+              <RefreshCw
+                className={`w-3 h-3 ${isRemoteSyncing ? "animate-spin text-primary" : ""}`}
+                aria-hidden="true"
+              />
+              <span>
+                Ostatnia zmiana: <strong className="text-foreground">{lastSyncLabel}</strong>
+              </span>
+            </p>
+          )}
+        </div>
       </div>
 
       {/* Inline „Zapisz dzień" — widoczny TYLKO gdy auto-zapis OFF i jest co zapisać.
