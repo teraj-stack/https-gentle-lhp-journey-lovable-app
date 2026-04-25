@@ -54,6 +54,10 @@ const SOURCE_FILES = {
 /** Project root — vitest runs from repo root so cwd is reliable. */
 const ROOT = process.cwd();
 
+/** Annotation severity level. `error` fails the GitHub check (red X);
+ * `warning` surfaces a yellow marker but does NOT fail the build. */
+export type AnnotationSeverity = "error" | "warning";
+
 /** A single annotation-ready violation. The shape is intentionally narrow
  * so each test file can adapt its richer Violation type without coupling. */
 export interface AnnotatableViolation {
@@ -65,7 +69,33 @@ export interface AnnotatableViolation {
   reason: string;
   /** Optional human-readable detail (will be appended to message). */
   detail?: string;
+  /** Optional explicit severity override. When omitted, severity is
+   * derived from `reason` via {@link classifyReasonSeverity}. */
+  severity?: AnnotationSeverity;
 }
+
+/**
+ * Reasons that should NOT fail the build — purely advisory drift signals.
+ * Empty OPTIONAL keys are the canonical example: the schema permits the
+ * key to be absent entirely, so an empty string is a soft-issue (probably
+ * a translator forgot to fill it) rather than a contract breach.
+ *
+ * Anything not listed here is treated as `error` (build-failing). Keep
+ * this set conservative — promoting a real bug to a warning silently is
+ * worse than over-failing.
+ */
+const WARNING_REASONS: ReadonlySet<string> = new Set([
+  "empty-optional-value",
+]);
+
+/**
+ * Map a violation `reason` to its default severity. Pure helper — no I/O,
+ * trivially testable. Callers may override per-violation by setting
+ * `severity` explicitly on the violation object (e.g. to escalate a
+ * normally-warning reason for a critical key).
+ */
+export const classifyReasonSeverity = (reason: string): AnnotationSeverity =>
+  WARNING_REASONS.has(reason) ? "warning" : "error";
 
 /** Cache file reads — vitest fans out tests and we don't want to re-read
  * the same source file 50× per run. */
