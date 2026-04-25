@@ -1351,6 +1351,34 @@ const DiaryFullModule = ({
           </p>
         </div>
 
+        {/* Baner trybu draft — widoczny TYLKO gdy auto-zapis OFF.
+            Stałe wizualne ostrzeżenie nad pytaniami, że odpowiedzi/notatki żyją
+            wyłącznie w pamięci komponentu, dopóki pacjent nie kliknie „Zapisz dzień". */}
+        {!autoSaveEnabled && (
+          <div
+            role="status"
+            aria-live="polite"
+            className="mb-4 rounded-xl border border-primary/40 bg-primary/5 px-4 py-3 flex items-start gap-3"
+          >
+            <AlertTriangle className="w-4 h-4 text-primary mt-0.5 shrink-0" aria-hidden="true" />
+            <div className="min-w-0 flex-1">
+              <p className="font-sans text-xs sm:text-sm text-foreground leading-relaxed">
+                <strong className="font-medium">Tryb draftu</strong> — auto-zapis wyłączony.
+                Zmiany w pytaniach i notatkach nie są zapisywane lokalnie, dopóki nie
+                klikniesz <span className="text-primary font-medium">„Zapisz dzień"</span>
+                {activeDayHasDraft && (
+                  <span className="text-muted-foreground">
+                    {" "}(czeka {Object.keys(draftAnswers[activeDate] ?? {}).length +
+                      (draftNotes[activeDate] !== undefined ? 1 : 0)}{" "}
+                    niezapisanych dziś).
+                  </span>
+                )}
+                {!activeDayHasDraft && "."}
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Filtr „Tylko brakujące" — szybko skupia uwagę na nieuzupełnionych pytaniach.
             Auto-wyłącza się gdy quiz jest kompletny (nie ma czego ukrywać). */}
         {missingQuestionNumbers.length > 0 && (
