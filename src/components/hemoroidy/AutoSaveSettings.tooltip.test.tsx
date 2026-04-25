@@ -356,4 +356,184 @@ describe("AutoSaveSettings — tooltip „Ostatnia zmiana” wybiera nagłówek 
       expect(ariaLabel.startsWith("Źródło: Synchronizacja między kartami")).toBe(true);
     });
   });
+
+  /**
+   * Atrybuty dostępności triggera (a11y contract):
+   *
+   *  - `aria-label` (na zewnętrznym kontenerze) i `title` (na samym triggerze
+   *    `<span tabindex=0>`) MUSZĄ deklarować dokładnie JEDNO źródło zmiany —
+   *    nigdy nie mogą zawierać equivalentów obu wariantów jednocześnie
+   *    (mieszany komunikat „Synchronizacja… + Lokalna…" zafałszowałby kontekst
+   *    dla screen readera i pacjenta na touch).
+   *  - Oba atrybuty MUSZĄ być spójne (ten sam prefiks „Źródło: …"), żeby
+   *    użytkownik VO/NVDA/touch nie dostał sprzecznej informacji w zależności
+   *    od kanału prezentacji.
+   *  - `aria-live="polite"` na kontenerze pilnuje, że przełączenie źródła
+   *    zostanie ogłoszone — to wymóg WCAG dla dynamicznego status text.
+   *  - Trigger MUSI być fokusowalny (`tabindex=0`), bo tooltip Radix otwiera
+   *    się też po `focus`, nie tylko hover — bez tego użytkownicy klawiatury
+   *    nie zobaczyliby treści tooltipa.
+   *  - `aria-label` musi być NIE-pusty i sensowny: pusty/whitespace-only
+   *    label powoduje, że screen reader przeczyta tag elementu, nie kontekst.
+   */
+  describe("atrybuty a11y triggera (aria-label, title) — kontrakt spójności", () => {
+    it.each([
+      [
+        "remote" as const,
+        "Synchronizacja między kartami",
+        "Lokalna akcja w tej karcie",
+      ],
+      [
+        "local" as const,
+        "Moja lokalna akcja w tej karcie",
+        "Synchronizacja między kartami",
+      ],
+    ])(
+      "source='%s': aria-label i title zawierają TYLKO `%s`, nigdy `%s`",
+      (source, expectedHeading, forbiddenHeading) => {
+        mockLastChangeSource = source;
+        mockLastChangeAt = FROZEN_NOW;
+
+        renderPanel();
+
+        const { trigger, container } = findLastChangeTooltip();
+        const ariaLabel = container.getAttribute("aria-label") ?? "";
+        const title = trigger.getAttribute("title") ?? "";
+
+        // Oba atrybuty zawierają nagłówek właściwego wariantu.
+        expect(ariaLabel).toContain(expectedHeading);
+        expect(title).toContain(expectedHeading);
+
+        // KLUCZOWA anty-mieszanka: żaden atrybut NIE może zawierać nagłówka
+        // przeciwnego wariantu — to byłby sprzeczny komunikat dla a11y.
+        expect(ariaLabel).not.toContain(forbiddenHeading);
+        expect(title).not.toContain(forbiddenHeading);
+
+        // Anty-regresja: dokładnie JEDEN prefiks „Źródło: " w aria-label
+        // (gdyby ktoś przez pomyłkę skleił dwa warianty, mielibyśmy 2).
+        const sourceMatches = ariaLabel.match(/Źródło: /g) ?? [];
+        expect(sourceMatches.length).toBe(1);
+        const titleSourceMatches = title.match(/Źródło: /g) ?? [];
+        expect(titleSourceMatches.length).toBe(1);
+      },
+    );
+
+    it("aria-label i title triggera są dokładnie tym samym stringiem (spójność kanałów a11y)", () => {
+      // Screen reader korzysta z aria-label, użytkownik touch widzi `title`
+      // jako native tooltip systemu — oba MUSZĄ przekazywać tę samą treść,
+      // inaczej dwa kanały dostępności rozjechałyby się i pacjent dostałby
+      // sprzeczną informację o źródle zmiany.
+      for (const source of ["remote", "local"] as const) {
+        mockLastChangeSource = source;
+        mockLastChangeAt = FROZEN_NOW;
+        const { unmount } = renderPanel();
+
+        const { trigger, container } = findLastChangeTooltip();
+        const ariaLabel = container.getAttribute("aria-label") ?? "";
+        const title = trigger.getAttribute("title") ?? "";
+
+        expect(ariaLabel).toBe(title);
+
+        unmount();
+      }
+    });
+
+    it("aria-label jest niepustym, sensownym stringiem (nie whitespace, nie 'undefined'/'null')", () => {
+      // Pusty/whitespace-only aria-label powoduje, że screen reader przeczyta
+      // tag elementu (np. „div") zamiast kontekstu. Stringified `null`/`undefined`
+      // to wpadka serializacyjna z złego template literal.
+      for (const source of ["remote", "local"] as const) {
+        mockLastChangeSource = source;
+        mockLastChangeAt = FROZEN_NOW;
+        const { unmount } = renderPanel();
+
+        const { trigger, container } = findLastChangeTooltip();
+        const ariaLabel = container.getAttribute("aria-label") ?? "";
+        const title = trigger.getAttribute("title") ?? "";
+
+        expect(ariaLabel.trim().length).toBeGreaterThan(0);
+        expect(title.trim().length).toBeGreaterThan(0);
+        // Brak literałów „undefined"/„null" w atrybutach (kontrakt serializacji).
+        expect(ariaLabel).not.toMatch(/\b(undefined|null)\b/);
+        expect(title).not.toMatch(/\b(undefined|null)\b/);
+
+        unmount();
+      }
+    });
+
+    it("kontener tooltipa ma aria-live='polite' (ogłaszanie zmian źródła)", () => {
+      // WCAG: dynamiczny status text musi być w live region, żeby screen reader
+      // ogłosił przełączenie źródła bez ponownego fokusu na trigger.
+      mockLastChangeSource = "remote";
+      mockLastChangeAt = FROZEN_NOW;
+      renderPanel();
+
+      const { container } = findLastChangeTooltip();
+      expect(container.getAttribute("aria-live")).toBe("polite");
+    });
+
+    it("trigger jest fokusowalny (tabindex=0) — dostępny z klawiatury", () => {
+      // Radix Tooltip otwiera się też na focus; bez tabindex=0 użytkownik
+      // klawiatury nigdy nie zobaczyłby treści tooltipa.
+      mockLastChangeSource = "local";
+      mockLastChangeAt = FROZEN_NOW;
+      renderPanel();
+
+      const { trigger } = findLastChangeTooltip();
+      expect(trigger.getAttribute("tabindex")).toBe("0");
+    });
+
+    it("aria-label i title nie zawierają HTML/encji — czysty plain text dla SR", () => {
+      // Screen readery czytają aria-label dosłownie. Gdyby do stringu wyciekł
+      // znacznik HTML albo encja (`&lt;`, `&amp;`), użytkownik usłyszałby
+      // surowy markup zamiast komunikatu.
+      for (const source of ["remote", "local"] as const) {
+        mockLastChangeSource = source;
+        mockLastChangeAt = FROZEN_NOW;
+        const { unmount } = renderPanel();
+
+        const { trigger, container } = findLastChangeTooltip();
+        const ariaLabel = container.getAttribute("aria-label") ?? "";
+        const title = trigger.getAttribute("title") ?? "";
+
+        expect(ariaLabel).not.toMatch(/<[^>]+>/);
+        expect(title).not.toMatch(/<[^>]+>/);
+        expect(ariaLabel).not.toMatch(/&[a-z]+;|&#\d+;/i);
+        expect(title).not.toMatch(/&[a-z]+;|&#\d+;/i);
+
+        unmount();
+      }
+    });
+
+    it("przejście remote → local: aria-label NIE zachowuje śladu poprzedniego nagłówka", () => {
+      // Re-render musi w pełni podmienić atrybut, nie skleić starej wartości
+      // z nową (regresja typu „Źródło: Synchronizacja… Źródło: Moja lokalna…"
+      // gdyby ktoś użył mutacji zamiast nowego stringu).
+      mockLastChangeSource = "remote";
+      mockLastChangeAt = FROZEN_NOW;
+      const { rerender } = renderPanel();
+
+      mockLastChangeSource = "local";
+      mockLastChangeAt = FROZEN_NOW + 5_000;
+      rerender(
+        <TooltipProvider delayDuration={0}>
+          <AutoSaveSettings />
+        </TooltipProvider>,
+      );
+
+      const { trigger, container } = findLastChangeTooltip();
+      const ariaLabel = container.getAttribute("aria-label") ?? "";
+      const title = trigger.getAttribute("title") ?? "";
+
+      // Po przełączeniu obecny jest WYŁĄCZNIE nagłówek lokalny.
+      expect(ariaLabel).toContain("Moja lokalna akcja w tej karcie");
+      expect(title).toContain("Moja lokalna akcja w tej karcie");
+      expect(ariaLabel).not.toContain("Synchronizacja między kartami");
+      expect(title).not.toContain("Synchronizacja między kartami");
+
+      // Dokładnie jeden prefiks „Źródło: " (brak konkatenacji starego stanu).
+      expect((ariaLabel.match(/Źródło: /g) ?? []).length).toBe(1);
+      expect((title.match(/Źródło: /g) ?? []).length).toBe(1);
+    });
+  });
 });
