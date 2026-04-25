@@ -59,6 +59,32 @@ import {
   __getRawTimeLineTranslationsForTesting,
 } from "./lastChangeTooltipModel";
 import { emitGithubAnnotations } from "./i18nGithubAnnotations";
+import {
+  getActiveLocalesForTests,
+  getInactiveLocales,
+  isActiveLocalesMode,
+} from "./i18nActiveLocales";
+
+/**
+ * Resolved at module load. Tests iterate `ACTIVE_LOCALES` for per-locale
+ * KEY coverage so a partially-translated locale (e.g. `de` still being
+ * authored) can be deferred via `I18N_TEST_MODE=active` or
+ * `I18N_ACTIVE_LOCALES=pl,en` without forking the test file.
+ *
+ * Locales validated unconditionally remain `SUPPORTED_LOCALES` for the
+ * "shape" tests (no extra/orphan locales in the maps) — those guard the
+ * STATIC contract, not the rollout state.
+ */
+const ACTIVE_LOCALES = getActiveLocalesForTests();
+if (isActiveLocalesMode()) {
+  // Single visible notice per test-file run so a CI failure can never be
+  // misread as "all locales were validated".
+  // eslint-disable-next-line no-console
+  console.log(
+    `[i18n] active-locales mode: validating [${ACTIVE_LOCALES.join(", ")}], ` +
+      `deferred [${getInactiveLocales().join(", ") || "<none>"}]`,
+  );
+}
 
 // ---------------------------------------------------------------------------
 // VIOLATION REPORT — ten sam wzorzec co w sąsiednich kontraktach i18n.
@@ -316,7 +342,9 @@ describe("i18n required keys — TRANSLATIONS map covers REQUIRED_TRANSLATION_KE
     const violations: Violation[] = [];
     const raw = __getRawTranslationsForTesting();
 
-    for (const locale of SUPPORTED_LOCALES) {
+    // ACTIVE_LOCALES, not SUPPORTED_LOCALES: in active-locales test mode,
+    // skip per-key validation for locales that are not yet shipped.
+    for (const locale of ACTIVE_LOCALES) {
       const entry = raw[locale];
       checkTopLevelTranslation(locale, entry, violations);
       checkVariantEntry(locale, "local", entry?.local, violations);
@@ -364,7 +392,9 @@ describe("i18n required keys — TIME_LINE_TRANSLATIONS covers REQUIRED_TIME_LIN
     const violations: Violation[] = [];
     const raw = __getRawTimeLineTranslationsForTesting();
 
-    for (const locale of SUPPORTED_LOCALES) {
+    // ACTIVE_LOCALES: per-key validation respects test mode. Orphan-locale
+    // check below stays on SUPPORTED_LOCALES (static shape contract).
+    for (const locale of ACTIVE_LOCALES) {
       checkTimeLineEntry(locale, raw[locale] as unknown as Record<string, unknown>, violations);
     }
 
