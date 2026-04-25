@@ -241,7 +241,7 @@ const RiskFactorsAccordion = () => {
         </p>
       </div>
 
-      <Accordion type="multiple" className="space-y-2">
+      <Accordion type="multiple" className="space-y-3 sm:space-y-2.5">
         {RISK_FACTORS.map((rf) => {
           const Icon = rf.Icon;
           return (
@@ -250,52 +250,49 @@ const RiskFactorsAccordion = () => {
               value={rf.id}
               className="rounded-xl border border-border bg-background/40 overflow-hidden data-[state=open]:border-primary/40 data-[state=open]:bg-primary/5 transition-colors"
             >
-              <AccordionTrigger className="px-4 sm:px-5 py-3.5 hover:no-underline group text-left">
-                <div className="flex items-center gap-3 flex-1 min-w-0">
-                  <span className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 group-data-[state=open]:bg-primary/20 transition-colors">
+              <AccordionTrigger className="px-3.5 sm:px-5 py-4 sm:py-3.5 hover:no-underline group text-left gap-2">
+                <div className="flex items-start sm:items-center gap-3 sm:gap-3 flex-1 min-w-0">
+                  <span className="w-10 h-10 sm:w-9 sm:h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 group-data-[state=open]:bg-primary/20 transition-colors mt-0.5 sm:mt-0">
                     <Icon className="w-4 h-4 text-primary" />
                   </span>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-heading text-base md:text-lg text-foreground leading-snug">
+                  <div className="flex-1 min-w-0 flex flex-col gap-1.5">
+                    <p className="font-heading text-[15px] sm:text-base md:text-lg text-foreground leading-snug">
                       {rf.title}
                     </p>
-                    <p className="text-[11px] sm:text-xs text-muted-foreground mt-0.5">
-                      {rf.shortBadge}
-                    </p>
+                    <span className="inline-flex w-fit max-w-full items-center px-2 py-0.5 rounded-md text-[10.5px] sm:text-[11px] font-sans uppercase tracking-[0.06em] bg-destructive/10 text-destructive border border-destructive/25 leading-snug">
+                      <span className="truncate">{rf.shortBadge}</span>
+                    </span>
                   </div>
                 </div>
               </AccordionTrigger>
-              <AccordionContent className="px-4 sm:px-5 pb-5">
-                <p className="text-sm leading-relaxed text-foreground/90 pt-2 border-t border-border/50">
+              <AccordionContent className="px-3.5 sm:px-5 pb-5">
+                <p className="text-[14px] sm:text-sm leading-relaxed text-foreground/90 pt-3 border-t border-border/50">
                   {rf.body}
                 </p>
-                <div className="mt-4">
-                  <p className="text-[11px] uppercase tracking-[0.14em] font-sans text-muted-foreground mb-2 inline-flex items-center gap-1.5">
+                <div className="mt-5 sm:mt-4 rounded-lg bg-muted/30 border border-border/40 p-3 sm:p-3.5">
+                  <p className="text-[10.5px] sm:text-[11px] uppercase tracking-[0.14em] font-sans text-muted-foreground mb-2.5 inline-flex items-center gap-1.5">
                     <BookOpen className="w-3 h-3" />
                     Źródła EBM
                   </p>
-                  <ul className="space-y-1.5">
+                  <ul className="space-y-3 sm:space-y-2">
                     {rf.sources.map((s, i) => (
-                      <li key={i} className="text-sm">
+                      <li key={i} className="text-[13.5px] sm:text-sm flex flex-col gap-1">
                         <a
                           href={s.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-primary hover:underline inline-flex items-center gap-1"
+                          className="text-primary hover:underline inline-flex items-start gap-1.5 leading-snug"
                         >
-                          {s.label}
-                          <ExternalLink className="w-3 h-3" />
+                          <span className="flex-1">{s.label}</span>
+                          <ExternalLink className="w-3 h-3 shrink-0 mt-1" />
                         </a>
                         {s.ebmId && (
-                          <>
-                            {" · "}
-                            <Link
-                              to={`/dla-pacjenta/ebm-hemoroidy#ebm-${s.ebmId}`}
-                              className="text-xs text-muted-foreground hover:text-primary underline-offset-2 hover:underline"
-                            >
-                              kategoria w bibliografii →
-                            </Link>
-                          </>
+                          <Link
+                            to={`/dla-pacjenta/ebm-hemoroidy#ebm-${s.ebmId}`}
+                            className="text-[11.5px] sm:text-xs text-muted-foreground hover:text-primary underline-offset-2 hover:underline w-fit"
+                          >
+                            → kategoria w bibliografii
+                          </Link>
                         )}
                       </li>
                     ))}
