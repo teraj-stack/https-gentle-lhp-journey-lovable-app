@@ -46,6 +46,7 @@ import { HEMOROIDY_QUESTIONS, RiskLevel } from "@/lib/hemoroidyQuizData";
 import { buildDiarySummary, exportDiaryCsv, exportDiaryPdf } from "@/lib/diaryExport";
 import DiaryReminderBanner from "@/components/hemoroidy/DiaryReminderBanner";
 import DiaryReminderSettings from "@/components/hemoroidy/DiaryReminderSettings";
+import DiaryTrendStats from "@/components/hemoroidy/DiaryTrendStats";
 import { toast } from "@/hooks/use-toast";
 
 const easeOut = [0.16, 1, 0.3, 1] as const;
@@ -276,6 +277,9 @@ const DiaryFullModule = ({
             </LineChart>
           </ResponsiveContainer>
         </div>
+
+        {/* Wzbogacone statystyki trendu */}
+        <DiaryTrendStats trend={trend} entries={entries} />
       </motion.div>
 
       {/* Day picker — 14-day strip */}
