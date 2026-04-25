@@ -612,13 +612,21 @@ const DiaryFullModule = ({
           </p>
         </div>
 
-        {/* Save day button */}
-        <div className="mt-6 flex flex-col sm:flex-row sm:items-center gap-3">
+        {/* Save day button — wymaga 9/9 odpowiedzi (entry.complete) */}
+        <div className="mt-6 flex flex-col sm:flex-row sm:items-start gap-3">
           <Button
             type="button"
             variant="hero"
             size="lg"
             onClick={handleSaveDay}
+            disabled={!entry.complete}
+            aria-disabled={!entry.complete}
+            aria-describedby="save-day-hint"
+            title={
+              entry.complete
+                ? "Zapisz dzień jako kompletny wpis"
+                : `Uzupełnij brakujące pytania (${completed}/${total}), aby aktywować przycisk`
+            }
             className="gap-2"
           >
             {entry.complete ? (
@@ -627,9 +635,20 @@ const DiaryFullModule = ({
               <Save className="w-4 h-4" />
             )}
             Zapisz dzień
+            <span className="ml-1 text-xs font-sans tabular-nums opacity-80">
+              {completed}/{total}
+            </span>
           </Button>
-          <p className="text-xs text-muted-foreground italic leading-relaxed">
-            Każda zmiana zapisuje się automatycznie. Przycisk daje Ci pewność potwierdzenia.
+          <p
+            id="save-day-hint"
+            className={`text-xs leading-relaxed ${
+              entry.complete ? "text-emerald-500" : "text-muted-foreground italic"
+            }`}
+            aria-live="polite"
+          >
+            {entry.complete
+              ? "✓ Komplet odpowiedzi — możesz zatwierdzić dzień. Każda zmiana zapisuje się też automatycznie."
+              : `Aby zapisać dzień, odpowiedz na wszystkie ${total} pytania quizu. Brakuje jeszcze: ${total - completed}.`}
           </p>
         </div>
 
