@@ -501,6 +501,61 @@ export const useAutoSave = () => {
     if (!isBrowser()) return;
 
     const onStorage = (e: StorageEvent) => {
+      // Storage-probe: inna karta wysłała probe — odpowiedz echem (zapis w PROBE_ECHO_KEY).
+      if (e.key === PROBE_KEY) {
+        const probe = safeParseProbe(e.newValue);
+        if (!probe || probe.origin === TAB_ID) return; // własne probe albo śmieciowy payload
+        const echo: StorageProbePayload = {
+          pingId: probe.pingId,
+          origin: TAB_ID,
+          label: TAB_LABEL,
+          enabled: readStored(),
+          sentAt: probe.sentAt,
+          receivedAt: Date.now(),
+        };
+        try {
+          // Dodajemy nonce do wartości, żeby kolejne echa do tego samego pingId
+          // od różnych kart NA PEWNO triggerowały storage event (zmiana wartości).
+          // Bez nonce dwie karty z identycznym TAB_LABEL/enabled mogłyby nadpisać
+          // wartością binarnie identyczną — wtedy storage event nie wystrzeli
+          // u inicjatora i odpowiedź by zniknęła.
+          window.localStorage.setItem(
+            PROBE_ECHO_KEY,
+            JSON.stringify({ ...echo, _nonce: Math.random().toString(36).slice(2) }),
+          );
+        } catch {
+          // brak miejsca / tryb prywatny — pomijamy, inicjator i tak dostanie timeout
+        }
+        return;
+      }
+
+      // Storage-probe echo: dotarła odpowiedź na nasz aktywny ping.
+      if (e.key === PROBE_ECHO_KEY) {
+        const echo = safeParseProbe(e.newValue);
+        if (!echo) return;
+        if (echo.origin === TAB_ID) return; // własne echo (nie powinno wystrzelić, ale safety net)
+        if (echo.pingId !== activePingIdRef.current) return; // echo na stary ping — ignoruj
+        const sentAt = pingSentAtRef.current ?? echo.sentAt;
+        const latencyMs = Math.max(0, Date.now() - sentAt);
+        setPingState((prev) => {
+          if (prev.responses.some((r) => r.origin === echo.origin)) return prev;
+          return {
+            ...prev,
+            responses: [
+              ...prev.responses,
+              {
+                origin: echo.origin,
+                label: echo.label,
+                enabled: echo.enabled,
+                latencyMs,
+                via: "storage",
+              },
+            ],
+          };
+        });
+        return;
+      }
+
       if (e.key !== STORAGE_KEY && e.key !== null) return;
       // storage event nie niesie payloadu z `version` — używamy ogólnej heurystyki:
       // nadaj nową wersję na podstawie aktualnego zegara, ale tylko jeśli wartość faktycznie się zmieniła.
