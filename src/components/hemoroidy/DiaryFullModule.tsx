@@ -145,7 +145,7 @@ const DiaryFullModule = ({
   showReminderSettings = true,
   showExport = true,
 }: DiaryFullModuleProps) => {
-  const { entries, getEntry, setAnswer, setNotes, removeEntry, clearAll, last14Trend, maxScore } =
+  const { entries, getEntry, setAnswer, setNotes, removeEntry, clearAll, last14Trend, maxScore, thresholds } =
     useDailyDiary();
 
   const days = useMemo(() => last14DaysKeys(), []);
