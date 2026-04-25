@@ -280,6 +280,83 @@ Things to notice:
 
 The validator reads two TypeScript modules — **not** `locales/*.json` files — but the contract it enforces maps 1:1 to a conventional flat-JSON locale layout. Both shapes are documented here so fixtures stay reproducible regardless of which mental model you bring.
 
+##### Actual module exports (ground truth)
+
+This subsection documents the **real** symbols the validator imports — file paths, export names, and exact shapes. The simplified `TRANSLATIONS` / `TIME_LINE` literals shown in later subsections are pedagogical; the production code has a richer shape, and reproducing failures requires hitting the real exports.
+
+###### File 1 — `src/lib/lastChangeTooltipContent.ts`
+
+| Export | Type / shape | Used by |
+| --- | --- | --- |
+| `Locale` | `"pl" \| "en" \| "de" \| "it"` (type alias) | All test files for type-safe locale iteration |
+| `SUPPORTED_LOCALES` | `readonly Locale[]` = `["pl", "en", "de", "it"]` | `i18nRequiredKeys.test.ts` (the unconditional locale list — every locale here MUST satisfy the contract) |
+| `TranslationEntry` | Interface defining one locale's payload (nested objects with `local`, `remote`, `sourcePrefix`, etc.) | Type guard for `__getRawTranslationsForTesting` |
+| `REQUIRED_TRANSLATION_KEYS` | **Object** with three buckets (NOT a flat array): `{ top: readonly string[], variant: readonly string[], variantOptional: readonly string[] }` | `i18nRequiredKeys.test.ts`, `scripts/autofix-required-translation-keys.mjs` |
+| `__getRawTranslationsForTesting` | `() => Record<Locale, TranslationEntry>` — exposes the in-memory map without going through `getLastChangeTooltipContent`'s fallback chain | All three contract tests; the leading `__` marks it as test-only API |
+
+The three required-key buckets carry distinct semantics:
+
+- **`REQUIRED_TRANSLATION_KEYS.top`** — top-level keys (e.g. `"sourcePrefix"`). Missing → `missing-required-key`.
+- **`REQUIRED_TRANSLATION_KEYS.variant`** — keys inside `local.*` / `remote.*` variant blocks (e.g. `"heading"`, `"description"`). Missing in any locale → `missing-required-key`. Each variant key must exist in **both** `local` and `remote` for every locale.
+- **`REQUIRED_TRANSLATION_KEYS.variantOptional`** — keys that may be empty string `""` in non-reference locales. Empty → `empty-optional-value` (`::warning`). Absent → still `missing-required-key`.
+
+###### File 2 — `src/lib/lastChangeTooltipModel.ts`
+
+| Export | Type / shape | Used by |
+| --- | --- | --- |
+| `TimeLineStrings` | Interface defining one locale's time-line payload (`relative.*`, `qualifier.*`, `timePrefix`) | Type guard for `__getRawTimeLineTranslationsForTesting` |
+| `REQUIRED_TIME_LINE_KEYS` | `readonly string[]` — flat dotted-path list (e.g. `"relative.minutesAgo"`, `"timePrefix"`) | `i18nRequiredKeys.test.ts` |
+| `__getRawTimeLineTranslationsForTesting` | `() => Record<Locale, TimeLineStrings>` | All three contract tests |
+| `validateLastChangeTooltipInput`, `smoothTimeValue`, etc. | Runtime helpers — **not** read by the contract validator, but they consume the same locale map, which is why the contract matters | App code only |
+
+###### File 3 — `src/lib/i18nActiveLocales.ts` (env-driven test scope)
+
+The contract tests don't always validate **every** locale in `SUPPORTED_LOCALES`. They consult `getActiveLocalesForTests()` to support faster local iteration on a subset.
+
+| Export | Purpose |
+| --- | --- |
+| `getActiveLocalesForTests()` | Returns the locale list the tests should iterate. Reads `I18N_ACTIVE_LOCALES` env var (comma-separated) → falls back to `DEFAULT_ACTIVE_LOCALES` → falls back to `SUPPORTED_LOCALES` |
+| `DEFAULT_ACTIVE_LOCALES` | `["pl", "en"]` — the minimum set CI always validates |
+| `ENV_ACTIVE_LIST` | String constant `"I18N_ACTIVE_LOCALES"` — the env var name |
+| `isActiveLocalesMode()` | Returns `true` when the env or test-mode flag narrowed the active set below `SUPPORTED_LOCALES` |
+
+**Implication for fixtures**: when a fixture targets `de` or `it`, run with the locale included in scope:
+
+```sh
+I18N_ACTIVE_LOCALES=pl,en,de,it GITHUB_ACTIVE_LOCALES=true \
+GITHUB_ACTIONS=true bunx vitest run src/lib/i18nRequiredKeys.test.ts
+```
+
+Without this, `de`/`it` violations may be silently skipped because `DEFAULT_ACTIVE_LOCALES` is `["pl", "en"]` only.
+
+###### File 4 — `src/lib/i18nGithubAnnotations.ts` (the validator itself)
+
+The annotation emitter wires everything together. Constants you'll touch when extending the contract:
+
+| Constant / function | Value / purpose |
+| --- | --- |
+| `SOURCE_FILES` | `{ TRANSLATIONS: "src/lib/lastChangeTooltipContent.ts", TIME_LINE: "src/lib/lastChangeTooltipModel.ts" }` — the prefix → file map written into `file=` of every annotation |
+| `pickSourceFile(path)` | Routes a dotted violation path to the right source file based on its top-level prefix |
+| `REFERENCE_LOCALE` | `"pl"` — used for the `expected (from \`pl\`): …` snippet when the failing locale's key is absent |
+| `MAX_SNIPPET_LEN` | `200` — char cap on the assembled multi-line value snippet in the message body |
+| `WARNING_REASONS` | Set of reasons that emit `::warning` instead of `::error` (currently just `empty-optional-value`) |
+| `emitGithubAnnotations(violations, groupTitle)` | Public entry — called from each contract test's `formatViolations` |
+| `__resetAnnotationDedupForTesting()` | Test-only — clears the cross-call dedup index between `it()` blocks |
+
+###### Path-to-failure-reason cheat-sheet
+
+Use this when you want to know which file + export to mutate to reproduce a specific `reason` code:
+
+| `reason` | Mutate in this file | Touch this export |
+| --- | --- | --- |
+| `missing-required-key` | `lastChangeTooltipContent.ts` (variant/top) **or** `lastChangeTooltipModel.ts` (time-line) | The locale map returned by `__getRawTranslationsForTesting` / `__getRawTimeLineTranslationsForTesting` — delete a key declared in the corresponding `REQUIRED_*` |
+| `placeholder-mismatch` | Either source file | The locale map — change the `{name}` set on a leaf in a non-reference locale |
+| `undeclared-key` | `lastChangeTooltipContent.ts` (most natural) | The locale map — add a key that isn't in `REQUIRED_TRANSLATION_KEYS.top/.variant/.variantOptional` |
+| `empty-optional-value` | Either source file | The locale map — set a `REQUIRED_*` leaf to `""` in a non-reference locale |
+| `wrong-type` | Either source file | The locale map — set a leaf to `42` / `null` / object where `string` is expected (TS will complain; cast through `unknown` to bypass) |
+
+The pedagogical `TRANSLATIONS = { pl: { local: {...} }, en: {...} }` snippets in the next subsections are **simplifications** — they show the conceptual shape so fixtures stay readable. When a fixture says "edit `TRANSLATIONS.en.local.heading`", read it as "edit the locale map exposed by `__getRawTranslationsForTesting`, in the `en.local.heading` slot".
+
 ##### Canonical TS contract (what this repo actually uses)
 
 ```ts
