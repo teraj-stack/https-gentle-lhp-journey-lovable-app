@@ -119,7 +119,17 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
     });
   };
 
-  const lastSyncLabel = lastRemoteSyncAt !== null ? formatRelativeTime(lastRemoteSyncAt) : null;
+  // Format „2 min temu (14:32)" — relatywny czas + godzina dnia w nawiasie.
+  const lastSyncLabel = (() => {
+    if (lastRemoteSyncAt === null) return null;
+    const relative = formatRelativeTime(lastRemoteSyncAt);
+    const clock = new Date(lastRemoteSyncAt).toLocaleTimeString("pl-PL", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    return `${relative} (${clock})`;
+  })();
+  // Pełna data + godzina jako tooltip — pomocna gdy karta wisi długo otwarta.
   const lastSyncFullDate =
     lastRemoteSyncAt !== null
       ? new Date(lastRemoteSyncAt).toLocaleString("pl-PL", {
