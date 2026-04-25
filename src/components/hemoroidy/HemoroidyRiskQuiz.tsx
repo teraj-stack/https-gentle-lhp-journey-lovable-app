@@ -17,6 +17,8 @@ import {
 import { generateQuizResultPdf } from "@/lib/quizResultPdf";
 import { useQuizHistory } from "@/hooks/useQuizHistory";
 import { useDiaryReminders } from "@/hooks/useDiaryReminders";
+import { useRiskThresholds } from "@/hooks/useRiskThresholds";
+import { getRiskLevelWithThresholds, getRiskRangeWithThresholds } from "@/lib/hemoroidyQuizData";
 
 type Option = { label: string; points: number };
 type Question = { id: string; q: string; options: Option[] };
@@ -191,10 +193,8 @@ const tiers: RiskTier[] = [
   },
 ];
 
-const getTier = (score: number): RiskTier => {
-  if (score <= 8) return tiers[0];
-  if (score <= 17) return tiers[1];
-  return tiers[2];
+const getTierForLevel = (level: "low" | "medium" | "high"): RiskTier => {
+  return tiers.find((t) => t.level === level) ?? tiers[0];
 };
 
 const easeOut = [0.16, 1, 0.3, 1] as const;
@@ -205,6 +205,7 @@ const HemoroidyRiskQuiz = () => {
   const [done, setDone] = useState(false);
   const { addEntry } = useQuizHistory();
   const { markQuizCompleted } = useDiaryReminders();
+  const { thresholds } = useRiskThresholds();
 
   const total = questions.length;
   const progress = done ? 100 : Math.round((step / total) * 100);
@@ -230,7 +231,9 @@ const HemoroidyRiskQuiz = () => {
     (sum, q) => sum + Math.max(...q.options.map((o) => o.points)),
     0
   );
-  const tier = getTier(score);
+  const tierLevel = getRiskLevelWithThresholds(score, thresholds);
+  const tier = getTierForLevel(tierLevel);
+  const tierRange = getRiskRangeWithThresholds(tierLevel, thresholds);
   const TierIcon = tier.Icon;
   const current = questions[step];
 
@@ -239,7 +242,7 @@ const HemoroidyRiskQuiz = () => {
       score,
       maxScore,
       tierLabel: tier.label,
-      tierRange: tier.range,
+      tierRange,
       headline: tier.headline,
       recommendations: tier.recommendations.slice(0, 5),
       showUrgent: tier.showUrgent,
@@ -339,7 +342,7 @@ const HemoroidyRiskQuiz = () => {
                 <TierIcon className={`w-7 h-7 ${tier.color} shrink-0 mt-0.5`} />
                 <div className="min-w-0">
                   <p className="text-[10px] sm:text-xs font-sans uppercase tracking-[0.14em] sm:tracking-[0.18em] text-muted-foreground">
-                    Twój wynik · {score} pkt · {tier.range}
+                    Twój wynik · {score} pkt · {tierRange}
                   </p>
                   <h3 className={`font-heading text-2xl md:text-3xl ${tier.color} leading-tight`}>
                     {tier.label}
