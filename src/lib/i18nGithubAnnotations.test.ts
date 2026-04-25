@@ -28,6 +28,7 @@ import {
   __stripTopPrefixForTesting,
   __getSourceLineSnippetForTesting,
   __buildExpectedLineHintForTesting,
+  __resetAnnotationDedupForTesting,
 } from "./i18nGithubAnnotations";
 
 const ROOT = process.cwd();
