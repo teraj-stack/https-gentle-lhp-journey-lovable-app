@@ -184,6 +184,14 @@ const RedFlagsFAQ = () => {
                             href={src.url}
                             target="_blank"
                             rel="noopener noreferrer"
+                            onClick={() =>
+                              trackEbmClick({
+                                url: src.url,
+                                label: src.label,
+                                source: "RedFlagsFAQ",
+                                kind: "external_source",
+                              })
+                            }
                             className="text-primary hover:underline inline-flex items-start gap-1.5 leading-snug"
                           >
                             <ExternalLink className="w-3 h-3 mt-0.5 shrink-0" />
