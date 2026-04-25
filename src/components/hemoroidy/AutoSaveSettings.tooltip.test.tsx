@@ -1174,5 +1174,258 @@ describe("AutoSaveSettings — tooltip „Ostatnia zmiana” wybiera nagłówek 
       expect(t3).not.toBe(t2);
     });
   });
+
+  /**
+   * Regresja środowiska: ustawienia językowe przeglądarki, kierunek tekstu (RTL/LTR),
+   * tryb wysokiego kontrastu (forced-colors), preferencja redukcji ruchu.
+   *
+   * Reguła brzegowa: niezależnie od tego, jak system operacyjny / przeglądarka
+   * próbuje przepisać interfejs, nasze stringi a11y MUSZĄ pozostać:
+   *  - po polsku („Źródło:" + rdzeń „kart-/karc-"), bo `getLastChangeTooltipContent`
+   *    nie korzysta z żadnego i18n loadera — to twardo wpisane stringi PL,
+   *  - bez anglicyzmów typu „tab" / „source:" / „local-tab",
+   *  - obecne 1:1 w `aria-label` kontenera i `title` triggera (jedyne dwa
+   *    kanały, które OS/przeglądarka mogą czytać poza wizualnym DOM).
+   *
+   * Te testy świadomie symulują zewnętrzne wymuszenia środowiska (lang/dir
+   * na <html>, CSS @media forced-colors, prefers-reduced-motion) i sprawdzają,
+   * że stringi pozostają nienaruszone — żaden CSS, lang attribute ani forced
+   * colors mode nie powinien podmieniać tekstu w aria-label.
+   */
+  describe("regresja: lang/dir/forced-colors/prefers-reduced-motion — stringi a11y są stabilne", () => {
+    const REMOTE_HEADING = "Źródło: Synchronizacja między kartami";
+    const LOCAL_HEADING = "Źródło: Moja lokalna akcja w tej karcie";
+
+    /** Bezpieczny restorer atrybutów <html> między testami. */
+    const withHtmlAttrs = (
+      attrs: Record<string, string | null>,
+      fn: () => void,
+    ): void => {
+      const html = document.documentElement;
+      const previous: Record<string, string | null> = {};
+      for (const [key, value] of Object.entries(attrs)) {
+        previous[key] = html.getAttribute(key);
+        if (value === null) html.removeAttribute(key);
+        else html.setAttribute(key, value);
+      }
+      try {
+        fn();
+      } finally {
+        for (const [key, value] of Object.entries(previous)) {
+          if (value === null) html.removeAttribute(key);
+          else html.setAttribute(key, value);
+        }
+      }
+    };
+
+    it.each([
+      ["pl", "ltr", "polski LTR (baseline)"],
+      ["en", "ltr", "angielski LTR — przeglądarka może chcieć przetłumaczyć"],
+      ["en-US", "ltr", "angielski US (Chrome auto-translate target)"],
+      ["ar", "rtl", "arabski RTL — kierunek tekstu nie zmienia treści stringów"],
+      ["he", "rtl", "hebrajski RTL"],
+      ["de-DE", "ltr", "niemiecki — żaden auto-translator nie rusza aria-label"],
+    ])(
+      "lang=%s dir=%s (%s): aria-label i title zachowują polskie „Źródło:” + „karta/karcie”",
+      (lang, dir, _label) => {
+        withHtmlAttrs({ lang, dir }, () => {
+          for (const source of ["remote", "local"] as const) {
+            mockLastChangeSource = source;
+            mockLastChangeAt = FROZEN_NOW;
+            const { unmount } = renderPanel();
+
+            const { trigger, container } = findLastChangeTooltip();
+            const ariaLabel = container.getAttribute("aria-label") ?? "";
+            const title = trigger.getAttribute("title") ?? "";
+            const expectedHeading = source === "remote" ? REMOTE_HEADING : LOCAL_HEADING;
+
+            // 1) Polski prefiks „Źródło:" obecny w obu kanałach.
+            expect(
+              ariaLabel.startsWith(expectedHeading),
+              `lang=${lang} source=${source}: aria-label musi zaczynać się od polskiego "${expectedHeading}"`,
+            ).toBe(true);
+            expect(title.startsWith(expectedHeading)).toBe(true);
+
+            // 2) Polski rdzeń „kart-/karc-" obecny — nigdy zastąpiony „tab".
+            expect(
+              ariaLabel.toLowerCase(),
+              `lang=${lang} source=${source}: musi zawierać polski rdzeń "kar[ct]-"`,
+            ).toMatch(/\bkar[ct]/);
+            expect(ariaLabel).not.toMatch(/\btab\b/i);
+            expect(ariaLabel).not.toMatch(/cross-tab|local-tab|within-tab/i);
+
+            // 3) Anglicyzm „source:" (małymi) NIE może wyciec — to wpadka i18n.
+            expect(ariaLabel).not.toMatch(/\bsource:\s/i);
+            expect(title).not.toMatch(/\bsource:\s/i);
+
+            // 4) Kanały spójne (obronnik dla VoiceOver/NVDA + touch).
+            expect(ariaLabel).toBe(title);
+
+            unmount();
+          }
+        });
+      },
+    );
+
+    it("forced-colors: active (Windows High Contrast) — aria-label nadal zawiera polski heading", () => {
+      // Symulujemy aktywny tryb wysokiego kontrastu przez window.matchMedia.
+      // W praktyce forced-colors zmienia paletę CSS, ale NIE może zmieniać
+      // tekstu — pilnujemy że nasz aria-label przeżywa to nietknięty.
+      // Dodatkowo defensywnie sprawdzamy, że JEŚLI komponent reaguje na ten
+      // tryb (np. dodaje wizualne wzmocnienia), to NIE rusza stringów a11y.
+      const originalMatchMedia = window.matchMedia;
+      window.matchMedia = ((query: string) => ({
+        matches: query.includes("forced-colors") || query.includes("prefers-contrast"),
+        media: query,
+        onchange: null,
+        addListener: () => {},
+        removeListener: () => {},
+        addEventListener: () => {},
+        removeEventListener: () => {},
+        dispatchEvent: () => false,
+      })) as unknown as typeof window.matchMedia;
+
+      try {
+        for (const source of ["remote", "local"] as const) {
+          mockLastChangeSource = source;
+          mockLastChangeAt = FROZEN_NOW;
+          const { unmount } = renderPanel();
+
+          const { trigger, container } = findLastChangeTooltip();
+          const ariaLabel = container.getAttribute("aria-label") ?? "";
+          const title = trigger.getAttribute("title") ?? "";
+          const expectedHeading = source === "remote" ? REMOTE_HEADING : LOCAL_HEADING;
+
+          expect(ariaLabel.startsWith(expectedHeading)).toBe(true);
+          expect(title.startsWith(expectedHeading)).toBe(true);
+          expect(ariaLabel.toLowerCase()).toMatch(/\bkar[ct]/);
+          expect(ariaLabel).not.toMatch(/\btab\b/i);
+
+          // High contrast mode czasami sygnalizuje dostępne cyfry/symbole
+          // emoji jako placeholder — pilnujemy, że żaden taki znak nie
+          // zastąpił litery polskiego rdzenia.
+          expect(ariaLabel).toContain("Źródło:");
+          expect(ariaLabel).toContain("kar"); // „karcie"/„kartami"
+
+          unmount();
+        }
+      } finally {
+        window.matchMedia = originalMatchMedia;
+      }
+    });
+
+    it("prefers-reduced-motion: reduce — animacje wyciszone, ale aria-label bez zmian", () => {
+      // Reduced-motion nie powinno mieć wpływu na treść aria-label, ale
+      // gdyby ktoś kiedyś dodał warunek typu „w trybie reduced renderuj
+      // krótszy label" — ten test wyłapie regresję.
+      const originalMatchMedia = window.matchMedia;
+      window.matchMedia = ((query: string) => ({
+        matches: query.includes("prefers-reduced-motion"),
+        media: query,
+        onchange: null,
+        addListener: () => {},
+        removeListener: () => {},
+        addEventListener: () => {},
+        removeEventListener: () => {},
+        dispatchEvent: () => false,
+      })) as unknown as typeof window.matchMedia;
+
+      try {
+        mockLastChangeSource = "local";
+        mockLastChangeAt = FROZEN_NOW;
+        renderPanel();
+
+        const { trigger, container } = findLastChangeTooltip();
+        const ariaLabel = container.getAttribute("aria-label") ?? "";
+        const title = trigger.getAttribute("title") ?? "";
+
+        expect(ariaLabel.startsWith(LOCAL_HEADING)).toBe(true);
+        expect(title.startsWith(LOCAL_HEADING)).toBe(true);
+        expect(ariaLabel.toLowerCase()).toMatch(/\bkar[ct]/);
+        expect(ariaLabel).not.toMatch(/\btab\b/i);
+        // Stabilna struktura: 3 linie nawet przy reduced motion.
+        expect(ariaLabel.split("\n").length).toBe(3);
+      } finally {
+        window.matchMedia = originalMatchMedia;
+      }
+    });
+
+    it("translate='no' na <html>: aria-label wciąż czysty PL, badge ma poprawny aria-label", () => {
+      // Atrybut `translate="no"` informuje przeglądarkę, żeby NIE tłumaczyła
+      // poddrzewa. Nawet gdy ktoś go nie ustawi, my korzystamy z hardkodowanych
+      // stringów PL — testujemy oba warianty (translate=yes i no), żeby
+      // zagwarantować stabilność.
+      for (const translate of ["yes", "no"] as const) {
+        withHtmlAttrs({ translate }, () => {
+          mockLastChangeSource = "local";
+          mockLastChangeAt = FROZEN_NOW;
+          const { unmount } = renderPanel();
+
+          const { container } = findLastChangeTooltip();
+          const ariaLabel = container.getAttribute("aria-label") ?? "";
+
+          expect(ariaLabel).toContain("Źródło:");
+          expect(ariaLabel.toLowerCase()).toMatch(/\bkar[ct]/);
+
+          // Badge „lokalnie" — aria-label musi pozostać polski niezależnie
+          // od translate hint.
+          const badge = screen.getByText("lokalnie");
+          expect(badge.getAttribute("aria-label")).toBe(LOCAL_HEADING);
+
+          unmount();
+        });
+      }
+    });
+
+    it("kombinacja: lang=en + dir=rtl + reduced-motion + forced-colors — pełen worst case a11y środowiska", () => {
+      // Skumulowany scenariusz najgorszego przypadku: użytkownik na Windows
+      // High Contrast, z hebrajskim/arabskim ustawieniem RTL, z włączoną
+      // redukcją ruchu, w przeglądarce z lang=en (np. ekspat). Mimo to nasze
+      // stringi PL muszą przetrwać 1:1 — to jedyna gwarancja, że SR przeczyta
+      // dokładnie to, co programista zaprojektował.
+      const originalMatchMedia = window.matchMedia;
+      window.matchMedia = ((query: string) => ({
+        matches:
+          query.includes("forced-colors") ||
+          query.includes("prefers-reduced-motion") ||
+          query.includes("prefers-contrast"),
+        media: query,
+        onchange: null,
+        addListener: () => {},
+        removeListener: () => {},
+        addEventListener: () => {},
+        removeEventListener: () => {},
+        dispatchEvent: () => false,
+      })) as unknown as typeof window.matchMedia;
+
+      try {
+        withHtmlAttrs({ lang: "en", dir: "rtl" }, () => {
+          for (const source of ["remote", "local"] as const) {
+            mockLastChangeSource = source;
+            mockLastChangeAt = FROZEN_NOW;
+            const { unmount } = renderPanel();
+
+            const { trigger, container } = findLastChangeTooltip();
+            const ariaLabel = container.getAttribute("aria-label") ?? "";
+            const title = trigger.getAttribute("title") ?? "";
+            const expectedHeading =
+              source === "remote" ? REMOTE_HEADING : LOCAL_HEADING;
+
+            expect(ariaLabel.startsWith(expectedHeading)).toBe(true);
+            expect(title.startsWith(expectedHeading)).toBe(true);
+            expect(ariaLabel).toContain("Źródło:");
+            expect(ariaLabel.toLowerCase()).toMatch(/\bkar[ct]/);
+            expect(ariaLabel).not.toMatch(/\btab\b/i);
+            expect(ariaLabel).not.toMatch(/\bsource:\s/i);
+            expect(ariaLabel).toBe(title);
+
+            unmount();
+          }
+        });
+      } finally {
+        window.matchMedia = originalMatchMedia;
+      }
+    });
+  });
 });
 
