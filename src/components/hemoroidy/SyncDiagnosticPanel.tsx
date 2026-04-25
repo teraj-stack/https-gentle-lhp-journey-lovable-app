@@ -690,6 +690,7 @@ const SyncDiagnosticPanel = ({
               )}
             </button>
           </div>
+          <DegradationGuidance cause={degradationInfo.cause} tone="amber" />
         </div>
       )}
 
