@@ -386,7 +386,8 @@ const RiskFactorsAccordion = () => {
               <AccordionItem
                 key={rf.id}
                 value={rf.id}
-                className="rounded-xl border border-border bg-background/40 overflow-hidden data-[state=open]:border-primary/40 data-[state=open]:bg-primary/5 transition-colors"
+                data-selected={isSelected}
+                className="rounded-xl border border-border bg-background/40 overflow-hidden data-[state=open]:border-primary/40 data-[state=open]:bg-primary/5 data-[selected=true]:border-primary/60 data-[selected=true]:bg-primary/[0.07] transition-colors"
               >
                 <AccordionTrigger className="px-3.5 sm:px-5 py-4 sm:py-3.5 hover:no-underline group text-left gap-2">
                   <div className="flex items-start sm:items-center gap-3 sm:gap-3 flex-1 min-w-0">
