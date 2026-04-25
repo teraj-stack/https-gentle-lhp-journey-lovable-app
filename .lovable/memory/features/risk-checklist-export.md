@@ -22,3 +22,9 @@ type: feature
 - **UI**: ikona `Star` przy każdym wpisie checklisty (toggle). Aktywny stan = `fill-current` + złoty kolor + dodatkowy badge "PRIORYTET" obok tytułu + akcent karty (`border-primary/60 bg-primary/[0.06] ring-1 ring-primary/20`).
 - **Sortowanie**: `selectedFactors` useMemo sortuje priorytetowe na górę (stable wewnątrz grupy).
 - **Licznik**: w nagłówku obok "X z Y zaznaczonych" pojawia się "· N priorytetów" gdy `priorityCount > 0`.
+
+## Auto-podsumowanie (kategorie + mechanizmy)
+- **Mapa**: `src/lib/checklistSummary.ts` — `RISK_FACTOR_META: Record<id, { category, mechanisms[] }>` z 5 kategoriami (Dieta/Styl życia/Fizjologia/Genetyka/Zachowanie w toalecie) i 5 mechanizmami patofizjologicznymi.
+- **Helper**: `buildChecklistSummary(ids)` zwraca top kategorie + top mechanizmy z count i share %, plus krótki kontekstowy komentarz dopasowany do dominującego mechanizmu.
+- **UI**: `src/components/blog/ChecklistAutoSummary.tsx` — karta na dole checklisty (po liście, przed przyciskami eksportu) z 2 kolumnami pasków top-3 + komentarz w kursywie. Hidden gdy total = 0.
+- **Brak nowych zależności**: czysty TS + framer-motion + lucide.
