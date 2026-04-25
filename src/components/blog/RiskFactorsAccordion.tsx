@@ -381,6 +381,7 @@ const RiskFactorsAccordion = () => {
         >
           {filtered.map((rf) => {
             const Icon = rf.Icon;
+            const isSelected = selected.includes(rf.id);
             return (
               <AccordionItem
                 key={rf.id}
