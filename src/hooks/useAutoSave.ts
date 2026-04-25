@@ -322,6 +322,10 @@ export const useAutoSave = () => {
       const statePayload = data as StateBroadcastPayload;
       if (typeof statePayload.enabled !== "boolean") return;
       if (statePayload.origin === TAB_ID) return; // ignorujemy echo własnego nadania
+      // Symulacja braku BC — udajemy, że wiadomość nie dotarła kanałem broadcast.
+      // Storage event/CustomEvent (z innej karty) i tak zaktualizują stan, więc test
+      // realnie weryfikuje, czy fallback działa.
+      if (simulateFallbackRef.current) return;
       // Anti-race: ignoruj wiadomości starsze lub równe ostatnio zaaplikowanej wersji.
       if (compareVersions(statePayload.version, lastAppliedVersionRef.current) <= 0) return;
       lastAppliedVersionRef.current = statePayload.version ?? [Date.now(), 0];
