@@ -159,7 +159,7 @@ Touch `findKeyLine` (and re-run `bunx vitest run src/lib/i18nGithubAnnotations.t
 | --- | --- |
 | Indent step changes (e.g. tabs, or 4 spaces) | The hardcoded `+ 2` in `findKeyLine`’s child-indent check. |
 | Locale block declared with a quoted key (`"pl": {`) or different syntax | `isKeyDecl` regex (currently allows optional `"` quotes around the key). |
-| Keys split across multiple lines (multi-line object values) | `getSourceLineSnippet` — currently returns `null` for multi-line values; either accept that gracefully or extend it to walk to the value’s opening brace. |
+| Keys split across multiple lines (multi-line object / array / template values) | `getSourceLineSnippet` + `assembleMultiLineSnippet` — the assembler tracks backtick / `[` / `{` / `(` balance and collapses the value to a single line (capped at 200 chars with `…`). Extend `isMultiLineValueOpener` if a new continuation pattern appears. |
 | Key files moved/renamed | The `SOURCE_FILES` map at the top of `i18nGithubAnnotations.ts`. |
 | New top-level prefix (sibling of `TRANSLATIONS` / `TIME_LINE`) | `pickSourceFile` and `stripTopPrefix` — both branch on the prefix. |
 
