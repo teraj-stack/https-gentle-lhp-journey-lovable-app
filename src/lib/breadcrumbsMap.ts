@@ -69,6 +69,7 @@ export const BREADCRUMBS_MAP: Record<string, BreadcrumbItem[]> = {
   "/dla-pacjenta/hemoroidy-infografika": [WIEDZA, DLA_PACJENTA, { label: "Hemoroidy – infografika" }],
   "/dla-pacjenta/quiz-hemoroidy": [WIEDZA, DLA_PACJENTA, { label: "Test ryzyka hemoroidów" }],
   "/dla-pacjenta/ebm-hemoroidy": [WIEDZA, DLA_PACJENTA, { label: "EBM hemoroidy" }],
+  "/dla-pacjenta/dziennik-hemoroidy": [WIEDZA, DLA_PACJENTA, { label: "Dziennik 14 dni — hemoroidy" }],
   "/dla-pacjenta/pajaczki": [WIEDZA, DLA_PACJENTA, { label: "Odzyskaj beztroskę" }],
   "/dla-pacjenta/faldy-odbytu": [WIEDZA, DLA_PACJENTA, { label: "Fałdy okolicy odbytu" }],
   "/dla-pacjenta/profilaktyka-zylakow": [WIEDZA, DLA_PACJENTA, { label: "Profilaktyka żylaków" }],
