@@ -7,10 +7,12 @@ type: feature
 Interaktywny test ryzyka hemoroidów na podstronie `/dla-pacjenta/quiz-hemoroidy`.
 
 ## Komponenty
-- `src/components/hemoroidy/HemoroidyRiskQuiz.tsx` — reużywalny komponent quizu
+- `src/components/hemoroidy/HemoroidyRiskQuiz.tsx` — reużywalny komponent quizu (id="hemoroidy-quiz", reaguje na event `cml:quiz-restart`)
+- `src/components/hemoroidy/QuizRetakeModule.tsx` — moduł powtórnego quizu: side-by-side porównanie poprzedni vs ostatni, delta, najlepszy wynik, insight kontekstowy + CTA "Wypełnij ponownie" (dispatch `cml:quiz-restart` + smooth scroll do quizu)
+- `src/components/hemoroidy/QuizHistorySection.tsx` — historia + line chart trendu (recharts) + eksport JSON
 - `src/components/hemoroidy/HemoroidyChecklistSections.tsx` — 6 sekcji checklisty (anchor targets) pod quizem
 - `src/components/hemoroidy/EBMSourcesSection.tsx` — bibliografia EBM
-- `src/pages/QuizHemoroidy.tsx` — strona: hero → quiz → checklist → kafelki → źródła EBM
+- `src/pages/QuizHemoroidy.tsx` — strona: hero → quiz → CTA dziennik → retake module → history → red flags → checklist → kafelki → źródła EBM
 
 ## Struktura quizu
 - 5 pytań (błonnik, nawodnienie, czas w toalecie, ruch/styl życia, objawy)

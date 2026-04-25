@@ -256,8 +256,19 @@ const HemoroidyRiskQuiz = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [done]);
 
+  // Listen for external "restart" events (e.g. from QuizRetakeModule's button)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const handler = () => reset();
+    window.addEventListener("cml:quiz-restart", handler);
+    return () => window.removeEventListener("cml:quiz-restart", handler);
+  }, []);
+
   return (
-    <div className="glass-card rounded-2xl p-5 sm:p-6 md:p-10 max-w-3xl mx-auto">
+    <div
+      id="hemoroidy-quiz"
+      className="glass-card rounded-2xl p-5 sm:p-6 md:p-10 max-w-3xl mx-auto scroll-mt-32 focus:outline-none"
+    >
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
         <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
