@@ -287,6 +287,21 @@ export const useAutoSave = () => {
   const [isRemoteSyncing, setIsRemoteSyncing] = useState(false);
   const [lastRemoteSyncAt, setLastRemoteSyncAt] = useState<number | null>(null);
   /**
+   * Źródło ostatniej zmiany przełącznika auto-zapisu:
+   *  - `"remote"` — przyszła z innej karty (BroadcastChannel/storage) lub innej instancji
+   *    hooka w tej samej karcie (CustomEvent). Etykieta „Ostatnia zmiana" jest wtedy
+   *    podświetlona na zielono, sygnalizując sukces synchronizacji.
+   *  - `"local"` — pacjent kliknął Switch lub użył skrótu Alt+Shift+A w TEJ karcie.
+   *    Etykieta używa wtedy neutralnego (domyślnego) koloru — to nie była synchronizacja,
+   *    tylko ręczna edycja, więc zielony akcent byłby mylący.
+   *  - `null` — od mount nie było żadnej zmiany.
+   *
+   * `lastChangeAt` jest niezależne od `lastRemoteSyncAt`, bo ten drugi celowo trzyma
+   * tylko zdalne timestampy (do animacji pulsu i historii).
+   */
+  const [lastChangeSource, setLastChangeSource] = useState<"remote" | "local" | null>(null);
+  const [lastChangeAt, setLastChangeAt] = useState<number | null>(null);
+  /**
    * Historia ostatnich N zdalnych synchronizacji (najnowsza pierwsza).
    * Trzymamy w state, żeby UI mogło reagować, ale ograniczamy do HISTORY_LIMIT,
    * by nie rosła w nieskończoność na karcie otwartej godzinami.
