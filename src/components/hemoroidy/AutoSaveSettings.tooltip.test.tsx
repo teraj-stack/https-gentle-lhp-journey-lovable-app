@@ -190,7 +190,7 @@ describe("AutoSaveSettings — tooltip „Ostatnia zmiana” wybiera nagłówek 
     expect(ariaLabel).not.toContain("Synchronizacja między kartami");
   });
 
-  it("aria-label NIGDY nie używa anglicyzmu „tab” — zawsze polskie „karta/karcie”, () => {
+  it("aria-label NIGDY nie używa anglicyzmu „tab” — zawsze polskie „karta/karcie”", () => {
     // Reguła z `mem://design/ui-language-tab-vs-karta`: cały interfejs po
     // polsku mówi „karta”, nigdy „tab”/„cross-tab”/„local-tab”. Test pilnuje,
     // żeby copy w aria-label triggera było zgodne z badge'em i tooltipem
