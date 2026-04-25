@@ -62,7 +62,9 @@ const collectMissingKeys = (): MissingKeyReport[] => {
   const timeLine = __getRawTimeLineTranslationsForTesting();
 
   for (const locale of SUPPORTED_LOCALES) {
-    const t = translations[locale] as Record<string, unknown> | undefined;
+    const t = translations[locale] as unknown as
+      | Record<string, unknown>
+      | undefined;
     if (!t) {
       out.push({ map: "TRANSLATIONS", locale, path: "<root>", reason: "missing" });
       continue;
