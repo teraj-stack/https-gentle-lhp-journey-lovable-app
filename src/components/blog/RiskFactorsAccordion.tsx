@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { useMemo, useState } from "react";
 import {
   AlertTriangle,
   Salad,
@@ -12,6 +13,8 @@ import {
   Activity,
   ExternalLink,
   BookOpen,
+  Search,
+  X,
 } from "lucide-react";
 import {
   Accordion,
@@ -19,7 +22,35 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { Input } from "@/components/ui/input";
 import { Link } from "react-router-dom";
+
+/** Polski-friendly normalizer: lowercase + usuwa diakrytyki */
+const normalize = (s: string) =>
+  s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/ł/g, "l");
+
+/** Podświetlenie dopasowanego fragmentu w tekście */
+const Highlight = ({ text, query }: { text: string; query: string }) => {
+  if (!query.trim()) return <>{text}</>;
+  const nText = normalize(text);
+  const nQuery = normalize(query.trim());
+  const idx = nText.indexOf(nQuery);
+  if (idx === -1) return <>{text}</>;
+  const end = idx + nQuery.length;
+  return (
+    <>
+      {text.slice(0, idx)}
+      <mark className="bg-primary/25 text-foreground rounded px-0.5">
+        {text.slice(idx, end)}
+      </mark>
+      {text.slice(end)}
+    </>
+  );
+};
 
 const easeOut = [0.16, 1, 0.3, 1] as const;
 
@@ -213,6 +244,20 @@ const RISK_FACTORS: RiskFactor[] = [
 ];
 
 const RiskFactorsAccordion = () => {
+  const [query, setQuery] = useState("");
+  const nQuery = normalize(query.trim());
+
+  const filtered = useMemo(() => {
+    if (!nQuery) return RISK_FACTORS;
+    return RISK_FACTORS.filter((rf) => {
+      const haystack = normalize(`${rf.title} ${rf.shortBadge} ${rf.body}`);
+      return haystack.includes(nQuery);
+    });
+  }, [nQuery]);
+
+  // Auto-rozwijaj dopasowane karty podczas wyszukiwania
+  const openValues = nQuery ? filtered.map((rf) => rf.id) : undefined;
+
   return (
     <motion.section
       initial={{ opacity: 0, y: 16 }}
@@ -241,68 +286,124 @@ const RiskFactorsAccordion = () => {
         </p>
       </div>
 
-      <Accordion type="multiple" className="space-y-3 sm:space-y-2.5">
-        {RISK_FACTORS.map((rf) => {
-          const Icon = rf.Icon;
-          return (
-            <AccordionItem
-              key={rf.id}
-              value={rf.id}
-              className="rounded-xl border border-border bg-background/40 overflow-hidden data-[state=open]:border-primary/40 data-[state=open]:bg-primary/5 transition-colors"
+      {/* Wyszukiwarka — filtruje po tytule, badge'u i mechanizmie */}
+      <div className="mb-4">
+        <label htmlFor="risk-factors-search" className="sr-only">
+          Szukaj w czynnikach ryzyka
+        </label>
+        <div className="relative">
+          <Search
+            className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none"
+            aria-hidden="true"
+          />
+          <Input
+            id="risk-factors-search"
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Szukaj np. „błonnik”, „parcie”, „ciąża”…"
+            className="pl-9 pr-10 bg-background/40 border-border/60"
+            aria-describedby="risk-factors-search-hint"
+          />
+          {query && (
+            <button
+              type="button"
+              onClick={() => setQuery("")}
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors"
+              aria-label="Wyczyść wyszukiwanie"
             >
-              <AccordionTrigger className="px-3.5 sm:px-5 py-4 sm:py-3.5 hover:no-underline group text-left gap-2">
-                <div className="flex items-start sm:items-center gap-3 sm:gap-3 flex-1 min-w-0">
-                  <span className="w-10 h-10 sm:w-9 sm:h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 group-data-[state=open]:bg-primary/20 transition-colors mt-0.5 sm:mt-0">
-                    <Icon className="w-4 h-4 text-primary" />
-                  </span>
-                  <div className="flex-1 min-w-0 flex flex-col gap-1.5">
-                    <p className="font-heading text-[15px] sm:text-base md:text-lg text-foreground leading-snug">
-                      {rf.title}
-                    </p>
-                    <span className="inline-flex w-fit max-w-full items-center px-2 py-0.5 rounded-md text-[10.5px] sm:text-[11px] font-sans uppercase tracking-[0.06em] bg-destructive/10 text-destructive border border-destructive/25 leading-snug">
-                      <span className="truncate">{rf.shortBadge}</span>
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+        <p
+          id="risk-factors-search-hint"
+          className="mt-2 text-[11.5px] sm:text-xs text-muted-foreground"
+          aria-live="polite"
+        >
+          {nQuery
+            ? `Znaleziono ${filtered.length} z ${RISK_FACTORS.length} czynników`
+            : `Filtruje po tytule, oznaczeniu i opisie mechanizmu (${RISK_FACTORS.length} kart)`}
+        </p>
+      </div>
+
+      {filtered.length === 0 ? (
+        <div className="rounded-xl border border-dashed border-border bg-background/30 px-5 py-8 text-center">
+          <p className="text-sm text-muted-foreground">
+            Brak dopasowań dla „<span className="text-foreground">{query}</span>".
+            Spróbuj innego słowa, np. <em>„błonnik”</em>, <em>„valsalva”</em> lub <em>„toaleta”</em>.
+          </p>
+        </div>
+      ) : (
+        <Accordion
+          type="multiple"
+          className="space-y-3 sm:space-y-2.5"
+          value={openValues}
+        >
+          {filtered.map((rf) => {
+            const Icon = rf.Icon;
+            return (
+              <AccordionItem
+                key={rf.id}
+                value={rf.id}
+                className="rounded-xl border border-border bg-background/40 overflow-hidden data-[state=open]:border-primary/40 data-[state=open]:bg-primary/5 transition-colors"
+              >
+                <AccordionTrigger className="px-3.5 sm:px-5 py-4 sm:py-3.5 hover:no-underline group text-left gap-2">
+                  <div className="flex items-start sm:items-center gap-3 sm:gap-3 flex-1 min-w-0">
+                    <span className="w-10 h-10 sm:w-9 sm:h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 group-data-[state=open]:bg-primary/20 transition-colors mt-0.5 sm:mt-0">
+                      <Icon className="w-4 h-4 text-primary" />
                     </span>
+                    <div className="flex-1 min-w-0 flex flex-col gap-1.5">
+                      <p className="font-heading text-[15px] sm:text-base md:text-lg text-foreground leading-snug">
+                        <Highlight text={rf.title} query={query} />
+                      </p>
+                      <span className="inline-flex w-fit max-w-full items-center px-2 py-0.5 rounded-md text-[10.5px] sm:text-[11px] font-sans uppercase tracking-[0.06em] bg-destructive/10 text-destructive border border-destructive/25 leading-snug">
+                        <span className="truncate">
+                          <Highlight text={rf.shortBadge} query={query} />
+                        </span>
+                      </span>
+                    </div>
                   </div>
-                </div>
-              </AccordionTrigger>
-              <AccordionContent className="px-3.5 sm:px-5 pb-5">
-                <p className="text-[14px] sm:text-sm leading-relaxed text-foreground/90 pt-3 border-t border-border/50">
-                  {rf.body}
-                </p>
-                <div className="mt-5 sm:mt-4 rounded-lg bg-muted/30 border border-border/40 p-3 sm:p-3.5">
-                  <p className="text-[10.5px] sm:text-[11px] uppercase tracking-[0.14em] font-sans text-muted-foreground mb-2.5 inline-flex items-center gap-1.5">
-                    <BookOpen className="w-3 h-3" />
-                    Źródła EBM
+                </AccordionTrigger>
+                <AccordionContent className="px-3.5 sm:px-5 pb-5">
+                  <p className="text-[14px] sm:text-sm leading-relaxed text-foreground/90 pt-3 border-t border-border/50">
+                    <Highlight text={rf.body} query={query} />
                   </p>
-                  <ul className="space-y-3 sm:space-y-2">
-                    {rf.sources.map((s, i) => (
-                      <li key={i} className="text-[13.5px] sm:text-sm flex flex-col gap-1">
-                        <a
-                          href={s.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-primary hover:underline inline-flex items-start gap-1.5 leading-snug"
-                        >
-                          <span className="flex-1">{s.label}</span>
-                          <ExternalLink className="w-3 h-3 shrink-0 mt-1" />
-                        </a>
-                        {s.ebmId && (
-                          <Link
-                            to={`/dla-pacjenta/ebm-hemoroidy#ebm-${s.ebmId}`}
-                            className="text-[11.5px] sm:text-xs text-muted-foreground hover:text-primary underline-offset-2 hover:underline w-fit"
+                  <div className="mt-5 sm:mt-4 rounded-lg bg-muted/30 border border-border/40 p-3 sm:p-3.5">
+                    <p className="text-[10.5px] sm:text-[11px] uppercase tracking-[0.14em] font-sans text-muted-foreground mb-2.5 inline-flex items-center gap-1.5">
+                      <BookOpen className="w-3 h-3" />
+                      Źródła EBM
+                    </p>
+                    <ul className="space-y-3 sm:space-y-2">
+                      {rf.sources.map((s, i) => (
+                        <li key={i} className="text-[13.5px] sm:text-sm flex flex-col gap-1">
+                          <a
+                            href={s.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-primary hover:underline inline-flex items-start gap-1.5 leading-snug"
                           >
-                            → kategoria w bibliografii
-                          </Link>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </AccordionContent>
-            </AccordionItem>
-          );
-        })}
-      </Accordion>
+                            <span className="flex-1">{s.label}</span>
+                            <ExternalLink className="w-3 h-3 shrink-0 mt-1" />
+                          </a>
+                          {s.ebmId && (
+                            <Link
+                              to={`/dla-pacjenta/ebm-hemoroidy#ebm-${s.ebmId}`}
+                              className="text-[11.5px] sm:text-xs text-muted-foreground hover:text-primary underline-offset-2 hover:underline w-fit"
+                            >
+                              → kategoria w bibliografii
+                            </Link>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            );
+          })}
+        </Accordion>
+      )}
 
       <div className="mt-5 text-xs text-muted-foreground">
         Pełna bibliografia z linkami do PubMed, ASCRS, ESCP i Cochrane:{" "}
