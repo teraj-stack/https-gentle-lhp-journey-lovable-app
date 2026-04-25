@@ -278,28 +278,41 @@ describe("AutoSaveSettings — tooltip „Ostatnia zmiana” wybiera nagłówek 
       expect(document.body.textContent ?? "").not.toMatch(/Źródło:\s*(null|undefined)/i);
     });
 
-    it("source=undefined + lastChangeAt=valid: etykieta i badge nie renderują się", () => {
-      // Ten sam kontrakt co dla `null`, ale dla `undefined` — symuluje
-      // sytuację, gdy hook zwraca pole bez wartości (np. starsza wersja
-      // kontraktu lub mock w teście ad-hoc). `isLastChangeVisible` traktuje
-      // `undefined` tak samo defensywnie jak `null` (early-return na `=== null`
-      // nie łapie `undefined`, ale dalej `visibility === source` daje `false`,
-      // bo żaden visibility nie równa się `undefined`).
+    it("source=undefined + lastChangeAt=valid: tooltip i badge spadają na bezpieczny wariant LOCAL", () => {
+      // Asymetria z `null`: `isLastChangeVisible` ma early-return tylko na
+      // `source === null`, więc `undefined` przechodzi dalej i przy domyślnym
+      // visibility=`both` etykieta JEST widoczna. W tej sytuacji nagłówek
+      // musi spaść na bezpieczny wariant lokalny — nigdy nie udajemy
+      // „Synchronizacji między kartami", bo to byłoby kłamstwo o pochodzeniu
+      // zmiany. Odpowiada za to defensywny fallback w `getLastChangeTooltipContent`
+      // (wszystko ≠ "remote" → wariant local), który tu właśnie weryfikujemy
+      // end-to-end z DOM.
       mockLastChangeSource = undefined;
       mockLastChangeAt = FROZEN_NOW;
 
       renderPanel();
 
-      const triggers = Array.from(
-        document.querySelectorAll<HTMLElement>('span[tabindex="0"][title]'),
-      );
-      const sourceTrigger = triggers.find((el) =>
-        (el.getAttribute("title") ?? "").startsWith("Źródło: "),
-      );
-      expect(sourceTrigger).toBeUndefined();
+      const { trigger, container } = findLastChangeTooltip();
+      const ariaLabel = container.getAttribute("aria-label") ?? "";
+      const title = trigger.getAttribute("title") ?? "";
 
-      expect(screen.queryByText("lokalnie")).not.toBeInTheDocument();
+      // Fallback nagłówka: wariant lokalny, NIGDY remote.
+      expect(ariaLabel.startsWith("Źródło: Moja lokalna akcja w tej karcie")).toBe(true);
+      expect(title.startsWith("Źródło: Moja lokalna akcja w tej karcie")).toBe(true);
+      expect(ariaLabel).not.toContain("Synchronizacja między kartami");
+      expect(title).not.toContain("Synchronizacja między kartami");
+
+      // Anty-regresja serializacji: nigdy do DOM nie wycieka „undefined"/„null"
+      // jako część etykiety źródła.
       expect(document.body.textContent ?? "").not.toMatch(/Źródło:\s*(null|undefined)/i);
+
+      // Badge „lokalnie" pokazuje się — wariant lokalny ma `showLocalSuffix=true`
+      // (analogicznie do twardego source="local"), bo `getLastChangeLabelStyle`
+      // też defaultuje do local dla każdego source ≠ "remote".
+      const badge = screen.getByText("lokalnie");
+      expect(badge.getAttribute("aria-label")).toBe(
+        "Źródło: Moja lokalna akcja w tej karcie",
+      );
     });
 
     it("source=null + lastChangeAt=null: cała sekcja „Ostatnia zmiana” nie renderuje się", () => {
