@@ -768,20 +768,44 @@ const DiaryFullModule = ({
               <span className="font-semibold">{progressPct}%</span>
             </p>
           </div>
+          {/* 9-segmentowy pasek: każdy segment = 1 pytanie. Emerald = odpowiedziane,
+              primary/30 = puste. Pierwszy brakujący ma subtelny pulse dla orientacji. */}
           <div
-            className="h-2 rounded-full bg-muted overflow-hidden"
+            className="flex gap-1"
             role="progressbar"
             aria-valuemin={0}
             aria-valuemax={100}
             aria-valuenow={progressPct}
             aria-valuetext={`${completed} z ${total} pytań uzupełnione (${progressPct}%)`}
           >
-            <motion.div
-              className={`h-full ${entry.complete ? "bg-emerald-500" : "bg-primary"}`}
-              initial={false}
-              animate={{ width: `${progressPct}%` }}
-              transition={{ duration: 0.4, ease: easeOut }}
-            />
+            {entry.answers.map((a, i) => {
+              const answered = a !== null;
+              const isFirstMissing = !answered && missingQuestionNumbers[0] === i + 1;
+              return (
+                <motion.div
+                  key={i}
+                  className={`relative h-2 flex-1 rounded-full overflow-hidden ${
+                    answered
+                      ? entry.complete
+                        ? "bg-emerald-500"
+                        : "bg-primary"
+                      : "bg-primary/15 border border-primary/30"
+                  } ${isFirstMissing ? "ring-1 ring-primary/60" : ""}`}
+                  initial={false}
+                  animate={{ opacity: answered ? 1 : 0.85 }}
+                  transition={{ duration: 0.3, ease: easeOut }}
+                  title={`Pytanie ${i + 1}: ${answered ? "uzupełnione" : "brak odpowiedzi"}`}
+                  aria-hidden="true"
+                >
+                  {isFirstMissing && (
+                    <span
+                      className="absolute inset-0 bg-primary/20 animate-pulse"
+                      aria-hidden="true"
+                    />
+                  )}
+                </motion.div>
+              );
+            })}
           </div>
           {/* Dyskretny komunikat dla czytników ekranu — ogłaszany po każdej zaznaczonej
               odpowiedzi (toast pełni tę samą rolę wizualnie). */}
