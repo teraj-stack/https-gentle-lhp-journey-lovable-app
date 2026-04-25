@@ -786,6 +786,31 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
             </Button>
           </div>
 
+          {/*
+           * Trzeci przycisk demo: toggle „brak pełnej daty" (mostek pełnej szerokości
+           * pod gridem 2-kol). Świadomie wyciągnięty na osobny wiersz, bo NIE jest
+           * alternatywą wyboru źródła (remote/local), tylko ortogonalnym modyfikatorem
+           * wpływającym na linię czasu w tooltipie i aria-label.
+           */}
+          <Button
+            type="button"
+            variant={demoHideFullDate ? "default" : "outline"}
+            size="sm"
+            onClick={handleToggleHideFullDate}
+            aria-pressed={demoHideFullDate}
+            aria-label={
+              demoHideFullDate
+                ? "Wyłącz symulację braku pełnej daty (pokaż realny stempel czasowy w podglądzie)"
+                : "Symuluj brak pełnej daty (formatter zwraca pusty/invalid timestamp)"
+            }
+            className="justify-start text-xs"
+          >
+            <CalendarOff className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
+            {demoHideFullDate
+              ? "Symulacja: brak pełnej daty (włączona)"
+              : "Symuluj: brak pełnej daty"}
+          </Button>
+
           {demoSource !== null && demoAt !== null && (() => {
             // Generujemy podgląd dokładnie tymi samymi helperami, których używa główna
             // etykieta — `getLastChangeTooltipContent` (treść tooltipa + aria),
@@ -794,8 +819,27 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
             const demoTooltip = getLastChangeTooltipContent(demoSource);
             const demoStyle = getLastChangeLabelStyle(demoSource, /* isRemoteSyncing */ false);
             const demoRelative = formatTimestamp(demoAt, timeFormatMode);
-            const demoFull = formatFullTimestamp(demoAt);
+            // Pełna data: gdy toggle „brak pełnej daty" jest aktywny, wymuszamy
+            // pusty string — komponent musi spaść na `demoRelative` i dokleić
+            // kwalifikator a11y, dokładnie jak w produkcyjnej etykiecie.
+            const demoFull = demoHideFullDate ? "" : formatFullTimestamp(demoAt);
             const isDemoRemote = demoSource === "remote";
+            // Replikujemy logikę składania aria-label z głównej etykiety, żeby
+            // podgląd pokazał pacjentowi/audytorowi DOKŁADNIE ten string, który
+            // dostaje screen reader. Jakakolwiek rozbieżność = bug w demo.
+            const demoTimeValue = demoFull.trim().length > 0 ? demoFull : demoRelative;
+            const demoIsRelativeFallback =
+              demoFull.trim().length === 0 && demoRelative.trim().length > 0;
+            const demoTimeLine = demoTimeValue
+              ? `Czas: ${demoTimeValue}${demoIsRelativeFallback ? " (etykieta względna)" : ""}`
+              : null;
+            const demoAriaLabel = [
+              demoTooltip.ariaHeading,
+              demoTooltip.description,
+              demoTimeLine,
+            ]
+              .filter((line): line is string => Boolean(line && line.trim()))
+              .join("\n");
             return (
               <div
                 className="rounded-xl border border-border/60 bg-muted/20 px-3 py-3 space-y-2"
@@ -804,6 +848,11 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
               >
                 <p className="text-[10px] uppercase tracking-wider font-sans text-muted-foreground/70">
                   Podgląd etykiety
+                  {demoHideFullDate && (
+                    <span className="ml-2 inline-flex items-center px-1.5 py-0.5 text-[9px] uppercase tracking-wider font-mono rounded-md border border-amber-500/40 bg-amber-500/10 text-amber-300 align-middle normal-case">
+                      tryb: brak pełnej daty
+                    </span>
+                  )}
                 </p>
                 <div
                   className={`text-[11px] font-sans inline-flex items-center gap-1.5 ${demoStyle.containerClass}`}
@@ -837,13 +886,59 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
                   <p className="text-[11px] text-muted-foreground leading-snug">
                     {demoTooltip.description}
                   </p>
-                  <p className="text-[10px] text-muted-foreground/80 font-mono">
-                    {demoFull}
+                  {/*
+                   * Linia czasu w podglądzie tooltipa.
+                   *  - Tryb normalny: pełna data (np. „24 kwietnia 2026, 12:34:56").
+                   *  - Tryb „brak pełnej daty": fallback na etykietę względną
+                   *    (np. „2 minuty temu") z dodatkowym wskazaniem charakteru
+                   *    wartości — bursztynowa ramka + sufiks „(etykieta względna)".
+                   *    Bursztynowy kolor = ostrzegawczy znacznik degradacji,
+                   *    NIE error — bo to wciąż czytelna informacja, tylko mniej precyzyjna.
+                   */}
+                  {demoHideFullDate ? (
+                    <p
+                      className="text-[10px] text-amber-300 font-mono rounded border border-amber-500/30 bg-amber-500/5 px-1.5 py-1"
+                      title="Pełna data niedostępna — pokazujemy etykietę względną zamiast precyzyjnego stempla."
+                    >
+                      Czas: {demoRelative}{" "}
+                      <span className="text-amber-200/70">(etykieta względna)</span>
+                    </p>
+                  ) : (
+                    <p className="text-[10px] text-muted-foreground/80 font-mono">
+                      Czas: {demoFull}
+                    </p>
+                  )}
+                </div>
+
+                {/*
+                 * Podgląd dokładnego stringu, który trafia do `aria-label` triggera
+                 * tooltipa i `title` (fallback dla touch). Wyświetlamy w pre-bloku
+                 * z `whitespace-pre-line`, żeby pacjent/audytor a11y zobaczył
+                 * formatowanie 1:1 — w tym kwalifikator „(etykieta względna)" w
+                 * trybie fallback.
+                 */}
+                <div className="rounded-lg border border-border/40 bg-background/40 px-2.5 py-2 space-y-1">
+                  <p className="text-[10px] uppercase tracking-wider font-sans text-muted-foreground/70">
+                    Dane dla screen readera (aria-label / title)
                   </p>
+                  <pre
+                    className={`text-[10px] font-mono whitespace-pre-line leading-snug ${
+                      demoHideFullDate ? "text-amber-200" : "text-muted-foreground"
+                    }`}
+                    aria-label="Podgląd stringu aria-label triggera tooltipa"
+                  >
+                    {demoAriaLabel}
+                  </pre>
                 </div>
 
                 <p className="text-[10px] text-muted-foreground/70 italic leading-relaxed">
                   To jest tylko podgląd — realne zdarzenia auto-zapisu pojawią się w mini-historii i etykiecie powyżej.
+                  {demoHideFullDate && (
+                    <>
+                      {" "}Przełącznik „brak pełnej daty" pokazuje, jak komponent
+                      degraduje się gracefully, gdy formatter nie zwróci precyzyjnego stempla.
+                    </>
+                  )}
                 </p>
               </div>
             );
