@@ -844,6 +844,10 @@ export const useAutoSave = () => {
     setLastRemoteSyncAt(null);
     setSyncHistory([]);
     setIsRemoteSyncing(false);
+    // Reset również źródła ostatniej zmiany — etykieta znika razem z historią,
+    // a po następnej akcji (lokalnej lub zdalnej) źródło ustawia się na nowo.
+    setLastChangeSource(null);
+    setLastChangeAt(null);
     if (flashTimeoutRef.current) {
       clearTimeout(flashTimeoutRef.current);
       flashTimeoutRef.current = null;
