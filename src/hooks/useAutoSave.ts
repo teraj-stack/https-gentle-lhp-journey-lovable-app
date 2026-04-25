@@ -944,6 +944,15 @@ export const useAutoSave = () => {
      * i znacznik czasu — UI prezentuje kategorię jako badge, a opis jako podpis.
      */
     degradationInfo,
+    /**
+     * Pełna historia degradacji BroadcastChannel (do `DEGRADATION_HISTORY_LIMIT` wpisów,
+     * najnowsza pierwsza). Każdy wpis zawiera kategorię, opis, datownik i opcjonalny
+     * komunikat błędu — UI w panelu diagnostycznym filtruje to po typie i pokazuje
+     * licznik per kategoria oraz datowniki wszystkich incydentów.
+     */
+    degradationHistory,
+    /** Czyści historię degradacji (nie kasuje aktualnego degradationInfo). */
+    clearDegradationHistory,
     /** Czy obecnie symulujemy brak BC (diagnostycznie wymuszony fallback). */
     simulateFallback,
     /** Włącza/wyłącza symulację braku BC bez przeładowania strony. */
