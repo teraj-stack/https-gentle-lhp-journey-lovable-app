@@ -438,7 +438,50 @@ If you're porting fixtures from an i18next / react-intl / FormatJS project, this
 | Top-level prefix (`TRANSLATIONS` vs `TIME_LINE`) | Bucket / namespace in your i18n loader (e.g. i18next namespaces `tooltip` / `timeLine`) |
 | Reference locale `pl` | `defaultNS` / source language for fallback chains |
 
-##### Placeholder convention
+##### Placeholder matching rules (precise spec)
+
+The validator's placeholder check is **set-equality on identifier names**, computed per `(leaf-path, locale)` against the reference locale (`pl`). All other dimensions — order, repetition count, surrounding literal text — are intentionally **not** checked, because translators legitimately reorder placeholders and adjust prose between languages. The five rules below are the complete contract; anything not listed here is **not** enforced.
+
+| # | Dimension | Rule | Enforced? | Failure mode |
+| --- | --- | --- | --- | --- |
+| 1 | **Names** | Each placeholder is `{<identifier>}` where `<identifier>` matches `[A-Za-z_][A-Za-z0-9_]*` (ASCII only, no dots, no spaces). The validator builds a `Set<string>` of identifiers per leaf. | ✅ | `placeholder-mismatch` if the set differs from the reference set for the same key |
+| 2 | **Order** | Placeholders may appear in **any order** across locales. `"Hi {name}, you have {count}"` and `"Masz {count} wiadomości, {name}"` are equivalent. | ❌ (intentional) | None — order is a translator's prerogative |
+| 3 | **Repetition** | Each identifier may appear **0..N times** per leaf without changing its set membership. `"{name}, {name}!"` and `"{name}!"` are treated identically. | ❌ (intentional) | None — only presence/absence of the identifier matters |
+| 4 | **Optional placeholders** | **Not supported.** Every identifier in the reference locale's set is **required** in every other locale; every identifier in a non-reference locale must also exist in the reference. There is no `{name?}` syntax and no per-key opt-out. If you need a placeholder only in some locales, split the key into variants and add the variant to `REQUIRED_TRANSLATION_KEYS.variantOptional` (which downgrades **missing-key** to `::warning`, but **placeholder set parity is still `::error` once the key exists**). | ✅ (strict) | `placeholder-mismatch` for any asymmetry |
+| 5 | **Escaping** | There is **no escape sequence**. To render a literal `{` or `}` in user-facing copy, use a Unicode equivalent (`｛` U+FF5B, `｝` U+FF5D) or rephrase. Sequences that look like placeholders but fail the identifier regex (e.g. `{ count }` with spaces, `{user.name}` with a dot, `{0}` starting with a digit) are silently treated as **literal text** — they will neither match nor count as placeholders, which usually produces a `placeholder-mismatch` because the reference's real `{name}` won't have a counterpart. | ✅ | `placeholder-mismatch` (degraded — looks like "missing placeholder" because the malformed token isn't recognized) |
+
+###### What the validator does NOT check
+
+| Non-rule | Example that passes | Why it's allowed |
+| --- | --- | --- |
+| Order across locales | `pl: "{name} ma {count} wiadomości"` vs `en: "{name} has {count} messages"` — same order coincidentally, but `de: "{count} Nachrichten für {name}"` would also pass | Word order is grammar; placeholders carry semantic identity, not position |
+| Repetition count | `pl: "{name}!"` vs `en: "{name}, {name}!"` | Set membership is the contract; counting would block legitimate stylistic choices |
+| Surrounding literal text | Adding/removing punctuation, articles, or full clauses around the placeholder | The tooltip renderer interpolates by name, not by position |
+| Identifier casing convention | `{userName}` vs `{username}` | These are **different** identifiers — they will mismatch as rule #1 violations, not as casing warnings |
+
+###### Mismatch scenario → expected error type (cheat sheet)
+
+Use this table when writing a fixture: pick a row, mutate the locale string accordingly, and `grep '^::'` should show exactly the listed reason+severity.
+
+| Scenario | Reference (`pl`) | Mutated (e.g. `en`) | Validator output | Severity |
+| --- | --- | --- | --- | --- |
+| **Names match exactly** | `"Zmieniono {count} razy"` | `"Changed {count} times"` | (no annotation) | — |
+| **Names match, order differs** | `"{name}: {count} nowych"` | `"{count} new for {name}"` | (no annotation) | — |
+| **Names match, repetition differs** | `"{name}!"` | `"{name}, hi {name}!"` | (no annotation) | — |
+| **Missing placeholder** | `"Zmieniono {count} minut temu"` | `"Changed a few minutes ago"` | `::error … placeholder-mismatch::… is missing placeholder {count}` | `error` |
+| **Renamed placeholder** | `"Zmieniono {count} razy"` | `"Changed {n} times"` | `::error … placeholder-mismatch::… is missing placeholder {count} and has unexpected placeholder {n}` | `error` |
+| **Extra placeholder** | `"Zmieniono {count} razy"` | `"Changed {count} times ({locale})"` | `::error … placeholder-mismatch::… has unexpected placeholder {locale}` | `error` |
+| **Forbidden alternate** (`%d`, `%s`, `${name}`, `{{name}}`, `<name/>`) | `"Zmieniono {count} razy"` | `"Changed %d times"` | `::error … placeholder-mismatch::… is missing placeholder {count}` (alternate is invisible to the extractor) | `error` |
+| **Whitespace-padded identifier** | `"Zmieniono {count} razy"` | `"Changed { count } times"` | `::error … placeholder-mismatch::… is missing placeholder {count}` (the padded form is parsed as literal text) | `error` |
+| **Dotted / digit-leading identifier** | `"Zmieniono {count} razy"` | `"Changed {0} times"` or `"Changed {user.count} times"` | `::error … placeholder-mismatch::… is missing placeholder {count}` (regex rejects digit-leading and dotted forms) | `error` |
+| **Literal brace via Unicode** | `"Wybierz opcję {name}"` | `"Choose option ｛X｝ for {name}"` | (no annotation — `｛` U+FF5B is not a placeholder delimiter) | — |
+| **Optional placeholder syntax** | `"Zmieniono {count} razy"` | `"Changed {count?} times"` | `::error … placeholder-mismatch::… is missing placeholder {count}` (the `?` violates the identifier regex, so `{count?}` is parsed as literal text — degrades to a "missing" diagnosis) | `error` |
+
+> **Reading note**: every row above resolves to the **same** `reason=placeholder-mismatch` code with **same** `severity=error`. The differentiation is only in the message body — branch protection rules can therefore key on the single reason code without enumerating sub-types.
+
+##### Placeholder convention (legacy summary)
+
+The table below is the older one-liner version of the rules above, kept as a quick reference. Prefer the precise spec when authoring fixtures or onboarding contributors.
 
 | Aspect | Rule |
 | --- | --- |
