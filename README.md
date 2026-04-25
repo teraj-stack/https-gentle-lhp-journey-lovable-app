@@ -169,6 +169,99 @@ Things to notice:
 - Inside the **message body**, `:` and `,` stay literal — only `%`, `\r`, `\n` need encoding (`%25`, `%0D`, `%0A`).
 - Newlines in the message render as line breaks in the PR popover, so `%0A` is the safe way to write multi-line hints.
 
+#### Reproducible source fixtures
+
+These TypeScript snippets are paste-into-source ready against `src/lib/lastChangeTooltipContent.ts` and `lastChangeTooltipModel.ts`. Each one trips a specific `::error` / `::warning` reason — copy a snippet in, run the [Quickstart](#quickstart) command, and the matching annotation appears in stdout. (Note: this repo stores translations in TypeScript modules, not `locales/*.json` files — the validator reads the `.ts` source directly so it can resolve `(file, line)` for inline annotations.)
+
+**1. Reproduces `::error … missing-required-key`** — `en` is missing `local.heading`, which is listed in `REQUIRED_TRANSLATION_KEYS`:
+
+```ts
+// src/lib/lastChangeTooltipContent.ts
+export const TRANSLATIONS = {
+  pl: {
+    local: { heading: "Ostatnia zmiana", description: "…" },
+    sourcePrefix: "Źródło: ",
+  },
+  en: {
+    // ⛔ `local.heading` is required but absent — emitter points at the
+    //    `en: {` line because the key isn't there to point at.
+    local: { description: "…" },
+    sourcePrefix: "Source: ",
+  },
+} as const;
+```
+
+**2. Reproduces `::error … placeholder-mismatch`** — `pl` uses `%d` while the base locale uses `{count}`:
+
+```ts
+// src/lib/lastChangeTooltipModel.ts (TIME_LINE bucket)
+export const TIME_LINE = {
+  en: {
+    relative: {
+      minutesAgo: "Changed {count} minutes ago", // ✅ canonical placeholder
+    },
+  },
+  pl: {
+    relative: {
+      minutesAgo: "Zmieniono %d minut temu",     // ⛔ placeholder set differs
+    },
+  },
+} as const;
+```
+
+**3. Reproduces `::error … undeclared-key`** — `en` ships a key that isn't in `REQUIRED_TRANSLATION_KEYS` (so other locales aren't required to translate it — usually a typo or a forgotten autofix run):
+
+```ts
+// src/lib/lastChangeTooltipContent.ts
+export const TRANSLATIONS = {
+  pl: { local: { heading: "Ostatnia zmiana" } },
+  en: {
+    local: {
+      heading: "Last change",
+      // ⛔ `subheading` is not in REQUIRED_TRANSLATION_KEYS — drift signal.
+      //    Fix: `npm run i18n:autofix` to register it, or delete it.
+      subheading: "(uncategorised)",
+    },
+  },
+} as const;
+```
+
+**4. Reproduces `::warning … empty-optional-value`** — `de` declares an optional key but leaves the value empty (yellow marker, does NOT fail the build):
+
+```ts
+// src/lib/lastChangeTooltipModel.ts
+export const TIME_LINE = {
+  en: { relative: { minutesAgo: "Changed {count} minutes ago" } },
+  de: {
+    relative: {
+      minutesAgo: "", // ⚠️ empty string for an optional key → `::warning`
+    },
+  },
+} as const;
+```
+
+**5. Reproduces `::error … wrong-type`** — `it` provides a non-string value for a key that the contract declares as a `string`:
+
+```ts
+// src/lib/lastChangeTooltipContent.ts
+export const TRANSLATIONS = {
+  pl: { local: { heading: "Ostatnia zmiana" } },
+  it: {
+    // ⛔ Number where a string is expected — annotation message embeds the
+    //    actual line so reviewers see `heading: 42,` directly.
+    local: { heading: 42 as unknown as string },
+  },
+} as const;
+```
+
+After pasting any one of these, run:
+
+```sh
+GITHUB_ACTIONS=true bunx vitest run src/lib/i18nRequiredKeys.test.ts src/lib/i18nContract.test.ts src/lib/i18nPlaceholders.test.ts 2>&1 | grep '^::'
+```
+
+You should see exactly one `::<level>` line per fixture, with `line=` pointing at the highlighted row in the snippet. Revert the snippet (or `git checkout`) when you're done — these are demonstration-only edits.
+
 ### Source line resolution
 
 Each annotation needs `(file, line)` to land on the offending key. The resolver (`findKeyLine` in `i18nGithubAnnotations.ts`) is **indentation-based** and assumes the codebase convention used in `src/lib/lastChangeTooltipContent.ts` and `src/lib/lastChangeTooltipModel.ts`:
