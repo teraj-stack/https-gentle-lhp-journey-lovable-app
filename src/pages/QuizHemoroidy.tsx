@@ -5,6 +5,7 @@ import { BREADCRUMBS_MAP } from "@/lib/breadcrumbsMap";
 import SeoHead from "@/components/shared/SeoHead";
 import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 import HemoroidyRiskQuiz from "@/components/hemoroidy/HemoroidyRiskQuiz";
+import QuizRetakeModule from "@/components/hemoroidy/QuizRetakeModule";
 import QuizHistorySection from "@/components/hemoroidy/QuizHistorySection";
 import HemoroidyChecklistSections from "@/components/hemoroidy/HemoroidyChecklistSections";
 import EBMSourcesSection from "@/components/hemoroidy/EBMSourcesSection";
@@ -108,8 +109,13 @@ const QuizHemoroidy = () => {
             </div>
           </motion.aside>
 
-          {/* History — local trend of past quiz results */}
+          {/* Retake module — side-by-side comparison + restart CTA */}
           <div className="mt-12 max-w-3xl mx-auto">
+            <QuizRetakeModule />
+          </div>
+
+          {/* History — local trend of past quiz results */}
+          <div className="mt-8 max-w-3xl mx-auto">
             <QuizHistorySection />
           </div>
 
