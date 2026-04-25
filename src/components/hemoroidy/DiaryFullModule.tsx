@@ -555,7 +555,7 @@ const DiaryFullModule = ({
     reader.readAsText(file);
   };
 
-
+  const goPrev = () => {
     const i = days.indexOf(activeDate);
     if (i > 0) setActiveDate(days[i - 1]);
   };
