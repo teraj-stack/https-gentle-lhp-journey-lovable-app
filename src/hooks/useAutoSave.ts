@@ -14,6 +14,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
  *
  * Każdy emit niesie pełną wartość boolean — odbiorcy nie muszą czytać localStorage,
  * dzięki czemu unikamy race conditions i niepotrzebnych re-readów.
+ *
+ * Dodatkowo kanał obsługuje wiadomości diagnostyczne `ping`/`pong` (typowane przez `kind`),
+ * używane przez przycisk „Test synchronizacji" w panelu ustawień. Nadawca wysyła `ping`
+ * z unikalnym `pingId`, każda inna karta odpowiada `pong`-iem. Nadawca zbiera odpowiedzi
+ * przez 5 s i prezentuje listę kart, które potwierdziły odbiór.
  */
 
 const STORAGE_KEY = "cml.hemoroidy.autosave.v1";
@@ -42,11 +47,33 @@ const writeStored = (enabled: boolean) => {
   }
 };
 
-interface BroadcastPayload {
+interface StateBroadcastPayload {
+  kind?: "state"; // brak `kind` = legacy state (back-compat z poprzednią wersją hooka)
   enabled: boolean;
   /** Identyfikator nadawcy — odbiorca pomija własne wiadomości w within-tab CustomEvent. */
   origin: string;
 }
+
+interface PingPayload {
+  kind: "ping";
+  pingId: string;
+  origin: string;
+  /** Krótka, czytelna etykieta karty (np. „Karta abc12") — do pokazania w UI. */
+  label: string;
+  sentAt: number;
+}
+
+interface PongPayload {
+  kind: "pong";
+  pingId: string;
+  origin: string;
+  label: string;
+  /** Aktualny stan przełącznika u odbiorcy — żeby nadawca mógł zweryfikować spójność. */
+  enabled: boolean;
+  receivedAt: number;
+}
+
+type ChannelPayload = StateBroadcastPayload | PingPayload | PongPayload;
 
 /** Identyfikator instancji karty — generowany raz przy ładowaniu modułu. */
 const TAB_ID =
@@ -54,32 +81,47 @@ const TAB_ID =
     ? window.crypto.randomUUID()
     : `tab-${Math.random().toString(36).slice(2)}-${Date.now()}`;
 
+/** Krótka, ludzka etykieta karty (pierwsze 6 znaków UUID). */
+const TAB_LABEL = `Karta ${TAB_ID.slice(0, 6)}`;
+
 /** Czas trwania flagi „świeża zdalna synchronizacja" (ms) — używany do animacji pulsu w UI. */
 const REMOTE_SYNC_FLASH_MS = 1500;
 
+/** Czas zbierania odpowiedzi pong na pojedynczy ping (ms). */
+const PING_COLLECTION_WINDOW_MS = 5000;
+
+export interface PongResponse {
+  origin: string;
+  label: string;
+  enabled: boolean;
+  /** Latencja od wysłania ping do otrzymania pong (ms). */
+  latencyMs: number;
+}
+
 export const useAutoSave = () => {
   const [enabled, setEnabled] = useState<boolean>(() => readStored());
-  /**
-   * Monotoniczny licznik nadpisywany za każdym razem, gdy stan przyszedł z innej instancji
-   * (inna karta przez BroadcastChannel/storage, albo inna instancja hooka w tej samej karcie).
-   * Konsumenci mogą obserwować zmianę wartości, żeby uruchomić animację „flash".
-   * 0 = brak zdalnej synchronizacji od montażu.
-   */
   const [remoteSyncTick, setRemoteSyncTick] = useState(0);
-  /**
-   * Boolean pochodny — `true` przez krótką chwilę (REMOTE_SYNC_FLASH_MS) po każdej zdalnej
-   * synchronizacji. Używany do warunkowego pulsu badge „Auto-zapis: ON/OFF".
-   */
   const [isRemoteSyncing, setIsRemoteSyncing] = useState(false);
-  /**
-   * Znacznik czasu (epoch ms) ostatniej zdalnej synchronizacji. `null` przed pierwszym zdarzeniem.
-   * Konsumenci mogą sformatować go jako relatywny czas („przed chwilą", „2 min temu").
-   */
   const [lastRemoteSyncAt, setLastRemoteSyncAt] = useState<number | null>(null);
+
+  /**
+   * Stan testu synchronizacji: aktywny pingId (lub null), znacznik wysłania,
+   * lista odpowiedzi i flaga „w trakcie zbierania".
+   */
+  const [pingState, setPingState] = useState<{
+    pingId: string | null;
+    sentAt: number | null;
+    responses: PongResponse[];
+    isCollecting: boolean;
+  }>({ pingId: null, sentAt: null, responses: [], isCollecting: false });
+
   const channelRef = useRef<BroadcastChannel | null>(null);
   const flashTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pingCollectionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** Trzymamy aktywny pingId w refie, żeby handler kanału nie musiał być re-bindowany. */
+  const activePingIdRef = useRef<string | null>(null);
+  const pingSentAtRef = useRef<number | null>(null);
 
-  /** Zaznacz, że właśnie przyszła zdalna synchronizacja — uruchom flash + auto-reset po czasie. */
   const markRemoteSync = useCallback(() => {
     setRemoteSyncTick((n) => n + 1);
     setIsRemoteSyncing(true);
@@ -97,11 +139,56 @@ export const useAutoSave = () => {
     const channel = new BroadcastChannel(CHANNEL_NAME);
     channelRef.current = channel;
 
-    const onMessage = (e: MessageEvent<BroadcastPayload>) => {
+    const onMessage = (e: MessageEvent<ChannelPayload>) => {
       const data = e.data;
-      if (!data || typeof data.enabled !== "boolean") return;
-      if (data.origin === TAB_ID) return; // ignorujemy echo własnego nadania
-      setEnabled(data.enabled);
+      if (!data) return;
+
+      // PING — odpowiedz pong-iem, jeśli to nie my pytamy.
+      if ((data as PingPayload).kind === "ping") {
+        const ping = data as PingPayload;
+        if (ping.origin === TAB_ID) return; // własny ping
+        const pong: PongPayload = {
+          kind: "pong",
+          pingId: ping.pingId,
+          origin: TAB_ID,
+          label: TAB_LABEL,
+          enabled: readStored(),
+          receivedAt: Date.now(),
+        };
+        try {
+          channel.postMessage(pong);
+        } catch {
+          // kanał zamknięty — pomijamy
+        }
+        return;
+      }
+
+      // PONG — zbierz odpowiedź na nasz aktywny ping.
+      if ((data as PongPayload).kind === "pong") {
+        const pong = data as PongPayload;
+        if (pong.origin === TAB_ID) return; // echo własnej odpowiedzi (nie powinno się zdarzyć, ale safety net)
+        if (pong.pingId !== activePingIdRef.current) return; // pong do starego pinga — ignoruj
+        const sentAt = pingSentAtRef.current ?? Date.now();
+        const latencyMs = Math.max(0, Date.now() - sentAt);
+        setPingState((prev) => {
+          // dedupe po origin (jakby ta sama karta odpowiedziała 2x)
+          if (prev.responses.some((r) => r.origin === pong.origin)) return prev;
+          return {
+            ...prev,
+            responses: [
+              ...prev.responses,
+              { origin: pong.origin, label: pong.label, enabled: pong.enabled, latencyMs },
+            ],
+          };
+        });
+        return;
+      }
+
+      // STATE (legacy: brak `kind` lub kind === "state").
+      const statePayload = data as StateBroadcastPayload;
+      if (typeof statePayload.enabled !== "boolean") return;
+      if (statePayload.origin === TAB_ID) return; // ignorujemy echo własnego nadania
+      setEnabled(statePayload.enabled);
       markRemoteSync();
     };
     channel.addEventListener("message", onMessage);
@@ -113,14 +200,12 @@ export const useAutoSave = () => {
     };
   }, [markRemoteSync]);
 
-  // Fallback: storage event (gdy inna karta nadpisała localStorage)
-  // + CustomEvent w tej samej karcie (dla wielu instancji hooka).
+  // Fallback: storage event + within-tab CustomEvent.
   useEffect(() => {
     if (!isBrowser()) return;
 
     const onStorage = (e: StorageEvent) => {
       if (e.key !== STORAGE_KEY && e.key !== null) return;
-      // e.key === null oznacza localStorage.clear() z innej karty — re-read i tak da default.
       const next = readStored();
       setEnabled((prev) => {
         if (prev !== next) markRemoteSync();
@@ -128,14 +213,13 @@ export const useAutoSave = () => {
       });
     };
     const onCustom = (e: Event) => {
-      const detail = (e as CustomEvent<BroadcastPayload | undefined>).detail;
+      const detail = (e as CustomEvent<StateBroadcastPayload | undefined>).detail;
       if (detail && typeof detail.enabled === "boolean") {
-        if (detail.origin === TAB_ID) return; // własne emit — już mamy stan w setEnabled
+        if (detail.origin === TAB_ID) return;
         setEnabled(detail.enabled);
         markRemoteSync();
         return;
       }
-      // brak payloadu (back-compat) — fallback na re-read
       const next = readStored();
       setEnabled((prev) => {
         if (prev !== next) markRemoteSync();
@@ -151,10 +235,11 @@ export const useAutoSave = () => {
     };
   }, [markRemoteSync]);
 
-  // Cleanup wiszącego timeoutu przy unmount.
+  // Cleanup timeoutów przy unmount.
   useEffect(() => {
     return () => {
       if (flashTimeoutRef.current) clearTimeout(flashTimeoutRef.current);
+      if (pingCollectionTimeoutRef.current) clearTimeout(pingCollectionTimeoutRef.current);
     };
   }, []);
 
@@ -162,24 +247,90 @@ export const useAutoSave = () => {
     setEnabled(next);
     writeStored(next);
 
-    const payload: BroadcastPayload = { enabled: next, origin: TAB_ID };
+    const payload: StateBroadcastPayload = { kind: "state", enabled: next, origin: TAB_ID };
 
-    // Push do innych kart (instant, bez retry localStorage).
     try {
       channelRef.current?.postMessage(payload);
     } catch {
-      // BroadcastChannel zamknięty / niedostępny — storage event i tak zadziała
+      // BroadcastChannel niedostępny — storage event zadziała
     }
 
-    // Push do innych instancji hooka w tej samej karcie.
     if (isBrowser()) {
       try {
         window.dispatchEvent(new CustomEvent(EVENT_NAME, { detail: payload }));
       } catch {
-        // bardzo stare przeglądarki bez CustomEvent — pomijamy
+        // pomijamy
       }
     }
   }, []);
 
-  return { enabled, setEnabled: toggle, isRemoteSyncing, remoteSyncTick, lastRemoteSyncAt };
+  /**
+   * Wyślij ping diagnostyczny i zacznij zbierać pongi przez PING_COLLECTION_WINDOW_MS.
+   * Zwraca Promise rozwiązany listą odpowiedzi (po zamknięciu okna).
+   */
+  const sendPing = useCallback((): Promise<PongResponse[]> => {
+    const pingId =
+      isBrowser() && "crypto" in window && "randomUUID" in window.crypto
+        ? window.crypto.randomUUID()
+        : `ping-${Math.random().toString(36).slice(2)}-${Date.now()}`;
+    const sentAt = Date.now();
+
+    activePingIdRef.current = pingId;
+    pingSentAtRef.current = sentAt;
+    setPingState({ pingId, sentAt, responses: [], isCollecting: true });
+
+    const ping: PingPayload = {
+      kind: "ping",
+      pingId,
+      origin: TAB_ID,
+      label: TAB_LABEL,
+      sentAt,
+    };
+
+    try {
+      channelRef.current?.postMessage(ping);
+    } catch {
+      // kanał niedostępny — Promise rozwiąże się pustą listą po timeout
+    }
+
+    return new Promise((resolve) => {
+      if (pingCollectionTimeoutRef.current) clearTimeout(pingCollectionTimeoutRef.current);
+      pingCollectionTimeoutRef.current = setTimeout(() => {
+        setPingState((prev) => {
+          // tylko zamknij okno zbierania — zachowaj odpowiedzi, żeby UI mogło je pokazać
+          const finalResponses = prev.pingId === pingId ? prev.responses : prev.responses;
+          resolve(finalResponses);
+          return { ...prev, isCollecting: false };
+        });
+        pingCollectionTimeoutRef.current = null;
+      }, PING_COLLECTION_WINDOW_MS);
+    });
+  }, []);
+
+  /** Wyczyść wynik testu (np. po kliknięciu „X" lub przy nowym pingu). */
+  const clearPing = useCallback(() => {
+    if (pingCollectionTimeoutRef.current) {
+      clearTimeout(pingCollectionTimeoutRef.current);
+      pingCollectionTimeoutRef.current = null;
+    }
+    activePingIdRef.current = null;
+    pingSentAtRef.current = null;
+    setPingState({ pingId: null, sentAt: null, responses: [], isCollecting: false });
+  }, []);
+
+  return {
+    enabled,
+    setEnabled: toggle,
+    isRemoteSyncing,
+    remoteSyncTick,
+    lastRemoteSyncAt,
+    /** Etykieta tej karty — pokazywana w UI obok przycisku testu. */
+    tabLabel: TAB_LABEL,
+    /** Stan testu synchronizacji (ping/pong). */
+    pingState,
+    sendPing,
+    clearPing,
+    /** Czy BroadcastChannel jest dostępny (niektóre tryby prywatne go nie mają). */
+    isBroadcastSupported: isBrowser() && typeof BroadcastChannel !== "undefined",
+  };
 };
