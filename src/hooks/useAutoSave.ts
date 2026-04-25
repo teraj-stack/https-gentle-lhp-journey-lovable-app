@@ -132,11 +132,37 @@ export interface PongResponse {
   latencyMs: number;
 }
 
+/**
+ * Pojedynczy wpis w historii synchronizacji — pokazywany w panelu ustawień jako
+ * lista ostatnich N zmian. Źródło wskazuje, którym kanałem przyszła wiadomość:
+ * BroadcastChannel (główny), storage event (cross-tab fallback) lub CustomEvent
+ * (within-tab, gdy jest wiele instancji hooka w jednej karcie).
+ */
+export interface SyncHistoryEntry {
+  /** Unikalny id wpisu — używany jako React key (timestamp + counter wystarczy, brak kolizji w obrębie jednej sesji). */
+  id: string;
+  /** Kiedy aplikowano zmianę (ms epoch). */
+  at: number;
+  /** Wartość, którą ustawiono po synchronizacji. */
+  enabled: boolean;
+  /** Źródło sygnału. */
+  source: "broadcast" | "storage" | "custom-event";
+}
+
+const HISTORY_LIMIT = 5;
+let historyCounter = 0;
+
 export const useAutoSave = () => {
   const [enabled, setEnabled] = useState<boolean>(() => readStored());
   const [remoteSyncTick, setRemoteSyncTick] = useState(0);
   const [isRemoteSyncing, setIsRemoteSyncing] = useState(false);
   const [lastRemoteSyncAt, setLastRemoteSyncAt] = useState<number | null>(null);
+  /**
+   * Historia ostatnich N zdalnych synchronizacji (najnowsza pierwsza).
+   * Trzymamy w state, żeby UI mogło reagować, ale ograniczamy do HISTORY_LIMIT,
+   * by nie rosła w nieskończoność na karcie otwartej godzinami.
+   */
+  const [syncHistory, setSyncHistory] = useState<SyncHistoryEntry[]>([]);
   /**
    * Aktywny transport synchronizacji. „broadcast" = BroadcastChannel działa,
    * „storage-fallback" = używamy tylko storage event + CustomEvent (np. tryb
@@ -180,16 +206,28 @@ export const useAutoSave = () => {
    */
   const lastAppliedVersionRef = useRef<[number, number]>([0, 0]);
 
-  const markRemoteSync = useCallback(() => {
-    setRemoteSyncTick((n) => n + 1);
-    setIsRemoteSyncing(true);
-    setLastRemoteSyncAt(Date.now());
-    if (flashTimeoutRef.current) clearTimeout(flashTimeoutRef.current);
-    flashTimeoutRef.current = setTimeout(() => {
-      setIsRemoteSyncing(false);
-      flashTimeoutRef.current = null;
-    }, REMOTE_SYNC_FLASH_MS);
-  }, []);
+  const markRemoteSync = useCallback(
+    (source: SyncHistoryEntry["source"], enabledValue: boolean) => {
+      const at = Date.now();
+      historyCounter += 1;
+      const entry: SyncHistoryEntry = {
+        id: `${at}-${historyCounter}`,
+        at,
+        enabled: enabledValue,
+        source,
+      };
+      setSyncHistory((prev) => [entry, ...prev].slice(0, HISTORY_LIMIT));
+      setRemoteSyncTick((n) => n + 1);
+      setIsRemoteSyncing(true);
+      setLastRemoteSyncAt(at);
+      if (flashTimeoutRef.current) clearTimeout(flashTimeoutRef.current);
+      flashTimeoutRef.current = setTimeout(() => {
+        setIsRemoteSyncing(false);
+        flashTimeoutRef.current = null;
+      }, REMOTE_SYNC_FLASH_MS);
+    },
+    [],
+  );
 
   // Inicjalizacja BroadcastChannel (jedna na życie hooka).
   useEffect(() => {
@@ -264,7 +302,7 @@ export const useAutoSave = () => {
       if (compareVersions(statePayload.version, lastAppliedVersionRef.current) <= 0) return;
       lastAppliedVersionRef.current = statePayload.version ?? [Date.now(), 0];
       setEnabled((prev) => {
-        if (prev !== statePayload.enabled) markRemoteSync();
+        if (prev !== statePayload.enabled) markRemoteSync("broadcast", statePayload.enabled);
         return statePayload.enabled;
       });
     };
@@ -307,7 +345,7 @@ export const useAutoSave = () => {
         const synthetic: [number, number] = [Date.now(), 0];
         if (compareVersions(synthetic, lastAppliedVersionRef.current) <= 0) return prev;
         lastAppliedVersionRef.current = synthetic;
-        markRemoteSync();
+        markRemoteSync("storage", next);
         return next;
       });
     };
@@ -319,7 +357,7 @@ export const useAutoSave = () => {
         if (compareVersions(detail.version, lastAppliedVersionRef.current) <= 0) return;
         lastAppliedVersionRef.current = detail.version ?? [Date.now(), 0];
         setEnabled((prev) => {
-          if (prev !== detail.enabled) markRemoteSync();
+          if (prev !== detail.enabled) markRemoteSync("custom-event", detail.enabled);
           return detail.enabled;
         });
         return;
@@ -331,7 +369,7 @@ export const useAutoSave = () => {
         const synthetic: [number, number] = [Date.now(), 0];
         if (compareVersions(synthetic, lastAppliedVersionRef.current) <= 0) return prev;
         lastAppliedVersionRef.current = synthetic;
-        markRemoteSync();
+        markRemoteSync("custom-event", next);
         return next;
       });
     };
@@ -476,5 +514,7 @@ export const useAutoSave = () => {
     isBroadcastSupported: transport === "broadcast",
     /** Aktywny transport — przydatne do diagnostyki w UI ustawień. */
     transport,
+    /** Historia ostatnich {HISTORY_LIMIT} zdalnych synchronizacji (najnowsza pierwsza). */
+    syncHistory,
   };
 };
