@@ -9,6 +9,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { BookMarked, Download, ExternalLink, Salad, Droplet, Timer, Activity, Stethoscope, ScrollText, AlertCircle, Microscope, Info, Search, X } from "lucide-react";
+import { trackEbmClick } from "@/lib/ebmAnalytics";
 
 const normalize = (s: string): string =>
   s
@@ -559,6 +560,15 @@ const EBMSourcesSection = ({
                           target="_blank"
                           rel="noopener noreferrer nofollow external"
                           referrerPolicy="no-referrer"
+                          onClick={() =>
+                            trackEbmClick({
+                              url: src.url,
+                              label: src.title,
+                              source: "EBMSourcesSection",
+                              kind: "external_source",
+                              ebmId: cat.id,
+                            })
+                          }
                           aria-label={`${src.title} — otwiera się w nowej karcie`}
                           title="Otwórz źródło w nowej karcie"
                           className="text-primary hover:underline inline-flex items-center gap-1 break-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded-sm"

@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/accordion";
 import { Input } from "@/components/ui/input";
 import { Link } from "react-router-dom";
+import { trackEbmClick } from "@/lib/ebmAnalytics";
 
 /** Polski-friendly normalizer: lowercase + usuwa diakrytyki */
 const normalize = (s: string) =>
@@ -422,6 +423,15 @@ const RiskFactorsAccordion = () => {
                             href={s.url}
                             target="_blank"
                             rel="noopener noreferrer"
+                            onClick={() =>
+                              trackEbmClick({
+                                url: s.url,
+                                label: s.label,
+                                source: "RiskFactorsAccordion",
+                                kind: "external_source",
+                                ebmId: s.ebmId,
+                              })
+                            }
                             className="text-primary hover:underline inline-flex items-start gap-1.5 leading-snug"
                           >
                             <span className="flex-1">{s.label}</span>
@@ -430,6 +440,15 @@ const RiskFactorsAccordion = () => {
                           {s.ebmId && (
                             <Link
                               to={`/dla-pacjenta/ebm-hemoroidy#ebm-${s.ebmId}`}
+                              onClick={() =>
+                                trackEbmClick({
+                                  url: `/dla-pacjenta/ebm-hemoroidy#ebm-${s.ebmId}`,
+                                  label: `kategoria bibliografii: ${s.ebmId}`,
+                                  source: "RiskFactorsAccordion",
+                                  kind: "internal_anchor",
+                                  ebmId: s.ebmId,
+                                })
+                              }
                               className="text-[11.5px] sm:text-xs text-muted-foreground hover:text-primary underline-offset-2 hover:underline w-fit"
                             >
                               → kategoria w bibliografii
@@ -477,6 +496,14 @@ const RiskFactorsAccordion = () => {
         Pełna bibliografia z linkami do PubMed, ASCRS, ESCP i Cochrane:{" "}
         <Link
           to="/dla-pacjenta/ebm-hemoroidy#bibliografia"
+          onClick={() =>
+            trackEbmClick({
+              url: "/dla-pacjenta/ebm-hemoroidy#bibliografia",
+              label: "Pełna bibliografia EBM",
+              source: "RiskFactorsAccordion",
+              kind: "internal_anchor",
+            })
+          }
           className="text-primary hover:underline"
         >
           moduł „Źródła EBM" →
@@ -708,6 +735,15 @@ const RiskVsPreventionTable = () => {
                     target="_blank"
                     rel="noopener noreferrer nofollow external"
                     referrerPolicy="no-referrer"
+                    onClick={() =>
+                      trackEbmClick({
+                        url: row.source.url,
+                        label: row.source.label,
+                        source: "RiskVsPreventionTable:desktop",
+                        kind: "external_source",
+                        ebmId: row.source.ebmId,
+                      })
+                    }
                     title="Otwórz źródło w nowej karcie"
                     className="text-primary hover:underline inline-flex items-start gap-1 leading-snug text-[13px]"
                   >
@@ -717,6 +753,15 @@ const RiskVsPreventionTable = () => {
                   {row.source.ebmId && (
                     <Link
                       to={`/dla-pacjenta/ebm-hemoroidy#ebm-${row.source.ebmId}`}
+                      onClick={() =>
+                        trackEbmClick({
+                          url: `/dla-pacjenta/ebm-hemoroidy#ebm-${row.source.ebmId}`,
+                          label: `kategoria bibliografii: ${row.source.ebmId}`,
+                          source: "RiskVsPreventionTable:desktop",
+                          kind: "internal_anchor",
+                          ebmId: row.source.ebmId,
+                        })
+                      }
                       className="block mt-1 text-[11.5px] text-muted-foreground hover:text-primary underline-offset-2 hover:underline"
                     >
                       → kategoria w bibliografii
@@ -755,6 +800,15 @@ const RiskVsPreventionTable = () => {
               target="_blank"
               rel="noopener noreferrer nofollow external"
               referrerPolicy="no-referrer"
+              onClick={() =>
+                trackEbmClick({
+                  url: row.source.url,
+                  label: row.source.label,
+                  source: "RiskVsPreventionTable:mobile",
+                  kind: "external_source",
+                  ebmId: row.source.ebmId,
+                })
+              }
               className="text-primary hover:underline inline-flex items-start gap-1.5 leading-snug text-[13px]"
             >
               <ExternalLink className="w-3 h-3 mt-1 shrink-0" aria-hidden="true" />
@@ -763,6 +817,15 @@ const RiskVsPreventionTable = () => {
             {row.source.ebmId && (
               <Link
                 to={`/dla-pacjenta/ebm-hemoroidy#ebm-${row.source.ebmId}`}
+                onClick={() =>
+                  trackEbmClick({
+                    url: `/dla-pacjenta/ebm-hemoroidy#ebm-${row.source.ebmId}`,
+                    label: `kategoria bibliografii: ${row.source.ebmId}`,
+                    source: "RiskVsPreventionTable:mobile",
+                    kind: "internal_anchor",
+                    ebmId: row.source.ebmId,
+                  })
+                }
                 className="block mt-1.5 text-[11.5px] text-muted-foreground hover:text-primary underline-offset-2 hover:underline"
               >
                 → kategoria w bibliografii
