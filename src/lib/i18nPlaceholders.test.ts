@@ -221,6 +221,33 @@ describe("i18n placeholder parity — static tokens consistent across locales", 
 const SENTINEL_TIME_FULL = "⏱FULL-DATE-SENTINEL-2026-Z⏱";
 const SENTINEL_TIME_RELATIVE = "⏰REL-LABEL-SENTINEL-XYZ⏰";
 
+/**
+ * Wyciąga DOKŁADNY qualifier dla danego locale przez analizę modelu w trybie
+ * fallback. NIE używamy tu regexu `/\([^)]+\)/`, bo `description` (np. PL
+ * „Sam(a) przełączyłe(a)ś…") sama zawiera nawiasy — fałszywie złapałby je
+ * jako qualifier i kompletnie rozjechał liczenie.
+ *
+ * Kontrakt buildera (patrz `lastChangeTooltipModel.ts`): w trybie fallback
+ * `timeLineForA11y === composeTimeLine(value, locale) + " " + qualifier`.
+ * Czyli qualifier = `timeLineForA11y.slice((prefix + value).length + 1)` —
+ * deterministyczne, locale-agnostic, oparte WYŁĄCZNIE na publicznym kontrakcie.
+ */
+const deriveQualifierForLocale = (locale: Locale): string => {
+  const fallback = buildLastChangeTooltipModel({
+    source: "local",
+    fullDate: null,
+    relativeLabel: SENTINEL_TIME_RELATIVE,
+    locale,
+  });
+  const line = fallback.timeLineForA11y ?? "";
+  // prefix + value + " " + qualifier
+  const sentinelIdx = line.lastIndexOf(SENTINEL_TIME_RELATIVE);
+  if (sentinelIdx === -1) return "";
+  const after = line.slice(sentinelIdx + SENTINEL_TIME_RELATIVE.length);
+  // `after` zaczyna się od " " (single space separator), wycinamy ją.
+  return after.startsWith(" ") ? after.slice(1) : after;
+};
+
 describe("i18n placeholder parity — dynamic values appear exactly N times in ariaText", () => {
   it("scenariusz A: full date — wszystkie składniki dokładnie raz, żaden qualifier nie wycieka", () => {
     const violations: Violation[] = [];
