@@ -808,6 +808,25 @@ export const useAutoSave = () => {
     // Jeśli kanał był trwale zdegradowany, transport i info zostają — to nie symulacja, tylko realny fallback.
   }, []);
 
+  /**
+   * Czyści wyświetlaną w UI historię „Ostatnia zmiana": resetuje znacznik
+   * `lastRemoteSyncAt`, listę `syncHistory` oraz natychmiast wygasza flagę
+   * podświetlenia (`isRemoteSyncing`), żeby UI nie pulsowało resztkową animacją.
+   *
+   * UWAGA: nie dotyka stanu samego przełącznika (`enabled`) ani transportu —
+   * to wyłącznie reset prezentacyjny. Kolejna zdalna synchronizacja zaczyna
+   * historię od nowa, więc operacja jest bezpieczna i odwracalna w sposób naturalny.
+   */
+  const clearSyncHistory = useCallback(() => {
+    setLastRemoteSyncAt(null);
+    setSyncHistory([]);
+    setIsRemoteSyncing(false);
+    if (flashTimeoutRef.current) {
+      clearTimeout(flashTimeoutRef.current);
+      flashTimeoutRef.current = null;
+    }
+  }, []);
+
   return {
     enabled,
     setEnabled: toggle,
@@ -842,5 +861,10 @@ export const useAutoSave = () => {
     setSimulateFallback: setSimulateFallbackMode,
     /** Historia ostatnich {HISTORY_LIMIT} zdalnych synchronizacji (najnowsza pierwsza). */
     syncHistory,
+    /**
+     * Czyści wyświetlaną historię synchronizacji (lastRemoteSyncAt + syncHistory + flash).
+     * Nie wpływa na stan przełącznika ani transport — jest czysto prezentacyjne.
+     */
+    clearSyncHistory,
   };
 };
