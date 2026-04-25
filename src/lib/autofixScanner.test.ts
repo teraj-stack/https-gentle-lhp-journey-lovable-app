@@ -30,6 +30,9 @@ import {
   collectTranslatorCallKeys,
   collectOptionalVariantReads,
   categoriseHelperPath,
+  parseCurrentTranslationKeys,
+  parseCurrentTimeLineKeys,
+  diffKeys,
 } from "./autofixScannerShim";
 
 describe("autofix scanner — collectDotMemberReads", () => {
