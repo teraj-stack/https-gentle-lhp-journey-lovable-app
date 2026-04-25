@@ -81,6 +81,11 @@ interface Violation {
 
 const formatViolations = (violations: Violation[]): string => {
   if (violations.length === 0) return "";
+  // Emit GitHub Actions inline annotations (no-op outside CI). This must
+  // happen on the SAME call that builds the developer-facing message so
+  // the two reports stay perfectly in sync — every issue surfaced in the
+  // test output also gets an inline marker on the PR diff.
+  emitGithubAnnotations(violations, "i18n required keys");
   const localesAffected = new Set(violations.map((v) => v.locale));
   const header = `❌ i18n required-keys violations (${violations.length} issue(s) across ${localesAffected.size} locale(s)):`;
   const sorted = [...violations].sort((a, b) => {
