@@ -906,6 +906,16 @@ export const useAutoSave = () => {
     }
   }, []);
 
+  /**
+   * Czyści historię degradacji BroadcastChannel (lista incydentów). Nie kasuje
+   * `degradationInfo` (aktualny status BC) ani transportu — to czysty reset
+   * licznika dla diagnostyki, żeby pacjent mógł zacząć obserwację od zera
+   * (np. po włączeniu/wyłączeniu symulacji fallback).
+   */
+  const clearDegradationHistory = useCallback(() => {
+    setDegradationHistory([]);
+  }, []);
+
   return {
     enabled,
     setEnabled: toggle,
