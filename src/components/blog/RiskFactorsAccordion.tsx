@@ -934,6 +934,41 @@ const RiskFactorsAccordion = () => {
                 </button>
               </span>
             )}
+            <span className="inline-flex items-center gap-2 ml-auto sm:ml-0">
+              <ShieldOff
+                className={`w-3.5 h-3.5 ${privacyMode ? "text-primary" : "text-muted-foreground"}`}
+                aria-hidden="true"
+              />
+              <label
+                htmlFor="risk-factors-privacy-toggle"
+                className="cursor-pointer select-none"
+                title='Gdy włączone: oznaczenia „przeczytane" działają tylko w tej sesji i nie są zapisywane w przeglądarce.'
+              >
+                Tryb prywatny
+              </label>
+              <Switch
+                id="risk-factors-privacy-toggle"
+                checked={privacyMode}
+                onCheckedChange={(v) => {
+                  setPrivacyMode(v);
+                  if (v) {
+                    // Wyłączenie persystencji = wyczyść też bieżącą sesyjną listę,
+                    // żeby przełącznik dawał namacalny efekt (licznik znika).
+                    setReadItems([]);
+                    toast({
+                      title: "Tryb prywatny włączony",
+                      description: 'Oznaczenia „przeczytane" nie będą zapisywane w przeglądarce. Wyczyściliśmy też bieżącą historię.',
+                    });
+                  } else {
+                    toast({
+                      title: "Tryb prywatny wyłączony",
+                      description: 'Oznaczenia „przeczytane" znowu będą zapisywane lokalnie.',
+                    });
+                  }
+                }}
+                aria-label="Tryb prywatny — nie zapisuj „przeczytane” w przeglądarce"
+              />
+            </span>
           </div>
           <Button
             type="button"
