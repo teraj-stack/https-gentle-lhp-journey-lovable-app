@@ -52,14 +52,14 @@ export type EbmAnalyticsState = {
   recent: EbmClickEvent[];
 };
 
-const EMPTY_STATE: EbmAnalyticsState = {
+const freshState = (): EbmAnalyticsState => ({
   version: 1,
   totals: { external_source: 0, internal_anchor: 0 },
   perHost: {},
   perEbmId: {},
   perSource: {},
   recent: [],
-};
+});
 
 const isBrowser = () => typeof window !== "undefined" && typeof localStorage !== "undefined";
 
