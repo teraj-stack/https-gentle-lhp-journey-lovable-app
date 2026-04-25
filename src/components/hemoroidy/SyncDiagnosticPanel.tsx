@@ -144,6 +144,56 @@ const DEGRADATION_GUIDANCE: Record<
   },
 };
 
+/**
+ * Reużywalny blok „Co to oznacza + sugerowane kroki" dla danej kategorii degradacji.
+ * Wyciągnięty osobno, bo używamy go w dwóch miejscach (alert aktualnej degradacji
+ * oraz wynik ręcznego testu BC) i chcemy spójną prezentację.
+ *
+ * Tonalność wizualna (amber vs neutralna) regulowana propsem `tone`, żeby pasował
+ * zarówno do alertu (amber) jak i do bloku testu (neutralny przy ok=true wariancie).
+ */
+const DegradationGuidance = ({
+  cause,
+  tone = "amber",
+}: {
+  cause: DegradationCause;
+  tone?: "amber" | "neutral";
+}) => {
+  const guidance = DEGRADATION_GUIDANCE[cause];
+  if (!guidance) return null;
+  const headingClass =
+    tone === "amber" ? "text-amber-300" : "text-foreground/90";
+  const bulletClass =
+    tone === "amber" ? "text-amber-400/80" : "text-muted-foreground/70";
+  return (
+    <div className="mt-2 rounded-md border border-border/40 bg-background/40 px-2.5 py-2">
+      <p className={`text-[10px] uppercase tracking-wider font-sans ${headingClass} mb-1`}>
+        Co to zwykle oznacza
+      </p>
+      <p className="text-[11px] text-muted-foreground leading-relaxed">
+        {guidance.meaning}
+      </p>
+      {guidance.steps.length > 0 && (
+        <>
+          <p className={`mt-2 text-[10px] uppercase tracking-wider font-sans ${headingClass} mb-1`}>
+            Sugerowane kroki
+          </p>
+          <ul className="space-y-0.5 text-[11px] text-muted-foreground leading-relaxed">
+            {guidance.steps.map((step, i) => (
+              <li key={i} className="flex gap-1.5">
+                <span className={`shrink-0 ${bulletClass}`} aria-hidden="true">
+                  →
+                </span>
+                <span>{step}</span>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+    </div>
+  );
+};
+
 
 /**
  * Wykrywanie środowiska runtime — używamy do checklisty "co jest dostępne".
