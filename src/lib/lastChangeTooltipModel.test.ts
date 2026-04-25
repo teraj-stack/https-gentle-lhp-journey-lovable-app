@@ -16,10 +16,12 @@ import { describe, it, expect } from "vitest";
 import {
   buildLastChangeTooltipModel,
   composeTimeLine,
+  getTimeLinePrefix,
   smoothTimeValue,
   TIME_LINE_PREFIX,
   type TimeValueFormat,
 } from "./lastChangeTooltipModel";
+import { resolveLocale, SUPPORTED_LOCALES } from "./lastChangeTooltipContent";
 
 describe("smoothTimeValue — wygładzanie wartości czasu", () => {
   it("usuwa newline'y i tabulatory, kolapsuje spacje, trimuje krawędzie", () => {
