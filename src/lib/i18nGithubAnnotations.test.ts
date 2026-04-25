@@ -28,6 +28,7 @@ import {
   __stripTopPrefixForTesting,
   __getSourceLineSnippetForTesting,
   __buildExpectedLineHintForTesting,
+  __resetAnnotationDedupForTesting,
 } from "./i18nGithubAnnotations";
 
 const ROOT = process.cwd();
@@ -92,6 +93,7 @@ describe("i18nGithubAnnotations — emitGithubAnnotations", () => {
   let logSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
+    __resetAnnotationDedupForTesting();
     logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
   });
   afterEach(() => {
@@ -208,6 +210,7 @@ describe("i18nGithubAnnotations — line hint embedded in CI annotations", () =>
   let logSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
+    __resetAnnotationDedupForTesting();
     process.env.GITHUB_ACTIONS = "true";
     logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
   });
@@ -309,6 +312,7 @@ describe("i18nGithubAnnotations — severity emission in CI", () => {
   let logSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
+    __resetAnnotationDedupForTesting();
     process.env.GITHUB_ACTIONS = "true";
     logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
   });
@@ -400,5 +404,116 @@ describe("i18nGithubAnnotations — severity emission in CI", () => {
     const lines = logSpy.mock.calls.map((c) => String(c[0]));
     expect(lines[0].startsWith("::error ")).toBe(true);
     expect(lines[1].startsWith("::warning ")).toBe(true);
+  });
+});
+
+describe("i18nGithubAnnotations — dedup of identical violations", () => {
+  const originalEnv = process.env.GITHUB_ACTIONS;
+  let logSpy: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    __resetAnnotationDedupForTesting();
+    process.env.GITHUB_ACTIONS = "true";
+    logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+  });
+  afterEach(() => {
+    logSpy.mockRestore();
+    if (originalEnv === undefined) delete process.env.GITHUB_ACTIONS;
+    else process.env.GITHUB_ACTIONS = originalEnv;
+  });
+
+  it("collapses identical (locale, path, reason) entries within a single call", () => {
+    emitGithubAnnotations(
+      [
+        { locale: "pl", path: "TRANSLATIONS.local.heading", reason: "missing-required-key" },
+        { locale: "pl", path: "TRANSLATIONS.local.heading", reason: "missing-required-key" },
+        { locale: "pl", path: "TRANSLATIONS.local.heading", reason: "missing-required-key" },
+      ],
+      "i18n required keys",
+    );
+    expect(logSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps distinct entries when locale/path/reason differ", () => {
+    emitGithubAnnotations(
+      [
+        { locale: "pl", path: "TRANSLATIONS.local.heading", reason: "missing-required-key" },
+        { locale: "en", path: "TRANSLATIONS.local.heading", reason: "missing-required-key" }, // diff locale
+        { locale: "pl", path: "TRANSLATIONS.local.subhead", reason: "missing-required-key" }, // diff path
+        { locale: "pl", path: "TRANSLATIONS.local.heading", reason: "wrong-type" }, // diff reason
+      ],
+      "i18n required keys",
+    );
+    expect(logSpy).toHaveBeenCalledTimes(4);
+  });
+
+  it("treats differing `detail` strings as the SAME violation (first-wins)", () => {
+    // Two test groups may flag the same key with slightly different detail
+    // text — the underlying bug is identical so only one annotation surfaces.
+    emitGithubAnnotations(
+      [
+        {
+          locale: "pl",
+          path: "TRANSLATIONS.local.heading",
+          reason: "empty-required-value",
+          detail: "value=\"\"",
+        },
+        {
+          locale: "pl",
+          path: "TRANSLATIONS.local.heading",
+          reason: "empty-required-value",
+          detail: "value is the empty string",
+        },
+      ],
+      "i18n required keys",
+    );
+    expect(logSpy).toHaveBeenCalledTimes(1);
+    // First detail wins, surviving in the emitted line.
+    expect(String(logSpy.mock.calls[0][0])).toContain("value=\"\"");
+  });
+
+  it("dedupes across multiple emitGithubAnnotations calls (different test groups)", () => {
+    // Simulates the real scenario: i18nRequiredKeys flags a missing key,
+    // then i18nContract independently flags the SAME key. The reviewer
+    // should see only one annotation, not two stacked on the same line.
+    emitGithubAnnotations(
+      [{ locale: "de", path: "TRANSLATIONS.local.heading", reason: "missing-required-key" }],
+      "i18n required keys",
+    );
+    emitGithubAnnotations(
+      [{ locale: "de", path: "TRANSLATIONS.local.heading", reason: "missing-required-key" }],
+      "i18n contract",
+    );
+    expect(logSpy).toHaveBeenCalledTimes(1);
+    // The first group "wins" the title slot.
+    expect(String(logSpy.mock.calls[0][0])).toContain("i18n required keys");
+  });
+
+  it("preserves NON-overlapping violations from a second call", () => {
+    emitGithubAnnotations(
+      [{ locale: "de", path: "TRANSLATIONS.local.heading", reason: "missing-required-key" }],
+      "i18n required keys",
+    );
+    emitGithubAnnotations(
+      [
+        { locale: "de", path: "TRANSLATIONS.local.heading", reason: "missing-required-key" }, // dup → skip
+        { locale: "de", path: "TRANSLATIONS.local.subhead", reason: "missing-required-key" }, // new → emit
+      ],
+      "i18n contract",
+    );
+    expect(logSpy).toHaveBeenCalledTimes(2);
+  });
+
+  it("__resetAnnotationDedupForTesting clears the cross-call index", () => {
+    emitGithubAnnotations(
+      [{ locale: "pl", path: "TRANSLATIONS.local.heading", reason: "missing-required-key" }],
+      "g1",
+    );
+    __resetAnnotationDedupForTesting();
+    emitGithubAnnotations(
+      [{ locale: "pl", path: "TRANSLATIONS.local.heading", reason: "missing-required-key" }],
+      "g2",
+    );
+    expect(logSpy).toHaveBeenCalledTimes(2);
   });
 });
