@@ -44,13 +44,59 @@
  *   node scripts/autofix-required-translation-keys.mjs           # writes
  *   node scripts/autofix-required-translation-keys.mjs --check   # dry-run,
  *     exits 1 if the file would change (CI guard against forgotten autofix)
+ *   node scripts/autofix-required-translation-keys.mjs --debug   # print every
+ *     detector's raw findings (great for diagnosing why a key was missed)
+ *
+ * Supported access patterns
+ * -------------------------
+ * The scanner intentionally covers a SUPERSET of the patterns the builder
+ * uses today, so adding a refactor (e.g. wrapping reads in a `$t("foo")`
+ * helper, or switching from dot to bracket access) does NOT silently drop
+ * keys from the REQUIRED_* lists. Each pattern below is implemented as a
+ * named detector so it's easy to extend / disable in isolation.
+ *
+ *   1. Dot member reads on local aliases
+ *        t.heading            variant.shortBadge       tStrings.timePrefix
+ *
+ *   2. Bracket reads with STRING LITERALS on the same aliases
+ *        t["heading"]         variant['shortBadge']    tStrings[`timePrefix`]
+ *      Useful when a future refactor uses bracket access (e.g. for keys
+ *      that collide with reserved words, or for dynamic-but-literal keys).
+ *
+ *   3. Direct indexed reads on the source maps (no local alias)
+ *        TRANSLATIONS[locale].sourcePrefix
+ *        TRANSLATIONS["pl"].local.heading
+ *        TIME_LINE_TRANSLATIONS[loc].timePrefix
+ *      The existing model-file scanner already did this for
+ *      TIME_LINE_TRANSLATIONS — extended now to TRANSLATIONS too, and to
+ *      bracket-access tail segments.
+ *
+ *   4. Translator-helper calls (optional alias):
+ *        $t("heading")        $t('local.heading')
+ *        t("sourcePrefix")    tStrings("timePrefix")
+ *      The argument is parsed as a dotted path. Single-segment paths land
+ *      in the `top`/`variant`/`tStrings` bucket (depending on which helper
+ *      is called); two-segment paths starting with `local.`/`remote.` are
+ *      classified as variant keys; deeper paths are reported under --debug
+ *      so the maintainer can decide whether to extend the categorizer.
+ *      Calls inside SOURCE_FILE comments / strings unrelated to the
+ *      builder are filtered out by the call-site heuristic (see
+ *      `isLikelyTranslatorCall`).
  *
  * Limitations
  * -----------
  * This is a pragmatic regex-based scanner — it intentionally does NOT spin up
- * a TS AST. It assumes the builder keeps using the local aliases `t`,
- * `variant`, and `tStrings`. If you rename them, update the patterns below
- * AND the detection comment in the relevant source file.
+ * a TS AST. The trade-off: false positives are possible for code that just
+ * happens to use the same identifier names. We mitigate by:
+ *   - anchoring patterns with a non-word lookbehind (`(?<![\\w$.])`),
+ *   - only treating bracket access as a key when the index is a string
+ *     literal (no variables — those would have to be resolved by the type
+ *     checker and we explicitly opt out of that complexity),
+ *   - filtering translator calls to require at least one of the recognised
+ *     helper names AND a non-empty literal argument.
+ * If the builder ever reads keys via genuinely dynamic access (e.g.
+ * `t[someEnumKey]`), this scanner won't detect them — that case must be
+ * caught by the runtime contract test, not the static autofix.
  */
 import { readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -65,35 +111,156 @@ const MODEL_PATH = resolve(ROOT, "src/lib/lastChangeTooltipModel.ts");
 
 const args = new Set(process.argv.slice(2));
 const CHECK_ONLY = args.has("--check");
+const DEBUG = args.has("--debug");
 
 // ---------------------------------------------------------------------------
 // Detection helpers
+//
+// Each detector below returns a Set<string> of identifier names. Detectors
+// are intentionally narrow (one pattern each) so failures are easy to
+// localize: turn on --debug, see which detector dropped the key.
 // ---------------------------------------------------------------------------
 
+/** Identifier-character regex bit, reused so we don't drift between detectors. */
+const IDENT = "[a-zA-Z_$][\\w$]*";
+/** Lookbehind ensuring the alias is not preceded by `.` or word chars (so
+ * `obj.t.foo` is NOT counted as `t.foo`). */
+const ALIAS_BOUNDARY = "(?<![\\w$.])";
+
 /**
- * Find all <alias>.<identifier> reads in source for the given alias.
- * Returns a Set of identifier names (deduped). We intentionally exclude
- * shorthand/declaration sites by ignoring matches preceded by . (avoids
- * picking up something.t.x chains where t isn't our alias).
+ * #1 — Dot member reads: `<alias>.<key>`.
+ * Original detector, unchanged in semantics.
  */
-const collectMemberReads = (source, alias) => {
-  const re = new RegExp(`(?<![\\w$.])${alias}\\.([a-zA-Z_$][\\w$]*)`, "g");
+const collectDotMemberReads = (source, alias) => {
+  const re = new RegExp(`${ALIAS_BOUNDARY}${alias}\\.(${IDENT})`, "g");
+  const found = new Set();
+  for (const m of source.matchAll(re)) found.add(m[1]);
+  return found;
+};
+
+/**
+ * #2 — Bracket reads with string literals: `<alias>["key"]` / `['key']` /
+ * `` `key` `` (template literal, only when it has no `${}` interpolation).
+ * Returns the un-quoted identifier.
+ */
+const collectBracketLiteralReads = (source, alias) => {
+  // Match either single, double, or backtick-quoted SIMPLE literal (no
+  // interpolation, no escapes inside the key — those would imply non-static
+  // keys and we explicitly skip them).
+  const re = new RegExp(
+    `${ALIAS_BOUNDARY}${alias}\\[\\s*(?:"([^"\\\\]+)"|'([^'\\\\]+)'|\`([^\`$\\\\]+)\`)\\s*\\]`,
+    "g",
+  );
   const found = new Set();
   for (const m of source.matchAll(re)) {
-    found.add(m[1]);
+    const key = m[1] ?? m[2] ?? m[3];
+    if (key && /^[a-zA-Z_$][\w$]*$/.test(key)) found.add(key);
   }
   return found;
 };
 
 /**
- * Find variant.<key> reads that appear with a ?? fallback (treated as
- * OPTIONAL keys — the builder tolerates them being undefined).
+ * #3 — Direct indexed reads on a source MAP (e.g. `TRANSLATIONS[locale].key`,
+ * `TIME_LINE_TRANSLATIONS["pl"].timePrefix`, plus chained
+ * `TRANSLATIONS[locale].local.heading`).
+ *
+ * Returns an array of dotted-path strings (e.g. `"sourcePrefix"`,
+ * `"local.heading"`) — the caller categorises them.
  */
-const collectOptionalVariantReads = (source) => {
-  const re = /(?<![\w$.])variant\.([a-zA-Z_$][\w$]*)\s*\?\?/g;
+const collectIndexedMapReads = (source, mapName) => {
+  // After the `[...]` we accept zero or more `.<ident>` or `["literal"]`
+  // segments. Only the FIRST tail segment is required (otherwise a bare
+  // `TRANSLATIONS[locale]` is a sub-object access we don't care about).
+  const re = new RegExp(
+    `${ALIAS_BOUNDARY}${mapName}\\[[^\\]]+\\]((?:\\.${IDENT}|\\[\\s*(?:"[^"\\\\]+"|'[^'\\\\]+'|\`[^\`$\\\\]+\`)\\s*\\])+)`,
+    "g",
+  );
+  const paths = new Set();
+  for (const m of source.matchAll(re)) {
+    const tail = m[1];
+    // Normalise tail into dotted path. Bracket["x"] → .x, .x → .x.
+    const segments = [];
+    const segRe = new RegExp(
+      `\\.(${IDENT})|\\[\\s*(?:"([^"\\\\]+)"|'([^'\\\\]+)'|\`([^\`$\\\\]+)\`)\\s*\\]`,
+      "g",
+    );
+    let s;
+    while ((s = segRe.exec(tail)) !== null) {
+      const seg = s[1] ?? s[2] ?? s[3] ?? s[4];
+      if (seg && /^[a-zA-Z_$][\w$]*$/.test(seg)) segments.push(seg);
+    }
+    if (segments.length > 0) paths.add(segments.join("."));
+  }
+  return paths;
+};
+
+/**
+ * #4 — Translator-helper call: `<helper>("key")`, `<helper>('local.heading')`.
+ *
+ * The argument must be a single string literal (concatenated/templated args
+ * imply dynamic keys we can't resolve statically). Recognises any helper in
+ * the `helperNames` list — pass `["$t","t","tStrings"]` for the broadest
+ * coverage. The detector ignores call-sites where the literal is empty or
+ * looks like a sentence (contains spaces) so test/debug strings don't leak in.
+ */
+const collectTranslatorCallKeys = (source, helperNames) => {
+  if (helperNames.length === 0) return new Set();
+  const helpersAlt = helperNames
+    .map((n) => n.replace(/[$]/g, "\\$"))
+    .join("|");
+  const re = new RegExp(
+    `${ALIAS_BOUNDARY}(?:${helpersAlt})\\(\\s*(?:"([^"\\\\]+)"|'([^'\\\\]+)'|\`([^\`$\\\\]+)\`)\\s*[,)]`,
+    "g",
+  );
   const found = new Set();
   for (const m of source.matchAll(re)) {
+    const arg = m[1] ?? m[2] ?? m[3];
+    if (!arg) continue;
+    // Reject obvious non-keys: whitespace, leading/trailing dot, all-digits.
+    if (/\s/.test(arg)) continue;
+    if (/^\.|\.$/.test(arg)) continue;
+    if (/^\d+$/.test(arg)) continue;
+    // Only accept dotted-path of valid identifiers.
+    const parts = arg.split(".");
+    if (!parts.every((p) => /^[a-zA-Z_$][\w$]*$/.test(p))) continue;
+    found.add(arg);
+  }
+  return found;
+};
+
+/**
+ * Find variant.<key> reads that appear with a `??` fallback (treated as
+ * OPTIONAL keys — the builder tolerates them being undefined).
+ *
+ * Extended to also catch:
+ *   - bracket form:   variant["key"] ?? …
+ *   - translator call form: $t("local.key") ?? …  (when arg is `local.X` /
+ *     `remote.X`, the `X` segment is the variant key)
+ */
+const collectOptionalVariantReads = (source) => {
+  const found = new Set();
+  // a) variant.X ??
+  for (const m of source.matchAll(
+    new RegExp(`${ALIAS_BOUNDARY}variant\\.(${IDENT})\\s*\\?\\?`, "g"),
+  )) {
     found.add(m[1]);
+  }
+  // b) variant["X"] ?? / variant['X'] ?? / variant[`X`] ??
+  for (const m of source.matchAll(
+    new RegExp(
+      `${ALIAS_BOUNDARY}variant\\[\\s*(?:"([^"\\\\]+)"|'([^'\\\\]+)'|\`([^\`$\\\\]+)\`)\\s*\\]\\s*\\?\\?`,
+      "g",
+    ),
+  )) {
+    const key = m[1] ?? m[2] ?? m[3];
+    if (key && /^[a-zA-Z_$][\w$]*$/.test(key)) found.add(key);
+  }
+  // c) $t("local.X") ?? …  (variant.X with fallback via translator helper)
+  for (const m of source.matchAll(
+    /(?<![\w$.])\$?t\(\s*(?:"(?:local|remote)\.([a-zA-Z_$][\w$]*)"|'(?:local|remote)\.([a-zA-Z_$][\w$]*)')\s*\)\s*\?\?/g,
+  )) {
+    const key = m[1] ?? m[2];
+    if (key) found.add(key);
   }
   return found;
 };
