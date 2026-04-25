@@ -797,8 +797,10 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
                       : entry.source === "custom-event"
                         ? {
                             Icon: Layers,
-                            label: "Zdalna synchronizacja w obrębie tej karty (CustomEvent)",
-                            short: "Local-tab",
+                            label: "Synchronizacja w obrębie tej karty (CustomEvent)",
+                            // Ujednolicony język UI: zawsze „karta", nigdy „tab" —
+                            // zgodnie z `lastChangeTooltipContent` i resztą interfejsu.
+                            short: "Ta karta",
                             isLocal: false,
                           }
                         : {
