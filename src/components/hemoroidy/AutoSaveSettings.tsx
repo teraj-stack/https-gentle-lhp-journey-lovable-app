@@ -484,68 +484,26 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
             </kbd>
           </p>
           {lastSyncLabel && showLastChangeLabel && (() => {
-            // Tooltip ma do trzech linii: jednoznaczna etykieta źródła
-            // („Synchronizacja…" vs „Lokalna akcja…"), opis kontekstu, czas zdarzenia.
-            // Dzięki temu nawet bez kolorów (screen reader, high-contrast mode)
-            // widać, skąd przyszła zmiana. To samo idzie do `aria-label` i `title`.
+            // SINGLE SOURCE OF TRUTH dla treści tooltipa „Ostatnia zmiana".
             //
-            // Nagłówek + opis pochodzą z pure helpera `getLastChangeTooltipContent`,
-            // dzięki czemu logika wyboru wariantu jest pokryta testami jednostkowymi
-            // bez konieczności renderowania całego komponentu z Radix Tooltip.
-            const tooltipContent = getLastChangeTooltipContent(lastChangeSource);
-            // Wygładzamy wartość czasu PRZED użyciem w tooltipie/aria-label:
-            //  - usuwamy znaki nowej linii (`\n`, `\r`) i tabulatory — wstawiłyby
-            //    sztuczne łamanie w środku linii „Czas: …", co w aria-label
-            //    powodowałoby fałszywą dodatkową linię i pauzę u screen readera,
-            //  - kolapsujemy ciągi białych znaków do pojedynczej spacji
-            //    (np. „24 kwietnia\n2026" → „24 kwietnia 2026"),
-            //  - obcinamy whitespace z początku/końca.
-            // Dzięki temu helper zawsze produkuje czysty single-line string albo
-            // pusty `""`, który dalsze sprawdzenia odrzucą jako brak wartości.
-            const smoothTimeValue = (raw: unknown): string => {
-              if (typeof raw !== "string") return "";
-              return raw.replace(/[\r\n\t]+/g, " ").replace(/\s+/g, " ").trim();
-            };
-            // Linia czasu w tooltipie: preferujemy pełną datę (`lastSyncFullDate`),
-            // ale gdy z jakiegoś powodu nie udało się jej zbudować (np. timestamp
-            // odrzucony przez `isValidTimestamp` w środku formatera, pusty string
-            // albo same białe znaki), spadamy na względną etykietę (`lastSyncLabel`).
-            // UWAGA: używamy testu na niepuste-po-wygładzeniu, NIE `??`/`||`, bo
-            // nullish coalescing przepuściłby „" oraz „   " (truthy w JS),
-            // co dałoby osierocone „Czas: " w aria-label.
-            const smoothFullDate = smoothTimeValue(lastSyncFullDate);
-            const smoothRelativeLabel = smoothTimeValue(lastSyncLabel);
-            const tooltipTimeValue =
-              smoothFullDate.length > 0 ? smoothFullDate : smoothRelativeLabel;
-            // Składamy linię „Czas: …" TYLKO gdy po wygładzeniu zostaje realna
-            // treść — pusty fallback nie nadpisuje ani nie pozostawia
-            // osieroconego „Czas: " w żadnym kanale (aria-label, title, tooltip).
+            // Helper `buildLastChangeTooltipModel` zbiera wszystkie warunki
+            // renderowania w jednym miejscu — komponent tylko czyta pola modelu
+            // i przekazuje je do JSX. Dzięki temu widoczny `<TooltipContent>`,
+            // `aria-label` triggera oraz natywny `title` (touch fallback) NIE
+            // mogą się rozjechać: wszystkie kanały biorą dane z tego samego
+            // obiektu, a logika fallbacków (full date → relative label →
+            // brak linii czasu) jest w 100% pokryta testami jednostkowymi
+            // helpera bez konieczności renderu komponentu w jsdom.
             //
-            // Dla aria-label / title (kanał a11y) DODATKOWO oznaczamy fallback:
-            // gdy pełna data jest niedostępna, screen reader dostaje wyraźny
-            // doklejony kwalifikator „(etykieta względna)" — inaczej użytkownik
-            // VO/NVDA usłyszałby tylko „Czas: 2 minuty temu" bez kontekstu, że
-            // to przybliżenie, a nie precyzyjny stempel czasowy z systemu.
-            // Widoczny tooltip pozostaje bez tego dopisku, bo ma już natywny
-            // `title` na linii czasu z pełnym wyjaśnieniem dla touch/hover.
-            const isRelativeFallback =
-              smoothFullDate.length === 0 && smoothRelativeLabel.length > 0;
-            const timeLine =
-              tooltipTimeValue.length > 0 ? `Czas: ${tooltipTimeValue}` : null;
-            const timeLineForA11y = !timeLine
-              ? null
-              : isRelativeFallback
-                ? `${timeLine} (etykieta względna)`
-                : timeLine;
-            // Sklejamy `tooltipText` (aria-label + native `title` fallback) bez
-            // pustych linii: każda część dodana TYLKO gdy ma realną treść.
-            const tooltipText = [
-              tooltipContent.ariaHeading,
-              tooltipContent.description,
-              timeLineForA11y,
-            ]
-              .filter((line): line is string => Boolean(line && line.trim()))
-              .join("\n");
+            // Każdy nowy kanał (eksport PDF, narrator screen-reader-only,
+            // alternatywny tooltip) MUSI również czytać z tego helpera —
+            // inline składanie stringów `Czas: ${…}` w JSX jest zakazane.
+            const tooltipModel = buildLastChangeTooltipModel({
+              source: lastChangeSource,
+              fullDate: lastSyncFullDate,
+              relativeLabel: lastSyncLabel,
+            });
+            const { content: tooltipContent, ariaText: tooltipText } = tooltipModel;
             return (
             <div
               key={lastChangeAt ?? "none"}
