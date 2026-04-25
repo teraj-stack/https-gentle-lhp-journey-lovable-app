@@ -1070,6 +1070,140 @@ describe("i18n — obsługa języków PL/EN w tooltipie Ostatnia zmiana", () => 
       expect(model.timeLineForA11y).toBe(model.timeLineForView);
     });
   });
+
+  describe("buildLastChangeTooltipModel — DE (niemiecki)", () => {
+    it("DE + remote + pełna data: 'Quelle: ', 'Tab-übergreifende…', prefiks 'Zeit: '", () => {
+      const model = buildLastChangeTooltipModel({
+        source: "remote",
+        fullDate: "24. April 2026, 12:34:56",
+        relativeLabel: "vor 2 Minuten",
+        locale: "de",
+      });
+
+      expect(model.content.locale).toBe("de");
+      expect(model.content.heading).toBe("Tab-übergreifende Synchronisation");
+      expect(model.content.ariaHeading).toBe("Quelle: Tab-übergreifende Synchronisation");
+      expect(model.content.description).toMatch(/anderen geöffneten Tab/);
+      expect(model.timeLineForView).toBe("Zeit: 24. April 2026, 12:34:56");
+      expect(model.timeLineForA11y).toBe("Zeit: 24. April 2026, 12:34:56");
+      expect(model.timeLineHelpTitle).toBeUndefined();
+      // Brak wycieków PL/EN.
+      expect(model.ariaText).not.toMatch(/Czas:|Time:|Ora:|Źródło:|Source:|Origine:/);
+      expect(model.ariaText).toMatch(/^Quelle: Tab-übergreifende Synchronisation\n/);
+    });
+
+    it("DE + local: aria-headingOverride 'Meine lokale Aktion in diesem Tab'", () => {
+      const model = buildLastChangeTooltipModel({
+        source: "local",
+        fullDate: "24. April 2026",
+        relativeLabel: "gerade eben",
+        locale: "de",
+      });
+
+      expect(model.content.heading).toBe("Lokale Aktion in diesem Tab");
+      expect(model.content.ariaHeading).toBe("Quelle: Meine lokale Aktion in diesem Tab");
+      expect(model.content.description).toMatch(/Switch|Alt\+Umschalt\+A/);
+    });
+
+    it("DE + fallback na relative: sufiks '(relative Angabe)' i niemiecki help title", () => {
+      const model = buildLastChangeTooltipModel({
+        source: "remote",
+        fullDate: "",
+        relativeLabel: "vor 2 Minuten",
+        locale: "de",
+      });
+
+      expect(model.isRelativeFallback).toBe(true);
+      expect(model.timeLineForView).toBe("Zeit: vor 2 Minuten");
+      expect(model.timeLineForA11y).toBe("Zeit: vor 2 Minuten (relative Angabe)");
+      expect(model.timeLineHelpTitle).toBe(
+        "Vollständiges Datum nicht verfügbar — relative Angabe wird angezeigt.",
+      );
+      // Brak wycieków sufiksów z innych języków.
+      expect(model.ariaText).not.toContain("(etykieta względna)");
+      expect(model.ariaText).not.toContain("(relative label)");
+      expect(model.ariaText).not.toContain("(etichetta relativa)");
+    });
+
+    it("BCP-47 'de-AT' i 'de-CH' aktywują DE", () => {
+      for (const tag of ["de-AT", "de-CH", "DE-de"]) {
+        const model = buildLastChangeTooltipModel({
+          source: "remote",
+          fullDate: "24. April",
+          relativeLabel: "n/a",
+          locale: tag,
+        });
+        expect(model.content.locale).toBe("de");
+        expect(model.timeLineForView).toBe("Zeit: 24. April");
+      }
+    });
+  });
+
+  describe("buildLastChangeTooltipModel — IT (włoski)", () => {
+    it("IT + remote + pełna data: 'Origine: ', 'Sincronizzazione…', prefiks 'Ora: '", () => {
+      const model = buildLastChangeTooltipModel({
+        source: "remote",
+        fullDate: "24 aprile 2026, 12:34:56",
+        relativeLabel: "2 minuti fa",
+        locale: "it",
+      });
+
+      expect(model.content.locale).toBe("it");
+      expect(model.content.heading).toBe("Sincronizzazione tra schede");
+      expect(model.content.ariaHeading).toBe("Origine: Sincronizzazione tra schede");
+      expect(model.content.description).toMatch(/un'altra scheda aperta/);
+      expect(model.timeLineForView).toBe("Ora: 24 aprile 2026, 12:34:56");
+      expect(model.timeLineForA11y).toBe("Ora: 24 aprile 2026, 12:34:56");
+      expect(model.timeLineHelpTitle).toBeUndefined();
+      expect(model.ariaText).not.toMatch(/Czas:|Time:|Zeit:|Źródło:|Source:|Quelle:/);
+      expect(model.ariaText).toMatch(/^Origine: Sincronizzazione tra schede\n/);
+    });
+
+    it("IT + local: aria-headingOverride 'La mia azione locale in questa scheda'", () => {
+      const model = buildLastChangeTooltipModel({
+        source: "local",
+        fullDate: "24 aprile 2026",
+        relativeLabel: "appena ora",
+        locale: "it",
+      });
+
+      expect(model.content.heading).toBe("Azione locale in questa scheda");
+      expect(model.content.ariaHeading).toBe("Origine: La mia azione locale in questa scheda");
+      expect(model.content.description).toMatch(/Switch|Alt\+Maiusc\+A/);
+    });
+
+    it("IT + fallback na relative: sufiks '(etichetta relativa)' i włoski help title", () => {
+      const model = buildLastChangeTooltipModel({
+        source: "remote",
+        fullDate: "",
+        relativeLabel: "2 minuti fa",
+        locale: "it",
+      });
+
+      expect(model.isRelativeFallback).toBe(true);
+      expect(model.timeLineForView).toBe("Ora: 2 minuti fa");
+      expect(model.timeLineForA11y).toBe("Ora: 2 minuti fa (etichetta relativa)");
+      expect(model.timeLineHelpTitle).toBe(
+        "Data completa non disponibile — viene mostrata un'etichetta relativa.",
+      );
+      expect(model.ariaText).not.toContain("(etykieta względna)");
+      expect(model.ariaText).not.toContain("(relative label)");
+      expect(model.ariaText).not.toContain("(relative Angabe)");
+    });
+
+    it("BCP-47 'it-CH' i 'it_IT' aktywują IT", () => {
+      for (const tag of ["it-CH", "it_IT", "IT-it"]) {
+        const model = buildLastChangeTooltipModel({
+          source: "remote",
+          fullDate: "24 aprile",
+          relativeLabel: "n/a",
+          locale: tag,
+        });
+        expect(model.content.locale).toBe("it");
+        expect(model.timeLineForView).toBe("Ora: 24 aprile");
+      }
+    });
+  });
 });
 
 /**
