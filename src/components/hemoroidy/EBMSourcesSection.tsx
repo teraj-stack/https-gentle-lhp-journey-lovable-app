@@ -1346,6 +1346,26 @@ const EBMSourcesSection = ({
                             <ExternalLink className="w-3 h-3" aria-hidden="true" />
                             <span className="sr-only"> (nowa karta)</span>
                           </a>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              openReader({
+                                src,
+                                categoryId: cat.id,
+                                categoryTitle: cat.title,
+                                categoryIntro: cat.intro,
+                                categoryTldr: cat.tldr,
+                                studyType: classifyStudyType(src, cat.id),
+                                linkMeta: meta,
+                              })
+                            }
+                            aria-label={`Otwórz streszczenie EBM w trybie czytnika: ${src.title}`}
+                            title="Streszczenie EBM (tryb czytnika)"
+                            className="mt-1 ml-1.5 inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/30 px-2.5 py-1 text-[11px] font-sans uppercase tracking-[0.08em] text-muted-foreground hover:text-foreground hover:border-primary/40 hover:bg-primary/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                          >
+                            <BookOpen className="w-3 h-3" aria-hidden="true" />
+                            <span>Streszczenie</span>
+                          </button>
                         </li>
                       );
                     })}
