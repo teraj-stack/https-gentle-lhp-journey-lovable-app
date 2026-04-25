@@ -154,6 +154,15 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
   const { mode: timeFormatMode, setMode: setTimeFormatMode } = useTimeFormatPreference();
 
   /**
+   * Preferencja widoczności etykiety „Ostatnia zmiana:" — pacjent może filtrować
+   * wyświetlanie zależnie od źródła zmiany (lokalna / zdalna / obie / ukryj).
+   * Stan persystowany w localStorage i synchronizowany cross-tab.
+   */
+  const { visibility: lastChangeVisibility, setVisibility: setLastChangeVisibility } =
+    useLastChangeVisibility();
+  const showLastChangeLabel = isLastChangeVisible(lastChangeVisibility, lastChangeSource);
+
+  /**
    * Symulacja braku BC + sanity check: po włączeniu robimy tymczasowy toggle
    * przełącznika (na bieżącą wartość) i sprawdzamy w historii, czy zmiana
    * wróciła kanałem fallbackowym. To potwierdza, że storage+CustomEvent wciąż
