@@ -79,6 +79,8 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
     clearPing,
     isBroadcastSupported,
     syncHistory,
+    transport,
+    degradationReason,
   } = useAutoSave();
   /**
    * Tick używany do auto-odświeżania względnego czasu („X s temu" → „X min temu").
