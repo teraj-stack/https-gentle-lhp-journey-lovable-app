@@ -632,4 +632,146 @@ describe("buildLastChangeTooltipModel — pełny model tooltipa", () => {
       },
     );
   });
+
+  /**
+   * Centralizacja prefiksu „Czas: " — testy jednostkowe składania linii czasu.
+   *
+   * Wcześniej literał „Czas: " występował inline w dwóch miejscach helpera
+   * (`timeLineForView` i pośrednio `timeLineForA11y` przez interpolację).
+   * Po refactorze prefiks jest składany WYŁĄCZNIE w `composeTimeLine`,
+   * a `TIME_LINE_PREFIX` jest jedyną stałą stringową — zerowe ryzyko
+   * literówki ani zdublowanego prefiksu.
+   *
+   * Te testy zabezpieczają cztery kontrakty:
+   *  1. Prefiks jest stałą wartością „Czas: " (z dokładnie jedną spacją).
+   *  2. composeTimeLine zwraca null dla pustego/whitespace/non-string.
+   *  3. composeTimeLine dodaje prefiks DOKŁADNIE RAZ (kontrola occurrence).
+   *  4. composeTimeLine NIE wywołuje smoothTimeValue ponownie — wartość
+   *     przekazana jako już wygładzona JEST UŻYTA 1:1 (bytewise).
+   */
+  describe("composeTimeLine — centralny składacz linii czasu", () => {
+    it("TIME_LINE_PREFIX to dokładnie 'Czas: ' (z jedną spacją końcową)", () => {
+      expect(TIME_LINE_PREFIX).toBe("Czas: ");
+      expect(TIME_LINE_PREFIX.endsWith(" ")).toBe(true);
+      expect(TIME_LINE_PREFIX.match(/ /g)?.length).toBe(1);
+    });
+
+    it.each([
+      ["pusty string", ""],
+      ["sam space", " "],
+      ["wielokrotny whitespace", "   \t  "],
+      ["sam newline", "\n"],
+    ])("'%s' → null (brak treści, blokada osieroconego prefiksu)", (_label, input) => {
+      expect(composeTimeLine(input)).toBeNull();
+    });
+
+    it.each([
+      ["null", null],
+      ["undefined", undefined],
+      ["number", 12345],
+      ["object", { foo: "bar" }],
+    ])("non-string '%s' → null (defensywna obrona przed crashem)", (_label, input) => {
+      expect(composeTimeLine(input as unknown as string)).toBeNull();
+    });
+
+    it("dodaje prefiks DOKŁADNIE RAZ — żadnego zdublowania", () => {
+      const result = composeTimeLine("12:34:56");
+      expect(result).toBe("Czas: 12:34:56");
+      // Liczymy occurrence: dokładnie 1 wystąpienie „Czas:".
+      expect(result?.match(/Czas:/g)?.length).toBe(1);
+    });
+
+    it("NIE wygładza wartości ponownie — przekazany string trafia 1:1 po prefiksie", () => {
+      // Kontrakt: composeTimeLine ufa, że konsument już wywołał smoothTimeValue.
+      // Surowy input z whitespace nie powinien być modyfikowany — tylko
+      // kompletnie pusty/whitespace daje null. Tu mamy treść, więc 1:1.
+      const result = composeTimeLine("12:34   56");
+      expect(result).toBe("Czas: 12:34   56");
+    });
+  });
+
+  /**
+   * Snapshoty pełnego modelu — testy regresji wizualnej dla helpera.
+   *
+   * Snapshot łapie KAŻDĄ zmianę w sklejaniu pól (`timeLineForView`,
+   * `timeLineForA11y`, `ariaText`, `timeLineHelpTitle`) bez konieczności
+   * dopisywania osobnej asercji per pole. Jeśli ktoś przypadkiem zmieni
+   * prefiks, dodawanie sufiksu „(etykieta względna)" albo separator linii
+   * w ariaText — snapshot pęknie i jasno pokaże, co się zmieniło.
+   *
+   * Pokrywamy 7 wariantów wejścia obejmujących wszystkie ścieżki kodu:
+   *  1. Happy path: remote + pełna data
+   *  2. Local + pełna data
+   *  3. Fallback na relativeLabel (full whitespace)
+   *  4. Brak danych (null + null) — tylko 2 linie ariaText
+   *  5. source=null + dane (bezpieczny fallback nagłówka)
+   *  6. Format 'compact' (zwarte separatory)
+   *  7. Format 'preserve-newlines' (wieloliniowy timeValue)
+   */
+  describe("snapshoty pełnego modelu dla wariantów wejścia", () => {
+    it("[1] remote + pełna data — happy path", () => {
+      const model = buildLastChangeTooltipModel({
+        source: "remote",
+        fullDate: "24 kwietnia 2026, 12:34:56",
+        relativeLabel: "2 minuty temu",
+      });
+      expect(model).toMatchSnapshot();
+    });
+
+    it("[2] local + pełna data — lokalny nagłówek + brak kwalifikatora a11y", () => {
+      const model = buildLastChangeTooltipModel({
+        source: "local",
+        fullDate: "24 kwietnia 2026, 12:34:56",
+        relativeLabel: "2 minuty temu",
+      });
+      expect(model).toMatchSnapshot();
+    });
+
+    it("[3] fallback na relativeLabel — full=whitespace, sufiks „(etykieta względna)” w a11y", () => {
+      const model = buildLastChangeTooltipModel({
+        source: "remote",
+        fullDate: "   \n\t  ",
+        relativeLabel: "5 sekund temu",
+      });
+      expect(model).toMatchSnapshot();
+    });
+
+    it("[4] brak danych (null + null) — ariaText 2-liniowy, brak „Czas:”", () => {
+      const model = buildLastChangeTooltipModel({
+        source: "local",
+        fullDate: null,
+        relativeLabel: null,
+      });
+      expect(model).toMatchSnapshot();
+    });
+
+    it("[5] source=null + dane — nagłówek lokalny jako bezpieczny fallback", () => {
+      const model = buildLastChangeTooltipModel({
+        source: null,
+        fullDate: "24 kwietnia 2026, 12:34:56",
+        relativeLabel: "2 minuty temu",
+      });
+      expect(model).toMatchSnapshot();
+    });
+
+    it("[6] format='compact' — zwarte separatory wokół `,` i `:`", () => {
+      const model = buildLastChangeTooltipModel({
+        source: "remote",
+        fullDate: "24 kwietnia 2026 ,  12 : 34 : 56",
+        relativeLabel: "ignored",
+        format: "compact",
+      });
+      expect(model).toMatchSnapshot();
+    });
+
+    it("[7] format='preserve-newlines' — wieloliniowa wartość czasu zachowana", () => {
+      const model = buildLastChangeTooltipModel({
+        source: "local",
+        fullDate: "24 kwietnia 2026\n\n12:34:56",
+        relativeLabel: "ignored",
+        format: "preserve-newlines",
+      });
+      expect(model).toMatchSnapshot();
+    });
+  });
 });
