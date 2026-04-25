@@ -313,21 +313,13 @@ describe("i18n placeholder parity — dynamic values appear exactly N times in a
         });
       }
 
-      // 4) qualifier („(etykieta względna)" itd.) → 0. Full date NIE jest
+      // 4) qualifier ("(etykieta względna)" itd.) → 0. Full date NIE jest
       //    fallbackiem, więc qualifier nie ma prawa być doklejony.
-      // Użyjemy fragmentu „(” + locale-specific marker. Najprościej: znamy,
-      // że qualifier jest zawsze w nawiasach, więc szukamy znaku `(`. Aby
-      // jednak nie złapać legalnego nawiasu w description (gdyby się pojawił),
-      // wyciągamy qualifier z modelu fallback i sprawdzamy DOKŁADNY string.
-      const fallbackModel = buildLastChangeTooltipModel({
-        source: "local",
-        fullDate: null,
-        relativeLabel: SENTINEL_TIME_RELATIVE,
-        locale,
-      });
-      const qualifierMatch = fallbackModel.ariaText.match(/\([^)]+\)/);
-      const qualifier = qualifierMatch ? qualifierMatch[0] : null;
-      if (qualifier) {
+      // Wyciągamy qualifier deterministycznie z buildera (slice po prefixie+
+      //  sentinel) — NIE regexem `/\([^)]+\)/`, bo description może legalnie
+      //  zawierać nawiasy (np. PL „Sam(a) przełączyłe(a)ś…").
+      const qualifier = deriveQualifierForLocale(locale);
+      if (qualifier.length > 0) {
         const cQual = countOccurrences(aria, qualifier);
         if (cQual !== 0) {
           violations.push({
