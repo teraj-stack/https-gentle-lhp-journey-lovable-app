@@ -59,6 +59,32 @@ import {
   __getRawTimeLineTranslationsForTesting,
 } from "./lastChangeTooltipModel";
 import { emitGithubAnnotations } from "./i18nGithubAnnotations";
+import {
+  getActiveLocalesForTests,
+  getInactiveLocales,
+  isActiveLocalesMode,
+} from "./i18nActiveLocales";
+
+/**
+ * Resolved at module load. Tests iterate `ACTIVE_LOCALES` for per-locale
+ * KEY coverage so a partially-translated locale (e.g. `de` still being
+ * authored) can be deferred via `I18N_TEST_MODE=active` or
+ * `I18N_ACTIVE_LOCALES=pl,en` without forking the test file.
+ *
+ * Locales validated unconditionally remain `SUPPORTED_LOCALES` for the
+ * "shape" tests (no extra/orphan locales in the maps) — those guard the
+ * STATIC contract, not the rollout state.
+ */
+const ACTIVE_LOCALES = getActiveLocalesForTests();
+if (isActiveLocalesMode()) {
+  // Single visible notice per test-file run so a CI failure can never be
+  // misread as "all locales were validated".
+  // eslint-disable-next-line no-console
+  console.log(
+    `[i18n] active-locales mode: validating [${ACTIVE_LOCALES.join(", ")}], ` +
+      `deferred [${getInactiveLocales().join(", ") || "<none>"}]`,
+  );
+}
 
 // ---------------------------------------------------------------------------
 // VIOLATION REPORT — ten sam wzorzec co w sąsiednich kontraktach i18n.
