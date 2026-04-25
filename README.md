@@ -556,7 +556,7 @@ Sample output (after pasting fixtures #2 + #4 + #5 from the [End-to-end walkthro
 
 **Notes on behaviour**
 
-- **Locale scope** — defaults to `pl,en,de,it` so all five fixture types are in scope. Override with `I18N_ACTIVE_LOCALES=pl,en bash i18n-summary.sh` to mimic the default CI scope.
+- **Locale scope** — defaults to `pl,en,de,it` so all five fixture types are in scope. Override per-run with `--locales en,de` (validated against `SUPPORTED_LOCALES`) or per-shell with `I18N_ACTIVE_LOCALES=pl,en bash i18n-summary.sh`. Precedence is `--locales` > env > default; the chosen source is printed on the `Locales:` echo line for traceability.
 - **Exit code** — `0` iff every error-severity reason is `PASS`. `empty-optional-value` (the only warning reason) **never** flips the verdict, matching the in-CI behaviour where warnings stay green.
 - **Dedup** — `sort -u` collapses duplicate annotations (a stacked fixture can trip the same key in multiple tests). Counts are post-dedup, so the table mirrors what reviewers actually see in the PR diff.
 - **Multi-reason filter** — `--only a,b,c` runs the **union** of owning test files (so `--only placeholder-mismatch,wrong-type` runs both `i18nPlaceholders.test.ts` and `i18nContract.test.ts`), then narrows the annotations file to `reason=(a|b|c)` before counting. Each selected reason gets its own row, and the overall verdict fails iff any selected **error-severity** reason has hits — adding `empty-optional-value` to the list never flips the verdict.
