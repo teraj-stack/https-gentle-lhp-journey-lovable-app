@@ -4,11 +4,15 @@ import Footer from "./Footer";
 import CookieConsent from "./CookieConsent";
 import ScrollToTop from "./ScrollToTop";
 import { useScrollToHash } from "@/hooks/useScrollToHash";
+import { useAutoSaveStartupDiagnostic } from "@/hooks/useAutoSaveStartupDiagnostic";
 
 const Layout = () => {
   // Globalny scroll-to-anchor dla DOWOLNEGO #hash w URL (np. /strona#sekcja).
   // Działa zarówno przy wejściu z zewnątrz, jak i przy nawigacji client-side.
   useScrollToHash();
+  // Jednorazowa diagnostyka transportu auto-zapisu (BroadcastChannel vs storage-fallback).
+  // Po starcie aplikacji raportuje status i — jeśli BC padł z runtime error — proponuje refresh.
+  useAutoSaveStartupDiagnostic();
 
   return (
     <div className="min-h-screen flex flex-col">
