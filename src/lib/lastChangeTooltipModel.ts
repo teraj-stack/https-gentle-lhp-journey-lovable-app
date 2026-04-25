@@ -295,9 +295,8 @@ export const buildLastChangeTooltipModel = (
   const content = getLastChangeTooltipContent(input.source, resolvedLocale);
   const tStrings = TIME_LINE_TRANSLATIONS[resolvedLocale];
 
-  // Tryb formatowania jest STOSOWANY RAZ — oba kanały (view + a11y) czytają
-  // wynikowy `timeValue`, więc niemożliwe jest rozjechanie się formatu między
-  // widocznym tooltipem a aria-label/title.
+  // Tryb formatowania jest STOSOWANY RAZ do wartości WIDOCZNEJ — oba kanały
+  // wizualne (TooltipContent i timeLineForView) czytają to samo `timeValue`.
   const format: TimeValueFormat = input.format ?? "single-space";
   const smoothFull = smoothTimeValue(input.fullDate, format);
   const smoothRelative = smoothTimeValue(input.relativeLabel, format);
@@ -307,20 +306,39 @@ export const buildLastChangeTooltipModel = (
   const timeValue = smoothFull.length > 0 ? smoothFull : smoothRelative;
   const isRelativeFallback = smoothFull.length === 0 && smoothRelative.length > 0;
 
+  // KRYTYCZNE: dla kanałów A11Y (aria-label/title) ZAWSZE używamy
+  // `single-space`, niezależnie od `input.format`. To gwarantuje, że
+  // `ariaText` NIE może zawierać:
+  //   - osieroconych pustych linii (newline w środku timeValue rozbiłby
+  //     `join("\n")` na 4+ pola, z których jedno mogłoby być whitespace),
+  //   - osieroconego prefiksu „Czas: \n…" (gdzie po prefiksie jest tylko
+  //     newline),
+  //   - pauz w mowie screen readera (każdy `\n` w aria-label wywołuje
+  //     pauzę w NVDA/JAWS/VoiceOver).
+  // Dzięki temu nawet gdy konsument świadomie wybierze `preserve-newlines`
+  // dla widocznego tooltipa (np. PDF), aria-label dostanie single-line
+  // wersję — i to BEZ zmiany kontraktu po stronie wywołującego.
+  const a11ySmoothFull = smoothTimeValue(input.fullDate, "single-space");
+  const a11ySmoothRelative = smoothTimeValue(input.relativeLabel, "single-space");
+  const a11yTimeValue = a11ySmoothFull.length > 0 ? a11ySmoothFull : a11ySmoothRelative;
+
   // composeTimeLine jest JEDYNYM miejscem składania prefiksu „Czas:" / „Time:".
   // Zwraca null gdy nie ma treści — dzięki temu shouldRenderTimeLine
   // jest pochodną tego samego warunku, a nie osobnym sprawdzeniem.
   const timeLineForView = composeTimeLine(timeValue, resolvedLocale);
+  const a11yTimeLineBase = composeTimeLine(a11yTimeValue, resolvedLocale);
   const shouldRenderTimeLine = timeLineForView !== null;
   const timeLineForA11y =
-    timeLineForView === null
+    a11yTimeLineBase === null
       ? null
       : isRelativeFallback
-        ? `${timeLineForView} ${tStrings.relativeQualifier}`
-        : timeLineForView;
+        ? `${a11yTimeLineBase} ${tStrings.relativeQualifier}`
+        : a11yTimeLineBase;
 
   // Sklejanie tekstu a11y — JEDNO miejsce filtrowania pustych linii.
   // `filter(Boolean && trim)` gwarantuje brak "\n\n" i trailing newline.
+  // Dodatkowo: bo `timeLineForA11y` jest budowany ze single-space wartości,
+  // niemożliwe jest, by ta linia wniosła wewnętrzny `\n` do ariaText.
   const ariaText = [content.ariaHeading, content.description, timeLineForA11y]
     .filter((line): line is string => Boolean(line && line.trim()))
     .join("\n");

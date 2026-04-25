@@ -534,7 +534,7 @@ describe("buildLastChangeTooltipModel — pełny model tooltipa", () => {
       expect(model.timeValue).not.toMatch(/[\n\r\t]/);
     });
 
-    it("'compact': spacje wokół `,` i `:` → zwarte (zero przed, jedna po)", () => {
+    it("'compact': spacje wokół `,` i `:` → zwarte (zero przed, jedna po) w VIEW", () => {
       const model = buildLastChangeTooltipModel({
         source: "local",
         fullDate: "24 kwietnia 2026 ,  12 : 34 : 56",
@@ -542,17 +542,20 @@ describe("buildLastChangeTooltipModel — pełny model tooltipa", () => {
         format: "compact",
       });
 
-      // Po compact: brak spacji przed `,`/`:`, dokładnie jedna po.
+      // Po compact: brak spacji przed `,`/`:`, dokładnie jedna po — to dotyczy
+      // VIEW (i `timeValue`, który jest wartością widoczną).
       expect(model.timeValue).toBe("24 kwietnia 2026, 12: 34: 56");
       expect(model.timeLineForView).toBe(`Czas: ${model.timeValue}`);
-      expect(model.timeLineForA11y).toBe(model.timeLineForView);
-      // Brak osieroconych podwójnych spacji.
       expect(model.timeValue).not.toMatch(/\s{2,}/);
-      // Brak spacji TUŻ przed `,` lub `:` (kontrakt trybu compact).
       expect(model.timeValue).not.toMatch(/\s[,:]/);
+
+      // KRYTYCZNE: A11Y używa ZAWSZE single-space (kontrakt
+      // ariaText-no-extra-spaces) — niezależnie od `format`. Dlatego
+      // a11y nie ma „compact-style" zachowania (żadnej spacji wokół `:` w 12:34:56).
+      expect(model.timeLineForA11y).toBe("Czas: 24 kwietnia 2026 , 12 : 34 : 56");
     });
 
-    it("'preserve-newlines': `\\n` zachowane jako separator linii, ale spacje skompresowane", () => {
+    it("'preserve-newlines': `\\n` zachowane TYLKO w VIEW; A11Y jest single-line", () => {
       const model = buildLastChangeTooltipModel({
         source: "local",
         fullDate: "24   kwietnia 2026\n\n\n12:34:56\t\t(UTC)",
@@ -560,44 +563,61 @@ describe("buildLastChangeTooltipModel — pełny model tooltipa", () => {
         format: "preserve-newlines",
       });
 
-      // Wielokrotne `\n` → jeden, spacje/taby w linii → pojedyncza spacja.
+      // VIEW: wielokrotne `\n` → jeden, spacje/taby w linii → pojedyncza spacja.
       expect(model.timeValue).toBe("24 kwietnia 2026\n12:34:56 (UTC)");
       expect(model.timeLineForView).toBe(`Czas: ${model.timeValue}`);
-      // KRYTYCZNE: a11y też dostaje TĘ SAMĄ wartość (bez sufiksu, bo full).
-      // Mimo że tryb wieloliniowy nie jest zalecany dla a11y, parytet z view
-      // MUSI być zachowany — komponent decyduje, którego trybu użyć.
-      expect(model.timeLineForA11y).toBe(model.timeLineForView);
+
+      // A11Y: ZAWSZE single-line — wszystkie `\n` z fullDate stają się
+      // pojedynczymi spacjami. To jest świadomy override kontraktu trybu,
+      // żeby `aria-label` nigdy nie zawierał `\n` (pauza w screen readerze)
+      // ani osieroconych pustych linii w `ariaText`.
+      expect(model.timeLineForA11y).toBe("Czas: 24 kwietnia 2026 12:34:56 (UTC)");
+      expect(model.timeLineForA11y).not.toMatch(/\n/);
     });
 
     it.each<TimeValueFormat>(["single-space", "compact", "preserve-newlines"])(
-      "[%s] timeLineForView i timeLineForA11y są bytewise identyczne (gdy NIE fallback)",
+      "[%s] timeLineForA11y NIGDY nie zawiera `\\n` ani podwójnych spacji (gdy NIE fallback)",
       (format) => {
         const model = buildLastChangeTooltipModel({
           source: "remote",
-          fullDate: "24 kwietnia 2026, 12:34:56",
+          fullDate: "24 kwietnia 2026,  12:34\n56", // newline + podwójna spacja
           relativeLabel: "2 min temu",
           format,
         });
 
         expect(model.isRelativeFallback).toBe(false);
-        expect(model.timeLineForView).not.toBeNull();
         expect(model.timeLineForA11y).not.toBeNull();
 
-        // Bytewise equality — żaden tryb nie może wstrzyknąć dodatkowego
-        // znaku do view ani do a11y, gdy nie używamy relativeLabel.
-        const view = model.timeLineForView!;
         const aria = model.timeLineForA11y!;
-        expect(view.length).toBe(aria.length);
-        for (let i = 0; i < view.length; i++) {
-          expect(view.charCodeAt(i), `[${format}] char @${i}`).toBe(
-            aria.charCodeAt(i),
-          );
-        }
+        // Kontrakt a11y, niezależny od `format`:
+        //  - brak `\n`/`\r`/`\t`,
+        //  - brak podwójnych spacji (single-space wszędzie),
+        //  - prefiks „Czas: " obecny dokładnie raz, treść po nim niepusta.
+        expect(aria, `[${format}] aria nie może mieć newline`).not.toMatch(/[\n\r\t]/);
+        expect(aria, `[${format}] aria nie może mieć podwójnych spacji`).not.toMatch(/  +/);
+        expect(aria.startsWith("Czas: "), `[${format}] prefiks`).toBe(true);
+        expect(aria.slice("Czas: ".length).trim().length).toBeGreaterThan(0);
       },
     );
 
+    it("[single-space] timeLineForView i timeLineForA11y są bytewise identyczne (gdy NIE fallback)", () => {
+      // Tylko `single-space` daje pełny parytet view↔a11y (bo a11y też używa
+      // single-space). Dla `compact` i `preserve-newlines` parytet jest
+      // świadomie ZŁAMANY na rzecz bezpieczeństwa screen readera — pokrywają
+      // to dedykowane testy powyżej.
+      const model = buildLastChangeTooltipModel({
+        source: "remote",
+        fullDate: "24 kwietnia 2026, 12:34:56",
+        relativeLabel: "2 min temu",
+        format: "single-space",
+      });
+
+      expect(model.isRelativeFallback).toBe(false);
+      expect(model.timeLineForView).toBe(model.timeLineForA11y);
+    });
+
     it.each<TimeValueFormat>(["single-space", "compact", "preserve-newlines"])(
-      "[%s] przy fallbacku na relative: a11y = view + ' (etykieta względna)' (różnica TYLKO w sufiksie)",
+      "[%s] przy fallbacku na relative: a11y kończy się ' (etykieta względna)' i jest single-line",
       (format) => {
         const model = buildLastChangeTooltipModel({
           source: "local",
@@ -607,12 +627,13 @@ describe("buildLastChangeTooltipModel — pełny model tooltipa", () => {
         });
 
         expect(model.isRelativeFallback).toBe(true);
-        // Prefiks „Czas: <wartość>" identyczny — różnica TYLKO w sufiksie.
-        expect(model.timeLineForA11y).toBe(
-          `${model.timeLineForView} (etykieta względna)`,
-        );
-        // Wartość czasu po wygładzeniu — żadnych podwójnych spacji.
-        expect(model.timeValue).not.toMatch(/  +/);
+        expect(model.timeLineForA11y).not.toBeNull();
+        const aria = model.timeLineForA11y!;
+
+        // Sufiks fallbacku ZAWSZE doklejony w a11y.
+        expect(aria.endsWith(" (etykieta względna)")).toBe(true);
+        // A11Y single-line, niezależnie od format.
+        expect(aria).not.toMatch(/[\n\r\t]/);
       },
     );
 
@@ -1015,6 +1036,223 @@ describe("i18n — obsługa języków PL/EN w tooltipie Ostatnia zmiana", () => 
       expect(model.timeLineForA11y).toBe("Time: April 24, 2026");
       expect(model.timeLineForA11y).toBe(model.timeLineForView);
     });
+  });
+});
+
+/**
+ * GUARD a11y — `ariaText` NIGDY nie może mieć:
+ *  - pustych linii (regex `/\n\s*\n/`),
+ *  - trailing/leading newline,
+ *  - osieroconego prefiksu „Czas: " / „Time: " bez treści po,
+ *  - wewnętrznego `\n` wprowadzonego przez `format: "preserve-newlines"`
+ *    (kanały a11y MUSZĄ być single-line w wartości czasu, niezależnie od
+ *    formatu wybranego dla widocznej linii).
+ *
+ * Te testy są ostatnim szczeblem obrony — pilnują kontraktu, na którym
+ * polega screen reader (NVDA/JAWS/VoiceOver pauzują na każdym `\n`,
+ * a osierocony prefiks „Czas: " bez wartości brzmi jak błąd UI).
+ */
+describe("ariaText guard — brak pustych linii i osieroconych prefiksów", () => {
+  /**
+   * Helper asercji — rzuca jeżeli `ariaText` narusza inwarianty.
+   * Współdzielony przez wszystkie scenariusze tej sekcji.
+   */
+  const assertAriaTextInvariants = (
+    ariaText: string,
+    {
+      expectedTimePrefix,
+    }: { expectedTimePrefix: "Czas: " | "Time: " | null },
+  ) => {
+    // 1. Brak pustych linii (\n\n lub \n   \n).
+    expect(ariaText, "ariaText nie może mieć pustych linii").not.toMatch(/\n\s*\n/);
+
+    // 2. Brak trailing/leading whitespace (w tym `\n`).
+    expect(ariaText).toBe(ariaText.trim());
+
+    // 3. Każda linia po podziale na `\n` jest niepusta po trim.
+    const lines = ariaText.split("\n");
+    for (const [idx, line] of lines.entries()) {
+      expect(
+        line.trim().length,
+        `linia ${idx} ("${line}") musi mieć treść po trim`,
+      ).toBeGreaterThan(0);
+    }
+
+    // 4. Brak osieroconego prefiksu „Czas: " / „Time: ".
+    for (const prefix of ["Czas: ", "Time: "] as const) {
+      for (const [idx, line] of lines.entries()) {
+        expect(
+          line.trim() === prefix.trim(),
+          `linia ${idx} ("${line}") nie może być osieroconym prefiksem "${prefix.trim()}"`,
+        ).toBe(false);
+        if (line.startsWith(prefix)) {
+          expect(
+            line.slice(prefix.length).trim().length,
+            `linia ${idx} ma prefiks "${prefix.trim()}" — wymaga treści po nim`,
+          ).toBeGreaterThan(0);
+        }
+      }
+    }
+
+    // 5. Jeżeli oczekujemy prefiksu — dokładnie jedna linia musi go zawierać.
+    if (expectedTimePrefix !== null) {
+      const matching = lines.filter((l) => l.startsWith(expectedTimePrefix));
+      expect(
+        matching.length,
+        `dokładnie jedna linia musi zaczynać się od "${expectedTimePrefix}"`,
+      ).toBe(1);
+    }
+  };
+
+  describe("preserve-newlines — wartość czasu wieloliniowa", () => {
+    it("PL: ariaText pozostaje single-line w linii czasu mimo \\n w fullDate", () => {
+      const model = buildLastChangeTooltipModel({
+        source: "remote",
+        fullDate: "24 kwietnia 2026\n12:34:56",
+        relativeLabel: null,
+        locale: "pl",
+        format: "preserve-newlines",
+      });
+
+      // Widoczna linia ZACHOWUJE newline (kontrakt preserve-newlines).
+      expect(model.timeLineForView).toBe("Czas: 24 kwietnia 2026\n12:34:56");
+      // A11y linia jest single-line (wymuszone w helperze).
+      expect(model.timeLineForA11y).toBe("Czas: 24 kwietnia 2026 12:34:56");
+      expect(model.ariaText.split("\n")).toHaveLength(3);
+
+      assertAriaTextInvariants(model.ariaText, { expectedTimePrefix: "Czas: " });
+    });
+
+    it("EN: ariaText pozostaje single-line w linii czasu mimo \\n w fullDate", () => {
+      const model = buildLastChangeTooltipModel({
+        source: "local",
+        fullDate: "April 24, 2026\n12:34:56",
+        relativeLabel: null,
+        locale: "en",
+        format: "preserve-newlines",
+      });
+
+      expect(model.timeLineForView).toBe("Time: April 24, 2026\n12:34:56");
+      expect(model.timeLineForA11y).toBe("Time: April 24, 2026 12:34:56");
+      expect(model.ariaText.split("\n")).toHaveLength(3);
+
+      assertAriaTextInvariants(model.ariaText, { expectedTimePrefix: "Time: " });
+    });
+
+    it("preserve-newlines + relativeLabel z \\n: a11y jest single-line + sufiks", () => {
+      const model = buildLastChangeTooltipModel({
+        source: "remote",
+        fullDate: null,
+        relativeLabel: "2 minuty\ntemu",
+        locale: "pl",
+        format: "preserve-newlines",
+      });
+
+      expect(model.isRelativeFallback).toBe(true);
+      expect(model.timeLineForView).toBe("Czas: 2 minuty\ntemu");
+      expect(model.timeLineForA11y).toBe("Czas: 2 minuty temu (etykieta względna)");
+      expect(model.ariaText.split("\n")).toHaveLength(3);
+
+      assertAriaTextInvariants(model.ariaText, { expectedTimePrefix: "Czas: " });
+    });
+
+    it("preserve-newlines z wieloma kolejnymi \\n: ariaText nie wprowadza pustych linii", () => {
+      const model = buildLastChangeTooltipModel({
+        source: "local",
+        fullDate: "24 kwietnia\n\n\n2026\n\n12:34",
+        relativeLabel: null,
+        locale: "pl",
+        format: "preserve-newlines",
+      });
+
+      expect(model.timeLineForView).toBe("Czas: 24 kwietnia\n2026\n12:34");
+      expect(model.timeLineForA11y).toBe("Czas: 24 kwietnia 2026 12:34");
+
+      assertAriaTextInvariants(model.ariaText, { expectedTimePrefix: "Czas: " });
+    });
+
+    it("preserve-newlines + brak danych: ariaText to 2 linie BEZ prefiksu „Czas:”", () => {
+      const model = buildLastChangeTooltipModel({
+        source: "local",
+        fullDate: null,
+        relativeLabel: null,
+        locale: "pl",
+        format: "preserve-newlines",
+      });
+
+      expect(model.shouldRenderTimeLine).toBe(false);
+      expect(model.timeLineForA11y).toBeNull();
+      expect(model.ariaText.split("\n")).toHaveLength(2);
+
+      assertAriaTextInvariants(model.ariaText, { expectedTimePrefix: null });
+    });
+
+    it("preserve-newlines + fullDate=tylko-whitespace-z-newline: brak osieroconego prefiksu", () => {
+      const model = buildLastChangeTooltipModel({
+        source: "remote",
+        fullDate: "\n\n\t  \n",
+        relativeLabel: null,
+        locale: "pl",
+        format: "preserve-newlines",
+      });
+
+      expect(model.shouldRenderTimeLine).toBe(false);
+      expect(model.timeLineForView).toBeNull();
+      expect(model.timeLineForA11y).toBeNull();
+      expect(model.ariaText).not.toContain("Czas:");
+      assertAriaTextInvariants(model.ariaText, { expectedTimePrefix: null });
+    });
+  });
+
+  describe("inwarianty na macierzy format×locale×source×wejście", () => {
+    /**
+     * Macierz brute-force: każda kombinacja wejścia musi spełnić kontrakt.
+     * Pilnuje, że żadna przyszła zmiana nie wprowadzi regresji w jakimkolwiek
+     * trybie — bez konieczności pisania osobnego testu per kombinacja.
+     */
+    const FORMATS: TimeValueFormat[] = ["single-space", "compact", "preserve-newlines"];
+    const SOURCES = ["remote", "local", null] as const;
+    const FULL_DATES = [
+      "24 kwietnia 2026, 12:34:56",
+      "24 kwietnia 2026\n12:34:56",
+      "  spacje  i\ttabulatory  ",
+      null,
+      "",
+      "   ",
+      "\n\n",
+    ];
+    const RELATIVES = ["5 sekund temu", "2 minuty\ntemu", null, ""];
+
+    for (const format of FORMATS) {
+      for (const locale of SUPPORTED_LOCALES) {
+        for (const source of SOURCES) {
+          for (const fullDate of FULL_DATES) {
+            for (const relativeLabel of RELATIVES) {
+              const label = `format=${format} locale=${locale} source=${source ?? "null"} fullDate=${JSON.stringify(fullDate)} relative=${JSON.stringify(relativeLabel)}`;
+              it(`inwariant: ${label}`, () => {
+                const model = buildLastChangeTooltipModel({
+                  source,
+                  fullDate,
+                  relativeLabel,
+                  locale,
+                  format,
+                });
+
+                const expectedPrefix = !model.shouldRenderTimeLine
+                  ? null
+                  : locale === "en"
+                    ? "Time: "
+                    : "Czas: ";
+
+                assertAriaTextInvariants(model.ariaText, {
+                  expectedTimePrefix: expectedPrefix,
+                });
+              });
+            }
+          }
+        }
+      }
+    }
   });
 });
 

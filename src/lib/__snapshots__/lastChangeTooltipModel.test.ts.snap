@@ -108,7 +108,7 @@ exports[`buildLastChangeTooltipModel — pełny model tooltipa > snapshoty pełn
 {
   "ariaText": "Źródło: Synchronizacja między kartami
 Zmiana auto-zapisu przyszła z innej otwartej karty (BroadcastChannel lub storage).
-Czas: 24 kwietnia 2026, 12: 34: 56",
+Czas: 24 kwietnia 2026 , 12 : 34 : 56",
   "content": {
     "ariaHeading": "Źródło: Synchronizacja między kartami",
     "description": "Zmiana auto-zapisu przyszła z innej otwartej karty (BroadcastChannel lub storage).",
@@ -118,7 +118,7 @@ Czas: 24 kwietnia 2026, 12: 34: 56",
   },
   "isRelativeFallback": false,
   "shouldRenderTimeLine": true,
-  "timeLineForA11y": "Czas: 24 kwietnia 2026, 12: 34: 56",
+  "timeLineForA11y": "Czas: 24 kwietnia 2026 , 12 : 34 : 56",
   "timeLineForView": "Czas: 24 kwietnia 2026, 12: 34: 56",
   "timeLineHelpTitle": undefined,
   "timeValue": "24 kwietnia 2026, 12: 34: 56",
@@ -129,8 +129,7 @@ exports[`buildLastChangeTooltipModel — pełny model tooltipa > snapshoty pełn
 {
   "ariaText": "Źródło: Moja lokalna akcja w tej karcie
 Sam(a) przełączyłe(a)ś auto-zapis w tej karcie (Switch lub skrót Alt+Shift+A).
-Czas: 24 kwietnia 2026
-12:34:56",
+Czas: 24 kwietnia 2026 12:34:56",
   "content": {
     "ariaHeading": "Źródło: Moja lokalna akcja w tej karcie",
     "description": "Sam(a) przełączyłe(a)ś auto-zapis w tej karcie (Switch lub skrót Alt+Shift+A).",
@@ -140,8 +139,7 @@ Czas: 24 kwietnia 2026
   },
   "isRelativeFallback": false,
   "shouldRenderTimeLine": true,
-  "timeLineForA11y": "Czas: 24 kwietnia 2026
-12:34:56",
+  "timeLineForA11y": "Czas: 24 kwietnia 2026 12:34:56",
   "timeLineForView": "Czas: 24 kwietnia 2026
 12:34:56",
   "timeLineHelpTitle": undefined,
