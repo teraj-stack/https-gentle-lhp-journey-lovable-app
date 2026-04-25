@@ -219,20 +219,20 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
           {lastSyncLabel && (
             <p
               key={lastRemoteSyncAt ?? "none"}
-              className={`text-[11px] font-sans text-muted-foreground inline-flex items-center gap-1 transition-colors ${
-                isRemoteSyncing ? "text-primary" : ""
-              } animate-fade-in`}
+              className={`text-[11px] font-sans inline-flex items-center gap-1 transition-colors animate-fade-in ${
+                isRemoteSyncing ? "text-emerald-400" : "text-emerald-500/80"
+              }`}
               title={`Zmiana auto-zapisu wykryta przez synchronizację z inną kartą${
                 lastSyncFullDate ? ` — ${lastSyncFullDate}` : ""
               }`}
               aria-live="polite"
             >
               <RefreshCw
-                className={`w-3 h-3 ${isRemoteSyncing ? "animate-spin text-primary" : ""}`}
+                className={`w-3 h-3 ${isRemoteSyncing ? "animate-spin text-emerald-400" : "text-emerald-500/80"}`}
                 aria-hidden="true"
               />
               <span>
-                Ostatnia zmiana: <strong className="text-foreground">{lastSyncLabel}</strong>
+                Ostatnia zmiana: <strong className="text-emerald-400">{lastSyncLabel}</strong>
               </span>
             </p>
           )}
