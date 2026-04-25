@@ -41,6 +41,13 @@ import { toast } from "@/hooks/use-toast";
 export interface SyncDiagnosticPanelProps {
   transport: "broadcast" | "storage-fallback";
   degradationInfo: DegradationInfo | null;
+  /**
+   * Akumulowana historia degradacji BC (najnowsza pierwsza).
+   * Panel renderuje licznik per typ + filtr + listę z datownikami.
+   */
+  degradationHistory: DegradationHistoryEntry[];
+  /** Czyści historię degradacji (nie kasuje aktualnego degradationInfo). */
+  clearDegradationHistory: () => void;
   simulateFallback: boolean;
   isBroadcastSupported: boolean;
   tabLabel: string;
@@ -54,6 +61,27 @@ export interface SyncDiagnosticPanelProps {
     strategy: "broadcast" | "storage" | null;
   };
 }
+
+/**
+ * Etykiety krótkich nazw kategorii degradacji — używane w badge'ach licznika
+ * i w filtrach. Trzymane razem z opisami z hooka, ale skrócone do 1-2 słów,
+ * żeby zmieściły się w zwartym UI panelu diagnostycznego.
+ */
+const DEGRADATION_LABELS: Record<DegradationCause, string> = {
+  "api-missing": "Brak API",
+  "constructor-exception": "Konstruktor",
+  messageerror: "Deserializacja",
+  "postmessage-failure": "postMessage",
+  simulation: "Symulacja",
+};
+
+/** Wszystkie kategorie pokazywane w pasku filtrów (kolejność = częstotliwość w praktyce). */
+const FILTER_CAUSES: readonly DegradationCause[] = [
+  "api-missing",
+  "constructor-exception",
+  "messageerror",
+  "postmessage-failure",
+];
 
 /**
  * Wykrywanie środowiska runtime — używamy do checklisty "co jest dostępne".
