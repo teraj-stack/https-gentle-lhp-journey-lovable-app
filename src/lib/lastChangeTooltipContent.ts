@@ -42,6 +42,8 @@ export const resolveLocale = (raw: string | null | undefined): Locale => {
   if (typeof raw !== "string") return "pl";
   const primary = raw.toLowerCase().split(/[-_]/)[0];
   if (primary === "en") return "en";
+  if (primary === "de") return "de";
+  if (primary === "it") return "it";
   return "pl";
 };
 
