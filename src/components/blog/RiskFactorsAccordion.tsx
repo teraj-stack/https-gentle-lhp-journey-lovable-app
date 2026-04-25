@@ -735,7 +735,7 @@ const RiskFactorsAccordion = () => {
             size="sm"
             variant="outline"
             onClick={() => {
-              setOpenItems(filtered.map((rf) => rf.id));
+              setOpenItemsStaggered(filtered.map((rf) => rf.id));
               setQuery("");
               toast({
                 title: "Rozwinięto dopasowane sekcje",
