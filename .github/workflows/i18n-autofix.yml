@@ -1,0 +1,150 @@
+name: i18n autofix
+
+# When REQUIRED_TRANSLATION_KEYS / REQUIRED_TIME_LINE_KEYS drift from the
+# keys actually consumed by the tooltip builder, this workflow runs the
+# autofix script in WRITE mode and opens a pull request with the resulting
+# patch — so contributors don't have to remember to run `npm run i18n:autofix`
+# locally and the main branch self-heals on a schedule.
+#
+# Triggers
+# --------
+#   - workflow_dispatch  → on-demand from the Actions tab (`Run workflow`).
+#                         Optional `preserve_order` input toggles the
+#                         low-churn merge mode that keeps existing key
+#                         declaration order and only appends new keys.
+#   - schedule (daily)   → catches drift introduced by PRs that bypassed
+#                         the i18n-check workflow (e.g. merged from a fork).
+#   - push to main       → only on touched files (mirrors i18n-check) so a
+#                         direct push to main also triggers a self-healing PR.
+#
+# Behaviour
+# ---------
+#   1. Checkout + install deps.
+#   2. Run `npm run i18n:autofix` (optionally with --preserve-order).
+#   3. If `git status` shows changes → open / update a PR via
+#      peter-evans/create-pull-request@v6.
+#      If nothing changed → exit 0 quietly (no noisy "no-op" PRs).
+#
+# Permissions
+# -----------
+#   `contents: write`  → push the autofix branch.
+#   `pull-requests: write` → open / update the PR.
+# These are scoped to GITHUB_TOKEN; no PAT is required as long as the repo
+# allows GitHub Actions to create PRs (Settings → Actions → Workflow
+# permissions → "Allow GitHub Actions to create and approve pull requests").
+
+on:
+  workflow_dispatch:
+    inputs:
+      preserve_order:
+        description: "Preserve existing key declaration order (low-churn mode)"
+        type: boolean
+        default: false
+  schedule:
+    # Daily at 06:17 UTC — off-peak so it doesn't compete with PR-CI for
+    # runner capacity. Adjust if your team prefers a different cadence.
+    - cron: "17 6 * * *"
+  push:
+    branches: [main]
+    paths:
+      - "src/lib/lastChangeTooltipContent.ts"
+      - "src/lib/lastChangeTooltipModel.ts"
+      - "scripts/autofix-required-translation-keys.mjs"
+
+jobs:
+  i18n-autofix:
+    name: Run autofix and open PR if drift detected
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        # Full history isn't needed; the PR action only needs the working
+        # tree + the base ref. Defaults to fetch-depth: 1 which is fine.
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run i18n autofix (write mode)
+        id: autofix
+        # The script is a no-op when REQUIRED_* lists are already in sync —
+        # so it's safe to run unconditionally. The `--preserve-order` flag
+        # is forwarded only when the dispatch input is true; for scheduled /
+        # push runs we use the default sorted mode.
+        run: |
+          if [ "${{ inputs.preserve_order }}" = "true" ]; then
+            echo "Running with --preserve-order (low-churn mode)"
+            npm run i18n:autofix -- --preserve-order
+          else
+            npm run i18n:autofix
+          fi
+
+      - name: Detect changes
+        id: diff
+        # `git diff --quiet` exits 1 when there are unstaged changes — we
+        # invert that into a boolean step output so the PR-creation step
+        # can be conditionally skipped (avoiding empty PRs).
+        run: |
+          if git diff --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "✅ No drift detected — REQUIRED_* lists are already in sync."
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "⚠️  Drift detected — opening / updating PR with autofix patch."
+            git --no-pager diff --stat
+          fi
+
+      - name: Create or update pull request
+        if: steps.diff.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@v6
+        with:
+          # Reuse a stable branch so consecutive runs UPDATE the same PR
+          # instead of opening a new one for every drift detection.
+          branch: chore/i18n-autofix
+          base: main
+          commit-message: "chore(i18n): sync REQUIRED_* keys via autofix"
+          title: "chore(i18n): sync REQUIRED_* keys"
+          body: |
+            ## Automated i18n contract sync
+
+            The autofix script (`npm run i18n:autofix`) detected drift between
+            the `REQUIRED_TRANSLATION_KEYS` / `REQUIRED_TIME_LINE_KEYS` lists
+            and the keys actually consumed by the tooltip builder.
+
+            This PR applies the regenerated lists. The per-bucket diff
+            (added / removed) is visible in the **i18n autofix** workflow run
+            that produced this PR — see the *Run i18n autofix* step.
+
+            ### What you should review
+            - **Added keys** → confirm the new keys exist in every active
+              locale (CI's `i18n contract` workflow will verify automatically).
+            - **Removed keys** → confirm they are genuinely no longer read
+              by the builder (a refactor that intentionally dropped a field).
+
+            ### How it was generated
+            - Trigger: `${{ github.event_name }}`
+            - Mode: ${{ inputs.preserve_order && 'preserve-order (low-churn)' || 'sorted (default)' }}
+            - Workflow run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+            > 💡 Auto-generated. To regenerate locally: `npm run i18n:autofix`.
+          labels: |
+            i18n
+            automation
+          # `delete-branch: true` cleans up the autofix branch after merge,
+          # so a subsequent drift opens a fresh PR (rather than reopening
+          # a merged-and-closed one with the same branch name).
+          delete-branch: true
+          # Sign commits with the github-actions[bot] identity so the audit
+          # trail is unambiguous and the PR doesn't appear authored by the
+          # last human committer.
+          committer: "github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>"
+          author: "github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>"
