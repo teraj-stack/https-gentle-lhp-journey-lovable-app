@@ -427,6 +427,11 @@ export const useAutoSave = () => {
     };
   }, []);
 
+  // Lustrzane odbicie state→ref dla simulateFallback (handler BC w useEffect).
+  useEffect(() => {
+    simulateFallbackRef.current = simulateFallback;
+  }, [simulateFallback]);
+
   const toggle = useCallback((next: boolean) => {
     // Generujemy nową wersję dla TEJ lokalnej zmiany. Każdy odbiorca (inna instancja
     // tego samego hooka, inna karta, fallback przez storage) zignoruje ją, jeśli
@@ -448,7 +453,9 @@ export const useAutoSave = () => {
     };
 
     // Próbujemy BC tylko jeśli kanał istnieje i nie został zdegradowany.
-    if (channelRef.current && !broadcastDegradedRef.current) {
+    // Symulacja braku BC pomija postMessage — storage write powyżej i CustomEvent
+    // poniżej zostają, więc inne karty i komponenty nadal odbiorą zmianę.
+    if (channelRef.current && !broadcastDegradedRef.current && !simulateFallbackRef.current) {
       try {
         channelRef.current.postMessage(payload);
       } catch {
