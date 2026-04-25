@@ -312,6 +312,7 @@ describe("i18nGithubAnnotations — severity emission in CI", () => {
   let logSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
+    __resetAnnotationDedupForTesting();
     process.env.GITHUB_ACTIONS = "true";
     logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
   });
