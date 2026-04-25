@@ -397,6 +397,9 @@ const DiaryFullModule = ({
           </ResponsiveContainer>
         </div>
 
+        {/* Auto-werdykt: kierunek trendu + najważniejszy dzień zmiany */}
+        <DiaryTrendSummary trend={trend} entries={entries} />
+
         {/* Wzbogacone statystyki trendu */}
         <DiaryTrendStats trend={trend} entries={entries} />
       </motion.div>
