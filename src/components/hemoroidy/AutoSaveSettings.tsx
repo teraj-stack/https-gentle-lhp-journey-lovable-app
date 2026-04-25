@@ -494,7 +494,7 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
                         // Celowo neutralna paleta (muted), bo zielony rezerwujemy dla remote.
                         <span
                           className="ml-1.5 inline-flex items-center px-1.5 py-0.5 text-[10px] uppercase tracking-wider font-mono rounded-md border border-border/60 bg-muted/40 text-foreground/80 align-middle"
-                          aria-label="Źródło: lokalna zmiana w tej karcie"
+                          aria-label="Źródło: Moja lokalna akcja w tej karcie"
                         >
                           lokalnie
                         </span>
