@@ -313,7 +313,216 @@ const RiskFactorsAccordion = () => {
           moduł „Źródła EBM" →
         </Link>
       </div>
+
+      <RiskVsPreventionTable />
     </motion.section>
+  );
+};
+
+/* ============================================================
+   Tabela porównawcza: Ryzyko vs. Profilaktyka
+   Linki do badań współdzielone z modułem „Źródła EBM"
+   (te same URL-e + ebmId co w RISK_FACTORS).
+   ============================================================ */
+
+type Row = {
+  risk: string;
+  prevention: string;
+  source: RiskSource;
+};
+
+const COMPARISON_ROWS: Row[] = [
+  {
+    risk: "Parcie i zaparcia (Valsalva) — ↑ ciśnienie żylne",
+    prevention: "Błonnik 25–35 g/d + nawodnienie ≥2 l, krótkie wizyty w toalecie (<3 min)",
+    source: {
+      label: "ASCRS Clinical Practice Guidelines (2018)",
+      url: "https://journals.lww.com/dcrjournal/Fulltext/2018/03000/The_American_Society_of_Colon_and_Rectal_Surgeons.7.aspx",
+      ebmId: "guidelines",
+    },
+  },
+  {
+    risk: "Dieta uboga w błonnik — twardy stolec, krwawienie",
+    prevention: "Psyllium 7–10 g/d (Cochrane: −50% objawów, poziom 1A)",
+    source: {
+      label: "Alonso-Coello P. et al. (2005) — Cochrane Review",
+      url: "https://www.cochranelibrary.com/cdsr/doi/10.1002/14651858.CD004649.pub2/full",
+      ebmId: "fiber",
+    },
+  },
+  {
+    risk: "Długie siedzenie na toalecie + smartfon",
+    prevention: "Zasada „3 minut": jeśli nie ma efektu — wstań i wróć później",
+    source: {
+      label: "Garg P., Singh P. (2017) — TONE technique",
+      url: "https://pubmed.ncbi.nlm.nih.gov/28206729/",
+      ebmId: "toilet",
+    },
+  },
+  {
+    risk: "Stosunek analny bez przygotowania — mikrourazy, ↑ napięcie zwieracza",
+    prevention: "Lubrykant na bazie wody/silikonu, stopniowa relaksacja, unikanie podczas zaostrzeń",
+    source: {
+      label: "ESCP guideline for haemorrhoidal disease (2020)",
+      url: "https://onlinelibrary.wiley.com/doi/10.1111/codi.14975",
+      ebmId: "guidelines",
+    },
+  },
+  {
+    risk: "Siedzący tryb życia — zastój żylny w miednicy",
+    prevention: "Aktywność aerobowa 150 min/tydz. (chód, pływanie); unikać izometrii (deadlift max)",
+    source: {
+      label: "Johanson J.F., Sonnenberg A. (1990) — Gastroenterology",
+      url: "https://pubmed.ncbi.nlm.nih.gov/2295392/",
+      ebmId: "risk",
+    },
+  },
+  {
+    risk: "Przewlekła biegunka — drażnienie śluzówki",
+    prevention: "Diagnostyka przyczyny (IBS/IBD), nawodnienie elektrolitowe, krótkie podmywanie wodą",
+    source: {
+      label: "ESCP guideline for haemorrhoidal disease (2020)",
+      url: "https://onlinelibrary.wiley.com/doi/10.1111/codi.14975",
+      ebmId: "guidelines",
+    },
+  },
+];
+
+const RiskVsPreventionTable = () => {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.15 }}
+      transition={{ duration: 0.6, ease: easeOut }}
+      className="mt-10"
+      aria-labelledby="risk-vs-prevention-heading"
+    >
+      <div className="mb-4">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/30 mb-3">
+          <Scale className="w-3.5 h-3.5 text-primary" />
+          <span className="text-xs font-sans uppercase tracking-[0.16em] text-primary">
+            Ryzyko vs. profilaktyka
+          </span>
+        </div>
+        <h3
+          id="risk-vs-prevention-heading"
+          className="font-heading text-xl md:text-2xl text-foreground mb-1.5"
+        >
+          Co szkodzi — i co realnie chroni
+        </h3>
+        <p className="text-sm text-muted-foreground leading-relaxed max-w-2xl">
+          Każdy wiersz ma jedno źródło EBM (te same linki co w module „Źródła" powyżej i pełnej
+          bibliografii). Otwieraj w nowej karcie — strona pozostaje w tle.
+        </p>
+      </div>
+
+      {/* Desktop / tablet: tabela */}
+      <div className="hidden md:block overflow-x-auto rounded-xl border border-border bg-background/40">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-border bg-muted/30">
+              <th scope="col" className="text-left font-sans uppercase tracking-[0.12em] text-[11px] text-muted-foreground px-4 py-3 w-[34%]">
+                Czynnik ryzyka
+              </th>
+              <th scope="col" className="text-left font-sans uppercase tracking-[0.12em] text-[11px] text-muted-foreground px-4 py-3 w-[44%]">
+                Profilaktyka (EBM)
+              </th>
+              <th scope="col" className="text-left font-sans uppercase tracking-[0.12em] text-[11px] text-muted-foreground px-4 py-3 w-[22%]">
+                Źródło
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {COMPARISON_ROWS.map((row, i) => (
+              <tr
+                key={i}
+                className="border-b border-border/50 last:border-b-0 hover:bg-primary/[0.03] transition-colors"
+              >
+                <td className="px-4 py-3 align-top">
+                  <span className="inline-flex items-start gap-2 text-foreground/90 leading-snug">
+                    <AlertTriangle className="w-3.5 h-3.5 text-destructive mt-0.5 shrink-0" aria-hidden="true" />
+                    <span>{row.risk}</span>
+                  </span>
+                </td>
+                <td className="px-4 py-3 align-top text-foreground/90 leading-snug">
+                  {row.prevention}
+                </td>
+                <td className="px-4 py-3 align-top">
+                  <a
+                    href={row.source.url}
+                    target="_blank"
+                    rel="noopener noreferrer nofollow external"
+                    referrerPolicy="no-referrer"
+                    title="Otwórz źródło w nowej karcie"
+                    className="text-primary hover:underline inline-flex items-start gap-1 leading-snug text-[13px]"
+                  >
+                    <span>{row.source.label}</span>
+                    <ExternalLink className="w-3 h-3 mt-0.5 shrink-0" aria-hidden="true" />
+                  </a>
+                  {row.source.ebmId && (
+                    <Link
+                      to={`/dla-pacjenta/ebm-hemoroidy#ebm-${row.source.ebmId}`}
+                      className="block mt-1 text-[11.5px] text-muted-foreground hover:text-primary underline-offset-2 hover:underline"
+                    >
+                      → kategoria w bibliografii
+                    </Link>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Mobile: karty zamiast tabeli */}
+      <ul className="md:hidden space-y-3">
+        {COMPARISON_ROWS.map((row, i) => (
+          <li
+            key={i}
+            className="rounded-xl border border-border bg-background/40 p-4"
+          >
+            <div className="flex items-start gap-2 mb-2">
+              <AlertTriangle className="w-4 h-4 text-destructive mt-0.5 shrink-0" aria-hidden="true" />
+              <p className="text-[14px] text-foreground/90 leading-snug font-medium">
+                {row.risk}
+              </p>
+            </div>
+            <div className="rounded-lg bg-primary/5 border border-primary/20 p-3 mb-3">
+              <p className="text-[10.5px] uppercase tracking-[0.14em] font-sans text-primary mb-1">
+                Profilaktyka
+              </p>
+              <p className="text-[13.5px] text-foreground/90 leading-snug">
+                {row.prevention}
+              </p>
+            </div>
+            <a
+              href={row.source.url}
+              target="_blank"
+              rel="noopener noreferrer nofollow external"
+              referrerPolicy="no-referrer"
+              className="text-primary hover:underline inline-flex items-start gap-1.5 leading-snug text-[13px]"
+            >
+              <ExternalLink className="w-3 h-3 mt-1 shrink-0" aria-hidden="true" />
+              <span>{row.source.label}</span>
+            </a>
+            {row.source.ebmId && (
+              <Link
+                to={`/dla-pacjenta/ebm-hemoroidy#ebm-${row.source.ebmId}`}
+                className="block mt-1.5 text-[11.5px] text-muted-foreground hover:text-primary underline-offset-2 hover:underline"
+              >
+                → kategoria w bibliografii
+              </Link>
+            )}
+          </li>
+        ))}
+      </ul>
+
+      <p className="text-xs text-muted-foreground italic mt-4">
+        Tabela edukacyjna oparta na ASCRS 2018, ESCP 2020, Cochrane i PubMed. Nie zastępuje
+        konsultacji proktologicznej.
+      </p>
+    </motion.div>
   );
 };
 
