@@ -243,11 +243,12 @@ Accepted values for `--only`: `missing-required-key`, `placeholder-mismatch`, `u
 #!/usr/bin/env bash
 # i18n-summary.sh — run i18n contract tests and print a per-reason PASS/FAIL summary.
 # Usage:
-#   bash i18n-summary.sh                          # run all reasons (default)
-#   bash i18n-summary.sh --only placeholder-mismatch
+#   bash i18n-summary.sh                                          # run all reasons (default)
+#   bash i18n-summary.sh --only placeholder-mismatch              # one reason
 #   bash i18n-summary.sh -o wrong-type
-#   bash i18n-summary.sh --only all               # explicit equivalent of default
-#   bash i18n-summary.sh --list                   # print reason → test-file table and exit
+#   bash i18n-summary.sh --only placeholder-mismatch,wrong-type   # multiple reasons (comma-joined)
+#   bash i18n-summary.sh --only all                               # explicit equivalent of default
+#   bash i18n-summary.sh --list                                   # print reason → test-file table and exit
 set -euo pipefail
 
 LOG=/tmp/i18n-summary.log
