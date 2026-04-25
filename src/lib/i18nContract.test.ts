@@ -368,6 +368,11 @@ describe("i18n contract — content keys per locale (aggregated report)", () => 
           const fullKey = `${k}${tag}`;
           if (checkNonEmptyString(locale, fullKey, c[k], violations)) {
             checkNoPlaceholders(locale, fullKey, c[k] as string, violations);
+            // Higiena białych znaków + limity długości — TYLKO dla pól
+            // prozatorskich. shortBadge ma własne, ostrzejsze reguły niżej.
+            if (k !== "shortBadge") {
+              checkStringHygiene(locale, fullKey, c[k] as string, k, violations);
+            }
           }
         }
 
