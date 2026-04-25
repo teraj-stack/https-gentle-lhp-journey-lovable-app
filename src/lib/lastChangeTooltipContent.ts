@@ -180,7 +180,7 @@ export const SUPPORTED_LOCALES: readonly Locale[] = ["pl", "en", "de", "it"] as 
  */
 export const REQUIRED_TRANSLATION_KEYS = {
   top: ["sourcePrefix"] as const,
-  variant: ["heading", "description", "shortBadge"] as const,
+  variant: ["description", "heading", "shortBadge"] as const,
   variantOptional: ["ariaHeadingOverride"] as const,
 } as const;
 

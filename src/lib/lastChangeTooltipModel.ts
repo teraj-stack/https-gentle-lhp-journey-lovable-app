@@ -100,9 +100,9 @@ const TIME_LINE_TRANSLATIONS: Record<Locale, TimeLineStrings> = {
  * dla wszystkich locale.
  */
 export const REQUIRED_TIME_LINE_KEYS = [
-  "timePrefix",
-  "relativeQualifier",
   "relativeHelpTitle",
+  "relativeQualifier",
+  "timePrefix",
 ] as const satisfies ReadonlyArray<keyof TimeLineStrings>;
 
 /**
