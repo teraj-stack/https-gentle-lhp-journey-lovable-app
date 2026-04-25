@@ -23,6 +23,7 @@ import {
   Clock,
   AlertCircle,
   ArrowDownToLine,
+  Upload,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -56,6 +57,8 @@ import {
   exportDiaryPdf,
   exportSingleDayJson,
   exportSingleDayPdf,
+  parseImportedDayJson,
+  type ImportedDayPayload,
 } from "@/lib/diaryExport";
 import DiaryReminderBanner from "@/components/hemoroidy/DiaryReminderBanner";
 import DiaryReminderSettings from "@/components/hemoroidy/DiaryReminderSettings";
