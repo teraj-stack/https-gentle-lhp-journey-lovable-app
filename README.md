@@ -892,6 +892,47 @@ Multi-line value handling (after step 3):
 
 The resolver tests in `src/lib/i18nGithubAnnotations.test.ts` deliberately read the **real** source files (not mocks), so any divergence between this normative spec and the actual code surfaces as a failing test on the next CI run.
 
+#### Fixture → source-file mapping (placement cheat sheet)
+
+Use this table as the **first reference** when pasting any fixture from this README into the codebase. Each row tells you exactly which file to open, which top-level constant to mutate, which locale branch to target, and which dotted key path the annotation will report — so you can navigate to the paste site in seconds without reading the surrounding prose.
+
+| # | Fixture / reason | Source file (open this) | Top-level constant | Locale branch (paste here) | Key path (mutated) | Reference locale (do **not** edit) | Required scope env |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | **`missing-required-key`** (delete a required key) | `src/lib/lastChangeTooltipContent.ts` | `TRANSLATIONS` | `en: { local: { … } }` | `local.description` | `pl.local.description` | default (`pl,en`) — none needed |
+| 2 | **`placeholder-mismatch`** (forbidden alternate `%d`) | `src/lib/lastChangeTooltipModel.ts` | `TIME_LINE` | `en: { relative: { … } }` | `relative.minutesAgo` | `pl.relative.minutesAgo` (`"Zmieniono {count} minut temu"`) | default (`pl,en`) — none needed |
+| 3 | **`undeclared-key`** (add key not in `REQUIRED_TRANSLATION_KEYS`) | `src/lib/lastChangeTooltipContent.ts` | `TRANSLATIONS` | `en: { local: { … } }` | `local.subheading` (new) | `pl.local.*` (no sibling needed) | default (`pl,en`) — none needed |
+| 4 | **`empty-optional-value`** (`""` for an optional key) | `src/lib/lastChangeTooltipModel.ts` | `TIME_LINE` | `de: { relative: { … } }` (add branch) | `relative.relativeHelpTitle` | `pl.relative.relativeHelpTitle` | `I18N_ACTIVE_LOCALES=pl,en,de` |
+| 5 | **`wrong-type`** (number cast to string) | `src/lib/lastChangeTooltipContent.ts` | `TRANSLATIONS` | `it: { local: { … } }` | `local.heading` | `pl.local.heading` (`"Ostatnia zmiana"`) | `I18N_ACTIVE_LOCALES=pl,en,it` |
+
+**How to read this table**
+
+- **Source file** — the only two files the validator reads. Open it in your editor; everything else stays untouched.
+- **Top-level constant** — the test-only export name (`TRANSLATIONS` is exposed via `__getRawTranslationsForTesting`; `TIME_LINE` via `__getRawTimeLineTranslationsForTesting`). The fixture pastes into the corresponding `const = { … } as const` literal.
+- **Locale branch** — the `<locale>: { … }` sub-object you mutate. For `de` / `it` fixtures the branch may not exist yet — add it (and remember the scope env var below).
+- **Key path** — dotted form of where inside the locale branch the mutation lives. This is what appears as `TRANSLATIONS.<locale>.<path>` (or `TIME_LINE.<locale>.<path>`) in the `::error` / `::warning` body.
+- **Reference locale** — `pl` is the source of truth; the validator compares non-reference locales against it. Editing `pl` shifts the baseline and may silently make a fixture pass. Always leave `pl` alone.
+- **Required scope env** — `I18N_ACTIVE_LOCALES` defaults to `pl,en`. Fixtures targeting `de` / `it` are silently skipped without the env var. Prepend it to the run command exactly as shown.
+
+**Quick visual map of both files**
+
+```
+src/lib/lastChangeTooltipContent.ts          src/lib/lastChangeTooltipModel.ts
+└── const TRANSLATIONS = {                    └── const TIME_LINE = {
+    pl: {                                          pl: {
+      local: {                                       relative: {
+        heading,         ← #5 (it)                     relativeHelpTitle, ← #4 (de)
+        description,     ← #1 (en)                     minutesAgo,        ← #2 (en)
+        subheading,      ← #3 (en, NEW)               …
+      },                                             },
+      sourcePrefix,                                 },
+    },                                            en: { … },
+    en: { … },                                    de: { … },  ← add for #4
+    it: { … },                                  } as const;
+  } as const;
+```
+
+After picking a row, jump to the matching numbered fixture in [Reproducible source fixtures](#reproducible-source-fixtures) below for the literal paste-in code, and to [End-to-end walkthrough](#end-to-end-walkthrough--one-fixture-per-error-type-start-to-finish) for the run command + verbatim expected output.
+
 #### Reproducible source fixtures
 
 <!-- BEGIN: AUTO-GENERATED FIXTURE SNIPPETS -->
