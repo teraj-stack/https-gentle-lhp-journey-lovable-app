@@ -460,13 +460,108 @@ export const TRANSLATIONS = {
 } as const;
 ```
 
-After pasting any one of these, run:
+#### Run + expected output (per fixture)
+
+After pasting **one** fixture into the indicated source file, run the matching command. The expected stdout is shown verbatim — `line=` numbers depend on where you pasted, but the rest (file path, title, reason, severity, message body) should match exactly. Revert with `git checkout src/lib/lastChangeTooltipContent.ts src/lib/lastChangeTooltipModel.ts` when done.
+
+The single command that runs **all three** contract tests at once (use this if you don't care which test catches the fixture):
 
 ```sh
-GITHUB_ACTIONS=true bunx vitest run src/lib/i18nRequiredKeys.test.ts src/lib/i18nContract.test.ts src/lib/i18nPlaceholders.test.ts 2>&1 | grep '^::'
+GITHUB_ACTIONS=true bunx vitest run \
+  src/lib/i18nRequiredKeys.test.ts \
+  src/lib/i18nContract.test.ts \
+  src/lib/i18nPlaceholders.test.ts 2>&1 | grep '^::'
 ```
 
-You should see exactly one `::<level>` line per fixture, with `line=` pointing at the highlighted row in the snippet. Revert the snippet (or `git checkout`) when you're done — these are demonstration-only edits.
+If you want to narrow it down to the **single test** that owns a given reason (faster, less noise), use the per-fixture commands below.
+
+**Fixture 1 — `missing-required-key`** (owned by `i18nRequiredKeys.test.ts`):
+
+```sh
+GITHUB_ACTIONS=true bunx vitest run src/lib/i18nRequiredKeys.test.ts 2>&1 | grep '^::'
+```
+
+Expected stdout (one line):
+
+```text
+::error file=src/lib/lastChangeTooltipContent.ts,line=<en-block-line>,title=TRANSLATIONS [error]%3A en · missing-required-key::TRANSLATIONS.en.local.heading (locale=en, reason=missing-required-key, severity=error) — Locale "en" is missing required key "local.heading" — expected (from `pl`): heading: "Ostatnia zmiana", — Fix: update the locale entry in the indicated file, or run `npm run i18n:autofix` if REQUIRED_* keys drifted.
+```
+
+`line=` lands on the `en: {` line because the key isn't there to point at. The `expected (from \`pl\`): …` segment shows the reference declaration verbatim so you can copy-paste-translate.
+
+**Fixture 2 — `placeholder-mismatch`** (owned by `i18nPlaceholders.test.ts`):
+
+```sh
+GITHUB_ACTIONS=true bunx vitest run src/lib/i18nPlaceholders.test.ts 2>&1 | grep '^::'
+```
+
+Expected stdout (one line):
+
+```text
+::error file=src/lib/lastChangeTooltipModel.ts,line=<pl-minutesAgo-line>,title=TIME_LINE [error]%3A pl · placeholder-mismatch::TIME_LINE.pl.relative.minutesAgo (locale=pl, reason=placeholder-mismatch, severity=error) — Locale "pl" value "Zmieniono %d minut temu" is missing placeholder {count}, expected by base locale "en" ("Changed {count} minutes ago") — current: minutesAgo: "Zmieniono %d minut temu", — Fix: update the locale entry in the indicated file, or run `npm run i18n:autofix` if REQUIRED_* keys drifted.
+```
+
+Note the `current: …` segment quotes the offending line **verbatim** (with the trailing comma), so reviewers see the broken `%d` directly without opening the file.
+
+**Fixture 3 — `undeclared-key`** (owned by `i18nContract.test.ts`):
+
+```sh
+GITHUB_ACTIONS=true bunx vitest run src/lib/i18nContract.test.ts 2>&1 | grep '^::'
+```
+
+Expected stdout (one line):
+
+```text
+::error file=src/lib/lastChangeTooltipContent.ts,line=<en-subheading-line>,title=TRANSLATIONS [error]%3A en · undeclared-key::TRANSLATIONS.en.local.subheading (locale=en, reason=undeclared-key, severity=error) — Locale "en" ships key "local.subheading" not present in REQUIRED_TRANSLATION_KEYS — current: subheading: "(uncategorised)", — Fix: update the locale entry in the indicated file, or run `npm run i18n:autofix` if REQUIRED_* keys drifted.
+```
+
+The `Fix:` hint specifically calls out `npm run i18n:autofix` because the most common cause is a forgotten autofix run after adding a new key — the script will register `local.subheading` into `REQUIRED_TRANSLATION_KEYS` and the error disappears.
+
+**Fixture 4 — `empty-optional-value`** (owned by `i18nContract.test.ts`, severity `warning`):
+
+```sh
+GITHUB_ACTIONS=true bunx vitest run src/lib/i18nContract.test.ts 2>&1 | grep '^::'
+```
+
+Expected stdout (one line — note `::warning` not `::error`, and the build stays green):
+
+```text
+::warning file=src/lib/lastChangeTooltipModel.ts,line=<de-minutesAgo-line>,title=TIME_LINE [warning]%3A de · empty-optional-value::TIME_LINE.de.relative.minutesAgo (locale=de, reason=empty-optional-value, severity=warning) — Locale "de" key "relative.minutesAgo" is empty — current: minutesAgo: "", — Fix: update the locale entry in the indicated file, or run `npm run i18n:autofix` if REQUIRED_* keys drifted.
+```
+
+Verify the exit code is `0` (warnings don't fail the build):
+
+```sh
+GITHUB_ACTIONS=true bunx vitest run src/lib/i18nContract.test.ts; echo "exit=$?"
+# → exit=0
+```
+
+**Fixture 5 — `wrong-type`** (owned by `i18nContract.test.ts`):
+
+```sh
+GITHUB_ACTIONS=true bunx vitest run src/lib/i18nContract.test.ts 2>&1 | grep '^::'
+```
+
+Expected stdout (one line):
+
+```text
+::error file=src/lib/lastChangeTooltipContent.ts,line=<it-heading-line>,title=TRANSLATIONS [error]%3A it · wrong-type::TRANSLATIONS.it.local.heading (locale=it, reason=wrong-type, severity=error) — Locale "it" key "local.heading" expected string, got number (42) — current: local: { heading: 42 as unknown as string }, — Fix: update the locale entry in the indicated file, or run `npm run i18n:autofix` if REQUIRED_* keys drifted.
+```
+
+The `current: …` segment is the **collapsed multi-line** snippet (the assembler walks the inline `{ … }` and emits one row), proving the multi-line resolver works for type errors too.
+
+##### Sanity-check checklist for all five
+
+After running any fixture command, verify:
+
+1. **Exactly one `::<level>` line** in the output (no duplicates from cross-test dedup leaking).
+2. **`line=N` is non-zero** and points at a real row in the indicated file (`sed -n "${N}p" <file>` should match the highlighted line in the fixture snippet).
+3. **`severity=` matches the table**: 1/2/3/5 → `error`, 4 → `warning`.
+4. **Exit code**: `error` fixtures → vitest exits non-zero (the test failed); `warning` fixture → exit `0` (no test fails).
+5. **Cleanup**: `git diff src/lib/lastChange*.ts` shows only your fixture, then `git checkout src/lib/lastChange*.ts` to restore.
+
+If any of points 1–4 don't match, jump to [Troubleshooting: `line=` lands on the wrong line](#troubleshooting-line-lands-on-the-wrong-line) — that walks through the resolver edge cases.
+
 
 ### Source line resolution
 
