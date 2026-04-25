@@ -350,7 +350,7 @@ const RiskFactorsAccordion = () => {
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Szukaj np. „błonnik”, „parcie”, „ciąża”…"
+            placeholder="Szukaj np. „błonnik”, „Cochrane”, „ASCRS”, „ciąża”…"
             className="pl-9 pr-10 bg-background/40 border-border/60"
             aria-describedby="risk-factors-search-hint"
           />
@@ -372,7 +372,7 @@ const RiskFactorsAccordion = () => {
         >
           {nQuery
             ? `Znaleziono ${filtered.length} z ${RISK_FACTORS.length} czynników`
-            : `Filtruje po tytule, oznaczeniu i opisie mechanizmu (${RISK_FACTORS.length} kart)`}
+            : `Filtruje po tytule, oznaczeniu, mechanizmie i nazwie źródła (${RISK_FACTORS.length} kart)`}
         </p>
       </div>
 
