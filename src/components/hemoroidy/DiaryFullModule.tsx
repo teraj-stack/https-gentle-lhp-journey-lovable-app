@@ -753,9 +753,23 @@ const DiaryFullModule = ({
           aria-label="Postęp uzupełniania pytań"
         >
           <div className="flex items-center justify-between gap-3 mb-1.5">
-            <p className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground font-sans">
-              Postęp pytań
-            </p>
+            <div className="flex items-center gap-2 min-w-0">
+              <p className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground font-sans">
+                Postęp pytań
+              </p>
+              {/* Badge auto-zapisu — potwierdza że odpowiedzi są zapisywane lokalnie
+                  natychmiast po kliknięciu (przeżyją refresh). Pojawia się dopiero gdy
+                  jest co potwierdzać (≥1 odpowiedź). */}
+              {completed > 0 && (
+                <span
+                  className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-sans text-emerald-500"
+                  title="Twoje odpowiedzi są zapisywane lokalnie w przeglądarce po każdym kliknięciu — przeżyją odświeżenie strony."
+                >
+                  <CheckCircle2 className="w-3 h-3" aria-hidden="true" />
+                  Auto-zapis
+                </span>
+              )}
+            </div>
             <p
               className={`text-xs font-sans tabular-nums ${
                 entry.complete ? "text-emerald-500" : "text-foreground/80"
