@@ -983,15 +983,26 @@ const EBMSourcesSection = ({
                             target="_blank"
                             rel="noopener noreferrer nofollow external"
                             referrerPolicy="no-referrer"
-                            onClick={() =>
+                            onClick={() => {
                               trackEbmClick({
                                 url: src.url,
                                 label: src.title,
                                 source: "EBMSourcesSection",
                                 kind: "external_source",
                                 ebmId: cat.id,
-                              })
-                            }
+                              });
+                              recordRecent({
+                                url: src.url,
+                                title: src.title,
+                                journal: src.journal,
+                                authors: src.authors,
+                                year: src.year,
+                                categoryId: cat.id,
+                                categoryTitle: cat.title,
+                                linkLabel: meta.label,
+                                linkKind: meta.kind,
+                              });
+                            }}
                             aria-label={`${src.title} — ${meta.longLabel}, otwiera się w nowej karcie`}
                             title={`${meta.longLabel} — otwiera się w nowej karcie`}
                             className={`mt-1 inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-sans uppercase tracking-[0.08em] transition-colors hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${linkKindClasses[meta.kind]}`}
