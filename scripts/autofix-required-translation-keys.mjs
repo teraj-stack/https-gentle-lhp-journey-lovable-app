@@ -112,6 +112,12 @@ const MODEL_PATH = resolve(ROOT, "src/lib/lastChangeTooltipModel.ts");
 const args = new Set(process.argv.slice(2));
 const CHECK_ONLY = args.has("--check");
 const DEBUG = args.has("--debug");
+// `--preserve-order` keeps the EXISTING declaration order of keys that are
+// still present in the file, and only appends NEW keys (sorted among
+// themselves for determinism) at the end. Removed keys drop out. This is
+// the low-churn mode for teams that group keys by intent / commit history
+// rather than alphabetically — the default mode still sorts everything.
+const PRESERVE_ORDER = args.has("--preserve-order");
 
 // ---------------------------------------------------------------------------
 // Detection helpers
@@ -333,6 +339,38 @@ export const diffKeys = (current, next) => {
 };
 
 /**
+ * Merge a `current` (existing on-disk) key list with a `next` (freshly
+ * detected) set, preserving the original declaration order of any key
+ * that survives, and appending NEW keys (sorted among themselves) at the
+ * end. Removed keys silently drop out.
+ *
+ * Used by `--preserve-order` mode so teams that intentionally group keys
+ * by feature/commit history don't see giant alphabetical reshuffles when
+ * a single new key is added. The appended-keys tail is still sorted, so
+ * the output remains deterministic regardless of detector iteration order.
+ *
+ * Exported for unit tests.
+ */
+export const mergePreservingOrder = (current, next) => {
+  const nxt = new Set(next);
+  const out = [];
+  const seen = new Set();
+  // 1. Keep every still-present key in its original position.
+  for (const k of current) {
+    if (nxt.has(k) && !seen.has(k)) {
+      out.push(k);
+      seen.add(k);
+    }
+  }
+  // 2. Append truly-new keys, sorted, at the tail.
+  const additions = [...nxt]
+    .filter((k) => !seen.has(k))
+    .sort((a, b) => a.localeCompare(b));
+  for (const k of additions) out.push(k);
+  return out;
+};
+
+/**
  * Format a single bucket's diff as human-readable lines. Returns `null`
  * when there are no changes (caller filters those out so the summary only
  * lists buckets that actually moved).
@@ -521,10 +559,29 @@ const run = () => {
     [...variantAll].filter((k) => !variantOptional.has(k)),
   );
 
+  // Parse the CURRENT on-disk lists up-front so we can either re-sort
+  // (default mode) or merge while preserving existing order
+  // (`--preserve-order`). Doing this before render keeps the two modes
+  // sharing the same downstream pipeline.
+  const currentTranslations = parseCurrentTranslationKeys(contentSrc);
+  const currentTimeLine = parseCurrentTimeLineKeys(modelSrc);
+
+  // `orderKeys` is the only place that branches on PRESERVE_ORDER — every
+  // other site below just consumes its (already-ordered) output.
+  const orderKeys = (current, next) =>
+    PRESERVE_ORDER ? mergePreservingOrder(current, next) : sortedArr(next);
+
+  const orderedTop = orderKeys(currentTranslations.top, topReads);
+  const orderedVariant = orderKeys(currentTranslations.variant, variantRequired);
+  const orderedVariantOptional = orderKeys(
+    currentTranslations.variantOptional,
+    variantOptional,
+  );
+
   const newTranslationBlock = renderRequiredTranslationKeys({
-    top: sortedArr(topReads),
-    variant: sortedArr(variantRequired),
-    variantOptional: sortedArr(variantOptional),
+    top: orderedTop,
+    variant: orderedVariant,
+    variantOptional: orderedVariantOptional,
   });
 
   // ─── TIME_LINE_TRANSLATIONS (model file) ───────────────────────────────────
@@ -563,7 +620,8 @@ const run = () => {
     ...timeLineFromIndexed,
     ...timeLineFromHelper,
   ]);
-  const newTimeLineBlock = renderRequiredTimeLineKeys(sortedArr(timeLineKeys));
+  const orderedTimeLine = orderKeys(currentTimeLine, timeLineKeys);
+  const newTimeLineBlock = renderRequiredTimeLineKeys(orderedTimeLine);
 
   // --- Apply edits ---
   const updatedContent = replaceBlock(
@@ -582,7 +640,9 @@ const run = () => {
   const contentChanged = updatedContent !== contentSrc;
   const modelChanged = updatedModel !== modelSrc;
 
-  // Reporting
+  // Reporting — `detected` always shows the SORTED canonical view so the
+  // JSON dump stays comparable run-over-run regardless of file ordering;
+  // the per-bucket diff (below) reflects the actual on-disk → next change.
   const summary = {
     detected: {
       translations: {
@@ -596,23 +656,21 @@ const run = () => {
       [CONTENT_PATH]: contentChanged ? "updated" : "unchanged",
       [MODEL_PATH]: modelChanged ? "updated" : "unchanged",
     },
+    mode: PRESERVE_ORDER ? "preserve-order" : "sorted",
   };
 
-  // Per-bucket diff between what's CURRENTLY in the source files and what
-  // the scanner would write. Computed from the raw source (not from the
-  // `*Changed` flags) so the diff still works in --check mode where we
-  // never write — and so it surfaces zero-change buckets explicitly.
-  const currentTranslations = parseCurrentTranslationKeys(contentSrc);
-  const currentTimeLine = parseCurrentTimeLineKeys(modelSrc);
+  // Per-bucket diff — diffKeys is order-independent, so we feed it the
+  // ordered arrays directly (same set membership, but avoids a redundant
+  // resort on the right-hand side).
   const translationDiffs = {
-    top: diffKeys(currentTranslations.top, sortedArr(topReads)),
-    variant: diffKeys(currentTranslations.variant, sortedArr(variantRequired)),
+    top: diffKeys(currentTranslations.top, orderedTop),
+    variant: diffKeys(currentTranslations.variant, orderedVariant),
     variantOptional: diffKeys(
       currentTranslations.variantOptional,
-      sortedArr(variantOptional),
+      orderedVariantOptional,
     ),
   };
-  const timeLineDiff = diffKeys(currentTimeLine, sortedArr(timeLineKeys));
+  const timeLineDiff = diffKeys(currentTimeLine, orderedTimeLine);
 
   console.log("[autofix-required-translation-keys] detected keys:");
   console.log(JSON.stringify(summary.detected, null, 2));
