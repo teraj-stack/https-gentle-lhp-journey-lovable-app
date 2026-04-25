@@ -584,6 +584,9 @@ const DziennikHemoroidy = () => {
             </p>
           </motion.section>
 
+          {/* Reminder settings — cadence + snooze + system notifications */}
+          <DiaryReminderSettings />
+
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
