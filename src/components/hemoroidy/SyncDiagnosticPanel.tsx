@@ -12,6 +12,7 @@ import {
   ClipboardCheck,
   History,
   Trash2,
+  Zap,
 } from "lucide-react";
 import type {
   DegradationCause,
@@ -164,6 +165,27 @@ const SyncDiagnosticPanel = ({
    * potwierdzenia bez kolizji wizualnej.
    */
   const [degradationCopied, setDegradationCopied] = useState(false);
+  /**
+   * Wynik ostatniego ręcznego testu BroadcastChannel uruchomionego z UI panelu.
+   * Test jest **niezależny** od głównego kanału hooka — tworzy ad-hoc instancję
+   * `BroadcastChannel`, próbuje raz wysłać `postMessage`, mierzy outcome i od razu
+   * zamyka kanał. Dzięki temu można sprawdzić aktualną dostępność BC bez wpływu
+   * na stan auto-zapisu czy historię degradacji hooka.
+   *
+   * `cause` używa tej samej taksonomii co `DegradationInfo`, żeby UI mógł reusować
+   * te same etykiety (`DEGRADATION_LABELS`).
+   */
+  const [bcTestResult, setBcTestResult] = useState<
+    | null
+    | {
+        ok: boolean;
+        at: number;
+        cause?: DegradationCause;
+        detail: string;
+        errorMessage?: string;
+      }
+  >(null);
+  const [bcTestRunning, setBcTestRunning] = useState(false);
 
   /** Liczniki per kategoria — zliczamy z pełnej historii, niezależnie od filtra. */
   const counts = useMemo(() => {
@@ -292,6 +314,92 @@ const SyncDiagnosticPanel = ({
       });
     }
   };
+
+  /**
+   * Ręczny test BroadcastChannel uruchamiany z UI.
+   *
+   * Sekwencja:
+   *  1. Sprawdza dostępność API (`api-missing` jeśli brak).
+   *  2. Próbuje skonstruować ad-hoc kanał `cml-bc-probe` (`constructor-exception` przy wyjątku).
+   *  3. Próbuje raz wykonać `postMessage` (`postmessage-failure` przy wyjątku).
+   *  4. Zamyka kanał i zapisuje wynik w `bcTestResult`.
+   *
+   * Test jest read-only względem hooka — nie modyfikuje degradationInfo ani historii.
+   */
+  const handleRunBcTest = async () => {
+    setBcTestRunning(true);
+    const at = Date.now();
+    if (typeof BroadcastChannel === "undefined") {
+      setBcTestResult({
+        ok: false,
+        at,
+        cause: "api-missing",
+        detail: "BroadcastChannel API nie jest dostępne w tej przeglądarce.",
+      });
+      setBcTestRunning(false);
+      toast({
+        title: "Test BC: API niedostępne",
+        description: "Ta przeglądarka nie wspiera BroadcastChannel — używamy fallbacku.",
+        duration: 2800,
+      });
+      return;
+    }
+    let probe: BroadcastChannel | null = null;
+    try {
+      probe = new BroadcastChannel("cml-bc-probe");
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      setBcTestResult({
+        ok: false,
+        at,
+        cause: "constructor-exception",
+        detail: "Konstruktor BroadcastChannel rzucił wyjątek (możliwy sandbox iframe).",
+        errorMessage,
+      });
+      setBcTestRunning(false);
+      toast({
+        title: "Test BC: błąd konstruktora",
+        description: errorMessage.slice(0, 120),
+        duration: 3200,
+      });
+      return;
+    }
+    try {
+      probe.postMessage({ kind: "cml-diagnostic-ping", at });
+      setBcTestResult({
+        ok: true,
+        at,
+        detail: "Kanał działa — pojedyncza wiadomość została wysłana bez błędu.",
+      });
+      toast({
+        title: "Test BC: OK",
+        description: "BroadcastChannel jest dostępny i przyjął wiadomość.",
+        duration: 2200,
+      });
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      setBcTestResult({
+        ok: false,
+        at,
+        cause: "postmessage-failure",
+        detail: "postMessage rzucił wyjątek — kanał istnieje, ale nie przyjmuje wiadomości.",
+        errorMessage,
+      });
+      toast({
+        title: "Test BC: postMessage padł",
+        description: errorMessage.slice(0, 120),
+        duration: 3200,
+      });
+    } finally {
+      try {
+        probe.close();
+      } catch {
+        // close() niemal nigdy nie rzuca; ignorujemy żeby nie maskować błędu testu
+      }
+      setBcTestRunning(false);
+    }
+  };
+
 
   return (
     <div
@@ -473,6 +581,74 @@ const SyncDiagnosticPanel = ({
           </div>
         </div>
       )}
+
+      {/* Ręczny test BroadcastChannel — niezależny od głównego kanału hooka.
+          Tworzy ad-hoc instancję, próbuje raz postMessage, pokazuje wynik
+          z taksonomią cause zgodną z DegradationInfo. */}
+      <div className="mb-4 rounded-xl border border-border/60 bg-muted/20 px-3 py-2.5">
+        <div className="flex items-start justify-between gap-2 flex-wrap mb-2">
+          <div className="min-w-0">
+            <p className="text-[10px] uppercase tracking-wider font-sans text-muted-foreground/70 inline-flex items-center gap-1.5">
+              <Zap className="w-3 h-3" aria-hidden="true" />
+              Ręczny test BroadcastChannel
+            </p>
+            <p className="text-[11px] text-muted-foreground mt-1 leading-snug">
+              Próbuje raz wysłać wiadomość na ad-hoc kanał i pokazuje, czy występuje degradacja wraz z powodem.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={handleRunBcTest}
+            disabled={bcTestRunning}
+            className="shrink-0 inline-flex items-center gap-1.5 text-[11px] font-sans px-2.5 py-1.5 rounded-md border border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 transition-colors focus:outline-none focus:ring-1 focus:ring-primary/60 disabled:opacity-50 disabled:cursor-not-allowed"
+            aria-label="Uruchom test BroadcastChannel — wyśle pojedynczą wiadomość i pokaże wynik"
+          >
+            <Zap className={`w-3.5 h-3.5 ${bcTestRunning ? "animate-pulse" : ""}`} aria-hidden="true" />
+            {bcTestRunning ? "Testowanie…" : "Uruchom test BroadcastChannel"}
+          </button>
+        </div>
+
+        {bcTestResult && (
+          <div
+            role="status"
+            aria-live="polite"
+            className={`mt-1 rounded-lg border px-2.5 py-2 ${
+              bcTestResult.ok
+                ? "border-emerald-500/40 bg-emerald-500/5"
+                : "border-amber-500/40 bg-amber-500/5"
+            }`}
+          >
+            <p
+              className={`text-[11px] sm:text-xs font-sans inline-flex items-center gap-1.5 ${
+                bcTestResult.ok ? "text-emerald-400" : "text-amber-400"
+              }`}
+            >
+              {bcTestResult.ok ? (
+                <CheckCircle2 className="w-3.5 h-3.5" aria-hidden="true" />
+              ) : (
+                <XCircle className="w-3.5 h-3.5" aria-hidden="true" />
+              )}
+              <strong>{bcTestResult.ok ? "Test OK" : "Wykryto degradację"}</strong>
+              {bcTestResult.cause && (
+                <span className="ml-auto text-[10px] font-mono px-1.5 py-0.5 rounded-md bg-amber-500/10 border border-amber-500/30 text-amber-300">
+                  {bcTestResult.cause}
+                </span>
+              )}
+            </p>
+            <p className="mt-1 text-[11px] text-muted-foreground leading-relaxed">
+              {bcTestResult.detail}
+            </p>
+            {bcTestResult.errorMessage && (
+              <p className="mt-1 text-[10px] font-mono text-muted-foreground/80 break-all">
+                {bcTestResult.errorMessage}
+              </p>
+            )}
+            <p className="mt-1 text-[10px] text-muted-foreground/60">
+              Test: {formatTime(bcTestResult.at)} ({formatRelative(bcTestResult.at)})
+            </p>
+          </div>
+        )}
+      </div>
 
       {/* Historia degradacji — licznik per typ + filtr + lista z datownikami.
           Renderujemy zawsze gdy mamy >0 wpisów, niezależnie od aktualnego
