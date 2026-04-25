@@ -23,6 +23,93 @@ const normalize = (s: string): string =>
 const PDF_URL =
   "https://jowtjcyevactqmhqrytz.supabase.co/storage/v1/object/public/blog-covers/downloads%2Fzrodla-EBM-quiz-hemoroidy-CML.pdf";
 
+/**
+ * Klasyfikacja linku źródła EBM na czytelną etykietę („PDF", „PubMed", „Wytyczne kliniczne", …).
+ * Używana w karcie źródła, żeby użytkownik wiedział, czego dotknie zanim kliknie.
+ */
+type SourceLinkKind =
+  | "pdf"
+  | "pubmed"
+  | "cochrane"
+  | "guidelines"
+  | "journal"
+  | "external";
+
+type SourceLinkMeta = {
+  kind: SourceLinkKind;
+  /** Krótka etykieta na chipie (PL). */
+  label: string;
+  /** Pełny tekst dla aria-label / tooltipa. */
+  longLabel: string;
+};
+
+const classifyLink = (url: string, opts?: { categoryId?: string }): SourceLinkMeta => {
+  const u = url.toLowerCase();
+  if (u.endsWith(".pdf") || u.includes("/pdf/") || u.includes(".pdf?")) {
+    return { kind: "pdf", label: "PDF", longLabel: "Plik PDF — pełny tekst" };
+  }
+  if (u.includes("pubmed.ncbi.nlm.nih.gov") || u.includes("ncbi.nlm.nih.gov/pmc")) {
+    return { kind: "pubmed", label: "PubMed", longLabel: "Abstrakt w bazie PubMed (NIH)" };
+  }
+  if (u.includes("cochranelibrary.com") || u.includes("cochrane.org")) {
+    return {
+      kind: "cochrane",
+      label: "Cochrane Review",
+      longLabel: "Przegląd systematyczny Cochrane",
+    };
+  }
+  // Główne źródła wytycznych klinicznych (ASCRS, ESCP, NICE, WGO, AGA, ESC)
+  if (
+    u.includes("fascrs.org") ||
+    u.includes("journals.lww.com/dcrjournal") ||
+    u.includes("escp.eu.com") ||
+    u.includes("nice.org.uk") ||
+    u.includes("worldgastroenterology.org") ||
+    u.includes("gastrojournal.org") ||
+    opts?.categoryId === "guidelines"
+  ) {
+    return {
+      kind: "guidelines",
+      label: "Wytyczne kliniczne",
+      longLabel: "Oficjalne wytyczne towarzystwa naukowego",
+    };
+  }
+  if (
+    u.includes("onlinelibrary.wiley.com") ||
+    u.includes("sciencedirect.com") ||
+    u.includes("springer.com") ||
+    u.includes("nature.com") ||
+    u.includes("nejm.org") ||
+    u.includes("jamanetwork.com") ||
+    u.includes("bmj.com") ||
+    u.includes("thelancet.com") ||
+    u.includes("karger.com") ||
+    u.includes("tandfonline.com") ||
+    u.includes("oup.com") ||
+    u.includes("sagepub.com")
+  ) {
+    return {
+      kind: "journal",
+      label: "Artykuł w czasopiśmie",
+      longLabel: "Pełen artykuł w recenzowanym czasopiśmie",
+    };
+  }
+  return {
+    kind: "external",
+    label: "Strona zewnętrzna",
+    longLabel: "Zewnętrzne źródło naukowe",
+  };
+};
+
+const linkKindClasses: Record<SourceLinkKind, string> = {
+  pdf: "bg-destructive/10 text-destructive border-destructive/30",
+  pubmed: "bg-primary/10 text-primary border-primary/30",
+  cochrane: "bg-primary/10 text-primary border-primary/30",
+  guidelines: "bg-primary/15 text-primary border-primary/40",
+  journal: "bg-muted/40 text-foreground/80 border-border",
+  external: "bg-muted/30 text-muted-foreground border-border",
+};
+
 type Source = {
   authors: string;
   year: string;
@@ -791,40 +878,43 @@ const EBMSourcesSection = ({
                     </div>
                   )}
                   <ul className="space-y-3 pt-2 border-t border-border/50">
-                    {cat.matchedItems.map((src, i) => (
-                      <li
-                        key={`${cat.id}-${i}`}
-                        className="text-sm leading-relaxed text-foreground/90"
-                      >
-                        <span className="font-semibold text-foreground">
-                          {src.authors} ({src.year}).
-                        </span>{" "}
-                        {src.title}.{" "}
-                        <em className="text-muted-foreground not-italic">{src.journal}.</em>{" "}
-                        <a
-                          href={src.url}
-                          target="_blank"
-                          rel="noopener noreferrer nofollow external"
-                          referrerPolicy="no-referrer"
-                          onClick={() =>
-                            trackEbmClick({
-                              url: src.url,
-                              label: src.title,
-                              source: "EBMSourcesSection",
-                              kind: "external_source",
-                              ebmId: cat.id,
-                            })
-                          }
-                          aria-label={`${src.title} — otwiera się w nowej karcie`}
-                          title="Otwórz źródło w nowej karcie"
-                          className="text-primary hover:underline inline-flex items-center gap-1 break-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded-sm"
+                    {cat.matchedItems.map((src, i) => {
+                      const meta = classifyLink(src.url, { categoryId: cat.id });
+                      return (
+                        <li
+                          key={`${cat.id}-${i}`}
+                          className="text-sm leading-relaxed text-foreground/90"
                         >
-                          Link
-                          <ExternalLink className="w-3 h-3" aria-hidden="true" />
-                          <span className="sr-only"> (nowa karta)</span>
-                        </a>
-                      </li>
-                    ))}
+                          <span className="font-semibold text-foreground">
+                            {src.authors} ({src.year}).
+                          </span>{" "}
+                          {src.title}.{" "}
+                          <em className="text-muted-foreground not-italic">{src.journal}.</em>{" "}
+                          <a
+                            href={src.url}
+                            target="_blank"
+                            rel="noopener noreferrer nofollow external"
+                            referrerPolicy="no-referrer"
+                            onClick={() =>
+                              trackEbmClick({
+                                url: src.url,
+                                label: src.title,
+                                source: "EBMSourcesSection",
+                                kind: "external_source",
+                                ebmId: cat.id,
+                              })
+                            }
+                            aria-label={`${src.title} — ${meta.longLabel}, otwiera się w nowej karcie`}
+                            title={`${meta.longLabel} — otwiera się w nowej karcie`}
+                            className={`mt-1 inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-sans uppercase tracking-[0.08em] transition-colors hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${linkKindClasses[meta.kind]}`}
+                          >
+                            <span>{meta.label}</span>
+                            <ExternalLink className="w-3 h-3" aria-hidden="true" />
+                            <span className="sr-only"> (nowa karta)</span>
+                          </a>
+                        </li>
+                      );
+                    })}
                   </ul>
                 </AccordionContent>
               </AccordionItem>
