@@ -283,6 +283,7 @@ const RISK_FACTORS: RiskFactor[] = [
 const STORAGE_KEY = "cml.hemoroidy.risk-factors.selected.v1";
 const READ_STORAGE_KEY = "cml.hemoroidy.risk-factors.read.v1";
 const PRIORITY_STORAGE_KEY = "cml.hemoroidy.risk-factors.priority.v1";
+const OPEN_ITEMS_STORAGE_KEY = "cml.hemoroidy.risk-factors.open.v1";
 const TIMESTAMP_STORAGE_KEY = "cml.hemoroidy.risk-factors.selected-at.v1";
 
 const loadStringArray = (key: string): string[] => {
