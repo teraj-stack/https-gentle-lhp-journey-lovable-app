@@ -209,7 +209,7 @@ describe("getLastChangeTooltipContent — odporność na nietypowe wartości sou
     ["unknown", "wartość-placeholder z niedokończonego refactoringu"],
   ])(
     "string '%s' (%s) → fallback lokalny",
-    (badSource) => {
+    (badSource, _label) => {
       const content = getLastChangeTooltipContent(
         badSource as unknown as "remote" | "local" | null,
       );
