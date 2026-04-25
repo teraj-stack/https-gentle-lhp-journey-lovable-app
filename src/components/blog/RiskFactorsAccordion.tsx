@@ -89,7 +89,7 @@ const RISK_FACTORS: RiskFactor[] = [
       {
         label: "ASCRS Clinical Practice Guidelines (2018)",
         url: "https://journals.lww.com/dcrjournal/Fulltext/2018/03000/The_American_Society_of_Colon_and_Rectal_Surgeons.7.aspx",
-        ebmId: "totally-bogus-id",
+        ebmId: "guidelines",
       },
       {
         label: "Garg P., Singh P. (2017) — Adequate fiber and TONE",
