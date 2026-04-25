@@ -215,9 +215,27 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
    */
   const [demoSource, setDemoSource] = useState<"remote" | "local" | null>(null);
   const [demoAt, setDemoAt] = useState<number | null>(null);
+  /**
+   * Toggle podglądu „brak pełnej daty" — symuluje sytuację, w której formatter
+   * `formatFullTimestamp` nie zwrócił czytelnej wartości (np. invalid timestamp,
+   * pusty string, „—"). Komponent w tym trybie spada na etykietę względną
+   * (`lastSyncLabel`) i dokleja kwalifikator „(etykieta względna)" do aria-label
+   * + title — pacjent/audytor a11y widzi 1:1, jak wygląda fallback w obu kanałach
+   * (wizualny tooltip + dane dla screen readera) bez czekania na realny edge case.
+   */
+  const [demoHideFullDate, setDemoHideFullDate] = useState(false);
   const handleDemoSelect = (source: "remote" | "local") => {
     setDemoSource(source);
     setDemoAt(Date.now());
+  };
+  const handleToggleHideFullDate = () => {
+    setDemoHideFullDate((prev) => !prev);
+    // Aktywuj demo jeśli pacjent jeszcze nie wybrał źródła — domyślnie remote,
+    // żeby kontrast „przed/po" był od razu widoczny bez dodatkowego kliknięcia.
+    if (demoSource === null) {
+      setDemoSource("remote");
+      setDemoAt(Date.now());
+    }
   };
 
   useEffect(() => {
