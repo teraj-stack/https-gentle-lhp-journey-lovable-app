@@ -777,3 +777,244 @@ describe("buildLastChangeTooltipModel — pełny model tooltipa", () => {
     });
   });
 });
+
+/**
+ * I18N — tooltip „Ostatnia zmiana" obsługuje PL (default) i EN.
+ *
+ * Pokrywamy:
+ *  1. `resolveLocale` — primary subtag, fallback do „pl" dla nieznanych.
+ *  2. `getTimeLinePrefix` — prefiks „Czas: " / „Time: ".
+ *  3. `composeTimeLine` z param `locale` — backward-compat (default PL).
+ *  4. `buildLastChangeTooltipModel({ locale })` — pełny tooltip w EN:
+ *     prefiks linii czasu, sufiks fallbacku, helpTitle, ariaHeading.
+ *  5. Spójność: dla każdego locale ariaText nie miesza języków.
+ */
+describe("i18n — obsługa języków PL/EN w tooltipie „Ostatnia zmiana"", () => {
+  describe("resolveLocale", () => {
+    it.each([
+      ["pl", "pl"],
+      ["en", "en"],
+      ["pl-PL", "pl"],
+      ["en-US", "en"],
+      ["en-GB", "en"],
+      ["en_US", "en"], // underscore też jest separatorem
+      ["EN", "en"], // case-insensitive
+      ["Pl-pL", "pl"],
+    ])("'%s' → '%s'", (input, expected) => {
+      expect(resolveLocale(input)).toBe(expected);
+    });
+
+    it.each([
+      [null],
+      [undefined],
+      [""],
+      ["fr"],
+      ["de-DE"],
+      ["xx-YY"],
+      [123 as unknown as string],
+      [{} as unknown as string],
+    ])("nieznane/niepoprawne wejście → fallback 'pl' (%s)", (input) => {
+      expect(resolveLocale(input as string | null | undefined)).toBe("pl");
+    });
+
+    it("SUPPORTED_LOCALES eksportuje dokładnie obsługiwane języki", () => {
+      expect([...SUPPORTED_LOCALES].sort()).toEqual(["en", "pl"]);
+    });
+  });
+
+  describe("getTimeLinePrefix", () => {
+    it("PL → 'Czas: ' (z dokładnie jedną spacją końcową)", () => {
+      expect(getTimeLinePrefix("pl")).toBe("Czas: ");
+    });
+
+    it("EN → 'Time: ' (z dokładnie jedną spacją końcową)", () => {
+      expect(getTimeLinePrefix("en")).toBe("Time: ");
+    });
+
+    it("default (bez argumentu) → PL (kompatybilność wsteczna)", () => {
+      expect(getTimeLinePrefix()).toBe(TIME_LINE_PREFIX);
+      expect(getTimeLinePrefix()).toBe("Czas: ");
+    });
+
+    it("BCP-47 z regionem działa: 'en-US' → 'Time: '", () => {
+      expect(getTimeLinePrefix("en-US")).toBe("Time: ");
+      expect(getTimeLinePrefix("pl-PL")).toBe("Czas: ");
+    });
+
+    it("nieznany język → fallback PL ('Czas: ')", () => {
+      expect(getTimeLinePrefix("fr")).toBe("Czas: ");
+      expect(getTimeLinePrefix("de-DE")).toBe("Czas: ");
+    });
+  });
+
+  describe("composeTimeLine z parametrem locale", () => {
+    it("PL: 'composeTimeLine(\"12:34\", \"pl\")' → 'Czas: 12:34'", () => {
+      expect(composeTimeLine("12:34", "pl")).toBe("Czas: 12:34");
+    });
+
+    it("EN: 'composeTimeLine(\"12:34\", \"en\")' → 'Time: 12:34'", () => {
+      expect(composeTimeLine("12:34", "en")).toBe("Time: 12:34");
+    });
+
+    it("default (bez locale) → PL — backward compat z istniejącymi wywołaniami", () => {
+      expect(composeTimeLine("12:34")).toBe("Czas: 12:34");
+    });
+
+    it("pusty/whitespace → null niezależnie od locale", () => {
+      for (const locale of ["pl", "en", "fr", undefined] as const) {
+        expect(composeTimeLine("", locale as string)).toBeNull();
+        expect(composeTimeLine("   ", locale as string)).toBeNull();
+        expect(composeTimeLine("\n\t", locale as string)).toBeNull();
+      }
+    });
+  });
+
+  describe("buildLastChangeTooltipModel({ locale })", () => {
+    it("EN + remote + pełna data: prefiks 'Time:', nagłówek 'Cross-tab synchronization'", () => {
+      const model = buildLastChangeTooltipModel({
+        source: "remote",
+        fullDate: "April 24, 2026, 12:34:56",
+        relativeLabel: "2 minutes ago",
+        locale: "en",
+      });
+
+      expect(model.content.locale).toBe("en");
+      expect(model.content.heading).toBe("Cross-tab synchronization");
+      expect(model.content.ariaHeading).toBe("Source: Cross-tab synchronization");
+      expect(model.content.description).toMatch(/another open tab/);
+      expect(model.timeLineForView).toBe("Time: April 24, 2026, 12:34:56");
+      expect(model.timeLineForA11y).toBe("Time: April 24, 2026, 12:34:56");
+      expect(model.timeLineHelpTitle).toBeUndefined();
+      // ariaText nie może mieć ŻADNEGO polskiego słowa.
+      expect(model.ariaText).not.toMatch(/Czas:|Źródło:|karta|karcie|kartami/);
+      expect(model.ariaText).toMatch(/^Source: Cross-tab synchronization\n/);
+    });
+
+    it("EN + local: aria-headingOverride 'My local action in this tab'", () => {
+      const model = buildLastChangeTooltipModel({
+        source: "local",
+        fullDate: "April 24, 2026",
+        relativeLabel: "just now",
+        locale: "en",
+      });
+
+      expect(model.content.heading).toBe("Local action in this tab");
+      // Pierwszoosobowy override w aria-label, dokładnie jak w PL ("Moja…").
+      expect(model.content.ariaHeading).toBe("Source: My local action in this tab");
+      expect(model.content.description).toMatch(/Switch|Alt\+Shift\+A/);
+    });
+
+    it("EN + fallback na relative: sufiks '(relative label)' i help title po angielsku", () => {
+      const model = buildLastChangeTooltipModel({
+        source: "remote",
+        fullDate: "",
+        relativeLabel: "2 minutes ago",
+        locale: "en",
+      });
+
+      expect(model.isRelativeFallback).toBe(true);
+      expect(model.timeLineForView).toBe("Time: 2 minutes ago");
+      expect(model.timeLineForA11y).toBe("Time: 2 minutes ago (relative label)");
+      expect(model.timeLineHelpTitle).toBe(
+        "Full date unavailable — showing a relative label.",
+      );
+      // Nie wolno wyciec polskiego sufiksu.
+      expect(model.ariaText).not.toContain("(etykieta względna)");
+      expect(model.ariaText).not.toContain("Pełna data niedostępna");
+    });
+
+    it("PL default (bez param locale) — pełna kompatybilność wsteczna", () => {
+      const model = buildLastChangeTooltipModel({
+        source: "remote",
+        fullDate: "24 kwietnia 2026, 12:34:56",
+        relativeLabel: "2 minuty temu",
+      });
+
+      expect(model.content.locale).toBe("pl");
+      expect(model.content.heading).toBe("Synchronizacja między kartami");
+      expect(model.content.ariaHeading).toBe("Źródło: Synchronizacja między kartami");
+      expect(model.timeLineForView).toBe("Czas: 24 kwietnia 2026, 12:34:56");
+    });
+
+    it("PL fallback dla relative — sufiks '(etykieta względna)' i polski help title", () => {
+      const model = buildLastChangeTooltipModel({
+        source: "local",
+        fullDate: "",
+        relativeLabel: "2 minuty temu",
+        locale: "pl",
+      });
+
+      expect(model.timeLineForA11y).toBe("Czas: 2 minuty temu (etykieta względna)");
+      expect(model.timeLineHelpTitle).toBe(
+        "Pełna data niedostępna — pokazujemy etykietę względną.",
+      );
+    });
+
+    it("BCP-47 z regionem ('en-US') aktywuje EN", () => {
+      const model = buildLastChangeTooltipModel({
+        source: "remote",
+        fullDate: "April 24",
+        relativeLabel: "n/a",
+        locale: "en-US",
+      });
+
+      expect(model.content.locale).toBe("en");
+      expect(model.timeLineForView).toBe("Time: April 24");
+    });
+
+    it("nieznany locale ('fr') → fallback PL (default kliniki)", () => {
+      const model = buildLastChangeTooltipModel({
+        source: "remote",
+        fullDate: "24 kwietnia",
+        relativeLabel: "2 minuty temu",
+        locale: "fr",
+      });
+
+      expect(model.content.locale).toBe("pl");
+      expect(model.content.heading).toBe("Synchronizacja między kartami");
+      expect(model.timeLineForView).toBe("Czas: 24 kwietnia");
+    });
+
+    it("spójność: dla każdego locale ariaText nie miesza języków", () => {
+      // Regression guard: nigdy nie powstanie tooltip typu
+      // "Source: Cross-tab synchronization\n…\nCzas: 12:34" (PL prefiks
+      // przykleił się do EN nagłówka).
+      const FORBIDDEN_IN_EN = ["Czas:", "Źródło:", "karta", "karcie", "kartami"];
+      const FORBIDDEN_IN_PL = ["Time:", "Source:", "Cross-tab", "Local action in"];
+
+      const en = buildLastChangeTooltipModel({
+        source: "remote",
+        fullDate: "April 24",
+        relativeLabel: "2 minutes ago",
+        locale: "en",
+      });
+      for (const phrase of FORBIDDEN_IN_EN) {
+        expect(en.ariaText, `EN ariaText nie może zawierać "${phrase}"`).not.toContain(phrase);
+      }
+
+      const pl = buildLastChangeTooltipModel({
+        source: "remote",
+        fullDate: "24 kwietnia",
+        relativeLabel: "2 minuty temu",
+        locale: "pl",
+      });
+      for (const phrase of FORBIDDEN_IN_PL) {
+        expect(pl.ariaText, `PL ariaText nie może zawierać "${phrase}"`).not.toContain(phrase);
+      }
+    });
+
+    it("parytet view↔a11y w EN: prefiks i wartość są DOKŁADNIE te same w obu kanałach", () => {
+      const model = buildLastChangeTooltipModel({
+        source: "remote",
+        fullDate: "April 24, 2026",
+        relativeLabel: "2 minutes ago",
+        locale: "en",
+      });
+      // timeLineForView nie ma sufiksu "(relative label)" (mamy pełną datę).
+      expect(model.timeLineForView).toBe("Time: April 24, 2026");
+      expect(model.timeLineForA11y).toBe("Time: April 24, 2026");
+      expect(model.timeLineForA11y).toBe(model.timeLineForView);
+    });
+  });
+});
+
