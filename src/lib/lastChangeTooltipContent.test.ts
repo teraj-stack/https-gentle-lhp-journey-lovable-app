@@ -109,7 +109,7 @@ describe("tooltipText (aria-label triggera) — sklejanie nagłówek+opis+czas",
   });
 });
 
-describe("spójność języka — wszystkie user-facing stringi używają „karta", nie „tab"", () => {
+describe("spójność języka — wszystkie user-facing stringi używają «karta», nie «tab»", () => {
   /**
    * Reguła z `mem://design`: cały interfejs po polsku mówi „karta(y)", nigdy
    * „tab(y)/tab-y/cross-tab/local-tab". Anglicyzmy zostawiamy WYŁĄCZNIE w
