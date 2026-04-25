@@ -41,9 +41,21 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Input } from "@/components/ui/input";
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { trackEbmClick } from "@/lib/ebmAnalytics";
 import { exportChecklistCsv, exportChecklistPdf } from "@/lib/checklistExport";
+import {
+  buildChecklistShareUrl,
+  buildChecklistShortCode,
+  decodeChecklist,
+} from "@/lib/checklistShare";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
 
 /** Polski-friendly normalizer: lowercase + usuwa diakrytyki */
