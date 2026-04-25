@@ -242,23 +242,27 @@ const escapeProperty = (s: string): string =>
     .replace(/,/g, "%2C");
 
 /**
- * Emit a single `::error file=...,line=...,title=...::message` command.
- * Writes to stdout (process.stdout.write) — vitest captures stdout from
- * test workers and forwards it, where the GH Actions runner parses it.
+ * Emit a single `::<level> file=...,line=...,title=...::message` command,
+ * where `<level>` is `error` or `warning`. Writes to stdout via
+ * console.log so vitest's worker→main forwarding picks it up reliably
+ * across all runners; the GH Actions runner parses it from there.
+ *
+ * Why both levels? Empty optional keys, soft drift signals, and other
+ * advisory issues should NOT block merges — yellow `::warning` markers
+ * surface them in the PR diff without failing the check.
  */
 const writeAnnotation = (params: {
   file: string;
   line?: number;
   title: string;
   message: string;
+  severity: AnnotationSeverity;
 }) => {
   const props = [`file=${escapeProperty(params.file)}`];
   if (params.line && params.line > 0) props.push(`line=${params.line}`);
   props.push(`title=${escapeProperty(params.title)}`);
-  // Use console.log instead of process.stdout.write so that vitest's
-  // worker→main forwarding picks it up reliably across all runners.
   // eslint-disable-next-line no-console
-  console.log(`::error ${props.join(",")}::${escapeData(params.message)}`);
+  console.log(`::${params.severity} ${props.join(",")}::${escapeData(params.message)}`);
 };
 
 /**
