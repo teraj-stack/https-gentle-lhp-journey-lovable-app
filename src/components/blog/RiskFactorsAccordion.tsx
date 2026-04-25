@@ -394,12 +394,13 @@ const RiskFactorsAccordion = () => {
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (nQuery) return;
+    if (sourceFilter.size > 0) return; // tryb filtra nadpisuje accordionValue → nie zapisujemy
     try {
       window.localStorage.setItem(OPEN_ITEMS_STORAGE_KEY, JSON.stringify(openItems));
     } catch {
       /* noop */
     }
-  }, [openItems, nQuery]);
+  }, [openItems, nQuery, sourceFilter]);
 
   // Wybrane czynniki — persystencja w localStorage (anonimowo)
   const [selected, setSelected] = useState<string[]>(() => loadStringArray(STORAGE_KEY));
