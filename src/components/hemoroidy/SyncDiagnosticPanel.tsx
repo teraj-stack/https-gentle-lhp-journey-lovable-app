@@ -315,6 +315,92 @@ const SyncDiagnosticPanel = ({
     }
   };
 
+  /**
+   * Ręczny test BroadcastChannel uruchamiany z UI.
+   *
+   * Sekwencja:
+   *  1. Sprawdza dostępność API (`api-missing` jeśli brak).
+   *  2. Próbuje skonstruować ad-hoc kanał `cml-bc-probe` (`constructor-exception` przy wyjątku).
+   *  3. Próbuje raz wykonać `postMessage` (`postmessage-failure` przy wyjątku).
+   *  4. Zamyka kanał i zapisuje wynik w `bcTestResult`.
+   *
+   * Test jest read-only względem hooka — nie modyfikuje degradationInfo ani historii.
+   */
+  const handleRunBcTest = async () => {
+    setBcTestRunning(true);
+    const at = Date.now();
+    if (typeof BroadcastChannel === "undefined") {
+      setBcTestResult({
+        ok: false,
+        at,
+        cause: "api-missing",
+        detail: "BroadcastChannel API nie jest dostępne w tej przeglądarce.",
+      });
+      setBcTestRunning(false);
+      toast({
+        title: "Test BC: API niedostępne",
+        description: "Ta przeglądarka nie wspiera BroadcastChannel — używamy fallbacku.",
+        duration: 2800,
+      });
+      return;
+    }
+    let probe: BroadcastChannel | null = null;
+    try {
+      probe = new BroadcastChannel("cml-bc-probe");
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      setBcTestResult({
+        ok: false,
+        at,
+        cause: "constructor-exception",
+        detail: "Konstruktor BroadcastChannel rzucił wyjątek (możliwy sandbox iframe).",
+        errorMessage,
+      });
+      setBcTestRunning(false);
+      toast({
+        title: "Test BC: błąd konstruktora",
+        description: errorMessage.slice(0, 120),
+        duration: 3200,
+      });
+      return;
+    }
+    try {
+      probe.postMessage({ kind: "cml-diagnostic-ping", at });
+      setBcTestResult({
+        ok: true,
+        at,
+        detail: "Kanał działa — pojedyncza wiadomość została wysłana bez błędu.",
+      });
+      toast({
+        title: "Test BC: OK",
+        description: "BroadcastChannel jest dostępny i przyjął wiadomość.",
+        duration: 2200,
+      });
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      setBcTestResult({
+        ok: false,
+        at,
+        cause: "postmessage-failure",
+        detail: "postMessage rzucił wyjątek — kanał istnieje, ale nie przyjmuje wiadomości.",
+        errorMessage,
+      });
+      toast({
+        title: "Test BC: postMessage padł",
+        description: errorMessage.slice(0, 120),
+        duration: 3200,
+      });
+    } finally {
+      try {
+        probe.close();
+      } catch {
+        // close() niemal nigdy nie rzuca; ignorujemy żeby nie maskować błędu testu
+      }
+      setBcTestRunning(false);
+    }
+  };
+
+
   return (
     <div
       className="rounded-2xl border border-border/60 bg-background/40 px-4 py-4 sm:px-5 sm:py-5"
