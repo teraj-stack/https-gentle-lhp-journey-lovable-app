@@ -80,6 +80,16 @@ const TIME_LINE_TRANSLATIONS: Record<Locale, TimeLineStrings> = {
     relativeQualifier: "(relative label)",
     relativeHelpTitle: "Full date unavailable — showing a relative label.",
   },
+  de: {
+    timePrefix: "Zeit: ",
+    relativeQualifier: "(relative Angabe)",
+    relativeHelpTitle: "Vollständiges Datum nicht verfügbar — relative Angabe wird angezeigt.",
+  },
+  it: {
+    timePrefix: "Ora: ",
+    relativeQualifier: "(etichetta relativa)",
+    relativeHelpTitle: "Data completa non disponibile — viene mostrata un'etichetta relativa.",
+  },
 };
 
 /**

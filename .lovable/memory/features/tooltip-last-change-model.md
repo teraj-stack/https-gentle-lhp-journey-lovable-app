@@ -16,12 +16,16 @@ Cała logika tooltipa „Ostatnia zmiana" w `AutoSaveSettings.tsx` (kanały: wid
   - `"compact"`: dodatkowo zwarte separatory (zero spacji przed `,`/`:`, jedna po).
   - `"preserve-newlines"`: zachowuje `\n` (kolapsuje wielokrotne) — dla wieloliniowych kanałów wizualnych (np. PDF).
 - **KRYTYCZNE — kontrakt a11y:** `timeLineForA11y` (i tym samym `ariaText`) ZAWSZE używa `single-space`, NIEZALEŻNIE od `input.format`. Helper liczy `a11yTimeValue` osobno przez `smoothTimeValue(raw, "single-space")`. Dzięki temu `aria-label`/`title` NIGDY nie zawierają `\n`, `\t`, ani podwójnych spacji — nawet gdy konsument świadomie wybrał `preserve-newlines` dla widocznego tooltipa. Screen reader nie zrobi pauzy, `ariaText` nie ma pustych linii (`/\n\s*\n/`) ani osieroconych prefiksów „Czas: " bez treści.
-- Opcjonalny parametr `locale: Locale | string` (PL/EN, default `"pl"`):
-  - Akceptuje `"pl"`, `"en"` oraz BCP-47 z regionem (`"pl-PL"`, `"en-US"`, `"en-GB"`).
+- Opcjonalny parametr `locale: Locale | string` (PL/EN/DE/IT, default `"pl"`):
+  - Akceptuje `"pl"`, `"en"`, `"de"`, `"it"` oraz BCP-47 z regionem (`"pl-PL"`, `"en-US"`, `"de-AT"`, `"it-CH"` itp.).
   - Nieznane języki → fallback `"pl"` (default operacyjny kliniki).
-  - Sterowane literały: prefiks linii czasu (`"Czas: "` / `"Time: "`), sufiks fallbacku (`"(etykieta względna)"` / `"(relative label)"`), helpTitle, nagłówek/opis źródła.
+  - Sterowane literały per locale:
+    - PL: prefiks `"Czas: "`, sourcePrefix `"Źródło: "`, qualifier `"(etykieta względna)"`.
+    - EN: `"Time: "`, `"Source: "`, `"(relative label)"`.
+    - DE: `"Zeit: "`, `"Quelle: "`, `"(relative Angabe)"`.
+    - IT: `"Ora: "`, `"Origine: "`, `"(etichetta relativa)"`.
   - Komponent `AutoSaveSettings` używa `navigator.language` (auto-detekcja); testy jsdom mają stały `pl-PL` w `src/test/setup.ts`.
-  - Tłumaczenia żyją w `TRANSLATIONS` (`lastChangeTooltipContent.ts`) i `TIME_LINE_TRANSLATIONS` (`lastChangeTooltipModel.ts`). Dodanie nowego języka = rozszerzenie typu `Locale` + dopisanie wpisów w obu mapach (TS wymusi komplet).
+  - Tłumaczenia żyją w `TRANSLATIONS` (`lastChangeTooltipContent.ts`) i `TIME_LINE_TRANSLATIONS` (`lastChangeTooltipModel.ts`). Dodanie nowego języka = rozszerzenie typu `Locale` + dopisanie wpisów w obu mapach + dopisanie regułki w `resolveLocale` + dodanie do `SUPPORTED_LOCALES` (TS wymusi komplet w mapach; brute-force matrix w testach automatycznie iteruje po nowym locale przez `SUPPORTED_LOCALES`).
 - Locale jest stosowany RAZ do wynikowych pól — niemożliwy rozjazd języków w obrębie jednego ariaText.
 - **Walidacja wejścia (`validateLastChangeTooltipInput`)**: builder ZAWSZE przepuszcza wejście przez walidator defensywny zanim cokolwiek policzy. Walidator NIGDY nie rzuca, koercuje każde pole o niepoprawnym typie/wartości do bezpiecznego fallbacku (`source` poza `"remote"|"local"` → `null`/local; `fullDate`/`relativeLabel` non-string → `null`; `format` poza whitelistą → `"single-space"`; `locale` non-string → `"pl"`). Zwraca `{value, issues[]}` — issues z polami `field`/`code`/`message` (8 kodów `ValidationIssueCode`) są ignorowane przez builder (UI musi pozostać stabilny), ale dostępne dla dev-overlay/testów. Nawet `buildLastChangeTooltipModel(null)` zwraca kompletny, spójny model bez throw — `ariaText` nie zawiera „undefined", „[object Object]", „NaN", osieroconego prefiksu „Czas:" ani pustych linii.
-- Testy: `src/lib/lastChangeTooltipModel.test.ts` (684) + `AutoSaveSettings.tooltip.test.tsx` (57) + `lastChangeTooltipContent.test.ts` (30) = 771. Z czego dedykowana sekcja `validateLastChangeTooltipInput — walidacja wejścia helpera` zawiera 44 testy (it.each per typ pola: number/boolean/object/array/null/NaN, scenariusze integracji buildera dla wejścia w pełni evil, meta-test reachability dla wszystkich 8 ValidationIssueCode).
+- Testy: 1403 globalnie (z czego ~1100 w `lastChangeTooltipModel.test.ts`). Brute-force matrix `format×locale×source×fullDate×relative` automatycznie iteruje po wszystkich 4 językach (helper `assertAriaTextInvariants` zna prefiksy `"Czas: "/"Time: "/"Zeit: "/"Ora: "` i blokuje osierocone prefiksy w każdym z nich). Dedykowane bloki: `buildLastChangeTooltipModel — DE` i `— IT` (po 4 testy: remote, local override, fallback qualifier+helpTitle, BCP-47 regiony) + `composeTimeLine — DE/IT`.
