@@ -203,5 +203,52 @@ npm run i18n:autofix -- --preserve-order  # keep manual ordering, only append ne
 npm run i18n:check            # CI-style dry run + per-bucket diff
 ```
 
-A scheduled GitHub Actions workflow (`.github/workflows/i18n-autofix.yml`) opens a PR automatically when daily drift is detected.
+A scheduled GitHub Actions workflow ([`.github/workflows/i18n-autofix.yml`](.github/workflows/i18n-autofix.yml)) opens a PR automatically when daily drift is detected.
+
+### `i18n-autofix` workflow — schedule, scope, and PR review
+
+**Workflow**: [`.github/workflows/i18n-autofix.yml`](.github/workflows/i18n-autofix.yml) — also visible in the GitHub **Actions** tab as **“i18n autofix”**.
+
+#### When it runs
+
+| Trigger | When | Mode |
+| --- | --- | --- |
+| `schedule` | Daily at **06:17 UTC** (off-peak; doesn't compete with PR-CI) | sorted (default) |
+| `push` to `main` | Only when one of these files changes: `src/lib/lastChangeTooltipContent.ts`, `src/lib/lastChangeTooltipModel.ts`, `scripts/autofix-required-translation-keys.mjs` | sorted (default) |
+| `workflow_dispatch` | Manually from the Actions tab → **Run workflow** | sorted, OR `--preserve-order` if you tick the `preserve_order` input |
+
+The script is a **no-op when the lists are already in sync**, so it's safe to run unconditionally — empty PRs are filtered out by the `Detect changes` step (`git diff --quiet`). If there's no drift, the workflow exits `0` quietly without touching the repo.
+
+#### What files it touches
+
+Only the two `REQUIRED_*` constant arrays:
+
+| File | Symbol rewritten |
+| --- | --- |
+| `src/lib/lastChangeTooltipContent.ts` | `REQUIRED_TRANSLATION_KEYS` |
+| `src/lib/lastChangeTooltipModel.ts` | `REQUIRED_TIME_LINE_KEYS` |
+
+The script never touches the surrounding `TRANSLATIONS` / `TIME_LINE` maps, JSX, or test files — that's intentional, so an autofix PR is purely a contract-list refresh and can be merged with low risk.
+
+#### How the PR shows up
+
+- **Branch**: always `chore/i18n-autofix` (stable). Successive drift detections **update** the same PR rather than spawning new ones; after merge the branch is auto-deleted (`delete-branch: true`) so the next drift opens a fresh PR.
+- **Title**: `chore(i18n): sync REQUIRED_* keys`
+- **Author / committer**: `github-actions[bot]` — never attributed to a human.
+- **Labels**: `i18n`, `automation`.
+- **Body**: includes the trigger that produced it (`schedule` / `push` / `workflow_dispatch`), the mode (sorted vs. preserve-order), and a deep link back to the workflow run.
+
+#### How to review the generated PR
+
+1. **Open the linked workflow run** (link is in the PR body) and expand the *Run i18n autofix (write mode)* step. The script prints a per-bucket diff (`+ added`, `- removed`) — that's the source of truth for what changed.
+2. **Inspect the diff in the PR** itself: it should be limited to the two files above and only the `REQUIRED_*` arrays inside them. Anything else is a red flag — close the PR and investigate the script.
+3. **Added keys** → confirm the new key is present in every active locale (`pl`, `en`, `de`, `it`). The `i18n check` PR-CI workflow will fail loudly if any locale is missing the key, but eyeballing `lastChangeTooltipContent.ts` first saves a CI cycle.
+4. **Removed keys** → confirm the key is genuinely no longer read by the tooltip builder (a recent refactor that intentionally dropped a field). If you can still find a `t.<keyName>` reference in the codebase, the autofix is wrong — investigate the script's key-extraction logic before merging.
+5. **Merge with squash** — keeps the main branch history clean (one `chore(i18n)` commit per drift event).
+
+#### When NOT to merge
+
+- If the diff also touches files outside the two listed above → don't merge; treat as a script bug.
+- If a removal accidentally drops a key that's still consumed → the next CI run on `main` will fail `i18n contract`. Revert immediately and fix the script's extraction pass before retrying.
+- If you've manually re-ordered keys and don't want them re-sorted → close the auto PR and re-run the workflow with `preserve_order: true` from the Actions tab.
 
