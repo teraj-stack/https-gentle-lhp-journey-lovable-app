@@ -374,7 +374,122 @@ If you're porting fixtures from an i18next / react-intl / FormatJS project, this
 
 **Why `{name}` and not `{{name}}` or `%s`**: the runtime renderer in `buildLastChangeTooltipModel` interpolates with a single-brace regex, and the contract test mirrors that exact regex so what you write is what the user sees. Changing the syntax requires updating both the renderer and the placeholder extractor in `i18nGithubAnnotations.ts` together.
 
+##### Placeholder mismatch sub-types
+
+`placeholder-mismatch` is a single `::error` reason that covers **four** distinct shapes. The annotation message body is what tells them apart — the validator computes `expected = {placeholders in pl}` and `actual = {placeholders in target locale}` for the same key, then phrases the diff in plain English. Each sub-type below is a paste-into-source fixture for `src/lib/lastChangeTooltipModel.ts` (assume `en.relative.minutesAgo: "Changed {count} minutes ago"` is the reference declaration in `pl`'s position — adapt to your real reference locale).
+
+| # | Sub-type | Trigger | Annotation message phrasing | Reason code |
+| --- | --- | --- | --- | --- |
+| 1 | **Missing placeholder** | Target locale drops a `{name}` that the reference declares | `is missing placeholder {count}` | `placeholder-mismatch` |
+| 2 | **Renamed placeholder** | Target locale uses `{n}` where reference uses `{count}` (different identifier, same intent) | `is missing placeholder {count}` **and** `has unexpected placeholder {n}` (one annotation, both clauses) | `placeholder-mismatch` |
+| 3 | **Extra placeholder** | Target locale adds a `{name}` the reference doesn't declare | `has unexpected placeholder {extra}` | `placeholder-mismatch` |
+| 4 | **Type / syntax difference** | Target locale uses a forbidden alternate (`%d`, `%s`, `${name}`, `{{name}}`, `<name/>`) where the reference uses `{name}` | `is missing placeholder {count}` (the alternate isn't recognized as a placeholder, so the set diff degrades to "missing the canonical one") + the literal alternate becomes part of the visible string in the `current: …` snippet | `placeholder-mismatch` |
+
+###### 1. Missing placeholder
+
+```ts
+// src/lib/lastChangeTooltipModel.ts
+export const TIME_LINE = {
+  pl: { relative: { minutesAgo: "Zmieniono {count} minut temu" } },
+  en: {
+    relative: {
+      // ⛔ Drops {count} entirely — string still reads, but loses the number.
+      minutesAgo: "Changed a few minutes ago",
+    },
+  },
+} as const;
+```
+
+Expected `::error` body fragment:
+
+```text
+Locale "en" value "Changed a few minutes ago" is missing placeholder {count}, expected by base locale "pl" ("Zmieniono {count} minut temu")
+```
+
+###### 2. Renamed placeholder
+
+```ts
+// src/lib/lastChangeTooltipModel.ts
+export const TIME_LINE = {
+  pl: { relative: { minutesAgo: "Zmieniono {count} minut temu" } },
+  en: {
+    relative: {
+      // ⛔ Renames {count} → {n}. Set diff: expected has {count}, actual has {n}.
+      minutesAgo: "Changed {n} minutes ago",
+    },
+  },
+} as const;
+```
+
+Expected `::error` body fragment (both clauses in one annotation):
+
+```text
+Locale "en" value "Changed {n} minutes ago" is missing placeholder {count} and has unexpected placeholder {n}, expected by base locale "pl" ("Zmieniono {count} minut temu")
+```
+
+The renderer would substitute the runtime `count` argument into the **canonical** name; the unrecognized `{n}` would render as literal text, so the bug is user-visible — exactly why this is `::error`, not `::warning`.
+
+###### 3. Extra placeholder
+
+```ts
+// src/lib/lastChangeTooltipModel.ts
+export const TIME_LINE = {
+  pl: { relative: { minutesAgo: "Zmieniono {count} minut temu" } },
+  en: {
+    relative: {
+      // ⛔ Adds {locale} that the reference doesn't declare. The runtime
+      //    has no value to bind, so {locale} renders as literal text.
+      minutesAgo: "Changed {count} minutes ago ({locale})",
+    },
+  },
+} as const;
+```
+
+Expected `::error` body fragment:
+
+```text
+Locale "en" value "Changed {count} minutes ago ({locale})" has unexpected placeholder {locale}, not declared by base locale "pl" ("Zmieniono {count} minut temu")
+```
+
+###### 4. Type / syntax difference (forbidden alternate)
+
+```ts
+// src/lib/lastChangeTooltipModel.ts
+export const TIME_LINE = {
+  pl: { relative: { minutesAgo: "Zmieniono {count} minut temu" } },
+  en: {
+    relative: {
+      // ⛔ %d is a printf-style placeholder — NOT recognized by the
+      //    single-brace extractor. The set degrades to {} (empty),
+      //    so the diff says "missing {count}" + leaves "%d" literal.
+      minutesAgo: "Changed %d minutes ago",
+    },
+  },
+} as const;
+```
+
+Expected `::error` body fragment:
+
+```text
+Locale "en" value "Changed %d minutes ago" is missing placeholder {count}, expected by base locale "pl" ("Zmieniono {count} minut temu")
+```
+
+The same shape applies to `${count}`, `{{count}}`, `<count/>` — all four trigger the **identical** annotation phrasing, because from the validator's perspective they're equivalent: "no `{name}` placeholders found, but the reference requires `{count}`". The give-away in PR review is the `current: …` snippet — it quotes the offending line verbatim, so reviewers see `%d` / `${count}` / `{{count}}` directly and immediately recognize the wrong syntax.
+
+###### Mapping summary
+
+All four sub-types resolve to the **same** `::error … placeholder-mismatch` reason code — which means they are caught by the **same** test (`i18nPlaceholders.test.ts`) and the **same** narrowed Quickstart command:
+
+```sh
+GITHUB_ACTIONS=true bunx vitest run src/lib/i18nPlaceholders.test.ts 2>&1 | grep '^::'
+```
+
+The differentiation lives **only** in the message body (`is missing` / `has unexpected` / both / forbidden-alternate degradation). If you need to programmatically classify them downstream (e.g. for a custom dashboard), parse the message body — the `reason=` field intentionally collapses them to a single code so that branch protection rules stay simple ("any `placeholder-mismatch` blocks merge").
+
 #### Reproducible source fixtures
+
+These TypeScript snippets are paste-into-source ready against `src/lib/lastChangeTooltipContent.ts` and `lastChangeTooltipModel.ts`. Each one trips a specific `::error` / `::warning` reason — copy a snippet in, run the [Quickstart](#quickstart) command, and the matching annotation appears in stdout. (Note: this repo stores translations in TypeScript modules, not `locales/*.json` files — the validator reads the `.ts` source directly so it can resolve `(file, line)` for inline annotations.)
+
 
 These TypeScript snippets are paste-into-source ready against `src/lib/lastChangeTooltipContent.ts` and `lastChangeTooltipModel.ts`. Each one trips a specific `::error` / `::warning` reason — copy a snippet in, run the [Quickstart](#quickstart) command, and the matching annotation appears in stdout. (Note: this repo stores translations in TypeScript modules, not `locales/*.json` files — the validator reads the `.ts` source directly so it can resolve `(file, line)` for inline annotations.)
 
