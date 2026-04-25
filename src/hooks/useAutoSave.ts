@@ -660,6 +660,11 @@ export const useAutoSave = () => {
     lastAppliedVersionRef.current = version;
 
     setEnabled(next);
+    // Lokalna ręczna zmiana — etykieta „Ostatnia zmiana" wraca do neutralnego koloru,
+    // żeby zielony akcent rezerwować WYŁĄCZNIE dla potwierdzonej synchronizacji
+    // przyszłej z innej karty (lub innej instancji hooka).
+    setLastChangeSource("local");
+    setLastChangeAt(Date.now());
     // Storage write to nasz uniwersalny fallback transport — robimy go ZAWSZE,
     // niezależnie czy BC działa. Inne karty bez BC dostaną storage event, a karty
     // z BC zignorują storage (bo dostaną świeższy payload przez kanał z wersją).
