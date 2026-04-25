@@ -18,6 +18,7 @@ import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { useAutoSave } from "@/hooks/useAutoSave";
 import { toast } from "@/hooks/use-toast";
+import SyncDiagnosticPanel from "@/components/hemoroidy/SyncDiagnosticPanel";
 
 /**
  * Format „przed chwilą" / „X s temu" / „X min temu" / „X h temu" / pełna data.
