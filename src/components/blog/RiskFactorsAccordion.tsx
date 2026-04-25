@@ -480,7 +480,9 @@ const RiskFactorsAccordion = () => {
                             }
                             className="text-primary hover:underline inline-flex items-start gap-1.5 leading-snug"
                           >
-                            <span className="flex-1">{s.label}</span>
+                            <span className="flex-1">
+                              <Highlight text={s.label} query={query} />
+                            </span>
                             <ExternalLink className="w-3 h-3 shrink-0 mt-1" />
                           </a>
                           {s.ebmId && (
