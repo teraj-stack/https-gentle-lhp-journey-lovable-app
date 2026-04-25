@@ -239,6 +239,69 @@ const writeAnnotation = (params: {
  * The `groupTitle` is used to prefix annotation titles so the GH UI shows
  * which contract test produced each error (e.g. "i18n required keys").
  */
+/**
+ * Reference locale used to suggest an "expected" value when the offending
+ * locale's key is missing entirely. PL is the project's source-of-truth
+ * locale (every other language is translated from it), so its line is the
+ * most useful template for a reviewer to copy-paste-translate.
+ *
+ * If the reference locale is also missing the key (genuinely new key,
+ * not yet authored anywhere), the helper degrades to a plain
+ * `"<key>": "<TODO>"` hint instead of failing.
+ */
+const REFERENCE_LOCALE = "pl";
+
+/**
+ * Pull the EXACT source line for `(locale, dottedKey)` from the file. This
+ * is what gets embedded in the annotation so reviewers see the offending
+ * declaration verbatim — no need to open the file to spot a missing comma,
+ * empty string, or wrong-typed value.
+ *
+ * Returns the trimmed line (no leading indent) so the annotation message
+ * stays one logical row in the GitHub UI; falls back to `null` when the
+ * key isn't on a single line (e.g. multi-line object — rare in this repo).
+ */
+const getSourceLineSnippet = (
+  lines: string[],
+  locale: string,
+  dottedKey: string,
+): { snippet: string; lineNumber: number } | null => {
+  const ln = findKeyLine(lines, locale, dottedKey);
+  if (!ln) return null;
+  const raw = lines[ln - 1] ?? "";
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+  return { snippet: trimmed, lineNumber: ln };
+};
+
+/**
+ * Build the human-readable "expected line" hint for a MISSING key, by
+ * looking up the same key in the reference locale block. Output shape:
+ *
+ *   expected (from `pl`): "heading": "Ostatnia zmiana"
+ *
+ * If the reference also lacks the key, returns a TODO template instead so
+ * the annotation still shows what shape to add.
+ */
+const buildExpectedLineHint = (
+  lines: string[],
+  dottedKey: string,
+): string => {
+  const ref = getSourceLineSnippet(lines, REFERENCE_LOCALE, dottedKey);
+  if (ref) return `expected (from \`${REFERENCE_LOCALE}\`): ${ref.snippet}`;
+  // Final segment is the key name shown to the developer.
+  const leaf = dottedKey.split(".").pop() ?? dottedKey;
+  return `expected: "${leaf}": "<TODO: translate>"`;
+};
+
+/**
+ * Public entry point. Called from each test's `formatViolations` AFTER the
+ * formatted error message has been built (so the developer-facing assertion
+ * message stays human-readable AND CI also gets inline annotations).
+ *
+ * The `groupTitle` is used to prefix annotation titles so the GH UI shows
+ * which contract test produced each error (e.g. "i18n required keys").
+ */
 export const emitGithubAnnotations = (
   violations: ReadonlyArray<AnnotatableViolation>,
   groupTitle: string,
@@ -250,11 +313,23 @@ export const emitGithubAnnotations = (
     const file = pickSourceFile(v.path);
     const lines = readSourceLines(file);
     let lineNumber: number | undefined;
+    let lineHint: string | undefined;
 
     if (lines) {
       const dottedKey = stripTopPrefix(v.path);
       if (dottedKey) {
-        lineNumber = findKeyLine(lines, v.locale, dottedKey) ?? undefined;
+        // Try to locate the offending key's line in the failing locale.
+        const located = getSourceLineSnippet(lines, v.locale, dottedKey);
+        if (located) {
+          lineNumber = located.lineNumber;
+          // Show the actual on-disk line so reviewers see e.g. an empty
+          // string `"heading": ""` or wrong-typed `"heading": 42` directly.
+          lineHint = `current: ${located.snippet}`;
+        } else {
+          // Key is absent in this locale → render the reference-locale
+          // line as the "expected" template the reviewer should add.
+          lineHint = buildExpectedLineHint(lines, dottedKey);
+        }
       }
       // If the entire locale block is missing/whole-path is just "TRANSLATIONS"
       // or "TIME_LINE", point at the locale line itself.
@@ -268,6 +343,7 @@ export const emitGithubAnnotations = (
     const title = `${groupTitle}: ${v.locale} · ${v.reason}`;
     const messageBits = [`${v.path} (locale=${v.locale}, reason=${v.reason})`];
     if (v.detail) messageBits.push(v.detail);
+    if (lineHint) messageBits.push(lineHint);
     messageBits.push(
       "Fix: update the locale entry in the indicated file, or run `npm run i18n:autofix` if REQUIRED_* keys drifted.",
     );
@@ -284,3 +360,5 @@ export const emitGithubAnnotations = (
 /** Internal helper exposed only for unit testing the line resolver. */
 export const __findKeyLineForTesting = findKeyLine;
 export const __stripTopPrefixForTesting = stripTopPrefix;
+export const __getSourceLineSnippetForTesting = getSourceLineSnippet;
+export const __buildExpectedLineHintForTesting = buildExpectedLineHint;
