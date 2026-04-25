@@ -446,7 +446,7 @@ const RiskFactorsAccordion = () => {
       });
       return;
     }
-    exportChecklistPdf(selectedFactors, RISK_FACTORS.length);
+    exportChecklistPdf(selectedFactors, RISK_FACTORS.length, selectedAt);
     toast({
       title: "Pobrano checklistę PDF",
       description: `${selectedFactors.length} z ${RISK_FACTORS.length} czynników — gotowe do druku.`,
