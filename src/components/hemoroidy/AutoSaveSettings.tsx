@@ -41,7 +41,7 @@ import {
   type LastChangeVisibility,
 } from "@/hooks/useLastChangeVisibility";
 import { getLastChangeLabelStyle } from "@/lib/lastChangeLabelStyle";
-import { getLastChangeTooltipContent, type Locale } from "@/lib/lastChangeTooltipContent";
+import { type Locale } from "@/lib/lastChangeTooltipContent";
 import {
   buildLastChangeTooltipModel,
   type TimeValueFormat,
