@@ -7,6 +7,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { trackEbmClick } from "@/lib/ebmAnalytics";
 
 const easeOut = [0.16, 1, 0.3, 1] as const;
 
