@@ -905,7 +905,17 @@ const RiskFactorsAccordion = () => {
                 Moja checklista czynników ryzyka
               </h3>
               <p className="text-[11.5px] sm:text-xs text-muted-foreground mt-0.5">
-                Zapisywane lokalnie w przeglądarce (anonimowo). {selectedFactors.length} z {RISK_FACTORS.length} zaznaczonych.
+                Zapisywane lokalnie w przeglądarce (anonimowo). {selectedFactors.length} z {RISK_FACTORS.length} zaznaczonych
+                {priorityCount > 0 && (
+                  <>
+                    {" "}·{" "}
+                    <span className="inline-flex items-center gap-1 text-primary font-medium">
+                      <Star className="w-3 h-3 fill-current" aria-hidden="true" />
+                      {priorityCount} {priorityCount === 1 ? "priorytet" : "priorytetów"}
+                    </span>
+                  </>
+                )}
+                .
               </p>
               {selectedAt && selectedFactors.length > 0 && (
                 <p className="text-[11px] sm:text-[11.5px] text-primary/80 mt-1 inline-flex items-center gap-1.5 font-sans">
