@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * Build-time validation:
  * Each `ebmId` referenced in src/components/blog/RiskFactorsAccordion.tsx
