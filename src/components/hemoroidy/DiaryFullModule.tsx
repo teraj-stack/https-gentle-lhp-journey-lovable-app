@@ -851,38 +851,107 @@ const DiaryFullModule = ({
           </div>
         </div>
 
-        {/* Pasek eksportu pojedynczego dnia — JSON (archiwum / re-import) lub PDF
-            (do druku / na konsultację). Aktywny gdy dzień ma jakąkolwiek treść. */}
-        {dayHasContent && (
-          <div className="mb-5 rounded-xl border border-primary/25 bg-primary/[0.04] px-3 py-2.5 flex flex-wrap items-center gap-2">
-            <div className="flex items-center gap-1.5 text-[11px] uppercase tracking-[0.14em] text-primary font-sans mr-auto">
-              <FileDown className="w-3.5 h-3.5" aria-hidden="true" />
-              Eksport tego dnia
-            </div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={handleExportDayPdf}
-              className="h-8 text-xs border-primary/40 text-primary hover:bg-primary/10 hover:text-primary"
-              aria-label={`Pobierz wpis z dnia ${formatLongDate(activeDate)} jako PDF`}
-            >
-              <FileDown className="w-3.5 h-3.5 mr-1.5" />
-              PDF
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={handleExportDayJson}
-              className="h-8 text-xs border-primary/40 text-primary hover:bg-primary/10 hover:text-primary"
-              aria-label={`Pobierz wpis z dnia ${formatLongDate(activeDate)} jako JSON`}
-            >
-              <FileJson className="w-3.5 h-3.5 mr-1.5" />
-              JSON
-            </Button>
+        {/* Pasek eksportu/importu pojedynczego dnia — JSON (archiwum / re-import na innym
+            urządzeniu) lub PDF (do druku / na konsultację). Eksport aktywny tylko gdy dzień
+            ma treść; Import zawsze dostępny (przywracanie z innego urządzenia). */}
+        <div className="mb-5 rounded-xl border border-primary/25 bg-primary/[0.04] px-3 py-2.5 flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-1.5 text-[11px] uppercase tracking-[0.14em] text-primary font-sans mr-auto">
+            <FileDown className="w-3.5 h-3.5" aria-hidden="true" />
+            Eksport / import dnia
           </div>
-        )}
+          {dayHasContent && (
+            <>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleExportDayPdf}
+                className="h-8 text-xs border-primary/40 text-primary hover:bg-primary/10 hover:text-primary"
+                aria-label={`Pobierz wpis z dnia ${formatLongDate(activeDate)} jako PDF`}
+              >
+                <FileDown className="w-3.5 h-3.5 mr-1.5" />
+                PDF
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleExportDayJson}
+                className="h-8 text-xs border-primary/40 text-primary hover:bg-primary/10 hover:text-primary"
+                aria-label={`Pobierz wpis z dnia ${formatLongDate(activeDate)} jako JSON`}
+              >
+                <FileJson className="w-3.5 h-3.5 mr-1.5" />
+                JSON
+              </Button>
+            </>
+          )}
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => importFileRef.current?.click()}
+            className="h-8 text-xs border-primary/40 text-primary hover:bg-primary/10 hover:text-primary"
+            aria-label="Importuj wpis dziennika z pliku JSON"
+          >
+            <Upload className="w-3.5 h-3.5 mr-1.5" />
+            Importuj JSON
+          </Button>
+          {/* Hidden input — wywoływany przez przycisk powyżej. Po wyborze pliku resetujemy
+              `value`, by wybranie tego samego pliku ponownie znowu wyzwoliło `onChange`. */}
+          <input
+            ref={importFileRef}
+            type="file"
+            accept="application/json,.json"
+            className="sr-only"
+            tabIndex={-1}
+            aria-hidden="true"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) handleImportFile(file);
+              e.target.value = "";
+            }}
+          />
+        </div>
+
+        {/* Dialog potwierdzający import gdy nadpisujemy istniejący wpis lub zmieniamy aktywny
+            dzień — chroni przed przypadkową utratą danych. */}
+        <AlertDialog open={!!pendingImport} onOpenChange={(open) => !open && setPendingImport(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Zaimportować wpis z pliku?</AlertDialogTitle>
+              <AlertDialogDescription>
+                {pendingImport && (
+                  <>
+                    Plik zawiera wpis z dnia <strong>{formatLongDate(pendingImport.date)}</strong>{" "}
+                    ({pendingImport.answers.filter((a) => a !== null).length}/
+                    {HEMOROIDY_QUESTIONS.length} odpowiedzi
+                    {pendingImport.notes ? " + notatki" : ""}).
+                    {entries[pendingImport.date] &&
+                      (entries[pendingImport.date].answers.some((a) => a !== null) ||
+                        !!entries[pendingImport.date].notes?.trim()) && (
+                        <>
+                          {" "}<strong>Istniejący wpis na ten dzień zostanie nadpisany</strong> —
+                          tej operacji nie można cofnąć.
+                        </>
+                      )}
+                  </>
+                )}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Anuluj</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => {
+                  if (pendingImport) applyImport(pendingImport);
+                  setPendingImport(null);
+                }}
+              >
+                Tak, zaimportuj
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
 
         {/* Progress */}
         <div className="mb-6">
