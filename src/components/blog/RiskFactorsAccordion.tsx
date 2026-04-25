@@ -295,7 +295,8 @@ const RiskFactorsAccordion = () => {
   const filtered = useMemo(() => {
     if (!nQuery) return RISK_FACTORS;
     return RISK_FACTORS.filter((rf) => {
-      const haystack = normalize(`${rf.title} ${rf.shortBadge} ${rf.body}`);
+      const sourcesText = rf.sources.map((s) => s.label).join(" ");
+      const haystack = normalize(`${rf.title} ${rf.shortBadge} ${rf.body} ${sourcesText}`);
       return haystack.includes(nQuery);
     });
   }, [nQuery]);
@@ -349,7 +350,7 @@ const RiskFactorsAccordion = () => {
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Szukaj np. „błonnik”, „parcie”, „ciąża”…"
+            placeholder="Szukaj np. „błonnik”, „Cochrane”, „ASCRS”, „ciąża”…"
             className="pl-9 pr-10 bg-background/40 border-border/60"
             aria-describedby="risk-factors-search-hint"
           />
@@ -371,7 +372,7 @@ const RiskFactorsAccordion = () => {
         >
           {nQuery
             ? `Znaleziono ${filtered.length} z ${RISK_FACTORS.length} czynników`
-            : `Filtruje po tytule, oznaczeniu i opisie mechanizmu (${RISK_FACTORS.length} kart)`}
+            : `Filtruje po tytule, oznaczeniu, mechanizmie i nazwie źródła (${RISK_FACTORS.length} kart)`}
         </p>
       </div>
 
@@ -479,7 +480,9 @@ const RiskFactorsAccordion = () => {
                             }
                             className="text-primary hover:underline inline-flex items-start gap-1.5 leading-snug"
                           >
-                            <span className="flex-1">{s.label}</span>
+                            <span className="flex-1">
+                              <Highlight text={s.label} query={query} />
+                            </span>
                             <ExternalLink className="w-3 h-3 shrink-0 mt-1" />
                           </a>
                           {s.ebmId && (
