@@ -313,19 +313,111 @@ const replaceBlock = (source, startMarker, endMarker, replacement) => {
 // Main
 // ---------------------------------------------------------------------------
 
+/**
+ * Categorise a dotted translator-call path into one of:
+ *   { bucket: "top",      key: "<id>" }       e.g. "sourcePrefix"
+ *   { bucket: "variant",  key: "<id>" }       e.g. "local.heading" / "remote.X"
+ *   { bucket: "timeLine", key: "<id>" }       e.g. "timePrefix" (model file only)
+ *   { bucket: "ignored",  reason: "..." }     for paths the categorizer can't classify
+ *
+ * The `scope` argument selects which buckets are valid:
+ *   - "translations" → top + variant
+ *   - "timeLine"     → timeLine
+ *
+ * In --debug mode the caller logs ignored entries so a maintainer can see
+ * why a translator call didn't end up in the REQUIRED_* lists (and decide
+ * whether to extend the categorizer).
+ */
+const categoriseHelperPath = (path, scope) => {
+  const parts = path.split(".");
+  if (scope === "timeLine") {
+    if (parts.length === 1) return { bucket: "timeLine", key: parts[0] };
+    return { bucket: "ignored", reason: `time-line helper expects single segment, got "${path}"` };
+  }
+  // scope === "translations"
+  if (parts.length === 1) return { bucket: "top", key: parts[0] };
+  if (parts.length === 2 && (parts[0] === "local" || parts[0] === "remote")) {
+    return { bucket: "variant", key: parts[1] };
+  }
+  return { bucket: "ignored", reason: `unrecognised translation path "${path}"` };
+};
+
+const debugLog = (label, value) => {
+  if (!DEBUG) return;
+  // eslint-disable-next-line no-console
+  console.log(`[autofix:debug] ${label}:`, value);
+};
+
 const run = () => {
   const contentSrc = readFileSync(CONTENT_PATH, "utf8");
   const modelSrc = readFileSync(MODEL_PATH, "utf8");
+  const ignoredPaths = []; // { file, path, reason }
 
-  // --- TRANSLATIONS (content file) ---
-  const topReads = collectMemberReads(contentSrc, "t");
-  // Filter t.<key> to only those that are NOT also variant-style sub-objects.
-  // We know t.remote and t.local are sub-variants — exclude them.
+  // ─── TRANSLATIONS (content file) ───────────────────────────────────────────
+  // Layer 1 — dot member reads (existing detector).
+  const tDot = collectDotMemberReads(contentSrc, "t");
+  const variantDot = collectDotMemberReads(contentSrc, "variant");
+  // Layer 2 — bracket-literal reads on the same aliases.
+  const tBracket = collectBracketLiteralReads(contentSrc, "t");
+  const variantBracket = collectBracketLiteralReads(contentSrc, "variant");
+  // Layer 3 — direct indexed map reads `TRANSLATIONS[loc].…`. The tail can
+  // be `sourcePrefix` (top), `local.heading` (variant), `remote.heading`
+  // (variant), or sub-object access like just `local` (ignored — that's
+  // taking the variant object, not a leaf key).
+  const indexedTranslationPaths = collectIndexedMapReads(contentSrc, "TRANSLATIONS");
+  // Layer 4 — translator-helper calls (`$t("…")` / `t("…")`). We accept
+  // both helpers; if the codebase later renames `$t` → `tr`, just add it
+  // to the list below.
+  const helperCallPaths = collectTranslatorCallKeys(contentSrc, ["$t", "tr"]);
+  // NOTE: we deliberately DO NOT include bare `t("…")` here — `t` is the
+  // variant-object alias, not a function, so any `t(...)` would be a false
+  // positive. If the codebase introduces a `t()` helper, add it explicitly.
+
+  debugLog("content/t.dot", [...tDot]);
+  debugLog("content/t.bracket", [...tBracket]);
+  debugLog("content/variant.dot", [...variantDot]);
+  debugLog("content/variant.bracket", [...variantBracket]);
+  debugLog("content/TRANSLATIONS[…].path", [...indexedTranslationPaths]);
+  debugLog("content/helperCall.path", [...helperCallPaths]);
+
+  // Categorise indexed and helper-call paths into top/variant buckets.
+  const topFromIndexed = new Set();
+  const variantFromIndexed = new Set();
+  for (const path of indexedTranslationPaths) {
+    const r = categoriseHelperPath(path, "translations");
+    if (r.bucket === "top") topFromIndexed.add(r.key);
+    else if (r.bucket === "variant") variantFromIndexed.add(r.key);
+    else ignoredPaths.push({ file: CONTENT_PATH, path, reason: r.reason });
+  }
+  const topFromHelper = new Set();
+  const variantFromHelper = new Set();
+  for (const path of helperCallPaths) {
+    const r = categoriseHelperPath(path, "translations");
+    if (r.bucket === "top") topFromHelper.add(r.key);
+    else if (r.bucket === "variant") variantFromHelper.add(r.key);
+    else ignoredPaths.push({ file: CONTENT_PATH, path, reason: r.reason });
+  }
+
+  // Top-level keys: union of all detectors. Strip known sub-objects
+  // (`local` / `remote`) — accessing those returns the variant container,
+  // not a leaf key, and they are NOT part of REQUIRED_TRANSLATION_KEYS.top.
+  const topReads = new Set([
+    ...tDot,
+    ...tBracket,
+    ...topFromIndexed,
+    ...topFromHelper,
+  ]);
   topReads.delete("remote");
   topReads.delete("local");
 
+  // Variant keys: union of all detectors, then split required vs optional.
   const variantOptional = collectOptionalVariantReads(contentSrc);
-  const variantAll = collectMemberReads(contentSrc, "variant");
+  const variantAll = new Set([
+    ...variantDot,
+    ...variantBracket,
+    ...variantFromIndexed,
+    ...variantFromHelper,
+  ]);
   const variantRequired = new Set(
     [...variantAll].filter((k) => !variantOptional.has(k)),
   );
@@ -336,17 +428,41 @@ const run = () => {
     variantOptional: sortedArr(variantOptional),
   });
 
-  // --- TIME_LINE_TRANSLATIONS (model file) ---
-  // The builder reads time-line strings via two patterns:
-  //   1. Local alias `tStrings.<key>` after `const tStrings = TIME_LINE_TRANSLATIONS[locale]`
-  //   2. Direct indexed access `TIME_LINE_TRANSLATIONS[…].<key>` (e.g. in
-  //      the standalone `getTimeLinePrefix` helper that does not bind a local alias).
-  // We union both to avoid missing keys consumed only via the inline form.
+  // ─── TIME_LINE_TRANSLATIONS (model file) ───────────────────────────────────
+  // Layer 1 — dot reads on the local alias `tStrings`.
+  const tStringsDot = collectDotMemberReads(modelSrc, "tStrings");
+  // Layer 2 — bracket-literal reads on the same alias.
+  const tStringsBracket = collectBracketLiteralReads(modelSrc, "tStrings");
+  // Layer 3 — direct indexed reads on the source map (e.g. inside the
+  // standalone `getTimeLinePrefix` helper that doesn't bind a local alias).
+  const indexedTimeLinePaths = collectIndexedMapReads(modelSrc, "TIME_LINE_TRANSLATIONS");
+  // Layer 4 — translator-helper calls. Use the same helper names as for
+  // translations; categoriser scopes them to `timeLine`.
+  const helperCallTimeLinePaths = collectTranslatorCallKeys(modelSrc, ["$t", "tr"]);
+
+  debugLog("model/tStrings.dot", [...tStringsDot]);
+  debugLog("model/tStrings.bracket", [...tStringsBracket]);
+  debugLog("model/TIME_LINE_TRANSLATIONS[…].path", [...indexedTimeLinePaths]);
+  debugLog("model/helperCall.path", [...helperCallTimeLinePaths]);
+
+  const timeLineFromIndexed = new Set();
+  for (const path of indexedTimeLinePaths) {
+    const r = categoriseHelperPath(path, "timeLine");
+    if (r.bucket === "timeLine") timeLineFromIndexed.add(r.key);
+    else ignoredPaths.push({ file: MODEL_PATH, path, reason: r.reason });
+  }
+  const timeLineFromHelper = new Set();
+  for (const path of helperCallTimeLinePaths) {
+    const r = categoriseHelperPath(path, "timeLine");
+    if (r.bucket === "timeLine") timeLineFromHelper.add(r.key);
+    else ignoredPaths.push({ file: MODEL_PATH, path, reason: r.reason });
+  }
+
   const timeLineKeys = new Set([
-    ...collectMemberReads(modelSrc, "tStrings"),
-    ...[...modelSrc.matchAll(/TIME_LINE_TRANSLATIONS\[[^\]]+\]\.([a-zA-Z_$][\w$]*)/g)].map(
-      (m) => m[1],
-    ),
+    ...tStringsDot,
+    ...tStringsBracket,
+    ...timeLineFromIndexed,
+    ...timeLineFromHelper,
   ]);
   const newTimeLineBlock = renderRequiredTimeLineKeys(sortedArr(timeLineKeys));
 
@@ -385,6 +501,23 @@ const run = () => {
 
   console.log("[autofix-required-translation-keys] detected keys:");
   console.log(JSON.stringify(summary.detected, null, 2));
+
+  // Surface ignored paths so a maintainer never silently loses a key to
+  // an unrecognised access shape (e.g. a future `$t("local.foo.bar")` with
+  // 3 segments). Always printed (not just under --debug) because it's a
+  // signal that the categorizer needs extension.
+  if (ignoredPaths.length > 0) {
+    console.warn(
+      `\n[autofix-required-translation-keys] WARNING: ${ignoredPaths.length} translator path(s) could not be categorised:`,
+    );
+    for (const { file, path, reason } of ignoredPaths) {
+      console.warn(`  - ${path}  (in ${file}) — ${reason}`);
+    }
+    console.warn(
+      "  These paths were NOT added to REQUIRED_* lists. Extend categoriseHelperPath() if they should be.",
+    );
+  }
+
 
   if (CHECK_ONLY) {
     if (contentChanged || modelChanged) {
