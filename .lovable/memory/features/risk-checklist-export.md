@@ -47,3 +47,9 @@ type: feature
 - **Lazy init** w `useState` z walidacją: `RISK_FACTORS` ids (Set), żeby zignorować przestarzałe id po refaktorze.
 - **Autosave**: useEffect na `openItems` — zapis TYLKO gdy `!nQuery` (tryb wyszukiwania nadpisuje accordionValue na auto-rozwinięcie dopasowań, więc to nie jest wybór użytkownika).
 - **Skrót Ctrl/⌘+E i przyciski "Rozwiń wszystko" / "Rozwiń tylko dopasowane"** automatycznie persistują przez ten sam mechanizm.
+
+## Stagger animation przy bulk expand/collapse
+- Helper `setOpenItemsStaggered(target)` rozkłada zmianę `openItems` na sekwencję 40ms/krok zamiast jednoczesnego skoku → fala otwierania (od góry) i zamykania (od dołu).
+- Bookkeeping przez `staggerTimersRef` (cancel poprzedniej sekwencji przy nowym wywołaniu i przy unmount).
+- `prefers-reduced-motion: reduce` → natychmiastowy `setOpenItems(target)` bez staggera.
+- Używane w 3 miejscach: `toggleAll` (przycisk Rozwiń/Zwiń wszystko), Ctrl/⌘+E, "Rozwiń tylko dopasowane". Pojedyncze klikanie w `AccordionTrigger` zostaje na natywnym `animate-accordion-down/up` z Radix.
