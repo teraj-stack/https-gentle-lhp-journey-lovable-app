@@ -449,6 +449,8 @@ const EBMSourcesSection = ({
   const [activeCat, setActiveCat] = useState<string>("all");
   const [query, setQuery] = useState<string>("");
   const [forcedOpen, setForcedOpen] = useState<string[]>([]);
+  const [yearFilter, setYearFilter] = useState<string>("all"); // "all" | "lt2010" | "2010-2014" | "2015-2019" | "gte2020"
+  const [studyTypeFilter, setStudyTypeFilter] = useState<string>("all"); // "all" | StudyType
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
 
   // ===== „Ostatnio otwierane" — historia kliknięć w linki EBM (localStorage) =====
