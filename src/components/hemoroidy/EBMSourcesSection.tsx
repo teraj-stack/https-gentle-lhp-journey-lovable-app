@@ -685,36 +685,85 @@ const EBMSourcesSection = ({
     return () => window.clearTimeout(t);
   }, [highlightedId]);
 
+  // Helper: czy rok publikacji pasuje do wybranego zakresu?
+  const yearMatches = (yearStr: string): boolean => {
+    if (yearFilter === "all") return true;
+    const y = parseInt(yearStr, 10);
+    if (Number.isNaN(y)) return false;
+    switch (yearFilter) {
+      case "lt2010":
+        return y < 2010;
+      case "2010-2014":
+        return y >= 2010 && y <= 2014;
+      case "2015-2019":
+        return y >= 2015 && y <= 2019;
+      case "gte2020":
+        return y >= 2020;
+      default:
+        return true;
+    }
+  };
+
+  const studyTypeMatches = (src: Source, categoryId: string): boolean => {
+    if (studyTypeFilter === "all") return true;
+    return classifyStudyType(src, categoryId) === studyTypeFilter;
+  };
+
+  // Dostępne typy badań w aktualnym zbiorze (do dynamicznego budowania selecta)
+  const availableStudyTypes = useMemo(() => {
+    const set = new Set<StudyType>();
+    baseCats.forEach((c) => c.items.forEach((s) => set.add(classifyStudyType(s, c.id))));
+    return set;
+  }, [baseCats]);
+
   const filtered = useMemo(() => {
     const q = normalize(query.trim());
     const byCat = activeCat === "all" ? baseCats : baseCats.filter((c) => c.id === activeCat);
-    if (q.length < 2) {
-      return byCat.map((c) => ({ ...c, matchedItems: c.items }));
-    }
     return byCat
       .map((c) => {
-        const catHit =
-          normalize(c.title).includes(q) || normalize(c.intro).includes(q);
-        const matchedItems = c.items.filter((s) => {
+        const passesQuery = (s: Source): boolean => {
+          if (q.length < 2) return true;
           const haystack = normalize(
             `${s.authors} ${s.year} ${s.title} ${s.journal}`,
           );
           return haystack.includes(q);
-        });
-        if (catHit) return { ...c, matchedItems: c.items };
+        };
+        const catTextHit =
+          q.length >= 2 &&
+          (normalize(c.title).includes(q) || normalize(c.intro).includes(q));
+
+        // Najpierw filtr query (z uwzględnieniem catTextHit), potem rok + typ.
+        const queryFiltered = catTextHit ? c.items : c.items.filter(passesQuery);
+        const matchedItems = queryFiltered.filter(
+          (s) => yearMatches(s.year) && studyTypeMatches(s, c.id),
+        );
+
         if (matchedItems.length > 0) return { ...c, matchedItems };
         return null;
       })
       .filter((c): c is Category & { matchedItems: Source[] } => c !== null);
-  }, [baseCats, activeCat, query]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [baseCats, activeCat, query, yearFilter, studyTypeFilter]);
 
   const totalMatches = filtered.reduce((sum, c) => sum + c.matchedItems.length, 0);
-  const isFiltering = query.trim().length >= 2 || activeCat !== "all";
+  const isFiltering =
+    query.trim().length >= 2 ||
+    activeCat !== "all" ||
+    yearFilter !== "all" ||
+    studyTypeFilter !== "all";
   const computedOpen = isFiltering ? filtered.map((c) => c.id) : [];
   const openValues =
     isFiltering || forcedOpen.length > 0
       ? Array.from(new Set([...computedOpen, ...forcedOpen]))
       : undefined;
+
+  const resetAllFilters = () => {
+    setQuery("");
+    setActiveCat("all");
+    setYearFilter("all");
+    setStudyTypeFilter("all");
+  };
+
 
   return (
     <section className="max-w-3xl mx-auto" aria-labelledby="ebm-sources-heading">
