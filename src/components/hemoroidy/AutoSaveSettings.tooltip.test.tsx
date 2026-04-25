@@ -136,7 +136,7 @@ describe("AutoSaveSettings — tooltip „Ostatnia zmiana” wybiera nagłówek 
     expect(screen.queryByText("lokalnie")).not.toBeInTheDocument();
   });
 
-  it("dla source='local' aria-label i title zawierają „Moja lokalna akcja w tej karcie”, () => {
+  it("dla source='local' aria-label i title zawierają „Moja lokalna akcja w tej karcie”", () => {
     mockLastChangeSource = "local";
     mockLastChangeAt = FROZEN_NOW;
 
