@@ -140,6 +140,8 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
     syncHistory,
     transport,
     degradationInfo,
+    degradationHistory,
+    clearDegradationHistory,
     simulateFallback,
     setSimulateFallback,
     clearSyncHistory,
