@@ -255,6 +255,44 @@ const SyncDiagnosticPanel = ({
     }
   };
 
+  /**
+   * Kopiuje OSTATNIĄ degradację BC w czytelnym, „human-readable" formacie
+   * (nie JSON — chcemy żeby pacjent/support mógł od razu odczytać treść w mailu).
+   * Zawiera: kategorię, opis, surowy errorMessage (jeśli był), pełny timestamp ISO
+   * + lokalny czas, oraz transport aktywny w momencie incydentu.
+   */
+  const handleCopyDegradation = async () => {
+    if (!degradationInfo) return;
+    const isoAt = new Date(degradationInfo.at).toISOString();
+    const localAt = new Date(degradationInfo.at).toLocaleString("pl-PL");
+    const lines = [
+      "=== Degradacja BroadcastChannel ===",
+      `Cause:        ${degradationInfo.cause} (${DEGRADATION_LABELS[degradationInfo.cause] ?? "—"})`,
+      `Detail:       ${degradationInfo.detail}`,
+      `Error msg:    ${degradationInfo.errorMessage ?? "(brak)"}`,
+      `Timestamp:    ${isoAt}`,
+      `Lokalnie:     ${localAt}`,
+      `Transport:    ${transport}${simulateFallback ? " (symulacja)" : ""}`,
+      `Karta:        ${tabLabel}`,
+    ];
+    try {
+      await navigator.clipboard.writeText(lines.join("\n"));
+      setDegradationCopied(true);
+      toast({
+        title: "Skopiowano ostatnią degradację",
+        description: "Wklej w zgłoszeniu — format tekstowy, czytelny od razu.",
+        duration: 2400,
+      });
+      setTimeout(() => setDegradationCopied(false), 2000);
+    } catch {
+      toast({
+        title: "Nie udało się skopiować",
+        description: "Brak uprawnień do schowka. Zrób zrzut ekranu sekcji.",
+        duration: 3500,
+      });
+    }
+  };
+
   return (
     <div
       className="rounded-2xl border border-border/60 bg-background/40 px-4 py-4 sm:px-5 sm:py-5"
