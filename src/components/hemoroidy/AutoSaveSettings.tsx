@@ -40,7 +40,7 @@ const TIME_FORMAT_OPTIONS: Array<{
     value: "relative",
     short: "Względny",
     label: "Format względny",
-    hint: "np. „2 min temu" — odświeżany automatycznie co 15 s.",
+    hint: "np. 2 min temu — odświeżany automatycznie co 15 s.",
   },
   {
     value: "clock",
