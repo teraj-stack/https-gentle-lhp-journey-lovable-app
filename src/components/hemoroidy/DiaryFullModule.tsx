@@ -767,6 +767,39 @@ const DiaryFullModule = ({
           </div>
         </div>
 
+        {/* Pasek eksportu pojedynczego dnia — JSON (archiwum / re-import) lub PDF
+            (do druku / na konsultację). Aktywny gdy dzień ma jakąkolwiek treść. */}
+        {dayHasContent && (
+          <div className="mb-5 rounded-xl border border-primary/25 bg-primary/[0.04] px-3 py-2.5 flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-1.5 text-[11px] uppercase tracking-[0.14em] text-primary font-sans mr-auto">
+              <FileDown className="w-3.5 h-3.5" aria-hidden="true" />
+              Eksport tego dnia
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleExportDayPdf}
+              className="h-8 text-xs border-primary/40 text-primary hover:bg-primary/10 hover:text-primary"
+              aria-label={`Pobierz wpis z dnia ${formatLongDate(activeDate)} jako PDF`}
+            >
+              <FileDown className="w-3.5 h-3.5 mr-1.5" />
+              PDF
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleExportDayJson}
+              className="h-8 text-xs border-primary/40 text-primary hover:bg-primary/10 hover:text-primary"
+              aria-label={`Pobierz wpis z dnia ${formatLongDate(activeDate)} jako JSON`}
+            >
+              <FileJson className="w-3.5 h-3.5 mr-1.5" />
+              JSON
+            </Button>
+          </div>
+        )}
+
         {/* Progress */}
         <div className="mb-6">
           <div className="h-1.5 rounded-full bg-muted overflow-hidden">
