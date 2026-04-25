@@ -335,6 +335,11 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
               >
                 {transport}
               </span>
+              {simulateFallback && (
+                <span className="text-[10px] px-1.5 py-0.5 rounded-md font-sans bg-amber-500/15 text-amber-400 border border-amber-500/40">
+                  symulacja
+                </span>
+              )}
             </p>
             {degradationReason && (
               <p className="text-[10px] sm:text-[11px] text-muted-foreground/80 mt-1 leading-relaxed italic">
@@ -342,6 +347,31 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
               </p>
             )}
           </div>
+          <Button
+            type="button"
+            size="sm"
+            variant={simulateFallback ? "default" : "outline"}
+            onClick={handleSimulateFallback}
+            className="shrink-0 self-start"
+            aria-pressed={simulateFallback}
+            aria-label={
+              simulateFallback
+                ? "Wyłącz symulację braku BroadcastChannel"
+                : "Symuluj brak BroadcastChannel i wymuś transport storage-fallback"
+            }
+          >
+            {simulateFallback ? (
+              <>
+                <Wifi className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
+                Przywróć BC
+              </>
+            ) : (
+              <>
+                <WifiOff className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
+                Symuluj brak BC
+              </>
+            )}
+          </Button>
         </div>
 
         {/* Historia ostatnich synchronizacji — kompaktowa lista czas + źródło + wartość.
