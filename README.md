@@ -492,6 +492,7 @@ Sample output for `bash i18n-summary.sh --only placeholder-mismatch,wrong-type` 
 ```
 ▶ Running i18n contract tests (filter: placeholder-mismatch,wrong-type)…
   Reasons:    placeholder-mismatch wrong-type
+  Locales:    pl,en,de,it   (default)
   Test files: src/lib/i18nPlaceholders.test.ts src/lib/i18nContract.test.ts
 
 ═══════════════════════════════════════════════════════
