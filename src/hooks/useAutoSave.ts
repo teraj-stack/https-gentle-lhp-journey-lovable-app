@@ -405,6 +405,9 @@ export const useAutoSave = () => {
       setRemoteSyncTick((n) => n + 1);
       setIsRemoteSyncing(true);
       setLastRemoteSyncAt(at);
+      // Zdalna zmiana — etykieta „Ostatnia zmiana" dostaje zielony akcent.
+      setLastChangeSource("remote");
+      setLastChangeAt(at);
       if (flashTimeoutRef.current) clearTimeout(flashTimeoutRef.current);
       flashTimeoutRef.current = setTimeout(() => {
         setIsRemoteSyncing(false);
