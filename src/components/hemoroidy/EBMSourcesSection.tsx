@@ -522,7 +522,8 @@ const EBMSourcesSection = ({
                 key={cat.id}
                 value={cat.id}
                 id={`ebm-${cat.id}`}
-                className="scroll-mt-32 rounded-xl border border-border bg-background/40 overflow-hidden data-[state=open]:border-primary/40 data-[state=open]:bg-primary/5 transition-colors"
+                data-highlighted={highlightedId === cat.id ? "true" : undefined}
+                className="scroll-mt-32 rounded-xl border border-border bg-background/40 overflow-hidden data-[state=open]:border-primary/40 data-[state=open]:bg-primary/5 data-[highlighted=true]:animate-[ebm-pulse_1.6s_ease-out] data-[highlighted=true]:ring-2 data-[highlighted=true]:ring-primary/60 data-[highlighted=true]:border-primary/60 transition-colors"
               >
                 <AccordionTrigger className="px-5 py-4 hover:no-underline group">
                   <div className="flex items-center gap-3 text-left">
