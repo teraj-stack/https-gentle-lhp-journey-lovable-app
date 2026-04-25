@@ -16,6 +16,7 @@ import {
   Activity,
   Lightbulb,
   MousePointerClick,
+  CalendarOff,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
