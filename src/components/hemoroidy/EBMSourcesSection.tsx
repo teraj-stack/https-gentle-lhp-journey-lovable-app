@@ -384,10 +384,12 @@ const EBMSourcesSection = ({
           <a
             href={PDF_URL}
             target="_blank"
-            rel="noopener noreferrer"
+            rel="noopener noreferrer nofollow"
+            referrerPolicy="no-referrer"
             download="zrodla-EBM-quiz-hemoroidy-CML.pdf"
+            aria-label="Pobierz bibliografię EBM w formacie PDF (otwiera się w nowej karcie)"
           >
-            <Download className="w-4 h-4 mr-2" />
+            <Download className="w-4 h-4 mr-2" aria-hidden="true" />
             Pobierz PDF (bibliografia)
           </a>
         </Button>
@@ -555,11 +557,15 @@ const EBMSourcesSection = ({
                         <a
                           href={src.url}
                           target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-primary hover:underline inline-flex items-center gap-1 break-all"
+                          rel="noopener noreferrer nofollow external"
+                          referrerPolicy="no-referrer"
+                          aria-label={`${src.title} — otwiera się w nowej karcie`}
+                          title="Otwórz źródło w nowej karcie"
+                          className="text-primary hover:underline inline-flex items-center gap-1 break-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded-sm"
                         >
                           Link
-                          <ExternalLink className="w-3 h-3" />
+                          <ExternalLink className="w-3 h-3" aria-hidden="true" />
+                          <span className="sr-only"> (nowa karta)</span>
                         </a>
                       </li>
                     ))}
