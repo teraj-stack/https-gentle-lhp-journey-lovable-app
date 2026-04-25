@@ -605,11 +605,11 @@ describe("AutoSaveSettings — tooltip „Ostatnia zmiana” wybiera nagłówek 
         expect(title).toContain("Źródło: Synchronizacja między kartami");
 
         // 2) Linia czasu obecna — spadła na `lastSyncLabel` (etykieta względna).
-        //    Komponent renderuje „Czas: <coś niepustego>" — gwarantowane przez
-        //    `tooltipTimeValue = lastSyncFullDate ?? lastSyncLabel` + warunek
-        //    `tooltipTimeValue ? `Czas: ${…}` : null`.
-        expect(ariaLabel).toMatch(/Czas: \S+/);
-        expect(title).toMatch(/Czas: \S+/);
+        //    Komponent renderuje „Czas: <coś niepustego>" oraz dokleja kwalifikator
+        //    „(etykieta względna)" w kanale a11y, żeby screen reader miał kontekst,
+        //    że to przybliżenie a nie precyzyjny stempel czasowy.
+        expect(ariaLabel).toMatch(/Czas: \S.*\(etykieta względna\)/);
+        expect(title).toMatch(/Czas: \S.*\(etykieta względna\)/);
 
         // 3) ZERO pustych linii ani trailing newline w aria-label.
         const lines = getAriaLines(ariaLabel);
@@ -731,6 +731,45 @@ describe("AutoSaveSettings — tooltip „Ostatnia zmiana” wybiera nagłówek 
       expect(lines[0]).toMatch(/^Źródło: /);
       expect(lines[1].length).toBeGreaterThan(0);
       expect(lines[2]).toMatch(/^Czas: \S+/);
+    });
+
+    it("aria-label dokleja '(etykieta względna)' TYLKO przy fallbacku — pełna data idzie bez sufiksu", () => {
+      // Asymetryczna obecność kwalifikatora: chronimy screen reader przed
+      // myleniem precyzyjnej daty z przybliżeniem. Gdy mamy pełny stempel
+      // czasowy, sufiks NIE może się pojawić (byłby kłamstwem o naturze
+      // wartości); gdy spadamy na etykietę względną, sufiks MUSI się pojawić.
+      mockLastChangeSource = "remote";
+      mockLastChangeAt = FROZEN_NOW;
+
+      // Wariant A: pełna data dostępna → BEZ sufiksu.
+      mockFullTimestampReturn = "DEFAULT_FULL_TIMESTAMP"; // realny formatter
+      const { unmount } = renderPanel();
+      const fullDateLabel =
+        findLastChangeTooltip().container.getAttribute("aria-label") ?? "";
+      expect(fullDateLabel).toMatch(/Czas: \S+/);
+      expect(fullDateLabel).not.toContain("(etykieta względna)");
+      unmount();
+
+      // Wariant B: brak pełnej daty → fallback na lastSyncLabel + sufiks.
+      mockFullTimestampReturn = null;
+      renderPanel();
+      const fallbackLabel =
+        findLastChangeTooltip().container.getAttribute("aria-label") ?? "";
+      const fallbackTitle =
+        findLastChangeTooltip().trigger.getAttribute("title") ?? "";
+
+      // Linia czasu zawiera realną wartość PRZED kwalifikatorem.
+      expect(fallbackLabel).toMatch(/Czas: \S.+ \(etykieta względna\)$/m);
+      expect(fallbackTitle).toMatch(/Czas: \S.+ \(etykieta względna\)$/m);
+
+      // Sufiks jest w TEJ SAMEJ linii co „Czas: " (nie tworzy nowej linii) —
+      // pilnujemy stabilnej liczby linii (nagłówek + opis + 1×czas).
+      const lines = fallbackLabel.split("\n");
+      expect(lines.length).toBe(3);
+      expect(lines[2]).toMatch(/^Czas: .+\(etykieta względna\)$/);
+
+      // Nigdy nie wycieka surowy „null"/„undefined" zamiast etykiety względnej.
+      expect(fallbackLabel).not.toMatch(/Czas:\s*(null|undefined|\(etykieta)/);
     });
   });
 });

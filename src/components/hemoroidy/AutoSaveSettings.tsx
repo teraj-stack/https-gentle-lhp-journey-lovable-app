@@ -500,14 +500,29 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
             // Składamy linię „Czas: …" TYLKO gdy po wygładzeniu zostaje realna
             // treść — pusty fallback nie nadpisuje ani nie pozostawia
             // osieroconego „Czas: " w żadnym kanale (aria-label, title, tooltip).
+            //
+            // Dla aria-label / title (kanał a11y) DODATKOWO oznaczamy fallback:
+            // gdy pełna data jest niedostępna, screen reader dostaje wyraźny
+            // doklejony kwalifikator „(etykieta względna)" — inaczej użytkownik
+            // VO/NVDA usłyszałby tylko „Czas: 2 minuty temu" bez kontekstu, że
+            // to przybliżenie, a nie precyzyjny stempel czasowy z systemu.
+            // Widoczny tooltip pozostaje bez tego dopisku, bo ma już natywny
+            // `title` na linii czasu z pełnym wyjaśnieniem dla touch/hover.
+            const isRelativeFallback =
+              smoothFullDate.length === 0 && smoothRelativeLabel.length > 0;
             const timeLine =
               tooltipTimeValue.length > 0 ? `Czas: ${tooltipTimeValue}` : null;
+            const timeLineForA11y = !timeLine
+              ? null
+              : isRelativeFallback
+                ? `${timeLine} (etykieta względna)`
+                : timeLine;
             // Sklejamy `tooltipText` (aria-label + native `title` fallback) bez
             // pustych linii: każda część dodana TYLKO gdy ma realną treść.
             const tooltipText = [
               tooltipContent.ariaHeading,
               tooltipContent.description,
-              timeLine,
+              timeLineForA11y,
             ]
               .filter((line): line is string => Boolean(line && line.trim()))
               .join("\n");
