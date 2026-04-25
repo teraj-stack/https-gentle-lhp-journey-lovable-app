@@ -46,6 +46,7 @@ import {
   buildLastChangeTooltipModel,
   type TimeValueFormat,
 } from "@/lib/lastChangeTooltipModel";
+import { useLocalePreference } from "@/hooks/useLocalePreference";
 
 /**
  * Etykiety segmented control dla wyboru widoczności „Ostatniej zmiany".
@@ -179,6 +180,15 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
   const { visibility: lastChangeVisibility, setVisibility: setLastChangeVisibility } =
     useLastChangeVisibility();
   const showLastChangeLabel = isLastChangeVisible(lastChangeVisibility, lastChangeSource);
+
+  /**
+   * Preferencja języka tooltipa „Ostatnia zmiana" (PL/EN). Persystowana w
+   * localStorage przez `useLocalePreference` — przeżywa F5/zamknięcie karty
+   * i synchronizuje się cross-tab. Zastępuje wcześniejszą auto-detekcję
+   * `navigator.language` (która nadal jest fallbackiem przy pierwszym wejściu,
+   * gdy localStorage jest pusty).
+   */
+  const [tooltipLocale, setTooltipLocale] = useLocalePreference();
 
   /**
    * Symulacja braku BC + sanity check: po włączeniu robimy tymczasowy toggle
@@ -531,10 +541,11 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
               source: lastChangeSource,
               fullDate: lastSyncFullDate,
               relativeLabel: lastSyncLabel,
-              // Auto-detekcja języka z `navigator.language` (np. „pl-PL", „en-US").
-              // Helper `resolveLocale` wytnie primary subtag i fallbackuje do „pl"
-              // dla nieznanych języków — bezpieczny default dla naszej kliniki.
-              locale: typeof navigator !== "undefined" ? navigator.language : "pl",
+              // Locale czytany z PERSYSTOWANEJ preferencji użytkownika
+              // (`useLocalePreference`). Default = `navigator.language` przy
+              // pierwszym wejściu, dalej kontrolowany przez segmented selector
+              // poniżej (synchronizacja cross-tab przez `storage` event).
+              locale: tooltipLocale,
             });
             const { content: tooltipContent, ariaText: tooltipText } = tooltipModel;
             return (
@@ -707,6 +718,53 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
                     className={`text-[10px] font-sans px-1.5 py-0.5 rounded transition-colors focus:outline-none focus:ring-1 focus:ring-primary/60 ${
                       active
                         ? "bg-primary/20 text-primary font-medium"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                    }`}
+                  >
+                    {opt.short}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+          {/* Segmented control: język tooltipa „Ostatnia zmiana" (PL/EN).
+              Persystowany w localStorage przez `useLocalePreference` —
+              przeżywa F5 i synchronizuje się z innymi kartami. Renderowany
+              gdy istnieje cokolwiek do wyświetlenia (lastSyncLabel), bo bez
+              treści tooltipa selektor nie miałby co przełączać. */}
+          {lastSyncLabel && (
+            <div
+              role="radiogroup"
+              aria-label="Język tooltipa Ostatnia zmiana"
+              className="inline-flex items-center gap-0.5 rounded-md border border-border/60 bg-muted/30 p-0.5"
+            >
+              {(
+                [
+                  { value: "pl", short: "PL", label: "Polski", hint: "Tooltip i etykiety po polsku (Czas:, Źródło:)." },
+                  { value: "en", short: "EN", label: "English", hint: "Tooltip and labels in English (Time:, Source:)." },
+                ] as Array<{ value: Locale; short: string; label: string; hint: string }>
+              ).map((opt) => {
+                const active = tooltipLocale === opt.value;
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    role="radio"
+                    aria-checked={active}
+                    aria-label={`Język tooltipa: ${opt.label}`}
+                    title={opt.hint}
+                    onClick={() => {
+                      if (active) return;
+                      setTooltipLocale(opt.value);
+                      toast({
+                        title: `Język: ${opt.short}`,
+                        description: opt.hint,
+                        duration: 1800,
+                      });
+                    }}
+                    className={`text-[10px] font-sans font-medium px-1.5 py-0.5 rounded transition-colors focus:outline-none focus:ring-1 focus:ring-primary/60 ${
+                      active
+                        ? "bg-primary/20 text-primary"
                         : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
                     }`}
                   >
