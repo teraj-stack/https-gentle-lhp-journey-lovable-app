@@ -417,6 +417,7 @@ Sample output for `bash i18n-summary.sh --only placeholder-mismatch` after pasti
 
 ```
 ▶ Running i18n contract tests (filter: placeholder-mismatch)…
+  Reasons:    placeholder-mismatch
   Test files: src/lib/i18nPlaceholders.test.ts
 
 ═══════════════════════════════════════════════════════
@@ -431,6 +432,29 @@ Sample output for `bash i18n-summary.sh --only placeholder-mismatch` after pasti
 
 ❌ Overall: FAIL — 1 error-severity violation(s) for 'placeholder-mismatch'. See /tmp/i18n-summary-annotations.txt.
 ```
+
+Sample output for `bash i18n-summary.sh --only placeholder-mismatch,wrong-type` after pasting fixtures #2 + #5 (multi-reason filter — note how the script runs **both** owning test files and prints **both** rows in one summary):
+
+```
+▶ Running i18n contract tests (filter: placeholder-mismatch,wrong-type)…
+  Reasons:    placeholder-mismatch wrong-type
+  Test files: src/lib/i18nPlaceholders.test.ts src/lib/i18nContract.test.ts
+
+═══════════════════════════════════════════════════════
+  i18n contract — PASS/FAIL summary (filter: placeholder-mismatch,wrong-type)
+═══════════════════════════════════════════════════════
+  REASON                     SEVERITY   VERDICT
+  ---------------------------------------------------
+  placeholder-mismatch       error      ❌ FAIL (1)
+  wrong-type                 error      ❌ FAIL (1)
+  ---------------------------------------------------
+  TOTAL ANNOTATIONS          —          2
+═══════════════════════════════════════════════════════
+
+❌ Overall: FAIL — 2 error-severity violation(s) for 'placeholder-mismatch,wrong-type'. See /tmp/i18n-summary-annotations.txt.
+```
+
+Whitespace around commas is tolerated (`--only "placeholder-mismatch, wrong-type"` works), duplicate reasons are de-duplicated (`--only wrong-type,wrong-type` is treated as one), and the `TOTAL` count reflects only the selected reasons — annotations from other reasons that happened to surface in the same test run are filtered out before counting.
 
 Sample output (clean repo — no drift):
 
