@@ -34,8 +34,10 @@ import {
   Copy,
   CalendarClock,
   Star,
+  ShieldOff,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import {
   Accordion,
   AccordionContent,
@@ -284,6 +286,8 @@ const STORAGE_KEY = "cml.hemoroidy.risk-factors.selected.v1";
 const READ_STORAGE_KEY = "cml.hemoroidy.risk-factors.read.v1";
 const PRIORITY_STORAGE_KEY = "cml.hemoroidy.risk-factors.priority.v1";
 const OPEN_ITEMS_STORAGE_KEY = "cml.hemoroidy.risk-factors.open.v1";
+/** Tryb prywatności: gdy `true`, NIE zapisujemy `readItems` do localStorage (tylko sesja). */
+const PRIVACY_STORAGE_KEY = "cml.hemoroidy.risk-factors.privacy.v1";
 const TIMESTAMP_STORAGE_KEY = "cml.hemoroidy.risk-factors.selected-at.v1";
 
 const loadStringArray = (key: string): string[] => {
@@ -575,17 +579,56 @@ const RiskFactorsAccordion = () => {
     });
   };
 
-  // Przeczytane karty — persystencja w localStorage (anonimowo)
-  const [readItems, setReadItems] = useState<string[]>(() => loadStringArray(READ_STORAGE_KEY));
+  // Tryb prywatności: gdy ON, NIE zapisujemy `readItems` do localStorage
+  // (sesja-only). Sama preferencja jednak jest persystowana — żeby przetrwała refresh.
+  // Lazy init: czytamy preferencję zanim zainicjujemy `readItems`, żeby przy włączonym
+  // privacy mode nie ładować historycznie zapisanych „przeczytane" (privacy oczekuje od nas właśnie tego).
+  const [privacyMode, setPrivacyMode] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      return window.localStorage.getItem(PRIVACY_STORAGE_KEY) === "1";
+    } catch {
+      return false;
+    }
+  });
+
+  // Przeczytane karty — persystencja w localStorage (anonimowo); pominięta w trybie prywatności.
+  const [readItems, setReadItems] = useState<string[]>(() => {
+    // Jeśli privacy ON na starcie → ignoruj historyczne dane (czysta sesja).
+    if (typeof window !== "undefined") {
+      try {
+        if (window.localStorage.getItem(PRIVACY_STORAGE_KEY) === "1") return [];
+      } catch {
+        /* noop */
+      }
+    }
+    return loadStringArray(READ_STORAGE_KEY);
+  });
+
+  // Autosave preferencji prywatności + reakcja na włączenie/wyłączenie:
+  // ON → usuń istniejące dane „przeczytane" z localStorage (clean wipe) i zostaw tylko sesję.
+  // OFF → następne zmiany `readItems` znowu się persistują (przez useEffect poniżej).
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem(PRIVACY_STORAGE_KEY, privacyMode ? "1" : "0");
+      if (privacyMode) {
+        window.localStorage.removeItem(READ_STORAGE_KEY);
+      }
+    } catch {
+      /* noop */
+    }
+  }, [privacyMode]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+    if (privacyMode) return; // tryb prywatności — pomijamy zapis
     try {
       window.localStorage.setItem(READ_STORAGE_KEY, JSON.stringify(readItems));
     } catch {
       /* noop */
     }
-  }, [readItems]);
+  }, [readItems, privacyMode]);
 
   const markRead = (id: string) =>
     setReadItems((prev) => (prev.includes(id) ? prev : [...prev, id]));
@@ -891,6 +934,41 @@ const RiskFactorsAccordion = () => {
                 </button>
               </span>
             )}
+            <span className="inline-flex items-center gap-2 ml-auto sm:ml-0">
+              <ShieldOff
+                className={`w-3.5 h-3.5 ${privacyMode ? "text-primary" : "text-muted-foreground"}`}
+                aria-hidden="true"
+              />
+              <label
+                htmlFor="risk-factors-privacy-toggle"
+                className="cursor-pointer select-none"
+                title='Gdy włączone: oznaczenia „przeczytane" działają tylko w tej sesji i nie są zapisywane w przeglądarce.'
+              >
+                Tryb prywatny
+              </label>
+              <Switch
+                id="risk-factors-privacy-toggle"
+                checked={privacyMode}
+                onCheckedChange={(v) => {
+                  setPrivacyMode(v);
+                  if (v) {
+                    // Wyłączenie persystencji = wyczyść też bieżącą sesyjną listę,
+                    // żeby przełącznik dawał namacalny efekt (licznik znika).
+                    setReadItems([]);
+                    toast({
+                      title: "Tryb prywatny włączony",
+                      description: 'Oznaczenia „przeczytane" nie będą zapisywane w przeglądarce. Wyczyściliśmy też bieżącą historię.',
+                    });
+                  } else {
+                    toast({
+                      title: "Tryb prywatny wyłączony",
+                      description: 'Oznaczenia „przeczytane" znowu będą zapisywane lokalnie.',
+                    });
+                  }
+                }}
+                aria-label="Tryb prywatny — nie zapisuj „przeczytane” w przeglądarce"
+              />
+            </span>
           </div>
           <Button
             type="button"
