@@ -64,23 +64,24 @@ const freshState = (): EbmAnalyticsState => ({
 const isBrowser = () => typeof window !== "undefined" && typeof localStorage !== "undefined";
 
 const safeRead = (): EbmAnalyticsState => {
-  if (!isBrowser()) return { ...EMPTY_STATE };
+  if (!isBrowser()) return freshState();
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return { ...EMPTY_STATE };
+    if (!raw) return freshState();
     const parsed = JSON.parse(raw);
-    if (!parsed || parsed.version !== 1) return { ...EMPTY_STATE };
+    if (!parsed || parsed.version !== 1) return freshState();
+    const base = freshState();
     return {
-      ...EMPTY_STATE,
+      ...base,
       ...parsed,
-      totals: { ...EMPTY_STATE.totals, ...(parsed.totals ?? {}) },
+      totals: { ...base.totals, ...(parsed.totals ?? {}) },
       perHost: parsed.perHost ?? {},
       perEbmId: parsed.perEbmId ?? {},
       perSource: parsed.perSource ?? {},
       recent: Array.isArray(parsed.recent) ? parsed.recent : [],
     };
   } catch {
-    return { ...EMPTY_STATE };
+    return freshState();
   }
 };
 
