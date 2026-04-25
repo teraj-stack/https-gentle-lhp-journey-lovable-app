@@ -637,7 +637,9 @@ const run = () => {
   const contentChanged = updatedContent !== contentSrc;
   const modelChanged = updatedModel !== modelSrc;
 
-  // Reporting
+  // Reporting — `detected` always shows the SORTED canonical view so the
+  // JSON dump stays comparable run-over-run regardless of file ordering;
+  // the per-bucket diff (below) reflects the actual on-disk → next change.
   const summary = {
     detected: {
       translations: {
@@ -651,23 +653,21 @@ const run = () => {
       [CONTENT_PATH]: contentChanged ? "updated" : "unchanged",
       [MODEL_PATH]: modelChanged ? "updated" : "unchanged",
     },
+    mode: PRESERVE_ORDER ? "preserve-order" : "sorted",
   };
 
-  // Per-bucket diff between what's CURRENTLY in the source files and what
-  // the scanner would write. Computed from the raw source (not from the
-  // `*Changed` flags) so the diff still works in --check mode where we
-  // never write — and so it surfaces zero-change buckets explicitly.
-  const currentTranslations = parseCurrentTranslationKeys(contentSrc);
-  const currentTimeLine = parseCurrentTimeLineKeys(modelSrc);
+  // Per-bucket diff — diffKeys is order-independent, so we feed it the
+  // ordered arrays directly (same set membership, but avoids a redundant
+  // resort on the right-hand side).
   const translationDiffs = {
-    top: diffKeys(currentTranslations.top, sortedArr(topReads)),
-    variant: diffKeys(currentTranslations.variant, sortedArr(variantRequired)),
+    top: diffKeys(currentTranslations.top, orderedTop),
+    variant: diffKeys(currentTranslations.variant, orderedVariant),
     variantOptional: diffKeys(
       currentTranslations.variantOptional,
-      sortedArr(variantOptional),
+      orderedVariantOptional,
     ),
   };
-  const timeLineDiff = diffKeys(currentTimeLine, sortedArr(timeLineKeys));
+  const timeLineDiff = diffKeys(currentTimeLine, orderedTimeLine);
 
   console.log("[autofix-required-translation-keys] detected keys:");
   console.log(JSON.stringify(summary.detected, null, 2));
