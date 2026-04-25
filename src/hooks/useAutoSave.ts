@@ -190,9 +190,14 @@ export interface PongResponse {
 
 /**
  * Pojedynczy wpis w historii synchronizacji — pokazywany w panelu ustawień jako
- * lista ostatnich N zmian. Źródło wskazuje, którym kanałem przyszła wiadomość:
- * BroadcastChannel (główny), storage event (cross-tab fallback) lub CustomEvent
- * (within-tab, gdy jest wiele instancji hooka w jednej karcie).
+ * lista ostatnich N zmian. Źródło wskazuje, skąd przyszła zmiana:
+ *  - `broadcast` — BroadcastChannel z innej karty (główny kanał),
+ *  - `storage` — storage event (cross-tab fallback dla starszych przeglądarek),
+ *  - `custom-event` — CustomEvent w obrębie tej samej karty (gdy żyje kilka
+ *    instancji hooka jednocześnie),
+ *  - `local` — ręczne kliknięcie Switch / skrót Alt+Shift+A w TEJ karcie.
+ *    Dzięki temu mini-historia pokazuje pełen kontekst (lokalnie/zdalnie),
+ *    a nie tylko echa synchronizacji.
  */
 export interface SyncHistoryEntry {
   /** Unikalny id wpisu — używany jako React key (timestamp + counter wystarczy, brak kolizji w obrębie jednej sesji). */
@@ -202,10 +207,11 @@ export interface SyncHistoryEntry {
   /** Wartość, którą ustawiono po synchronizacji. */
   enabled: boolean;
   /** Źródło sygnału. */
-  source: "broadcast" | "storage" | "custom-event";
+  source: "broadcast" | "storage" | "custom-event" | "local";
 }
 
-const HISTORY_LIMIT = 5;
+/** Maksymalna liczba wpisów w mini-historii (najstarsze są przycinane). */
+const HISTORY_LIMIT = 8;
 let historyCounter = 0;
 
 /**
