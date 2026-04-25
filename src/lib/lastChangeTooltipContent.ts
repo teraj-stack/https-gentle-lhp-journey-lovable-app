@@ -111,13 +111,43 @@ const TRANSLATIONS: Record<Locale, TranslationEntry> = {
         "You toggled auto-save in this tab (Switch or Alt+Shift+A shortcut).",
     },
   },
+  de: {
+    sourcePrefix: "Quelle: ",
+    remote: {
+      heading: "Tab-übergreifende Synchronisation",
+      description:
+        "Die Auto-Speichern-Änderung kam aus einem anderen geöffneten Tab (BroadcastChannel oder Storage).",
+    },
+    local: {
+      heading: "Lokale Aktion in diesem Tab",
+      // First-person override for SR (parytet z PL/EN).
+      ariaHeadingOverride: "Meine lokale Aktion in diesem Tab",
+      description:
+        "Sie haben Auto-Speichern in diesem Tab umgeschaltet (Switch oder Tastenkürzel Alt+Umschalt+A).",
+    },
+  },
+  it: {
+    sourcePrefix: "Origine: ",
+    remote: {
+      heading: "Sincronizzazione tra schede",
+      description:
+        "La modifica del salvataggio automatico è arrivata da un'altra scheda aperta (BroadcastChannel o storage).",
+    },
+    local: {
+      heading: "Azione locale in questa scheda",
+      // First-person override per screen reader.
+      ariaHeadingOverride: "La mia azione locale in questa scheda",
+      description:
+        "Hai attivato/disattivato il salvataggio automatico in questa scheda (Switch o scorciatoia Alt+Maiusc+A).",
+    },
+  },
 };
 
 /**
  * Dla testów i konsumentów helpera: kanoniczna lista wspieranych locale.
  * Pozwala iterować w testach po wszystkich wariantach bez duplikowania listy.
  */
-export const SUPPORTED_LOCALES: readonly Locale[] = ["pl", "en"] as const;
+export const SUPPORTED_LOCALES: readonly Locale[] = ["pl", "en", "de", "it"] as const;
 
 export interface LastChangeTooltipContent {
   /** Nagłówek pokazywany w TooltipContent (bez prefiksu „Źródło:"). */
