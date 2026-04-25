@@ -392,7 +392,9 @@ describe("i18n required keys — TIME_LINE_TRANSLATIONS covers REQUIRED_TIME_LIN
     const violations: Violation[] = [];
     const raw = __getRawTimeLineTranslationsForTesting();
 
-    for (const locale of SUPPORTED_LOCALES) {
+    // ACTIVE_LOCALES: per-key validation respects test mode. Orphan-locale
+    // check below stays on SUPPORTED_LOCALES (static shape contract).
+    for (const locale of ACTIVE_LOCALES) {
       checkTimeLineEntry(locale, raw[locale] as unknown as Record<string, unknown>, violations);
     }
 
