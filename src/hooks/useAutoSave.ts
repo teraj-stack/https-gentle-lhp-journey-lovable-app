@@ -54,9 +54,36 @@ const TAB_ID =
     ? window.crypto.randomUUID()
     : `tab-${Math.random().toString(36).slice(2)}-${Date.now()}`;
 
+/** Czas trwania flagi „świeża zdalna synchronizacja" (ms) — używany do animacji pulsu w UI. */
+const REMOTE_SYNC_FLASH_MS = 1500;
+
 export const useAutoSave = () => {
   const [enabled, setEnabled] = useState<boolean>(() => readStored());
+  /**
+   * Monotoniczny licznik nadpisywany za każdym razem, gdy stan przyszedł z innej instancji
+   * (inna karta przez BroadcastChannel/storage, albo inna instancja hooka w tej samej karcie).
+   * Konsumenci mogą obserwować zmianę wartości, żeby uruchomić animację „flash".
+   * 0 = brak zdalnej synchronizacji od montażu.
+   */
+  const [remoteSyncTick, setRemoteSyncTick] = useState(0);
+  /**
+   * Boolean pochodny — `true` przez krótką chwilę (REMOTE_SYNC_FLASH_MS) po każdej zdalnej
+   * synchronizacji. Używany do warunkowego pulsu badge „Auto-zapis: ON/OFF".
+   */
+  const [isRemoteSyncing, setIsRemoteSyncing] = useState(false);
   const channelRef = useRef<BroadcastChannel | null>(null);
+  const flashTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  /** Zaznacz, że właśnie przyszła zdalna synchronizacja — uruchom flash + auto-reset po czasie. */
+  const markRemoteSync = useCallback(() => {
+    setRemoteSyncTick((n) => n + 1);
+    setIsRemoteSyncing(true);
+    if (flashTimeoutRef.current) clearTimeout(flashTimeoutRef.current);
+    flashTimeoutRef.current = setTimeout(() => {
+      setIsRemoteSyncing(false);
+      flashTimeoutRef.current = null;
+    }, REMOTE_SYNC_FLASH_MS);
+  }, []);
 
   // Inicjalizacja BroadcastChannel (jedna na życie hooka).
   useEffect(() => {
@@ -69,6 +96,7 @@ export const useAutoSave = () => {
       if (!data || typeof data.enabled !== "boolean") return;
       if (data.origin === TAB_ID) return; // ignorujemy echo własnego nadania
       setEnabled(data.enabled);
+      markRemoteSync();
     };
     channel.addEventListener("message", onMessage);
 
@@ -77,7 +105,7 @@ export const useAutoSave = () => {
       channel.close();
       channelRef.current = null;
     };
-  }, []);
+  }, [markRemoteSync]);
 
   // Fallback: storage event (gdy inna karta nadpisała localStorage)
   // + CustomEvent w tej samej karcie (dla wielu instancji hooka).
@@ -87,17 +115,26 @@ export const useAutoSave = () => {
     const onStorage = (e: StorageEvent) => {
       if (e.key !== STORAGE_KEY && e.key !== null) return;
       // e.key === null oznacza localStorage.clear() z innej karty — re-read i tak da default.
-      setEnabled(readStored());
+      const next = readStored();
+      setEnabled((prev) => {
+        if (prev !== next) markRemoteSync();
+        return next;
+      });
     };
     const onCustom = (e: Event) => {
       const detail = (e as CustomEvent<BroadcastPayload | undefined>).detail;
       if (detail && typeof detail.enabled === "boolean") {
         if (detail.origin === TAB_ID) return; // własne emit — już mamy stan w setEnabled
         setEnabled(detail.enabled);
+        markRemoteSync();
         return;
       }
       // brak payloadu (back-compat) — fallback na re-read
-      setEnabled(readStored());
+      const next = readStored();
+      setEnabled((prev) => {
+        if (prev !== next) markRemoteSync();
+        return next;
+      });
     };
 
     window.addEventListener("storage", onStorage);
@@ -105,6 +142,13 @@ export const useAutoSave = () => {
     return () => {
       window.removeEventListener("storage", onStorage);
       window.removeEventListener(EVENT_NAME, onCustom);
+    };
+  }, [markRemoteSync]);
+
+  // Cleanup wiszącego timeoutu przy unmount.
+  useEffect(() => {
+    return () => {
+      if (flashTimeoutRef.current) clearTimeout(flashTimeoutRef.current);
     };
   }, []);
 
@@ -131,5 +175,5 @@ export const useAutoSave = () => {
     }
   }, []);
 
-  return { enabled, setEnabled: toggle };
+  return { enabled, setEnabled: toggle, isRemoteSyncing, remoteSyncTick };
 };

@@ -1,4 +1,4 @@
-import { Save, ShieldCheck, ShieldAlert, CheckCircle2 } from "lucide-react";
+import { Save, ShieldCheck, ShieldAlert, CheckCircle2, RefreshCw } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { useAutoSave } from "@/hooks/useAutoSave";
@@ -32,7 +32,7 @@ interface AutoSaveSettingsProps {
  * żeby przepisać je do storage'u (tę logikę implementuje DiaryFullModule).
  */
 const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }: AutoSaveSettingsProps) => {
-  const { enabled, setEnabled } = useAutoSave();
+  const { enabled, setEnabled, isRemoteSyncing } = useAutoSave();
 
   const handleToggle = (next: boolean) => {
     setEnabled(next);
@@ -66,14 +66,34 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
             >
               Auto-zapis odpowiedzi
               <span
-                className={`text-[11px] px-1.5 py-0.5 rounded-md font-sans border ${
+                role="status"
+                aria-live="polite"
+                aria-label={`Auto-zapis ${enabled ? "włączony" : "wyłączony"}${
+                  isRemoteSyncing ? " — właśnie zsynchronizowano z inną kartą" : ""
+                }`}
+                className={`text-[11px] px-1.5 py-0.5 rounded-md font-sans border transition-shadow duration-200 ${
                   enabled
                     ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/40"
                     : "bg-primary/15 text-primary border-primary/40"
+                } ${
+                  isRemoteSyncing
+                    ? enabled
+                      ? "animate-pulse ring-2 ring-emerald-400/60 shadow-[0_0_12px_hsl(var(--primary)/0.0)]"
+                      : "animate-pulse ring-2 ring-primary/60"
+                    : ""
                 }`}
               >
-                {enabled ? "Włączony" : "Wyłączony"}
+                Auto-zapis: {enabled ? "ON" : "OFF"}
               </span>
+              {isRemoteSyncing && (
+                <span
+                  className="inline-flex items-center gap-1 text-[10px] font-sans text-muted-foreground animate-pulse"
+                  aria-hidden="true"
+                >
+                  <RefreshCw className="w-3 h-3" />
+                  Zsynchronizowano
+                </span>
+              )}
             </label>
             <p className="text-xs sm:text-sm text-muted-foreground mt-1 leading-relaxed">
               {enabled ? (
