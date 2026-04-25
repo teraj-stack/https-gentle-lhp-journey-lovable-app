@@ -12,7 +12,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "i18n:autofix": "node scripts/autofix-required-translation-keys.mjs",
-    "i18n:check": "node scripts/autofix-required-translation-keys.mjs --check"
+    "i18n:check": "node scripts/autofix-required-translation-keys.mjs --check",
+    "i18n:fixtures": "node scripts/generate-fixture-snippets.mjs",
+    "i18n:fixtures:check": "node scripts/generate-fixture-snippets.mjs --check"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
