@@ -359,6 +359,29 @@ export const useAutoSave = () => {
     }
     return [];
   });
+
+  /**
+   * Każda nowa instancja `degradationInfo` (sygnatura `at + cause`) jest
+   * dopisywana do `degradationHistory`. Używamy `at + cause` zamiast referencji,
+   * bo `buildDegradationInfo` tworzy nowy obiekt nawet dla powtórzeń tej samej
+   * przyczyny — chcemy wtedy zarejestrować osobny incydent. Dedup po
+   * (at, cause) chroni przed podwójnym zapisem przy strict-mode double-render.
+   */
+  useEffect(() => {
+    if (!degradationInfo) return;
+    setDegradationHistory((prev) => {
+      const last = prev[0];
+      if (last && last.at === degradationInfo.at && last.cause === degradationInfo.cause) {
+        return prev; // dedup: ten sam incydent zarejestrowany powtórnie
+      }
+      degradationHistoryCounter += 1;
+      const entry: DegradationHistoryEntry = {
+        ...degradationInfo,
+        id: `deg-${degradationInfo.at}-${degradationHistoryCounter}`,
+      };
+      return [entry, ...prev].slice(0, DEGRADATION_HISTORY_LIMIT);
+    });
+  }, [degradationInfo]);
   /**
    * Symulacja braku BroadcastChannel — używana do diagnostyki.
    * Gdy `true`, hook zachowuje się tak, jakby BC nie działał: pomija
