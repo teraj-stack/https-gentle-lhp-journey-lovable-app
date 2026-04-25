@@ -158,6 +158,12 @@ const SyncDiagnosticPanel = ({
    * nie awaria) — ale jeśli pojawi się w historii, dalej jest liczona w „Razem".
    */
   const [activeFilters, setActiveFilters] = useState<Set<DegradationCause>>(new Set());
+  /**
+   * Osobny flag „Skopiowano" dla przycisku ostatniej degradacji — niezależny od
+   * `copied` przy raporcie głównym, żeby oba przyciski mogły mieć własny stan
+   * potwierdzenia bez kolizji wizualnej.
+   */
+  const [degradationCopied, setDegradationCopied] = useState(false);
 
   /** Liczniki per kategoria — zliczamy z pełnej historii, niezależnie od filtra. */
   const counts = useMemo(() => {
