@@ -511,12 +511,10 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
                         isRemoteChange ? "text-emerald-400" : "text-foreground"
                       }`}
                     >
-                      {isRemoteChange
-                        ? "Synchronizacja między kartami"
-                        : "Lokalna akcja w tej karcie"}
+                      {tooltipContent.heading}
                     </p>
                     <p className="text-[11px] text-muted-foreground leading-snug">
-                      {sourceDescription}
+                      {tooltipContent.description}
                     </p>
                     {lastSyncFullDate && (
                       <p className="text-[10px] text-muted-foreground/80 font-mono">
