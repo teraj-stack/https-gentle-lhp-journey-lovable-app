@@ -104,6 +104,25 @@ const FORBIDDEN_PLACEHOLDERS = [
 const SHORT_BADGE_MAX_LEN = 16;
 const HELP_TITLE_MIN_LEN = 10;
 
+/**
+ * Limity długości i higiena białych znaków dla pól tooltipa.
+ *
+ * - HEADING: krótki tytuł sekcji w `<TooltipContent>` — musi mieścić się w
+ *   jednej linii w popoverze (~max 60 znaków, żeby nie łamał layoutu na 320px).
+ * - DESCRIPTION: pełniejsze zdanie wyjaśniające mechanizm — pozwalamy na
+ *   ~200 znaków, ale nie chcemy paragrafów (tooltip ≠ artykuł).
+ * - ARIA_HEADING: prefix + heading; max ~80 znaków, żeby screen reader
+ *   nie czytał monstrum przed właściwą treścią.
+ *
+ * MIN ustawiamy na 8 znaków, żeby złapać przypadkowe „TBA"/„???"/„x" wpisane
+ * w fazie szkicu tłumaczenia.
+ */
+const STRING_LIMITS = {
+  heading: { min: 8, max: 60 },
+  description: { min: 8, max: 200 },
+  ariaHeading: { min: 8, max: 80 },
+} as const;
+
 // ---------------------------------------------------------------------------
 // REPORT INFRASTRUCTURE
 // ---------------------------------------------------------------------------
