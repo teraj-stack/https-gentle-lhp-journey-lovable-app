@@ -618,7 +618,33 @@ export const emitGithubAnnotations = (
       message: messageBits.join(" — "),
       severity,
     });
+
+    // Debug flag: print the resolved (file, line, snippet) tuple to stderr
+    // for each emitted annotation. Off by default; set
+    // I18N_ANNOTATION_DEBUG=1 (or =true) when troubleshooting why an
+    // annotation lands on the wrong row or shows a truncated snippet.
+    // stderr is used so the line-based stdout grep in the README's
+    // Quickstart (`grep '^::'`) stays clean.
+    if (isAnnotationDebugEnabled()) {
+      // eslint-disable-next-line no-console
+      console.error(
+        `[i18n-annotation-debug] file=${file} line=${lineNumber ?? "<unresolved>"} ` +
+          `severity=${severity} locale=${v.locale} reason=${v.reason} path=${v.path} ` +
+          `snippet=${JSON.stringify(lineHint ?? "<no-snippet>")}`,
+      );
+    }
   }
+};
+
+/**
+ * Read the debug flag fresh on every annotation so tests (and CI re-runs
+ * inside the same worker) can flip it without restarting. Accepts `1`,
+ * `true`, `yes` (case-insensitive). Anything else → off.
+ */
+const isAnnotationDebugEnabled = (): boolean => {
+  const raw = process.env.I18N_ANNOTATION_DEBUG;
+  if (!raw) return false;
+  return /^(1|true|yes)$/i.test(raw.trim());
 };
 
 /** Internal helper exposed only for unit testing the line resolver. */

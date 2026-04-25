@@ -419,6 +419,41 @@ When the PR annotation points at the wrong row (off by a few lines, or stuck on 
    ```
    Compare the `line=` value against `wc -l` of the source file — if it's larger than total lines, the resolver bailed out and returned a fallback. That's a `findKeyLine` bug, not a translation bug.
 
+#### Debug flag: `I18N_ANNOTATION_DEBUG=1`
+
+When the checklist above isn't enough, flip on `I18N_ANNOTATION_DEBUG=1` and the emitter prints the **resolved inputs** for every annotation to **stderr** (one line per emitted `::error` / `::warning`):
+
+```sh
+GITHUB_ACTIONS=true I18N_ANNOTATION_DEBUG=1 bunx vitest run \
+  src/lib/i18nRequiredKeys.test.ts \
+  src/lib/i18nContract.test.ts \
+  src/lib/i18nPlaceholders.test.ts 2>&1 \
+  | grep -E '^(::|\[i18n-annotation-debug\])'
+```
+
+Each debug line has the shape:
+
+```text
+[i18n-annotation-debug] file=src/lib/lastChangeTooltipContent.ts line=87 severity=error locale=en reason=placeholder-mismatch path=TRANSLATIONS.en.local.heading snippet="current: heading: \"Last change\","
+```
+
+Fields:
+
+| Field | Meaning | What to check |
+| --- | --- | --- |
+| `file=` | Source file the resolver picked via `pickSourceFile(v.path)` | If wrong, the top-level prefix → file mapping in `SOURCE_FILES` is stale (checklist #5/#6). |
+| `line=` | 1-based row from `getSourceLineSnippet` (or `<unresolved>` if the resolver returned `null` and no locale-block fallback fired) | If wrong number → checklist #1–#4. If `<unresolved>` → key isn't found at all in either failing or reference locale; the source file probably moved or the key is genuinely orphaned. |
+| `snippet=` | JSON-stringified `lineHint` that gets joined into the annotation message body — `current: …` for found keys, `expected (from \`pl\`): …` when the failing locale's key is missing entirely, or `expected: "<key>": "<TODO>"` when even PL is missing it | If truncated mid-value → `MAX_SNIPPET_LEN` (200) or the multi-line assembler bailed early (checklist #4). If `<no-snippet>` → resolver returned no line and no fallback — usually means `dottedKey` was empty after `stripTopPrefix`. |
+| `severity=` | Final `error` / `warning` after `classifyReasonSeverity` | If unexpected, check `WARNING_REASONS` in `i18nGithubAnnotations.ts`. |
+| `locale=`, `reason=`, `path=` | Original violation triple used for cross-call dedup | If you expected this triple to be deduped and it still appears, the previous emitter call ran in a different vitest worker — see the dedup comment in the source. |
+
+**Why stderr?** The Quickstart pipeline uses `grep '^::'` on stdout to extract just the annotation lines. Routing debug output to stderr keeps that pipe clean — you can opt into the debug stream by combining `2>&1` with the broader regex shown above.
+
+**Test runs**: the flag is read fresh on every annotation (no module-load caching), so you can `export I18N_ANNOTATION_DEBUG=1` for one shell, run a single failing test in isolation, and unset it without restarting anything. Accepts `1`, `true`, `yes` (case-insensitive); empty / unset / anything else → off.
+
+**CI use**: add `I18N_ANNOTATION_DEBUG: "1"` under the failing job's `env:` block when re-running with debug logging via `workflow_dispatch`. Keep it off for normal PR runs to avoid doubling the log volume.
+
+
 ### Auto-fixing drifted REQUIRED_* keys
 
 If the failure reason is `missing-required-key` or `undeclared-key`, run:
