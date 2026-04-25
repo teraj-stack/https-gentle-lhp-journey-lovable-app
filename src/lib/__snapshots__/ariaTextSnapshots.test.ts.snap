@@ -1,0 +1,137 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`ariaText snapshots — wording contract per locale > locale: de > local — full date 1`] = `
+"Quelle: Meine lokale Aktion in diesem Tab
+Sie haben Auto-Speichern in diesem Tab umgeschaltet (Switch oder Tastenkürzel Alt+Umschalt+A).
+Zeit: 24.04.2026, 12:34:56"
+`;
+
+exports[`ariaText snapshots — wording contract per locale > locale: de > local — relative fallback 1`] = `
+"Quelle: Meine lokale Aktion in diesem Tab
+Sie haben Auto-Speichern in diesem Tab umgeschaltet (Switch oder Tastenkürzel Alt+Umschalt+A).
+Zeit: 2 min (relative Angabe)"
+`;
+
+exports[`ariaText snapshots — wording contract per locale > locale: de > null source — no time line 1`] = `
+"Quelle: Meine lokale Aktion in diesem Tab
+Sie haben Auto-Speichern in diesem Tab umgeschaltet (Switch oder Tastenkürzel Alt+Umschalt+A)."
+`;
+
+exports[`ariaText snapshots — wording contract per locale > locale: de > remote — full date 1`] = `
+"Quelle: Tab-übergreifende Synchronisation
+Die Auto-Speichern-Änderung kam aus einem anderen geöffneten Tab (BroadcastChannel oder Storage).
+Zeit: 24.04.2026, 12:34:56"
+`;
+
+exports[`ariaText snapshots — wording contract per locale > locale: de > remote — no time line 1`] = `
+"Quelle: Tab-übergreifende Synchronisation
+Die Auto-Speichern-Änderung kam aus einem anderen geöffneten Tab (BroadcastChannel oder Storage)."
+`;
+
+exports[`ariaText snapshots — wording contract per locale > locale: de > remote — relative fallback 1`] = `
+"Quelle: Tab-übergreifende Synchronisation
+Die Auto-Speichern-Änderung kam aus einem anderen geöffneten Tab (BroadcastChannel oder Storage).
+Zeit: 2 min (relative Angabe)"
+`;
+
+exports[`ariaText snapshots — wording contract per locale > locale: en > local — full date 1`] = `
+"Source: My local action in this tab
+You toggled auto-save in this tab (Switch or Alt+Shift+A shortcut).
+Time: 24.04.2026, 12:34:56"
+`;
+
+exports[`ariaText snapshots — wording contract per locale > locale: en > local — relative fallback 1`] = `
+"Source: My local action in this tab
+You toggled auto-save in this tab (Switch or Alt+Shift+A shortcut).
+Time: 2 min (relative label)"
+`;
+
+exports[`ariaText snapshots — wording contract per locale > locale: en > null source — no time line 1`] = `
+"Source: My local action in this tab
+You toggled auto-save in this tab (Switch or Alt+Shift+A shortcut)."
+`;
+
+exports[`ariaText snapshots — wording contract per locale > locale: en > remote — full date 1`] = `
+"Source: Cross-tab synchronization
+The auto-save change came from another open tab (BroadcastChannel or storage).
+Time: 24.04.2026, 12:34:56"
+`;
+
+exports[`ariaText snapshots — wording contract per locale > locale: en > remote — no time line 1`] = `
+"Source: Cross-tab synchronization
+The auto-save change came from another open tab (BroadcastChannel or storage)."
+`;
+
+exports[`ariaText snapshots — wording contract per locale > locale: en > remote — relative fallback 1`] = `
+"Source: Cross-tab synchronization
+The auto-save change came from another open tab (BroadcastChannel or storage).
+Time: 2 min (relative label)"
+`;
+
+exports[`ariaText snapshots — wording contract per locale > locale: it > local — full date 1`] = `
+"Origine: La mia azione locale in questa scheda
+Hai attivato/disattivato il salvataggio automatico in questa scheda (Switch o scorciatoia Alt+Maiusc+A).
+Ora: 24.04.2026, 12:34:56"
+`;
+
+exports[`ariaText snapshots — wording contract per locale > locale: it > local — relative fallback 1`] = `
+"Origine: La mia azione locale in questa scheda
+Hai attivato/disattivato il salvataggio automatico in questa scheda (Switch o scorciatoia Alt+Maiusc+A).
+Ora: 2 min (etichetta relativa)"
+`;
+
+exports[`ariaText snapshots — wording contract per locale > locale: it > null source — no time line 1`] = `
+"Origine: La mia azione locale in questa scheda
+Hai attivato/disattivato il salvataggio automatico in questa scheda (Switch o scorciatoia Alt+Maiusc+A)."
+`;
+
+exports[`ariaText snapshots — wording contract per locale > locale: it > remote — full date 1`] = `
+"Origine: Sincronizzazione tra schede
+La modifica del salvataggio automatico è arrivata da un'altra scheda aperta (BroadcastChannel o storage).
+Ora: 24.04.2026, 12:34:56"
+`;
+
+exports[`ariaText snapshots — wording contract per locale > locale: it > remote — no time line 1`] = `
+"Origine: Sincronizzazione tra schede
+La modifica del salvataggio automatico è arrivata da un'altra scheda aperta (BroadcastChannel o storage)."
+`;
+
+exports[`ariaText snapshots — wording contract per locale > locale: it > remote — relative fallback 1`] = `
+"Origine: Sincronizzazione tra schede
+La modifica del salvataggio automatico è arrivata da un'altra scheda aperta (BroadcastChannel o storage).
+Ora: 2 min (etichetta relativa)"
+`;
+
+exports[`ariaText snapshots — wording contract per locale > locale: pl > local — full date 1`] = `
+"Źródło: Moja lokalna akcja w tej karcie
+Sam(a) przełączyłe(a)ś auto-zapis w tej karcie (Switch lub skrót Alt+Shift+A).
+Czas: 24.04.2026, 12:34:56"
+`;
+
+exports[`ariaText snapshots — wording contract per locale > locale: pl > local — relative fallback 1`] = `
+"Źródło: Moja lokalna akcja w tej karcie
+Sam(a) przełączyłe(a)ś auto-zapis w tej karcie (Switch lub skrót Alt+Shift+A).
+Czas: 2 min (etykieta względna)"
+`;
+
+exports[`ariaText snapshots — wording contract per locale > locale: pl > null source — no time line 1`] = `
+"Źródło: Moja lokalna akcja w tej karcie
+Sam(a) przełączyłe(a)ś auto-zapis w tej karcie (Switch lub skrót Alt+Shift+A)."
+`;
+
+exports[`ariaText snapshots — wording contract per locale > locale: pl > remote — full date 1`] = `
+"Źródło: Synchronizacja między kartami
+Zmiana auto-zapisu przyszła z innej otwartej karty (BroadcastChannel lub storage).
+Czas: 24.04.2026, 12:34:56"
+`;
+
+exports[`ariaText snapshots — wording contract per locale > locale: pl > remote — no time line 1`] = `
+"Źródło: Synchronizacja między kartami
+Zmiana auto-zapisu przyszła z innej otwartej karty (BroadcastChannel lub storage)."
+`;
+
+exports[`ariaText snapshots — wording contract per locale > locale: pl > remote — relative fallback 1`] = `
+"Źródło: Synchronizacja między kartami
+Zmiana auto-zapisu przyszła z innej otwartej karty (BroadcastChannel lub storage).
+Czas: 2 min (etykieta względna)"
+`;
