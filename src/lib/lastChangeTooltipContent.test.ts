@@ -152,3 +152,130 @@ describe("spójność języka — wszystkie user-facing stringi używają «kart
     });
   }
 });
+
+describe("getLastChangeTooltipContent — odporność na nietypowe wartości source", () => {
+  /**
+   * Sygnatura helpera jest zawężona do `"remote" | "local" | null`, ale w runtime
+   * mogą trafić wartości spoza tej domeny:
+   *  - `undefined` — np. gdy odbiorca odpakował payload z BroadcastChannel/storage,
+   *    który nie miał pola `lastChangeSource` (back-compat ze starszą wersją hooka),
+   *  - pusty string `""` — defensywnie po `JSON.parse` z uszkodzonego storage,
+   *  - inne stringi (`"REMOTE"`, `"sync"`, `"unknown"`) — literówki w innych modułach,
+   *  - typy nie-stringowe (`0`, `false`, obiekty) — zły mapping w testach E2E lub
+   *    przyszły refactor, który zapomni zaktualizować type guard.
+   *
+   * **Reguła**: każda nieznana/niespodziewana wartość MUSI bezpiecznie zdegradować
+   * do wariantu lokalnego (`isRemote: false`). Nigdy nie wolno przypadkiem pokazać
+   * „Synchronizacja między kartami" dla zmiany, której pochodzenie nie jest
+   * jednoznacznie potwierdzone jako `"remote"` — to byłoby mylące dla pacjenta
+   * i zafałszowałoby kontekst zdarzenia.
+   *
+   * Helper realizuje tę regułę przez `source === "remote"` (strict equality):
+   * cokolwiek nie jest dokładnie tym stringiem, idzie w fallback lokalny.
+   */
+  const REMOTE_HEADING = "Synchronizacja między kartami";
+  const LOCAL_HEADING = "Lokalna akcja w tej karcie";
+
+  // `undefined` — najczęstszy przypadek brakującego pola w payloadzie.
+  it("undefined zwraca wariant lokalny (fallback bezpieczny)", () => {
+    // Świadome rzutowanie — w produkcji TS to wyłapie, ale runtime może dostać undefined
+    // (np. ze starego JSON-a w localStorage albo brakującego pola w BC payload).
+    const content = getLastChangeTooltipContent(undefined as unknown as "remote" | "local" | null);
+
+    expect(content.isRemote).toBe(false);
+    expect(content.heading).toBe(LOCAL_HEADING);
+    expect(content.ariaHeading).toBe("Źródło: Moja lokalna akcja w tej karcie");
+    // KLUCZOWE: nie pokazujemy nagłówka zdalnego dla niejednoznacznego źródła.
+    expect(content.heading).not.toBe(REMOTE_HEADING);
+  });
+
+  it("pusty string zwraca wariant lokalny", () => {
+    const content = getLastChangeTooltipContent("" as unknown as "remote" | "local" | null);
+
+    expect(content.isRemote).toBe(false);
+    expect(content.heading).toBe(LOCAL_HEADING);
+  });
+
+  // Stringi „prawie remote" — typowe regresje przy refactorach (zła wielkość liter,
+  // synonimy, literówki). Każdy MUSI iść w fallback, bo strict equality.
+  it.each([
+    ["REMOTE", "wielkie litery — case-sensitive equality"],
+    ["Remote", "tytułowa wielkość liter"],
+    ["remote ", "trailing whitespace (zła normalizacja przy parsowaniu JSON)"],
+    [" remote", "leading whitespace"],
+    ["sync", "synonim z innego modułu"],
+    ["broadcast", "nazwa transportu zamiast źródła"],
+    ["cross-tab", "anglicyzm techniczny"],
+    ["unknown", "wartość-placeholder z niedokończonego refactoringu"],
+  ])(
+    "string '%s' (%s) → fallback lokalny",
+    (badSource, _label) => {
+      const content = getLastChangeTooltipContent(
+        badSource as unknown as "remote" | "local" | null,
+      );
+
+      expect(content.isRemote).toBe(false);
+      expect(content.heading).toBe(LOCAL_HEADING);
+    },
+  );
+
+  // Typy nie-stringowe — defensywa przed złym mapowaniem w testach lub złym JSON-em.
+  // Każdy MUSI iść w fallback, bo `=== "remote"` zwraca false dla każdego nie-stringu.
+  it.each([
+    [0, "liczba 0"],
+    [1, "liczba 1"],
+    [false, "boolean false"],
+    [true, "boolean true"],
+    [{}, "pusty obiekt"],
+    [{ kind: "remote" }, "obiekt z polem kind"],
+    [["remote"], "tablica ze stringiem"],
+    [Symbol("remote"), "Symbol"],
+  ])("typ %s (%s) → fallback lokalny", (badSource, _label) => {
+    const content = getLastChangeTooltipContent(
+      badSource as unknown as "remote" | "local" | null,
+    );
+
+    expect(content.isRemote).toBe(false);
+    expect(content.heading).toBe(LOCAL_HEADING);
+    expect(content.description).toMatch(/Switch|Alt\+Shift\+A/);
+  });
+
+  it("dokładnie 'remote' (strict equality) jest JEDYNYM wejściem dającym wariant zdalny", () => {
+    // Pozytywny dual: pilnujemy, żeby fallback nie był nadgorliwy i NIE blokował
+    // też prawidłowego stringu „remote". To regression guard na wypadek gdyby
+    // ktoś dodał kiedyś normalizację typu `.toLowerCase()` i niechcący zepsuł case.
+    const content = getLastChangeTooltipContent("remote");
+
+    expect(content.isRemote).toBe(true);
+    expect(content.heading).toBe(REMOTE_HEADING);
+  });
+
+  it("kształt zwracanego obiektu jest stabilny dla każdej wartości source", () => {
+    // Wymagane pola muszą zawsze istnieć i być nie-pustymi stringami,
+    // żeby `aria-label` w komponencie nie wyemitował pustego/undefined stringu
+    // (screen reader przeczytałby wtedy nazwę elementu zamiast źródła zmiany).
+    const inputs: Array<unknown> = [
+      "remote",
+      "local",
+      null,
+      undefined,
+      "",
+      "REMOTE",
+      0,
+      {},
+      [],
+    ];
+    for (const raw of inputs) {
+      const content = getLastChangeTooltipContent(
+        raw as "remote" | "local" | null,
+      );
+      expect(typeof content.heading).toBe("string");
+      expect(content.heading.length).toBeGreaterThan(0);
+      expect(typeof content.ariaHeading).toBe("string");
+      expect(content.ariaHeading.startsWith("Źródło: ")).toBe(true);
+      expect(typeof content.description).toBe("string");
+      expect(content.description.length).toBeGreaterThan(0);
+      expect(typeof content.isRemote).toBe("boolean");
+    }
+  });
+});
