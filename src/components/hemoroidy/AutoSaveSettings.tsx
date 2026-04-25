@@ -182,6 +182,15 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
   const showLastChangeLabel = isLastChangeVisible(lastChangeVisibility, lastChangeSource);
 
   /**
+   * Preferencja języka tooltipa „Ostatnia zmiana" (PL/EN). Persystowana w
+   * localStorage przez `useLocalePreference` — przeżywa F5/zamknięcie karty
+   * i synchronizuje się cross-tab. Zastępuje wcześniejszą auto-detekcję
+   * `navigator.language` (która nadal jest fallbackiem przy pierwszym wejściu,
+   * gdy localStorage jest pusty).
+   */
+  const [tooltipLocale, setTooltipLocale] = useLocalePreference();
+
+  /**
    * Symulacja braku BC + sanity check: po włączeniu robimy tymczasowy toggle
    * przełącznika (na bieżącą wartość) i sprawdzamy w historii, czy zmiana
    * wróciła kanałem fallbackowym. To potwierdza, że storage+CustomEvent wciąż
