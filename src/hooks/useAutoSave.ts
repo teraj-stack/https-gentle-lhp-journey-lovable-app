@@ -830,8 +830,20 @@ export const useAutoSave = () => {
     // Lokalna ręczna zmiana — etykieta „Ostatnia zmiana" wraca do neutralnego koloru,
     // żeby zielony akcent rezerwować WYŁĄCZNIE dla potwierdzonej synchronizacji
     // przyszłej z innej karty (lub innej instancji hooka).
+    const localAt = Date.now();
     setLastChangeSource("local");
-    setLastChangeAt(Date.now());
+    setLastChangeAt(localAt);
+    // Wpis w mini-historii — pacjent widzi nie tylko zdalne synchronizacje, lecz także
+    // własne kliknięcia z dokładnym timestampem. Bez tego historia wyglądała na pustą,
+    // gdy ktoś pracował tylko w jednej karcie.
+    historyCounter += 1;
+    const localEntry: SyncHistoryEntry = {
+      id: `${localAt}-${historyCounter}`,
+      at: localAt,
+      enabled: next,
+      source: "local",
+    };
+    setSyncHistory((prev) => [localEntry, ...prev].slice(0, HISTORY_LIMIT));
     // Storage write to nasz uniwersalny fallback transport — robimy go ZAWSZE,
     // niezależnie czy BC działa. Inne karty bez BC dostaną storage event, a karty
     // z BC zignorują storage (bo dostaną świeższy payload przez kanał z wersją).
