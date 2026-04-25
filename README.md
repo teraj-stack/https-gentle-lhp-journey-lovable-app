@@ -511,6 +511,27 @@ Sample output for `bash i18n-summary.sh --only placeholder-mismatch,wrong-type` 
 
 Whitespace around commas is tolerated (`--only "placeholder-mismatch, wrong-type"` works), duplicate reasons are de-duplicated (`--only wrong-type,wrong-type` is treated as one), and the `TOTAL` count reflects only the selected reasons — annotations from other reasons that happened to surface in the same test run are filtered out before counting.
 
+Sample output for `bash i18n-summary.sh --only wrong-type --locales pl` (single reason + single locale — fastest possible run, ~3s, useful for tight edit-test loops on one Polish fixture):
+
+```
+▶ Running i18n contract tests (filter: wrong-type)…
+  Reasons:    wrong-type
+  Locales:    pl   (--locales flag)
+  Test files: src/lib/i18nContract.test.ts
+
+═══════════════════════════════════════════════════════
+  i18n contract — PASS/FAIL summary (filter: wrong-type)
+═══════════════════════════════════════════════════════
+  REASON                     SEVERITY   VERDICT
+  ---------------------------------------------------
+  wrong-type                 error      ✅ PASS
+  ---------------------------------------------------
+  TOTAL ANNOTATIONS          —          0
+═══════════════════════════════════════════════════════
+
+✅ Overall: PASS — no error-severity violations for filter 'wrong-type'.
+```
+
 Sample output (clean repo — no drift):
 
 ```
