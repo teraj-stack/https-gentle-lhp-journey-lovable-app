@@ -493,7 +493,8 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
                 <X className="w-3 h-3" aria-hidden="true" />
               </button>
             </div>
-          )}
+            );
+          })()}
           {/* Segmented control: wybór formatu czasu dla etykiety „Ostatnia zmiana".
               Renderowany TYLKO gdy mamy co etykietować — nowa karta bez synchronizacji
               nie potrzebuje przełącznika, który nic by nie zmieniał wizualnie. */}
