@@ -496,7 +496,7 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
                     {degradationInfo.cause}
                   </span>
                   <span className="text-muted-foreground/60 text-[10px]">
-                    · {formatRelativeTime(degradationInfo.at)}
+                    · {formatTimestamp(degradationInfo.at, timeFormatMode)}
                   </span>
                 </p>
                 <p className="text-[10px] sm:text-[11px] text-muted-foreground/80 leading-relaxed italic">
