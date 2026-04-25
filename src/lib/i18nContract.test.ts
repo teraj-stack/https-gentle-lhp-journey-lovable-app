@@ -238,6 +238,83 @@ const checkNoPlaceholders = (
   }
 };
 
+/**
+ * Higiena białych znaków + limity długości dla pól prozatorskich
+ * (heading/description/ariaHeading). NIE używamy dla shortBadge — ten ma
+ * własne, ostrzejsze reguły (≤16 znaków, zero whitespace) sprawdzane osobno.
+ *
+ * Reguły:
+ *   - brak whitespace na początku/końcu (psuje wyrównanie w UI i dokleja
+ *     spację po prefiksie „Źródło: " w aria-label),
+ *   - brak podwójnych spacji wewnątrz (typowy artefakt po `${a} ${b}` gdzie
+ *     `a` lub `b` ma własną spację — nie do złapania okiem w tłumaczeniu),
+ *   - brak `\t`/`\n`/`\r` (tooltip jest jednoliniowy, znaki kontrolne łamią
+ *     layout i zostają odczytane przez SR jako pauzy),
+ *   - długość w przedziale `[min, max]` z `STRING_LIMITS[field]`.
+ */
+const checkStringHygiene = (
+  locale: Locale,
+  key: string,
+  value: string,
+  field: keyof typeof STRING_LIMITS,
+  out: Violation[],
+) => {
+  const limits = STRING_LIMITS[field];
+
+  if (value !== value.trimStart()) {
+    out.push({
+      locale,
+      key,
+      reason: "leading-whitespace",
+      got: JSON.stringify(value),
+    });
+  }
+  if (value !== value.trimEnd()) {
+    out.push({
+      locale,
+      key,
+      reason: "trailing-whitespace",
+      got: JSON.stringify(value),
+    });
+  }
+  if (/ {2,}/.test(value)) {
+    out.push({
+      locale,
+      key,
+      reason: "double-space",
+      got: value,
+      detail: "wewnętrzne podwójne spacje — sklej je w jeden znak",
+    });
+  }
+  if (/[\t\n\r]/.test(value)) {
+    out.push({
+      locale,
+      key,
+      reason: "tab-or-newline",
+      got: JSON.stringify(value),
+      detail: "tooltip jest jednoliniowy — usuń znaki kontrolne",
+    });
+  }
+  if (value.length < limits.min) {
+    out.push({
+      locale,
+      key,
+      reason: "too-short",
+      got: value,
+      detail: `${value.length} chars, min ${limits.min}`,
+    });
+  }
+  if (value.length > limits.max) {
+    out.push({
+      locale,
+      key,
+      reason: "too-long",
+      got: value,
+      detail: `${value.length} chars, max ${limits.max}`,
+    });
+  }
+};
+
 // ---------------------------------------------------------------------------
 // COVERAGE TESTS — meta-check, że mapy w TEŚCIE pokrywają SUPPORTED_LOCALES.
 // (Te trzy testy zostawiamy jako one-shot expecty — są tanie i pomagają
