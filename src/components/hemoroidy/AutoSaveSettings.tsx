@@ -324,6 +324,8 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
         })
       : undefined;
   const isRemoteChange = lastChangeSource === "remote";
+  // Pure helper sterujący kolorami etykiety — pokryty testami w lastChangeLabelStyle.test.ts.
+  const labelStyle = getLastChangeLabelStyle(lastChangeSource, isRemoteSyncing);
 
   return (
     <div
