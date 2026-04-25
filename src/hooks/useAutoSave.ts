@@ -287,6 +287,21 @@ export const useAutoSave = () => {
   const [isRemoteSyncing, setIsRemoteSyncing] = useState(false);
   const [lastRemoteSyncAt, setLastRemoteSyncAt] = useState<number | null>(null);
   /**
+   * Źródło ostatniej zmiany przełącznika auto-zapisu:
+   *  - `"remote"` — przyszła z innej karty (BroadcastChannel/storage) lub innej instancji
+   *    hooka w tej samej karcie (CustomEvent). Etykieta „Ostatnia zmiana" jest wtedy
+   *    podświetlona na zielono, sygnalizując sukces synchronizacji.
+   *  - `"local"` — pacjent kliknął Switch lub użył skrótu Alt+Shift+A w TEJ karcie.
+   *    Etykieta używa wtedy neutralnego (domyślnego) koloru — to nie była synchronizacja,
+   *    tylko ręczna edycja, więc zielony akcent byłby mylący.
+   *  - `null` — od mount nie było żadnej zmiany.
+   *
+   * `lastChangeAt` jest niezależne od `lastRemoteSyncAt`, bo ten drugi celowo trzyma
+   * tylko zdalne timestampy (do animacji pulsu i historii).
+   */
+  const [lastChangeSource, setLastChangeSource] = useState<"remote" | "local" | null>(null);
+  const [lastChangeAt, setLastChangeAt] = useState<number | null>(null);
+  /**
    * Historia ostatnich N zdalnych synchronizacji (najnowsza pierwsza).
    * Trzymamy w state, żeby UI mogło reagować, ale ograniczamy do HISTORY_LIMIT,
    * by nie rosła w nieskończoność na karcie otwartej godzinami.
@@ -390,6 +405,9 @@ export const useAutoSave = () => {
       setRemoteSyncTick((n) => n + 1);
       setIsRemoteSyncing(true);
       setLastRemoteSyncAt(at);
+      // Zdalna zmiana — etykieta „Ostatnia zmiana" dostaje zielony akcent.
+      setLastChangeSource("remote");
+      setLastChangeAt(at);
       if (flashTimeoutRef.current) clearTimeout(flashTimeoutRef.current);
       flashTimeoutRef.current = setTimeout(() => {
         setIsRemoteSyncing(false);
@@ -642,6 +660,11 @@ export const useAutoSave = () => {
     lastAppliedVersionRef.current = version;
 
     setEnabled(next);
+    // Lokalna ręczna zmiana — etykieta „Ostatnia zmiana" wraca do neutralnego koloru,
+    // żeby zielony akcent rezerwować WYŁĄCZNIE dla potwierdzonej synchronizacji
+    // przyszłej z innej karty (lub innej instancji hooka).
+    setLastChangeSource("local");
+    setLastChangeAt(Date.now());
     // Storage write to nasz uniwersalny fallback transport — robimy go ZAWSZE,
     // niezależnie czy BC działa. Inne karty bez BC dostaną storage event, a karty
     // z BC zignorują storage (bo dostaną świeższy payload przez kanał z wersją).
@@ -821,6 +844,10 @@ export const useAutoSave = () => {
     setLastRemoteSyncAt(null);
     setSyncHistory([]);
     setIsRemoteSyncing(false);
+    // Reset również źródła ostatniej zmiany — etykieta znika razem z historią,
+    // a po następnej akcji (lokalnej lub zdalnej) źródło ustawia się na nowo.
+    setLastChangeSource(null);
+    setLastChangeAt(null);
     if (flashTimeoutRef.current) {
       clearTimeout(flashTimeoutRef.current);
       flashTimeoutRef.current = null;
@@ -866,5 +893,17 @@ export const useAutoSave = () => {
      * Nie wpływa na stan przełącznika ani transport — jest czysto prezentacyjne.
      */
     clearSyncHistory,
+    /**
+     * Źródło ostatniej zmiany przełącznika: `"remote"` (sync z innej karty/instancji),
+     * `"local"` (ręczna edycja w tej karcie) lub `null` (od mount nic się nie wydarzyło).
+     * UI używa tego do warunkowego stylowania etykiety „Ostatnia zmiana" — zielony
+     * akcent rezerwujemy WYŁĄCZNIE dla `"remote"`, żeby nie wprowadzać w błąd.
+     */
+    lastChangeSource,
+    /**
+     * Timestamp ostatniej zmiany (lokalnej LUB zdalnej). Niezależny od `lastRemoteSyncAt`,
+     * który celowo trzyma tylko zdalne timestampy (do animacji pulsu i historii).
+     */
+    lastChangeAt,
   };
 };

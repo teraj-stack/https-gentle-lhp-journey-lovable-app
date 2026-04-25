@@ -100,6 +100,8 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
     simulateFallback,
     setSimulateFallback,
     clearSyncHistory,
+    lastChangeSource,
+    lastChangeAt,
   } = useAutoSave();
 
   /**
@@ -252,14 +254,16 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
   };
 
   // Etykieta „Ostatnia zmiana" honoruje wybrany przez użytkownika tryb formatu
-  // (relative / clock / full). Pełna data trafia do tooltipa zawsze — pacjent ma
-  // dostęp do dokładnego czasu nawet gdy w UI widzi „2 min temu".
+  // (relative / clock / full). Pokazujemy ją dla KAŻDEJ zmiany (lokalnej i zdalnej),
+  // ale kolor zielony rezerwujemy WYŁĄCZNIE dla zdalnej synchronizacji
+  // (`lastChangeSource === "remote"`) — lokalne kliknięcia używają neutralnego koloru,
+  // żeby nie sugerować, że właśnie coś przyszło z innej karty.
   const lastSyncLabel =
-    lastRemoteSyncAt !== null ? formatTimestamp(lastRemoteSyncAt, timeFormatMode) : null;
+    lastChangeAt !== null ? formatTimestamp(lastChangeAt, timeFormatMode) : null;
   // Pełna data + godzina jako tooltip — pomocna gdy karta wisi długo otwarta.
   const lastSyncFullDate =
-    lastRemoteSyncAt !== null
-      ? new Date(lastRemoteSyncAt).toLocaleString("pl-PL", {
+    lastChangeAt !== null
+      ? new Date(lastChangeAt).toLocaleString("pl-PL", {
           day: "2-digit",
           month: "long",
           year: "numeric",
@@ -268,6 +272,7 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
           second: "2-digit",
         })
       : undefined;
+  const isRemoteChange = lastChangeSource === "remote";
 
   return (
     <div
@@ -375,21 +380,43 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
           </p>
           {lastSyncLabel && (
             <div
-              key={lastRemoteSyncAt ?? "none"}
+              key={lastChangeAt ?? "none"}
               className={`text-[11px] font-sans inline-flex items-center gap-1.5 transition-colors animate-fade-in ${
-                isRemoteSyncing ? "text-emerald-400" : "text-emerald-500/80"
+                isRemoteChange
+                  ? isRemoteSyncing
+                    ? "text-emerald-400"
+                    : "text-emerald-500/80"
+                  : "text-muted-foreground"
               }`}
-              title={`Zmiana auto-zapisu wykryta przez synchronizację z inną kartą${
-                lastSyncFullDate ? ` — ${lastSyncFullDate}` : ""
-              }`}
+              title={`${
+                isRemoteChange
+                  ? "Zmiana auto-zapisu wykryta przez synchronizację z inną kartą"
+                  : "Twoja lokalna zmiana auto-zapisu w tej karcie"
+              }${lastSyncFullDate ? ` — ${lastSyncFullDate}` : ""}`}
               aria-live="polite"
             >
               <RefreshCw
-                className={`w-3 h-3 ${isRemoteSyncing ? "animate-spin text-emerald-400" : "text-emerald-500/80"}`}
+                className={`w-3 h-3 ${
+                  isRemoteChange
+                    ? isRemoteSyncing
+                      ? "animate-spin text-emerald-400"
+                      : "text-emerald-500/80"
+                    : "text-muted-foreground/70"
+                }`}
                 aria-hidden="true"
               />
               <span>
-                Ostatnia zmiana: <strong className="text-emerald-400">{lastSyncLabel}</strong>
+                Ostatnia zmiana:{" "}
+                <strong
+                  className={isRemoteChange ? "text-emerald-400" : "text-foreground"}
+                >
+                  {lastSyncLabel}
+                </strong>
+                {!isRemoteChange && (
+                  <span className="ml-1 text-[10px] text-muted-foreground/70 font-sans">
+                    (lokalnie)
+                  </span>
+                )}
               </span>
               <button
                 type="button"
@@ -398,11 +425,13 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
                   toast({
                     title: "Historia synchronizacji wyczyszczona",
                     description:
-                      'Etykieta „Ostatnia zmiana" zniknie do następnej synchronizacji z innej karty.',
+                      'Etykieta „Ostatnia zmiana" zniknie do następnej zmiany.',
                     duration: 2000,
                   });
                 }}
-                className="ml-0.5 p-0.5 rounded-md text-muted-foreground/70 hover:text-foreground hover:bg-muted/60 transition-colors focus:outline-none focus:ring-1 focus:ring-emerald-400/60"
+                className={`ml-0.5 p-0.5 rounded-md text-muted-foreground/70 hover:text-foreground hover:bg-muted/60 transition-colors focus:outline-none focus:ring-1 ${
+                  isRemoteChange ? "focus:ring-emerald-400/60" : "focus:ring-primary/60"
+                }`}
                 aria-label='Wyczyść historię synchronizacji „Ostatnia zmiana"'
                 title="Wyczyść historię synchronizacji"
               >
