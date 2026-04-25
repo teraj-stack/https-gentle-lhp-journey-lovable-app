@@ -66,6 +66,29 @@ vi.mock("@/hooks/use-toast", () => ({
   toast: vi.fn(),
 }));
 
+// Mockujemy `formatFullTimestamp`, żeby symulować scenariusze, w których
+// pełna data NIE jest dostępna (zwraca pusty string / null / "—" fallback).
+// W produkcji to się dzieje, gdy `isValidTimestamp` odrzuci wartość
+// (NaN/Infinity/0/ujemna). Komponent ma wtedy spaść na `lastSyncLabel`
+// (etykieta względna), żeby tooltip nigdy nie pokazywał osieroconej linii „Czas: ".
+let mockFullTimestampReturn: string | null | undefined = "DEFAULT_FULL_TIMESTAMP";
+vi.mock("@/hooks/useTimeFormatPreference", async () => {
+  const actual = await vi.importActual<
+    typeof import("@/hooks/useTimeFormatPreference")
+  >("@/hooks/useTimeFormatPreference");
+  return {
+    ...actual,
+    formatFullTimestamp: (ts: number) => {
+      if (mockFullTimestampReturn === "DEFAULT_FULL_TIMESTAMP") {
+        return actual.formatFullTimestamp(ts);
+      }
+      // Świadome rzutowanie: w produkcji helper zawsze zwraca string,
+      // ale tu testujemy obronę komponentu przed null/undefined/"" wyciekiem.
+      return mockFullTimestampReturn as unknown as string;
+    },
+  };
+});
+
 // Import PO `vi.mock`, żeby mocki zostały zaaplikowane.
 import AutoSaveSettings from "./AutoSaveSettings";
 
@@ -129,6 +152,7 @@ describe("AutoSaveSettings — tooltip „Ostatnia zmiana” wybiera nagłówek 
     mockLastChangeSource = null;
     mockLastChangeAt = null;
     mockEnabled = true;
+    mockFullTimestampReturn = "DEFAULT_FULL_TIMESTAMP";
     window.localStorage.clear();
   });
 
@@ -534,6 +558,179 @@ describe("AutoSaveSettings — tooltip „Ostatnia zmiana” wybiera nagłówek 
       // Dokładnie jeden prefiks „Źródło: " (brak konkatenacji starego stanu).
       expect((ariaLabel.match(/Źródło: /g) ?? []).length).toBe(1);
       expect((title.match(/Źródło: /g) ?? []).length).toBe(1);
+    });
+  });
+
+  /**
+   * Fallback dla niedostępnej pełnej daty (`lastSyncFullDate` puste/null/"—"):
+   *
+   * Komponent buduje linię czasu jako `tooltipTimeValue = lastSyncFullDate ?? lastSyncLabel`,
+   * a następnie sklejony tooltipText filtruje przez `Boolean(line && line.trim())`.
+   * Reguła: tooltip MUSI nadal pokazywać:
+   *   1) czytelne źródło zmiany (nagłówek + opis),
+   *   2) jakąś linię czasu (pełna data → względna etykieta),
+   *   3) ZERO pustych linii ani osieroconego „Czas: " bez wartości.
+   *
+   * Te testy pilnują, żeby przyszłe zmiany formattera lub mapowania nie
+   * przepuściły do DOM/aria-label artefaktów typu „Czas: ", "\n\n",
+   * „Czas: null" albo trailing newline (screen reader przeczytałby pauzę
+   * jako koniec wypowiedzi).
+   */
+  describe("fallback dla niedostępnego lastSyncFullDate (puste/null)", () => {
+    /**
+     * Pomocnik: zwraca wszystkie linie aria-label po splicie na "\n".
+     * Pilnujemy, żeby żadna linia nie była pusta ani whitespace-only.
+     */
+    const getAriaLines = (ariaLabel: string): string[] => ariaLabel.split("\n");
+
+    it.each([
+      [null, "null (mapowanie zwróciło brak wartości)"],
+      ["", "pusty string (zła ścieżka serializacji)"],
+      [undefined, "undefined (helper nie zainicjalizował returna)"],
+    ])(
+      "lastSyncFullDate=%s (%s): tooltip nadal ma źródło + linię czasu (względna), bez pustych linii",
+      (badValue, _label) => {
+        mockLastChangeSource = "remote";
+        mockLastChangeAt = FROZEN_NOW;
+        mockFullTimestampReturn = badValue as string | null | undefined;
+
+        renderPanel();
+
+        const { trigger, container } = findLastChangeTooltip();
+        const ariaLabel = container.getAttribute("aria-label") ?? "";
+        const title = trigger.getAttribute("title") ?? "";
+
+        // 1) Źródło zmiany (nagłówek + opis) zawsze widoczne.
+        expect(ariaLabel).toContain("Źródło: Synchronizacja między kartami");
+        expect(title).toContain("Źródło: Synchronizacja między kartami");
+
+        // 2) Linia czasu obecna — spadła na `lastSyncLabel` (etykieta względna).
+        //    Komponent renderuje „Czas: <coś niepustego>" — gwarantowane przez
+        //    `tooltipTimeValue = lastSyncFullDate ?? lastSyncLabel` + warunek
+        //    `tooltipTimeValue ? `Czas: ${…}` : null`.
+        expect(ariaLabel).toMatch(/Czas: \S+/);
+        expect(title).toMatch(/Czas: \S+/);
+
+        // 3) ZERO pustych linii ani trailing newline w aria-label.
+        const lines = getAriaLines(ariaLabel);
+        for (const line of lines) {
+          expect(line.trim().length).toBeGreaterThan(0);
+        }
+        expect(ariaLabel).not.toMatch(/\n\n/);
+        expect(ariaLabel.endsWith("\n")).toBe(false);
+        expect(ariaLabel.startsWith("\n")).toBe(false);
+
+        // 4) Anty-regresja serializacji: nigdzie nie wycieka „Czas: null/undefined/"".
+        expect(ariaLabel).not.toMatch(/Czas:\s*$/m);
+        expect(ariaLabel).not.toMatch(/Czas:\s*(null|undefined)/i);
+        expect(title).not.toMatch(/Czas:\s*$/m);
+      },
+    );
+
+    it("lastSyncFullDate='—' (TIMESTAMP_FALLBACK_LABEL): tooltip pokazuje fallback bez pustej linii", () => {
+      // Realny scenariusz produkcyjny: `formatFullTimestamp` przy invalid
+      // timestamp zwraca `TIMESTAMP_FALLBACK_LABEL = "—"`. To NIE jest pusty
+      // string ani null — `??` przepuści tę wartość, więc linia czasu pokaże
+      // dosłownie „Czas: —". Test pilnuje, że taka degradacja jest akceptowalna
+      // (lepsza niż brak linii) i nie produkuje pustych linii w aria-label.
+      mockLastChangeSource = "local";
+      mockLastChangeAt = FROZEN_NOW;
+      mockFullTimestampReturn = "—";
+
+      renderPanel();
+
+      const { container } = findLastChangeTooltip();
+      const ariaLabel = container.getAttribute("aria-label") ?? "";
+
+      // Źródło + linia czasu z fallback-glifem.
+      expect(ariaLabel).toContain("Źródło: Moja lokalna akcja w tej karcie");
+      expect(ariaLabel).toContain("Czas: —");
+
+      // Brak pustych linii — każda linia ma realną treść.
+      const lines = getAriaLines(ariaLabel);
+      for (const line of lines) {
+        expect(line.trim().length).toBeGreaterThan(0);
+      }
+      expect(ariaLabel).not.toMatch(/\n\n/);
+    });
+
+    it("lastSyncFullDate=whitespace ('   '): linia czasu spada na względną etykietę", () => {
+      // Defensywa: gdyby formatter zwrócił string z samymi spacjami, `filter`
+      // w komponencie używa `Boolean(line && line.trim())` na całym wierszu
+      // („Czas:    ") — czyli wiersz przejdzie filtr (bo „Czas: " jest niepuste).
+      // To realna pułapka regresyjna: aria-label miałby „Czas: " bez wartości.
+      // Pilnujemy, że kontrakt komponentu (teraz lub po refactorze) wyklucza
+      // taką sytuację — albo whitespace przejdzie przez `??` (wtedy „Czas: " z
+      // ogonem spacji jest nieakceptowalne), albo trzeba zrobić strict trim
+      // przed budowaniem linii. Test służy jako alarm na regresję.
+      mockLastChangeSource = "remote";
+      mockLastChangeAt = FROZEN_NOW;
+      mockFullTimestampReturn = "   ";
+
+      renderPanel();
+
+      const { container } = findLastChangeTooltip();
+      const ariaLabel = container.getAttribute("aria-label") ?? "";
+
+      // Źródło zawsze widoczne.
+      expect(ariaLabel).toContain("Źródło: Synchronizacja między kartami");
+
+      // KLUCZOWE: linia „Czas:" nie może kończyć się whitespace bez wartości.
+      // Albo całej linii nie ma, albo ma realną wartość po dwukropku.
+      const timeLine = ariaLabel
+        .split("\n")
+        .find((line) => line.startsWith("Czas:"));
+      if (timeLine) {
+        // Jeśli linia istnieje, MUSI mieć niepustą wartość po „Czas: ".
+        expect(timeLine.replace(/^Czas:\s*/, "").trim().length).toBeGreaterThan(0);
+      }
+
+      // Brak pustych linii w całym aria-label.
+      for (const line of ariaLabel.split("\n")) {
+        expect(line.trim().length).toBeGreaterThan(0);
+      }
+    });
+
+    it("lastSyncFullDate=null + brak źródła wciąż renderuje czytelny komunikat (źródło + czas)", () => {
+      // Symulujemy worst case: brak pełnej daty + niejednoznaczne źródło
+      // (`undefined`). Tooltip MUSI nadal mieć:
+      //   - nagłówek (fallback na lokalny wariant z `getLastChangeTooltipContent`),
+      //   - linię czasu z `lastSyncLabel` (względna etykieta),
+      //   - ani jednej pustej linii.
+      mockLastChangeSource = undefined;
+      mockLastChangeAt = FROZEN_NOW;
+      mockFullTimestampReturn = null;
+
+      renderPanel();
+
+      const { container } = findLastChangeTooltip();
+      const ariaLabel = container.getAttribute("aria-label") ?? "";
+
+      expect(ariaLabel).toContain("Źródło: Moja lokalna akcja w tej karcie");
+      expect(ariaLabel).toMatch(/Czas: \S+/);
+      expect(ariaLabel).not.toMatch(/\n\n/);
+      expect(ariaLabel).not.toMatch(/Czas:\s*(null|undefined|)\s*$/m);
+    });
+
+    it("aria-label ma dokładnie 3 niepuste linie (nagłówek + opis + czas) gdy fallback działa", () => {
+      // Strukturalna anty-regresja: kolejność i liczba linii musi być stabilna,
+      // żeby screen reader miał deterministyczną prezentację. Gdyby przyszły
+      // refactor dodał pustą linię między opisem a czasem, ten test natychmiast
+      // wyłapie regresję.
+      mockLastChangeSource = "local";
+      mockLastChangeAt = FROZEN_NOW;
+      mockFullTimestampReturn = ""; // pusty fullDate → spada na lastSyncLabel
+
+      renderPanel();
+
+      const { container } = findLastChangeTooltip();
+      const ariaLabel = container.getAttribute("aria-label") ?? "";
+      const lines = ariaLabel.split("\n");
+
+      expect(lines.length).toBe(3);
+      expect(lines[0]).toMatch(/^Źródło: /);
+      expect(lines[1].length).toBeGreaterThan(0);
+      expect(lines[2]).toMatch(/^Czas: \S+/);
     });
   });
 });
