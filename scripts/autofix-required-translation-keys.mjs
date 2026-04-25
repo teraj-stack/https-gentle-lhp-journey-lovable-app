@@ -598,8 +598,26 @@ const run = () => {
     },
   };
 
+  // Per-bucket diff between what's CURRENTLY in the source files and what
+  // the scanner would write. Computed from the raw source (not from the
+  // `*Changed` flags) so the diff still works in --check mode where we
+  // never write — and so it surfaces zero-change buckets explicitly.
+  const currentTranslations = parseCurrentTranslationKeys(contentSrc);
+  const currentTimeLine = parseCurrentTimeLineKeys(modelSrc);
+  const translationDiffs = {
+    top: diffKeys(currentTranslations.top, sortedArr(topReads)),
+    variant: diffKeys(currentTranslations.variant, sortedArr(variantRequired)),
+    variantOptional: diffKeys(
+      currentTranslations.variantOptional,
+      sortedArr(variantOptional),
+    ),
+  };
+  const timeLineDiff = diffKeys(currentTimeLine, sortedArr(timeLineKeys));
+
   console.log("[autofix-required-translation-keys] detected keys:");
   console.log(JSON.stringify(summary.detected, null, 2));
+
+  printDiffReport(translationDiffs, timeLineDiff);
 
   // Surface ignored paths so a maintainer never silently loses a key to
   // an unrecognised access shape (e.g. a future `$t("local.foo.bar")` with
@@ -627,6 +645,22 @@ const run = () => {
       console.error("\nFiles that would change:");
       for (const [p, status] of Object.entries(summary.changes)) {
         if (status === "updated") console.error(`  - ${p}`);
+      }
+      // Re-emit the per-bucket diff on stderr so it's visible in CI logs
+      // even when stdout is captured separately.
+      console.error(
+        "\nPer-bucket diff (current → next, `+` added, `-` removed):",
+      );
+      for (const [label, d] of [
+        ["top", translationDiffs.top],
+        ["variant", translationDiffs.variant],
+        ["variantOptional", translationDiffs.variantOptional],
+        ["timeLine", timeLineDiff],
+      ]) {
+        if (d.added.length === 0 && d.removed.length === 0) continue;
+        console.error(`  ${label}:`);
+        for (const k of d.added) console.error(`    + ${k}`);
+        for (const k of d.removed) console.error(`    - ${k}`);
       }
       process.exit(1);
     }
