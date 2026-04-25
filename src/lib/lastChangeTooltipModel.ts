@@ -47,13 +47,59 @@ import {
 } from "./lastChangeTooltipContent";
 
 /**
- * Wygładza wartość czasu do single-line stringu albo pustego "".
- * Eksportujemy, żeby testy jednostkowe mogły zweryfikować edge case'y
- * (newline'y, tabulatory, whitespace) niezależnie od reszty modelu.
+ * Tryby formatowania wartości czasu dla tooltipa „Ostatnia zmiana".
+ *
+ *  - `"single-space"` (DOMYŚLNY, zachowanie historyczne): wszystkie znaki
+ *    whitespace (`\n`, `\r`, `\t`, wielokrotne spacje) są zamieniane na
+ *    POJEDYNCZĄ spację. To gwarantuje single-line wartość bezpieczną dla
+ *    `aria-label` (screen reader nie zrobi pauzy na inline newline) i dla
+ *    layoutu widocznego tooltipa (brak rwących linii w `font-mono`).
+ *  - `"compact"`: jak `"single-space"`, ale dodatkowo zamienia spacje wokół
+ *    separatorów strukturalnych (`,` i `:`) na minimalną postać — zostaje
+ *    dokładnie jedna spacja PO separatorze i zero PRZED. Użyteczne dla
+ *    zwartych zapisów typu `"24 kw 2026, 12:34"`.
+ *  - `"preserve-newlines"`: zachowuje `\n` jako separator (normalizuje
+ *    `\r\n` → `\n` i kolapsuje wielokrotne `\n` do jednego), ale wciąż
+ *    kolapsuje spacje/`\t` w obrębie linii do pojedynczej spacji.
+ *    UWAGA: tego trybu NIE wolno używać dla `aria-label`/`title` (screen
+ *    reader zrobi pauzę na każdej linii) — przeznaczony wyłącznie dla
+ *    wieloliniowych kanałów wizualnych (np. `<pre>` w eksporcie PDF).
  */
-export const smoothTimeValue = (raw: unknown): string => {
+export type TimeValueFormat = "single-space" | "compact" | "preserve-newlines";
+
+/**
+ * Wygładza wartość czasu zgodnie z wybranym trybem formatu.
+ *
+ * Domyślny tryb `"single-space"` zachowuje historyczne zachowanie helpera
+ * — istniejące wywołania bez parametru `format` działają identycznie jak
+ * przed dodaniem opcji (parametr ma wartość domyślną).
+ *
+ * Eksportujemy, żeby testy jednostkowe mogły zweryfikować edge case'y
+ * (newline'y, tabulatory, whitespace, non-string) niezależnie od reszty
+ * modelu — w każdym z trzech trybów.
+ */
+export const smoothTimeValue = (
+  raw: unknown,
+  format: TimeValueFormat = "single-space",
+): string => {
   if (typeof raw !== "string") return "";
-  return raw.replace(/[\r\n\t]+/g, " ").replace(/\s+/g, " ").trim();
+
+  if (format === "preserve-newlines") {
+    return raw
+      .replace(/\r\n?/g, "\n")
+      .split("\n")
+      .map((line) => line.replace(/[\t ]+/g, " ").trim())
+      .filter((line) => line.length > 0)
+      .join("\n");
+  }
+
+  const singleSpace = raw.replace(/[\r\n\t]+/g, " ").replace(/\s+/g, " ").trim();
+
+  if (format === "compact") {
+    return singleSpace.replace(/\s*([,:])\s*/g, "$1 ").trim();
+  }
+
+  return singleSpace;
 };
 
 export interface LastChangeTooltipModelInput {
