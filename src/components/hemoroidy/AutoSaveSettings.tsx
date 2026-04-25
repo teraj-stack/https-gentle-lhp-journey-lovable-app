@@ -369,12 +369,13 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
                   clearSyncHistory();
                   toast({
                     title: "Historia synchronizacji wyczyszczona",
-                    description: "Etykieta „Ostatnia zmiana" zniknie do następnej synchronizacji z innej karty.",
+                    description:
+                      'Etykieta „Ostatnia zmiana" zniknie do następnej synchronizacji z innej karty.',
                     duration: 2000,
                   });
                 }}
                 className="ml-0.5 p-0.5 rounded-md text-muted-foreground/70 hover:text-foreground hover:bg-muted/60 transition-colors focus:outline-none focus:ring-1 focus:ring-emerald-400/60"
-                aria-label="Wyczyść historię synchronizacji „Ostatnia zmiana"
+                aria-label='Wyczyść historię synchronizacji „Ostatnia zmiana"'
                 title="Wyczyść historię synchronizacji"
               >
                 <X className="w-3 h-3" aria-hidden="true" />
