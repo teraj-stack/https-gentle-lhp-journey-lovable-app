@@ -1025,6 +1025,8 @@ const RiskFactorsAccordion = () => {
           </ul>
         )}
 
+        <ChecklistAutoSummary summary={checklistSummary} />
+
         {selectedFactors.length > 0 && (
           <>
             <div className="mt-5 flex flex-col sm:flex-row flex-wrap gap-2 sm:items-center">
