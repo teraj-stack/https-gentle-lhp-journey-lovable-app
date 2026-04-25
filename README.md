@@ -165,6 +165,34 @@ Touch `findKeyLine` (and re-run `bunx vitest run src/lib/i18nGithubAnnotations.t
 
 The resolver tests in `src/lib/i18nGithubAnnotations.test.ts` deliberately read the **real** source files (not mocks) so they break the moment a structural change makes line resolution inaccurate. If those tests start failing after a refactor of the tooltip files, that’s the signal — fix the resolver in `i18nGithubAnnotations.ts`, not the tests.
 
+#### Troubleshooting: `line=` lands on the wrong line
+
+When the PR annotation points at the wrong row (off by a few lines, or stuck on the locale block opener), walk this checklist top-to-bottom. The first match is almost always the cause.
+
+1. **Did the indent step change?** Open the offending file and count spaces between a parent key and its child. If it's no longer 2, update the hardcoded `+ 2` in `findKeyLine`'s child-indent check.
+   - Re-run: `bunx vitest run src/lib/i18nGithubAnnotations.test.ts`
+
+2. **Are tabs mixed in?** `findKeyLine` measures indent in **spaces only**. A single tab will throw the count off and the resolver will skip past the real key.
+   - Re-run: `bunx prettier --write src/lib/lastChangeTooltipContent.ts src/lib/lastChangeTooltipModel.ts && bunx vitest run src/lib/i18nGithubAnnotations.test.ts`
+
+3. **Is the locale block declared with quoted keys?** (e.g. `"pl": {` instead of `pl: {`.) Check `isKeyDecl` — it currently accepts optional `"` quotes; anything else (single quotes, computed keys) needs the regex extended.
+   - Re-run: `bunx vitest run src/lib/i18nGithubAnnotations.test.ts -t "isKeyDecl"`
+
+4. **Is the value split across multiple lines?** (object literals, template strings broken on `` ` ``, JSX). `getSourceLineSnippet` returns `null` in that case and the line falls back to the parent. Either accept the parent line, or extend the snippet helper to walk to the value's opening brace/backtick.
+   - Re-run: `bunx vitest run src/lib/i18nGithubAnnotations.test.ts -t "getSourceLineSnippet"`
+
+5. **Did the file move or get renamed?** Update the `SOURCE_FILES` map at the top of `i18nGithubAnnotations.ts`. Symptom: every annotation points at line 1 of an unrelated file.
+   - Re-run: `bunx vitest run src/lib/i18nGithubAnnotations.test.ts`
+
+6. **New top-level prefix added** (sibling of `TRANSLATIONS` / `TIME_LINE`)? Update both `pickSourceFile` and `stripTopPrefix` — they branch on the prefix and will silently route unknown prefixes to the wrong file.
+   - Re-run: `bunx vitest run src/lib/i18nGithubAnnotations.test.ts`
+
+7. **Still wrong after all of the above?** Reproduce locally with `GITHUB_ACTIONS` set so the emitter actually runs, and inspect the raw `::error` line:
+   ```sh
+   GITHUB_ACTIONS=true bunx vitest run src/lib/i18nRequiredKeys.test.ts src/lib/i18nContract.test.ts src/lib/i18nPlaceholders.test.ts 2>&1 | grep '^::'
+   ```
+   Compare the `line=` value against `wc -l` of the source file — if it's larger than total lines, the resolver bailed out and returned a fallback. That's a `findKeyLine` bug, not a translation bug.
+
 ### Auto-fixing drifted REQUIRED_* keys
 
 If the failure reason is `missing-required-key` or `undeclared-key`, run:
