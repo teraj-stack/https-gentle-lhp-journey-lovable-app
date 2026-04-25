@@ -368,6 +368,19 @@ const RiskFactorsAccordion = () => {
   const [query, setQuery] = useState("");
   const nQuery = normalize(query.trim());
 
+  // Filtr po wydawcy/bazie EBM (multi-select OR). Pusty Set = pokaż wszystko.
+  // Logika OR: zaznaczenie Cochrane + PubMed pokazuje czynniki które mają ≥1 źródło z któregokolwiek.
+  const [sourceFilter, setSourceFilter] = useState<Set<EbmProvider>>(() => new Set());
+  const toggleSourceProvider = (id: EbmProvider) => {
+    setSourceFilter((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+  const clearSourceFilter = () => setSourceFilter(new Set());
+
   // Otwarte sekcje (tryb ręczny — gdy nie ma aktywnego wyszukiwania)
   // Persystencja w localStorage: pamiętamy stan rozwinięcia między sesjami.
   const [openItems, setOpenItems] = useState<string[]>(() => {
