@@ -173,6 +173,16 @@ export const useAutoSave = () => {
   const [transport, setTransport] = useState<"broadcast" | "storage-fallback">(() =>
     isBrowser() && typeof BroadcastChannel !== "undefined" ? "broadcast" : "storage-fallback",
   );
+  /**
+   * Ostatnia przyczyna zejścia na storage-fallback (lub `null`, gdy BC działa od początku).
+   * Pole jest informacyjne — wyświetlane w panelu ustawień obok statusu transportu,
+   * pomaga zdiagnozować, dlaczego kanał padł (tryb prywatny? sandbox? wybudzenie z BFCache?).
+   */
+  const [degradationReason, setDegradationReason] = useState<string | null>(() =>
+    isBrowser() && typeof BroadcastChannel === "undefined"
+      ? "BroadcastChannel API nie jest dostępne w tej przeglądarce"
+      : null,
+  );
 
   /**
    * Stan testu synchronizacji: aktywny pingId (lub null), znacznik wysłania,
