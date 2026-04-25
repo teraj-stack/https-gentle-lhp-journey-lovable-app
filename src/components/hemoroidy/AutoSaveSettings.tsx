@@ -126,21 +126,21 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
   };
 
   const handleSendPing = async () => {
-    if (!isBroadcastSupported) {
-      toast({
-        title: "Test niedostępny",
-        description:
-          "Twoja przeglądarka nie wspiera BroadcastChannel — synchronizacja działa wtedy przez storage event (bez potwierdzenia odbioru).",
-        duration: 4000,
-      });
-      return;
-    }
+    // Test działa zawsze — w trybie storage-fallback używamy round-tripu przez localStorage
+    // (odpowiedzi liczone tak samo jak BC pong, tylko etykietowane jako „storage").
+    const usingStorage = !isBroadcastSupported;
     const responses = await sendPing();
+    const transportLabel = usingStorage ? " (storage round-trip)" : "";
     toast({
-      title: responses.length === 0 ? "Brak odpowiedzi z innych kart" : `Odpowiedziało ${responses.length} kart`,
+      title:
+        responses.length === 0
+          ? `Brak odpowiedzi z innych kart${transportLabel}`
+          : `Odpowiedziało ${responses.length} kart${transportLabel}`,
       description:
         responses.length === 0
-          ? "Otwórz tę stronę w drugiej karcie i spróbuj ponownie."
+          ? usingStorage
+            ? "Otwórz tę stronę w drugiej karcie — odpowiedź dotrze przez storage event (zwykle 50–300 ms wolniej niż BroadcastChannel)."
+            : "Otwórz tę stronę w drugiej karcie i spróbuj ponownie."
           : responses.map((r) => `${r.label} (${r.latencyMs} ms)`).join(", "),
       duration: 4000,
     });
