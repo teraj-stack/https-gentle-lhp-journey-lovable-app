@@ -1,5 +1,4 @@
 import { describe, it, expect } from "vitest";
-// @ts-expect-error — plain Node ESM script without type declarations
 import { validateEbmAnchors } from "../../scripts/validate-ebm-anchors.mjs";
 
 describe("EBM anchors contract", () => {
