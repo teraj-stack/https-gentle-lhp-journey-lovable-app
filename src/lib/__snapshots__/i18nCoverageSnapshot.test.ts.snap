@@ -1,0 +1,34 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`i18n runtime coverage matrix — snapshot > renders the full required-key × locale coverage table 1`] = `
+"# i18n runtime coverage matrix
+locales: pl, en, de, it
+
+## TRANSLATIONS — top-level
+key          | pl | en | de | it
+-------------+----+----+----+---
+sourcePrefix | ok | ok | ok | ok
+
+## TRANSLATIONS — variant.remote
+key                     | pl | en | de | it
+------------------------+----+----+----+---
+ariaHeadingOverride (?) | optional-absent | optional-absent | optional-absent | optional-absent
+description             | ok | ok | ok | ok
+heading                 | ok | ok | ok | ok
+shortBadge              | ok | ok | ok | ok
+
+## TRANSLATIONS — variant.local
+key                     | pl | en | de | it
+------------------------+----+----+----+---
+ariaHeadingOverride (?) | ok | ok | ok | ok
+description             | ok | ok | ok | ok
+heading                 | ok | ok | ok | ok
+shortBadge              | ok | ok | ok | ok
+
+## TIME_LINE_TRANSLATIONS
+key               | pl | en | de | it
+------------------+----+----+----+---
+relativeHelpTitle | ok | ok | ok | ok
+relativeQualifier | ok | ok | ok | ok
+timePrefix        | ok | ok | ok | ok"
+`;
