@@ -29,6 +29,8 @@ import {
   __getSourceLineSnippetForTesting,
   __buildExpectedLineHintForTesting,
   __resetAnnotationDedupForTesting,
+  __isMultiLineValueOpenerForTesting,
+  __assembleMultiLineSnippetForTesting,
 } from "./i18nGithubAnnotations";
 
 const ROOT = process.cwd();
