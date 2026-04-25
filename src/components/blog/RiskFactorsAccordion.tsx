@@ -430,7 +430,7 @@ const RiskFactorsAccordion = () => {
     [selectedFactors, priorityIds],
   );
 
-  // Dialog share
+  const checklistSummary = useMemo(() => buildChecklistSummary(selected), [selected]);
   const [shareOpen, setShareOpen] = useState(false);
   const [copiedField, setCopiedField] = useState<"url" | "code" | null>(null);
 
