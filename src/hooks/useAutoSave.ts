@@ -52,6 +52,17 @@ interface StateBroadcastPayload {
   enabled: boolean;
   /** Identyfikator nadawcy — odbiorca pomija własne wiadomości w within-tab CustomEvent. */
   origin: string;
+  /**
+   * Wersja payloadu w postaci [timestamp_ms, monotonic_counter].
+   * Odbiorca porównuje leksykograficznie z ostatnio zaaplikowaną wersją:
+   * — większy timestamp wygrywa (najnowsza zmiana jest źródłem prawdy);
+   * — przy tie-breakerze (ten sam ms) wygrywa większy counter.
+   * Counter chroni przed kolizją w obrębie tej samej milisekundy oraz
+   * przed cofnięciem zegara systemowego (NTP correction, manual change).
+   * Pole opcjonalne dla back-compat: payload bez `version` traktujemy jako [0, 0]
+   * — wygra każdy nowszy payload z wersją.
+   */
+  version?: [number, number];
 }
 
 interface PingPayload {
@@ -90,6 +101,29 @@ const REMOTE_SYNC_FLASH_MS = 1500;
 /** Czas zbierania odpowiedzi pong na pojedynczy ping (ms). */
 const PING_COLLECTION_WINDOW_MS = 5000;
 
+/**
+ * Monotoniczny licznik wersji w obrębie życia modułu (per zakładka).
+ * Każdy lokalny `toggle()` inkrementuje counter, więc para [Date.now(), counter]
+ * jest unikalna nawet w obrębie tej samej milisekundy.
+ */
+let versionCounter = 0;
+const nextVersion = (): [number, number] => {
+  versionCounter += 1;
+  return [Date.now(), versionCounter];
+};
+
+/**
+ * Porównanie wersji: zwraca >0 gdy `a` jest nowsza, <0 gdy starsza, 0 gdy równa.
+ * Najpierw porównuje timestamp, potem counter (tie-breaker).
+ * Brak wersji (legacy payload) jest traktowany jako [0, 0] — przegrywa z każdą wersjonowaną wiadomością.
+ */
+const compareVersions = (a: [number, number] | undefined, b: [number, number] | undefined): number => {
+  const [ta, ca] = a ?? [0, 0];
+  const [tb, cb] = b ?? [0, 0];
+  if (ta !== tb) return ta - tb;
+  return ca - cb;
+};
+
 export interface PongResponse {
   origin: string;
   label: string;
@@ -121,6 +155,14 @@ export const useAutoSave = () => {
   /** Trzymamy aktywny pingId w refie, żeby handler kanału nie musiał być re-bindowany. */
   const activePingIdRef = useRef<string | null>(null);
   const pingSentAtRef = useRef<number | null>(null);
+  /**
+   * Wersja ostatnio zaaplikowanego stanu (lokalna LUB zdalna). Wiadomości z wersją
+   * mniejszą lub równą są ignorowane jako stale → najnowsza zmiana wygrywa, niezależnie
+   * od kolejności dostarczenia (BroadcastChannel zwykle FIFO, ale storage event może się
+   * przeplatać z CustomEvent w obrębie tej samej karty, a w przyszłości np. SharedWorker
+   * może przyjść spoza kolejki). [0,0] = nic jeszcze nie zaaplikowano.
+   */
+  const lastAppliedVersionRef = useRef<[number, number]>([0, 0]);
 
   const markRemoteSync = useCallback(() => {
     setRemoteSyncTick((n) => n + 1);
@@ -188,6 +230,9 @@ export const useAutoSave = () => {
       const statePayload = data as StateBroadcastPayload;
       if (typeof statePayload.enabled !== "boolean") return;
       if (statePayload.origin === TAB_ID) return; // ignorujemy echo własnego nadania
+      // Anti-race: ignoruj wiadomości starsze lub równe ostatnio zaaplikowanej wersji.
+      if (compareVersions(statePayload.version, lastAppliedVersionRef.current) <= 0) return;
+      lastAppliedVersionRef.current = statePayload.version ?? [Date.now(), 0];
       setEnabled(statePayload.enabled);
       markRemoteSync();
     };
@@ -206,9 +251,16 @@ export const useAutoSave = () => {
 
     const onStorage = (e: StorageEvent) => {
       if (e.key !== STORAGE_KEY && e.key !== null) return;
+      // storage event nie niesie payloadu z `version` — używamy ogólnej heurystyki:
+      // nadaj nową wersję na podstawie aktualnego zegara, ale tylko jeśli wartość faktycznie się zmieniła.
+      // To wystarczy bo storage event w tej samej karcie nigdy nie wystrzeli — to zawsze inny tab.
       const next = readStored();
       setEnabled((prev) => {
-        if (prev !== next) markRemoteSync();
+        if (prev === next) return prev;
+        const synthetic: [number, number] = [Date.now(), 0];
+        if (compareVersions(synthetic, lastAppliedVersionRef.current) <= 0) return prev;
+        lastAppliedVersionRef.current = synthetic;
+        markRemoteSync();
         return next;
       });
     };
@@ -216,13 +268,21 @@ export const useAutoSave = () => {
       const detail = (e as CustomEvent<StateBroadcastPayload | undefined>).detail;
       if (detail && typeof detail.enabled === "boolean") {
         if (detail.origin === TAB_ID) return;
+        // Anti-race: ten sam check co dla BroadcastChannel.
+        if (compareVersions(detail.version, lastAppliedVersionRef.current) <= 0) return;
+        lastAppliedVersionRef.current = detail.version ?? [Date.now(), 0];
         setEnabled(detail.enabled);
         markRemoteSync();
         return;
       }
+      // Bez payloadu (back-compat) — fallback na re-read przez storage-style logikę.
       const next = readStored();
       setEnabled((prev) => {
-        if (prev !== next) markRemoteSync();
+        if (prev === next) return prev;
+        const synthetic: [number, number] = [Date.now(), 0];
+        if (compareVersions(synthetic, lastAppliedVersionRef.current) <= 0) return prev;
+        lastAppliedVersionRef.current = synthetic;
+        markRemoteSync();
         return next;
       });
     };
@@ -244,10 +304,21 @@ export const useAutoSave = () => {
   }, []);
 
   const toggle = useCallback((next: boolean) => {
+    // Generujemy nową wersję dla TEJ lokalnej zmiany. Każdy odbiorca (inna instancja
+    // tego samego hooka, inna karta, fallback przez storage) zignoruje ją, jeśli
+    // w międzyczasie zaaplikował coś nowszego — najnowsza zmiana zawsze wygrywa.
+    const version = nextVersion();
+    lastAppliedVersionRef.current = version;
+
     setEnabled(next);
     writeStored(next);
 
-    const payload: StateBroadcastPayload = { kind: "state", enabled: next, origin: TAB_ID };
+    const payload: StateBroadcastPayload = {
+      kind: "state",
+      enabled: next,
+      origin: TAB_ID,
+      version,
+    };
 
     try {
       channelRef.current?.postMessage(payload);
