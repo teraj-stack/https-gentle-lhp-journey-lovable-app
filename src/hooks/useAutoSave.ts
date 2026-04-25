@@ -52,6 +52,17 @@ interface StateBroadcastPayload {
   enabled: boolean;
   /** Identyfikator nadawcy — odbiorca pomija własne wiadomości w within-tab CustomEvent. */
   origin: string;
+  /**
+   * Wersja payloadu w postaci [timestamp_ms, monotonic_counter].
+   * Odbiorca porównuje leksykograficznie z ostatnio zaaplikowaną wersją:
+   * — większy timestamp wygrywa (najnowsza zmiana jest źródłem prawdy);
+   * — przy tie-breakerze (ten sam ms) wygrywa większy counter.
+   * Counter chroni przed kolizją w obrębie tej samej milisekundy oraz
+   * przed cofnięciem zegara systemowego (NTP correction, manual change).
+   * Pole opcjonalne dla back-compat: payload bez `version` traktujemy jako [0, 0]
+   * — wygra każdy nowszy payload z wersją.
+   */
+  version?: [number, number];
 }
 
 interface PingPayload {
