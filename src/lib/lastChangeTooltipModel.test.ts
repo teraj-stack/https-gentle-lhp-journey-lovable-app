@@ -34,6 +34,137 @@ describe("smoothTimeValue — wygładzanie wartości czasu", () => {
     expect(smoothTimeValue(123 as unknown as string)).toBe("");
     expect(smoothTimeValue({} as unknown as string)).toBe("");
   });
+
+  /**
+   * Pełna macierz znaków whitespace + edge cases które realnie wychodziły
+   * z formatterów (Intl.DateTimeFormat na różnych OS po lokalizacji liczb).
+   * Każdy z tych przypadków MUSI:
+   *  - zostać sprowadzony do pojedynczych spacji w środku (nigdy do "\n"),
+   *  - zwrócić pusty string, jeżeli po wygładzeniu nie zostaje treści
+   *    (kontrakt z konsumentem: pusty string blokuje renderowanie linii „Czas:").
+   */
+  describe("pełna macierz separatorów whitespace", () => {
+    it.each([
+      ["pojedynczy \\n", "12:34\n56"],
+      ["pojedynczy \\r", "12:34\r56"],
+      ["pojedynczy \\t", "12:34\t56"],
+      ["mieszanka \\r\\n\\t", "12:34\r\n\t56"],
+      ["wielokrotne \\n\\n\\n", "12:34\n\n\n56"],
+      ["wielokrotne \\t\\t", "12:34\t\t56"],
+      ["spacje wokół \\n", "12:34   \n   56"],
+      ["mieszane: początek+środek+koniec", "\n  12:34\t\t56  \r\n"],
+    ])("%s → kolapsuje do pojedynczej spacji ('12:34 56')", (_label, input) => {
+      expect(smoothTimeValue(input)).toBe("12:34 56");
+    });
+
+    it("nie zostawia trailing/leading newline ani spacji po wygładzeniu", () => {
+      const out = smoothTimeValue("\n\n  abc\t\tdef  \r\n");
+      expect(out).toBe("abc def");
+      expect(out.startsWith(" ")).toBe(false);
+      expect(out.endsWith(" ")).toBe(false);
+      expect(out).not.toContain("\n");
+      expect(out).not.toContain("\t");
+      expect(out).not.toContain("\r");
+    });
+
+    it("nie wstawia podwójnych spacji nawet przy ekstremalnym vandalizmie whitespace", () => {
+      const input = "a" + " ".repeat(50) + "\n".repeat(20) + "\t".repeat(15) + "b";
+      const out = smoothTimeValue(input);
+      expect(out).toBe("a b");
+      expect(out).not.toMatch(/ {2}/);
+    });
+
+    it("realne dane Intl.DateTimeFormat z polskimi przecinkami + \\n są wygładzane", () => {
+      // Realny przypadek z Chrome/Safari: localized timestamp z miękkim wrapem.
+      const input = "24 kwietnia 2026,\n12:34:56";
+      expect(smoothTimeValue(input)).toBe("24 kwietnia 2026, 12:34:56");
+    });
+  });
+
+  describe("kontrakt pustego stringu — blokowanie linii „Czas:”", () => {
+    it.each([
+      ["null", null],
+      ["undefined", undefined],
+      ["pusty string", ""],
+      ["pojedyncza spacja", " "],
+      ["wielokrotne spacje", "          "],
+      ["sam \\n", "\n"],
+      ["sam \\r", "\r"],
+      ["sam \\t", "\t"],
+      ["mieszanka samych whitespace", " \n\r\t \n\t "],
+    ])("%s → zwraca '' (kontrakt blokady „Czas:”)", (_label, input) => {
+      expect(smoothTimeValue(input as string | null | undefined)).toBe("");
+    });
+
+    it("integracja z modelem: gdy smoothTimeValue → '', NIE pojawia się prefiks „Czas:”", () => {
+      // Krytyczny kontrakt z konsumentem: pusty wynik smoothTimeValue MUSI
+      // skutkować `shouldRenderTimeLine === false` i `timeLineForView === null`.
+      // Bez tego widoczny tooltip miałby osierocony „Czas: " bez wartości.
+      const model = buildLastChangeTooltipModel({
+        source: "remote",
+        fullDate: "  \n\t  ", // sam whitespace
+        relativeLabel: "\n\n",  // też sam whitespace
+      });
+
+      expect(model.timeValue).toBe("");
+      expect(model.shouldRenderTimeLine).toBe(false);
+      expect(model.timeLineForView).toBeNull();
+      expect(model.timeLineForA11y).toBeNull();
+      expect(model.ariaText).not.toContain("Czas:");
+      expect(model.ariaText).not.toMatch(/Czas:\s*$/m);
+    });
+
+    it("integracja z modelem: tylko fullDate whitespace → fallback na relativeLabel z prefiksem „Czas:”", () => {
+      // Asymetria: sam fullDate jest wygładzony do "", ale relativeLabel ma
+      // realną wartość → linia „Czas:" MUSI się pojawić (z fallbackiem).
+      const model = buildLastChangeTooltipModel({
+        source: "local",
+        fullDate: "\n\t  \r",
+        relativeLabel: "2 minuty temu",
+      });
+
+      expect(model.timeValue).toBe("2 minuty temu");
+      expect(model.isRelativeFallback).toBe(true);
+      expect(model.shouldRenderTimeLine).toBe(true);
+      expect(model.timeLineForView).toBe("Czas: 2 minuty temu");
+      // a11y dokleja kwalifikator (etykieta względna).
+      expect(model.timeLineForA11y).toBe("Czas: 2 minuty temu (etykieta względna)");
+    });
+
+    it("integracja z modelem: oba pola undefined → ariaText to TYLKO heading + opis, bez czasu", () => {
+      const model = buildLastChangeTooltipModel({
+        source: "local",
+        fullDate: undefined,
+        relativeLabel: undefined,
+      });
+
+      expect(model.timeValue).toBe("");
+      expect(model.shouldRenderTimeLine).toBe(false);
+
+      // ariaText nie kończy się żadnym whitespace, nie ma „Czas:" w środku.
+      expect(model.ariaText).not.toContain("Czas:");
+      expect(model.ariaText.endsWith("\n")).toBe(false);
+      expect(model.ariaText.startsWith("\n")).toBe(false);
+      // Brak pustych linii w środku.
+      expect(model.ariaText).not.toMatch(/\n\s*\n/);
+      // Składa się dokładnie z ariaHeading + description (2 linie).
+      expect(model.ariaText.split("\n").length).toBe(2);
+    });
+
+    it("po wygładzeniu fullDate=' x ' (1 znak po trimie) — linia „Czas: x” się pojawia", () => {
+      // Sanity check granicy: jeden niepusty znak wystarcza do renderowania.
+      const model = buildLastChangeTooltipModel({
+        source: "remote",
+        fullDate: "   x   ",
+        relativeLabel: "ignored",
+      });
+
+      expect(model.timeValue).toBe("x");
+      expect(model.shouldRenderTimeLine).toBe(true);
+      expect(model.timeLineForView).toBe("Czas: x");
+      expect(model.isRelativeFallback).toBe(false);
+    });
+  });
 });
 
 describe("buildLastChangeTooltipModel — pełny model tooltipa", () => {
