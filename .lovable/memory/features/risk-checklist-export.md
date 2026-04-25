@@ -36,3 +36,8 @@ type: feature
 - **preventDefault** — Ctrl+E w Chrome to focus searchbar; przejmujemy.
 - **Feedback**: toast "Rozwinięto/Zwinięto wszystkie sekcje" + opis ze skrótem.
 - **Tooltip**: przycisk "Rozwiń/Zwiń wszystko" ma `title` z hintem skrótu.
+
+## Pasek wyników wyszukiwania
+- **Widoczny licznik**: pojawia się TYLKO gdy `nQuery` aktywne i `filtered.length > 0`. Karta z `border-primary/30 bg-primary/[0.05]`, badge `X/Y` z ikoną Search + tekst „dopasowanych czynników dla „query"".
+- **Przycisk „Rozwiń tylko dopasowane"**: zapisuje `filtered.map(rf => rf.id)` do `openItems`, czyści `query` (`setQuery("")`), pokazuje toast. Efekt: dopasowania zostają otwarte trwale, reszta zwinięta.
+- **Stary tekst hint** pod inputem zachowany (aria-live polite) — duplikuje informację dla czytników ekranu.
