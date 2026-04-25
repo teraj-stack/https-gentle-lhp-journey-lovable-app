@@ -239,6 +239,8 @@ Copy-paste this into your terminal (or save as `scripts/i18n-summary.sh` and `ch
 
 Accepted values for `--only`: `missing-required-key`, `placeholder-mismatch`, `undeclared-key`, `wrong-type`, `empty-optional-value` — singly or comma-joined. Use `--only all` (the default) to run the full suite.
 
+**Locale scope (`--locales <locale>[,<locale>…]`):** pass `--locales` (alias `-L`) to override the locale scope **just for this run** without exporting `I18N_ACTIVE_LOCALES` in your shell. Accepted values: `pl`, `en`, `de`, `it` (mirrors `SUPPORTED_LOCALES` in `src/lib/i18nActiveLocales.ts`); commas are tolerated with stray whitespace and duplicates are de-duplicated. Precedence: `--locales` flag > `$I18N_ACTIVE_LOCALES` env > built-in default `pl,en,de,it`. The resolved scope and its source (`--locales flag` / `$I18N_ACTIVE_LOCALES env` / `default`) are printed on the `Locales:` echo line so PR reviewers can see exactly what the run was scoped to. Combine freely with `--only`, e.g. `bash i18n-summary.sh --only wrong-type --locales pl` to verify a single Polish fixture in ~3s.
+
 ```sh
 #!/usr/bin/env bash
 # i18n-summary.sh — run i18n contract tests and print a per-reason PASS/FAIL summary.
