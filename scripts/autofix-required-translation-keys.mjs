@@ -339,7 +339,36 @@ export const diffKeys = (current, next) => {
 };
 
 /**
- * Format a single bucket's diff as human-readable lines. Returns `null`
+ * Merge a `current` (existing on-disk) key list with a `next` (freshly
+ * detected) set, preserving the original declaration order of any key
+ * that survives, and appending NEW keys (sorted among themselves) at the
+ * end. Removed keys silently drop out.
+ *
+ * Used by `--preserve-order` mode so teams that intentionally group keys
+ * by feature/commit history don't see giant alphabetical reshuffles when
+ * a single new key is added. The appended-keys tail is still sorted, so
+ * the output remains deterministic regardless of detector iteration order.
+ *
+ * Exported for unit tests.
+ */
+export const mergePreservingOrder = (current, next) => {
+  const nxt = new Set(next);
+  const out = [];
+  const seen = new Set();
+  // 1. Keep every still-present key in its original position.
+  for (const k of current) {
+    if (nxt.has(k) && !seen.has(k)) {
+      out.push(k);
+      seen.add(k);
+    }
+  }
+  // 2. Append truly-new keys, sorted, at the tail.
+  const additions = [...nxt]
+    .filter((k) => !seen.has(k))
+    .sort((a, b) => a.localeCompare(b));
+  for (const k of additions) out.push(k);
+  return out;
+};
  * when there are no changes (caller filters those out so the summary only
  * lists buckets that actually moved).
  */
