@@ -40,6 +40,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Link } from "react-router-dom";
 import { trackEbmClick } from "@/lib/ebmAnalytics";
+import { exportChecklistCsv, exportChecklistPdf } from "@/lib/checklistExport";
+import { toast } from "@/hooks/use-toast";
 
 /** Polski-friendly normalizer: lowercase + usuwa diakrytyki */
 const normalize = (s: string) =>
