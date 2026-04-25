@@ -248,9 +248,43 @@ const RISK_FACTORS: RiskFactor[] = [
   },
 ];
 
+const STORAGE_KEY = "cml.hemoroidy.risk-factors.selected.v1";
+
 const RiskFactorsAccordion = () => {
   const [query, setQuery] = useState("");
   const nQuery = normalize(query.trim());
+
+  // Wybrane czynniki — persystencja w localStorage (anonimowo)
+  const [selected, setSelected] = useState<string[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const raw = window.localStorage.getItem(STORAGE_KEY);
+      if (!raw) return [];
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed.filter((x): x is string => typeof x === "string") : [];
+    } catch {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(selected));
+    } catch {
+      /* noop */
+    }
+  }, [selected]);
+
+  const toggleSelected = (id: string) =>
+    setSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+
+  const clearSelected = () => setSelected([]);
+
+  const selectedFactors = useMemo(
+    () => selected.map((id) => RISK_FACTORS.find((rf) => rf.id === id)).filter(Boolean) as RiskFactor[],
+    [selected],
+  );
 
   const filtered = useMemo(() => {
     if (!nQuery) return RISK_FACTORS;
