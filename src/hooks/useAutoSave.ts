@@ -242,6 +242,19 @@ export interface DegradationInfo {
   at: number;
 }
 
+/**
+ * Wpis w historii degradacji = `DegradationInfo` + unikalny `id` (do React `key`).
+ * Trzymamy osobno od `DegradationInfo`, żeby publiczny typ ostatniej degradacji
+ * nie musiał obsługiwać id (informacja techniczna do listy).
+ */
+export interface DegradationHistoryEntry extends DegradationInfo {
+  id: string;
+}
+
+/** Maksymalna liczba wpisów w historii degradacji (najstarsze są przycinane). */
+const DEGRADATION_HISTORY_LIMIT = 20;
+let degradationHistoryCounter = 0;
+
 const DEGRADATION_DETAILS: Record<DegradationCause, string> = {
   "api-missing": "BroadcastChannel API nie jest dostępne w tej przeglądarce",
   "constructor-exception":
