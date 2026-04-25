@@ -103,6 +103,8 @@ const TRANSLATIONS: Record<Locale, TranslationEntry> = {
     },
     local: {
       heading: "Local action in this tab",
+      // Symetryczny override pierwszoosobowy dla EN.
+      ariaHeadingOverride: "My local action in this tab",
       description:
         "You toggled auto-save in this tab (Switch or Alt+Shift+A shortcut).",
     },
