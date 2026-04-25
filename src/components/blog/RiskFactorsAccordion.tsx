@@ -295,7 +295,8 @@ const RiskFactorsAccordion = () => {
   const filtered = useMemo(() => {
     if (!nQuery) return RISK_FACTORS;
     return RISK_FACTORS.filter((rf) => {
-      const haystack = normalize(`${rf.title} ${rf.shortBadge} ${rf.body}`);
+      const sourcesText = rf.sources.map((s) => s.label).join(" ");
+      const haystack = normalize(`${rf.title} ${rf.shortBadge} ${rf.body} ${sourcesText}`);
       return haystack.includes(nQuery);
     });
   }, [nQuery]);
