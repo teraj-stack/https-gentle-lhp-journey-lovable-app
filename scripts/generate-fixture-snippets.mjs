@@ -206,6 +206,8 @@ const buildFixtureBlock = (ctx) => {
     errorLocale,
     warningLocale,
     sampleVariantKey,
+    companionVariantKey,
+    noiseKey,
     sampleTimeLineKey,
   } = ctx;
 
@@ -223,13 +225,13 @@ These TypeScript snippets are paste-into-source ready against \`${sourceFiles.TR
 // (Pedagogical shape — the real export is __getRawTranslationsForTesting().)
 const TRANSLATIONS = {
   ${referenceLocale}: {
-    local: { ${sampleVariantKey}: "<reference value>", description: "…" },
+    local: { ${sampleVariantKey}: "<reference value>", ${companionVariantKey}: "…" },
     sourcePrefix: "Źródło: ",
   },
   ${errorLocale}: {
     // ⛔ \`local.${sampleVariantKey}\` is required but absent — emitter points at the
     //    \`${errorLocale}: {\` line because the key isn't there to point at.
-    local: { description: "…" },
+    local: { ${companionVariantKey}: "…" },
     sourcePrefix: "Source: ",
   },
 } as const;
@@ -253,7 +255,7 @@ const TIME_LINE = {
 } as const;
 \`\`\`
 
-**3. Reproduces \`::error … undeclared-key\`** — \`${errorLocale}\` ships a key that isn't in \`REQUIRED_TRANSLATION_KEYS\` (so other locales aren't required to translate it — usually a typo or a forgotten autofix run):
+**3. Reproduces \`::error … undeclared-key\`** — \`${errorLocale}\` ships a key (\`${noiseKey}\`) that isn't in \`REQUIRED_TRANSLATION_KEYS\` (so other locales aren't required to translate it — usually a typo or a forgotten autofix run):
 
 \`\`\`ts
 // ${sourceFiles.TRANSLATIONS}
@@ -262,9 +264,9 @@ const TRANSLATIONS = {
   ${errorLocale}: {
     local: {
       ${sampleVariantKey}: "<translated value>",
-      // ⛔ \`subheading\` is not in REQUIRED_TRANSLATION_KEYS — drift signal.
+      // ⛔ \`${noiseKey}\` is not in REQUIRED_TRANSLATION_KEYS — drift signal.
       //    Fix: \`npm run i18n:autofix\` to register it, or delete it.
-      subheading: "(uncategorised)",
+      ${noiseKey}: "(uncategorised)",
     },
   },
 } as const;
