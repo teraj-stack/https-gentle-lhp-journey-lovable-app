@@ -531,15 +531,13 @@ export const useAutoSave = () => {
     if (channelRef.current && !broadcastDegradedRef.current && !simulateFallbackRef.current) {
       try {
         channelRef.current.postMessage(payload);
-      } catch {
+      } catch (err) {
         // Kanał padł w runtime (np. po wybudzeniu z BFCache) — degradujemy trwale,
         // żeby kolejne toggle nie traciły czasu na próbę. Storage write powyżej
         // i CustomEvent poniżej gwarantują, że zmiana i tak doleci do innych kart i komponentów.
         broadcastDegradedRef.current = true;
         setTransport("storage-fallback");
-        setDegradationReason(
-          "postMessage rzucił wyjątek w runtime (kanał zamknięty, możliwe wybudzenie z BFCache)",
-        );
+        setDegradationInfo(buildDegradationInfo("postmessage-failure", err));
         try {
           channelRef.current.close();
         } catch {
@@ -614,7 +612,7 @@ export const useAutoSave = () => {
 
   /**
    * Włącza/wyłącza symulację braku BroadcastChannel. Aktualizuje też pochodne pola
-   * (transport, degradationReason), żeby UI od razu pokazało nowy stan.
+   * (transport, degradationInfo), żeby UI od razu pokazało nowy stan.
    * Wyłączenie symulacji przywraca poprzedni transport — `broadcast` jeśli kanał
    * nie był wcześniej zdegradowany trwale, inaczej zostaje `storage-fallback`.
    */
@@ -622,13 +620,13 @@ export const useAutoSave = () => {
     setSimulateFallback(next);
     if (next) {
       setTransport("storage-fallback");
-      setDegradationReason("Symulacja diagnostyczna: BroadcastChannel wyłączony ręcznie");
+      setDegradationInfo(buildDegradationInfo("simulation"));
     } else if (channelRef.current && !broadcastDegradedRef.current) {
       // Przywróć BC tylko jeśli kanał nadal istnieje i nie padł w międzyczasie.
       setTransport("broadcast");
-      setDegradationReason(null);
+      setDegradationInfo(null);
     }
-    // Jeśli kanał był trwale zdegradowany, transport i reason zostają — to nie symulacja, tylko realny fallback.
+    // Jeśli kanał był trwale zdegradowany, transport i info zostają — to nie symulacja, tylko realny fallback.
   }, []);
 
   return {
@@ -653,8 +651,12 @@ export const useAutoSave = () => {
     isBroadcastSupported: transport === "broadcast",
     /** Aktywny transport — przydatne do diagnostyki w UI ustawień. */
     transport,
-    /** Powód degradacji do storage-fallback (lub `null` gdy BC działa). */
-    degradationReason,
+    /**
+     * Szczegóły ostatniej degradacji do storage-fallback (lub `null` gdy BC działa).
+     * Zawiera kategorię (`cause`), czytelny opis (`detail`), surowy komunikat błędu
+     * i znacznik czasu — UI prezentuje kategorię jako badge, a opis jako podpis.
+     */
+    degradationInfo,
     /** Czy obecnie symulujemy brak BC (diagnostycznie wymuszony fallback). */
     simulateFallback,
     /** Włącza/wyłącza symulację braku BC bez przeładowania strony. */
