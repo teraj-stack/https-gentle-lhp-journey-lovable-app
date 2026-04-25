@@ -315,10 +315,79 @@ const RiskFactorsAccordion = () => {
 
   const clearSelected = () => setSelected([]);
 
+  // Restore z URL: ?c=<base64url> — gdy ktoś otworzył link udostępniony przez pacjenta.
+  // Robimy MERGE z aktualnym localStorage (nie nadpisujemy "po cichu") + tylko gdy parametr istnieje.
+  const location = useLocation();
+  const navigate = useNavigate();
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(location.search);
+    const code = params.get("c");
+    if (!code) return;
+    const ids = decodeChecklist(code);
+    if (ids.length === 0) return;
+    setSelected((prev) => Array.from(new Set([...prev, ...ids])));
+    // Usuń parametr z URL (zachowaj hash) — żeby nie zaśmiecać i nie re-aplikować.
+    params.delete("c");
+    const cleanSearch = params.toString();
+    navigate(
+      { pathname: location.pathname, search: cleanSearch ? `?${cleanSearch}` : "", hash: location.hash || "#moja-checklista-ryzyka" },
+      { replace: true },
+    );
+    toast({
+      title: "Wczytano udostępnioną checklistę",
+      description: `Dodano ${ids.length} czynników do Twojej listy.`,
+    });
+  }, [location.search, location.pathname, location.hash, navigate]);
+
   const selectedFactors = useMemo(
     () => selected.map((id) => RISK_FACTORS.find((rf) => rf.id === id)).filter(Boolean) as RiskFactor[],
     [selected],
   );
+
+  // Dialog share
+  const [shareOpen, setShareOpen] = useState(false);
+  const [copiedField, setCopiedField] = useState<"url" | "code" | null>(null);
+
+  const shareUrl = useMemo(
+    () => (selectedFactors.length ? buildChecklistShareUrl(selected) : ""),
+    [selected, selectedFactors.length],
+  );
+  const shareCode = useMemo(
+    () => (selectedFactors.length ? buildChecklistShortCode(selected) : ""),
+    [selected, selectedFactors.length],
+  );
+
+  const handleCopyShare = async (value: string, field: "url" | "code") => {
+    if (!value) return;
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopiedField(field);
+      setTimeout(() => setCopiedField(null), 2000);
+      toast({
+        title: field === "url" ? "Skopiowano link" : "Skopiowano kod",
+        description: field === "url"
+          ? "Wklej w wiadomości do lekarza — otworzy listę z Twoimi zaznaczeniami."
+          : "Możesz go podyktować lub wpisać po znaku „?c=" w adresie strony.",
+      });
+    } catch {
+      toast({
+        title: "Nie udało się skopiować",
+        description: "Zaznacz tekst ręcznie i skopiuj (Ctrl/Cmd+C).",
+      });
+    }
+  };
+
+  const handleOpenShare = () => {
+    if (selectedFactors.length === 0) {
+      toast({
+        title: "Brak zaznaczonych czynników",
+        description: "Najpierw zaznacz czynniki w akordeonach powyżej.",
+      });
+      return;
+    }
+    setShareOpen(true);
+  };
 
   const handleExportChecklistPdf = () => {
     if (selectedFactors.length === 0) {
