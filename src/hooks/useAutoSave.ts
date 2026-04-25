@@ -183,6 +183,15 @@ export const useAutoSave = () => {
       ? "BroadcastChannel API nie jest dostępne w tej przeglądarce"
       : null,
   );
+  /**
+   * Symulacja braku BroadcastChannel — używana do diagnostyki.
+   * Gdy `true`, hook zachowuje się tak, jakby BC nie działał: pomija
+   * `postMessage` przy lokalnym toggle i ignoruje przychodzące wiadomości BC,
+   * zostawiając tylko storage event + CustomEvent jako transport.
+   * Reset do `false` natychmiast przywraca BC bez przeładowania strony
+   * (kanał nie jest fizycznie zamykany, więc historia subskrypcji zostaje).
+   */
+  const [simulateFallback, setSimulateFallback] = useState(false);
 
   /**
    * Stan testu synchronizacji: aktywny pingId (lub null), znacznik wysłania,
