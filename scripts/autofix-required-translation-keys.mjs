@@ -369,6 +369,9 @@ export const mergePreservingOrder = (current, next) => {
   for (const k of additions) out.push(k);
   return out;
 };
+
+/**
+ * Format a single bucket's diff as human-readable lines. Returns `null`
  * when there are no changes (caller filters those out so the summary only
  * lists buckets that actually moved).
  */
