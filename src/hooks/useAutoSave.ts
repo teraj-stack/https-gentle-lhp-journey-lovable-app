@@ -629,6 +629,11 @@ export const useAutoSave = () => {
     simulateFallbackRef.current = simulateFallback;
   }, [simulateFallback]);
 
+  // Lustro `transport` w refie — używane przez `sendPing` do wyboru strategii bez re-bindu.
+  useEffect(() => {
+    transportRef.current = transport;
+  }, [transport]);
+
   const toggle = useCallback((next: boolean) => {
     // Generujemy nową wersję dla TEJ lokalnej zmiany. Każdy odbiorca (inna instancja
     // tego samego hooka, inna karta, fallback przez storage) zignoruje ją, jeśli
