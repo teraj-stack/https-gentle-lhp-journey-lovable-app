@@ -200,6 +200,25 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
    */
   const [, setNowTick] = useState(0);
 
+  /**
+   * Stan podglądu dla sekcji „Co oznacza synchronizacja między kartami vs lokalna akcja".
+   * Trzymany WYŁĄCZNIE lokalnie w komponencie — nie modyfikuje realnego `useAutoSave`,
+   * nie wywołuje toast'ów ani nie wpływa na storage. To czysty edukacyjny preview, który
+   * pokazuje, jak wygląda etykieta + tooltip + badge dla każdego ze źródeł zmiany.
+   *  - `null`   — sekcja schowana, żaden przycisk nie był jeszcze klikany,
+   *  - `remote` — symulacja przyjścia zmiany z innej karty (BroadcastChannel/storage),
+   *  - `local`  — symulacja ręcznego kliknięcia Switch / skrótu Alt+Shift+A w tej karcie.
+   * Razem z `demoAt` (timestamp wyboru) pozwala wygenerować realistyczne etykiety
+   * używając tych samych helperów co reszta panelu — dzięki temu user widzi 1:1,
+   * co go czeka, a nie schematyczny mock.
+   */
+  const [demoSource, setDemoSource] = useState<"remote" | "local" | null>(null);
+  const [demoAt, setDemoAt] = useState<number | null>(null);
+  const handleDemoSelect = (source: "remote" | "local") => {
+    setDemoSource(source);
+    setDemoAt(Date.now());
+  };
+
   useEffect(() => {
     if (lastRemoteSyncAt === null) return;
     if (timeFormatMode === "full") return;
