@@ -294,45 +294,74 @@ while [ $# -gt 0 ]; do
 done
 
 # Resolve which reasons + which test files to run.
+# `ONLY` may be "all" or a comma-separated list of reasons (e.g. "placeholder-mismatch,wrong-type").
+SELECTED_REASONS=()
 if [ "$ONLY" = "all" ]; then
-  ERROR_REASONS=("${ALL_ERROR_REASONS[@]}")
-  WARNING_REASONS=("${ALL_WARNING_REASONS[@]}")
-  TEST_FILES=(
-    src/lib/i18nRequiredKeys.test.ts
-    src/lib/i18nContract.test.ts
-    src/lib/i18nPlaceholders.test.ts
-  )
+  SELECTED_REASONS=("${ALL_ERROR_REASONS[@]}" "${ALL_WARNING_REASONS[@]}")
 else
-  if [ -z "${REASON_TEST[$ONLY]:-}" ]; then
-    echo "❌ Unknown --only reason: '$ONLY'" >&2
-    echo "   Valid: ${ALL_ERROR_REASONS[*]} ${ALL_WARNING_REASONS[*]} all" >&2
-    exit 2
-  fi
-  TEST_FILES=("${REASON_TEST[$ONLY]}")
-  # Classify the chosen reason as error or warning for the summary table.
-  ERROR_REASONS=()
-  WARNING_REASONS=()
-  for r in "${ALL_WARNING_REASONS[@]}"; do
-    [ "$r" = "$ONLY" ] && WARNING_REASONS=("$ONLY")
+  IFS=',' read -ra RAW_REASONS <<< "$ONLY"
+  declare -A SEEN=()
+  for raw in "${RAW_REASONS[@]}"; do
+    r="${raw// /}"  # strip stray spaces around commas
+    [ -z "$r" ] && continue
+    if [ -z "${REASON_TEST[$r]:-}" ]; then
+      echo "❌ Unknown --only reason: '$r'" >&2
+      echo "   Valid: ${ALL_ERROR_REASONS[*]} ${ALL_WARNING_REASONS[*]} all" >&2
+      exit 2
+    fi
+    if [ -z "${SEEN[$r]:-}" ]; then
+      SELECTED_REASONS+=("$r")
+      SEEN[$r]=1
+    fi
   done
-  if [ ${#WARNING_REASONS[@]} -eq 0 ]; then
-    ERROR_REASONS=("$ONLY")
+  if [ ${#SELECTED_REASONS[@]} -eq 0 ]; then
+    echo "❌ --only requires at least one reason" >&2
+    exit 2
   fi
 fi
 
+# Classify selected reasons → error vs warning rows for the summary table.
+ERROR_REASONS=()
+WARNING_REASONS=()
+for r in "${SELECTED_REASONS[@]}"; do
+  is_warn=0
+  for w in "${ALL_WARNING_REASONS[@]}"; do
+    [ "$r" = "$w" ] && is_warn=1
+  done
+  if [ "$is_warn" -eq 1 ]; then
+    WARNING_REASONS+=("$r")
+  else
+    ERROR_REASONS+=("$r")
+  fi
+done
+
+# Union of owning test files (de-duplicated, preserves first-seen order).
+TEST_FILES=()
+declare -A SEEN_FILE=()
+for r in "${SELECTED_REASONS[@]}"; do
+  f="${REASON_TEST[$r]}"
+  if [ -z "${SEEN_FILE[$f]:-}" ]; then
+    TEST_FILES+=("$f")
+    SEEN_FILE[$f]=1
+  fi
+done
+
 echo "▶ Running i18n contract tests (filter: $ONLY)…"
+echo "  Reasons:    ${SELECTED_REASONS[*]}"
 echo "  Test files: ${TEST_FILES[*]}"
 # `|| true` — vitest exits non-zero on any failing test; we want to inspect annotations
 # regardless. The final exit code is recomputed from the per-reason counts below.
 GITHUB_ACTIONS=true I18N_ACTIVE_LOCALES="${I18N_ACTIVE_LOCALES:-pl,en,de,it}" \
   bunx vitest run "${TEST_FILES[@]}" > "$LOG" 2>&1 || true
 
-# When filtering, keep only annotations for the chosen reason so $ANN and TOTAL match
+# When filtering, keep only annotations for the selected reasons so $ANN and TOTAL match
 # what the table reports. In `all` mode, keep every annotation.
 if [ "$ONLY" = "all" ]; then
   grep '^::' "$LOG" | sort -u > "$ANN" || true
 else
-  grep '^::' "$LOG" | grep "reason=$ONLY" | sort -u > "$ANN" || true
+  # Build an alternation pattern: reason=(a|b|c)
+  REASON_RE=$(IFS='|'; echo "${SELECTED_REASONS[*]}")
+  grep '^::' "$LOG" | grep -E "reason=($REASON_RE)" | sort -u > "$ANN" || true
 fi
 TOTAL=$(wc -l < "$ANN" | tr -d ' ')
 
