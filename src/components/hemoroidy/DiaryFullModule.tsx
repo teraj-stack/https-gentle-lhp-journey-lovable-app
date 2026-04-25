@@ -47,6 +47,7 @@ import { buildDiarySummary, exportDiaryCsv, exportDiaryPdf } from "@/lib/diaryEx
 import DiaryReminderBanner from "@/components/hemoroidy/DiaryReminderBanner";
 import DiaryReminderSettings from "@/components/hemoroidy/DiaryReminderSettings";
 import DiaryTrendStats from "@/components/hemoroidy/DiaryTrendStats";
+import DiaryWeeklySummary from "@/components/hemoroidy/DiaryWeeklySummary";
 import { toast } from "@/hooks/use-toast";
 
 const easeOut = [0.16, 1, 0.3, 1] as const;
