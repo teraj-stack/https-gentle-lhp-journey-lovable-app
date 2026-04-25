@@ -292,8 +292,24 @@ const REFERENCE_LOCALE = "pl";
  * empty string, or wrong-typed value.
  *
  * Returns the trimmed line (no leading indent) so the annotation message
- * stays one logical row in the GitHub UI; falls back to `null` when the
- * key isn't on a single line (e.g. multi-line object — rare in this repo).
+ * stays one logical row in the GitHub UI. The returned `lineNumber` is the
+ * key's declaration line (1-based) — i.e. where the annotation marker
+ * should land — even when the value spans multiple lines.
+ *
+ * Multi-line values
+ * -----------------
+ * When the value is broken across multiple lines (template literal with
+ * embedded `\n`, multi-line array `[ … ]`, multi-line object `{ … }`,
+ * concatenated strings via `+`), we walk forward from the key line until
+ * the value's opening delimiter is balanced (or until a sibling key /
+ * dedent is hit, as a safety stop). The collected text is collapsed to
+ * a single line — runs of whitespace become one space and a horizontal
+ * ellipsis (`…`) is inserted when we truncate, keeping the annotation
+ * compact while still showing reviewers what was declared.
+ *
+ * Returns `null` only when the key isn't found at all; an existing key
+ * with an empty/whitespace-only single line still returns the trimmed
+ * declaration so reviewers see e.g. `heading: "",` directly.
  */
 const getSourceLineSnippet = (
   lines: string[],
@@ -305,8 +321,156 @@ const getSourceLineSnippet = (
   const raw = lines[ln - 1] ?? "";
   const trimmed = raw.trim();
   if (!trimmed) return null;
-  return { snippet: trimmed, lineNumber: ln };
+  // Single-line value (the common case): the line already contains the
+  // full declaration (`heading: "Last change",`). No assembly needed.
+  if (!isMultiLineValueOpener(trimmed)) {
+    return { snippet: trimmed, lineNumber: ln };
+  }
+  // Multi-line value: walk forward and collapse to a one-line snippet.
+  const assembled = assembleMultiLineSnippet(lines, ln - 1);
+  return { snippet: assembled, lineNumber: ln };
 };
+
+/**
+ * Heuristic: does the trimmed line END with an unclosed value opener that
+ * almost certainly continues on the next line? We look at the last
+ * non-comment, non-comma token. The set is intentionally narrow to avoid
+ * false positives on perfectly well-formed single-line values.
+ *
+ * Triggers (in order of frequency in this codebase):
+ *  - Backtick template literal whose closing `\`` isn't on the same line.
+ *  - Open bracket `[` or `{` not closed before line end (multi-line array /
+ *    object value, e.g. structured strings).
+ *  - Trailing string-concatenation `+` (rare, but legal).
+ *  - Open parenthesis `(` (e.g. wrapped function call — also rare).
+ */
+const isMultiLineValueOpener = (trimmedLine: string): boolean => {
+  // Strip a trailing line comment so it doesn't fool the closer counter.
+  const codePart = stripTrailingLineComment(trimmedLine);
+  // Quick reject: line ends with a complete string + optional comma.
+  if (/(["'])(?:\\.|(?!\1).)*\1\s*,?\s*$/.test(codePart)) return false;
+  // Backtick template not closed on the same line.
+  if (countUnescaped(codePart, "`") % 2 === 1) return true;
+  // Bracket / brace / paren imbalance suggests a continued literal.
+  const open = (codePart.match(/[\[{(]/g) ?? []).length;
+  const close = (codePart.match(/[\]})]/g) ?? []).length;
+  if (open > close) return true;
+  // Trailing `+` (string concat) or trailing colon-then-nothing
+  // (`heading:` with the value on the next line).
+  if (/[+]\s*$/.test(codePart)) return true;
+  if (/:\s*$/.test(codePart)) return true;
+  return false;
+};
+
+/**
+ * Strip a trailing `// …` line comment without breaking on `//` that
+ * appears inside a string. Cheap state machine — good enough for the
+ * shape of strings we have in the locale maps.
+ */
+const stripTrailingLineComment = (line: string): string => {
+  let inStr: string | null = null;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    const prev = i > 0 ? line[i - 1] : "";
+    if (inStr) {
+      if (c === inStr && prev !== "\\") inStr = null;
+      continue;
+    }
+    if (c === '"' || c === "'" || c === "`") {
+      inStr = c;
+      continue;
+    }
+    if (c === "/" && line[i + 1] === "/") return line.slice(0, i).trimEnd();
+  }
+  return line;
+};
+
+/** Count occurrences of `ch` in `s` ignoring `\ch` escapes. */
+const countUnescaped = (s: string, ch: string): number => {
+  let n = 0;
+  for (let i = 0; i < s.length; i++) {
+    if (s[i] !== ch) continue;
+    if (i > 0 && s[i - 1] === "\\") continue;
+    n += 1;
+  }
+  return n;
+};
+
+/**
+ * Walk forward from `startIdx` (0-based index of the key line) and
+ * concatenate everything that belongs to the value, stopping when the
+ * opener is balanced or when we hit a safety boundary (sibling key on the
+ * same indent, or a dedent below the key's indent).
+ *
+ * The result is whitespace-collapsed and capped at MAX_SNIPPET_LEN with
+ * a trailing `…` so multi-paragraph translations don't blow up the
+ * GitHub UI. Reviewers can still click through to the line for the full
+ * value.
+ */
+const MAX_SNIPPET_LEN = 200;
+
+const assembleMultiLineSnippet = (
+  lines: string[],
+  startIdx: number,
+): string => {
+  const startLine = lines[startIdx] ?? "";
+  const startIndent = (startLine.match(/^( *)/)?.[1].length) ?? 0;
+  // Track delimiter balance starting from the key line. The key declaration
+  // itself (`heading:`) has no opener — the opener begins after the colon.
+  let backtickOpen = (countUnescaped(stripTrailingLineComment(startLine), "`") % 2) === 1;
+  let bracketDepth = 0;
+  let braceDepth = 0;
+  let parenDepth = 0;
+  const updateDepths = (line: string) => {
+    const code = stripTrailingLineComment(line);
+    for (let i = 0; i < code.length; i++) {
+      const c = code[i];
+      const prev = i > 0 ? code[i - 1] : "";
+      if (c === "`" && prev !== "\\") backtickOpen = !backtickOpen;
+      if (backtickOpen) continue; // inside template — brackets don't count
+      if (c === "[") bracketDepth += 1;
+      else if (c === "]") bracketDepth -= 1;
+      else if (c === "{") braceDepth += 1;
+      else if (c === "}") braceDepth -= 1;
+      else if (c === "(") parenDepth += 1;
+      else if (c === ")") parenDepth -= 1;
+    }
+  };
+  updateDepths(startLine);
+
+  const collected: string[] = [startLine.trim()];
+  for (let i = startIdx + 1; i < lines.length; i++) {
+    const line = lines[i];
+    const trimmed = line.trim();
+    const indent = (line.match(/^( *)/)?.[1].length) ?? 0;
+    // Safety: if we've returned to the key's indent (or shallower) AND we
+    // are NOT inside any open delimiter / template, the previous line was
+    // really the end of the value. Bail out before we eat a sibling key.
+    const inside =
+      backtickOpen || bracketDepth > 0 || braceDepth > 0 || parenDepth > 0;
+    if (!inside && indent <= startIndent && trimmed.length > 0) break;
+
+    if (trimmed.length > 0) collected.push(trimmed);
+    updateDepths(line);
+
+    // Stop as soon as the value is balanced AND the line ends with a
+    // value-terminator (`,`, `;`, or just the closing delimiter at end).
+    const balanced =
+      !backtickOpen && bracketDepth === 0 && braceDepth === 0 && parenDepth === 0;
+    if (balanced && /[`"'\])},;]\s*,?\s*$/.test(stripTrailingLineComment(line))) {
+      break;
+    }
+  }
+
+  // Collapse whitespace runs and cap length so the GitHub annotation
+  // popover doesn't get a wall of text.
+  let merged = collected.join(" ").replace(/\s+/g, " ").trim();
+  if (merged.length > MAX_SNIPPET_LEN) {
+    merged = merged.slice(0, MAX_SNIPPET_LEN - 1).trimEnd() + "…";
+  }
+  return merged;
+};
+
 
 /**
  * Build the human-readable "expected line" hint for a MISSING key, by
