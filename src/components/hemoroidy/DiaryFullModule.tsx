@@ -1004,6 +1004,23 @@ const DiaryFullModule = ({
                       brak odpowiedzi
                     </span>
                   )}
+                  {/* Mignięcie „Zapisano" — pojawia się na 1.5 s po każdym kliknięciu
+                      odpowiedzi (klucz timestamp wymusza re-mount = nowa animacja). */}
+                  {savedFlash[qi] && (
+                    <motion.span
+                      key={savedFlash[qi]}
+                      initial={{ opacity: 0, y: -2, scale: 0.9 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.25, ease: easeOut }}
+                      className="inline-flex items-center gap-1 rounded-full border border-emerald-500/40 bg-emerald-500/15 px-1.5 py-0.5 text-[10px] text-emerald-500"
+                      role="status"
+                      aria-label="Odpowiedź zapisana lokalnie"
+                    >
+                      <Save className="w-2.5 h-2.5" aria-hidden="true" />
+                      Zapisano
+                    </motion.span>
+                  )}
                 </legend>
                 <p className="font-heading text-base text-foreground mb-3 leading-snug">{q.q}</p>
                 <div className="grid sm:grid-cols-3 gap-2">
