@@ -492,9 +492,11 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
                         // żeby pacjent natychmiast widział, że to JEGO zmiana w tej karcie,
                         // a nie sync z innej karty (dla którego cała etykieta świeci na zielono).
                         // Celowo neutralna paleta (muted), bo zielony rezerwujemy dla remote.
+                        // aria-label współdzieli string z `tooltipContent.ariaHeading`,
+                        // żeby brzmienie „karta" było identyczne w tooltip + badge + a11y.
                         <span
                           className="ml-1.5 inline-flex items-center px-1.5 py-0.5 text-[10px] uppercase tracking-wider font-mono rounded-md border border-border/60 bg-muted/40 text-foreground/80 align-middle"
-                          aria-label="Źródło: lokalna zmiana w tej karcie"
+                          aria-label={tooltipContent.ariaHeading}
                         >
                           lokalnie
                         </span>
@@ -797,8 +799,10 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
                       : entry.source === "custom-event"
                         ? {
                             Icon: Layers,
-                            label: "Zdalna synchronizacja w obrębie tej karty (CustomEvent)",
-                            short: "Local-tab",
+                            label: "Synchronizacja w obrębie tej karty (CustomEvent)",
+                            // Ujednolicony język UI: zawsze „karta", nigdy „tab" —
+                            // zgodnie z `lastChangeTooltipContent` i resztą interfejsu.
+                            short: "Ta karta",
                             isLocal: false,
                           }
                         : {
