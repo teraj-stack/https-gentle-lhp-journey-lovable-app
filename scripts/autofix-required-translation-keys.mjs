@@ -112,6 +112,12 @@ const MODEL_PATH = resolve(ROOT, "src/lib/lastChangeTooltipModel.ts");
 const args = new Set(process.argv.slice(2));
 const CHECK_ONLY = args.has("--check");
 const DEBUG = args.has("--debug");
+// `--preserve-order` keeps the EXISTING declaration order of keys that are
+// still present in the file, and only appends NEW keys (sorted among
+// themselves for determinism) at the end. Removed keys drop out. This is
+// the low-churn mode for teams that group keys by intent / commit history
+// rather than alphabetically — the default mode still sorts everything.
+const PRESERVE_ORDER = args.has("--preserve-order");
 
 // ---------------------------------------------------------------------------
 // Detection helpers
