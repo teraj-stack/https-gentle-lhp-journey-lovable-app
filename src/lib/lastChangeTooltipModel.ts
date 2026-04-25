@@ -164,6 +164,21 @@ export interface LastChangeTooltipModelInput {
    * testami parytetu w `lastChangeTooltipModel.test.ts`.
    */
   format?: TimeValueFormat;
+  /**
+   * Język tooltipa (PL/EN). DOMYŚLNIE „pl" — zachowuje wsteczną
+   * kompatybilność (wszystkie istniejące wywołania bez `locale` działają
+   * jak dotąd po polsku).
+   *
+   * Akceptuje też pełne tagi BCP-47 (np. „pl-PL", „en-US") — zostaną
+   * zresolwowane przez `resolveLocale`. Nieznane języki → fallback „pl".
+   *
+   * Locale steruje:
+   *   - prefiksem linii czasu („Czas: " vs „Time: "),
+   *   - sufiksem fallbacku w a11y („(etykieta względna)" vs „(relative label)"),
+   *   - native `title` wyjaśniającym fallback,
+   *   - nagłówkiem/opisem źródła z `getLastChangeTooltipContent`.
+   */
+  locale?: Locale | string;
 }
 
 export interface LastChangeTooltipModel {
