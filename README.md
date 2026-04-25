@@ -239,6 +239,8 @@ Copy-paste this into your terminal (or save as `scripts/i18n-summary.sh` and `ch
 
 Accepted values for `--only`: `missing-required-key`, `placeholder-mismatch`, `undeclared-key`, `wrong-type`, `empty-optional-value` — singly or comma-joined. Use `--only all` (the default) to run the full suite.
 
+**Locale scope (`--locales <locale>[,<locale>…]`):** pass `--locales` (alias `-L`) to override the locale scope **just for this run** without exporting `I18N_ACTIVE_LOCALES` in your shell. Accepted values: `pl`, `en`, `de`, `it` (mirrors `SUPPORTED_LOCALES` in `src/lib/i18nActiveLocales.ts`); commas are tolerated with stray whitespace and duplicates are de-duplicated. Precedence: `--locales` flag > `$I18N_ACTIVE_LOCALES` env > built-in default `pl,en,de,it`. The resolved scope and its source (`--locales flag` / `$I18N_ACTIVE_LOCALES env` / `default`) are printed on the `Locales:` echo line so PR reviewers can see exactly what the run was scoped to. Combine freely with `--only`, e.g. `bash i18n-summary.sh --only wrong-type --locales pl` to verify a single Polish fixture in ~3s.
+
 ```sh
 #!/usr/bin/env bash
 # i18n-summary.sh — run i18n contract tests and print a per-reason PASS/FAIL summary.
@@ -248,6 +250,8 @@ Accepted values for `--only`: `missing-required-key`, `placeholder-mismatch`, `u
 #   bash i18n-summary.sh -o wrong-type
 #   bash i18n-summary.sh --only placeholder-mismatch,wrong-type   # multiple reasons (comma-joined)
 #   bash i18n-summary.sh --only all                               # explicit equivalent of default
+#   bash i18n-summary.sh --locales en,de                          # override I18N_ACTIVE_LOCALES for this run
+#   bash i18n-summary.sh --only wrong-type --locales pl           # narrow reason + locale together
 #   bash i18n-summary.sh --list                                   # print reason → test-file table and exit
 set -euo pipefail
 
@@ -268,11 +272,18 @@ declare -A REASON_TEST=(
   [empty-optional-value]="src/lib/i18nContract.test.ts"
 )
 
+# Locales the validator currently supports (mirrors SUPPORTED_LOCALES in
+# src/lib/i18nActiveLocales.ts). Used to validate --locales values early.
+ALL_LOCALES=(pl en de it)
+
 ONLY="all"
+LOCALES=""  # empty → use $I18N_ACTIVE_LOCALES if set, else fall back to pl,en,de,it
 while [ $# -gt 0 ]; do
   case "$1" in
-    --only|-o) ONLY="${2:-}"; shift 2 ;;
-    --only=*)  ONLY="${1#*=}"; shift ;;
+    --only|-o)    ONLY="${2:-}"; shift 2 ;;
+    --only=*)     ONLY="${1#*=}"; shift ;;
+    --locales|-L) LOCALES="${2:-}"; shift 2 ;;
+    --locales=*)  LOCALES="${1#*=}"; shift ;;
     --list|-l)
       printf '%-24s  %-10s  %s\n' "REASON" "SEVERITY" "TEST FILE (--only value)"
       printf '%-24s  %-10s  %s\n' "------" "--------" "------------------------"
@@ -282,11 +293,13 @@ while [ $# -gt 0 ]; do
       for r in "${ALL_WARNING_REASONS[@]}"; do
         printf '%-24s  %-10s  %s\n' "$r" "warning" "${REASON_TEST[$r]}"
       done
-      printf '\nExample: bash i18n-summary.sh --only %s\n' "${ALL_ERROR_REASONS[0]}"
+      printf '\nKnown locales (for --locales): %s\n' "${ALL_LOCALES[*]}"
+      printf 'Example: bash i18n-summary.sh --only %s --locales en,de\n' "${ALL_ERROR_REASONS[0]}"
       exit 0 ;;
     -h|--help)
-      echo "Usage: $0 [--only <reason>|all] [--list]"
+      echo "Usage: $0 [--only <reason>[,<reason>…]|all] [--locales <locale>[,<locale>…]] [--list]"
       echo "Reasons: ${ALL_ERROR_REASONS[*]} ${ALL_WARNING_REASONS[*]} | all"
+      echo "Locales: ${ALL_LOCALES[*]} (defaults to \$I18N_ACTIVE_LOCALES, else pl,en,de,it)"
       echo "Run '$0 --list' for a reason → test-file table."
       exit 0 ;;
     *) echo "Unknown arg: $1" >&2; exit 2 ;;
@@ -346,12 +359,52 @@ for r in "${SELECTED_REASONS[@]}"; do
   fi
 done
 
+# Resolve effective locale scope. Precedence: --locales flag > $I18N_ACTIVE_LOCALES env > default.
+# When --locales is passed we validate every entry against ALL_LOCALES and rebuild a clean,
+# de-duplicated, comma-joined string so typos like `--locales en, fr` fail fast instead of
+# silently dropping `fr` inside the test runner.
+if [ -n "$LOCALES" ]; then
+  IFS=',' read -ra RAW_LOCALES <<< "$LOCALES"
+  declare -A SEEN_LOC=()
+  CLEAN_LOCALES=()
+  for raw in "${RAW_LOCALES[@]}"; do
+    l="${raw// /}"
+    [ -z "$l" ] && continue
+    is_known=0
+    for k in "${ALL_LOCALES[@]}"; do
+      [ "$l" = "$k" ] && is_known=1
+    done
+    if [ "$is_known" -eq 0 ]; then
+      echo "❌ Unknown --locales value: '$l'" >&2
+      echo "   Valid: ${ALL_LOCALES[*]}" >&2
+      exit 2
+    fi
+    if [ -z "${SEEN_LOC[$l]:-}" ]; then
+      CLEAN_LOCALES+=("$l")
+      SEEN_LOC[$l]=1
+    fi
+  done
+  if [ ${#CLEAN_LOCALES[@]} -eq 0 ]; then
+    echo "❌ --locales requires at least one locale" >&2
+    exit 2
+  fi
+  EFFECTIVE_LOCALES=$(IFS=','; echo "${CLEAN_LOCALES[*]}")
+  LOCALE_SOURCE="--locales flag"
+elif [ -n "${I18N_ACTIVE_LOCALES:-}" ]; then
+  EFFECTIVE_LOCALES="$I18N_ACTIVE_LOCALES"
+  LOCALE_SOURCE="\$I18N_ACTIVE_LOCALES env"
+else
+  EFFECTIVE_LOCALES="pl,en,de,it"
+  LOCALE_SOURCE="default"
+fi
+
 echo "▶ Running i18n contract tests (filter: $ONLY)…"
 echo "  Reasons:    ${SELECTED_REASONS[*]}"
+echo "  Locales:    $EFFECTIVE_LOCALES   ($LOCALE_SOURCE)"
 echo "  Test files: ${TEST_FILES[*]}"
 # `|| true` — vitest exits non-zero on any failing test; we want to inspect annotations
 # regardless. The final exit code is recomputed from the per-reason counts below.
-GITHUB_ACTIONS=true I18N_ACTIVE_LOCALES="${I18N_ACTIVE_LOCALES:-pl,en,de,it}" \
+GITHUB_ACTIONS=true I18N_ACTIVE_LOCALES="$EFFECTIVE_LOCALES" \
   bunx vitest run "${TEST_FILES[@]}" > "$LOG" 2>&1 || true
 
 # When filtering, keep only annotations for the selected reasons so $ANN and TOTAL match
@@ -418,6 +471,7 @@ Sample output for `bash i18n-summary.sh --only placeholder-mismatch` after pasti
 ```
 ▶ Running i18n contract tests (filter: placeholder-mismatch)…
   Reasons:    placeholder-mismatch
+  Locales:    pl,en,de,it   (default)
   Test files: src/lib/i18nPlaceholders.test.ts
 
 ═══════════════════════════════════════════════════════
@@ -438,6 +492,7 @@ Sample output for `bash i18n-summary.sh --only placeholder-mismatch,wrong-type` 
 ```
 ▶ Running i18n contract tests (filter: placeholder-mismatch,wrong-type)…
   Reasons:    placeholder-mismatch wrong-type
+  Locales:    pl,en,de,it   (default)
   Test files: src/lib/i18nPlaceholders.test.ts src/lib/i18nContract.test.ts
 
 ═══════════════════════════════════════════════════════
@@ -455,6 +510,27 @@ Sample output for `bash i18n-summary.sh --only placeholder-mismatch,wrong-type` 
 ```
 
 Whitespace around commas is tolerated (`--only "placeholder-mismatch, wrong-type"` works), duplicate reasons are de-duplicated (`--only wrong-type,wrong-type` is treated as one), and the `TOTAL` count reflects only the selected reasons — annotations from other reasons that happened to surface in the same test run are filtered out before counting.
+
+Sample output for `bash i18n-summary.sh --only wrong-type --locales pl` (single reason + single locale — fastest possible run, ~3s, useful for tight edit-test loops on one Polish fixture):
+
+```
+▶ Running i18n contract tests (filter: wrong-type)…
+  Reasons:    wrong-type
+  Locales:    pl   (--locales flag)
+  Test files: src/lib/i18nContract.test.ts
+
+═══════════════════════════════════════════════════════
+  i18n contract — PASS/FAIL summary (filter: wrong-type)
+═══════════════════════════════════════════════════════
+  REASON                     SEVERITY   VERDICT
+  ---------------------------------------------------
+  wrong-type                 error      ✅ PASS
+  ---------------------------------------------------
+  TOTAL ANNOTATIONS          —          0
+═══════════════════════════════════════════════════════
+
+✅ Overall: PASS — no error-severity violations for filter 'wrong-type'.
+```
 
 Sample output (clean repo — no drift):
 
@@ -503,7 +579,7 @@ Sample output (after pasting fixtures #2 + #4 + #5 from the [End-to-end walkthro
 
 **Notes on behaviour**
 
-- **Locale scope** — defaults to `pl,en,de,it` so all five fixture types are in scope. Override with `I18N_ACTIVE_LOCALES=pl,en bash i18n-summary.sh` to mimic the default CI scope.
+- **Locale scope** — defaults to `pl,en,de,it` so all five fixture types are in scope. Override per-run with `--locales en,de` (validated against `SUPPORTED_LOCALES`) or per-shell with `I18N_ACTIVE_LOCALES=pl,en bash i18n-summary.sh`. Precedence is `--locales` > env > default; the chosen source is printed on the `Locales:` echo line for traceability.
 - **Exit code** — `0` iff every error-severity reason is `PASS`. `empty-optional-value` (the only warning reason) **never** flips the verdict, matching the in-CI behaviour where warnings stay green.
 - **Dedup** — `sort -u` collapses duplicate annotations (a stacked fixture can trip the same key in multiple tests). Counts are post-dedup, so the table mirrors what reviewers actually see in the PR diff.
 - **Multi-reason filter** — `--only a,b,c` runs the **union** of owning test files (so `--only placeholder-mismatch,wrong-type` runs both `i18nPlaceholders.test.ts` and `i18nContract.test.ts`), then narrows the annotations file to `reason=(a|b|c)` before counting. Each selected reason gets its own row, and the overall verdict fails iff any selected **error-severity** reason has hits — adding `empty-optional-value` to the list never flips the verdict.
