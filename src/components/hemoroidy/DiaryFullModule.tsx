@@ -47,6 +47,7 @@ import { buildDiarySummary, exportDiaryCsv, exportDiaryPdf } from "@/lib/diaryEx
 import DiaryReminderBanner from "@/components/hemoroidy/DiaryReminderBanner";
 import DiaryReminderSettings from "@/components/hemoroidy/DiaryReminderSettings";
 import DiaryTrendStats from "@/components/hemoroidy/DiaryTrendStats";
+import DiaryWeeklySummary from "@/components/hemoroidy/DiaryWeeklySummary";
 import { toast } from "@/hooks/use-toast";
 
 const easeOut = [0.16, 1, 0.3, 1] as const;
@@ -281,6 +282,9 @@ const DiaryFullModule = ({
         {/* Wzbogacone statystyki trendu */}
         <DiaryTrendStats trend={trend} entries={entries} />
       </motion.div>
+
+      {/* Auto-podsumowanie tygodniowe (Tydzień 1 vs Tydzień 2) */}
+      <DiaryWeeklySummary trend={trend} entries={entries} />
 
       {/* Day picker — 14-day strip */}
       <motion.div
