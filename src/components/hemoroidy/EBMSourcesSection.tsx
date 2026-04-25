@@ -1120,6 +1120,72 @@ const EBMSourcesSection = ({
           })}
         </div>
 
+        {/* Filtry zaawansowane: Rok publikacji + Typ badania */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <div className="flex flex-col gap-1">
+            <label
+              htmlFor="ebm-year-filter"
+              className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground/80 font-sans"
+            >
+              Rok publikacji
+            </label>
+            <Select value={yearFilter} onValueChange={setYearFilter}>
+              <SelectTrigger
+                id="ebm-year-filter"
+                className="h-9 bg-background/40 border-border text-sm focus:ring-primary"
+                aria-label="Filtruj według roku publikacji"
+              >
+                <SelectValue placeholder="Wszystkie lata" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Wszystkie lata</SelectItem>
+                <SelectItem value="gte2020">2020 i nowsze</SelectItem>
+                <SelectItem value="2015-2019">2015 – 2019</SelectItem>
+                <SelectItem value="2010-2014">2010 – 2014</SelectItem>
+                <SelectItem value="lt2010">Przed 2010</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label
+              htmlFor="ebm-study-type-filter"
+              className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground/80 font-sans"
+            >
+              Typ badania
+            </label>
+            <Select value={studyTypeFilter} onValueChange={setStudyTypeFilter}>
+              <SelectTrigger
+                id="ebm-study-type-filter"
+                className="h-9 bg-background/40 border-border text-sm focus:ring-primary"
+                aria-label="Filtruj według typu badania"
+              >
+                <SelectValue placeholder="Wszystkie typy" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Wszystkie typy</SelectItem>
+                {(
+                  [
+                    "guideline",
+                    "systematic_review",
+                    "meta_analysis",
+                    "rct",
+                    "cohort",
+                    "review",
+                    "other",
+                  ] as StudyType[]
+                )
+                  .filter((t) => availableStudyTypes.has(t))
+                  .map((t) => (
+                    <SelectItem key={t} value={t}>
+                      {STUDY_TYPE_LABEL[t]}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
         {isFiltering && (
           <p className="text-xs text-muted-foreground" aria-live="polite">
             Znaleziono <span className="text-foreground font-medium">{totalMatches}</span>{" "}
@@ -1132,10 +1198,7 @@ const EBMSourcesSection = ({
             )}
             <button
               type="button"
-              onClick={() => {
-                setQuery("");
-                setActiveCat("all");
-              }}
+              onClick={resetAllFilters}
               className="ml-2 text-primary hover:underline"
             >
               Wyczyść filtry
