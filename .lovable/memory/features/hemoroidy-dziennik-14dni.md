@@ -10,6 +10,11 @@ Dziennik 14 dni hemoroidów: anonimowy tracker w przeglądarce.
   - Props: `reminderVariant` ("diary-page" | "quiz-page"), `showReminderSettings`, `showExport`
   - Zawiera: trend chart + **auto-werdykt trendu** (`DiaryTrendSummary.tsx`: regresja liniowa po wypełnionych dniach → spadek/utrzymanie/wzrost + najważniejszy dzień zmiany vs średnia poprzedzających) + **panel statystyk trendu** (`DiaryTrendStats.tsx`) + **auto-podsumowanie tygodniowe** (`DiaryWeeklySummary.tsx`: Tydzień 1 = dni 1-7, Tydzień 2 = dni 8-14, średnia, dominujący poziom, rozkład N/Ś/W, delta + komentarz narracyjny EBM zależny od kierunku zmiany), day picker (14-dniowy strip), edytor dnia (quiz 9 pytań + notatki), **przycisk „Zapisz dzień"** (variant `hero`, ikona Save/CheckCircle2 zależnie od completeness, toast potwierdzający), opcjonalnie eksport PDF/CSV i ustawienia przypomnień + clear all
   - Auto-zapis po każdej zmianie (writeStorage), przycisk daje pacjentowi jawne potwierdzenie
+- **Eksport / import pojedynczego dnia** (pasek nad progress bar w DiaryFullModule):
+  - Eksport PDF (jednostronicowy, kolor karty wyniku wg poziomu ryzyka) i JSON (`exportSingleDayJson` → schema `cml.hemoroidy.diary.day.v1`) — aktywne tylko gdy `dayHasContent` (≥1 odp lub notatka).
+  - **Import JSON** (`parseImportedDayJson` w `diaryExport.ts`): hidden `<input type="file" accept="application/json,.json">`, walidacja schemy (akceptuje też pliki bez `schema` byle miały `date` + `answers`), tolerancyjne dopasowanie liczby pytań (uzupełnia null/ucina), walidacja indeksów opcji. Plik czytany lokalnie (FileReader) — dane nie wychodzą poza przeglądarkę.
+  - AlertDialog potwierdzenia gdy import nadpisuje istniejący wpis (`entries[date]` ma odpowiedzi/notatki) LUB zmienia aktywny dzień. Po potwierdzeniu: `setNotes` + `setAnswer` per pytanie (przez te same wrappery co normalna edycja → trend/wykres aktualizują się natychmiast), automatyczny `setActiveDate(payload.date)` jeśli różny od aktywnego.
+
 - **Statystyki trendu** (`DiaryTrendStats.tsx`):
   - Tydzień vs poprzedni: średnia ostatnich 7d minus średnia poprzednich 7d → kolor emerald (poprawa) / destructive (regres) / muted (flat lub n/a)
   - Najdłuższa seria niskiego ryzyka: liczy consecutive `level==='low'`, luki (brak wpisu) NIE przerywają serii
