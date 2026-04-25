@@ -375,6 +375,94 @@ const EBMSourcesSection = ({
   const [forcedOpen, setForcedOpen] = useState<string[]>([]);
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
 
+  // ===== „Ostatnio otwierane" — historia kliknięć w linki EBM (localStorage) =====
+  type RecentEntry = {
+    url: string;
+    title: string;
+    journal: string;
+    authors: string;
+    year: string;
+    categoryId: string;
+    categoryTitle: string;
+    linkLabel: string;
+    linkKind: SourceLinkKind;
+    openedAt: number; // epoch ms
+  };
+  const RECENTS_KEY = "cml.hemoroidy.ebm.recents.v1";
+  const RECENTS_MAX = 8;
+  const [recents, setRecents] = useState<RecentEntry[]>([]);
+
+  // Wczytaj z localStorage przy pierwszym renderze
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(RECENTS_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as unknown;
+      if (Array.isArray(parsed)) {
+        const cleaned = parsed
+          .filter(
+            (e): e is RecentEntry =>
+              !!e && typeof e === "object" && typeof (e as RecentEntry).url === "string",
+          )
+          .slice(0, RECENTS_MAX);
+        setRecents(cleaned);
+      }
+    } catch {
+      // ignore corrupted storage
+    }
+  }, []);
+
+  const persistRecents = (next: RecentEntry[]) => {
+    try {
+      window.localStorage.setItem(RECENTS_KEY, JSON.stringify(next));
+    } catch {
+      // quota / private mode — ignore
+    }
+  };
+
+  const recordRecent = (entry: Omit<RecentEntry, "openedAt">) => {
+    setRecents((prev) => {
+      const filtered = prev.filter((r) => r.url !== entry.url);
+      const next = [{ ...entry, openedAt: Date.now() }, ...filtered].slice(0, RECENTS_MAX);
+      persistRecents(next);
+      return next;
+    });
+  };
+
+  const removeRecent = (url: string) => {
+    setRecents((prev) => {
+      const next = prev.filter((r) => r.url !== url);
+      persistRecents(next);
+      return next;
+    });
+  };
+
+  const clearRecents = () => {
+    setRecents([]);
+    persistRecents([]);
+  };
+
+  const formatRelative = (ts: number): string => {
+    const diff = Date.now() - ts;
+    const sec = Math.max(1, Math.round(diff / 1000));
+    if (sec < 60) return "przed chwilą";
+    const min = Math.round(sec / 60);
+    if (min < 60) return `${min} min temu`;
+    const hr = Math.round(min / 60);
+    if (hr < 24) return `${hr} godz. temu`;
+    const day = Math.round(hr / 24);
+    if (day < 7) return `${day} dn. temu`;
+    try {
+      return new Date(ts).toLocaleDateString("pl-PL", {
+        day: "numeric",
+        month: "short",
+      });
+    } catch {
+      return `${day} dn. temu`;
+    }
+  };
+
+
   // Stan pobierania bibliografii PDF (z determinate progress)
   type DownloadStatus = "idle" | "downloading" | "success" | "error";
   const [dlStatus, setDlStatus] = useState<DownloadStatus>("idle");
