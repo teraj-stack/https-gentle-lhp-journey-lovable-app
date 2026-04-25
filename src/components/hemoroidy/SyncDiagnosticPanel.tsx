@@ -158,6 +158,12 @@ const SyncDiagnosticPanel = ({
    * nie awaria) — ale jeśli pojawi się w historii, dalej jest liczona w „Razem".
    */
   const [activeFilters, setActiveFilters] = useState<Set<DegradationCause>>(new Set());
+  /**
+   * Osobny flag „Skopiowano" dla przycisku ostatniej degradacji — niezależny od
+   * `copied` przy raporcie głównym, żeby oba przyciski mogły mieć własny stan
+   * potwierdzenia bez kolizji wizualnej.
+   */
+  const [degradationCopied, setDegradationCopied] = useState(false);
 
   /** Liczniki per kategoria — zliczamy z pełnej historii, niezależnie od filtra. */
   const counts = useMemo(() => {
@@ -244,6 +250,44 @@ const SyncDiagnosticPanel = ({
         title: "Nie udało się skopiować raportu",
         description:
           "Sprawdź uprawnienia do schowka. Możesz zrobić zrzut ekranu sekcji diagnostycznej.",
+        duration: 3500,
+      });
+    }
+  };
+
+  /**
+   * Kopiuje OSTATNIĄ degradację BC w czytelnym, „human-readable" formacie
+   * (nie JSON — chcemy żeby pacjent/support mógł od razu odczytać treść w mailu).
+   * Zawiera: kategorię, opis, surowy errorMessage (jeśli był), pełny timestamp ISO
+   * + lokalny czas, oraz transport aktywny w momencie incydentu.
+   */
+  const handleCopyDegradation = async () => {
+    if (!degradationInfo) return;
+    const isoAt = new Date(degradationInfo.at).toISOString();
+    const localAt = new Date(degradationInfo.at).toLocaleString("pl-PL");
+    const lines = [
+      "=== Degradacja BroadcastChannel ===",
+      `Cause:        ${degradationInfo.cause} (${DEGRADATION_LABELS[degradationInfo.cause] ?? "—"})`,
+      `Detail:       ${degradationInfo.detail}`,
+      `Error msg:    ${degradationInfo.errorMessage ?? "(brak)"}`,
+      `Timestamp:    ${isoAt}`,
+      `Lokalnie:     ${localAt}`,
+      `Transport:    ${transport}${simulateFallback ? " (symulacja)" : ""}`,
+      `Karta:        ${tabLabel}`,
+    ];
+    try {
+      await navigator.clipboard.writeText(lines.join("\n"));
+      setDegradationCopied(true);
+      toast({
+        title: "Skopiowano ostatnią degradację",
+        description: "Wklej w zgłoszeniu — format tekstowy, czytelny od razu.",
+        duration: 2400,
+      });
+      setTimeout(() => setDegradationCopied(false), 2000);
+    } catch {
+      toast({
+        title: "Nie udało się skopiować",
+        description: "Brak uprawnień do schowka. Zrób zrzut ekranu sekcji.",
         duration: 3500,
       });
     }
@@ -403,9 +447,30 @@ const SyncDiagnosticPanel = ({
               {degradationInfo.errorMessage}
             </p>
           )}
-          <p className="mt-1.5 text-[10px] text-muted-foreground/60">
-            Wykryto: {formatRelative(degradationInfo.at)}
-          </p>
+          <div className="mt-1.5 flex items-center justify-between gap-2 flex-wrap">
+            <p className="text-[10px] text-muted-foreground/60">
+              Wykryto: {formatRelative(degradationInfo.at)}
+            </p>
+            <button
+              type="button"
+              onClick={handleCopyDegradation}
+              className="inline-flex items-center gap-1 text-[10px] font-sans px-1.5 py-0.5 rounded-md border border-amber-500/40 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 transition-colors focus:outline-none focus:ring-1 focus:ring-amber-400/60"
+              aria-label="Skopiuj szczegóły ostatniej degradacji BroadcastChannel do schowka"
+              title="Kopiuje cause, detail, errorMessage i timestamp w czytelnym formacie tekstowym"
+            >
+              {degradationCopied ? (
+                <>
+                  <ClipboardCheck className="w-3 h-3" aria-hidden="true" />
+                  Skopiowano
+                </>
+              ) : (
+                <>
+                  <Copy className="w-3 h-3" aria-hidden="true" />
+                  Kopiuj degradację
+                </>
+              )}
+            </button>
+          </div>
         </div>
       )}
 
