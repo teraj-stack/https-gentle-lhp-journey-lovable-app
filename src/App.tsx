@@ -173,6 +173,7 @@ const App = () => (
             <Route path="/reminder-opt-out" element={<ReminderOptOut />} />
             <Route path="/booking-action" element={<BookingAction />} />
             <Route path="/dev/tooltip-preview" element={<DevTooltipPreview />} />
+            <Route path="/dev/i18n-contract" element={<DevI18nContract />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
