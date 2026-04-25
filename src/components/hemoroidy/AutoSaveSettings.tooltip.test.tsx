@@ -116,7 +116,7 @@ describe("AutoSaveSettings — tooltip „Ostatnia zmiana” wybiera nagłówek 
     vi.useRealTimers();
   });
 
-  it("dla source='remote' aria-label i title zawierają „Synchronizacja między kartami”, () => {
+  it("dla source='remote' aria-label i title zawierają „Synchronizacja między kartami”", () => {
     mockLastChangeSource = "remote";
     mockLastChangeAt = FROZEN_NOW;
 
