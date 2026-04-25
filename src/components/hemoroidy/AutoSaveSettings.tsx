@@ -569,16 +569,12 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
                     <p className="text-[11px] text-muted-foreground leading-snug">
                       {tooltipContent.description}
                     </p>
-                    {tooltipTimeValue.length > 0 && (
+                    {tooltipModel.shouldRenderTimeLine && (
                       <p
                         className="text-[10px] text-muted-foreground/80 font-mono"
-                        title={
-                          smoothFullDate.length > 0
-                            ? undefined
-                            : "Pełna data niedostępna — pokazujemy etykietę względną."
-                        }
+                        title={tooltipModel.timeLineHelpTitle}
                       >
-                        {tooltipTimeValue}
+                        {tooltipModel.timeValue}
                       </p>
                     )}
                   </div>
