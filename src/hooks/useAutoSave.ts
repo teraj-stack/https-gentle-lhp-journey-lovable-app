@@ -893,5 +893,17 @@ export const useAutoSave = () => {
      * Nie wpływa na stan przełącznika ani transport — jest czysto prezentacyjne.
      */
     clearSyncHistory,
+    /**
+     * Źródło ostatniej zmiany przełącznika: `"remote"` (sync z innej karty/instancji),
+     * `"local"` (ręczna edycja w tej karcie) lub `null` (od mount nic się nie wydarzyło).
+     * UI używa tego do warunkowego stylowania etykiety „Ostatnia zmiana" — zielony
+     * akcent rezerwujemy WYŁĄCZNIE dla `"remote"`, żeby nie wprowadzać w błąd.
+     */
+    lastChangeSource,
+    /**
+     * Timestamp ostatniej zmiany (lokalnej LUB zdalnej). Niezależny od `lastRemoteSyncAt`,
+     * który celowo trzyma tylko zdalne timestampy (do animacji pulsu i historii).
+     */
+    lastChangeAt,
   };
 };
