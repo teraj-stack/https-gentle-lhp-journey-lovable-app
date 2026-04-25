@@ -439,6 +439,33 @@ const RiskFactorsAccordion = () => {
                       ))}
                     </ul>
                   </div>
+                  <div className="mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                    <p className="text-[11.5px] sm:text-xs text-muted-foreground">
+                      {isSelected
+                        ? "Ten czynnik trafił do Twojej checklisty na dole."
+                        : "Dotyczy Cię? Dodaj do swojej krótkiej checklisty ryzyka."}
+                    </p>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={isSelected ? "default" : "outline"}
+                      onClick={() => toggleSelected(rf.id)}
+                      className="gap-2 self-start sm:self-auto"
+                      aria-pressed={isSelected}
+                    >
+                      {isSelected ? (
+                        <>
+                          <BookmarkCheck className="w-3.5 h-3.5" />
+                          Zapisane — kliknij, aby usunąć
+                        </>
+                      ) : (
+                        <>
+                          <Bookmark className="w-3.5 h-3.5" />
+                          Zapisz moje ryzyko
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 </AccordionContent>
               </AccordionItem>
             );
