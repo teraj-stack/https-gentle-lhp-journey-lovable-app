@@ -832,7 +832,7 @@ describe("i18n — obsługa języków PL/EN w tooltipie Ostatnia zmiana", () => 
       [undefined],
       [""],
       ["fr"],
-      ["de-DE"],
+      ["es-ES"],
       ["xx-YY"],
       [123 as unknown as string],
       [{} as unknown as string],
@@ -841,7 +841,7 @@ describe("i18n — obsługa języków PL/EN w tooltipie Ostatnia zmiana", () => 
     });
 
     it("SUPPORTED_LOCALES eksportuje dokładnie obsługiwane języki", () => {
-      expect([...SUPPORTED_LOCALES].sort()).toEqual(["en", "pl"]);
+      expect([...SUPPORTED_LOCALES].sort()).toEqual(["de", "en", "it", "pl"]);
     });
   });
 
@@ -852,6 +852,18 @@ describe("i18n — obsługa języków PL/EN w tooltipie Ostatnia zmiana", () => 
 
     it("EN → 'Time: ' (z dokładnie jedną spacją końcową)", () => {
       expect(getTimeLinePrefix("en")).toBe("Time: ");
+    });
+
+    it("DE → 'Zeit: '", () => {
+      expect(getTimeLinePrefix("de")).toBe("Zeit: ");
+      expect(getTimeLinePrefix("de-DE")).toBe("Zeit: ");
+      expect(getTimeLinePrefix("de-AT")).toBe("Zeit: ");
+    });
+
+    it("IT → 'Ora: '", () => {
+      expect(getTimeLinePrefix("it")).toBe("Ora: ");
+      expect(getTimeLinePrefix("it-IT")).toBe("Ora: ");
+      expect(getTimeLinePrefix("it-CH")).toBe("Ora: ");
     });
 
     it("default (bez argumentu) → PL (kompatybilność wsteczna)", () => {
@@ -866,7 +878,7 @@ describe("i18n — obsługa języków PL/EN w tooltipie Ostatnia zmiana", () => 
 
     it("nieznany język → fallback PL ('Czas: ')", () => {
       expect(getTimeLinePrefix("fr")).toBe("Czas: ");
-      expect(getTimeLinePrefix("de-DE")).toBe("Czas: ");
+      expect(getTimeLinePrefix("es-ES")).toBe("Czas: ");
     });
   });
 
