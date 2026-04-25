@@ -481,21 +481,30 @@ export const composeTimeLine = (
 export const buildLastChangeTooltipModel = (
   input: LastChangeTooltipModelInput,
 ): LastChangeTooltipModel => {
+  // KROK 1: Walidacja defensywna. NIGDY nie ufamy konsumentowi — nawet jeśli
+  // typy TS mówią inaczej, dane mogą przyjść z hooka po regresji, z localStorage,
+  // z eventu BroadcastChannel z innej karty/zakładki w innej wersji aplikacji,
+  // albo z testu E2E ze złym mockiem. Walidator gwarantuje, że dalej pracujemy
+  // wyłącznie na bezpiecznych, zwalidowanych wartościach. Issues są tu
+  // zignorowane (UI musi pozostać stabilny) — kto chce je zobaczyć, woła
+  // `validateLastChangeTooltipInput` osobno.
+  const { value: validated } = validateLastChangeTooltipInput(input);
+
   // Resolved locale jest STOSOWANY JEDNOLICIE: te same tłumaczenia trafiają
   // do `content` (heading/description/ariaHeading), prefiksu linii czasu,
   // sufiksu fallbacku i `timeLineHelpTitle`. Niemożliwe jest, żeby kanały
   // się rozjechały na warstwie języka (np. PL prefiks „Czas:" + EN nagłówek).
   const resolvedLocale = resolveLocale(
-    typeof input.locale === "string" ? input.locale : "pl",
+    typeof validated.locale === "string" ? validated.locale : "pl",
   );
-  const content = getLastChangeTooltipContent(input.source, resolvedLocale);
+  const content = getLastChangeTooltipContent(validated.source, resolvedLocale);
   const tStrings = TIME_LINE_TRANSLATIONS[resolvedLocale];
 
   // Tryb formatowania jest STOSOWANY RAZ do wartości WIDOCZNEJ — oba kanały
   // wizualne (TooltipContent i timeLineForView) czytają to samo `timeValue`.
-  const format: TimeValueFormat = input.format ?? "single-space";
-  const smoothFull = smoothTimeValue(input.fullDate, format);
-  const smoothRelative = smoothTimeValue(input.relativeLabel, format);
+  const format: TimeValueFormat = validated.format;
+  const smoothFull = smoothTimeValue(validated.fullDate, format);
+  const smoothRelative = smoothTimeValue(validated.relativeLabel, format);
 
   // Wybór wartości czasu: full preferowane, relative jako fallback.
   // Gdy oba są puste — `timeValue` zostaje "" i blokuje renderowanie linii.
