@@ -331,4 +331,150 @@ describe("buildLastChangeTooltipModel — pełny model tooltipa", () => {
       expect(model.content.heading).toBe("Lokalna akcja w tej karcie");
     });
   });
+
+  /**
+   * Kontrakt obronny: konsumenci helpera (formattery dat, hooki realtime,
+   * stare odczyty z localStorage) MOGĄ przekazać `lastSyncFullDate`
+   * lub `lastSyncLabel` jako:
+   *   - null / undefined           (brak danych — sytuacja typowa po freshu),
+   *   - "" / "   " / "\n\t"        (pusty fallback z formatera),
+   *   - liczba / boolean / obiekt  (bug w upstream serializacji JSON),
+   *   - NaN / Infinity             (pomyłka z `new Date(x).getTime()`),
+   *   - tablica / funkcja / Symbol (pomyłka typowa z dynamicznym propem).
+   *
+   * Helper MUSI w każdym z tych przypadków:
+   *   1. NIE rzucić wyjątku (smoothTimeValue zwraca "" dla non-string),
+   *   2. NIE zrenderować linii „Czas:" (shouldRenderTimeLine === false,
+   *      timeLineForView === null, timeLineForA11y === null),
+   *   3. NIE zostawić pustej trzeciej linii w ariaText (pozostaje 2 linie:
+   *      Źródło + opis),
+   *   4. NIE wystawić timeLineHelpTitle (undefined — nie ma czego tłumaczyć).
+   *
+   * Bez tej obrony screen reader przeczytałby „Czas:" jako osierocony
+   * prefiks, a JSX wyrenderowałby pusty `<span>` w widocznym tooltipie.
+   */
+  describe("bezpieczny fallback: lastSyncFullDate/lastSyncLabel jako null/undefined/non-string", () => {
+    /**
+     * Kompaktowa asercja kontraktu „pusty fallback bez Czas:".
+     * Wyciągnięta, żeby każdy `it.each` case był jednolinijkowy
+     * i regresja od razu pokazała, KTÓRY input zepsuł kontrakt.
+     */
+    const expectSafeEmptyFallback = (
+      model: ReturnType<typeof buildLastChangeTooltipModel>,
+    ) => {
+      expect(model.timeValue).toBe("");
+      expect(model.shouldRenderTimeLine).toBe(false);
+      expect(model.timeLineForView).toBeNull();
+      expect(model.timeLineForA11y).toBeNull();
+      expect(model.timeLineHelpTitle).toBeUndefined();
+      expect(model.isRelativeFallback).toBe(false);
+      expect(model.ariaText).not.toContain("Czas:");
+      // Dokładnie 2 linie: nagłówek źródła + opis. Brak osieroconej linii czasu.
+      expect(model.ariaText.split("\n")).toHaveLength(2);
+      // Żaden artefakt JSON.stringify (np. „[object Object]") nie wycieka.
+      expect(model.ariaText).not.toMatch(/\[object\s+\w+\]/i);
+      expect(model.ariaText).not.toMatch(/\bNaN\b|\bInfinity\b|\bundefined\b|\bnull\b/);
+    };
+
+    it.each([
+      ["null + null", null, null],
+      ["undefined + undefined", undefined, undefined],
+      ["null + undefined", null, undefined],
+      ["undefined + null", undefined, null],
+      ['"" + ""', "", ""],
+      ['"   " + "\\n\\t"', "   ", "\n\t"],
+      ["null + ''", null, ""],
+      ["undefined + '   '", undefined, "   "],
+    ])(
+      "%s: tooltip pokazuje pusty fallback bez „Czas:”",
+      (_label, fullDate, relativeLabel) => {
+        const model = buildLastChangeTooltipModel({
+          source: "local",
+          fullDate: fullDate as string | null | undefined,
+          relativeLabel: relativeLabel as string | null | undefined,
+        });
+        expectSafeEmptyFallback(model);
+        // Sanity: treść źródła wciąż się buduje (komponent musi pokazać heading/desc).
+        expect(model.content.heading).toBe("Lokalna akcja w tej karcie");
+      },
+    );
+
+    it.each([
+      ["number 0", 0, 0],
+      ["number 1700000000000 (timestamp ms)", 1_700_000_000_000, 1_700_000_000_000],
+      ["NaN", Number.NaN, Number.NaN],
+      ["Infinity", Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY],
+      ["boolean true/false", true, false],
+      ["obiekt Date (przekazany surowo zamiast .toLocaleString())", new Date("2026-04-25"), new Date()],
+      ["plain object", { iso: "2026-04-25" }, { label: "5 min temu" }],
+      ["tablica", ["2026", "04", "25"], ["5", "min"]],
+      ["funkcja", () => "2026-04-25", () => "5 min temu"],
+    ])(
+      "%s: non-string upstream → pusty fallback bez „Czas:” i bez wyjątku",
+      (_label, fullDate, relativeLabel) => {
+        const model = buildLastChangeTooltipModel({
+          source: "remote",
+          fullDate: fullDate as unknown as string,
+          relativeLabel: relativeLabel as unknown as string,
+        });
+        expectSafeEmptyFallback(model);
+        // Sanity dla source='remote' — heading musi się przełączyć mimo śmieciowego inputu.
+        expect(model.content.heading).toBe("Synchronizacja między kartami");
+      },
+    );
+
+    it("Symbol jako wejście NIE crashuje (Symbol→string konwersja jest illegal w JS)", () => {
+      // Symbol w template stringu rzuciłby TypeError; smoothTimeValue robi
+      // strict typeof === 'string', więc Symbol nigdy nie dociera do interpolacji.
+      const sym = Symbol("dirty");
+      expect(() =>
+        buildLastChangeTooltipModel({
+          source: "local",
+          fullDate: sym as unknown as string,
+          relativeLabel: sym as unknown as string,
+        }),
+      ).not.toThrow();
+
+      const model = buildLastChangeTooltipModel({
+        source: "local",
+        fullDate: sym as unknown as string,
+        relativeLabel: sym as unknown as string,
+      });
+      expectSafeEmptyFallback(model);
+    });
+
+    it("mieszane: non-string fullDate + valid relativeLabel → fallback na relative (z kwalifikatorem)", () => {
+      // Asymetryczny case: upstream rozsypał tylko jedno pole. Helper MUSI
+      // wyciągnąć drugie i zaznaczyć w a11y, że to przybliżenie.
+      const model = buildLastChangeTooltipModel({
+        source: "local",
+        fullDate: 12345 as unknown as string,
+        relativeLabel: "2 minuty temu",
+      });
+
+      expect(model.timeValue).toBe("2 minuty temu");
+      expect(model.isRelativeFallback).toBe(true);
+      expect(model.shouldRenderTimeLine).toBe(true);
+      expect(model.timeLineForView).toBe("Czas: 2 minuty temu");
+      expect(model.timeLineForA11y).toBe("Czas: 2 minuty temu (etykieta względna)");
+      expect(model.timeLineHelpTitle).toBeTruthy();
+      expect(model.ariaText).toContain("Czas: 2 minuty temu (etykieta względna)");
+    });
+
+    it("mieszane: valid fullDate + non-string relativeLabel → używa fullDate (bez kwalifikatora)", () => {
+      // Symetryczna obrona: zaśmiecony relativeLabel nie może popsuć ścieżki
+      // głównej, gdy fullDate jest poprawne.
+      const model = buildLastChangeTooltipModel({
+        source: "remote",
+        fullDate: "24 kwietnia 2026, 12:34:56",
+        relativeLabel: { broken: true } as unknown as string,
+      });
+
+      expect(model.timeValue).toBe("24 kwietnia 2026, 12:34:56");
+      expect(model.isRelativeFallback).toBe(false);
+      expect(model.timeLineForView).toBe("Czas: 24 kwietnia 2026, 12:34:56");
+      expect(model.timeLineForA11y).toBe("Czas: 24 kwietnia 2026, 12:34:56");
+      expect(model.timeLineHelpTitle).toBeUndefined();
+    });
+  });
 });
