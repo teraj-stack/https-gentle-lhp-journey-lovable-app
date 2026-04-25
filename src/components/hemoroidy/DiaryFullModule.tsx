@@ -325,8 +325,14 @@ const DiaryFullModule = ({
         transition={{ duration: 0.6, ease: easeOut }}
         className="mb-6"
       >
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="font-heading text-lg text-foreground">Wybierz dzień</h3>
+        <div className="flex items-start justify-between gap-3 mb-3 flex-wrap">
+          <div>
+            <h3 className="font-heading text-lg text-foreground">Wybierz dzień</h3>
+            <p className="text-xs text-muted-foreground mt-0.5 inline-flex items-center gap-1.5">
+              <Pencil className="w-3 h-3 text-primary" />
+              Możesz edytować dowolny z 14 dni — kliknij datę, aby otworzyć i poprawić wpis.
+            </p>
+          </div>
           <div className="flex items-center gap-1">
             <Button variant="ghost" size="icon" onClick={goPrev} aria-label="Poprzedni dzień">
               <ChevronLeft className="w-4 h-4" />
@@ -338,14 +344,19 @@ const DiaryFullModule = ({
         </div>
         <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1 snap-x">
           {days.map((d) => {
+            const stored = entries[d];
             const e = getEntry(d);
             const active = d === activeDate;
             const dot = e.complete && e.level ? RISK_DOT_BG[e.level] : "bg-muted";
+            const updatedTip = stored?.updatedAt
+              ? `Ostatnia aktualizacja: ${formatUpdatedAt(stored.updatedAt)}`
+              : "Brak wpisu — kliknij, aby dodać";
             return (
               <button
                 key={d}
                 type="button"
                 onClick={() => setActiveDate(d)}
+                title={updatedTip}
                 className={`shrink-0 snap-start w-14 sm:w-16 rounded-xl border px-2 py-2.5 transition-all text-center ${
                   active
                     ? "border-primary bg-primary/10"
@@ -366,6 +377,11 @@ const DiaryFullModule = ({
                   className={`inline-block mt-1 w-2 h-2 rounded-full ${dot}`}
                   aria-hidden="true"
                 />
+                {stored?.updatedAt && (
+                  <span className="block mt-1 text-[9px] text-muted-foreground/80 font-sans leading-none">
+                    {formatUpdatedAtCompact(stored.updatedAt).replace(/^(dziś|wczoraj)\s/, "")}
+                  </span>
+                )}
               </button>
             );
           })}
