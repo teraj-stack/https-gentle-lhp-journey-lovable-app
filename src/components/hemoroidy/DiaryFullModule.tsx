@@ -192,6 +192,68 @@ const DiaryFullModule = ({
     [entry.answers],
   );
 
+  /**
+   * Auto-zapis edytora dnia (heartbeat 30 s).
+   *
+   * Kontekst: `setAnswer` / `setNotes` w `useDailyDiary` już piszą do localStorage natychmiast
+   * (per kliknięcie/keystroke), więc dane są stale bezpieczne. Tutaj utrzymujemy
+   * **user-facing checkpoint** — co 30 s aktualizujemy `lastAutosaveAt` *tylko jeśli*
+   * `entry.updatedAt` zmienił się od ostatniego heartbeatu (czyli pacjent COŚ edytował).
+   * Dzięki temu pod CTA „Zapisz dzień" pokazujemy autentyczne „Auto-zapis: X temu"
+   * zamiast pseudo-licznika tykającego bez powodu.
+   *
+   * `pendingChanges` = od ostatniego heartbeatu są nowe edycje (UI: „Niezapisane zmiany…").
+   */
+  const [lastAutosaveAt, setLastAutosaveAt] = useState<string | null>(
+    () => (typeof entry.updatedAt === "string" ? entry.updatedAt : null),
+  );
+  const lastSeenUpdatedAtRef = useRef<string | null>(entry.updatedAt ?? null);
+  const [nowTick, setNowTick] = useState<number>(() => Date.now());
+
+  // Reset checkpointa przy zmianie aktywnego dnia (przełączenie w stripie).
+  useEffect(() => {
+    lastSeenUpdatedAtRef.current = entry.updatedAt ?? null;
+    setLastAutosaveAt(entry.updatedAt ?? null);
+    // celowo bez `entry.updatedAt` — chcemy reagować TYLKO na zmianę dnia
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeDate]);
+
+  // Heartbeat 30 s: jeśli `updatedAt` zmienił się od poprzedniego sprawdzenia → checkpoint.
+  // Drugi setInterval (1 s) odświeża relatywny licznik „X temu" pod CTA.
+  useEffect(() => {
+    const heartbeat = window.setInterval(() => {
+      const current = entry.updatedAt ?? null;
+      if (current && current !== lastSeenUpdatedAtRef.current) {
+        lastSeenUpdatedAtRef.current = current;
+        setLastAutosaveAt(current);
+      }
+    }, 30_000);
+    const ticker = window.setInterval(() => setNowTick(Date.now()), 1_000);
+    return () => {
+      window.clearInterval(heartbeat);
+      window.clearInterval(ticker);
+    };
+  }, [entry.updatedAt]);
+
+  const pendingChanges =
+    !!entry.updatedAt &&
+    entry.updatedAt !== lastAutosaveAt;
+
+  /** Relatywny licznik „X temu" względem `lastAutosaveAt`. nowTick zapewnia odświeżanie co 1 s. */
+  const lastAutosaveRelative = useMemo(() => {
+    if (!lastAutosaveAt) return null;
+    const diffMs = nowTick - new Date(lastAutosaveAt).getTime();
+    if (Number.isNaN(diffMs) || diffMs < 0) return null;
+    const sec = Math.floor(diffMs / 1000);
+    if (sec < 5) return "przed chwilą";
+    if (sec < 60) return `${sec} s temu`;
+    const min = Math.floor(sec / 60);
+    if (min < 60) return `${min} min temu`;
+    const hr = Math.floor(min / 60);
+    if (hr < 24) return `${hr} godz. temu`;
+    return formatUpdatedAt(lastAutosaveAt);
+  }, [lastAutosaveAt, nowTick]);
+
   const handleSaveDay = () => {
     // Walidacja: wymaga kompletu 9/9 odpowiedzi przed potwierdzeniem dnia.
     // Auto-zapis postępu działa cały czas (setAnswer/setNotes), ale „Zapisz dzień"
@@ -209,6 +271,11 @@ const DiaryFullModule = ({
             : `Brakuje ${missingCount} ${missingCount === 1 ? "odpowiedzi" : "odpowiedzi"} (pytanie ${preview}${more}). Komplet ${total}/${total} jest wymagany do zatwierdzenia dnia.`,
       });
       return;
+    }
+    // Manualne potwierdzenie też domyka heartbeat → checkpoint = teraz.
+    if (entry.updatedAt) {
+      lastSeenUpdatedAtRef.current = entry.updatedAt;
+      setLastAutosaveAt(entry.updatedAt);
     }
     toast({
       title: "Zapisano dzień ✓",
