@@ -330,7 +330,24 @@ const RiskFactorsAccordion = () => {
   const nQuery = normalize(query.trim());
 
   // Otwarte sekcje (tryb ręczny — gdy nie ma aktywnego wyszukiwania)
-  const [openItems, setOpenItems] = useState<string[]>([]);
+  // Persystencja w localStorage: pamiętamy stan rozwinięcia między sesjami.
+  const [openItems, setOpenItems] = useState<string[]>(() => {
+    const stored = loadStringArray(OPEN_ITEMS_STORAGE_KEY);
+    const validIds = new Set(RISK_FACTORS.map((rf) => rf.id));
+    return stored.filter((id) => validIds.has(id));
+  });
+
+  // Autosave: zapisuj zmiany openItems do localStorage (TYLKO gdy nie aktywne wyszukiwanie,
+  // bo `accordionValue` przechodzi wtedy w tryb auto-rozwinięcia dopasowań — to nie jest wybór użytkownika).
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (nQuery) return;
+    try {
+      window.localStorage.setItem(OPEN_ITEMS_STORAGE_KEY, JSON.stringify(openItems));
+    } catch {
+      /* noop */
+    }
+  }, [openItems, nQuery]);
 
   // Wybrane czynniki — persystencja w localStorage (anonimowo)
   const [selected, setSelected] = useState<string[]>(() => loadStringArray(STORAGE_KEY));
