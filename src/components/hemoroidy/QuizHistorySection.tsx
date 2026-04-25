@@ -10,6 +10,7 @@ import {
   Tooltip,
   ResponsiveContainer,
   ReferenceLine,
+  ReferenceArea,
 } from "recharts";
 import {
   History,
@@ -214,76 +215,185 @@ const QuizHistorySection = () => {
         </div>
       </div>
 
-      {/* Chart */}
-      {history.length >= 2 && (
-        <div className="mb-6">
-          <p className="text-xs font-sans uppercase tracking-[0.18em] text-muted-foreground mb-3">
-            Trend punktów · niżej = mniejsze ryzyko
-          </p>
-          <div className="h-48 sm:h-56 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <XAxis
-                  dataKey="shortDate"
-                  stroke="hsl(var(--muted-foreground))"
-                  fontSize={11}
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <YAxis
-                  domain={[0, maxScore]}
-                  stroke="hsl(var(--muted-foreground))"
-                  fontSize={11}
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "hsl(var(--background))",
-                    border: "1px solid hsl(var(--border))",
-                    borderRadius: 8,
-                    fontSize: 12,
-                  }}
-                  formatter={(value: number) => [`${value} pkt`, "Wynik"]}
-                  labelStyle={{ color: "hsl(var(--foreground))" }}
-                />
-                <ReferenceLine
-                  y={lowThreshold}
-                  stroke="hsl(var(--muted-foreground))"
-                  strokeDasharray="3 3"
-                  strokeOpacity={0.4}
-                  label={{
-                    value: "niskie",
-                    position: "right",
-                    fill: "hsl(var(--muted-foreground))",
-                    fontSize: 10,
-                  }}
-                />
-                <ReferenceLine
-                  y={mediumThreshold}
-                  stroke="hsl(var(--muted-foreground))"
-                  strokeDasharray="3 3"
-                  strokeOpacity={0.4}
-                  label={{
-                    value: "średnie",
-                    position: "right",
-                    fill: "hsl(var(--muted-foreground))",
-                    fontSize: 10,
-                  }}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="score"
-                  stroke="hsl(var(--primary))"
-                  strokeWidth={2.5}
-                  dot={{ r: 4, fill: "hsl(var(--primary))" }}
-                  activeDot={{ r: 6 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
+      {/* Chart — risk zones, baseline, level-colored dots */}
+      {history.length >= 2 && (() => {
+        const baseline = history[0];
+        const levelDotFill: Record<QuizHistoryEntry["level"], string> = {
+          low: "hsl(var(--primary))",
+          medium: "hsl(var(--primary))",
+          high: "hsl(var(--destructive))",
+        };
+        const levelLabel: Record<QuizHistoryEntry["level"], string> = {
+          low: "Niskie",
+          medium: "Średnie",
+          high: "Wysokie",
+        };
+        return (
+          <div className="mb-6">
+            <p className="text-xs font-sans uppercase tracking-[0.18em] text-muted-foreground mb-3">
+              Trend punktów i ryzyka · niżej = mniejsze ryzyko
+            </p>
+            <div className="h-56 sm:h-64 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={chartData} margin={{ top: 10, right: 12, left: -20, bottom: 0 }}>
+                  {/* Risk zones — colored bands behind the line */}
+                  <ReferenceArea
+                    y1={0}
+                    y2={lowThreshold}
+                    fill="hsl(var(--primary))"
+                    fillOpacity={0.04}
+                    stroke="none"
+                  />
+                  <ReferenceArea
+                    y1={lowThreshold}
+                    y2={mediumThreshold}
+                    fill="hsl(var(--primary))"
+                    fillOpacity={0.08}
+                    stroke="none"
+                  />
+                  <ReferenceArea
+                    y1={mediumThreshold}
+                    y2={maxScore}
+                    fill="hsl(var(--destructive))"
+                    fillOpacity={0.08}
+                    stroke="none"
+                  />
+
+                  <XAxis
+                    dataKey="shortDate"
+                    stroke="hsl(var(--muted-foreground))"
+                    fontSize={11}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <YAxis
+                    domain={[0, maxScore]}
+                    stroke="hsl(var(--muted-foreground))"
+                    fontSize={11}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "hsl(var(--background))",
+                      border: "1px solid hsl(var(--border))",
+                      borderRadius: 8,
+                      fontSize: 12,
+                    }}
+                    formatter={(value: number, _name, item) => {
+                      const lvl = (item?.payload as ChartPoint | undefined)?.level;
+                      return [
+                        `${value} pkt${lvl ? ` · ${levelLabel[lvl]}` : ""}`,
+                        "Wynik",
+                      ];
+                    }}
+                    labelStyle={{ color: "hsl(var(--foreground))" }}
+                  />
+
+                  {/* Threshold lines (Low/Medium/High boundaries) */}
+                  <ReferenceLine
+                    y={lowThreshold}
+                    stroke="hsl(var(--muted-foreground))"
+                    strokeDasharray="3 3"
+                    strokeOpacity={0.5}
+                    label={{
+                      value: `Low ≤ ${lowThreshold}`,
+                      position: "insideTopRight",
+                      fill: "hsl(var(--muted-foreground))",
+                      fontSize: 10,
+                    }}
+                  />
+                  <ReferenceLine
+                    y={mediumThreshold}
+                    stroke="hsl(var(--muted-foreground))"
+                    strokeDasharray="3 3"
+                    strokeOpacity={0.5}
+                    label={{
+                      value: `Medium ≤ ${mediumThreshold}`,
+                      position: "insideTopRight",
+                      fill: "hsl(var(--muted-foreground))",
+                      fontSize: 10,
+                    }}
+                  />
+
+                  {/* Baseline — first ever quiz score */}
+                  {baseline && (
+                    <ReferenceLine
+                      y={baseline.score}
+                      stroke="hsl(var(--primary))"
+                      strokeDasharray="6 4"
+                      strokeOpacity={0.7}
+                      label={{
+                        value: `Start: ${baseline.score} pkt`,
+                        position: "insideBottomLeft",
+                        fill: "hsl(var(--primary))",
+                        fontSize: 10,
+                      }}
+                    />
+                  )}
+
+                  <Line
+                    type="monotone"
+                    dataKey="score"
+                    stroke="hsl(var(--primary))"
+                    strokeWidth={2.5}
+                    dot={(props: {
+                      cx?: number;
+                      cy?: number;
+                      payload?: ChartPoint;
+                      index?: number;
+                    }) => {
+                      const { cx, cy, payload, index } = props;
+                      if (cx == null || cy == null || !payload) {
+                        return <g key={`dot-${index ?? "x"}`} />;
+                      }
+                      const fill = levelDotFill[payload.level];
+                      const isBaseline = index === 0;
+                      return (
+                        <g key={`dot-${index ?? payload.date}`}>
+                          {isBaseline && (
+                            <circle
+                              cx={cx}
+                              cy={cy}
+                              r={8}
+                              fill="none"
+                              stroke="hsl(var(--primary))"
+                              strokeOpacity={0.5}
+                              strokeWidth={1.5}
+                            />
+                          )}
+                          <circle cx={cx} cy={cy} r={4} fill={fill} />
+                        </g>
+                      );
+                    }}
+                    activeDot={{ r: 6 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* Legend */}
+            <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-[11px] text-muted-foreground">
+              <span className="inline-flex items-center gap-1.5">
+                <span className="w-3 h-3 rounded-sm bg-primary/10 border border-primary/20" />
+                Strefa Low / Medium
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <span className="w-3 h-3 rounded-sm bg-destructive/10 border border-destructive/30" />
+                Strefa High
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <span className="w-4 h-px bg-primary" style={{ borderTop: "1px dashed hsl(var(--primary))" }} />
+                Wynik początkowy ({baseline?.score ?? 0} pkt)
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-destructive" />
+                Punkt w strefie wysokiego ryzyka
+              </span>
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Recent entries list */}
       <div>
