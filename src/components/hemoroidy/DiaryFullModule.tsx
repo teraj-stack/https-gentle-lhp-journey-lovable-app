@@ -680,6 +680,31 @@ const DiaryFullModule = ({
               );
             })}
           </div>
+          {/* Skok do pierwszego brakującego pytania — szybka nawigacja klawiaturą i myszką */}
+          {missingQuestionNumbers.length > 0 && (
+            <div className="mt-3 flex justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const firstMissing = missingQuestionNumbers[0]; // 1-indexed
+                  const qi = firstMissing - 1;
+                  const el = document.getElementById(`diary-q-${activeDate}-${qi}`);
+                  if (el) {
+                    el.scrollIntoView({ behavior: "smooth", block: "center" });
+                    const firstOpt = el.querySelector<HTMLButtonElement>("button[type='button']");
+                    firstOpt?.focus({ preventScroll: true });
+                  }
+                }}
+                aria-label={`Przejdź do pierwszego brakującego pytania — pytanie ${missingQuestionNumbers[0]}`}
+                className="h-8 text-xs border-primary/40 text-primary hover:bg-primary/10 hover:text-primary"
+              >
+                <ArrowDownToLine className="w-3.5 h-3.5 mr-1.5" />
+                Przejdź do pyt. {missingQuestionNumbers[0]}
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* Questions */}
