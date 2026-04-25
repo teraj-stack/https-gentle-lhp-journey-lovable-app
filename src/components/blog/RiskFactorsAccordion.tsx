@@ -1018,15 +1018,6 @@ const RiskFactorsAccordion = () => {
           </div>
         </DialogContent>
       </Dialog>
-    </>
-  );
-};
-
-const RiskFactorsAccordionSection = () => {
-  return (
-    <RiskFactorsAccordionInner />
-  );
-};
 
       <RiskVsPreventionTable />
     </motion.section>
