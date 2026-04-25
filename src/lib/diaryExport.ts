@@ -858,3 +858,91 @@ export const exportSingleDayPdf = (entry: DiaryEntry): void => {
 
   doc.save(`cml-dziennik-hemoroidy-${entry.date}.pdf`);
 };
+
+/* ---------- Import pojedynczego dnia (JSON) ---------- */
+
+export type ImportedDayPayload = {
+  /** YYYY-MM-DD (z pliku JSON; może wymagać potwierdzenia, jeśli ≠ aktywnego dnia) */
+  date: string;
+  /** Surowe odpowiedzi (indeksy opcji) — dopasowane długością do aktualnego quizu (9 pytań) */
+  answers: (number | null)[];
+  notes: string;
+};
+
+export type ImportResult =
+  | { ok: true; payload: ImportedDayPayload }
+  | { ok: false; message: string };
+
+/**
+ * Parsuje plik JSON z eksportu pojedynczego dnia (`cml.hemoroidy.diary.day.v1`).
+ * Tolerancyjny: jeśli plik ma więcej/mniej pytań niż aktualny quiz, dopasowuje długość
+ * (uzupełnia null, ucina nadmiar). Walidacja odrzuca tylko strukturalnie nieprawidłowe pliki.
+ */
+export const parseImportedDayJson = (rawText: string): ImportResult => {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(rawText);
+  } catch {
+    return { ok: false, message: "Plik nie jest prawidłowym JSON-em." };
+  }
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+    return { ok: false, message: "Plik nie zawiera obiektu z danymi dnia." };
+  }
+  const obj = parsed as Record<string, unknown>;
+
+  // Schema check (miękki — akceptujemy też pliki bez pola `schema`, byle miały date+answers).
+  if (typeof obj.schema === "string" && !obj.schema.startsWith("cml.hemoroidy.diary.day")) {
+    return {
+      ok: false,
+      message: "Ten plik pochodzi z innego eksportu. Wybierz plik JSON z dziennika hemoroidów.",
+    };
+  }
+
+  const date = typeof obj.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(obj.date) ? obj.date : null;
+  if (!date) {
+    return { ok: false, message: "Brak prawidłowej daty (YYYY-MM-DD) w pliku." };
+  }
+
+  // Odpowiedzi mogą być w dwóch formatach:
+  //  • tablica obiektów `{ selectedOptionIndex: number|null }` (nasz eksport)
+  //  • tablica liczb / nulli (uproszczony format)
+  let answers: (number | null)[] = [];
+  if (Array.isArray(obj.answers)) {
+    answers = obj.answers.map((a) => {
+      if (a === null || a === undefined) return null;
+      if (typeof a === "number" && Number.isFinite(a) && a >= 0 && a <= 10) return a;
+      if (typeof a === "object") {
+        const v = (a as Record<string, unknown>).selectedOptionIndex;
+        if (typeof v === "number" && Number.isFinite(v) && v >= 0 && v <= 10) return v;
+        if (v === null) return null;
+      }
+      return null;
+    });
+  }
+
+  // Dopasuj długość do liczby pytań w aktualnym quizie.
+  const total = HEMOROIDY_QUESTIONS.length;
+  if (answers.length < total) {
+    answers = [...answers, ...Array(total - answers.length).fill(null)];
+  } else if (answers.length > total) {
+    answers = answers.slice(0, total);
+  }
+
+  // Walidacja: każdy indeks musi mieścić się w options danego pytania (inaczej null).
+  answers = answers.map((idx, i) => {
+    if (idx === null) return null;
+    const opts = HEMOROIDY_QUESTIONS[i]?.options;
+    if (!opts || idx < 0 || idx >= opts.length) return null;
+    return idx;
+  });
+
+  const hasAnything = answers.some((a) => a !== null) || (typeof obj.notes === "string" && obj.notes.trim().length > 0);
+  if (!hasAnything) {
+    return { ok: false, message: "Plik nie zawiera żadnych odpowiedzi ani notatek do zaimportowania." };
+  }
+
+  const notes = typeof obj.notes === "string" ? obj.notes.slice(0, 1000) : "";
+
+  return { ok: true, payload: { date, answers, notes } };
+};
+

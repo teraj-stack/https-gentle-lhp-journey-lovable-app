@@ -23,6 +23,7 @@ import {
   Clock,
   AlertCircle,
   ArrowDownToLine,
+  Upload,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -56,6 +57,8 @@ import {
   exportDiaryPdf,
   exportSingleDayJson,
   exportSingleDayPdf,
+  parseImportedDayJson,
+  type ImportedDayPayload,
 } from "@/lib/diaryExport";
 import DiaryReminderBanner from "@/components/hemoroidy/DiaryReminderBanner";
 import DiaryReminderSettings from "@/components/hemoroidy/DiaryReminderSettings";
@@ -471,6 +474,87 @@ const DiaryFullModule = ({
     }
   };
 
+  /**
+   * Import wpisu z pliku JSON (eksport pojedynczego dnia, schema `cml.hemoroidy.diary.day.v1`).
+   * Plik jest parsowany w przeglądarce — dane nie są nigdzie wysyłane.
+   *
+   * Flow:
+   *  1. Klik „Importuj" → hidden `<input type="file">` otwiera picker
+   *  2. Po wyborze pliku: walidacja przez `parseImportedDayJson`
+   *  3. Jeśli plik ma datę różną od `activeDate` LUB wpis na docelowy dzień już istnieje
+   *     z jakąkolwiek treścią → pokaż AlertDialog z potwierdzeniem
+   *  4. Po potwierdzeniu: nadpisz odpowiedzi (per pytanie) + notatki, przełącz na dzień z pliku
+   */
+  const importFileRef = useRef<HTMLInputElement | null>(null);
+  const [pendingImport, setPendingImport] = useState<ImportedDayPayload | null>(null);
+
+  const applyImport = (payload: ImportedDayPayload) => {
+    // Najpierw notatki (jeśli są), potem każda odpowiedź — wszystko trafia do localStorage
+    // przez te same wrappery co normalna edycja, więc trend/wykres aktualizują się natychmiast.
+    if (payload.notes) {
+      setNotes(payload.date, payload.notes);
+    }
+    let firstError: string | null = null;
+    payload.answers.forEach((a, qi) => {
+      const result = setAnswer(payload.date, qi, a);
+      if (result.ok === false && !firstError) firstError = result.message;
+    });
+    if (firstError) {
+      toast({
+        variant: "destructive",
+        title: "Import nie powiódł się w pełni",
+        description: firstError,
+        duration: 6000,
+      });
+      return;
+    }
+    if (payload.date !== activeDate) {
+      // Przełącz strip na dzień z pliku, by pacjent od razu zobaczył efekt importu.
+      setActiveDate(payload.date);
+    }
+    const filledCount = payload.answers.filter((a) => a !== null).length;
+    toast({
+      title: "Wpis zaimportowany ✓",
+      description: `Dzień ${formatLongDate(payload.date)} — ${filledCount}/${HEMOROIDY_QUESTIONS.length} odpowiedzi${payload.notes ? " + notatki" : ""}.`,
+    });
+    setAnswerAnnouncement(`Zaimportowano wpis z dnia ${formatLongDate(payload.date)}.`);
+  };
+
+  const handleImportFile = (file: File) => {
+    const reader = new FileReader();
+    reader.onerror = () => {
+      toast({
+        variant: "destructive",
+        title: "Nie udało się odczytać pliku",
+        description: "Spróbuj ponownie lub wybierz inny plik JSON.",
+      });
+    };
+    reader.onload = () => {
+      const text = typeof reader.result === "string" ? reader.result : "";
+      const result = parseImportedDayJson(text);
+      if (result.ok === false) {
+        toast({
+          variant: "destructive",
+          title: "Nieprawidłowy plik",
+          description: result.message,
+          duration: 6000,
+        });
+        return;
+      }
+      // Czy nadpisujemy istniejący wpis lub zmieniamy aktywny dzień?
+      const targetExisting = entries[result.payload.date];
+      const targetHasContent =
+        !!targetExisting &&
+        (targetExisting.answers.some((a) => a !== null) || !!targetExisting.notes?.trim());
+      if (targetHasContent || result.payload.date !== activeDate) {
+        setPendingImport(result.payload);
+      } else {
+        applyImport(result.payload);
+      }
+    };
+    reader.readAsText(file);
+  };
+
   const goPrev = () => {
     const i = days.indexOf(activeDate);
     if (i > 0) setActiveDate(days[i - 1]);
@@ -767,38 +851,107 @@ const DiaryFullModule = ({
           </div>
         </div>
 
-        {/* Pasek eksportu pojedynczego dnia — JSON (archiwum / re-import) lub PDF
-            (do druku / na konsultację). Aktywny gdy dzień ma jakąkolwiek treść. */}
-        {dayHasContent && (
-          <div className="mb-5 rounded-xl border border-primary/25 bg-primary/[0.04] px-3 py-2.5 flex flex-wrap items-center gap-2">
-            <div className="flex items-center gap-1.5 text-[11px] uppercase tracking-[0.14em] text-primary font-sans mr-auto">
-              <FileDown className="w-3.5 h-3.5" aria-hidden="true" />
-              Eksport tego dnia
-            </div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={handleExportDayPdf}
-              className="h-8 text-xs border-primary/40 text-primary hover:bg-primary/10 hover:text-primary"
-              aria-label={`Pobierz wpis z dnia ${formatLongDate(activeDate)} jako PDF`}
-            >
-              <FileDown className="w-3.5 h-3.5 mr-1.5" />
-              PDF
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={handleExportDayJson}
-              className="h-8 text-xs border-primary/40 text-primary hover:bg-primary/10 hover:text-primary"
-              aria-label={`Pobierz wpis z dnia ${formatLongDate(activeDate)} jako JSON`}
-            >
-              <FileJson className="w-3.5 h-3.5 mr-1.5" />
-              JSON
-            </Button>
+        {/* Pasek eksportu/importu pojedynczego dnia — JSON (archiwum / re-import na innym
+            urządzeniu) lub PDF (do druku / na konsultację). Eksport aktywny tylko gdy dzień
+            ma treść; Import zawsze dostępny (przywracanie z innego urządzenia). */}
+        <div className="mb-5 rounded-xl border border-primary/25 bg-primary/[0.04] px-3 py-2.5 flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-1.5 text-[11px] uppercase tracking-[0.14em] text-primary font-sans mr-auto">
+            <FileDown className="w-3.5 h-3.5" aria-hidden="true" />
+            Eksport / import dnia
           </div>
-        )}
+          {dayHasContent && (
+            <>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleExportDayPdf}
+                className="h-8 text-xs border-primary/40 text-primary hover:bg-primary/10 hover:text-primary"
+                aria-label={`Pobierz wpis z dnia ${formatLongDate(activeDate)} jako PDF`}
+              >
+                <FileDown className="w-3.5 h-3.5 mr-1.5" />
+                PDF
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleExportDayJson}
+                className="h-8 text-xs border-primary/40 text-primary hover:bg-primary/10 hover:text-primary"
+                aria-label={`Pobierz wpis z dnia ${formatLongDate(activeDate)} jako JSON`}
+              >
+                <FileJson className="w-3.5 h-3.5 mr-1.5" />
+                JSON
+              </Button>
+            </>
+          )}
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => importFileRef.current?.click()}
+            className="h-8 text-xs border-primary/40 text-primary hover:bg-primary/10 hover:text-primary"
+            aria-label="Importuj wpis dziennika z pliku JSON"
+          >
+            <Upload className="w-3.5 h-3.5 mr-1.5" />
+            Importuj JSON
+          </Button>
+          {/* Hidden input — wywoływany przez przycisk powyżej. Po wyborze pliku resetujemy
+              `value`, by wybranie tego samego pliku ponownie znowu wyzwoliło `onChange`. */}
+          <input
+            ref={importFileRef}
+            type="file"
+            accept="application/json,.json"
+            className="sr-only"
+            tabIndex={-1}
+            aria-hidden="true"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) handleImportFile(file);
+              e.target.value = "";
+            }}
+          />
+        </div>
+
+        {/* Dialog potwierdzający import gdy nadpisujemy istniejący wpis lub zmieniamy aktywny
+            dzień — chroni przed przypadkową utratą danych. */}
+        <AlertDialog open={!!pendingImport} onOpenChange={(open) => !open && setPendingImport(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Zaimportować wpis z pliku?</AlertDialogTitle>
+              <AlertDialogDescription>
+                {pendingImport && (
+                  <>
+                    Plik zawiera wpis z dnia <strong>{formatLongDate(pendingImport.date)}</strong>{" "}
+                    ({pendingImport.answers.filter((a) => a !== null).length}/
+                    {HEMOROIDY_QUESTIONS.length} odpowiedzi
+                    {pendingImport.notes ? " + notatki" : ""}).
+                    {entries[pendingImport.date] &&
+                      (entries[pendingImport.date].answers.some((a) => a !== null) ||
+                        !!entries[pendingImport.date].notes?.trim()) && (
+                        <>
+                          {" "}<strong>Istniejący wpis na ten dzień zostanie nadpisany</strong> —
+                          tej operacji nie można cofnąć.
+                        </>
+                      )}
+                  </>
+                )}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Anuluj</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => {
+                  if (pendingImport) applyImport(pendingImport);
+                  setPendingImport(null);
+                }}
+              >
+                Tak, zaimportuj
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
 
         {/* Progress */}
         <div className="mb-6">
