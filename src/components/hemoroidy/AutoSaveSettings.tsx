@@ -502,6 +502,10 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
               source: lastChangeSource,
               fullDate: lastSyncFullDate,
               relativeLabel: lastSyncLabel,
+              // Auto-detekcja języka z `navigator.language` (np. „pl-PL", „en-US").
+              // Helper `resolveLocale` wytnie primary subtag i fallbackuje do „pl"
+              // dla nieznanych języków — bezpieczny default dla naszej kliniki.
+              locale: typeof navigator !== "undefined" ? navigator.language : "pl",
             });
             const { content: tooltipContent, ariaText: tooltipText } = tooltipModel;
             return (
