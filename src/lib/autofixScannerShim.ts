@@ -37,6 +37,12 @@ export interface KeyDiff {
   removed: string[];
 }
 
+export interface TranslationBuckets {
+  top: ReadonlyArray<string>;
+  variant: ReadonlyArray<string>;
+  variantOptional: ReadonlyArray<string>;
+}
+
 interface AutofixScannerExports {
   collectDotMemberReads: (source: string, alias: string) => Set<string>;
   collectBracketLiteralReads: (source: string, alias: string) => Set<string>;
@@ -60,6 +66,8 @@ interface AutofixScannerExports {
     current: ReadonlyArray<string>,
     next: ReadonlyArray<string>,
   ) => KeyDiff;
+  renderRequiredTranslationKeys: (buckets: TranslationBuckets) => string;
+  renderRequiredTimeLineKeys: (keys: ReadonlyArray<string>) => string;
 }
 
 const typed = raw as unknown as AutofixScannerExports;
@@ -74,4 +82,6 @@ export const {
   parseCurrentTranslationKeys,
   parseCurrentTimeLineKeys,
   diffKeys,
+  renderRequiredTranslationKeys,
+  renderRequiredTimeLineKeys,
 } = typed;
