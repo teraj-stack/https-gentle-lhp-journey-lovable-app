@@ -416,6 +416,7 @@ const RiskFactorsAccordion = () => {
         </div>
       ) : (
         <Accordion
+          id="risk-factors-list"
           type="multiple"
           className="space-y-3 sm:space-y-2.5"
           value={accordionValue}
