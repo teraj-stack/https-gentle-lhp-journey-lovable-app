@@ -873,6 +873,17 @@ const RiskFactorsAccordion = () => {
               <p className="text-[11.5px] sm:text-xs text-muted-foreground mt-0.5">
                 Zapisywane lokalnie w przeglądarce (anonimowo). {selectedFactors.length} z {RISK_FACTORS.length} zaznaczonych.
               </p>
+              {selectedAt && selectedFactors.length > 0 && (
+                <p className="text-[11px] sm:text-[11.5px] text-primary/80 mt-1 inline-flex items-center gap-1.5 font-sans">
+                  <CalendarClock className="w-3 h-3 sm:w-3.5 sm:h-3.5" aria-hidden="true" />
+                  <span>
+                    Data zaznaczenia:{" "}
+                    <time dateTime={selectedAt} className="font-medium text-foreground">
+                      {formatSelectedAt(selectedAt)}
+                    </time>
+                  </span>
+                </p>
+              )}
             </div>
           </div>
           {selectedFactors.length > 0 && (
