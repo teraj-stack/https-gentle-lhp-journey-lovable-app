@@ -139,7 +139,7 @@ const DEGRADATION_GUIDANCE: Record<
     meaning:
       "Tryb diagnostyczny wymuszony ręcznie — BC został celowo wyłączony, żeby zobaczyć zachowanie fallbacku storage. To NIE jest awaria.",
     steps: [
-      "Wyłącz przełącznik „Symuluj fallback" w ustawieniach diagnostycznych, żeby wrócić do BC.",
+      "Wyłącz przełącznik „Symuluj fallback” w ustawieniach diagnostycznych, żeby wrócić do BC.",
     ],
   },
 };
