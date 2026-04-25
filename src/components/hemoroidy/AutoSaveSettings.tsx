@@ -38,6 +38,7 @@ import {
   type LastChangeVisibility,
 } from "@/hooks/useLastChangeVisibility";
 import { getLastChangeLabelStyle } from "@/lib/lastChangeLabelStyle";
+import { getLastChangeTooltipContent } from "@/lib/lastChangeTooltipContent";
 
 /**
  * Etykiety segmented control dla wyboru widoczności „Ostatniej zmiany".
@@ -446,15 +447,14 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
             // („Synchronizacja…" vs „Lokalna akcja…"), opis kontekstu, pełna data.
             // Dzięki temu nawet bez kolorów (screen reader, high-contrast mode)
             // widać, skąd przyszła zmiana. To samo idzie do `aria-label`.
-            const sourceHeading = isRemoteChange
-              ? "Źródło: Synchronizacja między kartami"
-              : "Źródło: Moja lokalna akcja w tej karcie";
-            const sourceDescription = isRemoteChange
-              ? "Zmiana auto-zapisu przyszła z innej otwartej karty (BroadcastChannel lub storage)."
-              : "Sam(a) przełączyłe(a)ś auto-zapis w tej karcie (Switch lub skrót Alt+Shift+A).";
+            //
+            // Nagłówek + opis pochodzą z pure helpera `getLastChangeTooltipContent`,
+            // dzięki czemu logika wyboru wariantu jest pokryta testami jednostkowymi
+            // bez konieczności renderowania całego komponentu z Radix Tooltip.
+            const tooltipContent = getLastChangeTooltipContent(lastChangeSource);
             const tooltipText = [
-              sourceHeading,
-              sourceDescription,
+              tooltipContent.ariaHeading,
+              tooltipContent.description,
               lastSyncFullDate ? `Czas: ${lastSyncFullDate}` : null,
             ]
               .filter(Boolean)
@@ -512,12 +512,10 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
                         isRemoteChange ? "text-emerald-400" : "text-foreground"
                       }`}
                     >
-                      {isRemoteChange
-                        ? "Synchronizacja między kartami"
-                        : "Lokalna akcja w tej karcie"}
+                      {tooltipContent.heading}
                     </p>
                     <p className="text-[11px] text-muted-foreground leading-snug">
-                      {sourceDescription}
+                      {tooltipContent.description}
                     </p>
                     {lastSyncFullDate && (
                       <p className="text-[10px] text-muted-foreground/80 font-mono">
