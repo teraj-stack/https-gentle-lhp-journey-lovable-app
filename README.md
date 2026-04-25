@@ -230,14 +230,14 @@ diff -u /tmp/i18n-baseline.txt /tmp/i18n-annotations.txt
 
 Copy-paste this into your terminal (or save as `scripts/i18n-summary.sh` and `chmod +x`). It runs the i18n contract tests, captures `::error` / `::warning` annotations, and prints a per-reason PASS/FAIL count plus an overall verdict. Exit code is `0` only when **every** selected error-severity reason has zero hits.
 
-**Filter mode (`--only <reason>`):** pass `--only <reason>` (or `-o <reason>`) to narrow execution to a single fixture error type. The script then:
+**Filter mode (`--only <reason>[,<reason>…]`):** pass `--only <reason>` (or `-o <reason>`) to narrow execution to one or more fixture error types. Multiple reasons can be combined with commas (e.g. `--only placeholder-mismatch,wrong-type`) — the script de-duplicates them, runs the **union** of their owning test files (skipping the rest), filters annotations to the chosen set, and prints one row per selected reason. The script then:
 
-1. Runs **only** the test file that owns that reason (skipping the other two — saves ~6s).
-2. Filters the annotations file to just that reason.
-3. Prints a one-row summary table for that reason.
-4. Returns exit code `0`/`1` based on that reason alone (warnings never fail).
+1. Runs **only** the test files that own the selected reasons (skipping the others — saves ~3-6s when narrowing).
+2. Filters the annotations file to just the selected reasons.
+3. Prints a multi-row summary table for the selected reasons.
+4. Returns exit code `0`/`1` based on the selected reasons (warnings never fail).
 
-Accepted values for `--only`: `missing-required-key`, `placeholder-mismatch`, `undeclared-key`, `wrong-type`, `empty-optional-value`. Use `--only all` (the default) to run the full suite.
+Accepted values for `--only`: `missing-required-key`, `placeholder-mismatch`, `undeclared-key`, `wrong-type`, `empty-optional-value` — singly or comma-joined. Use `--only all` (the default) to run the full suite.
 
 ```sh
 #!/usr/bin/env bash
