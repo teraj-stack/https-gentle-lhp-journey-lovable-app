@@ -170,6 +170,7 @@ describe("autofix scanner — categoriseHelperPath", () => {
   it("rejects deeper or unrecognised translation paths", () => {
     const r = categoriseHelperPath("local.foo.bar", "translations");
     expect(r.bucket).toBe("ignored");
+    if (r.bucket !== "ignored") throw new Error("narrowing failed");
     expect(r.reason).toMatch(/unrecognised/);
   });
 
