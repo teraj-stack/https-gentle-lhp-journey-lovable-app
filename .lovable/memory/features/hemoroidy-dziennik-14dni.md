@@ -8,12 +8,15 @@ Dziennik 14 dni hemoroidów: anonimowy tracker w przeglądarce.
 
 - **Reusable component**: `src/components/hemoroidy/DiaryFullModule.tsx`
   - Props: `reminderVariant` ("diary-page" | "quiz-page"), `showReminderSettings`, `showExport`
-  - Zawiera: trend chart + **panel statystyk trendu** (`DiaryTrendStats.tsx`: tydzień vs poprzedni z deltą i kolorystyką emerald/destructive, najlepszy/najtrudniejszy dzień, aktualna+rekordowa seria niskiego ryzyka, % spójności wypełnienia, dni z notatką, średnia 7d), day picker (14-dniowy strip), edytor dnia (quiz 9 pytań + notatki), **przycisk „Zapisz dzień"** (variant `hero`, ikona Save/CheckCircle2 zależnie od completeness, toast potwierdzający), opcjonalnie eksport PDF/CSV i ustawienia przypomnień + clear all
+  - Zawiera: trend chart + **panel statystyk trendu** (`DiaryTrendStats.tsx`) + **auto-podsumowanie tygodniowe** (`DiaryWeeklySummary.tsx`: Tydzień 1 = dni 1-7, Tydzień 2 = dni 8-14, średnia, dominujący poziom, rozkład N/Ś/W, delta + komentarz narracyjny EBM zależny od kierunku zmiany), day picker (14-dniowy strip), edytor dnia (quiz 9 pytań + notatki), **przycisk „Zapisz dzień"** (variant `hero`, ikona Save/CheckCircle2 zależnie od completeness, toast potwierdzający), opcjonalnie eksport PDF/CSV i ustawienia przypomnień + clear all
   - Auto-zapis po każdej zmianie (writeStorage), przycisk daje pacjentowi jawne potwierdzenie
-- **Statystyki trendu** (`src/components/hemoroidy/DiaryTrendStats.tsx`):
+- **Statystyki trendu** (`DiaryTrendStats.tsx`):
   - Tydzień vs poprzedni: średnia ostatnich 7d minus średnia poprzednich 7d → kolor emerald (poprawa) / destructive (regres) / muted (flat lub n/a)
   - Najdłuższa seria niskiego ryzyka: liczy consecutive `level==='low'`, luki (brak wpisu) NIE przerywają serii
   - Spójność: `filled/totalDays * 100%`
+- **Auto-podsumowanie tygodniowe** (`DiaryWeeklySummary.tsx`):
+  - Dwie karty Tydzień 1/Tydzień 2 (slice 0-7 / 7-14 z trend), każda kolorowana wg dominującego poziomu (low=emerald, medium=primary, high=destructive)
+  - Komentarz generowany przez `buildCommentary()` na podstawie delty: brak danych / start / poprawa (z wzrostem dni low) / stabilnie (|delta|<0.5) / regres (z dodatkowymi dniami high) — wszystkie z mikro-poradami EBM (błonnik 25-35g, woda 1.5-2l, max 3 min na toalecie)
 - **Strony**:
   - `/dla-pacjenta/dziennik-hemoroidy` → `DziennikHemoroidy.tsx` (pełna strona z hero + DiaryFullModule + related links)
   - `/dla-pacjenta/quiz-hemoroidy` → `QuizHemoroidy.tsx` osadza DiaryFullModule inline pod quizem (sekcja `#dziennik-14-dni`, bez ustawień przypomnień)
