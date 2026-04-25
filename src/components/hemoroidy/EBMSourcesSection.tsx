@@ -1408,6 +1408,157 @@ const EBMSourcesSection = ({
           </div>
         </div>
       </div>
+
+      {/* Tryb czytnika / streszczenie EBM — minimalistyczny, dystrakcyjnie czysty layout */}
+      <Dialog
+        open={readerEntry !== null}
+        onOpenChange={(open) => {
+          if (!open) setReaderEntry(null);
+        }}
+      >
+        <DialogContent className="max-w-2xl bg-background/95 backdrop-blur border-border max-h-[90vh] overflow-y-auto">
+          {readerEntry && (
+            <>
+              <DialogHeader className="pr-6">
+                <div className="flex flex-wrap items-center gap-2 mb-3">
+                  <span className="inline-flex items-center gap-1 rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-[10px] font-sans uppercase tracking-[0.12em] text-primary">
+                    <BookOpen className="w-3 h-3" aria-hidden="true" />
+                    Tryb czytnika · streszczenie EBM
+                  </span>
+                  <span className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground/80">
+                    {readerEntry.categoryTitle}
+                  </span>
+                </div>
+                <DialogTitle className="font-heading text-xl md:text-2xl text-foreground leading-snug">
+                  {readerEntry.src.title}
+                </DialogTitle>
+                <DialogDescription className="text-sm text-muted-foreground mt-2">
+                  <span className="font-medium text-foreground/90">
+                    {readerEntry.src.authors}
+                  </span>{" "}
+                  ({readerEntry.src.year}) ·{" "}
+                  <em className="not-italic">{readerEntry.src.journal}</em>
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="mt-2 space-y-5">
+                <div className="flex flex-wrap gap-2">
+                  <span className="inline-flex items-center gap-1 rounded-full border border-primary/30 bg-primary/5 px-2.5 py-1 text-[11px] font-sans uppercase tracking-[0.08em] text-primary">
+                    {STUDY_TYPE_LABEL[readerEntry.studyType]}
+                  </span>
+                  <span
+                    className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-sans uppercase tracking-[0.08em] ${linkKindClasses[readerEntry.linkMeta.kind]}`}
+                  >
+                    {readerEntry.linkMeta.label}
+                  </span>
+                </div>
+
+                {readerEntry.categoryTldr && (
+                  <section
+                    aria-labelledby="reader-tldr-heading"
+                    className="rounded-lg border border-primary/25 bg-primary/5 p-4"
+                  >
+                    <h4
+                      id="reader-tldr-heading"
+                      className="text-[11px] font-sans uppercase tracking-[0.14em] text-primary mb-2"
+                    >
+                      TL;DR · ASCRS / ESCP
+                    </h4>
+                    <p className="text-sm md:text-base leading-relaxed text-foreground/90 font-serif">
+                      {readerEntry.categoryTldr}
+                    </p>
+                  </section>
+                )}
+
+                <section aria-labelledby="reader-context-heading">
+                  <h4
+                    id="reader-context-heading"
+                    className="text-[11px] font-sans uppercase tracking-[0.14em] text-muted-foreground mb-2"
+                  >
+                    Kontekst tematu
+                  </h4>
+                  <p className="text-sm leading-relaxed text-foreground/85">
+                    {readerEntry.categoryIntro}
+                  </p>
+                </section>
+
+                <section
+                  aria-labelledby="reader-takeaway-heading"
+                  className="rounded-lg border border-border bg-muted/20 p-4"
+                >
+                  <h4
+                    id="reader-takeaway-heading"
+                    className="text-[11px] font-sans uppercase tracking-[0.14em] text-foreground mb-2 flex items-center gap-1.5"
+                  >
+                    <Info className="w-3.5 h-3.5 text-primary" aria-hidden="true" />
+                    Co to znaczy dla Ciebie?
+                  </h4>
+                  <p className="text-sm leading-relaxed text-foreground/85">
+                    To źródło wspiera zalecenia widoczne w sekcji{" "}
+                    <span className="font-medium text-foreground">
+                      „{readerEntry.categoryTitle}"
+                    </span>{" "}
+                    Twojego wyniku quizu. Streszczenie to tylko skrót dla pacjenta — pełny tekst
+                    artykułu wymaga znajomości metodologii. W razie wątpliwości skonsultuj się z
+                    lekarzem.
+                  </p>
+                </section>
+
+                <div className="flex flex-col sm:flex-row gap-2 pt-2">
+                  <Button
+                    asChild
+                    variant="hero"
+                    className="w-full sm:w-auto"
+                    onClick={() => {
+                      const m = readerEntry.linkMeta;
+                      trackEbmClick({
+                        url: readerEntry.src.url,
+                        label: readerEntry.src.title,
+                        source: "EBMSourcesSection",
+                        kind: "external_source",
+                        ebmId: readerEntry.categoryId,
+                      });
+                      recordRecent({
+                        url: readerEntry.src.url,
+                        title: readerEntry.src.title,
+                        journal: readerEntry.src.journal,
+                        authors: readerEntry.src.authors,
+                        year: readerEntry.src.year,
+                        categoryId: readerEntry.categoryId,
+                        categoryTitle: readerEntry.categoryTitle,
+                        linkLabel: m.label,
+                        linkKind: m.kind,
+                      });
+                    }}
+                  >
+                    <a
+                      href={readerEntry.src.url}
+                      target="_blank"
+                      rel="noopener noreferrer nofollow external"
+                      referrerPolicy="no-referrer"
+                    >
+                      <ExternalLink className="w-4 h-4 mr-2" aria-hidden="true" />
+                      Otwórz pełny artykuł ({readerEntry.linkMeta.label})
+                    </a>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setReaderEntry(null)}
+                    className="w-full sm:w-auto"
+                  >
+                    Zamknij streszczenie
+                  </Button>
+                </div>
+
+                <p className="text-[11px] text-muted-foreground/70 leading-relaxed pt-1">
+                  Streszczenie nie zastępuje konsultacji lekarskiej. Materiał edukacyjny oparty na
+                  wytycznych ASCRS i ESCP.
+                </p>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </section>
   );
 };
