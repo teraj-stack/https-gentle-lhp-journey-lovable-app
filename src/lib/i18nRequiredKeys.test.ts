@@ -342,7 +342,9 @@ describe("i18n required keys — TRANSLATIONS map covers REQUIRED_TRANSLATION_KE
     const violations: Violation[] = [];
     const raw = __getRawTranslationsForTesting();
 
-    for (const locale of SUPPORTED_LOCALES) {
+    // ACTIVE_LOCALES, not SUPPORTED_LOCALES: in active-locales test mode,
+    // skip per-key validation for locales that are not yet shipped.
+    for (const locale of ACTIVE_LOCALES) {
       const entry = raw[locale];
       checkTopLevelTranslation(locale, entry, violations);
       checkVariantEntry(locale, "local", entry?.local, violations);
