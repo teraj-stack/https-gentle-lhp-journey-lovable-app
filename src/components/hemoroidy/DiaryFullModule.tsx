@@ -1513,6 +1513,14 @@ const DiaryFullModule = ({
           >
             <NotebookPen className="w-4 h-4 text-primary" />
             Notatki dnia (opcjonalnie)
+            {!autoSaveEnabled && draftNotes[activeDate] !== undefined && (
+              <span
+                className="text-[10px] uppercase tracking-[0.14em] font-sans px-1.5 py-0.5 rounded-md border border-primary/40 bg-primary/10 text-primary"
+                aria-label="Niezapisana zmiana w drafcie"
+              >
+                Draft
+              </span>
+            )}
           </label>
           <Textarea
             id={`diary-notes-${activeDate}`}
