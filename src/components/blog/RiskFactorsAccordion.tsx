@@ -375,6 +375,38 @@ const RiskFactorsAccordion = () => {
         </p>
       </div>
 
+      {/* Pasek akcji: Zwiń / Rozwiń wszystko (ukryty podczas wyszukiwania, które samo rozwija dopasowania) */}
+      {!nQuery && filtered.length > 0 && (
+        <div className="mb-3 flex items-center justify-between gap-2">
+          <span className="text-[11.5px] sm:text-xs text-muted-foreground">
+            {openItems.length === 0
+              ? "Wszystkie sekcje zwinięte"
+              : `Rozwinięte: ${openItems.length} z ${RISK_FACTORS.length}`}
+          </span>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={toggleAll}
+            className="gap-2"
+            aria-expanded={allExpanded}
+            aria-controls="risk-factors-list"
+          >
+            {allExpanded ? (
+              <>
+                <ChevronsDownUp className="w-3.5 h-3.5" />
+                Zwiń wszystko
+              </>
+            ) : (
+              <>
+                <ChevronsUpDown className="w-3.5 h-3.5" />
+                Rozwiń wszystko
+              </>
+            )}
+          </Button>
+        </div>
+      )}
+
       {filtered.length === 0 ? (
         <div className="rounded-xl border border-dashed border-border bg-background/30 px-5 py-8 text-center">
           <p className="text-sm text-muted-foreground">
