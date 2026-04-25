@@ -789,7 +789,7 @@ describe("buildLastChangeTooltipModel — pełny model tooltipa", () => {
  *     prefiks linii czasu, sufiks fallbacku, helpTitle, ariaHeading.
  *  5. Spójność: dla każdego locale ariaText nie miesza języków.
  */
-describe("i18n — obsługa języków PL/EN w tooltipie „Ostatnia zmiana"", () => {
+describe("i18n — obsługa języków PL/EN w tooltipie Ostatnia zmiana", () => {
   describe("resolveLocale", () => {
     it.each([
       ["pl", "pl"],
