@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Save,
   ShieldCheck,
@@ -151,6 +151,56 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
       duration: 2400,
     });
   };
+
+  /**
+   * Globalny skrót klawiaturowy do przełączenia auto-zapisu — przyspiesza testowanie
+   * synchronizacji między kartami: jedno naciśnięcie w karcie A natychmiast trzaska
+   * przełącznikiem i propaguje zmianę przez BroadcastChannel/storage do karty B.
+   *
+   * Wybrany kombo: **Alt+Shift+A** (A jak Auto-save).
+   *  - Nie koliduje z natywnymi skrótami przeglądarek (Ctrl/Cmd zarezerwowane dla
+   *    operacji systemowych, samo Alt+litera otwiera menu w niektórych desktopach).
+   *  - Działa cross-platform: na macOS odpowiada to ⌥⇧A.
+   *
+   * Skrót jest **wyłączony**, gdy fokus znajduje się w polu edycji tekstu
+   * (input/textarea/contenteditable/select), żeby nie przeszkadzać w pisaniu
+   * notatek diariusza ani w wyszukiwarce.
+   */
+  // Trzymamy aktualny `enabled` w refie, żeby handler odpalany przez window event
+  // widział świeżą wartość bez re-bindowania nasłuchu przy każdej zmianie state'u.
+  const enabledRef = useRef(enabled);
+  useEffect(() => {
+    enabledRef.current = enabled;
+  }, [enabled]);
+
+  const isEditableTarget = useCallback((target: EventTarget | null): boolean => {
+    if (!(target instanceof HTMLElement)) return false;
+    const tag = target.tagName;
+    if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return true;
+    if (target.isContentEditable) return true;
+    return false;
+  }, []);
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      // Sprawdzamy modyfikatory PRZED `key`, żeby nie alokować nic na zwykłych literach.
+      if (!e.altKey || !e.shiftKey || e.ctrlKey || e.metaKey) return;
+      // `e.code` używamy zamiast `e.key`, bo z Shift+Alt litera może mieć inny mapping
+      // (np. niektóre układy klawiatury produkują znak specjalny zamiast „A").
+      if (e.code !== "KeyA") return;
+      if (isEditableTarget(e.target)) return;
+      e.preventDefault();
+      const next = !enabledRef.current;
+      setEnabled(next);
+      toast({
+        title: `Skrót: auto-zapis ${next ? "ON" : "OFF"}`,
+        description: "Zmiana zostanie rozpropagowana do innych otwartych kart.",
+        duration: 2000,
+      });
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [isEditableTarget, setEnabled]);
 
   const handleSendPing = async () => {
     // Test działa zawsze — w trybie storage-fallback używamy round-tripu przez localStorage
