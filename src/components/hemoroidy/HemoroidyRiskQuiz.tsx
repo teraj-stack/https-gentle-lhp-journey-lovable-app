@@ -205,6 +205,7 @@ const HemoroidyRiskQuiz = () => {
   const [done, setDone] = useState(false);
   const { addEntry } = useQuizHistory();
   const { markQuizCompleted } = useDiaryReminders();
+  const { thresholds } = useRiskThresholds();
 
   const total = questions.length;
   const progress = done ? 100 : Math.round((step / total) * 100);
