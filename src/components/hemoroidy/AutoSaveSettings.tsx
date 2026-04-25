@@ -83,6 +83,7 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
     degradationInfo,
     simulateFallback,
     setSimulateFallback,
+    clearSyncHistory,
   } = useAutoSave();
 
   /**
