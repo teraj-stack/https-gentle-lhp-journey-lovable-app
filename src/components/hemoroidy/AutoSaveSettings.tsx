@@ -1,5 +1,6 @@
-import { Save, ShieldCheck, ShieldAlert } from "lucide-react";
+import { Save, ShieldCheck, ShieldAlert, CheckCircle2 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
+import { Button } from "@/components/ui/button";
 import { useAutoSave } from "@/hooks/useAutoSave";
 import { toast } from "@/hooks/use-toast";
 
@@ -9,6 +10,17 @@ interface AutoSaveSettingsProps {
    * Liczone w komponencie nadrzędnym (DiaryFullModule) — tu tylko prezentujemy.
    */
   pendingDraftCount?: number;
+  /**
+   * Callback wywoływany po kliknięciu „Zapisz dzień" w panelu (gdy auto-zapis OFF).
+   * Powinien zapisać draft aktywnej daty do storage'u — logika walidacji
+   * (np. wymóg kompletu odpowiedzi) leży po stronie nadrzędnego komponentu.
+   */
+  onSaveDay?: () => void;
+  /**
+   * Czytelna etykieta aktywnej daty (np. „środa, 23 kwietnia 2026") —
+   * wyświetlana w opisie przycisku, żeby pacjent wiedział, którego dnia dotyczy zapis.
+   */
+  activeDateLabel?: string;
 }
 
 /**
@@ -19,7 +31,7 @@ interface AutoSaveSettingsProps {
  * do tymczasowego draftu w pamięci komponentu — pacjent musi kliknąć „Zapisz dzień",
  * żeby przepisać je do storage'u (tę logikę implementuje DiaryFullModule).
  */
-const AutoSaveSettings = ({ pendingDraftCount = 0 }: AutoSaveSettingsProps) => {
+const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }: AutoSaveSettingsProps) => {
   const { enabled, setEnabled } = useAutoSave();
 
   const handleToggle = (next: boolean) => {
@@ -92,6 +104,40 @@ const AutoSaveSettings = ({ pendingDraftCount = 0 }: AutoSaveSettingsProps) => {
           aria-label="Przełącz auto-zapis odpowiedzi quizu"
         />
       </div>
+
+      {/* Inline „Zapisz dzień" — widoczny TYLKO gdy auto-zapis OFF i jest co zapisać.
+          Pozwala pacjentowi zatwierdzić draft bez przewijania do dołu modułu dziennika. */}
+      {!enabled && onSaveDay && pendingDraftCount > 0 && (
+        <div className="mt-4 pt-4 border-t border-border/60 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+            <span className="text-foreground font-medium">
+              {pendingDraftCount} niezapisan{pendingDraftCount === 1 ? "a zmiana" : "ych zmian"}
+            </span>
+            {activeDateLabel ? (
+              <>
+                {" "}dla dnia <span className="text-foreground font-medium">{activeDateLabel}</span>.
+              </>
+            ) : (
+              "."
+            )}{" "}
+            Zatwierdź wpis, aby trafił do trendu i historii.
+          </p>
+          <Button
+            type="button"
+            size="sm"
+            onClick={onSaveDay}
+            className="self-start sm:self-auto shrink-0"
+            aria-label={
+              activeDateLabel
+                ? `Zapisz draft dnia ${activeDateLabel}`
+                : "Zapisz draft aktywnego dnia"
+            }
+          >
+            <CheckCircle2 className="w-4 h-4 mr-2" aria-hidden="true" />
+            Zapisz dzień
+          </Button>
+        </div>
+      )}
     </div>
   );
 };
