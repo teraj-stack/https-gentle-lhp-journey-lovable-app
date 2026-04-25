@@ -108,3 +108,46 @@ describe("tooltipText (aria-label triggera) — sklejanie nagłówek+opis+czas",
     expect(text.split("\n").length).toBe(2);
   });
 });
+
+describe("spójność języka — wszystkie user-facing stringi używają „karta", nie „tab"", () => {
+  /**
+   * Reguła z `mem://design`: cały interfejs po polsku mówi „karta(y)", nigdy
+   * „tab(y)/tab-y/cross-tab/local-tab". Anglicyzmy zostawiamy WYŁĄCZNIE w
+   * komentarzach kodu i identyfikatorach technicznych. Test pilnuje, żeby
+   * helpery dostarczające copy do tooltipa, badge'a i aria-label nie
+   * wprowadziły regresji typu „local-tab"/„cross-tab".
+   */
+  const FORBIDDEN_PATTERNS: ReadonlyArray<RegExp> = [
+    /\btab\b/i, // pojedyncze słowo „tab"
+    /\btab-?[a-z]+/i, // local-tab, cross-tab, tabach itp.
+    /\bcross-tab\b/i,
+    /\bwithin-tab\b/i,
+  ];
+
+  const userFacingFields: Array<keyof ReturnType<typeof getLastChangeTooltipContent>> = [
+    "heading",
+    "ariaHeading",
+    "description",
+  ];
+
+  for (const source of ["remote", "local", null] as const) {
+    it(`source=${source ?? "null"}: żadne pole user-facing nie zawiera anglicyzmu „tab"`, () => {
+      const content = getLastChangeTooltipContent(source);
+      for (const field of userFacingFields) {
+        const value = content[field] as string;
+        for (const pattern of FORBIDDEN_PATTERNS) {
+          expect(
+            value,
+            `Pole „${field}" zawiera anglicyzm pasujący do ${pattern}: „${value}"`,
+          ).not.toMatch(pattern);
+        }
+        // Pozytywny check: skoro wspominamy o miejscu zmiany, MUSI pojawić się
+        // polskie słowo „kart" (kart/karta/karty/kartami/kartach).
+        expect(
+          value.toLowerCase(),
+          `Pole „${field}" powinno używać polskiego słowa „karta": „${value}"`,
+        ).toMatch(/\bkart/);
+      }
+    });
+  }
+});
