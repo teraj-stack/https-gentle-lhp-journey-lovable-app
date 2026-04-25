@@ -30,6 +30,7 @@ import {
   useLastChangeVisibility,
   type LastChangeVisibility,
 } from "@/hooks/useLastChangeVisibility";
+import { getLastChangeLabelStyle } from "@/lib/lastChangeLabelStyle";
 
 /**
  * Etykiety segmented control dla wyboru widoczności „Ostatniej zmiany".
@@ -324,6 +325,8 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
         })
       : undefined;
   const isRemoteChange = lastChangeSource === "remote";
+  // Pure helper sterujący kolorami etykiety — pokryty testami w lastChangeLabelStyle.test.ts.
+  const labelStyle = getLastChangeLabelStyle(lastChangeSource, isRemoteSyncing);
 
   return (
     <div
@@ -432,13 +435,7 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
           {lastSyncLabel && showLastChangeLabel && (
             <div
               key={lastChangeAt ?? "none"}
-              className={`text-[11px] font-sans inline-flex items-center gap-1.5 transition-colors animate-fade-in ${
-                isRemoteChange
-                  ? isRemoteSyncing
-                    ? "text-emerald-400"
-                    : "text-emerald-500/80"
-                  : "text-muted-foreground"
-              }`}
+              className={`text-[11px] font-sans inline-flex items-center gap-1.5 transition-colors animate-fade-in ${labelStyle.containerClass}`}
               title={`${
                 isRemoteChange
                   ? "Zmiana auto-zapisu wykryta przez synchronizację z inną kartą"
@@ -447,23 +444,15 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
               aria-live="polite"
             >
               <RefreshCw
-                className={`w-3 h-3 ${
-                  isRemoteChange
-                    ? isRemoteSyncing
-                      ? "animate-spin text-emerald-400"
-                      : "text-emerald-500/80"
-                    : "text-muted-foreground/70"
-                }`}
+                className={`w-3 h-3 ${labelStyle.iconClass}`}
                 aria-hidden="true"
               />
               <span>
                 Ostatnia zmiana:{" "}
-                <strong
-                  className={isRemoteChange ? "text-emerald-400" : "text-foreground"}
-                >
+                <strong className={labelStyle.strongClass}>
                   {lastSyncLabel}
                 </strong>
-                {!isRemoteChange && (
+                {labelStyle.showLocalSuffix && (
                   <span className="ml-1 text-[10px] text-muted-foreground/70 font-sans">
                     (lokalnie)
                   </span>
