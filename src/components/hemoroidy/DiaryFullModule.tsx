@@ -205,6 +205,27 @@ const DiaryFullModule = ({
   }, [activeDate]);
 
   /**
+   * „Mignięcie" badge'a Zapisano przy pytaniu po każdym kliknięciu odpowiedzi.
+   * Trzymamy timestamp ostatniego zapisu per pytanie (qi → ms), bo dzięki temu
+   * można równocześnie animować kilka pytań i resetować animację przy ponownym
+   * kliknięciu (key={timestamp}).
+   */
+  const [savedFlash, setSavedFlash] = useState<Record<number, number>>({});
+  const flashTimeoutRef = useRef<Record<number, ReturnType<typeof setTimeout>>>({});
+  useEffect(() => {
+    // Reset wszystkich flash przy zmianie aktywnego dnia (inny zestaw pytań).
+    Object.values(flashTimeoutRef.current).forEach((t) => clearTimeout(t));
+    flashTimeoutRef.current = {};
+    setSavedFlash({});
+  }, [activeDate]);
+  useEffect(() => {
+    // Cleanup przy unmount, by nie wywołać setState po unmount.
+    return () => {
+      Object.values(flashTimeoutRef.current).forEach((t) => clearTimeout(t));
+    };
+  }, []);
+
+  /**
    * Czyści wszystkie odpowiedzi quizu w aktywnym dniu (notatki zostają nietknięte).
    * Każda odpowiedź jest zerowana przez setAnswer(..., null), co od razu nadpisuje
    * localStorage przez hook useDailyDiary i emituje event "cml:diary-updated".
@@ -232,7 +253,36 @@ const DiaryFullModule = ({
   const handleAnswerSelect = (qi: number, oi: number) => {
     const wasAnswered = entry.answers[qi] !== null;
     const willBeAnswered = !wasAnswered; // toggle: jeśli było null → będzie wybrane
-    setAnswer(activeDate, qi, wasAnswered ? null : oi);
+    const result = setAnswer(activeDate, qi, wasAnswered ? null : oi);
+
+    // Niepowodzenie zapisu (quota / tryb prywatny / inny błąd) — pokaż błąd
+    // z konkretną instrukcją i NIE pokazuj badge'a "Zapisano" (mylące).
+    if (!result.ok) {
+      setAnswerAnnouncement(
+        `Błąd zapisu pytania ${qi + 1}: ${result.message}`,
+      );
+      toast({
+        variant: "destructive",
+        title: "Nie udało się zapisać odpowiedzi",
+        description: result.message,
+        duration: 6000,
+      });
+      return;
+    }
+
+    // Sukces: mignij badge'em "Zapisano" przy klikniętym pytaniu (1.5 s).
+    const stamp = Date.now();
+    setSavedFlash((prev) => ({ ...prev, [qi]: stamp }));
+    if (flashTimeoutRef.current[qi]) clearTimeout(flashTimeoutRef.current[qi]);
+    flashTimeoutRef.current[qi] = setTimeout(() => {
+      setSavedFlash((prev) => {
+        // Tylko skasuj jeśli wciąż ten sam timestamp (kolejny klik mógł go nadpisać).
+        if (prev[qi] !== stamp) return prev;
+        const next = { ...prev };
+        delete next[qi];
+        return next;
+      });
+    }, 1500);
 
     if (willBeAnswered) {
       const newCompleted = completed + 1;
