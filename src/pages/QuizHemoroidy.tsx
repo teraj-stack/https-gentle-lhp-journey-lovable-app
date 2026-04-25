@@ -11,6 +11,7 @@ import QuizHistorySection from "@/components/hemoroidy/QuizHistorySection";
 import HemoroidyChecklistSections from "@/components/hemoroidy/HemoroidyChecklistSections";
 import EBMSourcesSection from "@/components/hemoroidy/EBMSourcesSection";
 import RedFlagsFAQ from "@/components/hemoroidy/RedFlagsFAQ";
+import DiaryFullModule from "@/components/hemoroidy/DiaryFullModule";
 import { ClipboardList, Sparkles, BookOpen, Stethoscope, CalendarDays, ArrowRight } from "lucide-react";
 
 const easeOut = [0.16, 1, 0.3, 1] as const;
