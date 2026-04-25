@@ -13,11 +13,13 @@ import {
   Wifi,
   HardDrive,
   Layers,
+  Activity,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { useAutoSave } from "@/hooks/useAutoSave";
 import { toast } from "@/hooks/use-toast";
+import SyncDiagnosticPanel from "@/components/hemoroidy/SyncDiagnosticPanel";
 
 /**
  * Format „przed chwilą" / „X s temu" / „X min temu" / „X h temu" / pełna data.
@@ -689,6 +691,40 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
           </div>
         )}
       </div>
+
+      {/* Ekran diagnostyczny — pełny obraz transportu i historii synchronizacji.
+          Schowany w `<details>`, żeby nie dominował domyślnego widoku, a był jednym
+          kliknięciem od pacjenta/admina przy debugowaniu „dlaczego się nie synchronizuje". */}
+      <details className="mt-4 pt-4 border-t border-border/60 group">
+        <summary className="cursor-pointer list-none inline-flex items-center gap-2 text-xs sm:text-sm font-medium text-foreground hover:text-primary transition-colors">
+          <Activity className="w-3.5 h-3.5 text-primary" aria-hidden="true" />
+          <span>
+            Ekran diagnostyczny synchronizacji{" "}
+            <span
+              className={`text-[10px] px-1.5 py-0.5 rounded-md font-mono border ml-1 ${
+                transport === "broadcast" && !simulateFallback
+                  ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/40"
+                  : "bg-amber-500/15 text-amber-400 border-amber-500/40"
+              }`}
+            >
+              {transport === "broadcast" && !simulateFallback ? "OK" : "Fallback"}
+            </span>
+          </span>
+          <span className="ml-auto text-muted-foreground/60 group-open:rotate-180 transition-transform">▾</span>
+        </summary>
+        <div className="mt-3">
+          <SyncDiagnosticPanel
+            transport={transport}
+            degradationInfo={degradationInfo}
+            simulateFallback={simulateFallback}
+            isBroadcastSupported={isBroadcastSupported}
+            tabLabel={tabLabel}
+            syncHistory={syncHistory}
+            lastRemoteSyncAt={lastRemoteSyncAt}
+            pingState={pingState}
+          />
+        </div>
+      </details>
     </div>
   );
 };
