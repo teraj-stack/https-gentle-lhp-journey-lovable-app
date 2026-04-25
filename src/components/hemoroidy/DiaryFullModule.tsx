@@ -411,6 +411,15 @@ const DiaryFullModule = ({
                 </span>
               )}
             </p>
+            {entries[activeDate]?.updatedAt && (
+              <p className="text-[11px] text-muted-foreground/90 mt-1.5 inline-flex items-center gap-1.5">
+                <Clock className="w-3 h-3 text-primary" />
+                Ostatnia aktualizacja:{" "}
+                <span className="text-foreground/80 font-sans">
+                  {formatUpdatedAt(entries[activeDate].updatedAt)}
+                </span>
+              </p>
+            )}
           </div>
           <div className="flex items-center gap-2">
             <RiskIcon level={entry.complete ? entry.level : null} />
