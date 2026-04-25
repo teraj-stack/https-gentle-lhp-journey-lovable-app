@@ -605,11 +605,11 @@ describe("AutoSaveSettings — tooltip „Ostatnia zmiana” wybiera nagłówek 
         expect(title).toContain("Źródło: Synchronizacja między kartami");
 
         // 2) Linia czasu obecna — spadła na `lastSyncLabel` (etykieta względna).
-        //    Komponent renderuje „Czas: <coś niepustego>" — gwarantowane przez
-        //    `tooltipTimeValue = lastSyncFullDate ?? lastSyncLabel` + warunek
-        //    `tooltipTimeValue ? `Czas: ${…}` : null`.
-        expect(ariaLabel).toMatch(/Czas: \S+/);
-        expect(title).toMatch(/Czas: \S+/);
+        //    Komponent renderuje „Czas: <coś niepustego>" oraz dokleja kwalifikator
+        //    „(etykieta względna)" w kanale a11y, żeby screen reader miał kontekst,
+        //    że to przybliżenie a nie precyzyjny stempel czasowy.
+        expect(ariaLabel).toMatch(/Czas: \S.*\(etykieta względna\)/);
+        expect(title).toMatch(/Czas: \S.*\(etykieta względna\)/);
 
         // 3) ZERO pustych linii ani trailing newline w aria-label.
         const lines = getAriaLines(ariaLabel);
