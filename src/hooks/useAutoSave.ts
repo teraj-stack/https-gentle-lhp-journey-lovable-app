@@ -539,6 +539,25 @@ export const useAutoSave = () => {
     setPingState({ pingId: null, sentAt: null, responses: [], isCollecting: false });
   }, []);
 
+  /**
+   * Włącza/wyłącza symulację braku BroadcastChannel. Aktualizuje też pochodne pola
+   * (transport, degradationReason), żeby UI od razu pokazało nowy stan.
+   * Wyłączenie symulacji przywraca poprzedni transport — `broadcast` jeśli kanał
+   * nie był wcześniej zdegradowany trwale, inaczej zostaje `storage-fallback`.
+   */
+  const setSimulateFallbackMode = useCallback((next: boolean) => {
+    setSimulateFallback(next);
+    if (next) {
+      setTransport("storage-fallback");
+      setDegradationReason("Symulacja diagnostyczna: BroadcastChannel wyłączony ręcznie");
+    } else if (channelRef.current && !broadcastDegradedRef.current) {
+      // Przywróć BC tylko jeśli kanał nadal istnieje i nie padł w międzyczasie.
+      setTransport("broadcast");
+      setDegradationReason(null);
+    }
+    // Jeśli kanał był trwale zdegradowany, transport i reason zostają — to nie symulacja, tylko realny fallback.
+  }, []);
+
   return {
     enabled,
     setEnabled: toggle,
@@ -563,6 +582,10 @@ export const useAutoSave = () => {
     transport,
     /** Powód degradacji do storage-fallback (lub `null` gdy BC działa). */
     degradationReason,
+    /** Czy obecnie symulujemy brak BC (diagnostycznie wymuszony fallback). */
+    simulateFallback,
+    /** Włącza/wyłącza symulację braku BC bez przeładowania strony. */
+    setSimulateFallback: setSimulateFallbackMode,
     /** Historia ostatnich {HISTORY_LIMIT} zdalnych synchronizacji (najnowsza pierwsza). */
     syncHistory,
   };
