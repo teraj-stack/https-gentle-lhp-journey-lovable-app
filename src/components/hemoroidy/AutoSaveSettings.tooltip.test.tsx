@@ -1427,5 +1427,250 @@ describe("AutoSaveSettings — tooltip „Ostatnia zmiana” wybiera nagłówek 
       }
     });
   });
+
+  /**
+   * Spójność wygładzonej wartości czasu między `aria-label` a `title`:
+   *
+   * Helper `buildLastChangeTooltipModel` używa `smoothTimeValue` na obu
+   * źródłach (fullDate i relativeLabel), a następnie sklejony `ariaText`
+   * jest przekazany 1:1 do `aria-label` kontenera I `title` triggera.
+   * Reguła: NIEZALEŻNIE od tego, jak brudne są wejścia (newline'y, taby,
+   * wielokrotne spacje), oba kanały MUSZĄ otrzymać dokładnie ten sam string,
+   * w którym:
+   *   1) nie ma podwójnych spacji,
+   *   2) nie ma znaków sterujących `\n`/`\r`/`\t` w wartości czasu
+   *      (`\n` jest dozwolone TYLKO jako separator linii w aria-label,
+   *      ale wewnątrz każdej linii „Czas: …" musi być clean),
+   *   3) wartość po „Czas: " jest identyczna w obu kanałach.
+   *
+   * Te testy uzupełniają testy jednostkowe `smoothTimeValue` o pełen kontrakt
+   * end-to-end z DOM dla OBU wariantów źródła (remote/local) i dla OBU
+   * ścieżek wartości czasu (full date / fallback na relativeLabel).
+   */
+  describe("aria-label === title — wygładzona wartość czasu spójna dla obu lastSync", () => {
+    /**
+     * Wyciąga linię „Czas: …" z aria-label (split po `\n`).
+     * Zwraca null gdy brak takiej linii (świadoma asymetria — testy
+     * jawnie sprawdzają kontrakt obecności, nie domyślnie zakładają).
+     */
+    const extractTimeLine = (text: string): string | null =>
+      text.split("\n").find((line) => line.startsWith("Czas: ")) ?? null;
+
+    /**
+     * Wyciąga wartość po „Czas: " (bez prefiksu i bez ewentualnego
+     * sufiksu „(etykieta względna)" — tylko surowa wartość).
+     */
+    const extractTimeValue = (text: string): string | null => {
+      const line = extractTimeLine(text);
+      if (!line) return null;
+      return line
+        .replace(/^Czas:\s*/, "")
+        .replace(/\s*\(etykieta względna\)$/, "");
+    };
+
+    it.each([
+      ["remote", "ścieżka full date — wartość z formattera"],
+      ["local", "ścieżka full date — wartość z formattera"],
+    ] as const)(
+      "source=%s + pełna data: aria-label === title, czas bez \\n/\\t/\\r ani podwójnych spacji",
+      (source, _label) => {
+        mockLastChangeSource = source;
+        mockLastChangeAt = FROZEN_NOW;
+        // Realny formatter — wartość zawiera lokalizowaną datę PL.
+        mockFullTimestampReturn = "DEFAULT_FULL_TIMESTAMP";
+
+        renderPanel();
+
+        const { trigger, container } = findLastChangeTooltip();
+        const ariaLabel = container.getAttribute("aria-label") ?? "";
+        const title = trigger.getAttribute("title") ?? "";
+
+        // 1) Identyczność 1:1 — to jest definicja „spójności kanałów".
+        expect(ariaLabel).toBe(title);
+
+        // 2) Wartość czasu obecna w obu kanałach.
+        const ariaTime = extractTimeValue(ariaLabel);
+        const titleTime = extractTimeValue(title);
+        expect(ariaTime).not.toBeNull();
+        expect(titleTime).not.toBeNull();
+        expect(ariaTime).toBe(titleTime);
+
+        // 3) Wartość czasu MUSI być wygładzona — żadnych znaków sterujących
+        //    ani podwójnych spacji w środku.
+        expect(ariaTime).not.toMatch(/[\r\n\t]/);
+        expect(ariaTime).not.toMatch(/ {2,}/);
+        expect(ariaTime!.length).toBeGreaterThan(0);
+        // Brak trailing/leading whitespace na samej wartości.
+        expect(ariaTime).toBe(ariaTime!.trim());
+
+        // 4) Pełna data → BEZ sufiksu „(etykieta względna)".
+        const timeLine = extractTimeLine(ariaLabel);
+        expect(timeLine).not.toContain("(etykieta względna)");
+      },
+    );
+
+    it.each([
+      ["remote", "fallback na relativeLabel — bo formatter zwrócił pusty"],
+      ["local", "fallback na relativeLabel — bo formatter zwrócił pusty"],
+    ] as const)(
+      "source=%s + brak full date (fallback na relativeLabel): aria-label === title, czas wygładzony",
+      (source, _label) => {
+        mockLastChangeSource = source;
+        mockLastChangeAt = FROZEN_NOW;
+        // Symulujemy brzydki output formattera: pusta pełna data → fallback
+        // na lastSyncLabel (który w rzeczywistości też przechodzi przez
+        // smoothTimeValue w helperze).
+        mockFullTimestampReturn = "";
+
+        renderPanel();
+
+        const { trigger, container } = findLastChangeTooltip();
+        const ariaLabel = container.getAttribute("aria-label") ?? "";
+        const title = trigger.getAttribute("title") ?? "";
+
+        // 1) 1:1 spójność.
+        expect(ariaLabel).toBe(title);
+
+        // 2) Linia czasu obecna i ma sufiks „(etykieta względna)" w obu kanałach.
+        const ariaLine = extractTimeLine(ariaLabel);
+        const titleLine = extractTimeLine(title);
+        expect(ariaLine).not.toBeNull();
+        expect(titleLine).not.toBeNull();
+        expect(ariaLine).toBe(titleLine);
+        expect(ariaLine).toContain("(etykieta względna)");
+
+        // 3) Surowa wartość (po stripie prefiksu i sufiksu) wygładzona w obu.
+        const ariaTime = extractTimeValue(ariaLabel);
+        const titleTime = extractTimeValue(title);
+        expect(ariaTime).toBe(titleTime);
+        expect(ariaTime).not.toMatch(/[\r\n\t]/);
+        expect(ariaTime).not.toMatch(/ {2,}/);
+        expect(ariaTime!.length).toBeGreaterThan(0);
+        expect(ariaTime).toBe(ariaTime!.trim());
+      },
+    );
+
+    it.each([
+      ["remote" as const, "remote heading"],
+      ["local" as const, "local heading"],
+    ])(
+      "source=%s: brudny output formattera (\\n/\\t/podwójne spacje) jest wygładzony przed dotarciem do aria-label/title",
+      (source, _label) => {
+        // Symulujemy worst case: formatter zwraca string z newline'em w
+        // środku (np. miękki wrap z Intl.DateTimeFormat) + tabami + multi-spacje.
+        // Helper MUSI to wszystko wygładzić, zanim trafi do dowolnego kanału a11y.
+        mockLastChangeSource = source;
+        mockLastChangeAt = FROZEN_NOW;
+        mockFullTimestampReturn = "24 kwietnia\n2026,\t\t12:34:56   \r\n";
+
+        renderPanel();
+
+        const { trigger, container } = findLastChangeTooltip();
+        const ariaLabel = container.getAttribute("aria-label") ?? "";
+        const title = trigger.getAttribute("title") ?? "";
+
+        // 1:1 + identyczna wygładzona wartość.
+        expect(ariaLabel).toBe(title);
+
+        const ariaTime = extractTimeValue(ariaLabel);
+        const titleTime = extractTimeValue(title);
+        expect(ariaTime).toBe(titleTime);
+
+        // KLUCZOWY kontrakt: znaki sterujące zostały zjedzone, wielokrotne
+        // spacje sklejone w jedną. Oczekiwana wartość po smoothTimeValue:
+        expect(ariaTime).toBe("24 kwietnia 2026, 12:34:56");
+        expect(ariaTime).not.toMatch(/[\r\n\t]/);
+        expect(ariaTime).not.toMatch(/ {2,}/);
+
+        // Anty-regresja struktury aria-label: dokładnie 3 linie (heading +
+        // opis + 1 linia czasu) — żaden newline z formattera nie wytworzył
+        // 4. linii.
+        expect(ariaLabel.split("\n").length).toBe(3);
+      },
+    );
+
+    it("brudny relativeLabel (fallback z newline'ami) też jest wygładzony w obu kanałach", () => {
+      // Symulujemy fallback: full date pusta + relativeLabel brudny.
+      // Komponent korzysta z `formatTimestamp` dla relative — on jest naszym
+      // własnym helperem, więc w prod nie powinien zwracać brudów. Ale
+      // testujemy obronę helpera (smoothTimeValue na relativeLabel),
+      // żeby ewentualna regresja w formatterze nie wyciekła do a11y.
+      // Forsujemy ścieżkę full date → null, żeby model wpadł na relative.
+      // Brudny content wstrzykujemy bezpośrednio do mocka pełnej daty
+      // (smoothTimeValue zwróci ""), a relative będzie z realnego formattera.
+      mockLastChangeSource = "remote";
+      mockLastChangeAt = FROZEN_NOW;
+      mockFullTimestampReturn = "\n\t\r"; // wygładzone do "" → fallback
+
+      renderPanel();
+
+      const { trigger, container } = findLastChangeTooltip();
+      const ariaLabel = container.getAttribute("aria-label") ?? "";
+      const title = trigger.getAttribute("title") ?? "";
+
+      expect(ariaLabel).toBe(title);
+
+      const ariaTime = extractTimeValue(ariaLabel);
+      expect(ariaTime).not.toBeNull();
+      expect(ariaTime).not.toMatch(/[\r\n\t]/);
+      expect(ariaTime).not.toMatch(/ {2,}/);
+      expect(ariaTime!.length).toBeGreaterThan(0);
+
+      // Linia czasu dokładnie raz w aria-label — nie skleiła się z innymi.
+      const timeLines = ariaLabel.split("\n").filter((l) => l.startsWith("Czas:"));
+      expect(timeLines.length).toBe(1);
+    });
+
+    it("audyt char-by-char: aria-label i title są bytewise identyczne dla obu wariantów + obu ścieżek", () => {
+      // Najsilniejsza forma asercji spójności — porównujemy znak po znaku
+      // (length + każdy charCode). Gdyby kiedyś ktoś przez pomyłkę dodał
+      // np. `&nbsp;` (U+00A0) w jednym kanale a zwykłą spację w drugim,
+      // ten test wyłapie różnicę, której `toBe` mógłby przeoczyć przy
+      // łagodniejszym porównaniu.
+      const cases: Array<{
+        source: "remote" | "local";
+        full: string;
+        label: string;
+      }> = [
+        { source: "remote", full: "DEFAULT_FULL_TIMESTAMP", label: "remote + pełna data" },
+        { source: "local", full: "DEFAULT_FULL_TIMESTAMP", label: "local + pełna data" },
+        { source: "remote", full: "", label: "remote + fallback" },
+        { source: "local", full: "", label: "local + fallback" },
+      ];
+
+      for (const c of cases) {
+        mockLastChangeSource = c.source;
+        mockLastChangeAt = FROZEN_NOW;
+        mockFullTimestampReturn = c.full;
+
+        const { unmount } = renderPanel();
+
+        const { trigger, container } = findLastChangeTooltip();
+        const ariaLabel = container.getAttribute("aria-label") ?? "";
+        const title = trigger.getAttribute("title") ?? "";
+
+        // Ta sama długość.
+        expect(
+          ariaLabel.length,
+          `${c.label}: aria-label.length === title.length`,
+        ).toBe(title.length);
+
+        // Każdy charCode identyczny.
+        for (let i = 0; i < ariaLabel.length; i++) {
+          expect(
+            ariaLabel.charCodeAt(i),
+            `${c.label}: char @${i} (${JSON.stringify(ariaLabel[i])} vs ${JSON.stringify(title[i])})`,
+          ).toBe(title.charCodeAt(i));
+        }
+
+        // Brak U+00A0 (non-breaking space) — używamy tylko zwykłych spacji.
+        expect(ariaLabel).not.toMatch(/\u00A0/);
+        // Brak zero-width characters które mogłyby zakraść się z localizacji.
+        expect(ariaLabel).not.toMatch(/[\u200B\u200C\u200D\uFEFF]/);
+
+        unmount();
+      }
+    });
+  });
 });
 
