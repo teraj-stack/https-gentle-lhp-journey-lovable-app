@@ -473,26 +473,37 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
             // dzięki czemu logika wyboru wariantu jest pokryta testami jednostkowymi
             // bez konieczności renderowania całego komponentu z Radix Tooltip.
             const tooltipContent = getLastChangeTooltipContent(lastChangeSource);
+            // Wygładzamy wartość czasu PRZED użyciem w tooltipie/aria-label:
+            //  - usuwamy znaki nowej linii (`\n`, `\r`) i tabulatory — wstawiłyby
+            //    sztuczne łamanie w środku linii „Czas: …", co w aria-label
+            //    powodowałoby fałszywą dodatkową linię i pauzę u screen readera,
+            //  - kolapsujemy ciągi białych znaków do pojedynczej spacji
+            //    (np. „24 kwietnia\n2026" → „24 kwietnia 2026"),
+            //  - obcinamy whitespace z początku/końca.
+            // Dzięki temu helper zawsze produkuje czysty single-line string albo
+            // pusty `""`, który dalsze sprawdzenia odrzucą jako brak wartości.
+            const smoothTimeValue = (raw: unknown): string => {
+              if (typeof raw !== "string") return "";
+              return raw.replace(/[\r\n\t]+/g, " ").replace(/\s+/g, " ").trim();
+            };
             // Linia czasu w tooltipie: preferujemy pełną datę (`lastSyncFullDate`),
             // ale gdy z jakiegoś powodu nie udało się jej zbudować (np. timestamp
             // odrzucony przez `isValidTimestamp` w środku formatera, pusty string
             // albo same białe znaki), spadamy na względną etykietę (`lastSyncLabel`).
-            // UWAGA: używamy testu na niepuste-po-trim, NIE `??`/`||`, bo nullish
-            // coalescing przepuści pusty string „" oraz „   " (truthy w JS),
-            // co dałoby osierocone „Czas: " w aria-label. Strict trim eliminuje
-            // wszystkie warianty pustki: null, undefined, "", "   ", "\n".
-            const hasUsableFullDate =
-              typeof lastSyncFullDate === "string" && lastSyncFullDate.trim().length > 0;
-            const tooltipTimeValue = hasUsableFullDate ? lastSyncFullDate : lastSyncLabel;
-            // Składamy `tooltipText` (aria-label + native `title` fallback) bez
-            // pustych linii: każda część jest dodawana TYLKO gdy ma realną treść,
-            // a `filter(Boolean)` na końcu odsiewa ewentualne `null`/puste stringi.
-            // Dodatkowo trim na linii „Czas: …" pilnuje, że wartość po dwukropku
-            // jest niepusta (defensywa przed regresją w przyszłym formaterze).
+            // UWAGA: używamy testu na niepuste-po-wygładzeniu, NIE `??`/`||`, bo
+            // nullish coalescing przepuściłby „" oraz „   " (truthy w JS),
+            // co dałoby osierocone „Czas: " w aria-label.
+            const smoothFullDate = smoothTimeValue(lastSyncFullDate);
+            const smoothRelativeLabel = smoothTimeValue(lastSyncLabel);
+            const tooltipTimeValue =
+              smoothFullDate.length > 0 ? smoothFullDate : smoothRelativeLabel;
+            // Składamy linię „Czas: …" TYLKO gdy po wygładzeniu zostaje realna
+            // treść — pusty fallback nie nadpisuje ani nie pozostawia
+            // osieroconego „Czas: " w żadnym kanale (aria-label, title, tooltip).
             const timeLine =
-              tooltipTimeValue && tooltipTimeValue.trim().length > 0
-                ? `Czas: ${tooltipTimeValue.trim()}`
-                : null;
+              tooltipTimeValue.length > 0 ? `Czas: ${tooltipTimeValue}` : null;
+            // Sklejamy `tooltipText` (aria-label + native `title` fallback) bez
+            // pustych linii: każda część dodana TYLKO gdy ma realną treść.
             const tooltipText = [
               tooltipContent.ariaHeading,
               tooltipContent.description,
@@ -565,11 +576,11 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
                     <p className="text-[11px] text-muted-foreground leading-snug">
                       {tooltipContent.description}
                     </p>
-                    {tooltipTimeValue && tooltipTimeValue.trim().length > 0 && (
+                    {tooltipTimeValue.length > 0 && (
                       <p
                         className="text-[10px] text-muted-foreground/80 font-mono"
                         title={
-                          hasUsableFullDate
+                          smoothFullDate.length > 0
                             ? undefined
                             : "Pełna data niedostępna — pokazujemy etykietę względną."
                         }
