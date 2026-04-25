@@ -192,23 +192,7 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
                 </span>
               )}
             </label>
-            {lastSyncLabel && (
-              <p
-                className={`text-[11px] font-sans text-muted-foreground mt-1 inline-flex items-center gap-1 transition-colors ${
-                  isRemoteSyncing ? "text-primary" : ""
-                }`}
-                title={lastSyncFullDate}
-                aria-live="polite"
-              >
-                <RefreshCw
-                  className={`w-3 h-3 ${isRemoteSyncing ? "animate-spin text-primary" : ""}`}
-                  aria-hidden="true"
-                />
-                <span>
-                  Ostatnia zmiana: <strong className="text-foreground">{lastSyncLabel}</strong>
-                </span>
-              </p>
-            )}
+            {/* Etykieta „Ostatnia zmiana" przeniesiona pod Switch — patrz blok poniżej. */}
             <p className="text-xs sm:text-sm text-muted-foreground mt-1 leading-relaxed">
               {enabled ? (
                 <span className="inline-flex items-start gap-1.5">
