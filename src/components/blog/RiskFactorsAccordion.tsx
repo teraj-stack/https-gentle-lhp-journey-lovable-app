@@ -483,6 +483,91 @@ const RiskFactorsAccordion = () => {
         </Link>
       </div>
 
+      {/* Moja checklista czynników ryzyka */}
+      <motion.div
+        layout
+        id="moja-checklista-ryzyka"
+        className="mt-8 rounded-2xl border border-primary/30 bg-primary/[0.04] p-4 sm:p-5"
+        aria-labelledby="moja-checklista-heading"
+      >
+        <div className="flex items-start sm:items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <span className="w-9 h-9 rounded-lg bg-primary/15 flex items-center justify-center shrink-0">
+              <ListChecks className="w-4 h-4 text-primary" />
+            </span>
+            <div className="min-w-0">
+              <h3
+                id="moja-checklista-heading"
+                className="font-heading text-base sm:text-lg text-foreground leading-tight"
+              >
+                Moja checklista czynników ryzyka
+              </h3>
+              <p className="text-[11.5px] sm:text-xs text-muted-foreground mt-0.5">
+                Zapisywane lokalnie w przeglądarce (anonimowo). {selectedFactors.length} z {RISK_FACTORS.length} zaznaczonych.
+              </p>
+            </div>
+          </div>
+          {selectedFactors.length > 0 && (
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              onClick={clearSelected}
+              className="gap-1.5 text-muted-foreground hover:text-destructive"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              Wyczyść
+            </Button>
+          )}
+        </div>
+
+        {selectedFactors.length === 0 ? (
+          <p className="mt-3 text-sm text-muted-foreground italic">
+            Nic jeszcze nie zaznaczono. Rozwiń dowolny akordeon powyżej i kliknij{" "}
+            <span className="not-italic font-medium text-foreground">„Zapisz moje ryzyko”</span>,
+            aby zbudować swoją krótką listę.
+          </p>
+        ) : (
+          <ul className="mt-4 grid gap-2 sm:grid-cols-2">
+            {selectedFactors.map((rf) => {
+              const Icon = rf.Icon;
+              return (
+                <li
+                  key={rf.id}
+                  className="flex items-start gap-2.5 rounded-lg border border-border/60 bg-background/60 px-3 py-2.5"
+                >
+                  <span className="w-7 h-7 rounded-md bg-primary/15 flex items-center justify-center shrink-0 mt-0.5">
+                    <Icon className="w-3.5 h-3.5 text-primary" />
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[13.5px] sm:text-sm font-medium text-foreground leading-snug">
+                      {rf.title}
+                    </p>
+                    <p className="text-[11px] sm:text-[11.5px] text-muted-foreground leading-snug mt-0.5 truncate">
+                      {rf.shortBadge}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => toggleSelected(rf.id)}
+                    className="p-1 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors shrink-0"
+                    aria-label={`Usuń „${rf.title}" z checklisty`}
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+
+        {selectedFactors.length > 0 && (
+          <p className="mt-4 text-[11.5px] sm:text-xs text-muted-foreground">
+            Pokaż tę listę lekarzowi na konsultacji — ułatwi to dobór profilaktyki i decyzje o leczeniu.
+          </p>
+        )}
+      </motion.div>
+
       <RiskVsPreventionTable />
     </motion.section>
   );
