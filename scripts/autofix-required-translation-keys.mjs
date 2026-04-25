@@ -370,7 +370,7 @@ const printDiffReport = (translationDiffs, timeLineDiff) => {
 // Code generators
 // ---------------------------------------------------------------------------
 
-const renderRequiredTranslationKeys = ({ top, variant, variantOptional }) => {
+export const renderRequiredTranslationKeys = ({ top, variant, variantOptional }) => {
   const fmt = (arr) =>
     arr.length === 0
       ? "[]"
@@ -382,7 +382,7 @@ const renderRequiredTranslationKeys = ({ top, variant, variantOptional }) => {
 } as const;`;
 };
 
-const renderRequiredTimeLineKeys = (keys) => {
+export const renderRequiredTimeLineKeys = (keys) => {
   const lines = keys.map((k) => `  "${k}",`).join("\n");
   return `export const REQUIRED_TIME_LINE_KEYS = [
 ${lines}
