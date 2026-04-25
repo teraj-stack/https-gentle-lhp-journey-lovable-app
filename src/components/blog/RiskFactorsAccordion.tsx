@@ -596,13 +596,14 @@ const RiskFactorsAccordion = () => {
   // Auto-oznacz jako przeczytane po 1.2 s utrzymanego rozwinięcia (tylko ręczne otwarcie, nie wyszukiwarka)
   useEffect(() => {
     if (nQuery) return;
+    if (sourceFilter.size > 0) return; // auto-rozwinięcie z filtra ≠ świadome czytanie
     if (openItems.length === 0) return;
     const timers = openItems
       .filter((id) => !readItems.includes(id))
       .map((id) => window.setTimeout(() => markRead(id), 1200));
     return () => timers.forEach((t) => window.clearTimeout(t));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [openItems, nQuery]);
+  }, [openItems, nQuery, sourceFilter]);
 
   const filtered = useMemo(() => {
     const base = sourceFilter.size === 0
