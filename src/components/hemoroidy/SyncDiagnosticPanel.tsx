@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Activity,
   Wifi,
@@ -10,8 +10,12 @@ import {
   Radio,
   Copy,
   ClipboardCheck,
+  History,
+  Trash2,
 } from "lucide-react";
 import type {
+  DegradationCause,
+  DegradationHistoryEntry,
   DegradationInfo,
   PongResponse,
   SyncHistoryEntry,
