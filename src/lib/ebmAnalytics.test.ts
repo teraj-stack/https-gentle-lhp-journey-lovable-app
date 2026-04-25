@@ -87,6 +87,7 @@ describe("ebmAnalytics", () => {
   });
 
   it("caps recent events at 200", () => {
+    resetEbmAnalytics();
     for (let i = 0; i < 250; i++) {
       trackEbmClick({
         url: `https://pubmed.ncbi.nlm.nih.gov/${i}/`,
