@@ -494,10 +494,10 @@ const RiskFactorsAccordion = () => {
                 data-read={isRead}
                 className="rounded-xl border border-border bg-background/40 overflow-hidden data-[state=open]:border-primary/40 data-[state=open]:bg-primary/5 data-[selected=true]:border-primary/60 data-[selected=true]:bg-primary/[0.07] data-[read=true]:border-primary/30 transition-colors"
               >
-                <AccordionTrigger className="px-3.5 sm:px-5 py-4 sm:py-3.5 hover:no-underline group text-left gap-2">
-                  <div className="flex items-start sm:items-center gap-3 sm:gap-3 flex-1 min-w-0">
-                    <span className="relative w-10 h-10 sm:w-9 sm:h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 group-data-[state=open]:bg-primary/20 transition-colors mt-0.5 sm:mt-0">
-                      <Icon className="w-4 h-4 text-primary" />
+                <AccordionTrigger className="px-3.5 sm:px-5 md:px-6 lg:px-5 py-4 sm:py-3.5 md:py-4 hover:no-underline group text-left gap-2">
+                  <div className="flex items-start sm:items-center gap-3 md:gap-4 lg:gap-3 flex-1 min-w-0">
+                    <span className="relative w-10 h-10 sm:w-9 sm:h-9 md:w-11 md:h-11 lg:w-9 lg:h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 group-data-[state=open]:bg-primary/20 transition-colors mt-0.5 sm:mt-0">
+                      <Icon className="w-4 h-4 md:w-[18px] md:h-[18px] lg:w-4 lg:h-4 text-primary" />
                       {isRead && (
                         <span
                           className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-sm ring-1 ring-background"
@@ -507,21 +507,24 @@ const RiskFactorsAccordion = () => {
                         </span>
                       )}
                     </span>
-                    <div className="flex-1 min-w-0 flex flex-col gap-1.5">
-                      <p className={`font-heading text-[15px] sm:text-base md:text-lg leading-snug ${isRead ? "text-foreground/70" : "text-foreground"}`}>
+
+                    {/* Tablet (md..lg): układ 2-kolumnowy w nagłówku — tytuł po lewej, badge po prawej.
+                        Mobile (<md) i desktop (≥lg): układ jednokolumnowy z badge'ami pod tytułem. */}
+                    <div className="flex-1 min-w-0 flex flex-col gap-1.5 md:flex-row md:items-center md:justify-between md:gap-5 lg:flex-col lg:items-stretch lg:gap-1.5">
+                      <p className={`font-heading text-[15px] sm:text-base md:text-[17px] lg:text-lg leading-snug md:flex-1 md:min-w-0 ${isRead ? "text-foreground/70" : "text-foreground"}`}>
                         <Highlight text={rf.title} query={query} />
                         {isRead && (
                           <span className="sr-only"> (przeczytane)</span>
                         )}
                       </p>
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        <span className="inline-flex w-fit max-w-full items-center px-2 py-0.5 rounded-md text-[10.5px] sm:text-[11px] font-sans uppercase tracking-[0.06em] bg-destructive/10 text-destructive border border-destructive/25 leading-snug">
+                      <div className="flex flex-wrap items-center gap-1.5 md:flex-nowrap md:justify-end md:shrink-0 md:max-w-[46%] lg:max-w-none lg:justify-start lg:flex-wrap">
+                        <span className="inline-flex w-fit max-w-full items-center px-2 py-0.5 rounded-md text-[10.5px] sm:text-[11px] md:text-[11.5px] font-sans uppercase tracking-[0.06em] bg-destructive/10 text-destructive border border-destructive/25 leading-snug">
                           <span className="truncate">
                             <Highlight text={rf.shortBadge} query={query} />
                           </span>
                         </span>
                         {isRead && (
-                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] sm:text-[10.5px] font-sans uppercase tracking-[0.08em] bg-primary/10 text-primary border border-primary/30 leading-snug">
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] sm:text-[10.5px] md:text-[11px] font-sans uppercase tracking-[0.08em] bg-primary/10 text-primary border border-primary/30 leading-snug shrink-0">
                             <CheckCircle2 className="w-2.5 h-2.5" />
                             Przeczytane
                           </span>
