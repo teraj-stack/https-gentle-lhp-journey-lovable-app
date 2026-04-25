@@ -464,21 +464,32 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
             </kbd>
           </p>
           {lastSyncLabel && showLastChangeLabel && (() => {
-            // Tooltip rozdzielamy na trzy linie: jednoznaczna etykieta źródła
-            // („Synchronizacja…" vs „Lokalna akcja…"), opis kontekstu, pełna data.
+            // Tooltip ma do trzech linii: jednoznaczna etykieta źródła
+            // („Synchronizacja…" vs „Lokalna akcja…"), opis kontekstu, czas zdarzenia.
             // Dzięki temu nawet bez kolorów (screen reader, high-contrast mode)
-            // widać, skąd przyszła zmiana. To samo idzie do `aria-label`.
+            // widać, skąd przyszła zmiana. To samo idzie do `aria-label` i `title`.
             //
             // Nagłówek + opis pochodzą z pure helpera `getLastChangeTooltipContent`,
             // dzięki czemu logika wyboru wariantu jest pokryta testami jednostkowymi
             // bez konieczności renderowania całego komponentu z Radix Tooltip.
             const tooltipContent = getLastChangeTooltipContent(lastChangeSource);
+            // Linia czasu w tooltipie: preferujemy pełną datę (`lastSyncFullDate`),
+            // ale gdy z jakiegoś powodu nie udało się jej zbudować (np. timestamp
+            // odrzucony przez `isValidTimestamp` w środku formatera), spadamy na
+            // względną etykietę (`lastSyncLabel`) — zawsze coś sensownego, nigdy
+            // pusta linia ani „Czas: " bez wartości. Brak `lastSyncLabel` nie
+            // wystąpi, bo cały blok jest gardowany przez `lastSyncLabel && …`.
+            const tooltipTimeValue = lastSyncFullDate ?? lastSyncLabel;
+            // Składamy `tooltipText` (aria-label + native `title` fallback) bez
+            // pustych linii: każda część jest dodawana TYLKO gdy ma realną treść,
+            // a `filter(Boolean)` na końcu odsiewa ewentualne `null`/puste stringi.
+            // Gwarantuje to, że join("\n") nigdy nie wyprodukuje "\n\n" ani trailing newline.
             const tooltipText = [
               tooltipContent.ariaHeading,
               tooltipContent.description,
-              lastSyncFullDate ? `Czas: ${lastSyncFullDate}` : null,
+              tooltipTimeValue ? `Czas: ${tooltipTimeValue}` : null,
             ]
-              .filter(Boolean)
+              .filter((line): line is string => Boolean(line && line.trim()))
               .join("\n");
             return (
             <div
@@ -527,8 +538,13 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
                 </TooltipTrigger>
                 <TooltipContent side="top" className="max-w-xs">
                   {/* Struktura tooltipa: nagłówek koloryzowany per źródło + opis
-                      mechanizmu + pełna data. Symetryczne kolory: zielony dla remote,
-                      neutralny dla local — zgodnie z całym systemem etykiet. */}
+                      mechanizmu + linia czasu. Symetryczne kolory: zielony dla remote,
+                      neutralny dla local — zgodnie z całym systemem etykiet.
+                      Linia czasu: gdy mamy pełną datę → renderujemy ją w font-mono;
+                      gdy mamy tylko względną etykietę (np. „2 min temu") → też ją
+                      pokazujemy, żeby tooltip nigdy nie urywał się po opisie bez
+                      kontekstu czasowego. Pusta linia w ogóle nie jest renderowana
+                      (warunek `tooltipTimeValue && …`), więc layout się nie rwie. */}
                   <div className="space-y-1">
                     <p
                       className={`text-xs font-semibold ${
@@ -540,9 +556,16 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
                     <p className="text-[11px] text-muted-foreground leading-snug">
                       {tooltipContent.description}
                     </p>
-                    {lastSyncFullDate && (
-                      <p className="text-[10px] text-muted-foreground/80 font-mono">
-                        {lastSyncFullDate}
+                    {tooltipTimeValue && (
+                      <p
+                        className="text-[10px] text-muted-foreground/80 font-mono"
+                        title={
+                          lastSyncFullDate
+                            ? undefined
+                            : "Pełna data niedostępna — pokazujemy etykietę względną."
+                        }
+                      >
+                        {tooltipTimeValue}
                       </p>
                     )}
                   </div>
