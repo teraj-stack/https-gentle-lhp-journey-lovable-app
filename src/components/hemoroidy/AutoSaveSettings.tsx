@@ -64,7 +64,7 @@ const VISIBILITY_OPTIONS: Array<{
     value: "off",
     short: "Ukryj",
     label: "Ukryj etykietę",
-    hint: "Etykieta „Ostatnia zmiana" nie pojawia się wcale.",
+    hint: 'Etykieta „Ostatnia zmiana" nie pojawia się wcale.',
   },
 ];
 
