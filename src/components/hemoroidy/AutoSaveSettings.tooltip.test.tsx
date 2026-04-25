@@ -302,7 +302,7 @@ describe("AutoSaveSettings — tooltip „Ostatnia zmiana” wybiera nagłówek 
       expect(document.body.textContent ?? "").not.toMatch(/Źródło:\s*(null|undefined)/i);
     });
 
-    it("source=null + lastChangeAt=null: cała sekcja „Ostatnia zmiana" nie renderuje się", () => {
+    it("source=null + lastChangeAt=null: cała sekcja „Ostatnia zmiana” nie renderuje się", () => {
       // Stan początkowy zaraz po pierwszym mount, zanim cokolwiek się
       // wydarzyło. Brak timestampu → `lastSyncLabel` jest null → cały
       // blok JSX pod `lastSyncLabel && showLastChangeLabel && (…)` jest
