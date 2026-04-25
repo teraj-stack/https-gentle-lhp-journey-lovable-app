@@ -1673,6 +1673,7 @@ const DiaryFullModule = ({
       {/* Reminder settings + clear all */}
       {showReminderSettings && (
         <>
+          <AutoSaveSettings pendingDraftCount={pendingDraftCount} />
           <RiskThresholdsSettings />
           <DiaryReminderSettings />
           <motion.div
