@@ -284,8 +284,9 @@ const EBMSourcesSection = ({
   const [activeCat, setActiveCat] = useState<string>("all");
   const [query, setQuery] = useState<string>("");
   const [forcedOpen, setForcedOpen] = useState<string[]>([]);
+  const [highlightedId, setHighlightedId] = useState<string | null>(null);
 
-  // Open category from URL hash (#ebm-<id>) and scroll to it
+  // Open category from URL hash (#ebm-<id>) and scroll + highlight it
   useEffect(() => {
     const applyHash = () => {
       const h = typeof window !== "undefined" ? window.location.hash : "";
@@ -297,12 +298,22 @@ const EBMSourcesSection = ({
       window.setTimeout(() => {
         const el = document.getElementById(`ebm-${id}`);
         el?.scrollIntoView({ behavior: "smooth", block: "start" });
+        // Trigger highlight pulse — re-set even if same id, by clearing first
+        setHighlightedId(null);
+        window.setTimeout(() => setHighlightedId(id), 30);
       }, 80);
     };
     applyHash();
     window.addEventListener("hashchange", applyHash);
     return () => window.removeEventListener("hashchange", applyHash);
   }, [baseCats]);
+
+  // Auto-clear highlight after animation completes (~2.4s)
+  useEffect(() => {
+    if (!highlightedId) return;
+    const t = window.setTimeout(() => setHighlightedId(null), 2400);
+    return () => window.clearTimeout(t);
+  }, [highlightedId]);
 
   const filtered = useMemo(() => {
     const q = normalize(query.trim());
