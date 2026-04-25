@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { useMemo, useState } from "react";
 import {
   AlertTriangle,
   Salad,
@@ -12,6 +13,8 @@ import {
   Activity,
   ExternalLink,
   BookOpen,
+  Search,
+  X,
 } from "lucide-react";
 import {
   Accordion,
@@ -19,7 +22,35 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { Input } from "@/components/ui/input";
 import { Link } from "react-router-dom";
+
+/** Polski-friendly normalizer: lowercase + usuwa diakrytyki */
+const normalize = (s: string) =>
+  s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/ł/g, "l");
+
+/** Podświetlenie dopasowanego fragmentu w tekście */
+const Highlight = ({ text, query }: { text: string; query: string }) => {
+  if (!query.trim()) return <>{text}</>;
+  const nText = normalize(text);
+  const nQuery = normalize(query.trim());
+  const idx = nText.indexOf(nQuery);
+  if (idx === -1) return <>{text}</>;
+  const end = idx + nQuery.length;
+  return (
+    <>
+      {text.slice(0, idx)}
+      <mark className="bg-primary/25 text-foreground rounded px-0.5">
+        {text.slice(idx, end)}
+      </mark>
+      {text.slice(end)}
+    </>
+  );
+};
 
 const easeOut = [0.16, 1, 0.3, 1] as const;
 
