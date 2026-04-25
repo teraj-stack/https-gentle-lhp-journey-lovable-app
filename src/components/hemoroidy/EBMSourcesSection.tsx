@@ -284,8 +284,9 @@ const EBMSourcesSection = ({
   const [activeCat, setActiveCat] = useState<string>("all");
   const [query, setQuery] = useState<string>("");
   const [forcedOpen, setForcedOpen] = useState<string[]>([]);
+  const [highlightedId, setHighlightedId] = useState<string | null>(null);
 
-  // Open category from URL hash (#ebm-<id>) and scroll to it
+  // Open category from URL hash (#ebm-<id>) and scroll + highlight it
   useEffect(() => {
     const applyHash = () => {
       const h = typeof window !== "undefined" ? window.location.hash : "";
@@ -297,12 +298,22 @@ const EBMSourcesSection = ({
       window.setTimeout(() => {
         const el = document.getElementById(`ebm-${id}`);
         el?.scrollIntoView({ behavior: "smooth", block: "start" });
+        // Trigger highlight pulse — re-set even if same id, by clearing first
+        setHighlightedId(null);
+        window.setTimeout(() => setHighlightedId(id), 30);
       }, 80);
     };
     applyHash();
     window.addEventListener("hashchange", applyHash);
     return () => window.removeEventListener("hashchange", applyHash);
   }, [baseCats]);
+
+  // Auto-clear highlight after animation completes (~2.4s)
+  useEffect(() => {
+    if (!highlightedId) return;
+    const t = window.setTimeout(() => setHighlightedId(null), 2400);
+    return () => window.clearTimeout(t);
+  }, [highlightedId]);
 
   const filtered = useMemo(() => {
     const q = normalize(query.trim());
@@ -511,7 +522,8 @@ const EBMSourcesSection = ({
                 key={cat.id}
                 value={cat.id}
                 id={`ebm-${cat.id}`}
-                className="scroll-mt-32 rounded-xl border border-border bg-background/40 overflow-hidden data-[state=open]:border-primary/40 data-[state=open]:bg-primary/5 transition-colors"
+                data-highlighted={highlightedId === cat.id ? "true" : undefined}
+                className="scroll-mt-32 rounded-xl border border-border bg-background/40 overflow-hidden data-[state=open]:border-primary/40 data-[state=open]:bg-primary/5 data-[highlighted=true]:animate-[ebm-pulse_1.6s_ease-out] data-[highlighted=true]:ring-2 data-[highlighted=true]:ring-primary/60 data-[highlighted=true]:border-primary/60 transition-colors"
               >
                 <AccordionTrigger className="px-5 py-4 hover:no-underline group">
                   <div className="flex items-center gap-3 text-left">
