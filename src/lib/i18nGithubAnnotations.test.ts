@@ -162,8 +162,9 @@ describe("i18nGithubAnnotations — emitGithubAnnotations", () => {
     expect(line).toContain("%0A"); // newline encoded
     expect(line).toContain("100%25 bad"); // % encoded, "bad" still readable
     // Title must NOT contain raw colons (those would break the `::cmd::data`
-    // boundary and split the annotation).
-    const titleMatch = line.match(/title=([^,]+),/);
+    // boundary and split the annotation). Extract just the title property
+    // value (between `title=` and the next `,` or `::` boundary).
+    const titleMatch = line.match(/title=([^,:]+)(?:,|::)/);
     expect(titleMatch).not.toBeNull();
     expect(titleMatch![1]).not.toContain(":");
   });
