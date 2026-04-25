@@ -19,7 +19,9 @@ import {
   getTimeLinePrefix,
   smoothTimeValue,
   TIME_LINE_PREFIX,
+  validateLastChangeTooltipInput,
   type TimeValueFormat,
+  type ValidationIssueCode,
 } from "./lastChangeTooltipModel";
 import { resolveLocale, SUPPORTED_LOCALES } from "./lastChangeTooltipContent";
 
