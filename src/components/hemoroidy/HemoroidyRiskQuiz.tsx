@@ -191,10 +191,8 @@ const tiers: RiskTier[] = [
   },
 ];
 
-const getTier = (score: number): RiskTier => {
-  if (score <= 8) return tiers[0];
-  if (score <= 17) return tiers[1];
-  return tiers[2];
+const getTierForLevel = (level: "low" | "medium" | "high"): RiskTier => {
+  return tiers.find((t) => t.level === level) ?? tiers[0];
 };
 
 const easeOut = [0.16, 1, 0.3, 1] as const;
