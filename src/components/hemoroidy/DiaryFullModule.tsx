@@ -257,14 +257,13 @@ const DiaryFullModule = ({
 
     // Niepowodzenie zapisu (quota / tryb prywatny / inny błąd) — pokaż błąd
     // z konkretną instrukcją i NIE pokazuj badge'a "Zapisano" (mylące).
-    if (!result.ok) {
-      setAnswerAnnouncement(
-        `Błąd zapisu pytania ${qi + 1}: ${result.message}`,
-      );
+    if (result.ok === false) {
+      const errMessage = result.message;
+      setAnswerAnnouncement(`Błąd zapisu pytania ${qi + 1}: ${errMessage}`);
       toast({
         variant: "destructive",
         title: "Nie udało się zapisać odpowiedzi",
-        description: result.message,
+        description: errMessage,
         duration: 6000,
       });
       return;
