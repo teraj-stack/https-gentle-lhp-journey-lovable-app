@@ -334,7 +334,13 @@ export const useAutoSave = () => {
     sentAt: number | null;
     responses: PongResponse[];
     isCollecting: boolean;
-  }>({ pingId: null, sentAt: null, responses: [], isCollecting: false });
+    /**
+     * Strategia użyta przy bieżącym/ostatnim teście — `broadcast` korzysta z BC ping/pong,
+     * `storage` z round-tripu przez localStorage. UI pokazuje to jako podpis pod wynikiem,
+     * żeby pacjent wiedział, czym dokładnie zmierzono spójność kart.
+     */
+    strategy: "broadcast" | "storage" | null;
+  }>({ pingId: null, sentAt: null, responses: [], isCollecting: false, strategy: null });
 
   const channelRef = useRef<BroadcastChannel | null>(null);
   /**
