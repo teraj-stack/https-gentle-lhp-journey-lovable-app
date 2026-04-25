@@ -257,6 +257,9 @@ const RiskFactorsAccordion = () => {
   const [query, setQuery] = useState("");
   const nQuery = normalize(query.trim());
 
+  // Otwarte sekcje (tryb ręczny — gdy nie ma aktywnego wyszukiwania)
+  const [openItems, setOpenItems] = useState<string[]>([]);
+
   // Wybrane czynniki — persystencja w localStorage (anonimowo)
   const [selected, setSelected] = useState<string[]>(() => {
     if (typeof window === "undefined") return [];
@@ -297,8 +300,11 @@ const RiskFactorsAccordion = () => {
     });
   }, [nQuery]);
 
-  // Auto-rozwijaj dopasowane karty podczas wyszukiwania
-  const openValues = nQuery ? filtered.map((rf) => rf.id) : undefined;
+  // Auto-rozwijaj dopasowane karty podczas wyszukiwania (tryb wyszukiwania nadpisuje ręczny)
+  const accordionValue = nQuery ? filtered.map((rf) => rf.id) : openItems;
+  const allExpanded = openItems.length === RISK_FACTORS.length;
+  const toggleAll = () =>
+    setOpenItems(allExpanded ? [] : RISK_FACTORS.map((rf) => rf.id));
 
   return (
     <motion.section
