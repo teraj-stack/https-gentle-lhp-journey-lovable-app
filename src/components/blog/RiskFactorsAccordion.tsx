@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/accordion";
 import { Input } from "@/components/ui/input";
 import { Link } from "react-router-dom";
+import { trackEbmClick } from "@/lib/ebmAnalytics";
 
 /** Polski-friendly normalizer: lowercase + usuwa diakrytyki */
 const normalize = (s: string) =>
