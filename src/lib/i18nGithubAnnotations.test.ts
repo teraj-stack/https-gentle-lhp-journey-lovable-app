@@ -517,5 +517,169 @@ describe("i18nGithubAnnotations — dedup of identical violations", () => {
       "g2",
     );
     expect(logSpy).toHaveBeenCalledTimes(2);
+});
+
+/**
+ * Multi-line value handling
+ * -------------------------
+ * The locale maps in lastChangeTooltipContent.ts / lastChangeTooltipModel.ts
+ * are mostly single-line key/value pairs, but nothing prevents a future
+ * translator (or a copy-pasted long string) from spanning multiple lines.
+ * When that happens, the previous resolver returned only the key line —
+ * losing the actual value text and making the annotation harder to read.
+ *
+ * The new resolver walks forward through the value, tracking template
+ * literal / bracket / brace / paren balance, and collapses everything
+ * into a single compact snippet (with `…` truncation past 200 chars and
+ * a safety stop at sibling keys / dedents).
+ *
+ * Tests below use SYNTHETIC line arrays so we exercise edge cases
+ * (template literals, multi-line arrays, multi-line objects, value-on-
+ * next-line) that the real source files don't currently contain.
+ */
+describe("i18nGithubAnnotations — isMultiLineValueOpener heuristic", () => {
+  it("returns false for a complete single-line string value", () => {
+    expect(__isMultiLineValueOpenerForTesting('heading: "Last change",')).toBe(false);
+    expect(__isMultiLineValueOpenerForTesting("heading: 'foo'")).toBe(false);
   });
+  it("returns false for a complete single-line backtick value", () => {
+    expect(__isMultiLineValueOpenerForTesting("heading: `Last change`,")).toBe(false);
+  });
+  it("returns true for an unterminated template literal", () => {
+    expect(__isMultiLineValueOpenerForTesting("heading: `Last")).toBe(true);
+  });
+  it("returns true for a multi-line array opener", () => {
+    expect(__isMultiLineValueOpenerForTesting("variants: [")).toBe(true);
+  });
+  it("returns true for a multi-line object opener", () => {
+    expect(__isMultiLineValueOpenerForTesting("local: {")).toBe(true);
+  });
+  it("returns true for a colon-only line (value on next line)", () => {
+    expect(__isMultiLineValueOpenerForTesting("heading:")).toBe(true);
+  });
+  it("returns true for trailing string concatenation `+`", () => {
+    expect(__isMultiLineValueOpenerForTesting('heading: "foo" +')).toBe(true);
+  });
+  it("ignores `//` that appears inside a string literal", () => {
+    // Trailing comment after a complete string — still single-line.
+    expect(__isMultiLineValueOpenerForTesting('url: "http://x", // ok')).toBe(false);
+  });
+});
+
+describe("i18nGithubAnnotations — assembleMultiLineSnippet", () => {
+  it("collapses a multi-line backtick value into one line", () => {
+    const lines = [
+      "  pl: {",
+      "    heading: `Line one",
+      "Line two",
+      "Line three`,",
+      "  },",
+    ];
+    const snippet = __assembleMultiLineSnippetForTesting(lines, 1);
+    expect(snippet).toBe("heading: `Line one Line two Line three`,");
+  });
+  it("collapses a multi-line array value into one line", () => {
+    const lines = [
+      "  pl: {",
+      "    variants: [",
+      '      "a",',
+      '      "b",',
+      "    ],",
+      "  },",
+    ];
+    const snippet = __assembleMultiLineSnippetForTesting(lines, 1);
+    expect(snippet).toBe('variants: [ "a", "b", ],');
+  });
+  it("collapses a multi-line object value into one line", () => {
+    const lines = [
+      "  pl: {",
+      "    local: {",
+      '      heading: "H",',
+      '      description: "D",',
+      "    },",
+      "  },",
+    ];
+    const snippet = __assembleMultiLineSnippetForTesting(lines, 1);
+    expect(snippet).toContain('local: {');
+    expect(snippet).toContain('heading: "H"');
+    expect(snippet).toContain('description: "D"');
+  });
+  it("handles colon-then-value-on-next-line", () => {
+    const lines = [
+      "  pl: {",
+      "    heading:",
+      '      "Last change",',
+      "  },",
+    ];
+    const snippet = __assembleMultiLineSnippetForTesting(lines, 1);
+    expect(snippet).toBe('heading: "Last change",');
+  });
+  it("stops at a sibling key on the same indent", () => {
+    const lines = [
+      "  pl: {",
+      "    heading: `unclosed",
+      "    sibling: 'x',", // template still open — should be eaten
+      "    `,",
+      "  },",
+    ];
+    // Backtick is unterminated until line 3, so we collect lines 1–3.
+    const snippet = __assembleMultiLineSnippetForTesting(lines, 1);
+    expect(snippet).toContain("heading: `unclosed");
+    expect(snippet).toMatch(/`,$/);
+  });
+  it("truncates extremely long values with a trailing ellipsis", () => {
+    const long = "x".repeat(500);
+    const lines = [
+      "  pl: {",
+      "    heading: `" + long,
+      "`,",
+      "  },",
+    ];
+    const snippet = __assembleMultiLineSnippetForTesting(lines, 1);
+    expect(snippet.length).toBeLessThanOrEqual(200);
+    expect(snippet.endsWith("…")).toBe(true);
+  });
+});
+
+describe("i18nGithubAnnotations — getSourceLineSnippet on multi-line values", () => {
+  /**
+   * Pretend a locale block holds a multi-line backtick value. We can't
+   * mutate the real source file, but `getSourceLineSnippet` accepts a
+   * `lines: string[]` arg directly — perfect for synthetic fixtures.
+   */
+  const fixture = [
+    "export const TRANSLATIONS = {",
+    "  pl: {",
+    "    heading: `Linia jeden",
+    "Linia dwa`,",
+    '    description: "krótki",',
+    "  },",
+    "  en: {",
+    '    heading: "Last change",',
+    '    description: "short",',
+    "  },",
+    "};",
+  ];
+
+  it("returns the assembled one-line snippet AND the key declaration line number", () => {
+    const result = __getSourceLineSnippetForTesting(fixture, "pl", "heading");
+    expect(result).not.toBeNull();
+    expect(result!.lineNumber).toBe(3); // 1-based: `heading: \`Linia jeden`
+    expect(result!.snippet).toBe("heading: `Linia jeden Linia dwa`,");
+  });
+
+  it("still returns the trimmed line for normal single-line values", () => {
+    const result = __getSourceLineSnippetForTesting(fixture, "en", "heading");
+    expect(result).not.toBeNull();
+    expect(result!.lineNumber).toBe(8);
+    expect(result!.snippet).toBe('heading: "Last change",');
+  });
+
+  it("does not bleed into a sibling key when the value is single-line", () => {
+    const result = __getSourceLineSnippetForTesting(fixture, "pl", "description");
+    expect(result).not.toBeNull();
+    expect(result!.snippet).toBe('description: "krótki",');
+    expect(result!.snippet).not.toContain("heading");
+  });
+});
 });
