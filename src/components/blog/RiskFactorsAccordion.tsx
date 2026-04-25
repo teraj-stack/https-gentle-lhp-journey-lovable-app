@@ -423,6 +423,15 @@ const RiskFactorsAccordion = () => {
                             href={s.url}
                             target="_blank"
                             rel="noopener noreferrer"
+                            onClick={() =>
+                              trackEbmClick({
+                                url: s.url,
+                                label: s.label,
+                                source: "RiskFactorsAccordion",
+                                kind: "external_source",
+                                ebmId: s.ebmId,
+                              })
+                            }
                             className="text-primary hover:underline inline-flex items-start gap-1.5 leading-snug"
                           >
                             <span className="flex-1">{s.label}</span>
@@ -431,6 +440,15 @@ const RiskFactorsAccordion = () => {
                           {s.ebmId && (
                             <Link
                               to={`/dla-pacjenta/ebm-hemoroidy#ebm-${s.ebmId}`}
+                              onClick={() =>
+                                trackEbmClick({
+                                  url: `/dla-pacjenta/ebm-hemoroidy#ebm-${s.ebmId}`,
+                                  label: `kategoria bibliografii: ${s.ebmId}`,
+                                  source: "RiskFactorsAccordion",
+                                  kind: "internal_anchor",
+                                  ebmId: s.ebmId,
+                                })
+                              }
                               className="text-[11.5px] sm:text-xs text-muted-foreground hover:text-primary underline-offset-2 hover:underline w-fit"
                             >
                               → kategoria w bibliografii
