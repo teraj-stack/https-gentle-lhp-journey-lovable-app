@@ -436,6 +436,7 @@ echo "▶ Running i18n contract tests (filter: $ONLY)…"
 echo "  Reasons:    ${SELECTED_REASONS[*]}"
 echo "  Locales:    $EFFECTIVE_LOCALES   ($LOCALE_SOURCE)"
 echo "  Test files: ${TEST_FILES[*]}"
+echo "  Output dir: $EFFECTIVE_OUT_DIR   ($OUT_SOURCE)"
 # `|| true` — vitest exits non-zero on any failing test; we want to inspect annotations
 # regardless. The final exit code is recomputed from the per-reason counts below.
 GITHUB_ACTIONS=true I18N_ACTIVE_LOCALES="$EFFECTIVE_LOCALES" \
