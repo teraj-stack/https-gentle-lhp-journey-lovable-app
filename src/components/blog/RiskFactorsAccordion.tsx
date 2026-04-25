@@ -579,17 +579,56 @@ const RiskFactorsAccordion = () => {
     });
   };
 
-  // Przeczytane karty — persystencja w localStorage (anonimowo)
-  const [readItems, setReadItems] = useState<string[]>(() => loadStringArray(READ_STORAGE_KEY));
+  // Tryb prywatności: gdy ON, NIE zapisujemy `readItems` do localStorage
+  // (sesja-only). Sama preferencja jednak jest persystowana — żeby przetrwała refresh.
+  // Lazy init: czytamy preferencję zanim zainicjujemy `readItems`, żeby przy włączonym
+  // privacy mode nie ładować historycznie zapisanych „przeczytane" (privacy oczekuje od nas właśnie tego).
+  const [privacyMode, setPrivacyMode] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      return window.localStorage.getItem(PRIVACY_STORAGE_KEY) === "1";
+    } catch {
+      return false;
+    }
+  });
+
+  // Przeczytane karty — persystencja w localStorage (anonimowo); pominięta w trybie prywatności.
+  const [readItems, setReadItems] = useState<string[]>(() => {
+    // Jeśli privacy ON na starcie → ignoruj historyczne dane (czysta sesja).
+    if (typeof window !== "undefined") {
+      try {
+        if (window.localStorage.getItem(PRIVACY_STORAGE_KEY) === "1") return [];
+      } catch {
+        /* noop */
+      }
+    }
+    return loadStringArray(READ_STORAGE_KEY);
+  });
+
+  // Autosave preferencji prywatności + reakcja na włączenie/wyłączenie:
+  // ON → usuń istniejące dane „przeczytane" z localStorage (clean wipe) i zostaw tylko sesję.
+  // OFF → następne zmiany `readItems` znowu się persistują (przez useEffect poniżej).
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem(PRIVACY_STORAGE_KEY, privacyMode ? "1" : "0");
+      if (privacyMode) {
+        window.localStorage.removeItem(READ_STORAGE_KEY);
+      }
+    } catch {
+      /* noop */
+    }
+  }, [privacyMode]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+    if (privacyMode) return; // tryb prywatności — pomijamy zapis
     try {
       window.localStorage.setItem(READ_STORAGE_KEY, JSON.stringify(readItems));
     } catch {
       /* noop */
     }
-  }, [readItems]);
+  }, [readItems, privacyMode]);
 
   const markRead = (id: string) =>
     setReadItems((prev) => (prev.includes(id) ? prev : [...prev, id]));
