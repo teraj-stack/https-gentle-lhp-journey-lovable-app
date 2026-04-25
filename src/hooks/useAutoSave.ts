@@ -683,6 +683,13 @@ export const useAutoSave = () => {
   /**
    * Wyślij ping diagnostyczny i zacznij zbierać pongi przez PING_COLLECTION_WINDOW_MS.
    * Zwraca Promise rozwiązany listą odpowiedzi (po zamknięciu okna).
+   *
+   * Strategia jest wybierana automatycznie wg aktywnego transportu:
+   *  - `broadcast` (BC działa) — klasyczny ping/pong przez BroadcastChannel.
+   *  - `storage-fallback` (BC niedostępny lub symulacja) — round-trip przez
+   *    localStorage: zapisujemy probe w PROBE_KEY, inne karty odpisują w PROBE_ECHO_KEY.
+   *    Mierzona metryka pozostaje ta sama (latencja round-trip + lista origins),
+   *    więc UI nie musi rozróżniać przypadków poza zwykłą etykietą strategii.
    */
   const sendPing = useCallback((): Promise<PongResponse[]> => {
     const pingId =
@@ -690,23 +697,47 @@ export const useAutoSave = () => {
         ? window.crypto.randomUUID()
         : `ping-${Math.random().toString(36).slice(2)}-${Date.now()}`;
     const sentAt = Date.now();
+    // Wybór strategii — czytamy z refa, żeby nie wymuszać re-bindu callbacka przy zmianie transportu.
+    // Symulacja braku BC zmienia `transport` na storage-fallback, więc trafi tu naturalnie.
+    const strategy: "broadcast" | "storage" =
+      transportRef.current === "broadcast" ? "broadcast" : "storage";
 
     activePingIdRef.current = pingId;
     pingSentAtRef.current = sentAt;
-    setPingState({ pingId, sentAt, responses: [], isCollecting: true });
+    setPingState({ pingId, sentAt, responses: [], isCollecting: true, strategy });
 
-    const ping: PingPayload = {
-      kind: "ping",
-      pingId,
-      origin: TAB_ID,
-      label: TAB_LABEL,
-      sentAt,
-    };
-
-    try {
-      channelRef.current?.postMessage(ping);
-    } catch {
-      // kanał niedostępny — Promise rozwiąże się pustą listą po timeout
+    if (strategy === "broadcast") {
+      const ping: PingPayload = {
+        kind: "ping",
+        pingId,
+        origin: TAB_ID,
+        label: TAB_LABEL,
+        sentAt,
+      };
+      try {
+        channelRef.current?.postMessage(ping);
+      } catch {
+        // kanał niedostępny — Promise rozwiąże się pustą listą po timeout
+      }
+    } else {
+      // Storage probe — zapis w PROBE_KEY wystrzeli `storage` event TYLKO w innych kartach
+      // (W3C: storage event nie wraca do nadawcy), więc nie ma ryzyka echa we własnej karcie.
+      const probe: StorageProbePayload = {
+        pingId,
+        origin: TAB_ID,
+        label: TAB_LABEL,
+        enabled: readStored(),
+        sentAt,
+      };
+      try {
+        // Nonce gwarantuje, że dwa kolejne pingi (z tym samym wynikiem) wciąż triggerują storage event.
+        window.localStorage.setItem(
+          PROBE_KEY,
+          JSON.stringify({ ...probe, _nonce: Math.random().toString(36).slice(2) }),
+        );
+      } catch {
+        // brak miejsca / tryb prywatny — Promise rozwiąże się pustą listą po timeout
+      }
     }
 
     return new Promise((resolve) => {
@@ -719,6 +750,16 @@ export const useAutoSave = () => {
           return { ...prev, isCollecting: false };
         });
         pingCollectionTimeoutRef.current = null;
+        // Sprzątanie kluczy storage probe — żeby nie zostawiać śmieci w localStorage.
+        // Robimy to TYLKO gdy używaliśmy strategii storage; dla BC nie ma czego sprzątać.
+        if (strategy === "storage" && isBrowser()) {
+          try {
+            window.localStorage.removeItem(PROBE_KEY);
+            window.localStorage.removeItem(PROBE_ECHO_KEY);
+          } catch {
+            // pomijamy
+          }
+        }
       }, PING_COLLECTION_WINDOW_MS);
     });
   }, []);
@@ -731,7 +772,16 @@ export const useAutoSave = () => {
     }
     activePingIdRef.current = null;
     pingSentAtRef.current = null;
-    setPingState({ pingId: null, sentAt: null, responses: [], isCollecting: false });
+    setPingState({ pingId: null, sentAt: null, responses: [], isCollecting: false, strategy: null });
+    // Posprzątaj storage probe keys także przy ręcznym zamknięciu wyniku.
+    if (isBrowser()) {
+      try {
+        window.localStorage.removeItem(PROBE_KEY);
+        window.localStorage.removeItem(PROBE_ECHO_KEY);
+      } catch {
+        // pomijamy
+      }
+    }
   }, []);
 
   /**
