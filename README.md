@@ -76,6 +76,32 @@ Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/c
 
 The three i18n contract tests (`src/lib/i18nRequiredKeys.test.ts`, `i18nContract.test.ts`, `i18nPlaceholders.test.ts`) emit **inline GitHub Actions annotations** on every PR so a failed locale key shows up as a clickable red marker on the exact line in the “Files changed” view — no need to dig through vitest output.
 
+### Quickstart
+
+Run the full i18n validation locally **and** see the exact `::error` / `::warning` annotation lines that CI would post on a PR:
+
+```sh
+GITHUB_ACTIONS=true bunx vitest run \
+  src/lib/i18nRequiredKeys.test.ts \
+  src/lib/i18nContract.test.ts \
+  src/lib/i18nPlaceholders.test.ts \
+  src/lib/i18nGithubAnnotations.test.ts 2>&1 | grep -E '^(::|FAIL|PASS|Tests )'
+```
+
+What you should see:
+
+- **Green path** (no drift): only `Tests  N passed` lines — no `::error`/`::warning`, exit code `0`.
+- **Drift path**: one `::error file=…,line=N,title=…::…` (or `::warning`) per unique violation. Click any printed `file=` path + `line=` pair to jump to the offending key — that's exactly what reviewers see in the GitHub PR diff.
+
+Sanity-check the annotations:
+
+1. Each `line=N` should land on the actual key declaration in `src/lib/lastChangeTooltipContent.ts` or `src/lib/lastChangeTooltipModel.ts` — open the file at that line and confirm.
+2. Identical `(locale, path, reason)` triples should appear **exactly once** (cross-test dedup). If you see duplicates, the dedup cache wasn't reset between groups — file a bug.
+3. `empty-optional-value` should be `::warning` (yellow); everything else `::error` (red, build-failing).
+
+Without `GITHUB_ACTIONS=true` the emitter is a no-op, so plain `bunx vitest run` stays clean for normal local development.
+
+
 ### Workflow command format
 
 The emitter (`src/lib/i18nGithubAnnotations.ts`) writes one line to stdout per violation, using GitHub Actions’ [workflow command](https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#setting-an-error-message) protocol:
