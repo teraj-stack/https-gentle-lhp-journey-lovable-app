@@ -650,7 +650,7 @@ Sample output (after pasting fixtures #2 + #4 + #5 from the [End-to-end walkthro
 - **Exit code** — `0` iff every error-severity reason is `PASS`. `empty-optional-value` (the only warning reason) **never** flips the verdict, matching the in-CI behaviour where warnings stay green.
 - **Dedup** — `sort -u` collapses duplicate annotations (a stacked fixture can trip the same key in multiple tests). Counts are post-dedup, so the table mirrors what reviewers actually see in the PR diff.
 - **Multi-reason filter** — `--only a,b,c` runs the **union** of owning test files (so `--only placeholder-mismatch,wrong-type` runs both `i18nPlaceholders.test.ts` and `i18nContract.test.ts`), then narrows the annotations file to `reason=(a|b|c)` before counting. Each selected reason gets its own row, and the overall verdict fails iff any selected **error-severity** reason has hits — adding `empty-optional-value` to the list never flips the verdict.
-- **Output dir** — defaults to `/tmp` (`i18n-summary.log` + `i18n-summary-annotations.txt`). Override per-run with `--out ./artifacts` or per-shell with `I18N_SUMMARY_OUT=./artifacts bash i18n-summary.sh`. Precedence is `--out` > env > default; the resolved path + source is echoed on the `Output dir:` line. The script `mkdir -p`s the target and refuses to run if it can't create or write to it (exit `2`). Filenames are intentionally fixed so downstream tooling — CI artifact upload, the grep recipes earlier in this README — can hard-code them; only the parent dir varies.
+- **Output dir** — defaults to `/tmp` (`i18n-summary.log` + `i18n-summary-annotations.txt`). Override per-run with `--out ./artifacts` or per-shell with `I18N_SUMMARY_OUT=./artifacts bash i18n-summary.sh`. Precedence is `--out` > env > default; the resolved path + source is echoed on the `Output dir:` line. The script `mkdir -p`s the target and refuses to run if it can't create or write to it (exit `2`). Filenames are intentionally fixed so downstream tooling — CI artifact upload, the [grep recipes](#grep-recipes--find-a-specific-reason--locale-in-tmpi18n-summarylog) below — can hard-code them; only the parent dir varies.
 - **Wire into CI** — drop the script into `scripts/`, add a `"i18n:summary": "bash scripts/i18n-summary.sh"` entry to `package.json`, and call it from `.github/workflows/i18n-check.yml` for a compact summary line in the Actions log alongside the existing inline annotations. For artifact preservation across runs, pair it with `--out "$RUNNER_TEMP/i18n"` followed by `- uses: actions/upload-artifact@v4` pointing at the same path.
 
 #### Listing all available fixture error types
@@ -1827,6 +1827,58 @@ I18N_ACTIVE_LOCALES=pl,en,de,it GITHUB_ACTIONS=true bunx vitest run \
 ```
 
 `sort -u` deduplicates if the same key trips multiple tests (rare but possible — e.g. a missing key plus a placeholder mismatch on a sibling).
+
+#### Grep recipes — find a specific reason / locale in `/tmp/i18n-summary.log`
+
+Once `i18n-summary.sh` has finished, the full vitest output (including every `::error` / `::warning` workflow command) lives at `/tmp/i18n-summary.log` (or wherever you pointed `--out`). Each annotation line follows the shape `::<severity> file=<path>,line=<n>::<group> [<severity>]: <locale> · <reason> | …`, so plain `grep` is enough — no `jq` or `awk` needed. Replace `/tmp/i18n-summary.log` with `$OUT/i18n-summary.log` if you used `--out $OUT`.
+
+```sh
+# 0. Sanity — show every annotation (error + warning), one per line, deduped.
+grep '^::' /tmp/i18n-summary.log | sort -u
+
+# 1. By severity — only failures, or only advisories.
+grep '^::error '   /tmp/i18n-summary.log | sort -u
+grep '^::warning ' /tmp/i18n-summary.log | sort -u
+
+# 2. By reason — anchor on `reason=<name>` to avoid false positives in messages.
+grep '^::' /tmp/i18n-summary.log | grep 'reason=missing-required-key'
+grep '^::' /tmp/i18n-summary.log | grep 'reason=placeholder-mismatch'
+grep '^::' /tmp/i18n-summary.log | grep 'reason=undeclared-key'
+grep '^::' /tmp/i18n-summary.log | grep 'reason=wrong-type'
+grep '^::' /tmp/i18n-summary.log | grep 'reason=empty-optional-value'
+
+# 3. By locale — the locale shows up between the group and the reason as ` · <pl|en|de|it> · `.
+grep '^::' /tmp/i18n-summary.log | grep ' · pl · '
+grep '^::' /tmp/i18n-summary.log | grep ' · en · '
+grep '^::' /tmp/i18n-summary.log | grep ' · de · '
+grep '^::' /tmp/i18n-summary.log | grep ' · it · '
+
+# 4. Combined — reason AND locale (chain greps; order doesn't matter).
+grep '^::' /tmp/i18n-summary.log | grep 'reason=placeholder-mismatch' | grep ' · en · '
+grep '^::' /tmp/i18n-summary.log | grep 'reason=wrong-type'           | grep ' · pl · '
+
+# 5. By source file (which locale module the validator blamed).
+grep '^::' /tmp/i18n-summary.log | grep 'file=src/lib/lastChangeTooltipContent.ts'
+grep '^::' /tmp/i18n-summary.log | grep 'file=src/lib/lastChangeTooltipModel.ts'
+
+# 6. By key — useful when triaging a single failing translation entry.
+grep '^::' /tmp/i18n-summary.log | grep 'path=variant.warningSuffix'
+
+# 7. Counts — quick "how bad is it?" summary, deduped.
+grep '^::' /tmp/i18n-summary.log | sort -u | grep -c '^::error '   # error count
+grep '^::' /tmp/i18n-summary.log | sort -u | grep -c '^::warning ' # warning count
+
+# 8. Combined alternation (one grep, multiple reasons or locales).
+grep '^::' /tmp/i18n-summary.log | grep -E 'reason=(placeholder-mismatch|wrong-type)'
+grep '^::' /tmp/i18n-summary.log | grep -E ' · (en|de) · '
+```
+
+**Tips**
+
+- The `^::` anchor matters — it skips body text that happens to contain `::after`, CSS pseudo-elements in test snapshots, etc. Always start a recipe with it.
+- Spaces around `·` are non-breaking-looking but are regular ASCII spaces; `grep ' · en · '` (with the surrounding spaces) is the safest locale match because it won't collide with substrings like `· enabled ·`.
+- Pipe through `sort -u` whenever you want a count or a clean diff — the same fixture can trip multiple test files and produce duplicate annotation lines.
+- Set `I18N_ANNOTATION_DEBUG=1` alongside `GITHUB_ACTIONS=true` for a parallel stderr stream with `severity=… locale=… reason=… path=…` fields per annotation — easier to grep when the workflow-command line is too dense (see [Debug flag](#debug-flag-i18n_annotation_debug1)).
 
 
 ### Source line resolution
