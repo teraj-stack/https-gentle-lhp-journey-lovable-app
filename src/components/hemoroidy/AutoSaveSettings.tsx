@@ -461,33 +461,70 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
             <div
               key={lastChangeAt ?? "none"}
               className={`text-[11px] font-sans inline-flex items-center gap-1.5 transition-colors animate-fade-in ${labelStyle.containerClass}`}
-              title={tooltipText}
               aria-label={tooltipText}
               aria-live="polite"
             >
-              <RefreshCw
-                className={`w-3 h-3 ${labelStyle.iconClass}`}
-                aria-hidden="true"
-              />
-              <span>
-                Ostatnia zmiana:{" "}
-                <strong className={labelStyle.strongClass}>
-                  {lastSyncLabel}
-                </strong>
-                {labelStyle.showLocalSuffix && (
-                  // Wyraźny badge „(lokalnie)" — border + tło + uppercase + font-mono,
-                  // żeby pacjent natychmiast widział, że to JEGO zmiana w tej karcie,
-                  // a nie sync z innej karty (dla którego cała etykieta świeci na zielono).
-                  // Celowo neutralna paleta (muted), bo zielony rezerwujemy dla remote.
+              {/* Radix Tooltip opisuje źródło zmiany (lokalna vs sync między kartami).
+                  Trigger to span ikoną + tekstem — opakowuje TYLKO informacyjną
+                  część etykiety, żeby przycisk „X" obok miał własny title bez kolizji.
+                  Native `title` zostaje na trigger jako fallback dla touch (Radix
+                  Tooltip nie pokazuje się na hover dotykowym). */}
+              <Tooltip>
+                <TooltipTrigger asChild>
                   <span
-                    className="ml-1.5 inline-flex items-center px-1.5 py-0.5 text-[10px] uppercase tracking-wider font-mono rounded-md border border-border/60 bg-muted/40 text-foreground/80 align-middle"
-                    title="Ta zmiana pochodzi z TEJ karty (Switch lub skrót Alt+Shift+A), a nie z synchronizacji między kartami."
-                    aria-label="Źródło: lokalna zmiana w tej karcie"
+                    className="inline-flex items-center gap-1.5 cursor-help"
+                    title={tooltipText}
+                    tabIndex={0}
                   >
-                    lokalnie
+                    <RefreshCw
+                      className={`w-3 h-3 ${labelStyle.iconClass}`}
+                      aria-hidden="true"
+                    />
+                    <span>
+                      Ostatnia zmiana:{" "}
+                      <strong className={labelStyle.strongClass}>
+                        {lastSyncLabel}
+                      </strong>
+                      {labelStyle.showLocalSuffix && (
+                        // Wyraźny badge „(lokalnie)" — border + tło + uppercase + font-mono,
+                        // żeby pacjent natychmiast widział, że to JEGO zmiana w tej karcie,
+                        // a nie sync z innej karty (dla którego cała etykieta świeci na zielono).
+                        // Celowo neutralna paleta (muted), bo zielony rezerwujemy dla remote.
+                        <span
+                          className="ml-1.5 inline-flex items-center px-1.5 py-0.5 text-[10px] uppercase tracking-wider font-mono rounded-md border border-border/60 bg-muted/40 text-foreground/80 align-middle"
+                          aria-label="Źródło: lokalna zmiana w tej karcie"
+                        >
+                          lokalnie
+                        </span>
+                      )}
+                    </span>
                   </span>
-                )}
-              </span>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-xs">
+                  {/* Struktura tooltipa: nagłówek koloryzowany per źródło + opis
+                      mechanizmu + pełna data. Symetryczne kolory: zielony dla remote,
+                      neutralny dla local — zgodnie z całym systemem etykiet. */}
+                  <div className="space-y-1">
+                    <p
+                      className={`text-xs font-semibold ${
+                        isRemoteChange ? "text-emerald-400" : "text-foreground"
+                      }`}
+                    >
+                      {isRemoteChange
+                        ? "Synchronizacja między kartami"
+                        : "Lokalna akcja w tej karcie"}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground leading-snug">
+                      {sourceDescription}
+                    </p>
+                    {lastSyncFullDate && (
+                      <p className="text-[10px] text-muted-foreground/80 font-mono">
+                        {lastSyncFullDate}
+                      </p>
+                    )}
+                  </div>
+                </TooltipContent>
+              </Tooltip>
               <button
                 type="button"
                 onClick={() => {
