@@ -37,3 +37,8 @@ Dziennik 14 dni hemoroidów: anonimowy tracker w przeglądarce.
   - Każdy przycisk w stripie ma `title` z pełną datą+godziną aktualizacji (formatUpdatedAt: `25.04.2026, 14:32`) lub „Brak wpisu — kliknij, aby dodać"
   - Pod kropką poziomu w stripie: kompaktowy timestamp `formatUpdatedAtCompact` (HH:MM dla dziś/wczoraj, `DD.MM HH:MM` dla starszych)
   - W nagłówku edytora aktywnego dnia: linia z ikoną Clock i pełnym timestampem ostatniej aktualizacji (tylko gdy wpis istnieje w `entries[activeDate]`)
+- **Wskaźnik postępu 14-dniowego** (DiaryFullModule, między `DiaryReminderBanner` a kartą trendu):
+  - Pasek `Progress` (shadcn) wartość = `completedDaysCount/14 * 100%` — liczy TYLKO dni z `entry.complete === true` (wszystkie 9 pytań quizu mają odpowiedź)
+  - Liczniki w nagłówku: Ukończone (emerald), Częściowe (primary, gdy >0 — wpis istnieje z ≥1 odp. lub notatką ale niekomplet), Pozostało (`14 - totalProgressDays`)
+  - Status aktywnego dnia (chip pod paskiem): `completed/total pól quizu` z ikoną CheckCircle2 (entry.complete) lub CircleDashed (incomplete) i kolorem emerald/primary/muted
+  - `partialDaysCount` liczone w `useMemo` z `[trend, entries]` — aktualizuje się po każdej zmianie auto-zapisu
