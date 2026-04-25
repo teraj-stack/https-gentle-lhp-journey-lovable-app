@@ -103,6 +103,13 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
   } = useAutoSave();
 
   /**
+   * Preferencja formatu czasu dla etykiet typu „Ostatnia zmiana".
+   * Przechowywana w localStorage i synchronizowana między instancjami panelu
+   * przez CustomEvent — patrz `useTimeFormatPreference`.
+   */
+  const { mode: timeFormatMode, setMode: setTimeFormatMode } = useTimeFormatPreference();
+
+  /**
    * Symulacja braku BC + sanity check: po włączeniu robimy tymczasowy toggle
    * przełącznika (na bieżącą wartość) i sprawdzamy w historii, czy zmiana
    * wróciła kanałem fallbackowym. To potwierdza, że storage+CustomEvent wciąż
@@ -120,16 +127,20 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
     });
   };
   /**
-   * Tick używany do auto-odświeżania względnego czasu („X s temu" → „X min temu").
-   * Inkrementowany co 15 s tylko gdy mamy zarejestrowaną zdalną synchronizację.
+   * Tick używany do auto-odświeżania etykiet czasu. Częstotliwość zależy od trybu:
+   *  - `relative` — co 15 s (granulacja minutowa wystarcza),
+   *  - `clock`    — co 1 s (chcemy widzieć aktualizację sekund),
+   *  - `full`     — brak ticka (data nie zmienia się szybko, wystarczy render na zmianę).
    */
   const [, setNowTick] = useState(0);
 
   useEffect(() => {
     if (lastRemoteSyncAt === null) return;
-    const interval = setInterval(() => setNowTick((n) => n + 1), 15_000);
+    if (timeFormatMode === "full") return;
+    const intervalMs = timeFormatMode === "clock" ? 1_000 : 15_000;
+    const interval = setInterval(() => setNowTick((n) => n + 1), intervalMs);
     return () => clearInterval(interval);
-  }, [lastRemoteSyncAt]);
+  }, [lastRemoteSyncAt, timeFormatMode]);
 
   /**
    * Toast informujący o zdalnej synchronizacji — odpala się gdy `lastRemoteSyncAt`
