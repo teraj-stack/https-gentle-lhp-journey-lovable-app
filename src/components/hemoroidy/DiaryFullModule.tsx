@@ -291,11 +291,22 @@ const DiaryFullModule = ({
   );
 
   // Auto-flush po włączeniu auto-zapisu — żadne pending zmiany nie giną.
+  // Liczymy zmiany PRZED flushem (po nim drafty się wyczyszczą), żeby pokazać
+  // pacjentowi konkretny licznik w toaście potwierdzającym zachowanie danych.
   useEffect(() => {
     if (!autoSaveEnabled) return;
-    const hasDraft =
-      Object.keys(draftAnswers).length > 0 || Object.keys(draftNotes).length > 0;
-    if (hasDraft) flushDraft();
+    let count = 0;
+    for (const day of Object.values(draftAnswers)) count += Object.keys(day).length;
+    count += Object.keys(draftNotes).length;
+    if (count === 0) return;
+    const ok = flushDraft();
+    if (ok) {
+      toast({
+        title: "Niezapisane zmiany zachowane ✓",
+        description: `Auto-zapis włączony — ${count} ${count === 1 ? "zmiana z draftu została" : "zmian z draftu zostało"} zapisana lokalnie.`,
+        duration: 3200,
+      });
+    }
     // celowo bez `flushDraft` w deps — zapobiega pętli (flushDraft zmienia draft state)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoSaveEnabled]);
