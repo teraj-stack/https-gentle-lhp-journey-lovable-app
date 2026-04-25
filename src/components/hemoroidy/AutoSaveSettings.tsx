@@ -54,7 +54,18 @@ interface AutoSaveSettingsProps {
  * żeby przepisać je do storage'u (tę logikę implementuje DiaryFullModule).
  */
 const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }: AutoSaveSettingsProps) => {
-  const { enabled, setEnabled, isRemoteSyncing } = useAutoSave();
+  const { enabled, setEnabled, isRemoteSyncing, lastRemoteSyncAt } = useAutoSave();
+  /**
+   * Tick używany do auto-odświeżania względnego czasu („X s temu" → „X min temu").
+   * Inkrementowany co 15 s tylko gdy mamy zarejestrowaną zdalną synchronizację.
+   */
+  const [, setNowTick] = useState(0);
+
+  useEffect(() => {
+    if (lastRemoteSyncAt === null) return;
+    const interval = setInterval(() => setNowTick((n) => n + 1), 15_000);
+    return () => clearInterval(interval);
+  }, [lastRemoteSyncAt]);
 
   const handleToggle = (next: boolean) => {
     setEnabled(next);
@@ -66,6 +77,19 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
       duration: 2400,
     });
   };
+
+  const lastSyncLabel = lastRemoteSyncAt !== null ? formatRelativeTime(lastRemoteSyncAt) : null;
+  const lastSyncFullDate =
+    lastRemoteSyncAt !== null
+      ? new Date(lastRemoteSyncAt).toLocaleString("pl-PL", {
+          day: "2-digit",
+          month: "long",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+        })
+      : undefined;
 
   return (
     <div className="glass-card rounded-2xl p-4 sm:p-5 mb-6">
