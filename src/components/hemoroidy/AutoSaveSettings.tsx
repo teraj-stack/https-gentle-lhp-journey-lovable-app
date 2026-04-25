@@ -154,7 +154,7 @@ const AutoSaveSettings = ({ pendingDraftCount = 0, onSaveDay, activeDateLabel }:
                   aria-hidden="true"
                 />
                 <span>
-                  Ostatnia zmiana z innej karty: <strong className="text-foreground">{lastSyncLabel}</strong>
+                  Ostatnia zmiana: <strong className="text-foreground">{lastSyncLabel}</strong>
                 </span>
               </p>
             )}
