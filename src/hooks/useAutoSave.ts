@@ -304,10 +304,21 @@ export const useAutoSave = () => {
   }, []);
 
   const toggle = useCallback((next: boolean) => {
+    // Generujemy nową wersję dla TEJ lokalnej zmiany. Każdy odbiorca (inna instancja
+    // tego samego hooka, inna karta, fallback przez storage) zignoruje ją, jeśli
+    // w międzyczasie zaaplikował coś nowszego — najnowsza zmiana zawsze wygrywa.
+    const version = nextVersion();
+    lastAppliedVersionRef.current = version;
+
     setEnabled(next);
     writeStored(next);
 
-    const payload: StateBroadcastPayload = { kind: "state", enabled: next, origin: TAB_ID };
+    const payload: StateBroadcastPayload = {
+      kind: "state",
+      enabled: next,
+      origin: TAB_ID,
+      version,
+    };
 
     try {
       channelRef.current?.postMessage(payload);
