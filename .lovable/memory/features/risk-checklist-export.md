@@ -41,3 +41,9 @@ type: feature
 - **Widoczny licznik**: pojawia się TYLKO gdy `nQuery` aktywne i `filtered.length > 0`. Karta z `border-primary/30 bg-primary/[0.05]`, badge `X/Y` z ikoną Search + tekst „dopasowanych czynników dla „query"".
 - **Przycisk „Rozwiń tylko dopasowane"**: zapisuje `filtered.map(rf => rf.id)` do `openItems`, czyści `query` (`setQuery("")`), pokazuje toast. Efekt: dopasowania zostają otwarte trwale, reszta zwinięta.
 - **Stary tekst hint** pod inputem zachowany (aria-live polite) — duplikuje informację dla czytników ekranu.
+
+## Persystencja stanu rozwinięcia (openItems)
+- **Storage**: `cml.hemoroidy.risk-factors.open.v1` (string[]) — id otwartych akordeonów.
+- **Lazy init** w `useState` z walidacją: `RISK_FACTORS` ids (Set), żeby zignorować przestarzałe id po refaktorze.
+- **Autosave**: useEffect na `openItems` — zapis TYLKO gdy `!nQuery` (tryb wyszukiwania nadpisuje accordionValue na auto-rozwinięcie dopasowań, więc to nie jest wybór użytkownika).
+- **Skrót Ctrl/⌘+E i przyciski "Rozwiń wszystko" / "Rozwiń tylko dopasowane"** automatycznie persistują przez ten sam mechanizm.
