@@ -33,6 +33,7 @@ import {
   parseCurrentTranslationKeys,
   parseCurrentTimeLineKeys,
   diffKeys,
+  mergePreservingOrder,
 } from "./autofixScannerShim";
 
 describe("autofix scanner — collectDotMemberReads", () => {
