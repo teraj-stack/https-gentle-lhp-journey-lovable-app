@@ -454,6 +454,41 @@ Sample output (after pasting fixtures #2 + #4 + #5 from the [End-to-end walkthro
 - **Dedup** — `sort -u` collapses duplicate annotations (a stacked fixture can trip the same key in multiple tests). Counts are post-dedup, so the table mirrors what reviewers actually see in the PR diff.
 - **Wire into CI** — drop the script into `scripts/`, add a `"i18n:summary": "bash scripts/i18n-summary.sh"` entry to `package.json`, and call it from `.github/workflows/i18n-check.yml` for a compact summary line in the Actions log alongside the existing inline annotations.
 
+#### Listing all available fixture error types
+
+Run the script with `--list` (alias `-l`) to print every reason the validator can emit, its severity, and the owning test file — which is exactly the value you pass to `--only`. No tests are executed; the command is safe to run on any branch.
+
+```sh
+bash i18n-summary.sh --list
+```
+
+Expected output (stable across runs — the lists are sourced from `ALL_ERROR_REASONS` / `ALL_WARNING_REASONS` / `REASON_TEST` at the top of the script):
+
+```text
+REASON                    SEVERITY    TEST FILE (--only value)
+------                    --------    ------------------------
+missing-required-key      error       src/lib/i18nRequiredKeys.test.ts
+placeholder-mismatch      error       src/lib/i18nPlaceholders.test.ts
+undeclared-key            error       src/lib/i18nContract.test.ts
+wrong-type                error       src/lib/i18nContract.test.ts
+empty-optional-value      warning     src/lib/i18nContract.test.ts
+
+Example: bash i18n-summary.sh --only missing-required-key
+```
+
+Quick reference (same data, for readers who don't want to run the script):
+
+| `--only` value | Severity | Owning test file | Build-fail? |
+| --- | --- | --- | --- |
+| `missing-required-key` | `::error` | `src/lib/i18nRequiredKeys.test.ts` | yes |
+| `placeholder-mismatch` | `::error` | `src/lib/i18nPlaceholders.test.ts` | yes |
+| `undeclared-key` | `::error` | `src/lib/i18nContract.test.ts` | yes |
+| `wrong-type` | `::error` | `src/lib/i18nContract.test.ts` | yes |
+| `empty-optional-value` | `::warning` | `src/lib/i18nContract.test.ts` | no (advisory) |
+| `all` (default) | mixed | all three above | yes if any error reason hits |
+
+Severity is decided by `classifyReasonSeverity` in `src/lib/i18nGithubAnnotations.ts` (the `WARNING_REASONS` set currently contains only `empty-optional-value`); see [i18n CI annotation severity](mem://features/i18n-ci-annotation-severity.md). When you add a new reason to the validator, update `ALL_ERROR_REASONS` / `ALL_WARNING_REASONS` and `REASON_TEST` at the top of `i18n-summary.sh` so `--list` stays in sync.
+
 #### "I ran the command and got nothing" — quick triage
 
 | Symptom | Most likely cause | Fix |
