@@ -204,6 +204,7 @@ export const getLastChangeTooltipContent = (
     heading: variant.heading,
     ariaHeading: `${t.sourcePrefix}${variant.ariaHeadingOverride ?? variant.heading}`,
     description: variant.description,
+    shortBadge: variant.shortBadge,
     locale: resolved,
   };
 };
