@@ -1910,8 +1910,44 @@ Available flags:
 | `--log <path>` | Source file (default `/tmp/i18n-summary.log`) | Pair with `./i18n-summary.sh --out <dir>`. |
 | `-u`, `--unique` | Pipes through `sort -u` | Same fixture can produce duplicates across test files. |
 | `-c`, `--count` | Prints just the (deduped) row count | Implies `--unique`. |
+| `--pattern[=ere\|pcre\|literal]` | Prints a regex-safe pattern instead of running the search | Use to paste into other tools (`rg`, VS Code, JetBrains, BBEdit, `grep -E/-P`). Default flavor is `ere`. |
 
 Exits `0` on a successful run (even with zero matches), `2` if the log file is missing or a flag value is invalid. Combine flags freely — they AND together.
+
+##### `--pattern` — emit a paste-ready regex
+
+When you need the same filter in another tool (a workspace-wide search, a CI grep, a one-off `rg` invocation), pass `--pattern`. Instead of running the search, the script prints a single regex-safe expression to stdout — every value is escaped (`.`, `(`, `*`, `?`, `\`, `|`, `[`, `]`, `{`, `}`, `^`, `$`) so you can paste it verbatim. Three flavors:
+
+| Flavor | When to use | What it produces |
+| --- | --- | --- |
+| `--pattern` (default `ere`) | `grep -E`, `egrep`, `awk`, most editors without PCRE | Order-aware ERE chained with `.*`. When `--reason` AND `--locale` are both set, it anchors on the stable trailing form `(locale=X, reason=Y, …)` so order doesn't matter. |
+| `--pattern=pcre` | `rg` (default), `grep -P`, VS Code (regex on), JetBrains, Perl, Python `re` | Lookahead-based pattern (`^::(?=.*reason=…)(?=.*locale=…).*`). Order-independent across all filters. |
+| `--pattern=literal` | Building your own grep chain, `grep -F -f -`, fzf | One fixed string per line (no escaping needed). For `--locale` and `--key` it emits both forms (title + message body). |
+
+```sh
+# Get an ERE for grep / awk:
+./scripts/grep-i18n --reason placeholder-mismatch --locale en --pattern
+# → ^::.*\(locale=en, reason=placeholder-mismatch,
+
+# Get a PCRE for ripgrep / VS Code:
+./scripts/grep-i18n --reason wrong-type --locale en --pattern=pcre
+# → ^::(?=.*reason=wrong-type)(?=.*(locale=en[,)]| · en( · |$))).*
+
+# Pipe directly into ripgrep against any file:
+rg "$(./scripts/grep-i18n --reason undeclared-key --locale de --pattern=pcre)" /tmp/i18n-summary.log
+
+# Or into a stricter grep against the live CI artifact:
+grep -E "$(./scripts/grep-i18n --reason wrong-type --severity error --pattern)" ./artifacts/i18n-summary.log
+
+# Literal mode — build your own chain (each line is a substring, no regex):
+./scripts/grep-i18n --reason placeholder-mismatch --locale en --pattern=literal
+# → reason=placeholder-mismatch
+#   locale=en,
+#    · en ·
+#   (one fixed string per line; pipe into `grep -F -f -` or paste into fzf)
+```
+
+The emitter respects `--severity` (it tightens the `^::` anchor to `^::error ` / `^::warning `), `--file`, and `--key`. If you only pass `--pattern` with no filters, you get back the bare anchor (`^::`) — useful as a starting point. The script never reads the log when `--pattern` is set, so you can run it on a machine that hasn't produced an `i18n-summary.log` yet (e.g. to prepare a CI grep step).
 
 ### Source line resolution
 
