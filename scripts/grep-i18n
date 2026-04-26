@@ -51,6 +51,8 @@ while [ $# -gt 0 ]; do
     --log=*)    LOG="${1#*=}"; shift ;;
     -u|--unique) UNIQUE=1; shift ;;
     -c|--count)  COUNT=1; shift ;;
+    --pattern)         PATTERN="ere"; shift ;;
+    --pattern=*)       PATTERN="${1#*=}"; shift ;;
     -h|--help)  usage 0 ;;
     *) echo "Unknown arg: $1" >&2; usage 2 ;;
   esac
