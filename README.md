@@ -1975,6 +1975,67 @@ grep -cE '^::.*severity=error\)' /tmp/i18n-summary.log                         #
 - **`tail -F` + `grep --line-buffered`** — the `-F` follows file rotation and `--line-buffered` disables grep's default block buffering; without it, matches don't appear until 4 KB has accumulated.
 - **Pre-filter once, iterate cheap** (recipe 6) — the cheapest optimization is to `grep '^::' > smaller.log` once and point every subsequent recipe at `smaller.log` (or `./scripts/grep-i18n --log smaller.log`). On a 50 MB log this is usually a >100× speedup.
 
+##### Case-insensitive matching (`grep -i`) — when log formatting drifts
+
+The annotation emitter (`writeAnnotation` in `i18nGithubAnnotations.ts`) writes everything **lowercase**: `reason=placeholder-mismatch`, `locale=en`, `severity=error`. So in a clean local run the case-sensitive recipes above are the right default — they reject false-positive substring matches and are slightly faster.
+
+But the log isn't always clean. Surrounding noise can mix cases:
+
+- **vitest output** prints test names verbatim — so a `describe('Placeholder mismatch')` block leaks `Placeholder` (capital P) into the log alongside the lowercase annotation.
+- **Stack traces** include type names (`PlaceholderMismatchError`, `LocaleEN`).
+- **External tools** that re-emit the log (CI replayers, Slack notifiers, Sentry breadcrumbs) sometimes title-case headings or upper-case locale codes (`LOCALE=EN`).
+- **Custom `v.detail` strings** passed by validators may use sentence case (`Reason: placeholder-mismatch`) before the canonical `(locale=…, reason=…, severity=…)` tuple appears later on the same line.
+
+When you're triaging a noisy log and don't yet know which case form your matches use, swap `grep` → `grep -i` and the recipes still work. Pair `-i` with `-E` for ERE, or with `-w` to pin on whole words when the value happens to also be an English word (e.g. `--key local`).
+
+```sh
+# 1. Reason — case-insensitive. Matches `reason=placeholder-mismatch`,
+#    `Reason: Placeholder-Mismatch`, `PlaceholderMismatchError`, etc.
+grep -iE 'reason[=: ]+placeholder-mismatch|placeholdermismatch' /tmp/i18n-summary.log
+
+# 2. Locale — case-insensitive on the whole tuple position. The `-w` keeps
+#    `en` from matching inside `enabled` / `Length` / `Enum`.
+grep -iwE '(locale=en|locale=EN| · en · )' /tmp/i18n-summary.log
+
+# 3. Combined — reason AND locale, both case-insensitive, anchored on `^::`
+#    so we still skip non-annotation noise.
+grep -iE '^::.*reason=wrong-type' /tmp/i18n-summary.log | grep -iwE 'locale=en'
+
+# 4. Severity verdict — case-insensitive `severity=error|warning)` tail match.
+#    Useful when a downstream tool re-emits the tuple as `Severity=Error`.
+grep -iE '^::.*severity=(error|warning)\)' /tmp/i18n-summary.log
+
+# 5. Multi-reason alternation — case-insensitive, plus a tolerance for
+#    surrounding `=`, `:`, or whitespace separators (`reason=`, `Reason: `).
+grep -iE 'reason[=: ]+(placeholder-mismatch|wrong-type|missing-required-key)' /tmp/i18n-summary.log
+
+# 6. Counts — same as the case-sensitive count recipes, just `-i` added.
+#    The `sort -u` still dedups exact-byte duplicates; if you want to dedup
+#    case-folded duplicates too, pipe through `tr A-Z a-z` first.
+grep -iE '^::.*severity=error\)'   /tmp/i18n-summary.log | sort -u | wc -l
+grep -iE '^::.*severity=error\)'   /tmp/i18n-summary.log | tr 'A-Z' 'a-z' | sort -u | wc -l   # case-folded dedup
+
+# 7. ripgrep equivalent — `rg` is case-insensitive by default when the
+#    pattern is all-lowercase ("smart case"). Pass `-i` to force it, or
+#    `-s` to force case-sensitive when smart case guesses wrong.
+rg -i 'reason=placeholder-mismatch' /tmp/i18n-summary.log
+rg -s 'reason=placeholder-mismatch' /tmp/i18n-summary.log   # explicit sensitive
+
+# 8. Find ALL case variants that appear in a noisy log — useful for spotting
+#    a re-emitter that's mangling the format. `-o` prints just the match,
+#    `sort -u` shows unique forms.
+grep -ioE 'reason[=: ]*[a-z-]+' /tmp/i18n-summary.log | sort -u | head
+grep -ioE 'locale[=: ]*[a-z]{2}' /tmp/i18n-summary.log | sort -u | head
+```
+
+**When NOT to use `-i`**
+
+- **Path / key filtering** (`--key`, `path=…`) — translation keys are case-sensitive in the source files (`variant.warningSuffix` ≠ `Variant.WarningSuffix`), so `-i` here can hide real bugs by matching an unrelated key with the same letters.
+- **Severity verdict counts in CI** — your CI gate should run case-sensitive against the canonical form so a re-emitter accidentally lowering the count goes noticed.
+- **`./scripts/grep-i18n`** — the helper is intentionally case-sensitive. If you need `-i` behaviour with the helper, generate a pattern with `--pattern=pcre` and feed it to `rg -i` / `grep -iP`:
+  `grep -iP "$(./scripts/grep-i18n --reason placeholder-mismatch --locale en --pattern=pcre)" /tmp/i18n-summary.log`.
+- **When the `^::` anchor matters** (every recipe above) — `grep -i` doesn't change anchor semantics, so `^::` still requires a literal lowercase `::` at column 0. That's a feature: GitHub workflow commands are always lowercase `::error` / `::warning`, regardless of how the surrounding log was re-emitted.
+
 #### Helper: `./scripts/grep-i18n`
 
 If you find yourself re-typing the same `grep '^::' … | grep reason=… | grep locale=…` chain, use the bundled wrapper. It targets `/tmp/i18n-summary.log` by default and exposes the same filters as flags — no need to remember the exact field shape.
