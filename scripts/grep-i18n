@@ -76,9 +76,9 @@ fi
 
 # Escape every regex metachar so the value can be embedded verbatim into ERE/PCRE.
 # Covers: \ . * + ? ( ) [ ] { } ^ $ | /
-# Use `|` as the sed delimiter so `/` in the input doesn't terminate the s-command.
+# Use `#` as the sed delimiter so `/` and `|` in the input don't terminate the s-command.
 regex_escape() {
-  printf '%s' "$1" | sed -e 's|[\\.*+?()\[\]{}^$|/]|\\&|g'
+  printf '%s' "$1" | sed -e 's#[][\\.*+?(){}^$|/]#\\&#g'
 }
 
 # Build the pipeline: anchor on workflow-command lines, then chain filters.
