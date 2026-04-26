@@ -116,20 +116,22 @@ if [ -n "$PATTERN" ]; then
       printf '%s%s.*\n' "${parts[0]}" "$(IFS=''; echo "${parts[*]:1}")"
       ;;
     ere)
-      # Build a single ERE that requires reason= and/or locale= tokens to
-      # appear anywhere on the line (order-independent via alternation is
-      # not possible without lookahead, so we emit a permissive form).
-      ere_parts=("$ANCHOR.*")
-      [ -n "$REASON" ] && ere_parts+=("reason=$(regex_escape "$REASON")")
-      if [ -n "$LOCALE" ]; then
-        esc_loc=$(regex_escape "$LOCALE")
-        ere_parts+=("(locale=${esc_loc}[,)]| · ${esc_loc}( · |\$))")
+      # ERE has no lookahead, so we exploit the stable trailing form of every
+      # annotation: `… (locale=<X>, reason=<Y>, severity=<Z>)`. File/key/anchor
+      # are joined with `.*` in the order they appear in the line:
+      #   `^::sev[ ]file=…::group [sev]: locale · reason | path=… (locale=X, reason=Y, severity=Z)`
+      ere_parts=("$ANCHOR")
+      [ -n "$FILE" ] && ere_parts+=(".*file=$(regex_escape "$FILE")")
+      [ -n "$KEY" ]  && ere_parts+=(".*path=$(regex_escape "$KEY")")
+      if [ -n "$LOCALE" ] && [ -n "$REASON" ]; then
+        # Both — match the parenthesized tail exactly.
+        ere_parts+=(".*\(locale=$(regex_escape "$LOCALE"), reason=$(regex_escape "$REASON"),")
+      elif [ -n "$LOCALE" ]; then
+        ere_parts+=(".*locale=$(regex_escape "$LOCALE")[,)]")
+      elif [ -n "$REASON" ]; then
+        ere_parts+=(".*reason=$(regex_escape "$REASON")[,)]")
       fi
-      [ -n "$FILE" ] && ere_parts+=("file=$(regex_escape "$FILE")")
-      [ -n "$KEY" ]  && ere_parts+=("path=$(regex_escape "$KEY")")
-      # Join with `.*` so order matches the way fields appear in annotations:
-      # `^::sev file=… ::group [sev]: locale · reason | path=… (locale=…, reason=…, …)`
-      ( IFS=''; printf '%s\n' "$(printf '%s.*' "${ere_parts[@]}" | sed 's/\.\*$//')" )
+      ( IFS=''; printf '%s\n' "${ere_parts[*]}" )
       ;;
     literal)
       # Emit the individual fixed strings, one per line, so the caller can
