@@ -122,7 +122,9 @@ if [ -n "$PATTERN" ]; then
       #   `^::sev[ ]file=…::group [sev]: locale · reason | path=… (locale=X, reason=Y, severity=Z)`
       ere_parts=("$ANCHOR")
       [ -n "$FILE" ] && ere_parts+=(".*file=$(regex_escape "$FILE")")
-      [ -n "$KEY" ]  && ere_parts+=(".*path=$(regex_escape "$KEY")")
+      # Key appears either as `path=<key>` (workflow-command form) or as
+      # `%0A<key> (` in the message-bits payload after the newline escape.
+      [ -n "$KEY" ]  && ere_parts+=(".*(path=$(regex_escape "$KEY")|%0A$(regex_escape "$KEY") \()")
       if [ -n "$LOCALE" ] && [ -n "$REASON" ]; then
         # Both — match the parenthesized tail exactly.
         ere_parts+=(".*\(locale=$(regex_escape "$LOCALE"), reason=$(regex_escape "$REASON"),")
