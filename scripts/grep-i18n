@@ -74,7 +74,7 @@ run() {
   [ -n "$REASON" ]   && out=$(printf '%s\n' "$out" | grep "reason=${REASON}" || true)
   [ -n "$LOCALE" ]   && out=$(printf '%s\n' "$out" | grep -E "(locale=${LOCALE}[,)]| · ${LOCALE} · | · ${LOCALE}( |\$))" || true)
   [ -n "$FILE" ]     && out=$(printf '%s\n' "$out" | grep "file=${FILE}" || true)
-  [ -n "$KEY" ]      && out=$(printf '%s\n' "$out" | grep "path=${KEY}" || true)
+  [ -n "$KEY" ]      && out=$(printf '%s\n' "$out" | grep -E "(path=${KEY}[ ,)]?|%0A${KEY} \()" || true)
   if [ "$UNIQUE" = 1 ] || [ "$COUNT" = 1 ]; then
     out=$(printf '%s\n' "$out" | sort -u | sed '/^$/d')
   fi
