@@ -105,7 +105,7 @@ if [ -n "$PATTERN" ]; then
     parts+=("(?=.*(locale=${esc_loc}[,)]| · ${esc_loc}( · |\$)))")
   fi
   [ -n "$FILE" ] && parts+=("(?=.*file=$(regex_escape "$FILE"))")
-  [ -n "$KEY" ]  && parts+=("(?=.*path=$(regex_escape "$KEY"))")
+  [ -n "$KEY" ]  && parts+=("(?=.*(path=$(regex_escape "$KEY")|%0A$(regex_escape "$KEY") \())")
 
   # PCRE supports lookahead natively (rg, perl, VS Code w/ regex on).
   # ERE doesn't — fall back to a single-pass alternation that matches the
