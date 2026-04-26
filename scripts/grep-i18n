@@ -1,0 +1,88 @@
+#!/usr/bin/env bash
+# scripts/grep-i18n — quick filter over /tmp/i18n-summary.log
+#
+# Usage:
+#   ./scripts/grep-i18n [--reason <name>] [--locale <pl|en|de|it>] [--severity error|warning]
+#                       [--file <path>] [--key <dotted.path>] [--log <path>] [-u|--unique] [-c|--count]
+#
+# Each annotation in the log follows:
+#   ::<severity> file=<path>,line=<n>::<group> [<severity>]: <locale> · <reason> | …
+# so this script just chains plain `grep` filters — no jq/awk needed.
+#
+# Examples:
+#   ./scripts/grep-i18n --reason placeholder-mismatch --locale en
+#   ./scripts/grep-i18n --reason wrong-type --severity error -c
+#   ./scripts/grep-i18n --locale de --log ./artifacts/i18n-summary.log -u
+set -uo pipefail
+# Note: no `-e` — grep returns 1 on no-match, which is a valid outcome here.
+
+LOG="/tmp/i18n-summary.log"
+REASON=""
+LOCALE=""
+SEVERITY=""
+FILE=""
+KEY=""
+UNIQUE=0
+COUNT=0
+
+usage() {
+  sed -n '2,15p' "$0" | sed 's/^# \{0,1\}//'
+  exit "${1:-0}"
+}
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --reason)   REASON="$2"; shift 2 ;;
+    --reason=*) REASON="${1#*=}"; shift ;;
+    --locale)   LOCALE="$2"; shift 2 ;;
+    --locale=*) LOCALE="${1#*=}"; shift ;;
+    --severity) SEVERITY="$2"; shift 2 ;;
+    --severity=*) SEVERITY="${1#*=}"; shift ;;
+    --file)     FILE="$2"; shift 2 ;;
+    --file=*)   FILE="${1#*=}"; shift ;;
+    --key)      KEY="$2"; shift 2 ;;
+    --key=*)    KEY="${1#*=}"; shift ;;
+    --log)      LOG="$2"; shift 2 ;;
+    --log=*)    LOG="${1#*=}"; shift ;;
+    -u|--unique) UNIQUE=1; shift ;;
+    -c|--count)  COUNT=1; shift ;;
+    -h|--help)  usage 0 ;;
+    *) echo "Unknown arg: $1" >&2; usage 2 ;;
+  esac
+done
+
+if [ ! -f "$LOG" ]; then
+  echo "grep-i18n: log not found: $LOG" >&2
+  echo "Run ./i18n-summary.sh first, or pass --log <path>." >&2
+  exit 2
+fi
+
+if [ -n "$SEVERITY" ] && [ "$SEVERITY" != "error" ] && [ "$SEVERITY" != "warning" ]; then
+  echo "grep-i18n: --severity must be 'error' or 'warning' (got: $SEVERITY)" >&2
+  exit 2
+fi
+
+# Build the pipeline: anchor on workflow-command lines, then chain filters.
+ANCHOR='^::'
+if [ -n "$SEVERITY" ]; then
+  ANCHOR="^::${SEVERITY} "
+fi
+
+run() {
+  local out
+  out=$(grep "$ANCHOR" "$LOG" || true)
+  [ -n "$REASON" ]   && out=$(printf '%s\n' "$out" | grep "reason=${REASON}" || true)
+  [ -n "$LOCALE" ]   && out=$(printf '%s\n' "$out" | grep -E "(locale=${LOCALE}[,)]| · ${LOCALE} · | · ${LOCALE}( |\$))" || true)
+  [ -n "$FILE" ]     && out=$(printf '%s\n' "$out" | grep "file=${FILE}" || true)
+  [ -n "$KEY" ]      && out=$(printf '%s\n' "$out" | grep -E "(path=${KEY}[ ,)]?|%0A${KEY} \()" || true)
+  if [ "$UNIQUE" = 1 ] || [ "$COUNT" = 1 ]; then
+    out=$(printf '%s\n' "$out" | sort -u | sed '/^$/d')
+  fi
+  printf '%s\n' "$out" | sed '/^$/d'
+}
+
+if [ "$COUNT" = 1 ]; then
+  run | wc -l | tr -d ' '
+else
+  run
+fi

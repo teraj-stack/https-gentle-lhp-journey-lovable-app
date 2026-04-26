@@ -1880,6 +1880,38 @@ grep '^::' /tmp/i18n-summary.log | grep -E ' · (en|de) · '
 - Pipe through `sort -u` whenever you want a count or a clean diff — the same fixture can trip multiple test files and produce duplicate annotation lines.
 - Set `I18N_ANNOTATION_DEBUG=1` alongside `GITHUB_ACTIONS=true` for a parallel stderr stream with `severity=… locale=… reason=… path=…` fields per annotation — easier to grep when the workflow-command line is too dense (see [Debug flag](#debug-flag-i18n_annotation_debug1)).
 
+#### Helper: `./scripts/grep-i18n`
+
+If you find yourself re-typing the same `grep '^::' … | grep reason=… | grep locale=…` chain, use the bundled wrapper. It targets `/tmp/i18n-summary.log` by default and exposes the same filters as flags — no need to remember the exact field shape.
+
+```sh
+# Just the failures for one reason, in one locale:
+./scripts/grep-i18n --reason placeholder-mismatch --locale en
+
+# Only error-severity wrong-type rows, deduped count:
+./scripts/grep-i18n --reason wrong-type --severity error -c
+
+# Triage a single key across all locales:
+./scripts/grep-i18n --key variant.warningSuffix
+
+# Point at an artifact directory from CI (matches `./i18n-summary.sh --out ./artifacts`):
+./scripts/grep-i18n --reason undeclared-key --log ./artifacts/i18n-summary.log -u
+```
+
+Available flags:
+
+| Flag | Matches against | Notes |
+| --- | --- | --- |
+| `--reason <name>` | `reason=<name>` in the message body | e.g. `placeholder-mismatch`, `wrong-type`, `missing-required-key`, `undeclared-key`, `empty-optional-value`. |
+| `--locale <pl\|en\|de\|it>` | `locale=<x>` and ` · <x> · ` (title) | Picks up both the title and message forms so it doesn't collide with substrings like `enabled`. |
+| `--severity error\|warning` | Anchors the line on `^::error ` / `^::warning ` | Skips the other severity entirely. |
+| `--file <path>` | `file=<path>` (substring) | E.g. `--file src/lib/lastChangeTooltipContent.ts`. |
+| `--key <dotted.path>` | `path=<key>` (substring) | E.g. `--key variant.warningSuffix`. |
+| `--log <path>` | Source file (default `/tmp/i18n-summary.log`) | Pair with `./i18n-summary.sh --out <dir>`. |
+| `-u`, `--unique` | Pipes through `sort -u` | Same fixture can produce duplicates across test files. |
+| `-c`, `--count` | Prints just the (deduped) row count | Implies `--unique`. |
+
+Exits `0` on a successful run (even with zero matches), `2` if the log file is missing or a flag value is invalid. Combine flags freely — they AND together.
 
 ### Source line resolution
 
