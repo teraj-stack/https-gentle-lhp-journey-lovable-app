@@ -141,7 +141,7 @@ if [ -n "$PATTERN" ]; then
       [ -n "$REASON" ] && printf 'reason=%s\n' "$REASON"
       [ -n "$LOCALE" ] && printf 'locale=%s,\n · %s · \n' "$LOCALE" "$LOCALE"
       [ -n "$FILE" ]   && printf 'file=%s\n' "$FILE"
-      [ -n "$KEY" ]    && printf 'path=%s\n' "$KEY"
+      [ -n "$KEY" ]    && printf 'path=%s\n%%0A%s (\n' "$KEY" "$KEY"
       ;;
   esac
   exit 0
