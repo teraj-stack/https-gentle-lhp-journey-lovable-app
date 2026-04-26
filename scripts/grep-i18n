@@ -69,12 +69,16 @@ if [ -n "$SEVERITY" ]; then
 fi
 
 run() {
-  grep "$ANCHOR" "$LOG" \
-    | { [ -n "$REASON" ] && grep "reason=${REASON}" || cat; } \
-    | { [ -n "$LOCALE" ] && grep " · ${LOCALE} · " || cat; } \
-    | { [ -n "$FILE" ]   && grep "file=${FILE}"    || cat; } \
-    | { [ -n "$KEY" ]    && grep "path=${KEY}"     || cat; } \
-    | { [ "$UNIQUE" = 1 ] || [ "$COUNT" = 1 ] && sort -u || cat; }
+  local out
+  out=$(grep "$ANCHOR" "$LOG" || true)
+  [ -n "$REASON" ]   && out=$(printf '%s\n' "$out" | grep "reason=${REASON}" || true)
+  [ -n "$LOCALE" ]   && out=$(printf '%s\n' "$out" | grep " · ${LOCALE} · " || true)
+  [ -n "$FILE" ]     && out=$(printf '%s\n' "$out" | grep "file=${FILE}" || true)
+  [ -n "$KEY" ]      && out=$(printf '%s\n' "$out" | grep "path=${KEY}" || true)
+  if [ "$UNIQUE" = 1 ] || [ "$COUNT" = 1 ]; then
+    out=$(printf '%s\n' "$out" | sort -u | sed '/^$/d')
+  fi
+  printf '%s\n' "$out" | sed '/^$/d'
 }
 
 if [ "$COUNT" = 1 ]; then
