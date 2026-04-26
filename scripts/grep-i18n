@@ -58,12 +58,6 @@ while [ $# -gt 0 ]; do
   esac
 done
 
-if [ ! -f "$LOG" ]; then
-  echo "grep-i18n: log not found: $LOG" >&2
-  echo "Run ./i18n-summary.sh first, or pass --log <path>." >&2
-  exit 2
-fi
-
 if [ -n "$SEVERITY" ] && [ "$SEVERITY" != "error" ] && [ "$SEVERITY" != "warning" ]; then
   echo "grep-i18n: --severity must be 'error' or 'warning' (got: $SEVERITY)" >&2
   exit 2
@@ -71,6 +65,14 @@ fi
 
 if [ -n "$PATTERN" ] && [ "$PATTERN" != "ere" ] && [ "$PATTERN" != "pcre" ] && [ "$PATTERN" != "literal" ]; then
   echo "grep-i18n: --pattern must be one of: ere, pcre, literal (got: $PATTERN)" >&2
+  exit 2
+fi
+
+# Only require the log file when we actually intend to read it. The pattern
+# emitter is purely a regex-builder and works on any machine.
+if [ -z "$PATTERN" ] && [ ! -f "$LOG" ]; then
+  echo "grep-i18n: log not found: $LOG" >&2
+  echo "Run ./i18n-summary.sh first, or pass --log <path>." >&2
   exit 2
 fi
 
