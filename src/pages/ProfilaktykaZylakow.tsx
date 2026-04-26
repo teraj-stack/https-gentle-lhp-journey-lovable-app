@@ -27,6 +27,7 @@ import {
 import schematImg from "@/assets/profilaktyka-zylakow-schemat.png";
 import RiskQuiz from "@/components/profilaktyka/RiskQuiz";
 import ExercisesSection from "@/components/profilaktyka/ExercisesSection";
+import VenousInsufficiencyImage from "@/components/shared/VenousInsufficiencyImage";
 
 const easeOut = [0.16, 1, 0.3, 1] as const;
 

@@ -16,6 +16,7 @@ import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 import RecoveryBoostBanner from "@/components/shared/RecoveryBoostBanner";
 import PreparationRecoveryCards from "@/components/shared/PreparationRecoveryCards";
 import TestimonialsSection from "@/components/shared/TestimonialsSection";
+import VenousInsufficiencyImage from "@/components/shared/VenousInsufficiencyImage";
 
 const evltSummary = [
   { label: "Przygotowanie", value: "Konsultacja flebologiczna oraz USG Doppler w celu mapowania niewydolnych żył" },
@@ -90,6 +91,13 @@ const EVLT = () => (
 
     <div className="max-w-5xl mx-auto px-4 py-16 space-y-24">
       <Breadcrumbs items={BREADCRUMBS_MAP["/leczenie/evlt"]} className="mb-4" />
+
+      {/* Anatomia niewydolności żylnej — co naprawia EVLT */}
+      <VenousInsufficiencyImage
+        fadeUp={fadeUp}
+        title="Skąd biorą się żylaki — co dokładnie zamyka EVLT?"
+        subtitle="EVLT zamyka chorą żyłę odpiszczelową lub odstrzałkową od środka — eliminuje refluks, który napędza żylaki, perforatorowy zastój i stan zapalny widoczne na schemacie."
+      />
 
       {/* Przyczyny + Sygnały */}
       <div className="grid lg:grid-cols-2 gap-12">

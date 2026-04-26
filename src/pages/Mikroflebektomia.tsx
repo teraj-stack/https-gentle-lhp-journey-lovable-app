@@ -12,6 +12,7 @@ import RecoveryBoostBanner from "@/components/shared/RecoveryBoostBanner";
 import PreparationRecoveryCards from "@/components/shared/PreparationRecoveryCards";
 import TestimonialsSection from "@/components/shared/TestimonialsSection";
 import MikroflebektomiaFAQ from "@/components/mikroflebektomia/MikroflebektomiaFAQ";
+import VenousInsufficiencyImage from "@/components/shared/VenousInsufficiencyImage";
 
 const summary = [
   { label: "Przygotowanie", value: "Konsultacja flebologiczna oraz USG Doppler w celu mapowania żył" },
@@ -101,6 +102,12 @@ const Mikroflebektomia = () => (
     <div className="max-w-5xl mx-auto px-4 py-16 space-y-24">
       <Breadcrumbs items={BREADCRUMBS_MAP["/leczenie/mikroflebektomia"]} className="mb-4" />
 
+      {/* Anatomia żylaków — co usuwamy mikroflebektomią */}
+      <VenousInsufficiencyImage
+        fadeUp={fadeUp}
+        title="Co dokładnie usuwa mikroflebektomia?"
+        subtitle="„Sznury" pod skórą to żylaki bocznic — żył, w których ścianki osłabły, zastawki przestały się domykać, a krew zaczęła się cofać. Mikroflebektomia usuwa je z drobnych nakłuć, bez nacinania skóry."
+      />
       {/* Intro */}
       <motion.section {...fadeUp}>
         <h2 className="section-title mb-3 text-center">Przełom w leczeniu zaawansowanych żylaków</h2>
