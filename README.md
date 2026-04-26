@@ -1898,7 +1898,8 @@ grep -E '^::.*\(locale=en, reason=placeholder-mismatch, severity=error\)' /tmp/i
 grep -E '^::.*locale=de,.*severity=warning\)' /tmp/i18n-summary.log
 
 # Multi-reason / multi-locale verdict — all classified as ERROR.
-grep -E '^::.*reason=(placeholder-mismatch|wrong-type|missing-required-key).*locale=(en|de),.*severity=error\)' /tmp/i18n-summary.log
+# (Field order in the verdict tuple is `locale=…, reason=…, severity=…`.)
+grep -E '^::.*locale=(en|de), reason=(placeholder-mismatch|wrong-type|missing-required-key), severity=error\)' /tmp/i18n-summary.log
 
 # Counts — how many distinct violations end up classified at each severity?
 grep -Eo '^::.*severity=error\)'   /tmp/i18n-summary.log | sort -u | wc -l
