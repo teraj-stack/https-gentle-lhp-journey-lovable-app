@@ -9,6 +9,7 @@ import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import AnatomyDiagram from "@/components/pajaczki/AnatomyDiagram";
+import VeinAnatomyImage from "@/components/shared/VeinAnatomyImage";
 import PajaczkiTestimonials from "@/components/pajaczki/PajaczkiTestimonials";
 import RecoveryBoostBanner from "@/components/shared/RecoveryBoostBanner";
 import TestimonialsSection from "@/components/shared/TestimonialsSection";
@@ -112,7 +113,10 @@ const Pajaczki = () => (
         </div>
       </motion.section>
 
-      {/* Anatomia pajączka */}
+      {/* Anatomia pajączka — statyczny schemat z opisanymi warstwami */}
+      <VeinAnatomyImage fadeUp={fadeUp} />
+
+      {/* Anatomia pajączka — interaktywny diagram z hotspotami */}
       <AnatomyDiagram fadeUp={fadeUp} />
 
       {/* Pułapka kamuflażu */}
