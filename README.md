@@ -1880,6 +1880,42 @@ grep '^::' /tmp/i18n-summary.log | grep -E ' · (en|de) · '
 - Pipe through `sort -u` whenever you want a count or a clean diff — the same fixture can trip multiple test files and produce duplicate annotation lines.
 - Set `I18N_ANNOTATION_DEBUG=1` alongside `GITHUB_ACTIONS=true` for a parallel stderr stream with `severity=… locale=… reason=… path=…` fields per annotation — easier to grep when the workflow-command line is too dense (see [Debug flag](#debug-flag-i18n_annotation_debug1)).
 
+##### Verdict-only recipes — match on the final `severity=<error|warning>)` token
+
+The `^::error` / `^::warning` prefix is just the GitHub annotation channel. The **authoritative classifier verdict** for each violation is the trailing `severity=<x>` field inside the parenthesized message body — i.e. the value `classifyReasonSeverity(reason)` produced (with any per-violation override applied). Anchoring on `severity=…)` makes recipes immune to noisy neighbours (raw `severity:` text in test snapshots, the word `severity` in unrelated CSS/markdown, or mid-line `severity=warning,` debug dumps).
+
+```sh
+# Final verdict = ERROR for one reason (any locale).
+grep -E '^::.*reason=placeholder-mismatch.*severity=error\)' /tmp/i18n-summary.log
+
+# Final verdict = WARNING for one reason (any locale).
+grep -E '^::.*reason=empty-optional-value.*severity=warning\)' /tmp/i18n-summary.log
+
+# Final verdict = ERROR for one (reason, locale) pair — exact tail match.
+grep -E '^::.*\(locale=en, reason=placeholder-mismatch, severity=error\)' /tmp/i18n-summary.log
+
+# Final verdict = WARNING for one locale, any reason.
+grep -E '^::.*locale=de,.*severity=warning\)' /tmp/i18n-summary.log
+
+# Multi-reason / multi-locale verdict — all classified as ERROR.
+grep -E '^::.*reason=(placeholder-mismatch|wrong-type|missing-required-key).*locale=(en|de),.*severity=error\)' /tmp/i18n-summary.log
+
+# Counts — how many distinct violations end up classified at each severity?
+grep -Eo '^::.*severity=error\)'   /tmp/i18n-summary.log | sort -u | wc -l
+grep -Eo '^::.*severity=warning\)' /tmp/i18n-summary.log | sort -u | wc -l
+
+# Catch a per-violation override — channel says one thing, verdict says another.
+# (Useful when WARNING_REASONS or an explicit `v.severity` flips the classification.)
+grep -E '^::error .*severity=warning\)'   /tmp/i18n-summary.log
+grep -E '^::warning .*severity=error\)'   /tmp/i18n-summary.log
+```
+
+Why anchor on `severity=…\)` (with the literal closing paren)?
+
+- It pins the match to the **end of the verdict tuple** `(locale=…, reason=…, severity=<x>)`, so unrelated mentions of the word `severity` elsewhere on the line (or in surrounding test output) can't trip the recipe.
+- Pair with `--pattern=ere` from `./scripts/grep-i18n`: `./scripts/grep-i18n --reason placeholder-mismatch --locale en --pattern` emits `^::.*\(locale=en, reason=placeholder-mismatch,` — the prefix half of the verdict tuple. Append `.*severity=error\)` (or `.*severity=warning\)`) to filter on the final classification, e.g.
+  `grep -E "$(./scripts/grep-i18n --reason placeholder-mismatch --locale en --pattern).*severity=error\)" /tmp/i18n-summary.log`.
+
 #### Helper: `./scripts/grep-i18n`
 
 If you find yourself re-typing the same `grep '^::' … | grep reason=… | grep locale=…` chain, use the bundled wrapper. It targets `/tmp/i18n-summary.log` by default and exposes the same filters as flags — no need to remember the exact field shape.
