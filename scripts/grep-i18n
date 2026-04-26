@@ -69,11 +69,78 @@ if [ -n "$SEVERITY" ] && [ "$SEVERITY" != "error" ] && [ "$SEVERITY" != "warning
   exit 2
 fi
 
+if [ -n "$PATTERN" ] && [ "$PATTERN" != "ere" ] && [ "$PATTERN" != "pcre" ] && [ "$PATTERN" != "literal" ]; then
+  echo "grep-i18n: --pattern must be one of: ere, pcre, literal (got: $PATTERN)" >&2
+  exit 2
+fi
+
+# Escape every regex metachar so the value can be embedded verbatim into ERE/PCRE.
+# Covers: \ . * + ? ( ) [ ] { } ^ $ | /
+regex_escape() {
+  printf '%s' "$1" | sed -e 's/[\\.*+?()[\]{}^$|/]/\\&/g'
+}
+
 # Build the pipeline: anchor on workflow-command lines, then chain filters.
 ANCHOR='^::'
 if [ -n "$SEVERITY" ]; then
   ANCHOR="^::${SEVERITY} "
 fi
+
+# --- Pattern emitter -------------------------------------------------------
+# When --pattern is set, print a single regex-safe expression that ANDs the
+# active filters together, then exit. Useful for piping into other tools
+# (`rg`, VS Code search, JetBrains, BBEdit, etc.) without re-escaping by hand.
+if [ -n "$PATTERN" ]; then
+  parts=()
+  parts+=("$ANCHOR")
+  if [ -n "$REASON" ]; then
+    parts+=("(?=.*reason=$(regex_escape "$REASON"))")
+  fi
+  if [ -n "$LOCALE" ]; then
+    esc_loc=$(regex_escape "$LOCALE")
+    # Match either the message form `locale=<x>,` / `locale=<x>)` or the
+    # title form ` · <x> · ` / ` · <x>` at end-of-line.
+    parts+=("(?=.*(locale=${esc_loc}[,)]| · ${esc_loc}( · |\$)))")
+  fi
+  [ -n "$FILE" ] && parts+=("(?=.*file=$(regex_escape "$FILE"))")
+  [ -n "$KEY" ]  && parts+=("(?=.*path=$(regex_escape "$KEY"))")
+
+  # PCRE supports lookahead natively (rg, perl, VS Code w/ regex on).
+  # ERE doesn't — fall back to a single-pass alternation that matches the
+  # most-specific filter only (good enough for `grep -E`/`egrep`).
+  case "$PATTERN" in
+    pcre)
+      # Concatenate anchor + lookaheads + ".*" to ensure the line is consumed.
+      printf '%s%s.*\n' "${parts[0]}" "$(IFS=''; echo "${parts[*]:1}")"
+      ;;
+    ere)
+      # Build a single ERE that requires reason= and/or locale= tokens to
+      # appear anywhere on the line (order-independent via alternation is
+      # not possible without lookahead, so we emit a permissive form).
+      ere_parts=("$ANCHOR.*")
+      [ -n "$REASON" ] && ere_parts+=("reason=$(regex_escape "$REASON")")
+      if [ -n "$LOCALE" ]; then
+        esc_loc=$(regex_escape "$LOCALE")
+        ere_parts+=("(locale=${esc_loc}[,)]| · ${esc_loc}( · |\$))")
+      fi
+      [ -n "$FILE" ] && ere_parts+=("file=$(regex_escape "$FILE")")
+      [ -n "$KEY" ]  && ere_parts+=("path=$(regex_escape "$KEY")")
+      # Join with `.*` so order matches the way fields appear in annotations:
+      # `^::sev file=… ::group [sev]: locale · reason | path=… (locale=…, reason=…, …)`
+      ( IFS=''; printf '%s\n' "$(printf '%s.*' "${ere_parts[@]}" | sed 's/\.\*$//')" )
+      ;;
+    literal)
+      # Emit the individual fixed strings, one per line, so the caller can
+      # pipe them through `grep -F -f -` or build their own composition.
+      [ -n "$REASON" ] && printf 'reason=%s\n' "$REASON"
+      [ -n "$LOCALE" ] && printf 'locale=%s,\n · %s · \n' "$LOCALE" "$LOCALE"
+      [ -n "$FILE" ]   && printf 'file=%s\n' "$FILE"
+      [ -n "$KEY" ]    && printf 'path=%s\n' "$KEY"
+      ;;
+  esac
+  exit 0
+fi
+# ---------------------------------------------------------------------------
 
 run() {
   local out
