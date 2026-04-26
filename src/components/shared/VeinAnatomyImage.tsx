@@ -29,20 +29,31 @@ const VeinAnatomyImage = ({
   const motionProps = fadeUp ?? {};
 
   return (
-    <motion.section {...motionProps} className={`max-w-4xl mx-auto ${className}`.trim()}>
-      <h2 className="section-title mb-3 text-center">{title}</h2>
+    <motion.section
+      {...motionProps}
+      className={`max-w-4xl mx-auto px-1 sm:px-0 ${className}`.trim()}
+    >
+      <h2 className="section-title mb-2 sm:mb-3 text-center text-xl sm:text-2xl md:text-3xl px-2">
+        {title}
+      </h2>
       {subtitle && (
-        <p className="section-subtitle mb-8 text-center max-w-3xl mx-auto">{subtitle}</p>
+        <p className="section-subtitle mb-5 sm:mb-8 text-center max-w-3xl mx-auto text-sm sm:text-base px-2 leading-relaxed">
+          {subtitle}
+        </p>
       )}
-      <figure className="glass-card rounded-2xl p-4 md:p-6">
+      <figure className="glass-card rounded-xl sm:rounded-2xl p-2.5 sm:p-4 md:p-6">
         <img
           src={veinAnatomy}
           alt="Schemat anatomiczny pajączka żylnego — przekrój skóry pokazujący naskórek (epidermis), skórę właściwą (dermis) z pajączkiem (wenulektazja) i żyłą zasilającą oraz tkankę podskórną (hypodermis) z żyłą głęboką"
           loading="lazy"
           decoding="async"
-          className="w-full h-auto rounded-xl bg-background/40"
+          width={1456}
+          height={819}
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 90vw, 800px"
+          className="w-full h-auto rounded-lg sm:rounded-xl bg-background/40 block"
+          style={{ aspectRatio: "1456 / 819" }}
         />
-        <figcaption className="text-xs text-muted-foreground/80 mt-3 text-center leading-relaxed">
+        <figcaption className="text-[11px] sm:text-xs text-muted-foreground/80 mt-2.5 sm:mt-3 text-center leading-snug sm:leading-relaxed px-1">
           Naskórek · Skóra właściwa (pajączek + żyła zasilająca) · Tkanka podskórna (żyła głęboka)
         </figcaption>
       </figure>

@@ -118,23 +118,43 @@
   }
   .hero-anatomy {
     margin: 2.5rem auto 0;
+    width: 100%;
     max-width: 560px;
+    padding: 0 0.5rem;
     opacity: 0;
     animation: fadeUp 1s 0.9s forwards;
   }
   .hero-anatomy img {
+    display: block;
     width: 100%;
     height: auto;
+    aspect-ratio: 1456 / 819;
     border-radius: 16px;
     box-shadow: 0 20px 50px -20px rgba(91,58,140,0.35), 0 8px 20px -10px rgba(91,58,140,0.15);
     background: #fff;
   }
   .hero-anatomy figcaption {
-    margin-top: 0.9rem;
+    margin-top: 0.85rem;
     font-size: 0.78rem;
     color: var(--text-light);
     letter-spacing: 0.02em;
     line-height: 1.5;
+    padding: 0 0.25rem;
+  }
+  @media (max-width: 640px) {
+    .hero-anatomy {
+      margin-top: 1.75rem;
+      padding: 0 0.25rem;
+    }
+    .hero-anatomy img {
+      border-radius: 12px;
+      box-shadow: 0 12px 30px -16px rgba(91,58,140,0.3), 0 4px 12px -6px rgba(91,58,140,0.12);
+    }
+    .hero-anatomy figcaption {
+      margin-top: 0.65rem;
+      font-size: 0.72rem;
+      line-height: 1.45;
+    }
   }
   .hero .cta-btn {
     display: inline-block;
