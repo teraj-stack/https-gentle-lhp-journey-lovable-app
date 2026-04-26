@@ -3,7 +3,9 @@
 #
 # Usage:
 #   ./scripts/grep-i18n [--reason <name>] [--locale <pl|en|de|it>] [--severity error|warning]
-#                       [--file <path>] [--key <dotted.path>] [--log <path>] [-u|--unique] [-c|--count]
+#                       [--file <path>] [--key <dotted.path>] [--log <path>]
+#                       [-u|--unique] [-c|--count]
+#                       [--pattern[=ere|pcre|literal]]
 #
 # Each annotation in the log follows:
 #   ::<severity> file=<path>,line=<n>::<group> [<severity>]: <locale> · <reason> | …
@@ -13,6 +15,8 @@
 #   ./scripts/grep-i18n --reason placeholder-mismatch --locale en
 #   ./scripts/grep-i18n --reason wrong-type --severity error -c
 #   ./scripts/grep-i18n --locale de --log ./artifacts/i18n-summary.log -u
+#   ./scripts/grep-i18n --reason placeholder-mismatch --locale en --pattern
+#   ./scripts/grep-i18n --reason wrong-type --pattern=pcre   # for ripgrep / VS Code
 set -uo pipefail
 # Note: no `-e` — grep returns 1 on no-match, which is a valid outcome here.
 
@@ -24,9 +28,10 @@ FILE=""
 KEY=""
 UNIQUE=0
 COUNT=0
+PATTERN=""           # empty = disabled; otherwise "ere", "pcre", or "literal"
 
 usage() {
-  sed -n '2,15p' "$0" | sed 's/^# \{0,1\}//'
+  sed -n '2,20p' "$0" | sed 's/^# \{0,1\}//'
   exit "${1:-0}"
 }
 
@@ -46,27 +51,104 @@ while [ $# -gt 0 ]; do
     --log=*)    LOG="${1#*=}"; shift ;;
     -u|--unique) UNIQUE=1; shift ;;
     -c|--count)  COUNT=1; shift ;;
+    --pattern)         PATTERN="ere"; shift ;;
+    --pattern=*)       PATTERN="${1#*=}"; shift ;;
     -h|--help)  usage 0 ;;
     *) echo "Unknown arg: $1" >&2; usage 2 ;;
   esac
 done
-
-if [ ! -f "$LOG" ]; then
-  echo "grep-i18n: log not found: $LOG" >&2
-  echo "Run ./i18n-summary.sh first, or pass --log <path>." >&2
-  exit 2
-fi
 
 if [ -n "$SEVERITY" ] && [ "$SEVERITY" != "error" ] && [ "$SEVERITY" != "warning" ]; then
   echo "grep-i18n: --severity must be 'error' or 'warning' (got: $SEVERITY)" >&2
   exit 2
 fi
 
+if [ -n "$PATTERN" ] && [ "$PATTERN" != "ere" ] && [ "$PATTERN" != "pcre" ] && [ "$PATTERN" != "literal" ]; then
+  echo "grep-i18n: --pattern must be one of: ere, pcre, literal (got: $PATTERN)" >&2
+  exit 2
+fi
+
+# Only require the log file when we actually intend to read it. The pattern
+# emitter is purely a regex-builder and works on any machine.
+if [ -z "$PATTERN" ] && [ ! -f "$LOG" ]; then
+  echo "grep-i18n: log not found: $LOG" >&2
+  echo "Run ./i18n-summary.sh first, or pass --log <path>." >&2
+  exit 2
+fi
+
+# Escape every regex metachar so the value can be embedded verbatim into ERE/PCRE.
+# Covers: \ . * + ? ( ) [ ] { } ^ $ |  (NOT `/` — it's not a regex metachar and
+# many greps warn `stray \ before /`. Tool-level delimiters are the caller's job.)
+# Use `#` as the sed delimiter so `|` in the input doesn't terminate the s-command.
+regex_escape() {
+  printf '%s' "$1" | sed -e 's#[][\\.*+?(){}^$|]#\\&#g'
+}
+
 # Build the pipeline: anchor on workflow-command lines, then chain filters.
 ANCHOR='^::'
 if [ -n "$SEVERITY" ]; then
   ANCHOR="^::${SEVERITY} "
 fi
+
+# --- Pattern emitter -------------------------------------------------------
+# When --pattern is set, print a single regex-safe expression that ANDs the
+# active filters together, then exit. Useful for piping into other tools
+# (`rg`, VS Code search, JetBrains, BBEdit, etc.) without re-escaping by hand.
+if [ -n "$PATTERN" ]; then
+  parts=()
+  parts+=("$ANCHOR")
+  if [ -n "$REASON" ]; then
+    parts+=("(?=.*reason=$(regex_escape "$REASON"))")
+  fi
+  if [ -n "$LOCALE" ]; then
+    esc_loc=$(regex_escape "$LOCALE")
+    # Match either the message form `locale=<x>,` / `locale=<x>)` or the
+    # title form ` · <x> · ` / ` · <x>` at end-of-line.
+    parts+=("(?=.*(locale=${esc_loc}[,)]| · ${esc_loc}( · |\$)))")
+  fi
+  [ -n "$FILE" ] && parts+=("(?=.*file=$(regex_escape "$FILE"))")
+  [ -n "$KEY" ]  && parts+=("(?=.*(path=$(regex_escape "$KEY")|%0A$(regex_escape "$KEY") \())")
+
+  # PCRE supports lookahead natively (rg, perl, VS Code w/ regex on).
+  # ERE doesn't — fall back to a single-pass alternation that matches the
+  # most-specific filter only (good enough for `grep -E`/`egrep`).
+  case "$PATTERN" in
+    pcre)
+      # Concatenate anchor + lookaheads + ".*" to ensure the line is consumed.
+      printf '%s%s.*\n' "${parts[0]}" "$(IFS=''; echo "${parts[*]:1}")"
+      ;;
+    ere)
+      # ERE has no lookahead, so we exploit the stable trailing form of every
+      # annotation: `… (locale=<X>, reason=<Y>, severity=<Z>)`. File/key/anchor
+      # are joined with `.*` in the order they appear in the line:
+      #   `^::sev[ ]file=…::group [sev]: locale · reason | path=… (locale=X, reason=Y, severity=Z)`
+      ere_parts=("$ANCHOR")
+      [ -n "$FILE" ] && ere_parts+=(".*file=$(regex_escape "$FILE")")
+      # Key appears either as `path=<key>` (workflow-command form) or as
+      # `%0A<key> (` in the message-bits payload after the newline escape.
+      [ -n "$KEY" ]  && ere_parts+=(".*(path=$(regex_escape "$KEY")|%0A$(regex_escape "$KEY") \()")
+      if [ -n "$LOCALE" ] && [ -n "$REASON" ]; then
+        # Both — match the parenthesized tail exactly.
+        ere_parts+=(".*\(locale=$(regex_escape "$LOCALE"), reason=$(regex_escape "$REASON"),")
+      elif [ -n "$LOCALE" ]; then
+        ere_parts+=(".*locale=$(regex_escape "$LOCALE")[,)]")
+      elif [ -n "$REASON" ]; then
+        ere_parts+=(".*reason=$(regex_escape "$REASON")[,)]")
+      fi
+      ( IFS=''; printf '%s\n' "${ere_parts[*]}" )
+      ;;
+    literal)
+      # Emit the individual fixed strings, one per line, so the caller can
+      # pipe them through `grep -F -f -` or build their own composition.
+      [ -n "$REASON" ] && printf 'reason=%s\n' "$REASON"
+      [ -n "$LOCALE" ] && printf 'locale=%s,\n · %s · \n' "$LOCALE" "$LOCALE"
+      [ -n "$FILE" ]   && printf 'file=%s\n' "$FILE"
+      [ -n "$KEY" ]    && printf 'path=%s\n%%0A%s (\n' "$KEY" "$KEY"
+      ;;
+  esac
+  exit 0
+fi
+# ---------------------------------------------------------------------------
 
 run() {
   local out
