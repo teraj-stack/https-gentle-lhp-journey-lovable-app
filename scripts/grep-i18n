@@ -72,7 +72,7 @@ run() {
   local out
   out=$(grep "$ANCHOR" "$LOG" || true)
   [ -n "$REASON" ]   && out=$(printf '%s\n' "$out" | grep "reason=${REASON}" || true)
-  [ -n "$LOCALE" ]   && out=$(printf '%s\n' "$out" | grep " · ${LOCALE} · " || true)
+  [ -n "$LOCALE" ]   && out=$(printf '%s\n' "$out" | grep -E "(locale=${LOCALE}[,)]| · ${LOCALE} · | · ${LOCALE}( |\$))" || true)
   [ -n "$FILE" ]     && out=$(printf '%s\n' "$out" | grep "file=${FILE}" || true)
   [ -n "$KEY" ]      && out=$(printf '%s\n' "$out" | grep "path=${KEY}" || true)
   if [ "$UNIQUE" = 1 ] || [ "$COUNT" = 1 ]; then
