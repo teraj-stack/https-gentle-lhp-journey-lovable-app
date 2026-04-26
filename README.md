@@ -1917,6 +1917,64 @@ Why anchor on `severity=…\)` (with the literal closing paren)?
 - Pair with `--pattern=ere` from `./scripts/grep-i18n`: `./scripts/grep-i18n --reason placeholder-mismatch --locale en --pattern` emits `^::.*\(locale=en, reason=placeholder-mismatch,` — the prefix half of the verdict tuple. Append `.*severity=error\)` (or `.*severity=warning\)`) to filter on the final classification, e.g.
   `grep -E "$(./scripts/grep-i18n --reason placeholder-mismatch --locale en --pattern).*severity=error\)" /tmp/i18n-summary.log`.
 
+##### Fast iteration on huge logs (`grep -m`, `tail -n`, `head -n`)
+
+A failing CI run can produce a `/tmp/i18n-summary.log` in the **tens of MB** range (every locale × every key × every test file, plus the surrounding vitest noise). When you're iterating on a single fix, scanning the whole file each time is wasteful — the recipes below trim the working set without losing fidelity.
+
+```sh
+# 1. First-N matches per recipe — `grep -m` stops scanning after N hits.
+#    Perfect for "is this reason still firing at all?" checks.
+grep -m 1 -E '^::.*reason=placeholder-mismatch'        /tmp/i18n-summary.log   # any 1
+grep -m 5 -E '^::.*reason=placeholder-mismatch'        /tmp/i18n-summary.log   # first 5
+grep -m 1 -E '^::.*\(locale=en, reason=wrong-type, '   /tmp/i18n-summary.log   # smoke test
+
+# 2. Last-N matches — vitest writes annotations as tests run, so the *tail*
+#    is the most recently-failing locale/key. Pipe through grep first to
+#    avoid holding 50 MB in memory just to drop the last few lines.
+grep '^::' /tmp/i18n-summary.log | tail -n 20                                  # last 20 annotations
+grep '^::error ' /tmp/i18n-summary.log | tail -n 5                             # last 5 errors only
+grep -E '^::.*severity=error\)' /tmp/i18n-summary.log | tail -n 1              # the very last verdict=error
+
+# 3. Head-N — opposite end: the *first* failures usually surface the root
+#    cause (later ones are often cascading dupes of the same key).
+grep '^::' /tmp/i18n-summary.log | head -n 10                                  # first 10 annotations
+grep -E '^::.*reason=missing-required-key' /tmp/i18n-summary.log | head -n 3   # first 3 of one reason
+
+# 4. Combine `-m` with `./scripts/grep-i18n --pattern` for "is this fixed yet?"
+#    one-liners that exit the moment they find (or fail to find) a match.
+grep -m 1 -E "$(./scripts/grep-i18n --reason wrong-type --locale en --pattern)" \
+  /tmp/i18n-summary.log && echo "STILL FAILING" || echo "FIXED"
+
+# 5. Bounded window around a known line number (e.g. from a prior `--debug` run).
+#    `sed -n '<start>,<end>p'` is faster than `awk` for plain ranges.
+sed -n '12000,12050p' /tmp/i18n-summary.log | grep '^::'                       # ±25 lines
+
+# 6. Strip everything BUT the annotations once, then iterate on the small file.
+#    Cuts a 50 MB log down to a few hundred KB — every subsequent grep is instant.
+grep '^::' /tmp/i18n-summary.log > /tmp/i18n-annotations.log
+wc -l /tmp/i18n-annotations.log                                                # see the savings
+./scripts/grep-i18n --reason placeholder-mismatch --log /tmp/i18n-annotations.log
+
+# 7. Stream-grep a *running* test (no need to wait for completion).
+#    `--line-buffered` flushes per-match instead of per-block — required when
+#    piping `tail -F` into `grep` so matches appear in real time.
+tail -F /tmp/i18n-summary.log | grep --line-buffered -E '^::.*severity=error\)'
+
+# 8. Approximate counts without a full sort. `grep -c` is O(n) but never holds
+#    the matched lines in memory, so it's safe even on multi-GB logs.
+grep -c '^::error '   /tmp/i18n-summary.log                                    # raw error count
+grep -c '^::warning ' /tmp/i18n-summary.log                                    # raw warning count
+grep -cE '^::.*severity=error\)' /tmp/i18n-summary.log                         # verdict=error count
+```
+
+**Why each flag matters**
+
+- **`grep -m N`** — short-circuits the scanner. On a 50 MB log, `grep -m 1 …` typically returns in <50 ms even when the match is near the top; the unbounded form has to walk every byte.
+- **`tail -n N`** — only the last N lines are buffered. Combine with an upstream `grep '^::'` so `tail` doesn't have to read past noise.
+- **`head -n N`** — symmetric to `tail`; pairs especially well with `grep` because the pipe closes as soon as `head` has its quota, signalling `grep` to stop scanning (SIGPIPE).
+- **`tail -F` + `grep --line-buffered`** — the `-F` follows file rotation and `--line-buffered` disables grep's default block buffering; without it, matches don't appear until 4 KB has accumulated.
+- **Pre-filter once, iterate cheap** (recipe 6) — the cheapest optimization is to `grep '^::' > smaller.log` once and point every subsequent recipe at `smaller.log` (or `./scripts/grep-i18n --log smaller.log`). On a 50 MB log this is usually a >100× speedup.
+
 #### Helper: `./scripts/grep-i18n`
 
 If you find yourself re-typing the same `grep '^::' … | grep reason=… | grep locale=…` chain, use the bundled wrapper. It targets `/tmp/i18n-summary.log` by default and exposes the same filters as flags — no need to remember the exact field shape.
