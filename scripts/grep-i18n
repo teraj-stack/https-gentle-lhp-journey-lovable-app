@@ -13,7 +13,8 @@
 #   ./scripts/grep-i18n --reason placeholder-mismatch --locale en
 #   ./scripts/grep-i18n --reason wrong-type --severity error -c
 #   ./scripts/grep-i18n --locale de --log ./artifacts/i18n-summary.log -u
-set -euo pipefail
+set -uo pipefail
+# Note: no `-e` — grep returns 1 on no-match, which is a valid outcome here.
 
 LOG="/tmp/i18n-summary.log"
 REASON=""
