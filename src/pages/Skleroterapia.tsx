@@ -13,6 +13,7 @@ import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 import RecoveryBoostBanner from "@/components/shared/RecoveryBoostBanner";
 import PreparationRecoveryCards from "@/components/shared/PreparationRecoveryCards";
 import TestimonialsSection from "@/components/shared/TestimonialsSection";
+import VeinAnatomyImage from "@/components/shared/VeinAnatomyImage";
 
 const skleroterapiaSummary = [
   { label: "Przygotowanie", value: "USG Doppler żył" },
@@ -113,6 +114,14 @@ const Skleroterapia = () => {
 
     <div className="max-w-5xl mx-auto px-4 py-16 space-y-24">
       <Breadcrumbs items={BREADCRUMBS_MAP["/leczenie/skleroterapia"]} className="mb-4" />
+
+      {/* Anatomia naczyń — co zamykamy sklerosantem */}
+      <VeinAnatomyImage
+        fadeUp={fadeUp}
+        title="Co zamykamy podczas skleroterapii?"
+        subtitle="Pianka sklerotyzująca trafia precyzyjnie do żyły zasilającej w skórze właściwej i głębszych żył siateczkowatych — zamknięcie samego pajączka bez źródła ciśnienia byłoby tylko kosmetyką."
+      />
+
       {/* Wskazania */}
       <motion.section {...fadeUp}>
         <h2 className="section-title mb-3 text-center">Kiedy skleroterapia sprawdza się najlepiej?</h2>
