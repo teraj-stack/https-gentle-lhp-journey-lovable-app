@@ -3,7 +3,9 @@
 #
 # Usage:
 #   ./scripts/grep-i18n [--reason <name>] [--locale <pl|en|de|it>] [--severity error|warning]
-#                       [--file <path>] [--key <dotted.path>] [--log <path>] [-u|--unique] [-c|--count]
+#                       [--file <path>] [--key <dotted.path>] [--log <path>]
+#                       [-u|--unique] [-c|--count]
+#                       [--pattern[=ere|pcre|literal]]
 #
 # Each annotation in the log follows:
 #   ::<severity> file=<path>,line=<n>::<group> [<severity>]: <locale> · <reason> | …
@@ -13,6 +15,8 @@
 #   ./scripts/grep-i18n --reason placeholder-mismatch --locale en
 #   ./scripts/grep-i18n --reason wrong-type --severity error -c
 #   ./scripts/grep-i18n --locale de --log ./artifacts/i18n-summary.log -u
+#   ./scripts/grep-i18n --reason placeholder-mismatch --locale en --pattern
+#   ./scripts/grep-i18n --reason wrong-type --pattern=pcre   # for ripgrep / VS Code
 set -uo pipefail
 # Note: no `-e` — grep returns 1 on no-match, which is a valid outcome here.
 
