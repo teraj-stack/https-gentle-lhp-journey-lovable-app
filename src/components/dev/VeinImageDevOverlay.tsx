@@ -3,6 +3,7 @@ import {
   useVeinImageOverridesForPage,
   type VeinImagePageKey,
 } from "@/hooks/useVeinImageOverrides";
+import { getVeinImagePreset } from "@/lib/veinImagePagePresets";
 
 interface Props {
   pageKey: VeinImagePageKey;
