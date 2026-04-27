@@ -254,6 +254,10 @@ const ProfilaktykaZylakow = () => {
           fadeUp={fadeUp}
           title="Co dokładnie chronisz, dbając o nogi"
           subtitle="Profilaktyka żylaków to ochrona zastawek. Gdy zaczynają się one rozszczelniać, krew cofa się ku dołowi, ścianki słabną, a wokół naczynia narasta stan zapalny — proces, który po latach trudno cofnąć."
+          mainAlt="Schemat porównawczy zdrowej zastawki żylnej i niedomykającej się zastawki — proces, któremu zapobiega regularny ruch, kompresjoterapia i pielęgnacja nóg"
+          mainCaption="Zdrowa zastawka · Pierwsze rozszczelnienie · Refluks i stan zapalny · Etap, któremu zapobiegasz"
+          perforatorAlt="Schemat niewydolnego perforatora — pokazuje, dlaczego długie stanie i siedzenie obciąża układ żylny; czynnik ryzyka, który łagodzi aktywność i kompresjoterapia"
+          perforatorCaption="Niewydolny perforator · Obciążenie z długiego stania · Łagodzony ruchem i kompresją"
         />
 
         {/* Czynniki ryzyka */}
