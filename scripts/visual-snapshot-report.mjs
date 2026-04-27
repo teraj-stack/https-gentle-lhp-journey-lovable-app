@@ -464,6 +464,45 @@ const renderHtml = ({ trios, generatedAt, totalFailures }) => {
       padding: 24px; background: var(--card); border: 1px dashed var(--border);
       border-radius: 8px; text-align: center; color: var(--muted);
     }
+    /* ---- Breakdown (per viewport / per state) ---- */
+    .breakdown {
+      max-width: 1400px; margin: 0 auto 24px;
+      padding: 16px 20px; background: var(--card);
+      border: 1px solid var(--border); border-radius: 8px;
+    }
+    .breakdown-title { margin: 0 0 4px; font-size: 16px; }
+    .breakdown-hint { margin: 0 0 12px; color: var(--muted); font-size: 12px; }
+    .breakdown-grid {
+      display: grid; gap: 16px;
+      grid-template-columns: 1fr;
+    }
+    @media (min-width: 720px) {
+      .breakdown-grid { grid-template-columns: 1fr 1fr; }
+    }
+    .breakdown-table-wrap h3 {
+      margin: 0 0 8px; font-size: 12px; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .breakdown-table {
+      width: 100%; border-collapse: collapse; font-size: 13px;
+    }
+    .breakdown-table th,
+    .breakdown-table td {
+      text-align: left; padding: 6px 10px;
+      border-bottom: 1px solid var(--border);
+    }
+    .breakdown-table thead th {
+      font-size: 11px; color: var(--muted); font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .breakdown-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+    .num-failed { color: var(--danger); font-weight: 600; }
+    .num-incomplete { color: var(--warn); font-weight: 600; }
+    .num-zero { color: var(--muted); }
+    .breakdown-row { cursor: pointer; }
+    .breakdown-row:hover { background: rgba(127,127,127,.08); }
+    .breakdown-row:focus { outline: 2px solid var(--accent); outline-offset: -2px; }
+    .breakdown-row.is-active { background: rgba(79,195,247,.12); }
   </style>
 </head>
 <body>
