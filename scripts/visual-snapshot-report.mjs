@@ -415,18 +415,27 @@ const renderHtml = ({
     .map((t) => {
       const statusUpper = t.status.toUpperCase();
       const statusClass = t.status === "failed" ? "status-failed" : "status-incomplete";
-      const cell = (label, asset, fallback) =>
-        asset
-          ? `<figure>
+      // Gdy --max-copy obciął kopiowanie dla tego trio, pokazujemy dedykowany
+      // placeholder (informujący że plik istnieje, ale nie został skopiowany)
+      // zamiast ogólnego "brak baseline'u" — inaczej user pomyli to z incomplete.
+      const cell = (label, asset, fallback) => {
+        if (asset) {
+          return `<figure>
                <figcaption>${escapeHtml(label)}</figcaption>
                <a href="${escapeHtml(asset)}" target="_blank" rel="noopener">
                  <img loading="lazy" src="${escapeHtml(asset)}" alt="${escapeHtml(label)} — ${escapeHtml(t.stem)}" />
                </a>
-             </figure>`
-          : `<figure class="missing">
-               <figcaption>${escapeHtml(label)}</figcaption>
-               <div class="missing-box">${escapeHtml(fallback)}</div>
              </figure>`;
+        }
+        const isCopySkipped = t.copySkipped;
+        const message = isCopySkipped
+          ? "Pominięto kopiowanie (--max-copy). Patrz: folder artefaktów."
+          : fallback;
+        return `<figure class="missing${isCopySkipped ? " missing-copy-skipped" : ""}">
+               <figcaption>${escapeHtml(label)}</figcaption>
+               <div class="missing-box">${escapeHtml(message)}</div>
+             </figure>`;
+      };
       // data-* atrybuty są tym, na czym filtruje JS w runtime — żaden re-run nie jest potrzebny.
       // data-search agreguje wszystko, co jest sensowne do free-text search (stem + ścieżka katalogu testu).
       const searchHaystack = `${t.stem} ${t.testName}`.toLowerCase();
