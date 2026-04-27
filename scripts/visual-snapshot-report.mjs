@@ -1802,6 +1802,23 @@ const main = async () => {
   // Resolver ścieżki history.csv MUSI być zgodny z logiką append na końcu skryptu.
   const pctLocal = (saved, baseline) =>
     baseline > 0 ? Math.round((saved / baseline) * 1000) / 10 : 0;
+  // Komenda + flagi bieżącego runu — IDENTYCZNA logika jak przy zapisie do
+  // savings.csv/history.csv (patrz `csvRow` niżej), żeby UI filtra trendów
+  // pokazywał tę samą wartość, która zostanie zapisana w historii.
+  const flagToStr = (v) => (v === null || v === undefined ? "" : String(v));
+  const trendsCommandStr = [
+    path.basename(process.argv[0] ?? "node"),
+    ...process.argv.slice(1).map((a) => path.basename(a) === a ? a : path.relative(PROJECT_ROOT, a) || a),
+  ].join(" ");
+  const trendsCurrentFlags = {
+    flag_max_failures: flagToStr(maxFailures),
+    flag_max_per_viewport: flagToStr(maxPerViewport),
+    flag_max_per_state: flagToStr(maxPerState),
+    flag_max_copy: flagToStr(maxCopy),
+    flag_max_discovery: flagToStr(maxDiscovery),
+    flag_no_history: noHistory ? "true" : "false",
+    flag_history_path: flagToStr(historyRaw ?? ""),
+  };
   const trendsData = await loadTrendsHistory({
     historyRaw,
     noHistory,
@@ -1809,6 +1826,8 @@ const main = async () => {
       generatedAt: new Date().toISOString(),
       png: pctLocal(pngSaved, pngBaseline),
       discovery: pctLocal(discoverySaved, discoveryBaseline),
+      command: trendsCommandStr,
+      flags: trendsCurrentFlags,
     },
   });
 
