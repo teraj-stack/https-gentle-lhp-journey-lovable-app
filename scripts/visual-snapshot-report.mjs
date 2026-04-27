@@ -613,6 +613,59 @@ const TREND_FLAG_COLUMNS = [
   "flag_history_path",
 ];
 
+/**
+ * Pełna kanoniczna lista kolumn `savings.csv` / `history.csv` (schemaVersion 1).
+ *
+ * Trzymamy ją na module-levelu (a nie tylko lokalnie w funkcji zapisującej),
+ * żeby:
+ *  1. Walidator schematu mógł porównywać oczekiwany układ z plikiem.
+ *  2. UI raportu mogło zaproponować eksport „pełny schemat" — wiersze
+ *     wyrównane do tego samego nagłówka, z pustymi wartościami w polach,
+ *     których embedded payload (`points`) nie zawiera (większość metryk
+ *     trio_*/png_baseline/attribution_*/node_version/cwd_basename istnieje
+ *     wyłącznie w oryginalnym CSV, nie w UI).
+ *
+ * Kolejność jest STABILNA — append do `history.csv` zakłada identyczny header
+ * między runami, więc każda zmiana wymaga bumpa schemaVersion + re-archive
+ * starych plików (patrz README sekcja „Schema validation").
+ */
+const SAVINGS_CSV_COLUMNS = [
+  "generatedAt",
+  "trio_baseline",
+  "trio_rendered",
+  "trio_saved",
+  "trio_saved_pct",
+  "png_baseline",
+  "png_processed",
+  "png_saved",
+  "png_saved_pct",
+  "discovery_baseline",
+  "discovery_processed",
+  "discovery_saved",
+  "discovery_saved_pct",
+  "limit_max_failures",
+  "limit_max_per_viewport",
+  "limit_max_per_state",
+  "limit_max_copy",
+  "limit_max_discovery",
+  "attr_per_group_png",
+  "attr_per_group_discovery",
+  "attr_max_failures_png",
+  "attr_max_failures_discovery",
+  "attr_max_copy_png",
+  "attr_max_discovery_readdir",
+  "flag_max_failures",
+  "flag_max_per_viewport",
+  "flag_max_per_state",
+  "flag_max_copy",
+  "flag_max_discovery",
+  "flag_no_history",
+  "flag_history_path",
+  "command",
+  "node_version",
+  "cwd_basename",
+];
+
 const loadTrendsHistory = async ({ historyRaw, noHistory, currentRun }) => {
   const historySentinelOff = ["off", "false", "none", "no", "0"];
   const historyDisabled =
