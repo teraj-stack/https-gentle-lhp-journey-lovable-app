@@ -505,6 +505,86 @@ const renderCardLinks = (t, playwrightReportRel) => {
   return `<footer class="card-links" aria-label="Linki do szczegółów Playwrighta">${links.join("")}</footer>`;
 };
 
+/**
+ * Wczytuje historyczne wiersze z `history.csv` (jeśli istnieje) i zwraca
+ * dane do narysowania sparkline'ów png_saved_pct + discovery_saved_pct.
+ *
+ * Resolver ścieżki history.csv musi być spójny z logiką auto-append na końcu
+ * skryptu (default: REPORT_DIR/history.csv, --history=PATH override, --no-history
+ * → null).
+ *
+ * "Bieżący run" jest dołączany na końcu z flagą isCurrent=true (oznaczany w UI),
+ * żeby wykres pokazywał także TEN run, mimo że append do CSV zachodzi później.
+ */
+const loadTrendsHistory = async ({ historyRaw, noHistory, currentRun }) => {
+  const historySentinelOff = ["off", "false", "none", "no", "0"];
+  const historyDisabled =
+    noHistory ||
+    (historyRaw && historySentinelOff.includes(String(historyRaw).toLowerCase()));
+  if (historyDisabled) return null;
+
+  const historyPath = historyRaw
+    ? path.isAbsolute(historyRaw)
+      ? historyRaw
+      : path.resolve(PROJECT_ROOT, historyRaw)
+    : path.join(REPORT_DIR, "history.csv");
+
+  let raw;
+  try {
+    raw = await fs.readFile(historyPath, "utf8");
+  } catch (err) {
+    if (err.code === "ENOENT") {
+      // Pierwszy run — historii jeszcze nie ma. Pokażemy w UI sam current point
+      // jako placeholder ("zbieramy dane").
+      const points = [{ ...currentRun, isCurrent: true }];
+      return { source: path.relative(PROJECT_ROOT, historyPath), points, isFirstRun: true };
+    }
+    console.warn(
+      `[visual-snapshot-report] ⚠ Nie mogę odczytać ${path.relative(PROJECT_ROOT, historyPath)}: ${err.message}`,
+    );
+    return null;
+  }
+
+  // Prosty CSV parser: savings.csv nie zawiera przecinków/cudzysłowów wewnątrz pól
+  // (generatedAt = ISO string, reszta to liczby), więc split(",") wystarcza.
+  const lines = raw.split("\n").filter((l) => l.length > 0);
+  if (lines.length === 0) return null;
+  const header = lines[0].split(",");
+  const idxTime = header.indexOf("generatedAt");
+  const idxPng = header.indexOf("png_saved_pct");
+  const idxDisc = header.indexOf("discovery_saved_pct");
+  if (idxTime < 0 || idxPng < 0 || idxDisc < 0) {
+    console.warn(
+      `[visual-snapshot-report] ⚠ ${path.relative(PROJECT_ROOT, historyPath)}: nagłówek bez ` +
+        `generatedAt/png_saved_pct/discovery_saved_pct — pomijam wykres trendów.`,
+    );
+    return null;
+  }
+
+  const points = [];
+  for (let i = 1; i < lines.length; i++) {
+    const cols = lines[i].split(",");
+    const t = cols[idxTime];
+    const png = Number.parseFloat(cols[idxPng]);
+    const disc = Number.parseFloat(cols[idxDisc]);
+    if (!t || !Number.isFinite(png) || !Number.isFinite(disc)) continue;
+    points.push({ generatedAt: t, png, discovery: disc, isCurrent: false });
+  }
+  // Dodaj bieżący run jako ostatnia kropka (nie ma go jeszcze w CSV).
+  points.push({ ...currentRun, isCurrent: true });
+
+  // Limit: ostatnie 50 punktów, żeby SVG nie eksplodowało.
+  const limited = points.slice(-50);
+  return {
+    source: path.relative(PROJECT_ROOT, historyPath),
+    points: limited,
+    totalPoints: points.length,
+    truncated: points.length > limited.length,
+    isFirstRun: false,
+  };
+};
+
+
 const renderHtml = ({
   trios,
   generatedAt,
