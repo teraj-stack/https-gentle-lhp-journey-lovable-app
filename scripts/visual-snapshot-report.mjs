@@ -1481,6 +1481,25 @@ const renderHtml = ({
       align-self: end;
     }
     .trends-filter-reset:hover { background: rgba(127,127,127,.22); }
+    .trends-filter-export {
+      font-size: .75rem;
+      padding: 4px 10px;
+      background: rgba(201,168,76,.14);
+      color: inherit;
+      border: 1px solid rgba(201,168,76,.45);
+      border-radius: 4px;
+      cursor: pointer;
+      align-self: end;
+    }
+    .trends-filter-export:hover { background: rgba(201,168,76,.28); }
+    .trends-filter-export:disabled { opacity: .45; cursor: not-allowed; }
+    .trends-filter-export-status {
+      font-size: .72rem;
+      opacity: .75;
+      align-self: end;
+      padding-bottom: 6px;
+      min-height: 1em;
+    }
     .trends-empty {
       margin: .25rem 0 .75rem;
       font-size: .85rem;
