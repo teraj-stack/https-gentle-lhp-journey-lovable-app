@@ -2357,6 +2357,82 @@ const AdminVeinImages = () => {
             </label>
           </div>
 
+          {(() => {
+            const errorRows = importPreviewRows.filter((r) => r.status === "error");
+            if (errorRows.length === 0) return null;
+            const downloadErrorsCsv = () => {
+              const header = ["line", "page_key", "slot", "alt", "caption", "errors"];
+              const lines = [header.join(",")];
+              for (const r of errorRows) {
+                lines.push(
+                  [
+                    String(r.line),
+                    r.pageKey ?? "",
+                    r.slot ?? "",
+                    r.alt,
+                    r.caption,
+                    r.errors.join(" | "),
+                  ]
+                    .map(csvCell)
+                    .join(","),
+                );
+              }
+              const base = importPreview?.fileName?.replace(/\.csv$/i, "") ?? "import";
+              downloadFile(
+                `${base}-errors.csv`,
+                "\uFEFF" + lines.join("\r\n"),
+                "text/csv",
+              );
+              toast.success(`Pobrano CSV z błędami (${errorRows.length} wierszy)`);
+            };
+            return (
+              <details
+                className="-mt-1 mb-1 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs"
+                open
+              >
+                <summary className="flex cursor-pointer items-center justify-between gap-2 select-none">
+                  <span className="flex items-center gap-2 font-semibold text-destructive">
+                    <AlertTriangle className="w-4 h-4 shrink-0" />
+                    Wiersze z błędami: {errorRows.length}
+                  </span>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="h-7 px-2 text-[11px]"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      downloadErrorsCsv();
+                    }}
+                  >
+                    <FileDown className="w-3 h-3 mr-1" />
+                    Pobierz CSV z błędami
+                  </Button>
+                </summary>
+                <ul className="mt-2 max-h-40 overflow-auto space-y-1 font-mono text-[11px]">
+                  {errorRows.map((r) => (
+                    <li
+                      key={`err-${r.line}`}
+                      className="flex items-start gap-2 rounded border border-destructive/30 bg-background/40 px-2 py-1"
+                    >
+                      <span className="opacity-60 shrink-0">L{r.line}</span>
+                      <span className="shrink-0 text-foreground/80">
+                        {r.pageKey ?? "?"} / {r.slot ?? "?"}
+                      </span>
+                      <span className="text-destructive break-words">
+                        {r.errors.join(" · ") || "(brak szczegółów)"}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-2 text-[10px] text-muted-foreground">
+                  Popraw plik (zachowując nagłówki <code>page_key,slot,alt,caption</code>) i wgraj ponownie. Kolumna <code>errors</code> w pobranym CSV jest wyłącznie informacyjna — przy reimporcie zostanie zignorowana.
+                </p>
+              </details>
+            );
+          })()}
+
           <div className="flex-1 overflow-auto -mx-6 px-6">
             <div className="space-y-2">
               {importPreviewRows.map((row) => {
