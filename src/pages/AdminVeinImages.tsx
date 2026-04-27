@@ -700,11 +700,18 @@ const AdminVeinImages = () => {
   const [restoringSlot, setRestoringSlot] = useState<string | null>(null);
   /** Ukryty <input type="file"> — trigger przez Button. */
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-  /** Otwarty dialog z preview parsowanego CSV. */
+  /**
+   * Otwarty dialog z preview parsowanego CSV.
+   * Trzymamy `parsedRows` (pre-dedup) — finalna lista `ImportRow` jest
+   * derywowana memoicznie z `parsedRows × dedupStrategy`, co pozwala na
+   * reaktywne przełączanie strategii bez ponownego parsowania pliku.
+   */
   const [importPreview, setImportPreview] = useState<{
     fileName: string;
-    rows: ImportRow[];
+    parsedRows: ParsedImportRow[];
   } | null>(null);
+  /** Strategia dedupu duplikatów page_key+slot w pliku CSV (domyślnie „first"). */
+  const [dedupStrategy, setDedupStrategy] = useState<DedupStrategy>("first");
   const [importing, setImporting] = useState(false);
   /** Wyszukiwarka — filtruje strony po label/key oraz po treści alt/caption draftu. */
   const [searchQuery, setSearchQuery] = useState("");
