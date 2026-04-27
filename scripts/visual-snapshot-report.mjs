@@ -1896,11 +1896,75 @@ const main = async () => {
     savingsSummary.attribution.maxDiscovery.discoverySaved,
   ];
   const savingsCsvPath = path.join(REPORT_DIR, "savings.csv");
+  const headerLine = csvCols.join(",");
+  const dataLine = csvRow.join(",");
   await fs.writeFile(
     savingsCsvPath,
-    `${csvCols.join(",")}\n${csvRow.join(",")}\n`,
+    `${headerLine}\n${dataLine}\n`,
     "utf8",
   );
+
+  // Auto-append do history.csv (trend między uruchomieniami).
+  // Reguły:
+  // - default: <REPORT_DIR>/history.csv
+  // - --no-history (lub NO_HISTORY=1) → skip
+  // - --history=off|false|none → skip (sentinel string)
+  // - --history=path → custom path (relative do PROJECT_ROOT albo absolute)
+  // - guard: jeśli istniejący plik ma INNY nagłówek (np. dodano kolumny w nowej
+  //   wersji skryptu) → log warn + skip append (nie korumpujemy starej historii).
+  //   User powinien zarchiwizować stary plik i pozwolić wygenerować nowy.
+  const historySentinelOff = ["off", "false", "none", "no", "0"];
+  const historyDisabled =
+    noHistory ||
+    (historyRaw && historySentinelOff.includes(String(historyRaw).toLowerCase()));
+  if (!historyDisabled) {
+    const historyPath = historyRaw
+      ? path.isAbsolute(historyRaw)
+        ? historyRaw
+        : path.resolve(PROJECT_ROOT, historyRaw)
+      : path.join(REPORT_DIR, "history.csv");
+
+    let appendOk = true;
+    let existed = false;
+    try {
+      const existing = await fs.readFile(historyPath, "utf8");
+      existed = true;
+      const firstLine = existing.split("\n", 1)[0] ?? "";
+      if (firstLine !== headerLine) {
+        console.warn(
+          `[visual-snapshot-report] ⚠ Pomijam append do ${path.relative(PROJECT_ROOT, historyPath)} ` +
+            `— istniejący nagłówek różni się od bieżącego (schema mismatch). ` +
+            `Zarchiwizuj stary plik (np. mv history.csv history-v1.csv), ` +
+            `kolejny run wygeneruje świeży z aktualnym nagłówkiem.`,
+        );
+        appendOk = false;
+      }
+    } catch (err) {
+      if (err.code !== "ENOENT") {
+        console.warn(
+          `[visual-snapshot-report] ⚠ Nie mogę odczytać ${path.relative(PROJECT_ROOT, historyPath)}: ${err.message}`,
+        );
+        appendOk = false;
+      }
+    }
+
+    if (appendOk) {
+      await fs.mkdir(path.dirname(historyPath), { recursive: true });
+      const payload = existed ? `${dataLine}\n` : `${headerLine}\n${dataLine}\n`;
+      await fs.appendFile(historyPath, payload, "utf8");
+      // Liczba wierszy danych po append (bez headera) — szybki sygnał trendu w CI logu.
+      const contents = await fs.readFile(historyPath, "utf8");
+      const dataRows = contents.split("\n").filter((l) => l.length > 0).length - 1;
+      console.log(
+        `[visual-snapshot-report] 📈 History append: ${path.relative(PROJECT_ROOT, historyPath)} ` +
+          `(${dataRows} ${dataRows === 1 ? "wiersz" : "wierszy"} łącznie${existed ? "" : ", utworzono nowy plik"}).`,
+      );
+    }
+  } else {
+    console.log(
+      `[visual-snapshot-report] ⏭  History append wyłączony (--no-history / HISTORY_CSV=off).`,
+    );
+  }
 
   console.log(
     `[visual-snapshot-report] 📁 Zapisano podsumowanie: ` +
