@@ -196,6 +196,16 @@ const AdminVeinImages = () => {
   );
   const [viewport, setViewport] = useState<ViewportMode>("desktop");
   const [saving, setSaving] = useState<VeinImageSlot | null>(null);
+  /** Bump po każdym udanym zapisie — wymusza remount podglądu CMS (force-fresh render). */
+  const [savedTick, setSavedTick] = useState(0);
+  /** Timestamp + slot ostatniego zapisu — driver krótkiego flash highlightu. */
+  const [lastSaved, setLastSaved] = useState<{
+    at: number;
+    slot: VeinImageSlot;
+    pageKey: VeinImagePageKey;
+  } | null>(null);
+  /** Tryb podglądu: draft (live edycja) vs cms (to co jest w bazie po zapisie). */
+  const [previewMode, setPreviewMode] = useState<"draft" | "cms">("draft");
 
   const active = useMemo(
     () =>
