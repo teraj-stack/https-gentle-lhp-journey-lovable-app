@@ -266,6 +266,154 @@ const VIEWPORTS: Record<ViewportMode, { width: number; label: string }> = {
   desktop: { width: 1280, label: "Desktop · 1280px" },
 };
 
+
+/**
+ * Etykieta dla typu akcji w historii — krótkie, czytelne polskie opisy.
+ */
+const ACTION_LABEL: Record<VeinImageOverrideHistoryRow["action"], string> = {
+  insert: "utworzono",
+  update: "zmieniono",
+  delete: "usunięto",
+};
+
+interface HistoryPopoverProps {
+  pageKey: VeinImagePageKey;
+  slot: VeinImageSlot;
+  /** Wywoływane po kliknięciu „Przywróć" — rodzic robi update do bazy. */
+  onRestore: (row: VeinImageOverrideHistoryRow) => void | Promise<void>;
+  restoring: boolean;
+}
+
+/**
+ * Popover z listą wcześniejszych wersji alt+caption dla danego slotu.
+ * Każdy wiersz = snapshot w czasie. Klik „Przywróć" zwraca dane do rodzica,
+ * który nadpisuje aktualny override (i sam logujący trigger zapisze nową wersję).
+ */
+const HistoryPopover = ({ pageKey, slot, onRestore, restoring }: HistoryPopoverProps) => {
+  const [open, setOpen] = useState(false);
+  // enabled tylko gdy popover otwarty — nie blokujemy bazy zapytaniami w tle.
+  const { data, isLoading, error } = useVeinImageOverrideHistory(pageKey, slot, open);
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="ghost"
+          size="sm"
+          title="Pokaż historię wersji tego slotu"
+        >
+          <History className="w-3.5 h-3.5 mr-1" />
+          Historia
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[420px] p-0" align="end">
+        <div className="px-3 py-2 border-b border-border/40">
+          <p className="text-xs font-semibold text-foreground/90">
+            Historia wersji — {slot === "main" ? "główny obraz" : "perforator"}
+          </p>
+          <p className="text-[10px] text-muted-foreground">
+            Najnowsze pierwsze · max 50 wpisów · klik „Przywróć" nadpisuje bieżący override
+          </p>
+        </div>
+        <ScrollArea className="max-h-[420px]">
+          <div className="p-2 space-y-2">
+            {isLoading && (
+              <p className="text-[11px] text-muted-foreground py-3 text-center">
+                Ładowanie historii…
+              </p>
+            )}
+            {error && (
+              <p className="text-[11px] text-destructive py-3 text-center">
+                Błąd pobierania historii: {error instanceof Error ? error.message : String(error)}
+              </p>
+            )}
+            {!isLoading && !error && (data?.length ?? 0) === 0 && (
+              <p className="text-[11px] text-muted-foreground py-3 text-center italic">
+                Brak wpisów historii dla tego slotu.
+              </p>
+            )}
+            {data?.map((row, idx) => {
+              const isCurrent = idx === 0;
+              return (
+                <div
+                  key={row.id}
+                  className="rounded-md border border-border/40 bg-card/40 p-2 space-y-1.5 text-[11px]"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <span
+                        className={`text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded font-mono shrink-0 ${
+                          row.action === "insert"
+                            ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
+                            : row.action === "update"
+                              ? "bg-amber-500/15 text-amber-400 border border-amber-500/30"
+                              : "bg-destructive/15 text-destructive border border-destructive/30"
+                        }`}
+                      >
+                        {ACTION_LABEL[row.action]}
+                      </span>
+                      {isCurrent && (
+                        <span className="text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded font-mono bg-primary/15 text-primary border border-primary/30 shrink-0">
+                          najnowszy
+                        </span>
+                      )}
+                      <span className="text-muted-foreground truncate" title={row.updated_by ?? "system"}>
+                        {row.updated_by ?? "system"}
+                      </span>
+                    </div>
+                    <time
+                      dateTime={row.recorded_at}
+                      title={new Date(row.recorded_at).toLocaleString("pl-PL", { dateStyle: "full", timeStyle: "medium" })}
+                      className="text-[10px] text-muted-foreground font-mono shrink-0"
+                    >
+                      {new Date(row.recorded_at).toLocaleString("pl-PL", { dateStyle: "short", timeStyle: "short" })}
+                    </time>
+                  </div>
+                  <details className="group">
+                    <summary className="cursor-pointer text-muted-foreground hover:text-foreground/80 select-none text-[10px]">
+                      podgląd treści ({row.alt.length} alt · {row.caption.length} cap)
+                    </summary>
+                    <div className="mt-1.5 space-y-1 font-mono text-[10px]">
+                      <div className="rounded border border-border/30 bg-background/40 p-1.5">
+                        <span className="text-muted-foreground">alt:</span>{" "}
+                        <span className="text-foreground/85 break-words">{row.alt}</span>
+                      </div>
+                      <div className="rounded border border-border/30 bg-background/40 p-1.5">
+                        <span className="text-muted-foreground">caption:</span>{" "}
+                        <span className="text-foreground/85 break-words">{row.caption}</span>
+                      </div>
+                    </div>
+                  </details>
+                  <div className="flex items-center justify-end pt-0.5">
+                    <Button
+                      size="sm"
+                      variant={isCurrent ? "ghost" : "outline"}
+                      disabled={isCurrent || restoring}
+                      onClick={async () => {
+                        await onRestore(row);
+                        setOpen(false);
+                      }}
+                      title={
+                        isCurrent
+                          ? "To jest aktualnie zapisana wersja"
+                          : "Przywróć ten alt/caption do bazy"
+                      }
+                      className="h-7 text-[10px]"
+                    >
+                      <RotateCcw className="w-3 h-3 mr-1" />
+                      {isCurrent ? "Aktualna" : restoring ? "Przywracanie…" : "Przywróć"}
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </ScrollArea>
+      </PopoverContent>
+    </Popover>
+  );
+};
+
 const AdminVeinImages = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
