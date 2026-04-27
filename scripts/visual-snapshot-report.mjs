@@ -2412,7 +2412,7 @@ const renderHtml = ({
       var csvText = lines.join("\n") + "\n";
 
       // Split CSVs (na potrzeby trybu „zip-split"): osobny plik dla każdej
-      // metryki, tylko 2 kolumny `generatedAt,value` — gotowy do importu do
+      // metryki, tylko 2 kolumny generatedAt + value — gotowy do importu do
       // narzędzi single-series (np. Grafana CSV plugin, Datawrapper) bez
       // potrzeby selektowania kolumn po stronie usera.
       function buildSingleSeriesCsv(metricKey) {
