@@ -532,6 +532,14 @@ const AdminVeinImages = () => {
   const [previewMode, setPreviewMode] = useState<"draft" | "cms">("draft");
   /** Klucz: `${pageKey}:${slot}` — slot, dla którego trwa rollback z historii. */
   const [restoringSlot, setRestoringSlot] = useState<string | null>(null);
+  /** Ukryty <input type="file"> — trigger przez Button. */
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  /** Otwarty dialog z preview parsowanego CSV. */
+  const [importPreview, setImportPreview] = useState<{
+    fileName: string;
+    rows: ImportRow[];
+  } | null>(null);
+  const [importing, setImporting] = useState(false);
 
   const active = useMemo(
     () =>
