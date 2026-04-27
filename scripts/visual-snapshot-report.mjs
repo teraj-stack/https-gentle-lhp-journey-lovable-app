@@ -593,6 +593,7 @@ const renderHtml = ({
   truncation,
   copyTruncation,
   discoveryTruncation,
+  trends,
 }) => {
   // Zbieramy unikalne wartości viewport / state z trios, żeby wypełnić <select>'y.
   // Sortujemy alfabetycznie dla deterministycznej kolejności w UI (łatwiej znaleźć).
