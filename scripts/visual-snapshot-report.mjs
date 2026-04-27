@@ -50,14 +50,20 @@
  *     --sort=-status           → najpierw incomplete (np. po dodaniu nowego specu)
  *   Nieznane klucze → warning + skip; pusta wartość → fallback na default.
  *
- * Fail-fast — trzy poziomy obcinania (od najbardziej do najmniej agresywnego):
+ * Fail-fast — pięć poziomów obcinania (kolejność w pipeline od góry do dołu):
+ *
+ *   --max-failures-per-viewport=N (env MAX_FAILURES_PER_VIEWPORT)
+ *   --max-failures-per-state=N    (env MAX_FAILURES_PER_STATE)
+ *     Proporcjonalne kapowanie per grupa (round-robin). Cel: gdy mamy 400 regresji
+ *     w mobile + 5 w tablet, samo --max-failures=50 zjadłoby cały tablet.
+ *     Per-grupa cap zostawia pierwsze N na grupę (zgodnie z aktualnym sortowaniem),
+ *     więc każdy viewport / state ma reprezentację. Działa PRZED --max-failures.
  *
  *   --max-failures=N (alias -m, env MAX_FAILURES)
- *     Globalny limit kart w raporcie. Sortuje failed trio deterministycznie
- *     (po dir + stem) i zostawia pierwsze N. Wszystko poza tym jest pomijane:
- *     karty NIE są renderowane, asset NIE jest kopiowany, discovery NIE biegnie.
- *     Najszybsze, ale traci kontekst (user nie zobaczy że ma więcej regresji
- *     niż N — jest tylko banner z totalem).
+ *     Globalny limit kart w raporcie. Działa NA WIERZCHU per-grupa cap (więc
+ *     najpierw balansujemy, potem ograniczamy globalnie). Wszystko poza tym
+ *     jest pomijane: karty NIE są renderowane, asset NIE jest kopiowany,
+ *     discovery NIE biegnie. Sekcja "Pominięte" pokazuje powód (badge).
  *
  *   --max-copy=N (env MAX_COPY)
  *     Limit dla DROGIEGO kopiowania PNG (3 pliki * fs.copyFile per trio).
@@ -73,9 +79,6 @@
  *     skaluje. Pierwsze N trio dostaje pełne deep-linki (Trace Viewer, Video,
  *     Error context); reszta tylko podstawowy footer (Playwright report + folder).
  *
- *   Hierarchia: --max-failures TNIE FIRST (przed wszystkim), więc
- *   --max-copy / --max-discovery działają na już obcięty zbiór. Jeśli
- *   --max-copy > liczby kart po --max-failures, jest no-op (i odwrotnie).
  *   Wszystkie limity są niezależne — można łączyć dowolnie. Brak limitu
  *   = pełna obróbka wszystkich kart (back-compat z poprzednim zachowaniem).
  *
@@ -146,6 +149,10 @@ const parseCliArgs = (argv) => {
     maxFailures: { long: "--max-failures", short: "-m", env: "MAX_FAILURES", value: null, kind: "int" },
     maxCopy: { long: "--max-copy", short: null, env: "MAX_COPY", value: null, kind: "int" },
     maxDiscovery: { long: "--max-discovery", short: null, env: "MAX_DISCOVERY", value: null, kind: "int" },
+    // Per-grupę limity (round-robin po viewport / state). Działają NIEZALEŻNIE
+    // od --max-failures: można połączyć ("max 5 per viewport, do 50 łącznie").
+    maxPerViewport: { long: "--max-failures-per-viewport", short: null, env: "MAX_FAILURES_PER_VIEWPORT", value: null, kind: "int" },
+    maxPerState: { long: "--max-failures-per-state", short: null, env: "MAX_FAILURES_PER_STATE", value: null, kind: "int" },
     sort: { long: "--sort", short: null, env: "SORT", value: null, kind: "str" },
   };
 
@@ -196,6 +203,8 @@ const parseCliArgs = (argv) => {
     maxFailures: flags.maxFailures.value,
     maxCopy: flags.maxCopy.value,
     maxDiscovery: flags.maxDiscovery.value,
+    maxPerViewport: flags.maxPerViewport.value,
+    maxPerState: flags.maxPerState.value,
     sort: flags.sort.value, // string lub null (=> default)
   };
 };
@@ -694,10 +703,23 @@ const renderHtml = ({
     truncation && truncation.omitted && truncation.omitted.length > 0
       ? (() => {
           const stemsForCopy = truncation.omitted.map((o) => o.stem).join(" ");
+          // Mapowanie reason → human-readable badge. Każdy powód ma własny
+          // kolor (CSS class), żeby user szybko odróżnił "globalny limit"
+          // od "ta grupa miała za dużo regresji".
+          const reasonBadge = (o) => {
+            if (o.reason === "viewport") {
+              return `<span class="reason-badge reason-viewport" title="Limit per viewport: ${o.limit}">viewport &gt; ${escapeHtml(String(o.limit))}</span>`;
+            }
+            if (o.reason === "state") {
+              return `<span class="reason-badge reason-state" title="Limit per state: ${o.limit}">state &gt; ${escapeHtml(String(o.limit))}</span>`;
+            }
+            return `<span class="reason-badge reason-global" title="Globalny limit --max-failures: ${o.limit}">--max-failures</span>`;
+          };
           const rows = truncation.omitted
             .map(
               (o) => `
               <tr>
+                <td>${reasonBadge(o)}</td>
                 <td><code>${escapeHtml(o.stem)}</code></td>
                 <td>${escapeHtml(o.viewport)}</td>
                 <td>${escapeHtml(o.state)}</td>
@@ -705,12 +727,24 @@ const renderHtml = ({
               </tr>`,
             )
             .join("");
+          // Składamy nagłówek opisujący WSZYSTKIE aktywne limity.
+          const limitsParts = [];
+          if (truncation.perViewportLimit !== null) {
+            limitsParts.push(`<code>--max-failures-per-viewport=${truncation.perViewportLimit}</code>`);
+          }
+          if (truncation.perStateLimit !== null) {
+            limitsParts.push(`<code>--max-failures-per-state=${truncation.perStateLimit}</code>`);
+          }
+          if (truncation.limit !== null) {
+            limitsParts.push(`<code>--max-failures=${truncation.limit}</code>`);
+          }
+          const limitsLabel = limitsParts.length > 0 ? limitsParts.join(" + ") : "limity";
           return `
             <details class="omitted-section" open>
               <summary>
                 <span class="omitted-summary-label">
-                  📋 Pominięte przez <code>--max-failures=${truncation.limit}</code>:
-                  <strong>${truncation.omitted.length}</strong> ${truncation.omitted.length === 1 ? "trio" : "trio"}
+                  📋 Pominięte przez ${limitsLabel}:
+                  <strong>${truncation.omitted.length}</strong> trio
                 </span>
                 <button type="button"
                         class="card-link card-link-button omitted-copy-btn"
@@ -723,6 +757,7 @@ const renderHtml = ({
                 <table class="omitted-table">
                   <thead>
                     <tr>
+                      <th>Powód</th>
                       <th>Stem</th>
                       <th>Viewport</th>
                       <th>State</th>
@@ -733,8 +768,8 @@ const renderHtml = ({
                 </table>
               </div>
               <p class="omitted-hint">
-                Wskazówka: uruchom skrypt bez <code>--max-failures</code> (lub z większą wartością),
-                żeby zobaczyć karty z obrazami dla powyższych trio.
+                Wskazówka: zwiększ odpowiedni limit (per-grupa lub globalny) albo wyłącz go
+                całkowicie, żeby zobaczyć karty z obrazami dla powyższych trio.
               </p>
             </details>`;
         })()
@@ -986,6 +1021,16 @@ const renderHtml = ({
     .omitted-table code { font-size: 11px; word-break: break-all; }
     .omitted-testname { color: var(--muted); font-size: 11px; word-break: break-all; }
     .omitted-hint { margin: 10px 4px 0; color: var(--muted); font-size: 12px; }
+    /* Badge dla kolumny "Powód" w tabeli omitted — odrębne kolory per typ
+       limitu pomagają wzrokowo zgrupować "ten viewport ma za dużo regresji". */
+    .reason-badge {
+      display: inline-block; padding: 2px 8px; border-radius: 10px;
+      font-size: 10px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.3px; white-space: nowrap;
+    }
+    .reason-viewport { background: rgba(79,195,247,.18); color: var(--accent); }
+    .reason-state    { background: rgba(255,167,38,.18); color: var(--warn); }
+    .reason-global   { background: rgba(239,83,80,.15); color: var(--danger); }
     /* Placeholder dla figure gdy --max-copy obciął kopiowanie — bardziej
        neutralny niż czerwony "missing", żeby user nie myślał że to błąd. */
     .missing-copy-skipped .missing-box {
@@ -1194,7 +1239,14 @@ const renderHtml = ({
 };
 
 const main = async () => {
-  const { maxFailures, maxCopy, maxDiscovery, sort: sortRaw } = parseCliArgs(process.argv);
+  const {
+    maxFailures,
+    maxCopy,
+    maxDiscovery,
+    maxPerViewport,
+    maxPerState,
+    sort: sortRaw,
+  } = parseCliArgs(process.argv);
 
   // Sanity: czy są w ogóle wyniki?
   try {
@@ -1241,14 +1293,72 @@ const main = async () => {
     console.log(`[visual-snapshot-report] Sortowanie: ${human}`);
   }
 
+  // Fail-fast (poziom 0): kapowanie per-grupę PRZED globalnym --max-failures.
+  // Cel: gdy mamy 400 regresji w mobile + 5 w tablet, samo --max-failures=50
+  // mogłoby całkowicie zjeść tablet (utrata małej, ale ważnej grupy).
+  // Algorytm: dla każdej grupy (viewport / state) zostawiamy pierwsze N
+  // (zgodnie z aktualnym sortowaniem). Reszta wpada do `omittedByGroup`,
+  // żeby renderHtml mógł pokazać dokładnie co i z jakiego powodu wypadło.
+  // Sortowanie WEWNĄTRZ grupy jest zachowane bo iterujemy po `allFailed`
+  // które już jest posortowane przez `buildComparator`.
+  const omittedByGroup = []; // [{ trio, reason: "viewport"|"state", group: "mobile"|... }]
+  let perGroupFiltered = allFailed;
+
+  const applyPerGroupCap = (input, getKey, limit, reasonLabel) => {
+    if (limit === null) return input;
+    const counts = new Map();
+    const kept = [];
+    for (const t of input) {
+      const k = getKey(t);
+      const cur = counts.get(k) || 0;
+      if (cur < limit) {
+        counts.set(k, cur + 1);
+        kept.push(t);
+      } else {
+        omittedByGroup.push({ trio: t, reason: reasonLabel, group: k, limit });
+      }
+    }
+    return kept;
+  };
+
+  perGroupFiltered = applyPerGroupCap(
+    perGroupFiltered,
+    (t) => t._viewport,
+    maxPerViewport,
+    "viewport",
+  );
+  perGroupFiltered = applyPerGroupCap(
+    perGroupFiltered,
+    (t) => t._state,
+    maxPerState,
+    "state",
+  );
+
+  if (maxPerViewport !== null && perGroupFiltered.length < allFailed.length) {
+    const dropped = allFailed.length - perGroupFiltered.length;
+    console.log(
+      `[visual-snapshot-report] ⚠ Per-grupa: po --max-failures-per-viewport=${maxPerViewport} ` +
+        `i --max-failures-per-state=${maxPerState ?? "∞"} zostało ${perGroupFiltered.length} ` +
+        `z ${allFailed.length} trio (odrzucono ${dropped}).`,
+    );
+  } else if (maxPerState !== null && perGroupFiltered.length < allFailed.length) {
+    const dropped = allFailed.length - perGroupFiltered.length;
+    console.log(
+      `[visual-snapshot-report] ⚠ Per-grupa: po --max-failures-per-state=${maxPerState} ` +
+        `zostało ${perGroupFiltered.length} z ${allFailed.length} trio (odrzucono ${dropped}).`,
+    );
+  }
+
   // Fail-fast (poziom 1): obetnij globalnie PRZED dalszą obróbką.
   // Wszystko poza tym slice'em w ogóle nie wchodzi do raportu.
-  const truncatedBy = maxFailures !== null && allFailed.length > maxFailures;
-  const failed = truncatedBy ? allFailed.slice(0, maxFailures) : allFailed;
+  // UWAGA: pracujemy na `perGroupFiltered`, więc --max-failures działa NA WIERZCHU
+  // per-group cap (najpierw balansujemy, potem ograniczamy globalnie).
+  const truncatedBy = maxFailures !== null && perGroupFiltered.length > maxFailures;
+  const failed = truncatedBy ? perGroupFiltered.slice(0, maxFailures) : perGroupFiltered;
 
   if (truncatedBy) {
     console.log(
-      `[visual-snapshot-report] ⚠ Fail-fast: znaleziono ${allFailed.length} failed snapshotów, ` +
+      `[visual-snapshot-report] ⚠ Fail-fast: ${perGroupFiltered.length} trio po per-grupa cap, ` +
         `obcięto do pierwszych ${maxFailures} (--max-failures).`,
     );
   }
@@ -1320,23 +1430,48 @@ const main = async () => {
     generatedAt: new Date().toISOString(),
     totalFailures: failed.length,
     playwrightReportRel,
-    truncation: truncatedBy
-      ? {
-          shown: failed.length,
-          total: allFailed.length,
-          limit: maxFailures,
-          // Pełna lista pominiętych trio (wszystko po slice'ie). Wzbogacamy
-          // o viewport/state z parseSnapshotName, żeby user mógł zorientować
-          // się GDZIE są dalsze regresje bez re-runa skryptu bez limitu.
-          // testName = nazwa katalogu Playwrighta — jednoznaczny lokator.
-          omitted: allFailed.slice(maxFailures).map((t) => ({
+    // truncation: agregat WSZYSTKICH powodów obcięcia (per-grupa + globalny).
+    // Pokazujemy w raporcie jedną sekcję "omitted", w której każdy wiersz
+    // ma `reason` ("viewport"/"state"/"max-failures") + dodatkowe info
+    // (limit + ew. nazwa grupy), żeby user wiedział DLACZEGO to wypadło.
+    truncation: (() => {
+      const omitted = [];
+      // Per-grupa: trio odrzucone w applyPerGroupCap (ma już .reason/.group/.limit).
+      for (const o of omittedByGroup) {
+        omitted.push({
+          stem: o.trio.stem,
+          viewport: o.trio._viewport,
+          state: o.trio._state,
+          testName: o.trio.testName,
+          reason: o.reason, // "viewport" | "state"
+          group: o.group,
+          limit: o.limit,
+        });
+      }
+      // Globalny --max-failures: trio z `perGroupFiltered` po pozycji maxFailures.
+      if (truncatedBy) {
+        for (const t of perGroupFiltered.slice(maxFailures)) {
+          omitted.push({
             stem: t.stem,
             viewport: t._viewport,
             state: t._state,
             testName: t.testName,
-          })),
+            reason: "max-failures",
+            group: null,
+            limit: maxFailures,
+          });
         }
-      : null,
+      }
+      if (omitted.length === 0) return null;
+      return {
+        shown: failed.length,
+        total: allFailed.length,
+        limit: maxFailures, // może być null gdy obcinanie szło tylko per-grupą
+        perViewportLimit: maxPerViewport,
+        perStateLimit: maxPerState,
+        omitted,
+      };
+    })(),
     copyTruncation:
       maxCopy !== null && failed.length > maxCopy
         ? { processed: copyLimit, total: failed.length, limit: maxCopy }

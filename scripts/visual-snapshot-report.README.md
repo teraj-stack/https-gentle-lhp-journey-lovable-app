@@ -107,27 +107,36 @@ jobs:
 
 ### Warianty
 
-**Fail-fast w CI** (gdy zestaw urośnie do setek failures) — trzy niezależne flagi:
+**Fail-fast w CI** (gdy zestaw urośnie do setek failures) — pięć niezależnych flag:
 
 | Flaga | Env | Co tnie | Kiedy używać |
 |---|---|---|---|
 | `--max-failures=N` (`-m N`) | `MAX_FAILURES` | Globalna liczba kart (najmocniejsze) | Chcesz zobaczyć tylko top N regresji |
+| `--max-failures-per-viewport=N` | `MAX_FAILURES_PER_VIEWPORT` | Max N trio na viewport | Mobile/desktop nie zjada tabletu/small-mobile |
+| `--max-failures-per-state=N` | `MAX_FAILURES_PER_STATE` | Max N trio na stan | Każdy scenariusz reprezentowany w raporcie |
 | `--max-copy=N` | `MAX_COPY` | Kopiowanie PNG do `assets/` (drogie IO) | Wszystkie karty potrzebne, ale podgląd pikseli tylko dla N |
 | `--max-discovery=N` | `MAX_DISCOVERY` | Discovery `trace.zip`/`video`/`error-context` per katalog | Karty + obrazy OK, ale chcesz oszczędzić `readdir` |
 
 ```yaml
-- name: Generate + pack visual report (aggressive fail-fast)
+- name: Generate + pack visual report (balanced fail-fast)
   if: always()
   run: |
-    # Top 100 kart, podgląd pikseli dla 30, deep-linki dla 50.
+    # Maks 5 trio per viewport (żeby tablet/small-mobile nie zniknął),
+    # globalnie 100 kart, podgląd pikseli dla 30, deep-linki dla 50.
     node scripts/visual-snapshot-report.mjs \
+      --max-failures-per-viewport=5 \
       --max-failures=100 --max-copy=30 --max-discovery=50
     bun run test:visual:report:pack
 ```
 
-Hierarchia: `--max-failures` tnie pierwsze, więc `--max-copy` / `--max-discovery`
-działają już na obcięty zbiór. Kombinacje są niezależne — można podać jedną,
-dwie albo wszystkie trzy.
+Hierarchia kapowania (kolejność w pipeline):
+1. **`--max-failures-per-viewport` / `--max-failures-per-state`** — proporcjonalne kapowanie per grupa (zachowuje małe ważne grupy).
+2. **`--max-failures`** — globalny limit na wynik z punktu 1.
+3. **`--max-copy` / `--max-discovery`** — limit drogich operacji IO na wynik z punktu 2.
+
+Wszystkie limity są niezależne — można podać dowolną kombinację. Sekcja
+"Pominięte" w raporcie ma kolumnę **Powód** z badge'm (`viewport > N`,
+`state > N`, `--max-failures`), więc widać dokładnie który limit wyrzucił dane trio.
 
 **Sterowanie KOLEJNOŚCIĄ obcinania (`--sort`, env `SORT`)**:
 
