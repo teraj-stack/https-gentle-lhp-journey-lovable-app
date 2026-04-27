@@ -204,21 +204,28 @@ const BackupProgressSection = () => {
         <button
           type="button"
           onClick={handleExport}
-          disabled={totalDays === 0}
+          disabled={totalDays === 0 || exportConfirm.isExporting}
+          aria-busy={exportConfirm.isExporting}
           className="group flex items-center gap-3 p-4 rounded-xl border border-border/60 hover:border-primary/40 hover:bg-primary/5 transition-colors text-left disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-border/60 disabled:hover:bg-transparent"
           aria-label="Eksportuj postęp treningu do pliku JSON"
         >
           <div className="w-10 h-10 rounded-lg bg-primary/10 border border-primary/25 flex items-center justify-center shrink-0 group-hover:bg-primary/15 transition-colors">
-            <Download className="w-4 h-4 text-primary" aria-hidden="true" />
+            {exportConfirm.isExporting ? (
+              <Loader2 className="w-4 h-4 text-primary animate-spin" aria-hidden="true" />
+            ) : (
+              <Download className="w-4 h-4 text-primary" aria-hidden="true" />
+            )}
           </div>
           <div className="min-w-0">
             <p className="font-heading text-base text-foreground leading-tight">
-              Eksportuj postęp
+              {exportConfirm.isExporting ? "Pobieranie…" : "Eksportuj postęp"}
             </p>
             <p className="text-xs text-muted-foreground mt-0.5">
-              {totalDays === 0
-                ? "Najpierw ukończ trening"
-                : `Pobierz ${totalDays} ${totalDays === 1 ? "dzień" : "dni"} jako .json`}
+              {exportConfirm.isExporting
+                ? "Trwa zapis pliku JSON…"
+                : totalDays === 0
+                  ? "Najpierw ukończ trening"
+                  : `Pobierz ${totalDays} ${totalDays === 1 ? "dzień" : "dni"} jako .json`}
             </p>
           </div>
         </button>
@@ -226,7 +233,8 @@ const BackupProgressSection = () => {
         <button
           type="button"
           onClick={handleImportClick}
-          className="group flex items-center gap-3 p-4 rounded-xl border border-border/60 hover:border-primary/40 hover:bg-primary/5 transition-colors text-left"
+          disabled={exportConfirm.isExporting}
+          className="group flex items-center gap-3 p-4 rounded-xl border border-border/60 hover:border-primary/40 hover:bg-primary/5 transition-colors text-left disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-border/60 disabled:hover:bg-transparent"
           aria-label="Importuj postęp treningu z pliku JSON"
         >
           <div className="w-10 h-10 rounded-lg bg-primary/10 border border-primary/25 flex items-center justify-center shrink-0 group-hover:bg-primary/15 transition-colors">
