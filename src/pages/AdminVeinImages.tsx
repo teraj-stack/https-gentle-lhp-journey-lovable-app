@@ -589,10 +589,19 @@ const AdminVeinImages = () => {
                 const isSaving = saving === slot;
                 const dbRow =
                   slot === "main" ? overrides.main : overrides.perforator;
+                const altInvalid = altStats.errors.length > 0;
+                const captionInvalid = captionStats.errors.length > 0;
+                const slotInvalid = altInvalid || captionInvalid;
+                const altErrId = `${slot}-alt-err`;
+                const captionErrId = `${slot}-caption-err`;
                 return (
                   <div
                     key={slot}
-                    className="rounded-xl border border-border/40 bg-card/30 p-4 space-y-3"
+                    className={`rounded-xl border p-4 space-y-3 transition-colors ${
+                      slotInvalid
+                        ? "border-destructive/50 bg-destructive/5"
+                        : "border-border/40 bg-card/30"
+                    }`}
                   >
                     <div className="flex items-center justify-between gap-2">
                       <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -625,8 +634,15 @@ const AdminVeinImages = () => {
                         value={draft[altField]}
                         onChange={(e) => updateDraft(altField, e.target.value)}
                         rows={4}
-                        className="w-full text-[12px] leading-relaxed rounded-md border border-border/50 bg-background/60 px-2 py-1.5 font-mono text-foreground/90 focus:outline-none focus:ring-2 focus:ring-primary/40"
+                        aria-invalid={altInvalid || undefined}
+                        aria-describedby={altInvalid ? altErrId : undefined}
+                        className={`w-full text-[12px] leading-relaxed rounded-md border bg-background/60 px-2 py-1.5 font-mono text-foreground/90 focus:outline-none focus:ring-2 transition-colors ${
+                          altInvalid
+                            ? "border-destructive/60 focus:ring-destructive/40"
+                            : "border-border/50 focus:ring-primary/40"
+                        }`}
                       />
+                      <ErrorList errors={altStats.errors} id={altErrId} />
                     </div>
 
                     {/* Caption */}
@@ -647,7 +663,19 @@ const AdminVeinImages = () => {
                           updateDraft(captionField, e.target.value)
                         }
                         rows={2}
-                        className="w-full text-[12px] leading-relaxed rounded-md border border-border/50 bg-background/60 px-2 py-1.5 font-mono text-foreground/90 focus:outline-none focus:ring-2 focus:ring-primary/40"
+                        aria-invalid={captionInvalid || undefined}
+                        aria-describedby={
+                          captionInvalid ? captionErrId : undefined
+                        }
+                        className={`w-full text-[12px] leading-relaxed rounded-md border bg-background/60 px-2 py-1.5 font-mono text-foreground/90 focus:outline-none focus:ring-2 transition-colors ${
+                          captionInvalid
+                            ? "border-destructive/60 focus:ring-destructive/40"
+                            : "border-border/50 focus:ring-primary/40"
+                        }`}
+                      />
+                      <ErrorList
+                        errors={captionStats.errors}
+                        id={captionErrId}
                       />
                       {captionStats.segments && (
                         <SegmentList segments={captionStats.segments} />
@@ -662,11 +690,20 @@ const AdminVeinImages = () => {
                       </span>
                       <Button
                         size="sm"
-                        disabled={isSaving}
+                        disabled={isSaving || slotInvalid}
                         onClick={() => saveSlot(slot)}
+                        title={
+                          slotInvalid
+                            ? "Popraw błędy walidacji przed zapisem"
+                            : "Zapisz do bazy"
+                        }
                       >
                         <Save className="w-3.5 h-3.5 mr-1" />
-                        {isSaving ? "Zapisywanie…" : "Zapisz"}
+                        {isSaving
+                          ? "Zapisywanie…"
+                          : slotInvalid
+                            ? "Popraw błędy"
+                            : "Zapisz"}
                       </Button>
                     </div>
                   </div>
