@@ -898,6 +898,7 @@ const renderHtml = ({
        </aside>`
     : ""}
   ${summaryLine}
+  ${omittedSection}
   ${breakdownSection}
   ${filterBar}
   <div id="cards-container">${cards}</div>
