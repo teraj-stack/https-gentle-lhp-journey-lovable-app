@@ -144,6 +144,98 @@ const parseCsv = (raw: string): string[][] => {
   return rows.filter((r) => r.length > 1 || (r.length === 1 && r[0].trim() !== ""));
 };
 
+/**
+ * Mapuje nieoczywiste warianty nagłówków CSV na 4 kanoniczne pola
+ * (page_key/slot/alt/caption). Pozwala adminowi importować pliki edytowane
+ * w Excelu/Google Sheets, które często „normalizują" nazwy kolumn:
+ *  - „Page Key" / „page-key" / „PAGE_KEY" / „Strona" → page_key
+ *  - „Slot" / „Wariant" / „Typ"                      → slot
+ *  - „Alt" / „Alt text" / „Opis alternatywny"        → alt
+ *  - „Caption" / „Podpis" / „Figcaption"             → caption
+ *
+ * Normalizacja: lower-case + usuwanie spacji/myślników/podkreśleń → klucz
+ * porównania; każdy wariant jest „przyklejony" do tego samego klucza.
+ *
+ * Zwraca:
+ *  - `indices`: index kolumny per kanoniczne pole (–1 jeśli nie znaleziono),
+ *  - `matchedHeader`: oryginalna etykieta z CSV, którą rozpoznaliśmy
+ *    (do toastu „Rozpoznano nagłówki: Page Key → page_key"); pusty string,
+ *    gdy pole nie zostało znalezione.
+ */
+const CANONICAL_FIELDS = ["page_key", "slot", "alt", "caption"] as const;
+type CanonicalField = (typeof CANONICAL_FIELDS)[number];
+
+const normalizeHeaderToken = (s: string): string =>
+  s
+    .replace(/^\uFEFF/, "")
+    .trim()
+    .toLowerCase()
+    // collapse separator characters: spaces, dashes, underscores, dots
+    .replace(/[\s_\-.]+/g, "");
+
+const HEADER_ALIASES: Record<CanonicalField, readonly string[]> = {
+  page_key: [
+    "pagekey",
+    "page",
+    "pageid",
+    "key",
+    "strona",
+    "stronaklucz",
+    "kluczstrony",
+  ],
+  slot: ["slot", "wariant", "typ", "type", "variant", "rodzaj"],
+  alt: ["alt", "alttext", "altattribute", "opisalternatywny", "altopis"],
+  caption: [
+    "caption",
+    "figcaption",
+    "podpis",
+    "podpisobrazka",
+    "opis",
+    "description",
+  ],
+};
+
+interface CsvHeaderMapping {
+  indices: Record<CanonicalField, number>;
+  matchedHeader: Record<CanonicalField, string>;
+}
+
+const resolveCsvHeaderMapping = (rawHeader: readonly string[]): CsvHeaderMapping => {
+  const indices: Record<CanonicalField, number> = {
+    page_key: -1,
+    slot: -1,
+    alt: -1,
+    caption: -1,
+  };
+  const matchedHeader: Record<CanonicalField, string> = {
+    page_key: "",
+    slot: "",
+    alt: "",
+    caption: "",
+  };
+  // Mapa znormalizowany_token → kanoniczne pole (zbudowana raz).
+  const aliasMap = new Map<string, CanonicalField>();
+  for (const field of CANONICAL_FIELDS) {
+    aliasMap.set(normalizeHeaderToken(field), field);
+    for (const alias of HEADER_ALIASES[field]) {
+      aliasMap.set(alias, field);
+    }
+  }
+  rawHeader.forEach((cell, i) => {
+    const norm = normalizeHeaderToken(cell);
+    const field = aliasMap.get(norm);
+    if (!field) return;
+    // First-match-wins per field — chroni przed sytuacją gdzie obie kolumny
+    // „caption" i „opis" są w pliku (bardzo nieprawdopodobne, ale safe).
+    if (indices[field] === -1) {
+      indices[field] = i;
+      matchedHeader[field] = cell.trim();
+    }
+  });
+  return { indices, matchedHeader };
+};
+
+
 const VALID_PAGE_KEYS = new Set<VeinImagePageKey>(
   VEIN_IMAGE_PAGE_PRESETS.map((p) => p.key),
 );
@@ -1174,18 +1266,25 @@ const AdminVeinImages = () => {
         toast.error("Plik CSV jest pusty.");
         return;
       }
-      const header = matrix[0]!.map((h) => h.trim().toLowerCase());
-      const idx = {
-        page_key: header.indexOf("page_key"),
-        slot: header.indexOf("slot"),
-        alt: header.indexOf("alt"),
-        caption: header.indexOf("caption"),
-      };
-      if (idx.page_key < 0 || idx.slot < 0 || idx.alt < 0 || idx.caption < 0) {
+      const rawHeader = matrix[0]!;
+      const mapping = resolveCsvHeaderMapping(rawHeader);
+      const idx = mapping.indices;
+      const missing = (["page_key", "slot", "alt", "caption"] as const).filter(
+        (k) => idx[k] < 0,
+      );
+      if (missing.length > 0) {
         toast.error(
-          "Brak wymaganych kolumn. Wymagane: page_key, slot, alt, caption.",
+          `Brak wymaganych kolumn: ${missing.join(", ")}. Akceptowane warianty nagłówków: page_key/Page Key/Strona, slot/Slot/Wariant, alt/Alt text/Opis alternatywny, caption/Caption/Podpis.`,
         );
         return;
+      }
+      // Pokaż adminowi co system wykrył — szczególnie ważne, gdy mapowanie
+      // zadziałało na nieoczywistym wariancie (np. „Page Key" → page_key).
+      const remapped = (Object.keys(idx) as Array<keyof typeof idx>)
+        .filter((k) => mapping.matchedHeader[k] && mapping.matchedHeader[k] !== k)
+        .map((k) => `${mapping.matchedHeader[k]} → ${k}`);
+      if (remapped.length > 0) {
+        toast.info(`Rozpoznano nagłówki: ${remapped.join(", ")}`);
       }
 
       const dbRows = await fetchAllOverrides();
@@ -1667,7 +1766,7 @@ const AdminVeinImages = () => {
                 variant="outline"
                 size="sm"
                 onClick={() => fileInputRef.current?.click()}
-                title="Hurtowo podmień alt/caption z pliku CSV (kolumny: page_key, slot, alt, caption)"
+                title={`Hurtowo podmień alt/caption z pliku CSV. Akceptujemy nagłówki w PL/EN i z różnymi separatorami (np. „Page Key", „Strona", „page-key" → page_key).`}
               >
                 <Upload className="w-3.5 h-3.5 mr-1" /> Import CSV
               </Button>
