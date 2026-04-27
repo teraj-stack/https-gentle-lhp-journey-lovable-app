@@ -176,6 +176,7 @@ const DiaryFullModule = ({
   } = useDailyDiary();
 
   const { enabled: autoSaveEnabled } = useAutoSave();
+  const exportConfirm = useExportConfirmation();
 
   const days = useMemo(() => last14DaysKeys(), []);
   const [activeDate, setActiveDate] = useState<string>(todayKey());
@@ -589,10 +590,20 @@ const DiaryFullModule = ({
       });
       return;
     }
-    exportDiaryCsv(trend, entries, summary);
-    toast({
-      title: "Eksport CSV gotowy",
-      description: "Plik został zapisany w folderze pobranych.",
+    const stamp = new Date().toISOString().slice(0, 10);
+    exportConfirm.request({
+      filename: `cml-dziennik-hemoroidy-${stamp}.csv`,
+      format: "csv",
+      recordsLabel: `${summary.filledDays} z ${summary.totalDays} dni · ${summary.averageScore !== null ? `średnia ${summary.averageScore} pkt` : "brak średniej"}`,
+      description:
+        "Plik CSV otworzysz w Excelu/Google Sheets. Dane pozostają tylko na Twoim urządzeniu.",
+      run: () => {
+        exportDiaryCsv(trend, entries, summary);
+        toast({
+          title: "Eksport CSV gotowy",
+          description: "Plik został zapisany w folderze pobranych.",
+        });
+      },
     });
   };
 
@@ -621,19 +632,28 @@ const DiaryFullModule = ({
 
   const handleExportDayJson = () => {
     if (!dayHasContent) return;
-    try {
-      exportSingleDayJson(entry);
-      toast({
-        title: "Eksport JSON gotowy",
-        description: `Wpis z dnia ${formatLongDate(activeDate)} został pobrany.`,
-      });
-    } catch {
-      toast({
-        variant: "destructive",
-        title: "Nie udało się wyeksportować pliku",
-        description: "Spróbuj ponownie lub odśwież stronę.",
-      });
-    }
+    exportConfirm.request({
+      filename: `cml-dziennik-hemoroidy-${entry.date}.json`,
+      format: "json",
+      recordsLabel: `1 dzień · ${formatLongDate(activeDate)}`,
+      description:
+        "Surowe dane wpisu dnia w formacie JSON — możesz je później zaimportować w innej przeglądarce.",
+      run: () => {
+        try {
+          exportSingleDayJson(entry);
+          toast({
+            title: "Eksport JSON gotowy",
+            description: `Wpis z dnia ${formatLongDate(activeDate)} został pobrany.`,
+          });
+        } catch {
+          toast({
+            variant: "destructive",
+            title: "Nie udało się wyeksportować pliku",
+            description: "Spróbuj ponownie lub odśwież stronę.",
+          });
+        }
+      },
+    });
   };
 
   const handleExportDayPdf = () => {
