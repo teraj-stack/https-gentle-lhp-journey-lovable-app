@@ -2102,6 +2102,75 @@ const renderHtml = ({
         apply();
       });
     }
+
+    // ---- Eksport przefiltrowanych wierszy do CSV ----
+    // Pobiera AKTUALNIE widoczny zbiór (po filtrach command + flag_*) i serializuje
+    // do nowego pliku CSV. Kolumny = generatedAt + png_saved_pct + discovery_saved_pct
+    // + command + flag_* — czyli podzbiór schematu savings.csv/history.csv obecny w
+    // embedded trends-json. Nazwa pliku zawiera timestamp + skrócony hash filtrów,
+    // żeby kolejne eksporty się nie nadpisywały. Zero deps — Blob + a[download].
+    var exportBtn = root.querySelector("[data-trend-export]");
+    var exportStatus = root.querySelector("[data-trend-export-status]");
+    function csvEscape(v) {
+      var s = v == null ? "" : String(v);
+      // RFC 4180: cudzysłów wymagany jeśli wartość zawiera ", przecinek lub newline.
+      if (/[",\n\r]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+      return s;
+    }
+    function buildExportRows() {
+      var state = currentState();
+      var pts = filterPoints(state);
+      var cols = ["generatedAt", "png_saved_pct", "discovery_saved_pct", "isCurrent", "command"]
+        .concat(flagCols.map(function (c) { return c; }));
+      var lines = [cols.join(",")];
+      pts.forEach(function (p) {
+        var row = [
+          csvEscape(p.generatedAt || ""),
+          csvEscape(typeof p.png === "number" ? p.png.toFixed(2) : ""),
+          csvEscape(typeof p.discovery === "number" ? p.discovery.toFixed(2) : ""),
+          csvEscape(p.isCurrent ? "1" : "0"),
+          csvEscape(p.command || ""),
+        ];
+        flagCols.forEach(function (c) { row.push(csvEscape((p.flags && p.flags[c]) || "")); });
+        lines.push(row.join(","));
+      });
+      return { csv: lines.join("\n") + "\n", count: pts.length, total: allPoints.length, state: state };
+    }
+    function shortHash(s) {
+      // Mały deterministyczny hash (djb2) → 6 znaków hex. Wystarczy do unikalnej
+      // nazwy pliku per kombinacja filtra (kolizje OK — to tylko etykieta).
+      var h = 5381;
+      for (var i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0;
+      return ("00000000" + (h >>> 0).toString(16)).slice(-6);
+    }
+    if (exportBtn) {
+      exportBtn.addEventListener("click", function () {
+        var built = buildExportRows();
+        if (!built.count) {
+          if (exportStatus) exportStatus.textContent = "Brak wierszy do eksportu (zmień filtr).";
+          return;
+        }
+        var stamp = new Date().toISOString().replace(/[:.]/g, "-").replace(/Z$/, "Z");
+        var filterHash = shortHash(JSON.stringify(built.state));
+        var name = "savings-filtered-" + stamp + "-" + filterHash + ".csv";
+        try {
+          var blob = new Blob([built.csv], { type: "text/csv;charset=utf-8" });
+          var url = URL.createObjectURL(blob);
+          var a = document.createElement("a");
+          a.href = url; a.download = name;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+          if (exportStatus) {
+            exportStatus.textContent = "Pobrano " + built.count + "/" + built.total + " → " + name;
+          }
+        } catch (e) {
+          if (exportStatus) exportStatus.textContent = "Eksport nieudany: " + e.message;
+        }
+      });
+    }
+
     apply();
   })();
   </script>
