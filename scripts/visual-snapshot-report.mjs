@@ -1025,6 +1025,8 @@ const renderHtml = ({
         </label>
         ${flagSelects}
         <button type="button" class="trends-filter-reset" data-trend-reset>Resetuj</button>
+        <button type="button" class="trends-filter-export" data-trend-export title="Pobierz przefiltrowane wiersze jako CSV (kompatybilny ze schematem savings.csv/history.csv)">⬇ Eksportuj CSV</button>
+        <span class="trends-filter-export-status" data-trend-export-status role="status" aria-live="polite"></span>
       </div>`;
 
     // Embed pełnych danych (z command/flags) jako JSON. Klient czyta ten blok
