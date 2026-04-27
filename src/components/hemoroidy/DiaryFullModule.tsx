@@ -69,6 +69,8 @@ import DiaryWeeklySummary from "@/components/hemoroidy/DiaryWeeklySummary";
 import AutoSaveSettings from "@/components/hemoroidy/AutoSaveSettings";
 import { useAutoSave } from "@/hooks/useAutoSave";
 import { toast } from "@/hooks/use-toast";
+import ConfirmExportDialog from "@/components/shared/ConfirmExportDialog";
+import { useExportConfirmation } from "@/hooks/useExportConfirmation";
 
 const easeOut = [0.16, 1, 0.3, 1] as const;
 
