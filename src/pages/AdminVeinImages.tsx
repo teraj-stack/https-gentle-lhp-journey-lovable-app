@@ -1478,7 +1478,8 @@ const AdminVeinImages = () => {
           : null;
         if (!pageKey) baseErrors.push(`nieznany page_key: "${rawPage}"`);
         if (!slot) baseErrors.push(`nieznany slot: "${rawSlot}" (oczekiwano main/perforator)`);
-        baseErrors.push(...validateImportRow(alt, caption));
+        const fieldIssues = validateImportRowFields(alt, caption);
+        baseErrors.push(...fieldIssues.map((i) => i.message));
 
         const current = pageKey && slot ? dbMap.get(`${pageKey}:${slot}`) : undefined;
 
@@ -1489,6 +1490,7 @@ const AdminVeinImages = () => {
           alt,
           caption,
           baseErrors,
+          fieldIssues,
           currentAlt: current?.alt,
           currentCaption: current?.caption,
         };
