@@ -282,6 +282,12 @@ node scripts/visual-snapshot-report.mjs --no-history
 duckdb -c "SELECT generatedAt, png_saved_pct, discovery_saved_pct \
            FROM read_csv_auto('test-results/visual-report/history.csv') \
            ORDER BY generatedAt DESC LIMIT 20;"
+
+# Top oszczędzające viewporty (średnia z ostatnich runów):
+duckdb -c "SELECT \"group\", AVG(png_saved_pct) AS avg_png_pct, \
+                  AVG(discovery_saved_pct) AS avg_disc_pct, COUNT(*) AS runs \
+           FROM read_csv_auto('test-results/visual-report/history-by-viewport.csv') \
+           GROUP BY \"group\" ORDER BY avg_png_pct DESC;"
 ```
 
 | Flaga | Env | Default | Co robi |
