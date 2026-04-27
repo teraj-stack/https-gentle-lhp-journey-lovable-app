@@ -50,14 +50,20 @@
  *     --sort=-status           → najpierw incomplete (np. po dodaniu nowego specu)
  *   Nieznane klucze → warning + skip; pusta wartość → fallback na default.
  *
- * Fail-fast — trzy poziomy obcinania (od najbardziej do najmniej agresywnego):
+ * Fail-fast — pięć poziomów obcinania (kolejność w pipeline od góry do dołu):
+ *
+ *   --max-failures-per-viewport=N (env MAX_FAILURES_PER_VIEWPORT)
+ *   --max-failures-per-state=N    (env MAX_FAILURES_PER_STATE)
+ *     Proporcjonalne kapowanie per grupa (round-robin). Cel: gdy mamy 400 regresji
+ *     w mobile + 5 w tablet, samo --max-failures=50 zjadłoby cały tablet.
+ *     Per-grupa cap zostawia pierwsze N na grupę (zgodnie z aktualnym sortowaniem),
+ *     więc każdy viewport / state ma reprezentację. Działa PRZED --max-failures.
  *
  *   --max-failures=N (alias -m, env MAX_FAILURES)
- *     Globalny limit kart w raporcie. Sortuje failed trio deterministycznie
- *     (po dir + stem) i zostawia pierwsze N. Wszystko poza tym jest pomijane:
- *     karty NIE są renderowane, asset NIE jest kopiowany, discovery NIE biegnie.
- *     Najszybsze, ale traci kontekst (user nie zobaczy że ma więcej regresji
- *     niż N — jest tylko banner z totalem).
+ *     Globalny limit kart w raporcie. Działa NA WIERZCHU per-grupa cap (więc
+ *     najpierw balansujemy, potem ograniczamy globalnie). Wszystko poza tym
+ *     jest pomijane: karty NIE są renderowane, asset NIE jest kopiowany,
+ *     discovery NIE biegnie. Sekcja "Pominięte" pokazuje powód (badge).
  *
  *   --max-copy=N (env MAX_COPY)
  *     Limit dla DROGIEGO kopiowania PNG (3 pliki * fs.copyFile per trio).
@@ -73,9 +79,6 @@
  *     skaluje. Pierwsze N trio dostaje pełne deep-linki (Trace Viewer, Video,
  *     Error context); reszta tylko podstawowy footer (Playwright report + folder).
  *
- *   Hierarchia: --max-failures TNIE FIRST (przed wszystkim), więc
- *   --max-copy / --max-discovery działają na już obcięty zbiór. Jeśli
- *   --max-copy > liczby kart po --max-failures, jest no-op (i odwrotnie).
  *   Wszystkie limity są niezależne — można łączyć dowolnie. Brak limitu
  *   = pełna obróbka wszystkich kart (back-compat z poprzednim zachowaniem).
  *
