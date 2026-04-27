@@ -42,6 +42,17 @@ const PROJECT_ROOT = path.resolve(__dirname, "..");
 const TEST_RESULTS_DIR = path.join(PROJECT_ROOT, "test-results");
 const REPORT_DIR = path.join(TEST_RESULTS_DIR, "visual-report");
 const ASSETS_DIR = path.join(REPORT_DIR, "assets");
+// Domyślna lokalizacja Playwright HTML reportera.
+// Jeśli projekt używa innego (np. ENV PLAYWRIGHT_HTML_REPORT), readinę tu fallback.
+const PLAYWRIGHT_REPORT_DIR = path.join(
+  PROJECT_ROOT,
+  process.env.PLAYWRIGHT_HTML_REPORT || "playwright-report",
+);
+// Trace Viewer hostowany przez Playwright zespół — przyjmuje URL do trace.zip.
+// Działa, jeśli plik jest dostępny przez HTTP (np. CI artifact link).
+// Lokalnie linkujemy file:// — Trace Viewer wymaga drag-and-drop,
+// więc dla lokalnych runów dajemy też przycisk "Pokaż trace lokalnie".
+const TRACE_VIEWER_URL = "https://trace.playwright.dev/";
 
 /**
  * Filtr ścieżek — interesują nas TYLKO nieudane snapshoty z spec'ów live preview.
@@ -153,7 +164,127 @@ const escapeHtml = (s) =>
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
 
-const renderHtml = ({ trios, generatedAt, totalFailures }) => {
+/**
+ * Wykrywa dodatkowe artefakty Playwrighta w katalogu testu (`t.dir`):
+ *  - trace.zip          → link do Trace Viewera (https://trace.playwright.dev/)
+ *  - video.webm / *.webm → link do nagrania
+ *  - error-context.md   → snapshot stanu DOM/console (Playwright 1.40+)
+ *
+ * Wszystko relatywne do REPORT_DIR, żeby zachować przenośność (CI artifact upload
+ * pakuje cały `test-results/`, więc relatywne ścieżki działają out-of-the-box).
+ */
+const discoverPlaywrightArtifacts = async (testDir) => {
+  let entries = [];
+  try {
+    entries = await fs.readdir(testDir, { withFileTypes: true });
+  } catch {
+    return { trace: null, video: null, errorContext: null };
+  }
+  const find = (predicate) => {
+    const hit = entries.find((e) => e.isFile() && predicate(e.name));
+    return hit ? path.join(testDir, hit.name) : null;
+  };
+  return {
+    trace: find((n) => n === "trace.zip" || n.endsWith(".trace.zip")),
+    video: find((n) => n.endsWith(".webm")),
+    errorContext: find((n) => n === "error-context.md"),
+  };
+};
+
+/**
+ * Sprawdza, czy Playwright HTML report istnieje. Zwraca relatywną ścieżkę
+ * od REPORT_DIR do `index.html` reportera lub null, jeśli go nie ma.
+ *
+ * Uwaga: Playwright HTML reporter NIE eksponuje deep-linków per test case
+ * przez stabilny URL — testId jest hashem generowanym przy renderze. Dlatego
+ * linkujemy do listy + kopiujemy nazwę testu do clipboardu, żeby user wkleił
+ * w search box reportera.
+ */
+const discoverPlaywrightReport = async () => {
+  try {
+    await fs.access(path.join(PLAYWRIGHT_REPORT_DIR, "index.html"));
+    return path.relative(REPORT_DIR, path.join(PLAYWRIGHT_REPORT_DIR, "index.html"));
+  } catch {
+    return null;
+  }
+};
+
+/**
+ * Renderuje pasek linków na dole karty: Playwright HTML report, folder
+ * artefaktów, trace viewer, video, error-context. Każdy link jest opcjonalny
+ * — pokazujemy tylko te, dla których faktycznie mamy plik.
+ *
+ * Trace Viewer URL używa schematu ?trace=<URL>. Lokalnie file:// nie zadziała
+ * (CORS Trace Viewera), więc dajemy też kopiowalną komendę `playwright show-trace`,
+ * która zawsze działa lokalnie (przycisk "Kopiuj komendę").
+ */
+const renderCardLinks = (t, playwrightReportRel) => {
+  const links = [];
+  if (playwrightReportRel) {
+    // Playwright HTML reporter nie ma stabilnego deep-linka per test case
+    // (testId = lokalny hash). Dlatego linkujemy do listy + kopiujemy nazwę
+    // testu do clipboardu, żeby user wkleił w search box reportera.
+    links.push(`
+      <a class="card-link card-link-primary"
+         href="${escapeHtml(playwrightReportRel)}"
+         target="_blank"
+         rel="noopener"
+         data-copy-on-click="${escapeHtml(t.testName)}"
+         title="Otwórz Playwright HTML report (nazwa testu skopiowana do clipboardu)">
+        📊 Playwright report
+      </a>`);
+  }
+  if (t.tracePath) {
+    // Trace Viewer hostowany przez Playwright. Działa, gdy plik jest
+    // dostępny przez HTTP. Lokalnie file:// nie pójdzie — stąd
+    // alternatywny przycisk z komendą.
+    const traceUrl = `${TRACE_VIEWER_URL}?trace=${encodeURIComponent(t.tracePath)}`;
+    links.push(`
+      <a class="card-link"
+         href="${escapeHtml(traceUrl)}"
+         target="_blank"
+         rel="noopener"
+         title="Otwórz trace.zip w Trace Viewerze (działa, gdy plik jest dostępny przez HTTP)">
+        🔬 Trace Viewer
+      </a>
+      <button type="button"
+              class="card-link card-link-button"
+              data-copy="npx playwright show-trace ${t.dir.replace(PROJECT_ROOT + path.sep, "")}/trace.zip"
+              title="Kopiuj komendę CLI do otwarcia trace lokalnie">
+        📋 show-trace CLI
+      </button>`);
+  }
+  if (t.videoPath) {
+    links.push(`
+      <a class="card-link" href="${escapeHtml(t.videoPath)}" target="_blank" rel="noopener"
+         title="Otwórz nagranie testu (.webm)">
+        🎬 Video
+      </a>`);
+  }
+  if (t.errorContextPath) {
+    links.push(`
+      <a class="card-link" href="${escapeHtml(t.errorContextPath)}" target="_blank" rel="noopener"
+         title="Snapshot stanu DOM/console w momencie błędu">
+        🧾 Error context
+      </a>`);
+  }
+  if (t.testDirPath) {
+    // Link do katalogu z artefaktami (file:// w przeglądarce otworzy folder
+    // w explorerze). Działa lokalnie; w CI artefakty są zwykle w innym
+    // miejscu, więc przycisk kopiuje też ścieżkę do clipboardu.
+    links.push(`
+      <button type="button"
+              class="card-link card-link-button"
+              data-copy="${escapeHtml(t.testDirPath)}"
+              title="Kopiuj ścieżkę do katalogu artefaktów testu">
+        📁 Folder artefaktów
+      </button>`);
+  }
+  if (links.length === 0) return "";
+  return `<footer class="card-links" aria-label="Linki do szczegółów Playwrighta">${links.join("")}</footer>`;
+};
+
+const renderHtml = ({ trios, generatedAt, totalFailures, playwrightReportRel }) => {
   // Zbieramy unikalne wartości viewport / state z trios, żeby wypełnić <select>'y.
   // Sortujemy alfabetycznie dla deterministycznej kolejności w UI (łatwiej znaleźć).
   const viewportSet = new Set();
@@ -211,6 +342,7 @@ const renderHtml = ({ trios, generatedAt, totalFailures }) => {
             ${cell("Actual (ten run)", t.actualAsset, "Brak — test się nie wykonał?")}
             ${cell("Diff (różnica pikseli)", t.diffAsset, "Brak diff — snapshot przeszedł?")}
           </div>
+          ${renderCardLinks(t, playwrightReportRel)}
         </article>`;
     })
     .join("\n");
@@ -503,12 +635,43 @@ const renderHtml = ({ trios, generatedAt, totalFailures }) => {
     .breakdown-row:hover { background: rgba(127,127,127,.08); }
     .breakdown-row:focus { outline: 2px solid var(--accent); outline-offset: -2px; }
     .breakdown-row.is-active { background: rgba(79,195,247,.12); }
+    /* ---- Card links (Playwright deep links) ---- */
+    .card-links {
+      display: flex; flex-wrap: wrap; gap: 8px;
+      padding: 12px 16px; border-top: 1px solid var(--border);
+      background: rgba(127,127,127,.04);
+    }
+    .card-link {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 6px 10px; border-radius: 4px;
+      border: 1px solid var(--border); background: var(--bg);
+      color: var(--fg); text-decoration: none; font-size: 12px;
+      font-family: inherit; cursor: pointer;
+    }
+    .card-link:hover { border-color: var(--accent); color: var(--accent); }
+    .card-link:focus { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .card-link-primary { border-color: var(--accent); color: var(--accent); font-weight: 600; }
+    .card-link.is-copied { border-color: var(--accent); background: rgba(79,195,247,.15); }
+    .header-link {
+      display: inline-block; margin-left: 12px; padding: 4px 10px;
+      border: 1px solid var(--border); border-radius: 4px;
+      color: var(--accent); text-decoration: none; font-size: 12px;
+    }
+    .header-link:hover { border-color: var(--accent); }
   </style>
 </head>
 <body>
   <header class="page-header">
-    <h1>Visual snapshot report — live preview</h1>
-    <p class="meta">Wygenerowano: ${escapeHtml(generatedAt)} · Źródło: <code>test-results/</code></p>
+    <h1>Visual snapshot report — live preview${
+      playwrightReportRel
+        ? ` <a class="header-link" href="${escapeHtml(playwrightReportRel)}" target="_blank" rel="noopener">📊 Otwórz pełny Playwright report</a>`
+        : ""
+    }</h1>
+    <p class="meta">Wygenerowano: ${escapeHtml(generatedAt)} · Źródło: <code>test-results/</code>${
+      playwrightReportRel
+        ? ""
+        : ` · <em>(Playwright HTML report nie znaleziony w <code>playwright-report/</code> — uruchom z reporterem html, żeby aktywować deep linki)</em>`
+    }</p>
   </header>
   ${summaryLine}
   ${breakdownSection}
@@ -627,6 +790,45 @@ const renderHtml = ({ trios, generatedAt, totalFailures }) => {
     });
 
     applyFilter();
+
+    // ---- Clipboard helpers dla deep linków Playwrighta ----
+    // [data-copy="..."]          → button kopiuje wartość do clipboardu, brak nawigacji
+    // [data-copy-on-click="..."] → link działa normalnie (target=_blank), ale po drodze
+    //                              kopiuje wartość (np. nazwę testu do wklejenia w search)
+    function flashCopied(el) {
+      el.classList.add("is-copied");
+      var orig = el.textContent;
+      el.textContent = "✓ Skopiowano";
+      setTimeout(function () {
+        el.classList.remove("is-copied");
+        el.textContent = orig;
+      }, 1200);
+    }
+    function copyText(text) {
+      // Preferuj nowoczesne API; fallback dla file:// gdzie clipboard może być zablokowany.
+      if (navigator.clipboard && window.isSecureContext) {
+        return navigator.clipboard.writeText(text);
+      }
+      var ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed"; ta.style.opacity = "0";
+      document.body.appendChild(ta); ta.select();
+      try { document.execCommand("copy"); } finally { document.body.removeChild(ta); }
+      return Promise.resolve();
+    }
+    document.addEventListener("click", function (e) {
+      var btn = e.target.closest("[data-copy]");
+      if (btn) {
+        e.preventDefault();
+        copyText(btn.getAttribute("data-copy")).then(function () { flashCopied(btn); });
+        return;
+      }
+      var link = e.target.closest("[data-copy-on-click]");
+      if (link) {
+        // NIE preventDefault — link ma się otworzyć normalnie.
+        copyText(link.getAttribute("data-copy-on-click")).catch(function () {});
+      }
+    });
   })();
   </script>
 </body>
@@ -657,18 +859,31 @@ const main = async () => {
   const failed = trios.filter((t) => t.diff || !(t.expected && t.actual));
 
   // Kopiujemy obrazy do assets/, żeby HTML był samowystarczalny (CI artifact upload).
+  // Dodatkowo per trio wykrywamy artefakty Playwrighta (trace.zip / video / error-context),
+  // żeby raport mógł zaserwować deep-linki do szczegółów debug.
   for (let i = 0; i < failed.length; i++) {
     const t = failed[i];
     const prefix = `${i.toString().padStart(3, "0")}-${t.stem}`;
     if (t.expected) t.expectedAsset = await copyAsset(t.expected, prefix, "expected");
     if (t.actual) t.actualAsset = await copyAsset(t.actual, prefix, "actual");
     if (t.diff) t.diffAsset = await copyAsset(t.diff, prefix, "diff");
+    const artifacts = await discoverPlaywrightArtifacts(t.dir);
+    // Konwertujemy bezwzględne ścieżki na relatywne od REPORT_DIR — przenośność.
+    t.tracePath = artifacts.trace ? path.relative(REPORT_DIR, artifacts.trace) : null;
+    t.videoPath = artifacts.video ? path.relative(REPORT_DIR, artifacts.video) : null;
+    t.errorContextPath = artifacts.errorContext
+      ? path.relative(REPORT_DIR, artifacts.errorContext)
+      : null;
+    t.testDirPath = path.relative(REPORT_DIR, t.dir);
   }
+
+  const playwrightReportRel = await discoverPlaywrightReport();
 
   const html = renderHtml({
     trios: failed,
     generatedAt: new Date().toISOString(),
     totalFailures: failed.length,
+    playwrightReportRel,
   });
 
   const indexPath = path.join(REPORT_DIR, "index.html");
