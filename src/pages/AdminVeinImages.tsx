@@ -883,15 +883,31 @@ const AdminVeinImages = () => {
     }
   };
 
-  /** Czyści CAŁĄ tabelę vein_image_overrides — frontend wraca do PRESETS. */
+  /**
+   * Czyści CAŁĄ tabelę vein_image_overrides — frontend wraca do PRESETS.
+   *
+   * UX bezpieczeństwa: PRZED usunięciem robimy snapshot wszystkich rzędów
+   * (page_key/slot/alt/caption/updated_by) i po sukcesie pokazujemy toast
+   * z akcją „Cofnij" (10 s). Klik wywołuje upsert z payloadu snapshot →
+   * odtwarza dokładnie te same alt/caption (rekord dostaje nowe id, ale
+   * z punktu widzenia frontu jest to ta sama treść). Trigger
+   * log_vein_image_override_history zapisze nowy „insert" do historii,
+   * dzięki czemu undo jest w pełni audytowalne.
+   *
+   * Jeśli user nie kliknie „Cofnij" w oknie, snapshot po prostu wygasa —
+   * tabela zostaje pusta i podstrony używają wartości seedowych.
+   */
   const resetAllToDefaults = async () => {
     const ok = window.confirm(
-      "Usunąć WSZYSTKIE overrides ze wszystkich stron? Strony wrócą do hardkodowanych wartości seedowych. Tej operacji nie da się cofnąć.",
+      'Usunąć WSZYSTKIE overrides ze wszystkich stron? Strony wrócą do hardkodowanych wartości seedowych. Przez 10 sekund po resecie pokażemy toast z opcją "Cofnij".',
     );
     if (!ok) return;
     setResettingAll(true);
     try {
-      // .delete() wymaga filtra; .neq na zawsze-prawdziwym warunku usuwa wszystko.
+      // 1. SNAPSHOT przed usunięciem — to nasz „backup" do undo.
+      const snapshot = await fetchAllOverrides();
+
+      // 2. .delete() wymaga filtra; .neq na zawsze-prawdziwym warunku usuwa wszystko.
       const { error } = await supabase
         .from("vein_image_overrides")
         .delete()
@@ -910,8 +926,63 @@ const AdminVeinImages = () => {
       lastSeededKey.current = null;
       setSavedTick((t) => t + 1);
       setPreviewMode("draft");
+
+      // 3. Toast z akcją Cofnij. Pokazujemy go tylko gdy faktycznie
+      //    coś usunęliśmy — pusta baza nie wymaga undo.
+      if (snapshot.length === 0) {
+        toast.success(
+          "Baza overrides była już pusta — strony używają wartości seedowych",
+        );
+        return;
+      }
+
+      // Flag chroni przed double-clickiem na „Cofnij" (gdyby user kliknął
+      // 2× zanim toast się zamknął) i przed re-undo z dwóch toastów naraz.
+      let undone = false;
+
       toast.success(
-        "Wszystkie overrides wyczyszczone — strony używają wartości seedowych",
+        `Usunięto ${snapshot.length} ${snapshot.length === 1 ? "override" : "overrides"} — strony wróciły do wartości seedowych`,
+        {
+          duration: 10_000,
+          description: "Masz 10 sekund, żeby cofnąć ten reset.",
+          action: {
+            label: "Cofnij",
+            onClick: async () => {
+              if (undone) return;
+              undone = true;
+              try {
+                // Upsert na (page_key, slot) — gdyby user w międzyczasie
+                // zaczął edytować coś nowego, jego zmiana zostanie nadpisana
+                // snapshotem (taki jest semantyczny kontrakt „cofnij reset").
+                const payload = snapshot.map((row) => ({
+                  page_key: row.page_key,
+                  slot: row.slot,
+                  alt: row.alt,
+                  caption: row.caption,
+                  updated_by: row.updated_by ?? session?.user.email ?? null,
+                }));
+                const { error: restoreError } = await supabase
+                  .from("vein_image_overrides")
+                  .upsert(payload, { onConflict: "page_key,slot" });
+                if (restoreError) throw restoreError;
+                await queryClient.invalidateQueries({
+                  queryKey: VEIN_IMAGE_QUERY_KEY,
+                });
+                lastSeededKey.current = null;
+                setSavedTick((t) => t + 1);
+                setPreviewMode("cms");
+                toast.success(
+                  `Przywrócono ${payload.length} ${payload.length === 1 ? "override" : "overrides"} z snapshotu`,
+                );
+              } catch (undoErr) {
+                toast.error(
+                  `Nie udało się cofnąć resetu: ${undoErr instanceof Error ? undoErr.message : String(undoErr)}`,
+                  { duration: 8000 },
+                );
+              }
+            },
+          },
+        },
       );
     } catch (err) {
       toast.error(
