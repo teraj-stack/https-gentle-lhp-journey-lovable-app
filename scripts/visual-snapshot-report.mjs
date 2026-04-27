@@ -505,6 +505,86 @@ const renderCardLinks = (t, playwrightReportRel) => {
   return `<footer class="card-links" aria-label="Linki do szczegółów Playwrighta">${links.join("")}</footer>`;
 };
 
+/**
+ * Wczytuje historyczne wiersze z `history.csv` (jeśli istnieje) i zwraca
+ * dane do narysowania sparkline'ów png_saved_pct + discovery_saved_pct.
+ *
+ * Resolver ścieżki history.csv musi być spójny z logiką auto-append na końcu
+ * skryptu (default: REPORT_DIR/history.csv, --history=PATH override, --no-history
+ * → null).
+ *
+ * "Bieżący run" jest dołączany na końcu z flagą isCurrent=true (oznaczany w UI),
+ * żeby wykres pokazywał także TEN run, mimo że append do CSV zachodzi później.
+ */
+const loadTrendsHistory = async ({ historyRaw, noHistory, currentRun }) => {
+  const historySentinelOff = ["off", "false", "none", "no", "0"];
+  const historyDisabled =
+    noHistory ||
+    (historyRaw && historySentinelOff.includes(String(historyRaw).toLowerCase()));
+  if (historyDisabled) return null;
+
+  const historyPath = historyRaw
+    ? path.isAbsolute(historyRaw)
+      ? historyRaw
+      : path.resolve(PROJECT_ROOT, historyRaw)
+    : path.join(REPORT_DIR, "history.csv");
+
+  let raw;
+  try {
+    raw = await fs.readFile(historyPath, "utf8");
+  } catch (err) {
+    if (err.code === "ENOENT") {
+      // Pierwszy run — historii jeszcze nie ma. Pokażemy w UI sam current point
+      // jako placeholder ("zbieramy dane").
+      const points = [{ ...currentRun, isCurrent: true }];
+      return { source: path.relative(PROJECT_ROOT, historyPath), points, isFirstRun: true };
+    }
+    console.warn(
+      `[visual-snapshot-report] ⚠ Nie mogę odczytać ${path.relative(PROJECT_ROOT, historyPath)}: ${err.message}`,
+    );
+    return null;
+  }
+
+  // Prosty CSV parser: savings.csv nie zawiera przecinków/cudzysłowów wewnątrz pól
+  // (generatedAt = ISO string, reszta to liczby), więc split(",") wystarcza.
+  const lines = raw.split("\n").filter((l) => l.length > 0);
+  if (lines.length === 0) return null;
+  const header = lines[0].split(",");
+  const idxTime = header.indexOf("generatedAt");
+  const idxPng = header.indexOf("png_saved_pct");
+  const idxDisc = header.indexOf("discovery_saved_pct");
+  if (idxTime < 0 || idxPng < 0 || idxDisc < 0) {
+    console.warn(
+      `[visual-snapshot-report] ⚠ ${path.relative(PROJECT_ROOT, historyPath)}: nagłówek bez ` +
+        `generatedAt/png_saved_pct/discovery_saved_pct — pomijam wykres trendów.`,
+    );
+    return null;
+  }
+
+  const points = [];
+  for (let i = 1; i < lines.length; i++) {
+    const cols = lines[i].split(",");
+    const t = cols[idxTime];
+    const png = Number.parseFloat(cols[idxPng]);
+    const disc = Number.parseFloat(cols[idxDisc]);
+    if (!t || !Number.isFinite(png) || !Number.isFinite(disc)) continue;
+    points.push({ generatedAt: t, png, discovery: disc, isCurrent: false });
+  }
+  // Dodaj bieżący run jako ostatnia kropka (nie ma go jeszcze w CSV).
+  points.push({ ...currentRun, isCurrent: true });
+
+  // Limit: ostatnie 50 punktów, żeby SVG nie eksplodowało.
+  const limited = points.slice(-50);
+  return {
+    source: path.relative(PROJECT_ROOT, historyPath),
+    points: limited,
+    totalPoints: points.length,
+    truncated: points.length > limited.length,
+    isFirstRun: false,
+  };
+};
+
+
 const renderHtml = ({
   trios,
   generatedAt,
@@ -513,6 +593,7 @@ const renderHtml = ({
   truncation,
   copyTruncation,
   discoveryTruncation,
+  trends,
 }) => {
   // Zbieramy unikalne wartości viewport / state z trios, żeby wypełnić <select>'y.
   // Sortujemy alfabetycznie dla deterministycznej kolejności w UI (łatwiej znaleźć).
@@ -704,6 +785,86 @@ const renderHtml = ({
     totalFailures === 0
       ? `<p class="empty">Brak nieudanych snapshotów live preview w tym runie. ✓</p>`
       : `<p class="summary">Znaleziono <strong>${totalFailures}</strong> nieudany snapshot live preview.</p>`;
+
+  // ---- Sekcja "Trendy oszczędności" (sparkline'y na bazie history.csv) ----
+  // Renderujemy DWA inline SVG (png_saved_pct, discovery_saved_pct) z polyline
+  // + ostatnia kropka oznaczona "now". Brak zewnętrznych zależności (Chart.js
+  // itp.) — raport ma być samowystarczalny i otwierany z file://.
+  // Skala Y: zawsze 0-100% (saved_pct), więc kropka 95% jest "wysoko" =
+  // dużo oszczędzonego IO, kropka 0% = pełny baseline.
+  const trendsSection = (() => {
+    if (!trends || !trends.points || trends.points.length === 0) return "";
+    const points = trends.points;
+    const W = 560; // viewBox width
+    const H = 80;  // viewBox height
+    const PAD_L = 32; // miejsce na oś Y (0%/100% labels)
+    const PAD_R = 12;
+    const PAD_T = 8;
+    const PAD_B = 16; // miejsce na axis labels (first/last timestamp)
+    const innerW = W - PAD_L - PAD_R;
+    const innerH = H - PAD_T - PAD_B;
+    // X: równomierne rozmieszczenie (index, NIE czas — gęsto pakowane runy
+    // czasowo i tak wyglądałyby liniowo; index pokazuje kolejność a nie odstępy).
+    // Y: 0% na dole, 100% na górze.
+    const xFor = (i) =>
+      points.length === 1
+        ? PAD_L + innerW / 2
+        : PAD_L + (i / (points.length - 1)) * innerW;
+    const yFor = (pct) => PAD_T + (1 - Math.max(0, Math.min(100, pct)) / 100) * innerH;
+
+    const buildSpark = (key, color, label) => {
+      const polyline = points
+        .map((p, i) => `${xFor(i).toFixed(1)},${yFor(p[key]).toFixed(1)}`)
+        .join(" ");
+      const dots = points
+        .map((p, i) => {
+          const cx = xFor(i).toFixed(1);
+          const cy = yFor(p[key]).toFixed(1);
+          const isCurrent = p.isCurrent;
+          const r = isCurrent ? 4 : 2.2;
+          const cls = isCurrent ? "trend-dot trend-dot-current" : "trend-dot";
+          // Tooltip natywny <title> — bez JS, zero deps.
+          const ts = (p.generatedAt || "").replace("T", " ").replace(/\.\d+Z$/, "Z");
+          return `<circle cx="${cx}" cy="${cy}" r="${r}" class="${cls}" fill="${color}"><title>${escapeHtml(ts)} — ${p[key].toFixed(1)}%${isCurrent ? " (this run)" : ""}</title></circle>`;
+        })
+        .join("");
+      const last = points[points.length - 1][key];
+      const first = points[0].generatedAt
+        ? points[0].generatedAt.slice(0, 10)
+        : "";
+      const lastTs = points[points.length - 1].generatedAt
+        ? points[points.length - 1].generatedAt.slice(0, 10)
+        : "now";
+      return `
+        <figure class="trend-chart">
+          <figcaption>${escapeHtml(label)} <span class="trend-current">${last.toFixed(1)}%</span></figcaption>
+          <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${escapeHtml(label)} trend (${points.length} runów)">
+            <line x1="${PAD_L}" y1="${PAD_T}" x2="${PAD_L}" y2="${H - PAD_B}" class="trend-axis" />
+            <line x1="${PAD_L}" y1="${H - PAD_B}" x2="${W - PAD_R}" y2="${H - PAD_B}" class="trend-axis" />
+            <text x="${PAD_L - 4}" y="${PAD_T + 4}" text-anchor="end" class="trend-axis-label">100%</text>
+            <text x="${PAD_L - 4}" y="${H - PAD_B}" text-anchor="end" class="trend-axis-label">0%</text>
+            <text x="${PAD_L}" y="${H - 2}" text-anchor="start" class="trend-axis-label">${escapeHtml(first)}</text>
+            <text x="${W - PAD_R}" y="${H - 2}" text-anchor="end" class="trend-axis-label">${escapeHtml(lastTs)}</text>
+            ${points.length > 1 ? `<polyline points="${polyline}" fill="none" stroke="${color}" stroke-width="1.5" />` : ""}
+            ${dots}
+          </svg>
+        </figure>`;
+    };
+
+    const note = trends.isFirstRun
+      ? `<p class="trend-note">📈 Pierwszy run — historia zacznie się zbierać od następnego uruchomienia (<code>${escapeHtml(trends.source)}</code>).</p>`
+      : `<p class="trend-note">📈 ${points.length} ${points.length === 1 ? "run" : "runów"}${trends.truncated ? ` (z ${trends.totalPoints}, pokazano ostatnie 50)` : ""} z <code>${escapeHtml(trends.source)}</code>. Ostatnia kropka = ten run.</p>`;
+
+    return `
+    <section class="trends" aria-label="Trendy oszczędności IO między runami">
+      <h2 class="trends-title">Trendy oszczędności IO</h2>
+      ${note}
+      <div class="trends-grid">
+        ${buildSpark("png", "#c9a84c", "PNG copy saved %")}
+        ${buildSpark("discovery", "#8ab4f8", "Discovery readdir saved %")}
+      </div>
+    </section>`;
+  })();
 
   // ---- Sekcja "Pominięte przez --max-failures" ----
   // Jawna lista trio, które nie weszły do raportu, żeby user wiedział DOKŁADNIE
@@ -1052,6 +1213,39 @@ const renderHtml = ({
       background: rgba(127,127,127,.08);
       border-style: dashed;
     }
+    /* ---- Trends (sparkline) ---- */
+    .trends {
+      margin: 1.5rem 0;
+      padding: 1rem 1.25rem;
+      border: 1px solid rgba(127,127,127,.2);
+      border-radius: 8px;
+      background: rgba(127,127,127,.04);
+    }
+    .trends-title { margin: 0 0 .25rem; font-size: 1rem; }
+    .trend-note { margin: 0 0 .75rem; font-size: .85rem; opacity: .8; }
+    .trend-note code { font-size: .8rem; padding: 1px 4px; border-radius: 3px; background: rgba(127,127,127,.12); }
+    .trends-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1rem;
+    }
+    .trend-chart { margin: 0; }
+    .trend-chart figcaption {
+      font-size: .85rem;
+      margin-bottom: .25rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+    }
+    .trend-current { font-weight: 600; font-variant-numeric: tabular-nums; }
+    .trend-chart svg { width: 100%; height: auto; display: block; }
+    .trend-axis { stroke: rgba(127,127,127,.4); stroke-width: 0.5; }
+    .trend-axis-label { font-size: 8px; fill: currentColor; opacity: .55; font-family: ui-monospace, monospace; }
+    .trend-dot { stroke: none; opacity: .85; }
+    .trend-dot-current { stroke: #fff; stroke-width: 1.2; opacity: 1; }
+    @media (prefers-color-scheme: dark) {
+      .trend-dot-current { stroke: #1a1a1a; }
+    }
   </style>
 </head>
 <body>
@@ -1091,6 +1285,7 @@ const renderHtml = ({
        </aside>`
     : ""}
   ${summaryLine}
+  ${trendsSection}
   ${omittedSection}
   ${breakdownSection}
   ${filterBar}
@@ -1467,6 +1662,23 @@ const main = async () => {
 
   const playwrightReportRel = await discoverPlaywrightReport();
 
+  // Trendy: wczytujemy istniejący history.csv (jeśli jest) PRZED renderem
+  // index.html. Append nowego wiersza zachodzi POŹNIEJ — w tym renderze widać
+  // historyczne runy + bieżący jako ostatnia kropka (oznaczona "now").
+  // Resolver ścieżki history.csv MUSI być zgodny z logiką append na końcu skryptu.
+  const pctLocal = (saved, baseline) =>
+    baseline > 0 ? Math.round((saved / baseline) * 1000) / 10 : 0;
+  const trendsData = await loadTrendsHistory({
+    historyRaw,
+    noHistory,
+    currentRun: {
+      generatedAt: new Date().toISOString(),
+      png: pctLocal(pngSaved, pngBaseline),
+      discovery: pctLocal(discoverySaved, discoveryBaseline),
+    },
+  });
+
+
   const html = renderHtml({
     trios: failed,
     generatedAt: new Date().toISOString(),
@@ -1522,6 +1734,7 @@ const main = async () => {
       maxDiscovery !== null && failed.length > maxDiscovery
         ? { processed: discoveryLimit, total: failed.length, limit: maxDiscovery }
         : null,
+    trends: trendsData, // null gdy brak history lub --no-history
   });
 
   const indexPath = path.join(REPORT_DIR, "index.html");
