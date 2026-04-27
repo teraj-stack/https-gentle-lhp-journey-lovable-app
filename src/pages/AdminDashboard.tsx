@@ -174,6 +174,9 @@ const AdminDashboard = () => {
             <Button variant="ghost" size="sm" onClick={() => navigate("/admin/security")}>
               <ShieldCheck className="h-4 w-4 mr-2" /> Security
             </Button>
+            <Button variant="ghost" size="sm" onClick={() => navigate("/admin/vein-images")}>
+              <ImageIcon className="h-4 w-4 mr-2" /> Vein Images
+            </Button>
             <span className="text-sm text-muted-foreground hidden sm:inline">{session.user.email}</span>
             <Button variant="ghost" size="sm" onClick={handleLogout}>
               <LogOut className="w-4 h-4 mr-1" /> Wyloguj
