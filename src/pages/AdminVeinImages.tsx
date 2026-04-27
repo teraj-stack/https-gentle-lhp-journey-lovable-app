@@ -568,6 +568,44 @@ const AdminVeinImages = () => {
   const overrides = useVeinImageOverridesForPage(activeKey);
   const lastSeededKey = useRef<VeinImagePageKey | null>(null);
 
+  /**
+   * Strony pasujące do wyszukiwarki + filtra slotu.
+   * - Pusta query → wszystkie strony.
+   * - Dopasowanie po: label, key i treści draftu (alt/caption) per slot.
+   * - slotFilter zawęża pole „treść" do jednego slotu (main/perforator).
+   */
+  const filteredPresets = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    return VEIN_IMAGE_PAGE_PRESETS.filter((preset) => {
+      if (!q) return true;
+      const d = drafts[preset.key];
+      const haystack: string[] = [preset.label.toLowerCase(), preset.key.toLowerCase()];
+      if (slotFilter === "all" || slotFilter === "main") {
+        haystack.push(d.mainAlt.toLowerCase(), d.mainCaption.toLowerCase());
+      }
+      if (slotFilter === "all" || slotFilter === "perforator") {
+        haystack.push(d.perforatorAlt.toLowerCase(), d.perforatorCaption.toLowerCase());
+      }
+      return haystack.some((s) => s.includes(q));
+    });
+  }, [searchQuery, slotFilter, drafts]);
+
+  /** Auto-przełącz na pierwszą pasującą stronę, jeśli aktywna wypadła z filtra. */
+  useEffect(() => {
+    if (filteredPresets.length === 0) return;
+    if (!filteredPresets.some((p) => p.key === activeKey)) {
+      setActiveKey(filteredPresets[0]!.key);
+      lastSeededKey.current = null;
+    }
+  }, [filteredPresets, activeKey]);
+
+  const visibleSlots = useMemo<VeinImageSlot[]>(
+    () => (slotFilter === "all" ? ["main", "perforator"] : [slotFilter]),
+    [slotFilter],
+  );
+
+  const isFilterActive = searchQuery.trim().length > 0 || slotFilter !== "all";
+
   // Auth bootstrap (mirror of AdminDashboard pattern).
   useEffect(() => {
     let isMounted = true;
