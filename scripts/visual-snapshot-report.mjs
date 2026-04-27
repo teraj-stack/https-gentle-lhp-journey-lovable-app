@@ -1213,6 +1213,39 @@ const renderHtml = ({
       background: rgba(127,127,127,.08);
       border-style: dashed;
     }
+    /* ---- Trends (sparkline) ---- */
+    .trends {
+      margin: 1.5rem 0;
+      padding: 1rem 1.25rem;
+      border: 1px solid rgba(127,127,127,.2);
+      border-radius: 8px;
+      background: rgba(127,127,127,.04);
+    }
+    .trends-title { margin: 0 0 .25rem; font-size: 1rem; }
+    .trend-note { margin: 0 0 .75rem; font-size: .85rem; opacity: .8; }
+    .trend-note code { font-size: .8rem; padding: 1px 4px; border-radius: 3px; background: rgba(127,127,127,.12); }
+    .trends-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1rem;
+    }
+    .trend-chart { margin: 0; }
+    .trend-chart figcaption {
+      font-size: .85rem;
+      margin-bottom: .25rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+    }
+    .trend-current { font-weight: 600; font-variant-numeric: tabular-nums; }
+    .trend-chart svg { width: 100%; height: auto; display: block; }
+    .trend-axis { stroke: rgba(127,127,127,.4); stroke-width: 0.5; }
+    .trend-axis-label { font-size: 8px; fill: currentColor; opacity: .55; font-family: ui-monospace, monospace; }
+    .trend-dot { stroke: none; opacity: .85; }
+    .trend-dot-current { stroke: #fff; stroke-width: 1.2; opacity: 1; }
+    @media (prefers-color-scheme: dark) {
+      .trend-dot-current { stroke: #1a1a1a; }
+    }
   </style>
 </head>
 <body>
