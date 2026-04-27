@@ -1391,23 +1391,48 @@ const main = async () => {
     generatedAt: new Date().toISOString(),
     totalFailures: failed.length,
     playwrightReportRel,
-    truncation: truncatedBy
-      ? {
-          shown: failed.length,
-          total: allFailed.length,
-          limit: maxFailures,
-          // Pełna lista pominiętych trio (wszystko po slice'ie). Wzbogacamy
-          // o viewport/state z parseSnapshotName, żeby user mógł zorientować
-          // się GDZIE są dalsze regresje bez re-runa skryptu bez limitu.
-          // testName = nazwa katalogu Playwrighta — jednoznaczny lokator.
-          omitted: allFailed.slice(maxFailures).map((t) => ({
+    // truncation: agregat WSZYSTKICH powodów obcięcia (per-grupa + globalny).
+    // Pokazujemy w raporcie jedną sekcję "omitted", w której każdy wiersz
+    // ma `reason` ("viewport"/"state"/"max-failures") + dodatkowe info
+    // (limit + ew. nazwa grupy), żeby user wiedział DLACZEGO to wypadło.
+    truncation: (() => {
+      const omitted = [];
+      // Per-grupa: trio odrzucone w applyPerGroupCap (ma już .reason/.group/.limit).
+      for (const o of omittedByGroup) {
+        omitted.push({
+          stem: o.trio.stem,
+          viewport: o.trio._viewport,
+          state: o.trio._state,
+          testName: o.trio.testName,
+          reason: o.reason, // "viewport" | "state"
+          group: o.group,
+          limit: o.limit,
+        });
+      }
+      // Globalny --max-failures: trio z `perGroupFiltered` po pozycji maxFailures.
+      if (truncatedBy) {
+        for (const t of perGroupFiltered.slice(maxFailures)) {
+          omitted.push({
             stem: t.stem,
             viewport: t._viewport,
             state: t._state,
             testName: t.testName,
-          })),
+            reason: "max-failures",
+            group: null,
+            limit: maxFailures,
+          });
         }
-      : null,
+      }
+      if (omitted.length === 0) return null;
+      return {
+        shown: failed.length,
+        total: allFailed.length,
+        limit: maxFailures, // może być null gdy obcinanie szło tylko per-grupą
+        perViewportLimit: maxPerViewport,
+        perStateLimit: maxPerState,
+        omitted,
+      };
+    })(),
     copyTruncation:
       maxCopy !== null && failed.length > maxCopy
         ? { processed: copyLimit, total: failed.length, limit: maxCopy }
