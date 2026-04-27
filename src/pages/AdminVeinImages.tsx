@@ -431,9 +431,10 @@ const AdminVeinImages = () => {
         `Zapisano: ${active.label} · ${slot === "main" ? "główny obraz" : "perforator"} — podgląd odświeżony z bazy`,
       );
     } catch (err) {
-      toast.error(
-        `Błąd zapisu: ${err instanceof Error ? err.message : String(err)}`,
-      );
+      const { title, description } = describeSaveError(err, slot, active.label);
+      toast.error(title, { description, duration: 8000 });
+      // Zostaw użytkownika w trybie draft, żeby mógł natychmiast poprawić.
+      setPreviewMode("draft");
     } finally {
       setSaving(null);
     }
