@@ -2168,37 +2168,107 @@ const renderHtml = ({
     }
 
     // ---- Eksport przefiltrowanych wierszy do CSV ----
-    // Pobiera AKTUALNIE widoczny zbiór (po filtrach command + flag_*) i serializuje
-    // do nowego pliku CSV. Kolumny = generatedAt + png_saved_pct + discovery_saved_pct
-    // + command + flag_* — czyli podzbiór schematu savings.csv/history.csv obecny w
-    // embedded trends-json. Nazwa pliku zawiera timestamp + skrócony hash filtrów,
-    // żeby kolejne eksporty się nie nadpisywały. Zero deps — Blob + a[download].
+    // Dwa tryby (kontrolowane selectem [data-trend-export-mode]):
+    //
+    //  • "subset" (domyślny) — kompaktowy wycinek: generatedAt + png_saved_pct +
+    //    discovery_saved_pct + isCurrent + command + flag_*. Idealny do szybkiej
+    //    analizy ad-hoc w arkuszu / DuckDB. Tylko kolumny faktycznie pokazywane
+    //    w wykresach trendów.
+    //
+    //  • "full" — pełny schemat zgodny ze `savings.csv` / `history.csv`
+    //    (SAVINGS_CSV_COLUMNS embedowane w trends-json jako `fullSchemaColumns`).
+    //    Pola, których embedded payload NIE zawiera (trio_*, png_baseline,
+    //    attribution_*, node_version, cwd_basename, isCurrent — bo nie ma
+    //    odpowiednika w schemacie) są mapowane do pustego stringa, co zachowuje
+    //    poprawną liczbę kolumn i ich kolejność. Dzięki temu można wkleić plik
+    //    bezpośrednio jako append do `history.csv` lub załadować do narzędzia,
+    //    które oczekuje stałego nagłówka (np. duckdb `read_csv_auto` z innymi
+    //    plikami z tego samego runa).
+    //
+    // Nazwa pliku zawiera tryb + timestamp + skrócony hash filtrów, żeby kolejne
+    // eksporty się nie nadpisywały. Zero deps — Blob + a[download].
     var exportBtn = root.querySelector("[data-trend-export]");
     var exportStatus = root.querySelector("[data-trend-export-status]");
+    var exportModeSelect = root.querySelector("[data-trend-export-mode]");
+    var fullSchemaCols = (data.fullSchemaColumns && data.fullSchemaColumns.length)
+      ? data.fullSchemaColumns
+      : null;
     function csvEscape(v) {
       var s = v == null ? "" : String(v);
       // RFC 4180: cudzysłów wymagany jeśli wartość zawiera ", przecinek lub newline.
       if (/[",\n\r]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
       return s;
     }
+    /**
+     * Mapa kolumna → wartość dla pojedynczego punktu (`p`) w trybie pełnym.
+     * Zwraca string GOTOWY do CSV (po escape). Klucze nieobjęte mapą oznaczają
+     * brak danych w embedded payloadzie → eksport wstawia pusty string,
+     * zachowując kolumnę w wynikowym pliku.
+     *
+     * NOTE: świadomie obejmujemy tylko te pola, które realnie są w `points`:
+     * generatedAt, png_saved_pct, discovery_saved_pct, command oraz wszystkie
+     * flag_*. Reszta (trio_*, png_baseline, attr_*, node_version, cwd_basename)
+     * istnieje wyłącznie w oryginalnym savings.csv tego runa, którego raport
+     * nie embedduje, więc słusznie zostaje pusta. Konsument widzi `,,` zamiast
+     * fantomowego "0" i może odróżnić „brak danych" od „prawdziwe zero".
+     */
+    function fullSchemaValueFor(p, col) {
+      if (col === "generatedAt") return csvEscape(p.generatedAt || "");
+      if (col === "png_saved_pct") return csvEscape(typeof p.png === "number" ? p.png.toFixed(2) : "");
+      if (col === "discovery_saved_pct") return csvEscape(typeof p.discovery === "number" ? p.discovery.toFixed(2) : "");
+      if (col === "command") return csvEscape(p.command || "");
+      if (col.indexOf("flag_") === 0) {
+        return csvEscape((p.flags && p.flags[col]) || "");
+      }
+      return ""; // brak w embedded payload — pusta wartość
+    }
     function buildExportRows() {
       var state = currentState();
       var pts = filterPoints(state);
-      var cols = ["generatedAt", "png_saved_pct", "discovery_saved_pct", "isCurrent", "command"]
-        .concat(flagCols.map(function (c) { return c; }));
-      var lines = [cols.join(",")];
-      pts.forEach(function (p) {
-        var row = [
-          csvEscape(p.generatedAt || ""),
-          csvEscape(typeof p.png === "number" ? p.png.toFixed(2) : ""),
-          csvEscape(typeof p.discovery === "number" ? p.discovery.toFixed(2) : ""),
-          csvEscape(p.isCurrent ? "1" : "0"),
-          csvEscape(p.command || ""),
-        ];
-        flagCols.forEach(function (c) { row.push(csvEscape((p.flags && p.flags[c]) || "")); });
-        lines.push(row.join(","));
-      });
-      return { csv: lines.join("\n") + "\n", count: pts.length, total: allPoints.length, state: state };
+      var mode = (exportModeSelect && exportModeSelect.value) || "subset";
+      var lines;
+      var cols;
+      var missingCount = 0;
+      if (mode === "full" && fullSchemaCols) {
+        cols = fullSchemaCols.slice();
+        // Policz kolumny mapowane do pustego stringa — pokażemy w statusie,
+        // żeby user wiedział, że plik ma „dziury" zamiast halucynowanych zer.
+        cols.forEach(function (c) {
+          if (c === "generatedAt" || c === "png_saved_pct" || c === "discovery_saved_pct" || c === "command") return;
+          if (c.indexOf("flag_") === 0) return;
+          missingCount++;
+        });
+        lines = [cols.join(",")];
+        pts.forEach(function (p) {
+          var row = cols.map(function (c) { return fullSchemaValueFor(p, c); });
+          lines.push(row.join(","));
+        });
+      } else {
+        mode = "subset";
+        cols = ["generatedAt", "png_saved_pct", "discovery_saved_pct", "isCurrent", "command"]
+          .concat(flagCols.map(function (c) { return c; }));
+        lines = [cols.join(",")];
+        pts.forEach(function (p) {
+          var row = [
+            csvEscape(p.generatedAt || ""),
+            csvEscape(typeof p.png === "number" ? p.png.toFixed(2) : ""),
+            csvEscape(typeof p.discovery === "number" ? p.discovery.toFixed(2) : ""),
+            csvEscape(p.isCurrent ? "1" : "0"),
+            csvEscape(p.command || ""),
+          ];
+          flagCols.forEach(function (c) { row.push(csvEscape((p.flags && p.flags[c]) || "")); });
+          lines.push(row.join(","));
+        });
+      }
+      return {
+        csv: lines.join("\n") + "\n",
+        count: pts.length,
+        total: allPoints.length,
+        state: state,
+        mode: mode,
+        colCount: cols.length,
+        missingCount: missingCount,
+      };
     }
     function shortHash(s) {
       // Mały deterministyczny hash (djb2) → 6 znaków hex. Wystarczy do unikalnej
@@ -2208,6 +2278,15 @@ const renderHtml = ({
       return ("00000000" + (h >>> 0).toString(16)).slice(-6);
     }
     if (exportBtn) {
+      // Disable trybu „full" gdy serwer nie embedował SAVINGS_CSV_COLUMNS
+      // (np. starszy raport / regresja w buildzie). User widzi czemu.
+      if (exportModeSelect && !fullSchemaCols) {
+        var fullOpt = exportModeSelect.querySelector('option[value="full"]');
+        if (fullOpt) {
+          fullOpt.disabled = true;
+          fullOpt.textContent = "Pełny schemat (niedostępny)";
+        }
+      }
       exportBtn.addEventListener("click", function () {
         var built = buildExportRows();
         if (!built.count) {
@@ -2215,8 +2294,8 @@ const renderHtml = ({
           return;
         }
         var stamp = new Date().toISOString().replace(/[:.]/g, "-").replace(/Z$/, "Z");
-        var filterHash = shortHash(JSON.stringify(built.state));
-        var name = "savings-filtered-" + stamp + "-" + filterHash + ".csv";
+        var filterHash = shortHash(JSON.stringify(built.state) + "|" + built.mode);
+        var name = "savings-filtered-" + built.mode + "-" + stamp + "-" + filterHash + ".csv";
         try {
           var blob = new Blob([built.csv], { type: "text/csv;charset=utf-8" });
           var url = URL.createObjectURL(blob);
@@ -2227,7 +2306,10 @@ const renderHtml = ({
           document.body.removeChild(a);
           setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
           if (exportStatus) {
-            exportStatus.textContent = "Pobrano " + built.count + "/" + built.total + " → " + name;
+            var modeLabel = built.mode === "full"
+              ? ("pełny schemat, " + built.colCount + " kol." + (built.missingCount ? ", " + built.missingCount + " pustych" : ""))
+              : ("skrócony, " + built.colCount + " kol.");
+            exportStatus.textContent = "Pobrano " + built.count + "/" + built.total + " (" + modeLabel + ") → " + name;
           }
         } catch (e) {
           if (exportStatus) exportStatus.textContent = "Eksport nieudany: " + e.message;
