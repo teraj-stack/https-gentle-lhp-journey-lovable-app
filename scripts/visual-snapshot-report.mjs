@@ -2175,14 +2175,14 @@ const renderHtml = ({
     //    analizy ad-hoc w arkuszu / DuckDB. Tylko kolumny faktycznie pokazywane
     //    w wykresach trendów.
     //
-    //  • "full" — pełny schemat zgodny ze `savings.csv` / `history.csv`
-    //    (SAVINGS_CSV_COLUMNS embedowane w trends-json jako `fullSchemaColumns`).
-    //    Pola, których embedded payload NIE zawiera (trio_*, png_baseline,
-    //    attribution_*, node_version, cwd_basename, isCurrent — bo nie ma
+    //  • "full" — pełny schemat zgodny ze savings.csv / history.csv
+    //    (SAVINGS_CSV_COLUMNS embedowane w trends-json jako fullSchemaColumns).
+    //    Pola, których embedded payload NIE zawiera (trio_X, png_baseline,
+    //    attribution_X, node_version, cwd_basename, isCurrent — bo nie ma
     //    odpowiednika w schemacie) są mapowane do pustego stringa, co zachowuje
     //    poprawną liczbę kolumn i ich kolejność. Dzięki temu można wkleić plik
-    //    bezpośrednio jako append do `history.csv` lub załadować do narzędzia,
-    //    które oczekuje stałego nagłówka (np. duckdb `read_csv_auto` z innymi
+    //    bezpośrednio jako append do history.csv lub załadować do narzędzia,
+    //    które oczekuje stałego nagłówka (np. duckdb read_csv_auto z innymi
     //    plikami z tego samego runa).
     //
     // Nazwa pliku zawiera tryb + timestamp + skrócony hash filtrów, żeby kolejne
@@ -2200,16 +2200,16 @@ const renderHtml = ({
       return s;
     }
     /**
-     * Mapa kolumna → wartość dla pojedynczego punktu (`p`) w trybie pełnym.
+     * Mapa kolumna → wartość dla pojedynczego punktu (p) w trybie pełnym.
      * Zwraca string GOTOWY do CSV (po escape). Klucze nieobjęte mapą oznaczają
      * brak danych w embedded payloadzie → eksport wstawia pusty string,
      * zachowując kolumnę w wynikowym pliku.
      *
-     * NOTE: świadomie obejmujemy tylko te pola, które realnie są w `points`:
+     * NOTE: świadomie obejmujemy tylko te pola, które realnie są w points:
      * generatedAt, png_saved_pct, discovery_saved_pct, command oraz wszystkie
-     * flag_*. Reszta (trio_*, png_baseline, attr_*, node_version, cwd_basename)
+     * flag_X. Reszta (trio_X, png_baseline, attr_X, node_version, cwd_basename)
      * istnieje wyłącznie w oryginalnym savings.csv tego runa, którego raport
-     * nie embedduje, więc słusznie zostaje pusta. Konsument widzi `,,` zamiast
+     * nie embedduje, więc słusznie zostaje pusta. Konsument widzi ",," zamiast
      * fantomowego "0" i może odróżnić „brak danych" od „prawdziwe zero".
      */
     function fullSchemaValueFor(p, col) {
