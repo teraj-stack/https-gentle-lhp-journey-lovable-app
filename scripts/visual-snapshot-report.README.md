@@ -330,10 +330,27 @@ pasujących do wszystkich aktywnych selectów (AND), bez re-runu skryptu.
   `?trend_command=...&trend_flag_max_copy=200`, dzięki czemu można udostępnić
   link do konkretnego widoku trendu (np. „CI z `--max-copy=200`").
 - Przycisk **Resetuj** czyści wszystkie selecty i pokazuje pełną historię.
-- Przycisk **⬇ Eksportuj CSV** pobiera AKTUALNIE przefiltrowany zbiór runów do
-  nowego pliku `savings-filtered-<mode>-<timestamp>-<hash>.csv` (Blob +
-  `a[download]`, zero deps, działa też z `file://`). Tryb wybiera select
-  **„tryb eksportu"** obok przycisku:
+- Przycisk **⬇ Podgląd i eksport…** otwiera modal z **podglądem 20 pierwszych
+  wierszy** (natywny `<dialog>`, zero deps) zanim cokolwiek trafi na dysk.
+  Modal zawiera:
+  - nagłówek z metadanymi: `N/M runów · tryb {skrócony|pełny}, K kolumn
+    (L pustych)`,
+  - przewijalną tabelę z headerem CSV (sticky) i pierwszymi 20 wierszami;
+    wartości są od-escapowane (RFC 4180 unwrap) by user widział je „jak w
+    arkuszu", a komórki puste są oznaczone kursywą `(puste)` i wygaszone,
+  - notkę „Pokazuję 20 z N wierszy. Pełny zbiór trafi do pobranego pliku."
+    gdy zbiór jest większy niż próg podglądu,
+  - przyciski **Anuluj** (Esc / klik backdropa działa identycznie) i
+    **⬇ Pobierz CSV**, który dopiero teraz tworzy `savings-filtered-<mode>-<timestamp>-<hash>.csv`
+    (Blob + `a[download]`, działa też z `file://`).
+
+  Fallback: jeśli przeglądarka nie wspiera `<dialog>.showModal()` (Safari < 15.4),
+  pobranie startuje od razu, a w statusie pojawia się dopisek
+  „(podgląd niedostępny w tej przeglądarce)".
+
+  Tryb wybiera select **„tryb eksportu"** obok przycisku (jego wartość jest
+  zamrożona w momencie kliku „Podgląd" — modal pokazuje to, co realnie
+  trafi do pliku):
   - **Skrócony** (domyślny) — schemat: `generatedAt, png_saved_pct,
     discovery_saved_pct, isCurrent, command, flag_*` (podzbiór kolumn obecny
     w embedded `trends-json`). Idealny do szybkiej analizy ad-hoc.
@@ -352,8 +369,8 @@ pasujących do wszystkich aktywnych selectów (AND), bez re-runu skryptu.
   Hash w nazwie = deterministyczny djb2 stanu filtra + trybu (kolejne eksporty
   tej samej kombinacji nie nadpisują siebie z różnych timestampów). Status
   („Pobrano N/M (tryb, K kol., L pustych) → nazwa") wyświetla się obok
-  przycisku; jeśli filtr nie zwrócił żadnego wiersza, eksport jest blokowany
-  z komunikatem „Brak wierszy do eksportu".
+  przycisku; jeśli filtr nie zwrócił żadnego wiersza, otwarcie podglądu jest
+  blokowane z komunikatem „Brak wierszy do eksportu".
 - Pod selectami znajduje się rozwijana sekcja **„Unikalne kombinacje
   `command` + `flag_*`"** — tabela wszystkich krotek wartości, które
   rzeczywiście wystąpiły w `history.csv`, posortowana malejąco po liczbie
