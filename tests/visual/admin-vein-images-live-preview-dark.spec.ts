@@ -24,6 +24,11 @@
  *   bun run test:e2e -- tests/visual/admin-vein-images-live-preview-dark.spec.ts --update-snapshots
  */
 import { test, expect, type Page, type Route } from "../../playwright-fixture";
+import {
+  assertLayoutDoesNotBreak,
+  assertCaptionNotClipped,
+  LIVE_PREVIEW_SNAPSHOT_DIFF_RATIO,
+} from "./_helpers/livePreviewLayoutAssertions";
 
 const ADMIN_EMAIL = process.env.ADMIN_E2E_EMAIL ?? "";
 const ADMIN_PASSWORD = process.env.ADMIN_E2E_PASSWORD ?? "";
@@ -98,61 +103,11 @@ const longAlt = (suffix: string): string =>
 const longCaption = (suffix: string): string =>
   `VISUAL ${suffix} · podgląd renderu · ryc. snapshot`;
 
-/**
- * Asercje anty-łamliwości layoutu — niezależne od motywu.
- * Identyczne jak w spec light, bo regresje overflow nie mają nic wspólnego
- * z paletą kolorów.
- */
-const assertLayoutDoesNotBreak = async (page: Page, viewportWidth: number) => {
-  const pageMetrics = await page.evaluate(() => ({
-    scrollWidth: document.documentElement.scrollWidth,
-    clientWidth: document.documentElement.clientWidth,
-  }));
-  expect(
-    pageMetrics.scrollWidth,
-    `[dark] Strona nie powinna mieć horizontalnego scrolla (scrollW=${pageMetrics.scrollWidth} > clientW=${pageMetrics.clientWidth} przy viewport ${viewportWidth}px)`,
-  ).toBeLessThanOrEqual(pageMetrics.clientWidth + 1);
-
-  const frame = page.getByTestId("live-preview-frame");
-  await expect(frame).toBeVisible();
-  const box = await frame.boundingBox();
-  expect(box, "[dark] live-preview-frame musi mieć boundingBox").not.toBeNull();
-  if (box) {
-    expect(
-      box.x + box.width,
-      `[dark] live-preview-frame wystaje poza viewport (right=${box.x + box.width}, vw=${viewportWidth})`,
-    ).toBeLessThanOrEqual(viewportWidth + 1);
-    expect(box.width, "[dark] live-preview-frame ma zerową szerokość").toBeGreaterThan(0);
-  }
-
-  const draftImg = page
-    .getByTestId("live-preview-section")
-    .locator("img")
-    .first();
-  await expect(draftImg).toBeVisible();
-  const imgBox = await draftImg.boundingBox();
-  expect(imgBox?.width ?? 0, "[dark] draft <img> ma zerową szerokość").toBeGreaterThan(0);
-  expect(imgBox?.height ?? 0, "[dark] draft <img> ma zerową wysokość").toBeGreaterThan(0);
-};
-
-const assertCaptionNotClipped = async (page: Page) => {
-  const captionsOverflow = await page
-    .getByTestId("live-preview-section")
-    .locator("figcaption")
-    .evaluateAll((nodes) =>
-      nodes.map((n) => ({
-        scrollW: n.scrollWidth,
-        clientW: n.clientWidth,
-        text: n.textContent?.slice(0, 40) ?? "",
-      })),
-    );
-  for (const c of captionsOverflow) {
-    expect(
-      c.scrollW,
-      `[dark] figcaption "${c.text}" obcięte: scrollW=${c.scrollW} > clientW=${c.clientW}`,
-    ).toBeLessThanOrEqual(c.clientW + 1);
-  }
-};
+// Asercje anty-łamliwości layoutu i figcaption są DZIELONE z spec light —
+// patrz `_helpers/livePreviewLayoutAssertions.ts`. Nazwane progi tolerancji
+// (SUBPIXEL_ROUNDING_PX, HARD_OVERFLOW_CEILING_PX, VIEWPORT_FIT_TOLERANCE_PX,
+// TEXT_OVERFLOW_TOLERANCE_PX) gwarantują że light/dark stosują DOKŁADNIE te same
+// kryteria — żaden próg nie rozjedzie się przy tuningu jednej strony.
 
 /**
  * Sanity check: faktycznie jesteśmy w dark mode. Łapie regresje gdy ktoś
@@ -204,11 +159,11 @@ test.describe("AdminVeinImages — visual regression LIVE PREVIEW [DARK] (4 view
       await expect(previewSection).toBeVisible();
 
       // === STATE A: pusty draft (po wejściu na panel) ===
-      await assertLayoutDoesNotBreak(page, viewport.width);
+      await assertLayoutDoesNotBreak(page, viewport.width, "dark");
       await expect(previewSection).toHaveScreenshot(
         `live-preview-${viewport.name}-dark-state-a-empty.png`,
         {
-          maxDiffPixelRatio: 0.03,
+          maxDiffPixelRatio: LIVE_PREVIEW_SNAPSHOT_DIFF_RATIO,
           animations: "disabled",
         },
       );
@@ -221,11 +176,11 @@ test.describe("AdminVeinImages — visual regression LIVE PREVIEW [DARK] (4 view
         previewSection.locator(`img[alt="${newAlt}"]`).first(),
       ).toBeVisible();
 
-      await assertLayoutDoesNotBreak(page, viewport.width);
+      await assertLayoutDoesNotBreak(page, viewport.width, "dark");
       await expect(previewSection).toHaveScreenshot(
         `live-preview-${viewport.name}-dark-state-b-alt-edited.png`,
         {
-          maxDiffPixelRatio: 0.03,
+          maxDiffPixelRatio: LIVE_PREVIEW_SNAPSHOT_DIFF_RATIO,
           animations: "disabled",
         },
       );
@@ -238,12 +193,12 @@ test.describe("AdminVeinImages — visual regression LIVE PREVIEW [DARK] (4 view
         previewSection.getByText(newCap, { exact: false }).first(),
       ).toBeVisible();
 
-      await assertLayoutDoesNotBreak(page, viewport.width);
-      await assertCaptionNotClipped(page);
+      await assertLayoutDoesNotBreak(page, viewport.width, "dark");
+      await assertCaptionNotClipped(page, "dark");
       await expect(previewSection).toHaveScreenshot(
         `live-preview-${viewport.name}-dark-state-c-alt-and-caption.png`,
         {
-          maxDiffPixelRatio: 0.03,
+          maxDiffPixelRatio: LIVE_PREVIEW_SNAPSHOT_DIFF_RATIO,
           animations: "disabled",
         },
       );
