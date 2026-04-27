@@ -1040,6 +1040,16 @@ const renderHtml = ({
       <h2 class="trends-title">Trendy oszczędności IO</h2>
       ${note}
       ${filterBar}
+      <details class="trends-combos" data-trends-combos>
+        <summary>Unikalne kombinacje <code>command</code> + <code>flag_*</code> <span class="trends-combos-count" data-trends-combos-count></span></summary>
+        <p class="trends-combos-hint">Kliknij wiersz, żeby ustawić selecty filtra na tę dokładnie kombinację. Sortowanie: malejąco po liczbie runów.</p>
+        <div class="trends-combos-scroll">
+          <table class="trends-combos-table" data-trends-combos-table>
+            <thead><tr data-trends-combos-head></tr></thead>
+            <tbody data-trends-combos-body></tbody>
+          </table>
+        </div>
+      </details>
       <p class="trends-empty" data-trends-empty hidden>Żaden run nie pasuje do filtra. Wyczyść, żeby zobaczyć wszystkie.</p>
       <div class="trends-grid">
         ${buildSpark("png", "#c9a84c", "PNG copy saved %")}
@@ -1475,6 +1485,85 @@ const renderHtml = ({
       opacity: .8;
       font-style: italic;
     }
+    .trends-combos {
+      margin: 0 0 .75rem;
+      padding: .25rem .5rem;
+      border: 1px solid rgba(127,127,127,.2);
+      border-radius: 6px;
+      background: rgba(127,127,127,.03);
+    }
+    .trends-combos > summary {
+      cursor: pointer;
+      font-size: .85rem;
+      padding: .25rem;
+      user-select: none;
+    }
+    .trends-combos > summary code {
+      font-size: .8rem;
+      padding: 1px 4px;
+      border-radius: 3px;
+      background: rgba(127,127,127,.12);
+    }
+    .trends-combos-count {
+      opacity: .65;
+      font-family: ui-monospace, monospace;
+      font-size: .8rem;
+      margin-left: .25rem;
+    }
+    .trends-combos-hint {
+      margin: .25rem .25rem .5rem;
+      font-size: .78rem;
+      opacity: .75;
+    }
+    .trends-combos-scroll {
+      max-height: 280px;
+      overflow: auto;
+      border-top: 1px solid rgba(127,127,127,.15);
+    }
+    .trends-combos-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .78rem;
+      font-family: ui-monospace, monospace;
+    }
+    .trends-combos-table th,
+    .trends-combos-table td {
+      padding: 4px 8px;
+      text-align: left;
+      border-bottom: 1px solid rgba(127,127,127,.12);
+      white-space: nowrap;
+      max-width: 280px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .trends-combos-table th {
+      position: sticky;
+      top: 0;
+      background: rgba(127,127,127,.08);
+      backdrop-filter: blur(2px);
+      font-weight: 600;
+      opacity: .85;
+    }
+    .trends-combos-table tbody tr {
+      cursor: pointer;
+      transition: background .12s ease;
+    }
+    .trends-combos-table tbody tr:hover {
+      background: rgba(201, 168, 76, .12);
+    }
+    .trends-combos-table tbody tr.is-active {
+      background: rgba(201, 168, 76, .22);
+      box-shadow: inset 3px 0 0 #c9a84c;
+    }
+    .trends-combos-table td.col-count {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      opacity: .8;
+    }
+    .trends-combos-table td.is-empty {
+      opacity: .45;
+      font-style: italic;
+    }
   </style>
 </head>
 <body>
@@ -1735,6 +1824,92 @@ const renderHtml = ({
       });
     });
 
+    // ---- Tabela unikalnych kombinacji command + flag_* ----
+    // Grupujemy wszystkie wiersze historii po krotce (command, flag_*) — każdy
+    // unikalny zestaw to jedno potencjalne "preset" filtra. Kliknięcie wiersza
+    // ustawia selecty na DOKŁADNIE tę kombinację (single-select per kolumna),
+    // dzięki czemu user nie musi ręcznie zgadywać, jakie wartości wystąpiły razem.
+    var filterKeys = selects.map(function (sel) { return sel.getAttribute("data-trend-filter"); });
+    var combosBody = root.querySelector("[data-trends-combos-body]");
+    var combosHead = root.querySelector("[data-trends-combos-head]");
+    var combosCount = root.querySelector("[data-trends-combos-count]");
+    var combosRows = [];
+    if (combosBody && combosHead) {
+      // Header: count + każda kolumna filtrująca (z czytelną etykietą).
+      var headHtml = '<th scope="col" class="col-count">runów</th>';
+      filterKeys.forEach(function (key) {
+        var label = key === "command" ? "command" : (flagLabels[key] || key);
+        headHtml += '<th scope="col">' + label + '</th>';
+      });
+      combosHead.innerHTML = headHtml;
+
+      // Grupowanie: klucz = JSON.stringify wartości w kolejności filterKeys.
+      // JSON.stringify jest deterministyczny dla tablic stringów — bezpieczne.
+      var groups = Object.create(null);
+      allPoints.forEach(function (p) {
+        var values = filterKeys.map(function (k) { return valueOf(p, k); });
+        var key = JSON.stringify(values);
+        if (!groups[key]) groups[key] = { values: values, count: 0 };
+        groups[key].count++;
+      });
+      combosRows = Object.keys(groups).map(function (k) { return groups[k]; });
+      // Sort: malejąco po count, potem alfabetycznie po command (stabilizator
+      // dla deterministycznej kolejności w UI / testach wizualnych).
+      combosRows.sort(function (a, b) {
+        if (b.count !== a.count) return b.count - a.count;
+        var ai = filterKeys.indexOf("command");
+        if (ai >= 0 && a.values[ai] !== b.values[ai]) {
+          return a.values[ai] < b.values[ai] ? -1 : 1;
+        }
+        return 0;
+      });
+
+      // Render wierszy. Pusty string → "(brak)" + klasa is-empty (wizualne
+      // odróżnienie od konkretnej wartości). Tytuł na <td> = pełna wartość
+      // (na wypadek truncate'u przez ellipsis w wąskich kolumnach).
+      var rowsHtml = combosRows.map(function (row, idx) {
+        var cells = '<td class="col-count">' + row.count + '</td>';
+        row.values.forEach(function (v) {
+          var display = v === "" ? EMPTY_LABEL : v;
+          var cls = v === "" ? "is-empty" : "";
+          cells += '<td class="' + cls + '" title="' + display.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;") + '">' + display.replace(/&/g, "&amp;").replace(/</g, "&lt;") + '</td>';
+        });
+        return '<tr data-combo-idx="' + idx + '" tabindex="0" role="button" aria-label="Zastosuj kombinację (' + row.count + ' runów)">' + cells + '</tr>';
+      }).join("");
+      combosBody.innerHTML = rowsHtml;
+      if (combosCount) combosCount.textContent = "(" + combosRows.length + ")";
+
+      // Klik / Enter / Space na wierszu — ustaw selecty na wartości tej krotki
+      // i zastosuj filtr. Po użyciu rozwijamy <details> (gdyby user kliknął
+      // przez tab z klawiatury, gdy pasek był zwinięty).
+      function applyCombo(row) {
+        if (!row) return;
+        filterKeys.forEach(function (key, i) {
+          var sel = selects[i];
+          if (!sel) return;
+          var val = row.values[i] || "";
+          // Tylko jeśli wartość istnieje w options (zawsze powinna, bo pochodzi
+          // z tych samych danych); fallback do "" dla bezpieczeństwa.
+          var found = Array.prototype.some.call(sel.options, function (o) { return o.value === val; });
+          sel.value = found ? val : "";
+        });
+        apply();
+      }
+      combosBody.addEventListener("click", function (e) {
+        var tr = e.target.closest("tr[data-combo-idx]");
+        if (!tr) return;
+        applyCombo(combosRows[parseInt(tr.getAttribute("data-combo-idx"), 10)]);
+      });
+      combosBody.addEventListener("keydown", function (e) {
+        if (e.key !== "Enter" && e.key !== " ") return;
+        var tr = e.target.closest("tr[data-combo-idx]");
+        if (!tr) return;
+        e.preventDefault();
+        applyCombo(combosRows[parseInt(tr.getAttribute("data-combo-idx"), 10)]);
+      });
+    }
+
+
     function readUrl() {
       var p = new URLSearchParams(window.location.search);
       var s = {};
@@ -1874,6 +2049,27 @@ const renderHtml = ({
       }
       if (emptyEl) emptyEl.hidden = pts.length !== 0;
       sparks.forEach(function (fig) { redrawSpark(fig, pts); });
+      // Highlight wiersza w tabeli kombinacji, który odpowiada AKTUALNEMU
+      // stanowi selectów (wszystkie kolumny muszą się zgadzać). Brak highlightu
+      // = stan nie pokrywa się z żadną pełną kombinacją (np. user wybrał tylko
+      // command, a flag_max_copy zostawił "(wszystkie)").
+      if (combosBody && combosRows.length) {
+        var allSet = filterKeys.every(function (k) { return state[k]; });
+        var activeIdx = -1;
+        if (allSet) {
+          for (var ci = 0; ci < combosRows.length; ci++) {
+            var match = true;
+            for (var fi = 0; fi < filterKeys.length; fi++) {
+              if (combosRows[ci].values[fi] !== state[filterKeys[fi]]) { match = false; break; }
+            }
+            if (match) { activeIdx = ci; break; }
+          }
+        }
+        var rows = combosBody.querySelectorAll("tr[data-combo-idx]");
+        for (var ri = 0; ri < rows.length; ri++) {
+          rows[ri].classList.toggle("is-active", parseInt(rows[ri].getAttribute("data-combo-idx"), 10) === activeIdx);
+        }
+      }
     }
 
     selects.forEach(function (sel) {
