@@ -1824,6 +1824,92 @@ const renderHtml = ({
       });
     });
 
+    // ---- Tabela unikalnych kombinacji command + flag_* ----
+    // Grupujemy wszystkie wiersze historii po krotce (command, flag_*) — każdy
+    // unikalny zestaw to jedno potencjalne "preset" filtra. Kliknięcie wiersza
+    // ustawia selecty na DOKŁADNIE tę kombinację (single-select per kolumna),
+    // dzięki czemu user nie musi ręcznie zgadywać, jakie wartości wystąpiły razem.
+    var filterKeys = selects.map(function (sel) { return sel.getAttribute("data-trend-filter"); });
+    var combosBody = root.querySelector("[data-trends-combos-body]");
+    var combosHead = root.querySelector("[data-trends-combos-head]");
+    var combosCount = root.querySelector("[data-trends-combos-count]");
+    var combosRows = [];
+    if (combosBody && combosHead) {
+      // Header: count + każda kolumna filtrująca (z czytelną etykietą).
+      var headHtml = '<th scope="col" class="col-count">runów</th>';
+      filterKeys.forEach(function (key) {
+        var label = key === "command" ? "command" : (flagLabels[key] || key);
+        headHtml += '<th scope="col">' + label + '</th>';
+      });
+      combosHead.innerHTML = headHtml;
+
+      // Grupowanie: klucz = JSON.stringify wartości w kolejności filterKeys.
+      // JSON.stringify jest deterministyczny dla tablic stringów — bezpieczne.
+      var groups = Object.create(null);
+      allPoints.forEach(function (p) {
+        var values = filterKeys.map(function (k) { return valueOf(p, k); });
+        var key = JSON.stringify(values);
+        if (!groups[key]) groups[key] = { values: values, count: 0 };
+        groups[key].count++;
+      });
+      combosRows = Object.keys(groups).map(function (k) { return groups[k]; });
+      // Sort: malejąco po count, potem alfabetycznie po command (stabilizator
+      // dla deterministycznej kolejności w UI / testach wizualnych).
+      combosRows.sort(function (a, b) {
+        if (b.count !== a.count) return b.count - a.count;
+        var ai = filterKeys.indexOf("command");
+        if (ai >= 0 && a.values[ai] !== b.values[ai]) {
+          return a.values[ai] < b.values[ai] ? -1 : 1;
+        }
+        return 0;
+      });
+
+      // Render wierszy. Pusty string → "(brak)" + klasa is-empty (wizualne
+      // odróżnienie od konkretnej wartości). Tytuł na <td> = pełna wartość
+      // (na wypadek truncate'u przez ellipsis w wąskich kolumnach).
+      var rowsHtml = combosRows.map(function (row, idx) {
+        var cells = '<td class="col-count">' + row.count + '</td>';
+        row.values.forEach(function (v) {
+          var display = v === "" ? EMPTY_LABEL : v;
+          var cls = v === "" ? "is-empty" : "";
+          cells += '<td class="' + cls + '" title="' + display.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;") + '">' + display.replace(/&/g, "&amp;").replace(/</g, "&lt;") + '</td>';
+        });
+        return '<tr data-combo-idx="' + idx + '" tabindex="0" role="button" aria-label="Zastosuj kombinację (' + row.count + ' runów)">' + cells + '</tr>';
+      }).join("");
+      combosBody.innerHTML = rowsHtml;
+      if (combosCount) combosCount.textContent = "(" + combosRows.length + ")";
+
+      // Klik / Enter / Space na wierszu — ustaw selecty na wartości tej krotki
+      // i zastosuj filtr. Po użyciu rozwijamy <details> (gdyby user kliknął
+      // przez tab z klawiatury, gdy pasek był zwinięty).
+      function applyCombo(row) {
+        if (!row) return;
+        filterKeys.forEach(function (key, i) {
+          var sel = selects[i];
+          if (!sel) return;
+          var val = row.values[i] || "";
+          // Tylko jeśli wartość istnieje w options (zawsze powinna, bo pochodzi
+          // z tych samych danych); fallback do "" dla bezpieczeństwa.
+          var found = Array.prototype.some.call(sel.options, function (o) { return o.value === val; });
+          sel.value = found ? val : "";
+        });
+        apply();
+      }
+      combosBody.addEventListener("click", function (e) {
+        var tr = e.target.closest("tr[data-combo-idx]");
+        if (!tr) return;
+        applyCombo(combosRows[parseInt(tr.getAttribute("data-combo-idx"), 10)]);
+      });
+      combosBody.addEventListener("keydown", function (e) {
+        if (e.key !== "Enter" && e.key !== " ") return;
+        var tr = e.target.closest("tr[data-combo-idx]");
+        if (!tr) return;
+        e.preventDefault();
+        applyCombo(combosRows[parseInt(tr.getAttribute("data-combo-idx"), 10)]);
+      });
+    }
+
+
     function readUrl() {
       var p = new URLSearchParams(window.location.search);
       var s = {};
