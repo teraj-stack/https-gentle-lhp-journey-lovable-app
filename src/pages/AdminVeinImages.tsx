@@ -241,22 +241,62 @@ const VALID_PAGE_KEYS = new Set<VeinImagePageKey>(
 );
 const VALID_SLOTS: VeinImageSlot[] = ["main", "perforator"];
 
+/**
+ * Strukturalna walidacja per-pole — pozwala preview podświetlać konkretne
+ * pola (alt/caption) zamiast tylko wyświetlać tekstowe komunikaty.
+ *
+ * `kind`:
+ *  - "empty"   — pole puste (alt/caption),
+ *  - "tooShort"— wartość poniżej minimum (alt < ALT_MIN),
+ *  - "tooLong" — wartość powyżej maksimum (alt > ALT_BUDGET, caption > CAPTION_BUDGET),
+ *  - "segment" — pojedynczy segment caption przekracza SEGMENT_BUDGET.
+ */
+type FieldIssueField = "alt" | "caption";
+type FieldIssueKind = "empty" | "tooShort" | "tooLong" | "segment";
+
+interface FieldIssue {
+  field: FieldIssueField;
+  kind: FieldIssueKind;
+  message: string;
+  /** Dla "segment" — fragment naruszający limit (skrócony do podglądu). */
+  segment?: string;
+  /** Dla "segment" — pełna długość znaków segmentu. */
+  segmentLength?: number;
+}
+
 /** Te same reguły co trigger Postgres `validate_vein_image_override`. */
-const validateImportRow = (alt: string, caption: string): string[] => {
-  const errs: string[] = [];
-  if (alt.length < ALT_MIN || alt.length > ALT_BUDGET) {
-    errs.push(`alt ${alt.length}/${ALT_MIN}–${ALT_BUDGET} znaków`);
+const validateImportRowFields = (alt: string, caption: string): FieldIssue[] => {
+  const issues: FieldIssue[] = [];
+  if (alt.length === 0) {
+    issues.push({ field: "alt", kind: "empty", message: `alt jest pusty (wymagane ${ALT_MIN}–${ALT_BUDGET} zn.)` });
+  } else if (alt.length < ALT_MIN) {
+    issues.push({ field: "alt", kind: "tooShort", message: `alt za krótki: ${alt.length}/${ALT_MIN}–${ALT_BUDGET} zn.` });
+  } else if (alt.length > ALT_BUDGET) {
+    issues.push({ field: "alt", kind: "tooLong", message: `alt za długi: ${alt.length}/${ALT_MIN}–${ALT_BUDGET} zn.` });
   }
-  if (caption.length > CAPTION_BUDGET) {
-    errs.push(`caption ${caption.length}/≤${CAPTION_BUDGET} znaków`);
+  if (caption.length === 0) {
+    issues.push({ field: "caption", kind: "empty", message: `caption jest pusty (limit ≤${CAPTION_BUDGET} zn.)` });
+  } else if (caption.length > CAPTION_BUDGET) {
+    issues.push({ field: "caption", kind: "tooLong", message: `caption za długi: ${caption.length}/≤${CAPTION_BUDGET} zn.` });
   }
   for (const seg of caption.split(" · ")) {
     if (seg.length > SEGMENT_BUDGET) {
-      errs.push(`segment "${seg.slice(0, 24)}${seg.length > 24 ? "…" : ""}" ${seg.length}/≤${SEGMENT_BUDGET}`);
+      const preview = `${seg.slice(0, 24)}${seg.length > 24 ? "…" : ""}`;
+      issues.push({
+        field: "caption",
+        kind: "segment",
+        message: `segment "${preview}" ${seg.length}/≤${SEGMENT_BUDGET} zn.`,
+        segment: preview,
+        segmentLength: seg.length,
+      });
     }
   }
-  return errs;
+  return issues;
 };
+
+/** Wstecznie kompatybilny adapter — używany tylko przez stare ścieżki. */
+const validateImportRow = (alt: string, caption: string): string[] =>
+  validateImportRowFields(alt, caption).map((i) => i.message);
 
 type ImportRowStatus = "create" | "update" | "noop" | "error";
 
@@ -282,6 +322,8 @@ interface ImportRow {
   caption: string;
   status: ImportRowStatus;
   errors: string[];
+  /** Strukturalne błędy per-pole (alt/caption) — pozwalają preview podświetlać konkretne pola. */
+  fieldIssues: FieldIssue[];
   /** Aktualne wartości w bazie — do prezentacji diffu. */
   currentAlt?: string;
   currentCaption?: string;
@@ -300,6 +342,8 @@ interface ParsedImportRow {
   caption: string;
   /** Błędy NIEzwiązane z duplikatem (validacja pól, nieznany page_key/slot). */
   baseErrors: string[];
+  /** Strukturalne błędy walidacji per-pole (alt/caption). */
+  fieldIssues: FieldIssue[];
   currentAlt?: string;
   currentCaption?: string;
 }
@@ -371,6 +415,7 @@ const applyDedupStrategy = (
       caption: row.caption,
       status,
       errors,
+      fieldIssues: row.fieldIssues,
       currentAlt: row.currentAlt,
       currentCaption: row.currentCaption,
     };
@@ -1433,7 +1478,8 @@ const AdminVeinImages = () => {
           : null;
         if (!pageKey) baseErrors.push(`nieznany page_key: "${rawPage}"`);
         if (!slot) baseErrors.push(`nieznany slot: "${rawSlot}" (oczekiwano main/perforator)`);
-        baseErrors.push(...validateImportRow(alt, caption));
+        const fieldIssues = validateImportRowFields(alt, caption);
+        baseErrors.push(...fieldIssues.map((i) => i.message));
 
         const current = pageKey && slot ? dbMap.get(`${pageKey}:${slot}`) : undefined;
 
@@ -1444,6 +1490,7 @@ const AdminVeinImages = () => {
           alt,
           caption,
           baseErrors,
+          fieldIssues,
           currentAlt: current?.alt,
           currentCaption: current?.caption,
         };
@@ -2230,6 +2277,31 @@ const AdminVeinImages = () => {
                   do aktualizacji: {importPreviewRows.filter((r) => r.status === "update").length} ·
                   bez zmian: {importPreviewRows.filter((r) => r.status === "noop").length} ·
                   z błędami: {importPreviewRows.filter((r) => r.status === "error").length}
+                  {(() => {
+                    const altMissing = importPreviewRows.filter((r) =>
+                      r.fieldIssues.some((i) => i.field === "alt" && i.kind === "empty"),
+                    ).length;
+                    const capMissing = importPreviewRows.filter((r) =>
+                      r.fieldIssues.some((i) => i.field === "caption" && i.kind === "empty"),
+                    ).length;
+                    const overLimit = importPreviewRows.filter((r) =>
+                      r.fieldIssues.some(
+                        (i) => i.kind === "tooLong" || i.kind === "tooShort" || i.kind === "segment",
+                      ),
+                    ).length;
+                    if (altMissing + capMissing + overLimit === 0) return null;
+                    return (
+                      <>
+                        {" · "}
+                        <span className="text-destructive font-semibold">
+                          braki/limity:{" "}
+                          {altMissing > 0 && <>alt∅×{altMissing} </>}
+                          {capMissing > 0 && <>cap∅×{capMissing} </>}
+                          {overLimit > 0 && <>poza limitem×{overLimit}</>}
+                        </span>
+                      </>
+                    );
+                  })()}
                 </>
               ) : null}
             </DialogDescription>
@@ -2311,73 +2383,165 @@ const AdminVeinImages = () => {
                     key={row.line}
                     className={`rounded-md border px-3 py-2 text-[11px] ${statusColor}`}
                   >
-                    <div className="flex items-center justify-between gap-2 mb-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono opacity-60">L{row.line}</span>
-                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded font-mono text-[9px] uppercase tracking-wider bg-background/40">
-                          {statusIcon}
-                          {statusLabel}
-                        </span>
-                        <span className="font-mono text-foreground/85">
-                          {row.pageKey ?? "?"} / {row.slot ?? "?"}
-                        </span>
-                      </div>
-                      <span className="font-mono opacity-60">
-                        alt:{row.alt.length} · cap:{row.caption.length}
-                      </span>
-                    </div>
-                    {row.errors.length > 0 && (
-                      <ul className="mb-1 space-y-0.5">
-                        {row.errors.map((e, idx) => (
-                          <li key={idx} className="flex items-start gap-1">
-                            <FileWarning className="w-3 h-3 mt-0.5 shrink-0" />
-                            <span>{e}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                    {row.status === "update" && (
-                      <details className="mt-1">
-                        <summary className="cursor-pointer opacity-70 hover:opacity-100 select-none">
-                          pokaż diff
-                        </summary>
-                        <div className="mt-1 grid gap-1 font-mono text-[10px]">
-                          <div className="rounded border border-border/30 bg-background/30 p-1.5">
-                            <span className="opacity-60">stary alt:</span>{" "}
-                            <span className="break-words">{row.currentAlt}</span>
+                    {(() => {
+                      const altIssues = row.fieldIssues.filter((i) => i.field === "alt");
+                      const capIssues = row.fieldIssues.filter((i) => i.field === "caption");
+                      const altEmpty = altIssues.some((i) => i.kind === "empty");
+                      const capEmpty = capIssues.some((i) => i.kind === "empty");
+                      const altClass = altIssues.length
+                        ? "text-destructive font-semibold"
+                        : "opacity-60";
+                      const capClass = capIssues.length
+                        ? "text-destructive font-semibold"
+                        : "opacity-60";
+                      return (
+                        <>
+                          <div className="flex items-center justify-between gap-2 mb-1">
+                            <div className="flex items-center gap-2">
+                              <span className="font-mono opacity-60">L{row.line}</span>
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded font-mono text-[9px] uppercase tracking-wider bg-background/40">
+                                {statusIcon}
+                                {statusLabel}
+                              </span>
+                              <span className="font-mono text-foreground/85">
+                                {row.pageKey ?? "?"} / {row.slot ?? "?"}
+                              </span>
+                            </div>
+                            <span
+                              className="font-mono"
+                              title={
+                                row.fieldIssues.length
+                                  ? row.fieldIssues.map((i) => i.message).join(" · ")
+                                  : `alt ${ALT_MIN}–${ALT_BUDGET} zn., caption ≤${CAPTION_BUDGET} zn.`
+                              }
+                            >
+                              <span className={altClass}>
+                                alt:{altEmpty ? "∅" : row.alt.length}
+                              </span>
+                              <span className="opacity-40"> · </span>
+                              <span className={capClass}>
+                                cap:{capEmpty ? "∅" : row.caption.length}
+                              </span>
+                            </span>
                           </div>
-                          <div className="rounded border border-border/30 bg-background/30 p-1.5">
-                            <span className="opacity-60">nowy alt:</span>{" "}
-                            <span className="break-words">{row.alt}</span>
-                          </div>
-                          <div className="rounded border border-border/30 bg-background/30 p-1.5">
-                            <span className="opacity-60">stary caption:</span>{" "}
-                            <span className="break-words">{row.currentCaption}</span>
-                          </div>
-                          <div className="rounded border border-border/30 bg-background/30 p-1.5">
-                            <span className="opacity-60">nowy caption:</span>{" "}
-                            <span className="break-words">{row.caption}</span>
-                          </div>
-                        </div>
-                      </details>
-                    )}
-                    {(row.status === "create" || (row.status === "error" && !row.currentAlt)) && (
-                      <details className="mt-1">
-                        <summary className="cursor-pointer opacity-70 hover:opacity-100 select-none">
-                          pokaż treść
-                        </summary>
-                        <div className="mt-1 grid gap-1 font-mono text-[10px]">
-                          <div className="rounded border border-border/30 bg-background/30 p-1.5">
-                            <span className="opacity-60">alt:</span>{" "}
-                            <span className="break-words">{row.alt || <em className="opacity-50">(pusty)</em>}</span>
-                          </div>
-                          <div className="rounded border border-border/30 bg-background/30 p-1.5">
-                            <span className="opacity-60">caption:</span>{" "}
-                            <span className="break-words">{row.caption || <em className="opacity-50">(pusty)</em>}</span>
-                          </div>
-                        </div>
-                      </details>
-                    )}
+                          {row.fieldIssues.length > 0 && (
+                            <div className="mb-1 flex flex-wrap gap-1">
+                              {row.fieldIssues.map((issue, idx) => {
+                                const fieldLabel = issue.field === "alt" ? "alt" : "caption";
+                                const kindLabel = {
+                                  empty: "puste",
+                                  tooShort: "za krótkie",
+                                  tooLong: "za długie",
+                                  segment: "segment",
+                                }[issue.kind];
+                                return (
+                                  <span
+                                    key={`fi-${idx}`}
+                                    className="inline-flex items-center gap-1 rounded border border-destructive/40 bg-destructive/10 px-1.5 py-0.5 font-mono text-[10px]"
+                                    title={issue.message}
+                                  >
+                                    <FileWarning className="w-3 h-3 shrink-0" />
+                                    <span className="font-semibold uppercase tracking-wider">
+                                      {fieldLabel}
+                                    </span>
+                                    <span className="opacity-80">{kindLabel}</span>
+                                    {issue.kind === "segment" && issue.segmentLength != null && (
+                                      <span className="opacity-60">
+                                        ({issue.segmentLength}/{SEGMENT_BUDGET})
+                                      </span>
+                                    )}
+                                  </span>
+                                );
+                              })}
+                            </div>
+                          )}
+                          {row.errors.length > 0 && (
+                            <ul className="mb-1 space-y-0.5">
+                              {row.errors.map((e, idx) => (
+                                <li key={idx} className="flex items-start gap-1">
+                                  <FileWarning className="w-3 h-3 mt-0.5 shrink-0" />
+                                  <span>{e}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                          {row.status === "update" && (
+                            <details className="mt-1">
+                              <summary className="cursor-pointer opacity-70 hover:opacity-100 select-none">
+                                pokaż diff
+                              </summary>
+                              <div className="mt-1 grid gap-1 font-mono text-[10px]">
+                                <div className="rounded border border-border/30 bg-background/30 p-1.5">
+                                  <span className="opacity-60">stary alt:</span>{" "}
+                                  <span className="break-words">{row.currentAlt}</span>
+                                </div>
+                                <div
+                                  className={`rounded border p-1.5 ${
+                                    altIssues.length
+                                      ? "border-destructive/50 bg-destructive/10"
+                                      : "border-border/30 bg-background/30"
+                                  }`}
+                                >
+                                  <span className="opacity-60">nowy alt:</span>{" "}
+                                  <span className="break-words">
+                                    {row.alt || <em className="opacity-50">(pusty)</em>}
+                                  </span>
+                                </div>
+                                <div className="rounded border border-border/30 bg-background/30 p-1.5">
+                                  <span className="opacity-60">stary caption:</span>{" "}
+                                  <span className="break-words">{row.currentCaption}</span>
+                                </div>
+                                <div
+                                  className={`rounded border p-1.5 ${
+                                    capIssues.length
+                                      ? "border-destructive/50 bg-destructive/10"
+                                      : "border-border/30 bg-background/30"
+                                  }`}
+                                >
+                                  <span className="opacity-60">nowy caption:</span>{" "}
+                                  <span className="break-words">
+                                    {row.caption || <em className="opacity-50">(pusty)</em>}
+                                  </span>
+                                </div>
+                              </div>
+                            </details>
+                          )}
+                          {(row.status === "create" || (row.status === "error" && !row.currentAlt)) && (
+                            <details className="mt-1" open={row.fieldIssues.length > 0}>
+                              <summary className="cursor-pointer opacity-70 hover:opacity-100 select-none">
+                                pokaż treść
+                              </summary>
+                              <div className="mt-1 grid gap-1 font-mono text-[10px]">
+                                <div
+                                  className={`rounded border p-1.5 ${
+                                    altIssues.length
+                                      ? "border-destructive/50 bg-destructive/10"
+                                      : "border-border/30 bg-background/30"
+                                  }`}
+                                >
+                                  <span className="opacity-60">alt:</span>{" "}
+                                  <span className="break-words">
+                                    {row.alt || <em className="opacity-50">(pusty)</em>}
+                                  </span>
+                                </div>
+                                <div
+                                  className={`rounded border p-1.5 ${
+                                    capIssues.length
+                                      ? "border-destructive/50 bg-destructive/10"
+                                      : "border-border/30 bg-background/30"
+                                  }`}
+                                >
+                                  <span className="opacity-60">caption:</span>{" "}
+                                  <span className="break-words">
+                                    {row.caption || <em className="opacity-50">(pusty)</em>}
+                                  </span>
+                                </div>
+                              </div>
+                            </details>
+                          )}
+                        </>
+                      );
+                    })()}
                   </div>
                 );
               })}
