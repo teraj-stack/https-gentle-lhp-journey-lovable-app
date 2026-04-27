@@ -2033,12 +2033,16 @@ const AdminVeinImages = () => {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setPendingExport("csv")}
-                disabled={exporting !== null}
-                title={`Pobierz overrides z bazy jako CSV — Excel-friendly (${exportFilterSummary()})`}
+                onClick={() => void requestExport("csv")}
+                disabled={exporting !== null || preparingPreview !== null}
+                title={`Pobierz overrides z bazy jako CSV — Excel-friendly (${exportFilterSummary()}) — najpierw zobaczysz podgląd zawartości`}
               >
                 <FileSpreadsheet className="w-3.5 h-3.5 mr-1" />
-                {exporting === "csv" ? "Eksport…" : "Export CSV"}
+                {preparingPreview === "csv"
+                  ? "Podgląd…"
+                  : exporting === "csv"
+                    ? "Eksport…"
+                    : "Export CSV"}
               </Button>
               <Button
                 variant="outline"
