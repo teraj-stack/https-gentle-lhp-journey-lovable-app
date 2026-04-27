@@ -371,6 +371,20 @@ pasujących do wszystkich aktywnych selectów (AND), bez re-runu skryptu.
   („Pobrano N/M (tryb, K kol., L pustych) → nazwa") wyświetla się obok
   przycisku; jeśli filtr nie zwrócił żadnego wiersza, otwarcie podglądu jest
   blokowane z komunikatem „Brak wierszy do eksportu".
+
+  **Kolejność wierszy (kontrakt):** zarówno podgląd 20 wierszy, jak i
+  pobrany CSV zachowują **dokładnie tę samą kolejność, w jakiej rysowany
+  jest sparkline trendów** — chronologicznie po `generatedAt` ASC, z
+  bieżącym runem (`isCurrent=1`) zawsze na końcu. Implementacyjnie:
+  `allPoints` przychodzi z serwera już posortowany (`history.csv` ASC +
+  bieżący run dopięty na końcu), `filterPoints()` jest czystym `.filter()`
+  (zachowuje porządek), a `sortExportPointsLikeChart()` robi dodatkowy
+  **stabilny** re-sort kopii (ES2019 stable sort) z tie-breakerem
+  `isCurrent` na końcu — więc nawet gdyby przyszła zmiana w buildzie
+  podała punkty w innej kolejności, eksport nadal odda układ wykresu
+  jeden-do-jednego. Jeśli potrzebujesz odwrotnej kolejności (najnowsze
+  pierwsze) — odwróć kolumnę `generatedAt` w arkuszu po imporcie; eksport
+  celowo nie udostępnia toggla, żeby zachować jedno źródło prawdy.
 - Pod selectami znajduje się rozwijana sekcja **„Unikalne kombinacje
   `command` + `flag_*`"** — tabela wszystkich krotek wartości, które
   rzeczywiście wystąpiły w `history.csv`, posortowana malejąco po liczbie
