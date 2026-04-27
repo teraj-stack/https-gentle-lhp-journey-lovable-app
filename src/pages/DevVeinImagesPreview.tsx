@@ -390,8 +390,8 @@ const DevVeinImagesPreview = () => {
     const captionField = slot === "main" ? "mainCaption" : "perforatorCaption";
     const altValue = draft[altField];
     const captionValue = draft[captionField];
-    const altStats = buildStats(altValue, ALT_BUDGET, false);
-    const captionStats = buildStats(captionValue, CAPTION_BUDGET, true);
+    const altStats = buildStats(altValue, ALT_BUDGET, false, viewport);
+    const captionStats = buildStats(captionValue, CAPTION_BUDGET, true, viewport);
     if (
       altStats.overBudget ||
       altStats.underMin ||
