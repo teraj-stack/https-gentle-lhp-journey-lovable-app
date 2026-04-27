@@ -154,12 +154,25 @@ const escapeHtml = (s) =>
     .replace(/"/g, "&quot;");
 
 const renderHtml = ({ trios, generatedAt, totalFailures }) => {
-  const cards = trios
-    .map((t, idx) => {
-      const { viewport, state } = parseSnapshotName(t.stem + "-actual.png");
-      const isComplete = t.expected && t.actual && t.diff;
-      const status = isComplete ? "FAILED" : "INCOMPLETE";
-      const statusClass = isComplete ? "status-failed" : "status-incomplete";
+  // Zbieramy unikalne wartości viewport / state z trios, żeby wypełnić <select>'y.
+  // Sortujemy alfabetycznie dla deterministycznej kolejności w UI (łatwiej znaleźć).
+  const viewportSet = new Set();
+  const stateSet = new Set();
+  const enriched = trios.map((t, idx) => {
+    const { viewport, state } = parseSnapshotName(t.stem + "-actual.png");
+    viewportSet.add(viewport);
+    stateSet.add(state);
+    const isComplete = t.expected && t.actual && t.diff;
+    const status = isComplete ? "failed" : "incomplete"; // lower-case dla data-attr / filtra
+    return { ...t, idx, viewport, state, status };
+  });
+  const viewports = Array.from(viewportSet).sort();
+  const states = Array.from(stateSet).sort();
+
+  const cards = enriched
+    .map((t) => {
+      const statusUpper = t.status.toUpperCase();
+      const statusClass = t.status === "failed" ? "status-failed" : "status-incomplete";
       const cell = (label, asset, fallback) =>
         asset
           ? `<figure>
@@ -172,15 +185,23 @@ const renderHtml = ({ trios, generatedAt, totalFailures }) => {
                <figcaption>${escapeHtml(label)}</figcaption>
                <div class="missing-box">${escapeHtml(fallback)}</div>
              </figure>`;
+      // data-* atrybuty są tym, na czym filtruje JS w runtime — żaden re-run nie jest potrzebny.
+      // data-search agreguje wszystko, co jest sensowne do free-text search (stem + ścieżka katalogu testu).
+      const searchHaystack = `${t.stem} ${t.testName}`.toLowerCase();
       return `
-        <article class="card" id="snap-${idx}">
+        <article class="card"
+                 id="snap-${t.idx}"
+                 data-viewport="${escapeHtml(t.viewport)}"
+                 data-state="${escapeHtml(t.state)}"
+                 data-status="${escapeHtml(t.status)}"
+                 data-search="${escapeHtml(searchHaystack)}">
           <header class="card-header">
             <div>
               <h2>${escapeHtml(t.stem)}</h2>
               <p class="meta">
-                <span class="badge ${statusClass}">${status}</span>
-                <span class="badge badge-viewport">${escapeHtml(viewport)}</span>
-                <span class="badge badge-state">${escapeHtml(state)}</span>
+                <span class="badge ${statusClass}">${statusUpper}</span>
+                <span class="badge badge-viewport">${escapeHtml(t.viewport)}</span>
+                <span class="badge badge-state">${escapeHtml(t.state)}</span>
               </p>
               <p class="path">${escapeHtml(t.testName)}</p>
             </div>
@@ -193,6 +214,46 @@ const renderHtml = ({ trios, generatedAt, totalFailures }) => {
         </article>`;
     })
     .join("\n");
+
+  const renderOptions = (values) =>
+    values
+      .map((v) => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`)
+      .join("");
+  const filterBar = totalFailures === 0
+    ? ""
+    : `
+    <section class="filter-bar" aria-label="Filtry raportu">
+      <div class="filter-group">
+        <label for="f-viewport">Viewport</label>
+        <select id="f-viewport">
+          <option value="">— wszystkie —</option>
+          ${renderOptions(viewports)}
+        </select>
+      </div>
+      <div class="filter-group">
+        <label for="f-state">State</label>
+        <select id="f-state">
+          <option value="">— wszystkie —</option>
+          ${renderOptions(states)}
+        </select>
+      </div>
+      <div class="filter-group">
+        <label for="f-status">Status</label>
+        <select id="f-status">
+          <option value="">— wszystkie —</option>
+          <option value="failed">FAILED</option>
+          <option value="incomplete">INCOMPLETE</option>
+        </select>
+      </div>
+      <div class="filter-group filter-group-grow">
+        <label for="f-q">Szukaj (stem / ścieżka)</label>
+        <input id="f-q" type="search" placeholder="np. dark-state-c lub mobile" autocomplete="off" />
+      </div>
+      <div class="filter-group filter-group-actions">
+        <button type="button" id="f-reset" class="btn-reset">Wyczyść</button>
+      </div>
+      <p class="filter-counter" id="f-counter" aria-live="polite"></p>
+    </section>`;
 
   const summaryLine =
     totalFailures === 0
