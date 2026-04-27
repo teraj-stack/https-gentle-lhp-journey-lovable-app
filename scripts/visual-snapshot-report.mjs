@@ -511,6 +511,7 @@ const renderHtml = ({ trios, generatedAt, totalFailures }) => {
     <p class="meta">Wygenerowano: ${escapeHtml(generatedAt)} · Źródło: <code>test-results/</code></p>
   </header>
   ${summaryLine}
+  ${breakdownSection}
   ${filterBar}
   <div id="cards-container">${cards}</div>
   <p id="no-results" class="no-results" hidden>Żaden snapshot nie pasuje do filtra. Wyczyść filtr, żeby zobaczyć wszystkie.</p>
