@@ -977,12 +977,8 @@ const AdminVeinImages = () => {
                       )}
                     </div>
 
-                    <div className="flex items-center justify-between gap-2 pt-1">
-                      <span className="text-[10px] text-muted-foreground">
-                        {dbRow
-                          ? `Ostatnia zmiana: ${new Date(dbRow.updated_at).toLocaleString("pl-PL")}${dbRow.updated_by ? ` · ${dbRow.updated_by}` : ""}`
-                          : "Brak wpisu w bazie — zapis utworzy nowy."}
-                      </span>
+                    <div className="flex items-center justify-end gap-2 pt-1">
+
                       <Button
                         size="sm"
                         disabled={isSaving || slotInvalid}
