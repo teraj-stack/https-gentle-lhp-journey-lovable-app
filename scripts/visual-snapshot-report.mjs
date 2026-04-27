@@ -154,6 +154,11 @@ const parseCliArgs = (argv) => {
     maxPerViewport: { long: "--max-failures-per-viewport", short: null, env: "MAX_FAILURES_PER_VIEWPORT", value: null, kind: "int" },
     maxPerState: { long: "--max-failures-per-state", short: null, env: "MAX_FAILURES_PER_STATE", value: null, kind: "int" },
     sort: { long: "--sort", short: null, env: "SORT", value: null, kind: "str" },
+    // Auto-append podsumowania do trwałego pliku CSV (trend między runami).
+    // Domyślnie: "<REPORT_DIR>/history.csv". Przekazanie wartości "off"/"false"/"none"
+    // (lub flagi --no-history) wyłącza zapis. Custom path: --history=path/to/history.csv.
+    history: { long: "--history", short: null, env: "HISTORY_CSV", value: null, kind: "str" },
+    noHistory: { long: "--no-history", short: null, env: "NO_HISTORY", value: null, kind: "bool" },
   };
 
   const tryAssign = (flagKey, raw, source) => {
