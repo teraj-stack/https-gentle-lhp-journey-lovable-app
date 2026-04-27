@@ -106,6 +106,7 @@ describe("VenousInsufficiencyImage — per-page alt & figcaption", () => {
       expect((mainCap.textContent ?? "").trim()).not.toBe(
         (perfCap.textContent ?? "").trim(),
       );
+    });
 
     // ── MOBILE READABILITY GUARDS ──────────────────────────────────────
     // Caption renderowany jest jako text-[11px] na 375px (px-1).
