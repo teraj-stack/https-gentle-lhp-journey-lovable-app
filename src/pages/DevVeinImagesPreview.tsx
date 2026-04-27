@@ -765,6 +765,7 @@ const DevVeinImagesPreview = () => {
                   {captionStats.segments && (
                     <SegmentList segments={captionStats.segments} />
                   )}
+                  <ReadabilityRow stats={captionStats} viewport={viewport} kind="caption" />
                 </div>
 
                 {isEdit && (
