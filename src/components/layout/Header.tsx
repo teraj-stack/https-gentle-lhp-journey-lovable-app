@@ -104,6 +104,16 @@ const wiedzaColumns: MegaColumn[] = [
       { label: "Hemoroidy – infografika", href: "/dla-pacjenta/hemoroidy-infografika" },
     ],
   },
+  {
+    title: "Tematy intymne",
+    items: [
+      {
+        label: "Seks analny a hemoroidy",
+        href: "/wiedza/seks-analny-a-hemoroidy",
+        desc: "Mit czy fakt? Pełny raport medyczny EBM",
+      },
+    ],
+  },
 ];
 
 // Spłaszczone listy do isSectionActive
