@@ -1303,6 +1303,26 @@ const AdminVeinImages = () => {
                 <FileSpreadsheet className="w-3.5 h-3.5 mr-1" />
                 {exporting === "csv" ? "Eksport…" : "Export CSV"}
               </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => fileInputRef.current?.click()}
+                title="Hurtowo podmień alt/caption z pliku CSV (kolumny: page_key, slot, alt, caption)"
+              >
+                <Upload className="w-3.5 h-3.5 mr-1" /> Import CSV
+              </Button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".csv,text/csv"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleImportFile(file);
+                  // Reset wartości, żeby ten sam plik dało się wybrać ponownie po edycji.
+                  e.target.value = "";
+                }}
+              />
               <span className="w-px h-6 bg-border/50 mx-1" aria-hidden />
               <Button
                 variant="outline"
