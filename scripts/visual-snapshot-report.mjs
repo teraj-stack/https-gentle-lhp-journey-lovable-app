@@ -613,6 +613,59 @@ const TREND_FLAG_COLUMNS = [
   "flag_history_path",
 ];
 
+/**
+ * Pełna kanoniczna lista kolumn `savings.csv` / `history.csv` (schemaVersion 1).
+ *
+ * Trzymamy ją na module-levelu (a nie tylko lokalnie w funkcji zapisującej),
+ * żeby:
+ *  1. Walidator schematu mógł porównywać oczekiwany układ z plikiem.
+ *  2. UI raportu mogło zaproponować eksport „pełny schemat" — wiersze
+ *     wyrównane do tego samego nagłówka, z pustymi wartościami w polach,
+ *     których embedded payload (`points`) nie zawiera (większość metryk
+ *     trio_X/png_baseline/attribution_X/node_version/cwd_basename istnieje
+ *     wyłącznie w oryginalnym CSV, nie w UI).
+ *
+ * Kolejność jest STABILNA — append do `history.csv` zakłada identyczny header
+ * między runami, więc każda zmiana wymaga bumpa schemaVersion + re-archive
+ * starych plików (patrz README sekcja „Schema validation").
+ */
+const SAVINGS_CSV_COLUMNS = [
+  "generatedAt",
+  "trio_baseline",
+  "trio_rendered",
+  "trio_saved",
+  "trio_saved_pct",
+  "png_baseline",
+  "png_processed",
+  "png_saved",
+  "png_saved_pct",
+  "discovery_baseline",
+  "discovery_processed",
+  "discovery_saved",
+  "discovery_saved_pct",
+  "limit_max_failures",
+  "limit_max_per_viewport",
+  "limit_max_per_state",
+  "limit_max_copy",
+  "limit_max_discovery",
+  "attr_per_group_png",
+  "attr_per_group_discovery",
+  "attr_max_failures_png",
+  "attr_max_failures_discovery",
+  "attr_max_copy_png",
+  "attr_max_discovery_readdir",
+  "flag_max_failures",
+  "flag_max_per_viewport",
+  "flag_max_per_state",
+  "flag_max_copy",
+  "flag_max_discovery",
+  "flag_no_history",
+  "flag_history_path",
+  "command",
+  "node_version",
+  "cwd_basename",
+];
+
 const loadTrendsHistory = async ({ historyRaw, noHistory, currentRun }) => {
   const historySentinelOff = ["off", "false", "none", "no", "0"];
   const historyDisabled =
@@ -1025,6 +1078,13 @@ const renderHtml = ({
         </label>
         ${flagSelects}
         <button type="button" class="trends-filter-reset" data-trend-reset>Resetuj</button>
+        <label class="trends-filter-label trends-filter-export-mode" title="Skrócony: tylko kolumny obecne w wykresach. Pełny schemat: wszystkie kolumny savings.csv (puste tam, gdzie raport nie ma danych).">
+          tryb eksportu
+          <select class="trends-filter-select" data-trend-export-mode>
+            <option value="subset" selected>Skrócony</option>
+            <option value="full">Pełny schemat</option>
+          </select>
+        </label>
         <button type="button" class="trends-filter-export" data-trend-export title="Pobierz przefiltrowane wiersze jako CSV (kompatybilny ze schematem savings.csv/history.csv)">⬇ Eksportuj CSV</button>
         <span class="trends-filter-export-status" data-trend-export-status role="status" aria-live="polite"></span>
       </div>`;
@@ -1035,6 +1095,10 @@ const renderHtml = ({
       points,
       flagColumns: flagCols,
       flagLabels,
+      // Pełna kanoniczna lista kolumn `savings.csv` — używana przez tryb
+      // eksportu „Pełny schemat" (puste stringi dla pól, których embedded
+      // payload nie zawiera, np. trio_*/png_baseline/attribution_*).
+      fullSchemaColumns: SAVINGS_CSV_COLUMNS,
     }).replace(/</g, "\\u003c");
 
     return `
@@ -2104,37 +2168,107 @@ const renderHtml = ({
     }
 
     // ---- Eksport przefiltrowanych wierszy do CSV ----
-    // Pobiera AKTUALNIE widoczny zbiór (po filtrach command + flag_*) i serializuje
-    // do nowego pliku CSV. Kolumny = generatedAt + png_saved_pct + discovery_saved_pct
-    // + command + flag_* — czyli podzbiór schematu savings.csv/history.csv obecny w
-    // embedded trends-json. Nazwa pliku zawiera timestamp + skrócony hash filtrów,
-    // żeby kolejne eksporty się nie nadpisywały. Zero deps — Blob + a[download].
+    // Dwa tryby (kontrolowane selectem [data-trend-export-mode]):
+    //
+    //  • "subset" (domyślny) — kompaktowy wycinek: generatedAt + png_saved_pct +
+    //    discovery_saved_pct + isCurrent + command + flag_*. Idealny do szybkiej
+    //    analizy ad-hoc w arkuszu / DuckDB. Tylko kolumny faktycznie pokazywane
+    //    w wykresach trendów.
+    //
+    //  • "full" — pełny schemat zgodny ze savings.csv / history.csv
+    //    (SAVINGS_CSV_COLUMNS embedowane w trends-json jako fullSchemaColumns).
+    //    Pola, których embedded payload NIE zawiera (trio_X, png_baseline,
+    //    attribution_X, node_version, cwd_basename, isCurrent — bo nie ma
+    //    odpowiednika w schemacie) są mapowane do pustego stringa, co zachowuje
+    //    poprawną liczbę kolumn i ich kolejność. Dzięki temu można wkleić plik
+    //    bezpośrednio jako append do history.csv lub załadować do narzędzia,
+    //    które oczekuje stałego nagłówka (np. duckdb read_csv_auto z innymi
+    //    plikami z tego samego runa).
+    //
+    // Nazwa pliku zawiera tryb + timestamp + skrócony hash filtrów, żeby kolejne
+    // eksporty się nie nadpisywały. Zero deps — Blob + a[download].
     var exportBtn = root.querySelector("[data-trend-export]");
     var exportStatus = root.querySelector("[data-trend-export-status]");
+    var exportModeSelect = root.querySelector("[data-trend-export-mode]");
+    var fullSchemaCols = (data.fullSchemaColumns && data.fullSchemaColumns.length)
+      ? data.fullSchemaColumns
+      : null;
     function csvEscape(v) {
       var s = v == null ? "" : String(v);
       // RFC 4180: cudzysłów wymagany jeśli wartość zawiera ", przecinek lub newline.
       if (/[",\n\r]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
       return s;
     }
+    /**
+     * Mapa kolumna → wartość dla pojedynczego punktu (p) w trybie pełnym.
+     * Zwraca string GOTOWY do CSV (po escape). Klucze nieobjęte mapą oznaczają
+     * brak danych w embedded payloadzie → eksport wstawia pusty string,
+     * zachowując kolumnę w wynikowym pliku.
+     *
+     * NOTE: świadomie obejmujemy tylko te pola, które realnie są w points:
+     * generatedAt, png_saved_pct, discovery_saved_pct, command oraz wszystkie
+     * flag_X. Reszta (trio_X, png_baseline, attr_X, node_version, cwd_basename)
+     * istnieje wyłącznie w oryginalnym savings.csv tego runa, którego raport
+     * nie embedduje, więc słusznie zostaje pusta. Konsument widzi ",," zamiast
+     * fantomowego "0" i może odróżnić „brak danych" od „prawdziwe zero".
+     */
+    function fullSchemaValueFor(p, col) {
+      if (col === "generatedAt") return csvEscape(p.generatedAt || "");
+      if (col === "png_saved_pct") return csvEscape(typeof p.png === "number" ? p.png.toFixed(2) : "");
+      if (col === "discovery_saved_pct") return csvEscape(typeof p.discovery === "number" ? p.discovery.toFixed(2) : "");
+      if (col === "command") return csvEscape(p.command || "");
+      if (col.indexOf("flag_") === 0) {
+        return csvEscape((p.flags && p.flags[col]) || "");
+      }
+      return ""; // brak w embedded payload — pusta wartość
+    }
     function buildExportRows() {
       var state = currentState();
       var pts = filterPoints(state);
-      var cols = ["generatedAt", "png_saved_pct", "discovery_saved_pct", "isCurrent", "command"]
-        .concat(flagCols.map(function (c) { return c; }));
-      var lines = [cols.join(",")];
-      pts.forEach(function (p) {
-        var row = [
-          csvEscape(p.generatedAt || ""),
-          csvEscape(typeof p.png === "number" ? p.png.toFixed(2) : ""),
-          csvEscape(typeof p.discovery === "number" ? p.discovery.toFixed(2) : ""),
-          csvEscape(p.isCurrent ? "1" : "0"),
-          csvEscape(p.command || ""),
-        ];
-        flagCols.forEach(function (c) { row.push(csvEscape((p.flags && p.flags[c]) || "")); });
-        lines.push(row.join(","));
-      });
-      return { csv: lines.join("\n") + "\n", count: pts.length, total: allPoints.length, state: state };
+      var mode = (exportModeSelect && exportModeSelect.value) || "subset";
+      var lines;
+      var cols;
+      var missingCount = 0;
+      if (mode === "full" && fullSchemaCols) {
+        cols = fullSchemaCols.slice();
+        // Policz kolumny mapowane do pustego stringa — pokażemy w statusie,
+        // żeby user wiedział, że plik ma „dziury" zamiast halucynowanych zer.
+        cols.forEach(function (c) {
+          if (c === "generatedAt" || c === "png_saved_pct" || c === "discovery_saved_pct" || c === "command") return;
+          if (c.indexOf("flag_") === 0) return;
+          missingCount++;
+        });
+        lines = [cols.join(",")];
+        pts.forEach(function (p) {
+          var row = cols.map(function (c) { return fullSchemaValueFor(p, c); });
+          lines.push(row.join(","));
+        });
+      } else {
+        mode = "subset";
+        cols = ["generatedAt", "png_saved_pct", "discovery_saved_pct", "isCurrent", "command"]
+          .concat(flagCols.map(function (c) { return c; }));
+        lines = [cols.join(",")];
+        pts.forEach(function (p) {
+          var row = [
+            csvEscape(p.generatedAt || ""),
+            csvEscape(typeof p.png === "number" ? p.png.toFixed(2) : ""),
+            csvEscape(typeof p.discovery === "number" ? p.discovery.toFixed(2) : ""),
+            csvEscape(p.isCurrent ? "1" : "0"),
+            csvEscape(p.command || ""),
+          ];
+          flagCols.forEach(function (c) { row.push(csvEscape((p.flags && p.flags[c]) || "")); });
+          lines.push(row.join(","));
+        });
+      }
+      return {
+        csv: lines.join("\n") + "\n",
+        count: pts.length,
+        total: allPoints.length,
+        state: state,
+        mode: mode,
+        colCount: cols.length,
+        missingCount: missingCount,
+      };
     }
     function shortHash(s) {
       // Mały deterministyczny hash (djb2) → 6 znaków hex. Wystarczy do unikalnej
@@ -2144,6 +2278,15 @@ const renderHtml = ({
       return ("00000000" + (h >>> 0).toString(16)).slice(-6);
     }
     if (exportBtn) {
+      // Disable trybu „full" gdy serwer nie embedował SAVINGS_CSV_COLUMNS
+      // (np. starszy raport / regresja w buildzie). User widzi czemu.
+      if (exportModeSelect && !fullSchemaCols) {
+        var fullOpt = exportModeSelect.querySelector('option[value="full"]');
+        if (fullOpt) {
+          fullOpt.disabled = true;
+          fullOpt.textContent = "Pełny schemat (niedostępny)";
+        }
+      }
       exportBtn.addEventListener("click", function () {
         var built = buildExportRows();
         if (!built.count) {
@@ -2151,8 +2294,8 @@ const renderHtml = ({
           return;
         }
         var stamp = new Date().toISOString().replace(/[:.]/g, "-").replace(/Z$/, "Z");
-        var filterHash = shortHash(JSON.stringify(built.state));
-        var name = "savings-filtered-" + stamp + "-" + filterHash + ".csv";
+        var filterHash = shortHash(JSON.stringify(built.state) + "|" + built.mode);
+        var name = "savings-filtered-" + built.mode + "-" + stamp + "-" + filterHash + ".csv";
         try {
           var blob = new Blob([built.csv], { type: "text/csv;charset=utf-8" });
           var url = URL.createObjectURL(blob);
@@ -2163,7 +2306,10 @@ const renderHtml = ({
           document.body.removeChild(a);
           setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
           if (exportStatus) {
-            exportStatus.textContent = "Pobrano " + built.count + "/" + built.total + " → " + name;
+            var modeLabel = built.mode === "full"
+              ? ("pełny schemat, " + built.colCount + " kol." + (built.missingCount ? ", " + built.missingCount + " pustych" : ""))
+              : ("skrócony, " + built.colCount + " kol.");
+            exportStatus.textContent = "Pobrano " + built.count + "/" + built.total + " (" + modeLabel + ") → " + name;
           }
         } catch (e) {
           if (exportStatus) exportStatus.textContent = "Eksport nieudany: " + e.message;
@@ -2826,46 +2972,9 @@ const main = async () => {
   // CSV: header + jeden wiersz. Schema flat (bez nestingu) żeby spreadsheet/duckdb
   // mogły to czytać bez gimnastyki. Kolejność kolumn STABILNA — append do history
   // wymaga tej samej kolejności między runami.
-  const csvCols = [
-    "generatedAt",
-    "trio_baseline",
-    "trio_rendered",
-    "trio_saved",
-    "trio_saved_pct",
-    "png_baseline",
-    "png_processed",
-    "png_saved",
-    "png_saved_pct",
-    "discovery_baseline",
-    "discovery_processed",
-    "discovery_saved",
-    "discovery_saved_pct",
-    "limit_max_failures",
-    "limit_max_per_viewport",
-    "limit_max_per_state",
-    "limit_max_copy",
-    "limit_max_discovery",
-    "attr_per_group_png",
-    "attr_per_group_discovery",
-    "attr_max_failures_png",
-    "attr_max_failures_discovery",
-    "attr_max_copy_png",
-    "attr_max_discovery_readdir",
-    // Run context — pełne wartości flag + komenda. Pozwala filtrować trendy
-    // typu "tylko runy z --max-copy=200" albo "tylko CI (npm run …)".
-    // CSV-escape (cudzysłowy) bo command/history-path mogą zawierać spacje
-    // i przecinki — patrz `csvEscape` poniżej.
-    "flag_max_failures",
-    "flag_max_per_viewport",
-    "flag_max_per_state",
-    "flag_max_copy",
-    "flag_max_discovery",
-    "flag_no_history",
-    "flag_history_path",
-    "command",
-    "node_version",
-    "cwd_basename",
-  ];
+  // Schema kolumn — patrz module-level SAVINGS_CSV_COLUMNS. Trzymamy alias
+  // `csvCols` lokalnie żeby zminimalizować zmiany w istniejącym kodzie zapisu.
+  const csvCols = SAVINGS_CSV_COLUMNS;
   const limitCsv = (v) => (v === null || v === undefined ? "" : String(v));
   /**
    * RFC 4180 CSV escape: jeśli wartość zawiera `,`, `"`, `\n` lub `\r`,

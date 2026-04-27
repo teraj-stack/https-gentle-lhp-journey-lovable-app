@@ -331,16 +331,29 @@ pasujących do wszystkich aktywnych selectów (AND), bez re-runu skryptu.
   link do konkretnego widoku trendu (np. „CI z `--max-copy=200`").
 - Przycisk **Resetuj** czyści wszystkie selecty i pokazuje pełną historię.
 - Przycisk **⬇ Eksportuj CSV** pobiera AKTUALNIE przefiltrowany zbiór runów do
-  nowego pliku `savings-filtered-<timestamp>-<hash>.csv` (Blob + `a[download]`,
-  zero deps, działa też z `file://`). Schemat: `generatedAt, png_saved_pct,
-  discovery_saved_pct, isCurrent, command, flag_*` — podzbiór kolumn
-  `savings.csv`/`history.csv` obecny w embedded `trends-json`. Wartości są
-  RFC 4180-escaped (cudzysłowy w polach z przecinkami/newline'ami), więc plik
-  można od razu wczytać do DuckDB / Excela / Pandas. Hash w nazwie =
-  deterministyczny djb2 stanu filtra (kolejne eksporty tej samej kombinacji
-  nie nadpisują siebie z różnych timestampów). Status („Pobrano N/M → nazwa")
-  wyświetla się obok przycisku; jeśli filtr nie zwrócił żadnego wiersza,
-  eksport jest blokowany z komunikatem „Brak wierszy do eksportu".
+  nowego pliku `savings-filtered-<mode>-<timestamp>-<hash>.csv` (Blob +
+  `a[download]`, zero deps, działa też z `file://`). Tryb wybiera select
+  **„tryb eksportu"** obok przycisku:
+  - **Skrócony** (domyślny) — schemat: `generatedAt, png_saved_pct,
+    discovery_saved_pct, isCurrent, command, flag_*` (podzbiór kolumn obecny
+    w embedded `trends-json`). Idealny do szybkiej analizy ad-hoc.
+  - **Pełny schemat** — wszystkie kolumny `savings.csv` / `history.csv` w
+    kanonicznej kolejności (`SAVINGS_CSV_COLUMNS`). Pola, których raport nie
+    embedduje (`trio_*`, `png_baseline`, `png_processed`, `attr_*`,
+    `limit_*`, `node_version`, `cwd_basename`) są zapisane jako **pusty
+    string** (`,,`), nie jako `0` — konsument odróżnia „brak danych" od
+    „prawdziwe zero". Plik ma identyczny nagłówek co `history.csv`, więc
+    można go wkleić jako append lub wczytać razem z innymi snapshotami przez
+    `duckdb read_csv_auto`. Jeśli serwer nie embeduje listy kolumn (starszy
+    raport / regresja w buildzie), opcja jest oznaczona „(niedostępny)" i
+    select wymusza tryb skrócony.
+
+  Wartości są RFC 4180-escaped (cudzysłowy w polach z przecinkami/newline'ami).
+  Hash w nazwie = deterministyczny djb2 stanu filtra + trybu (kolejne eksporty
+  tej samej kombinacji nie nadpisują siebie z różnych timestampów). Status
+  („Pobrano N/M (tryb, K kol., L pustych) → nazwa") wyświetla się obok
+  przycisku; jeśli filtr nie zwrócił żadnego wiersza, eksport jest blokowany
+  z komunikatem „Brak wierszy do eksportu".
 - Pod selectami znajduje się rozwijana sekcja **„Unikalne kombinacje
   `command` + `flag_*`"** — tabela wszystkich krotek wartości, które
   rzeczywiście wystąpiły w `history.csv`, posortowana malejąco po liczbie
