@@ -1982,6 +1982,7 @@ const AdminVeinImages = () => {
             {/* Live preview — Draft (live z edytora) lub CMS (świeżo z bazy po Save). */}
             <section
               aria-label="Podgląd renderu"
+              data-testid="live-preview-section"
               className={`rounded-xl border bg-card/30 p-4 overflow-x-auto transition-all duration-500 ${
                 flashOn
                   ? "border-emerald-500/60 ring-2 ring-emerald-500/30"
@@ -2037,6 +2038,7 @@ const AdminVeinImages = () => {
               <div
                 className="mx-auto border border-border/40 rounded-lg bg-background overflow-hidden"
                 style={{ width: viewportConfig.width, maxWidth: "100%" }}
+                data-testid="live-preview-frame"
               >
                 <div className="p-4">
                   {previewMode === "draft" ? (
