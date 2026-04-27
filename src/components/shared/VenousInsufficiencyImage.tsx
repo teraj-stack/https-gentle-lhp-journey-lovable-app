@@ -127,7 +127,7 @@ const VenousInsufficiencyImage = ({
                 style={{ aspectRatio: "200 / 148" }}
               />
             </div>
-            <figcaption className="text-[11px] sm:text-xs text-muted-foreground/80 mt-2.5 sm:mt-3 text-center leading-snug sm:leading-relaxed px-1">
+            <figcaption className="text-[11px] sm:text-xs text-muted-foreground mt-2.5 sm:mt-3 text-center leading-snug sm:leading-relaxed px-1">
               {effectivePerforatorCaption}
             </figcaption>
           </figure>
