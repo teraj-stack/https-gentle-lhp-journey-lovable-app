@@ -1485,6 +1485,85 @@ const renderHtml = ({
       opacity: .8;
       font-style: italic;
     }
+    .trends-combos {
+      margin: 0 0 .75rem;
+      padding: .25rem .5rem;
+      border: 1px solid rgba(127,127,127,.2);
+      border-radius: 6px;
+      background: rgba(127,127,127,.03);
+    }
+    .trends-combos > summary {
+      cursor: pointer;
+      font-size: .85rem;
+      padding: .25rem;
+      user-select: none;
+    }
+    .trends-combos > summary code {
+      font-size: .8rem;
+      padding: 1px 4px;
+      border-radius: 3px;
+      background: rgba(127,127,127,.12);
+    }
+    .trends-combos-count {
+      opacity: .65;
+      font-family: ui-monospace, monospace;
+      font-size: .8rem;
+      margin-left: .25rem;
+    }
+    .trends-combos-hint {
+      margin: .25rem .25rem .5rem;
+      font-size: .78rem;
+      opacity: .75;
+    }
+    .trends-combos-scroll {
+      max-height: 280px;
+      overflow: auto;
+      border-top: 1px solid rgba(127,127,127,.15);
+    }
+    .trends-combos-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .78rem;
+      font-family: ui-monospace, monospace;
+    }
+    .trends-combos-table th,
+    .trends-combos-table td {
+      padding: 4px 8px;
+      text-align: left;
+      border-bottom: 1px solid rgba(127,127,127,.12);
+      white-space: nowrap;
+      max-width: 280px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .trends-combos-table th {
+      position: sticky;
+      top: 0;
+      background: rgba(127,127,127,.08);
+      backdrop-filter: blur(2px);
+      font-weight: 600;
+      opacity: .85;
+    }
+    .trends-combos-table tbody tr {
+      cursor: pointer;
+      transition: background .12s ease;
+    }
+    .trends-combos-table tbody tr:hover {
+      background: rgba(201, 168, 76, .12);
+    }
+    .trends-combos-table tbody tr.is-active {
+      background: rgba(201, 168, 76, .22);
+      box-shadow: inset 3px 0 0 #c9a84c;
+    }
+    .trends-combos-table td.col-count {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      opacity: .8;
+    }
+    .trends-combos-table td.is-empty {
+      opacity: .45;
+      font-style: italic;
+    }
   </style>
 </head>
 <body>
