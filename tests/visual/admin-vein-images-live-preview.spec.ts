@@ -33,6 +33,7 @@ import { test, expect, type Page, type Route } from "../../playwright-fixture";
 import {
   assertLayoutDoesNotBreak,
   assertCaptionNotClipped,
+  assertDraftA11y,
   LIVE_PREVIEW_SNAPSHOT_DIFF_RATIO,
 } from "./_helpers/livePreviewLayoutAssertions";
 
