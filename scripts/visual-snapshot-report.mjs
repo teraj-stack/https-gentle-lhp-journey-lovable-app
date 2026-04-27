@@ -209,6 +209,81 @@ const discoverPlaywrightReport = async () => {
   }
 };
 
+/**
+ * Renderuje pasek linków na dole karty: Playwright HTML report, folder
+ * artefaktów, trace viewer, video, error-context. Każdy link jest opcjonalny
+ * — pokazujemy tylko te, dla których faktycznie mamy plik.
+ *
+ * Trace Viewer URL używa schematu ?trace=<URL>. Lokalnie file:// nie zadziała
+ * (CORS Trace Viewera), więc dajemy też kopiowalną komendę `playwright show-trace`,
+ * która zawsze działa lokalnie (przycisk "Kopiuj komendę").
+ */
+const renderCardLinks = (t, playwrightReportRel) => {
+  const links = [];
+  if (playwrightReportRel) {
+    // Playwright HTML reporter nie ma stabilnego deep-linka per test case
+    // (testId = lokalny hash). Dlatego linkujemy do listy + kopiujemy nazwę
+    // testu do clipboardu, żeby user wkleił w search box reportera.
+    links.push(`
+      <a class="card-link card-link-primary"
+         href="${escapeHtml(playwrightReportRel)}"
+         target="_blank"
+         rel="noopener"
+         data-copy-on-click="${escapeHtml(t.testName)}"
+         title="Otwórz Playwright HTML report (nazwa testu skopiowana do clipboardu)">
+        📊 Playwright report
+      </a>`);
+  }
+  if (t.tracePath) {
+    // Trace Viewer hostowany przez Playwright. Działa, gdy plik jest
+    // dostępny przez HTTP. Lokalnie file:// nie pójdzie — stąd
+    // alternatywny przycisk z komendą.
+    const traceUrl = `${TRACE_VIEWER_URL}?trace=${encodeURIComponent(t.tracePath)}`;
+    links.push(`
+      <a class="card-link"
+         href="${escapeHtml(traceUrl)}"
+         target="_blank"
+         rel="noopener"
+         title="Otwórz trace.zip w Trace Viewerze (działa, gdy plik jest dostępny przez HTTP)">
+        🔬 Trace Viewer
+      </a>
+      <button type="button"
+              class="card-link card-link-button"
+              data-copy="npx playwright show-trace ${t.dir.replace(PROJECT_ROOT + path.sep, "")}/trace.zip"
+              title="Kopiuj komendę CLI do otwarcia trace lokalnie">
+        📋 show-trace CLI
+      </button>`);
+  }
+  if (t.videoPath) {
+    links.push(`
+      <a class="card-link" href="${escapeHtml(t.videoPath)}" target="_blank" rel="noopener"
+         title="Otwórz nagranie testu (.webm)">
+        🎬 Video
+      </a>`);
+  }
+  if (t.errorContextPath) {
+    links.push(`
+      <a class="card-link" href="${escapeHtml(t.errorContextPath)}" target="_blank" rel="noopener"
+         title="Snapshot stanu DOM/console w momencie błędu">
+        🧾 Error context
+      </a>`);
+  }
+  if (t.testDirPath) {
+    // Link do katalogu z artefaktami (file:// w przeglądarce otworzy folder
+    // w explorerze). Działa lokalnie; w CI artefakty są zwykle w innym
+    // miejscu, więc przycisk kopiuje też ścieżkę do clipboardu.
+    links.push(`
+      <button type="button"
+              class="card-link card-link-button"
+              data-copy="${escapeHtml(t.testDirPath)}"
+              title="Kopiuj ścieżkę do katalogu artefaktów testu">
+        📁 Folder artefaktów
+      </button>`);
+  }
+  if (links.length === 0) return "";
+  return `<footer class="card-links" aria-label="Linki do szczegółów Playwrighta">${links.join("")}</footer>`;
+};
+
 const renderHtml = ({ trios, generatedAt, totalFailures, playwrightReportRel }) => {
   // Zbieramy unikalne wartości viewport / state z trios, żeby wypełnić <select>'y.
   // Sortujemy alfabetycznie dla deterministycznej kolejności w UI (łatwiej znaleźć).
