@@ -267,6 +267,7 @@ const renderHtml = ({ trios, generatedAt, totalFailures, playwrightReportRel }) 
             ${cell("Actual (ten run)", t.actualAsset, "Brak — test się nie wykonał?")}
             ${cell("Diff (różnica pikseli)", t.diffAsset, "Brak diff — snapshot przeszedł?")}
           </div>
+          ${renderCardLinks(t, playwrightReportRel)}
         </article>`;
     })
     .join("\n");
