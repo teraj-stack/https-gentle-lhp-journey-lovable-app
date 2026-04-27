@@ -1809,6 +1809,12 @@ const DiaryFullModule = ({
           </motion.div>
         </>
       )}
+
+      {/* Dialog potwierdzenia eksportu (CSV pełnego dziennika + JSON pojedynczego dnia). */}
+      <ConfirmExportDialog
+        {...exportConfirm.dialogProps}
+        title="Eksport dziennika"
+      />
     </div>
   );
 };
