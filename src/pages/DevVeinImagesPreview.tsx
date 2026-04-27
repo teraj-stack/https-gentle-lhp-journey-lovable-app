@@ -110,10 +110,45 @@ const PAGES: readonly PagePreset[] = [
   },
 ] as const;
 
+type ViewportMode = "mobile" | "desktop";
+type Mode = "view" | "edit";
+
 const ALT_MIN = 60;
 const ALT_BUDGET = 220;
 const CAPTION_BUDGET = 110;
 const SEGMENT_BUDGET = 40;
+
+// Empirycznie skalibrowane szerokości pojedynczego znaku (px) dla figcaption
+// renderowanego klasą `text-[11px] sm:text-xs` w VenousInsufficiencyImage.
+// Mobile używa text-[11px] (~6.2 px/zn), desktop sm:text-xs (~6.6 px/zn).
+const CAPTION_CHAR_PX: Record<ViewportMode, number> = {
+  mobile: 6.2,
+  desktop: 6.6,
+};
+// Szerokość kolumny figcaption ≈ szerokość wewn. obrazka (kontener - padding).
+// Mobile (375): 375 - 16*2 (px-4 outer) - 16*2 (p-4 inner) ≈ 311 px,
+// minus px-1 figcaption ≈ 303. Desktop (1280) liczymy realistycznie dla
+// obrazka 2-kolumnowego: ~ (1280 - 64 - 64) / 2 ≈ 576 px.
+const CAPTION_COLUMN_PX: Record<ViewportMode, number> = {
+  mobile: 303,
+  desktop: 560,
+};
+// Linie figcaption — komfortowy próg czytelności na mobile.
+const CAPTION_LINE_WARN: Record<ViewportMode, number> = {
+  mobile: 3,
+  desktop: 2,
+};
+// Średnio: czytelność spada gdy >18 słów / linijkę przy gęstym layoutcie.
+const READING_WPM = 220;
+
+interface ReadabilityHints {
+  estimatedLines: number;
+  linesWarn: boolean;
+  longestSegmentPx: number;
+  segmentTruncationRisk: boolean;
+  readingSeconds: number;
+  wordCount: number;
+}
 
 interface FieldStats {
   length: number;
@@ -121,12 +156,45 @@ interface FieldStats {
   overBudget: boolean;
   underMin?: boolean;
   segments?: { text: string; length: number; overBudget: boolean }[];
+  readability?: ReadabilityHints;
 }
+
+const buildReadability = (
+  value: string,
+  viewport: ViewportMode,
+  segments: { text: string; length: number }[] | undefined,
+): ReadabilityHints => {
+  const charPx = CAPTION_CHAR_PX[viewport];
+  const columnPx = CAPTION_COLUMN_PX[viewport];
+  const charsPerLine = Math.max(1, Math.floor(columnPx / charPx));
+  const estimatedLines = Math.max(1, Math.ceil(value.length / charsPerLine));
+  const longestSegmentLen = segments
+    ? Math.max(0, ...segments.map((s) => s.length))
+    : value.length;
+  const longestSegmentPx = longestSegmentLen * charPx;
+  // Ryzyko ucięcia: pojedynczy segment albo całe słowo nie mieści się w kolumnie.
+  const longestWord = value
+    .split(/\s+/)
+    .reduce((max, w) => Math.max(max, w.length), 0);
+  const segmentTruncationRisk =
+    longestSegmentPx > columnPx || longestWord * charPx > columnPx;
+  const wordCount = value.trim() ? value.trim().split(/\s+/).length : 0;
+  const readingSeconds = Math.max(1, Math.round((wordCount / READING_WPM) * 60));
+  return {
+    estimatedLines,
+    linesWarn: estimatedLines > CAPTION_LINE_WARN[viewport],
+    longestSegmentPx: Math.round(longestSegmentPx),
+    segmentTruncationRisk,
+    readingSeconds,
+    wordCount,
+  };
+};
 
 const buildStats = (
   value: string,
   budget: number,
   isCaption: boolean,
+  viewport: ViewportMode,
 ): FieldStats => {
   const length = value.length;
   const stats: FieldStats = {
@@ -145,6 +213,7 @@ const buildStats = (
       };
     });
   }
+  stats.readability = buildReadability(value, viewport, stats.segments);
   return stats;
 };
 
@@ -171,6 +240,74 @@ const StatsBadge = ({ stats }: { stats: FieldStats }) => {
   );
 };
 
+const ReadabilityRow = ({
+  stats,
+  viewport,
+  kind,
+}: {
+  stats: FieldStats;
+  viewport: ViewportMode;
+  kind: "alt" | "caption";
+}) => {
+  const r = stats.readability;
+  if (!r) return null;
+  const lineLimit = CAPTION_LINE_WARN[viewport];
+  const columnPx = CAPTION_COLUMN_PX[viewport];
+  const items: { label: string; value: string; warn: boolean; title: string }[] =
+    [];
+
+  items.push({
+    label: "słowa",
+    value: `${r.wordCount}`,
+    warn: false,
+    title: `Czas czytania ≈ ${r.readingSeconds}s przy ${READING_WPM} wpm`,
+  });
+
+  if (kind === "caption") {
+    items.push({
+      label: "linie",
+      value: `~${r.estimatedLines} (max ${lineLimit})`,
+      warn: r.linesWarn,
+      title: `Szacunkowe linie figcaption w kolumnie ${columnPx}px na ${viewport}. Powyżej limitu rośnie ryzyko przeoczenia.`,
+    });
+    items.push({
+      label: "najdłuższy segment",
+      value: `${r.longestSegmentPx}px / ${columnPx}px`,
+      warn: r.segmentTruncationRisk,
+      title: r.segmentTruncationRisk
+        ? "Segment lub słowo szersze niż kolumna — ryzyko ucięcia / złamania w środku słowa."
+        : "Mieści się w szerokości kolumny — bez ryzyka ucięcia.",
+    });
+  } else {
+    items.push({
+      label: "czytanie",
+      value: `${r.readingSeconds}s`,
+      warn: false,
+      title: `Czas dla screen readera ≈ ${r.readingSeconds}s przy ${READING_WPM} wpm`,
+    });
+  }
+
+  return (
+    <div className="mt-1.5 flex flex-wrap gap-1">
+      {items.map((it) => (
+        <span
+          key={it.label}
+          title={it.title}
+          className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-mono border ${
+            it.warn
+              ? "bg-amber-500/10 text-amber-300 border-amber-500/30"
+              : "bg-card/40 text-muted-foreground border-border/30"
+          }`}
+        >
+          {it.warn && "⚠"}
+          <span className="opacity-70">{it.label}:</span>
+          <span>{it.value}</span>
+        </span>
+      ))}
+    </div>
+  );
+};
+
 const SegmentList = ({ segments }: { segments: NonNullable<FieldStats["segments"]> }) => (
   <ul className="mt-2 grid gap-1 text-[11px]">
     {segments.map((segment, idx) => (
@@ -191,8 +328,7 @@ const SegmentList = ({ segments }: { segments: NonNullable<FieldStats["segments"
   </ul>
 );
 
-type ViewportMode = "mobile" | "desktop";
-type Mode = "view" | "edit";
+// (ViewportMode + Mode are declared above near the budget constants)
 
 const VIEWPORTS: Record<ViewportMode, { width: number; label: string }> = {
   mobile: { width: 375, label: "Mobile · 375px (iPhone)" },
@@ -275,12 +411,12 @@ const DevVeinImagesPreview = () => {
 
   const stats = useMemo(
     () => ({
-      mainAlt: buildStats(draft.mainAlt, ALT_BUDGET, false),
-      mainCaption: buildStats(draft.mainCaption, CAPTION_BUDGET, true),
-      perforatorAlt: buildStats(draft.perforatorAlt, ALT_BUDGET, false),
-      perforatorCaption: buildStats(draft.perforatorCaption, CAPTION_BUDGET, true),
+      mainAlt: buildStats(draft.mainAlt, ALT_BUDGET, false, viewport),
+      mainCaption: buildStats(draft.mainCaption, CAPTION_BUDGET, true, viewport),
+      perforatorAlt: buildStats(draft.perforatorAlt, ALT_BUDGET, false, viewport),
+      perforatorCaption: buildStats(draft.perforatorCaption, CAPTION_BUDGET, true, viewport),
     }),
-    [draft],
+    [draft, viewport],
   );
 
   const updateDraft = (field: keyof DraftFields, value: string) => {
@@ -322,8 +458,8 @@ const DevVeinImagesPreview = () => {
     const captionField = slot === "main" ? "mainCaption" : "perforatorCaption";
     const altValue = draft[altField];
     const captionValue = draft[captionField];
-    const altStats = buildStats(altValue, ALT_BUDGET, false);
-    const captionStats = buildStats(captionValue, CAPTION_BUDGET, true);
+    const altStats = buildStats(altValue, ALT_BUDGET, false, viewport);
+    const captionStats = buildStats(captionValue, CAPTION_BUDGET, true, viewport);
     if (
       altStats.overBudget ||
       altStats.underMin ||
@@ -601,9 +737,8 @@ const DevVeinImagesPreview = () => {
                       {draft[altField]}
                     </p>
                   )}
+                  <ReadabilityRow stats={altStats} viewport={viewport} kind="alt" />
                 </div>
-
-                {/* Caption */}
                 <div>
                   <div className="flex items-center justify-between gap-2 mb-1">
                     <label
@@ -630,6 +765,7 @@ const DevVeinImagesPreview = () => {
                   {captionStats.segments && (
                     <SegmentList segments={captionStats.segments} />
                   )}
+                  <ReadabilityRow stats={captionStats} viewport={viewport} kind="caption" />
                 </div>
 
                 {isEdit && (
@@ -660,12 +796,30 @@ const DevVeinImagesPreview = () => {
 
           <div className="rounded-xl border border-border/30 bg-muted/20 p-3 text-[11px] text-muted-foreground leading-relaxed">
             <p className="font-semibold text-foreground/80 mb-1">
-              Mobile budget
+              Budżety długości
             </p>
             <ul className="space-y-0.5 list-disc list-inside">
               <li>Alt: {ALT_MIN}-{ALT_BUDGET} znaków</li>
               <li>Caption: max {CAPTION_BUDGET} znaków całość</li>
               <li>Segment „·": max {SEGMENT_BUDGET} znaków każdy</li>
+            </ul>
+            <p className="mt-2 font-semibold text-foreground/80">
+              Czytelność dla {viewport === "mobile" ? "📱 Mobile" : "🖥️ Desktop"}
+            </p>
+            <ul className="space-y-0.5 list-disc list-inside">
+              <li>
+                Kolumna figcaption ≈ {CAPTION_COLUMN_PX[viewport]}px (≈
+                {Math.floor(CAPTION_COLUMN_PX[viewport] / CAPTION_CHAR_PX[viewport])}{" "}
+                znaków/linię)
+              </li>
+              <li>
+                Linie figcaption: ostrzeżenie powyżej {CAPTION_LINE_WARN[viewport]}{" "}
+                — ryzyko przeoczenia
+              </li>
+              <li>
+                ⚠ przy „najdłuższy segment" = ryzyko ucięcia / złamania słowa
+              </li>
+              <li>Czas czytania liczony przy {READING_WPM} wpm</li>
             </ul>
             <p className="mt-2">
               W trybie <strong>Edycja</strong> podgląd ignoruje bazę i pokazuje
