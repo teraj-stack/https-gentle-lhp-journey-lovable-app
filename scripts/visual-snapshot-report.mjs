@@ -219,6 +219,81 @@ const renderHtml = ({ trios, generatedAt, totalFailures }) => {
     values
       .map((v) => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`)
       .join("");
+
+  // ---- Breakdown agregacje (per viewport, per state) ----
+  // Liczymy failed / incomplete osobno, żeby user widział czy "regresja rośnie"
+  // (failed = realna różnica wizualna), czy to pierwszy run (incomplete = brak baseline).
+  // Sortujemy malejąco po total — najgorsze viewporty/states na górze.
+  const aggregate = (key) => {
+    const map = new Map();
+    enriched.forEach((t) => {
+      const k = t[key];
+      if (!map.has(k)) map.set(k, { name: k, failed: 0, incomplete: 0, total: 0 });
+      const row = map.get(k);
+      row[t.status] += 1;
+      row.total += 1;
+    });
+    return Array.from(map.values()).sort((a, b) =>
+      b.total - a.total || b.failed - a.failed || a.name.localeCompare(b.name)
+    );
+  };
+  const byViewport = aggregate("viewport");
+  const byState = aggregate("state");
+
+  const renderBreakdownTable = (rows, label, filterKey) => {
+    if (rows.length === 0) return "";
+    const tbody = rows
+      .map((r) => {
+        // data-filter-* atrybuty pozwalają JS-owi ustawić odpowiedni select po kliknięciu wiersza.
+        // To "skok do filtra" — szybciej niż ręczne wybieranie z dropdowna.
+        const failedCell = r.failed > 0
+          ? `<td class="num num-failed">${r.failed}</td>`
+          : `<td class="num num-zero">0</td>`;
+        const incompleteCell = r.incomplete > 0
+          ? `<td class="num num-incomplete">${r.incomplete}</td>`
+          : `<td class="num num-zero">0</td>`;
+        return `<tr class="breakdown-row"
+                    data-filter-key="${escapeHtml(filterKey)}"
+                    data-filter-value="${escapeHtml(r.name)}"
+                    tabindex="0"
+                    role="button"
+                    aria-label="Filtruj po ${escapeHtml(label)}: ${escapeHtml(r.name)}">
+                  <th scope="row">${escapeHtml(r.name)}</th>
+                  ${failedCell}
+                  ${incompleteCell}
+                  <td class="num">${r.total}</td>
+                </tr>`;
+      })
+      .join("");
+    return `
+      <div class="breakdown-table-wrap">
+        <h3>${escapeHtml(label)}</h3>
+        <table class="breakdown-table">
+          <thead>
+            <tr>
+              <th scope="col">${escapeHtml(label)}</th>
+              <th scope="col" class="num">Failed</th>
+              <th scope="col" class="num">Incomplete</th>
+              <th scope="col" class="num">Total</th>
+            </tr>
+          </thead>
+          <tbody>${tbody}</tbody>
+        </table>
+      </div>`;
+  };
+
+  const breakdownSection = totalFailures === 0
+    ? ""
+    : `
+    <section class="breakdown" aria-label="Liczba snapshotów per viewport i state">
+      <h2 class="breakdown-title">Gdzie rosną regresje?</h2>
+      <p class="breakdown-hint">Kliknij wiersz, żeby ustawić filtr na ten viewport / state.</p>
+      <div class="breakdown-grid">
+        ${renderBreakdownTable(byViewport, "Viewport", "viewport")}
+        ${renderBreakdownTable(byState, "State", "state")}
+      </div>
+    </section>`;
+
   const filterBar = totalFailures === 0
     ? ""
     : `
@@ -389,6 +464,45 @@ const renderHtml = ({ trios, generatedAt, totalFailures }) => {
       padding: 24px; background: var(--card); border: 1px dashed var(--border);
       border-radius: 8px; text-align: center; color: var(--muted);
     }
+    /* ---- Breakdown (per viewport / per state) ---- */
+    .breakdown {
+      max-width: 1400px; margin: 0 auto 24px;
+      padding: 16px 20px; background: var(--card);
+      border: 1px solid var(--border); border-radius: 8px;
+    }
+    .breakdown-title { margin: 0 0 4px; font-size: 16px; }
+    .breakdown-hint { margin: 0 0 12px; color: var(--muted); font-size: 12px; }
+    .breakdown-grid {
+      display: grid; gap: 16px;
+      grid-template-columns: 1fr;
+    }
+    @media (min-width: 720px) {
+      .breakdown-grid { grid-template-columns: 1fr 1fr; }
+    }
+    .breakdown-table-wrap h3 {
+      margin: 0 0 8px; font-size: 12px; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .breakdown-table {
+      width: 100%; border-collapse: collapse; font-size: 13px;
+    }
+    .breakdown-table th,
+    .breakdown-table td {
+      text-align: left; padding: 6px 10px;
+      border-bottom: 1px solid var(--border);
+    }
+    .breakdown-table thead th {
+      font-size: 11px; color: var(--muted); font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .breakdown-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+    .num-failed { color: var(--danger); font-weight: 600; }
+    .num-incomplete { color: var(--warn); font-weight: 600; }
+    .num-zero { color: var(--muted); }
+    .breakdown-row { cursor: pointer; }
+    .breakdown-row:hover { background: rgba(127,127,127,.08); }
+    .breakdown-row:focus { outline: 2px solid var(--accent); outline-offset: -2px; }
+    .breakdown-row.is-active { background: rgba(79,195,247,.12); }
   </style>
 </head>
 <body>
@@ -397,6 +511,7 @@ const renderHtml = ({ trios, generatedAt, totalFailures }) => {
     <p class="meta">Wygenerowano: ${escapeHtml(generatedAt)} · Źródło: <code>test-results/</code></p>
   </header>
   ${summaryLine}
+  ${breakdownSection}
   ${filterBar}
   <div id="cards-container">${cards}</div>
   <p id="no-results" class="no-results" hidden>Żaden snapshot nie pasuje do filtra. Wyczyść filtr, żeby zobaczyć wszystkie.</p>
@@ -455,6 +570,17 @@ const renderHtml = ({ trios, generatedAt, totalFailures }) => {
       counter.textContent = "Pokazano " + visible + " z " + cards.length + " snapshotów.";
       noResults.hidden = visible !== 0;
 
+      // Zaznacz w breakdown wiersze, które odpowiadają aktywnym filtrom —
+      // user widzi od razu, którą "kategorię" ma zawężoną.
+      var breakdownRows = document.querySelectorAll(".breakdown-row");
+      Array.prototype.forEach.call(breakdownRows, function (row) {
+        var key = row.dataset.filterKey;
+        var val = row.dataset.filterValue;
+        var active = (key === "viewport" && v === val) || (key === "state" && st === val);
+        row.classList.toggle("is-active", active);
+        row.setAttribute("aria-pressed", active ? "true" : "false");
+      });
+
       // Zapis stanu do URL (bez przeładowania) i do localStorage.
       var p = new URLSearchParams();
       var snapshot = {};
@@ -476,6 +602,28 @@ const renderHtml = ({ trios, generatedAt, totalFailures }) => {
     $("f-reset").addEventListener("click", function () {
       fields.forEach(function (k) { inputs[k].value = ""; });
       applyFilter();
+    });
+
+    // Klikalne wiersze w breakdown — toggle filtra dla danego viewport / state.
+    // Drugi klik na ten sam wiersz = czyści ten wymiar (UX: row działa jak switch).
+    function toggleBreakdownFilter(row) {
+      var key = row.dataset.filterKey;
+      var val = row.dataset.filterValue;
+      if (!key || !inputs[key]) return;
+      inputs[key].value = inputs[key].value === val ? "" : val;
+      applyFilter();
+      // Przewiń do listy, żeby user widział wynik kliknięcia bez scrollowania.
+      var container = document.getElementById("cards-container");
+      if (container) container.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+    Array.prototype.forEach.call(document.querySelectorAll(".breakdown-row"), function (row) {
+      row.addEventListener("click", function () { toggleBreakdownFilter(row); });
+      row.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          toggleBreakdownFilter(row);
+        }
+      });
     });
 
     applyFilter();
