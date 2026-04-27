@@ -1018,6 +1018,16 @@ const renderHtml = ({
     .omitted-table code { font-size: 11px; word-break: break-all; }
     .omitted-testname { color: var(--muted); font-size: 11px; word-break: break-all; }
     .omitted-hint { margin: 10px 4px 0; color: var(--muted); font-size: 12px; }
+    /* Badge dla kolumny "Powód" w tabeli omitted — odrębne kolory per typ
+       limitu pomagają wzrokowo zgrupować "ten viewport ma za dużo regresji". */
+    .reason-badge {
+      display: inline-block; padding: 2px 8px; border-radius: 10px;
+      font-size: 10px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.3px; white-space: nowrap;
+    }
+    .reason-viewport { background: rgba(79,195,247,.18); color: var(--accent); }
+    .reason-state    { background: rgba(255,167,38,.18); color: var(--warn); }
+    .reason-global   { background: rgba(239,83,80,.15); color: var(--danger); }
     /* Placeholder dla figure gdy --max-copy obciął kopiowanie — bardziej
        neutralny niż czerwony "missing", żeby user nie myślał że to błąd. */
     .missing-copy-skipped .missing-box {
