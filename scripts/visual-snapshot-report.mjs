@@ -219,6 +219,8 @@ const parseCliArgs = (argv) => {
     maxPerViewport: flags.maxPerViewport.value,
     maxPerState: flags.maxPerState.value,
     sort: flags.sort.value, // string lub null (=> default)
+    history: flags.history.value, // string path, "off"/"false"/"none" lub null (=> default)
+    noHistory: flags.noHistory.value === true, // bool
   };
 };
 
