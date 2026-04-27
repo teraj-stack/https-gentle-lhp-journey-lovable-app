@@ -27,9 +27,16 @@ import {
   VEIN_IMAGE_PAGE_PRESETS,
   type VeinImagePagePreset,
 } from "@/lib/veinImagePagePresets";
+import {
+  useVeinImageOverrideHistory,
+  VEIN_IMAGE_HISTORY_QUERY_KEY,
+  type VeinImageOverrideHistoryRow,
+} from "@/hooks/useVeinImageOverrideHistory";
 import VenousInsufficiencyImage from "@/components/shared/VenousInsufficiencyImage";
 import { Button } from "@/components/ui/button";
-import { LogOut, ShieldAlert, Save, RotateCcw, Database, FileJson, FileSpreadsheet, Trash2, Clock, User } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { LogOut, ShieldAlert, Save, RotateCcw, Database, FileJson, FileSpreadsheet, Trash2, Clock, User, History } from "lucide-react";
 import { toast } from "sonner";
 import SeoHead from "@/components/shared/SeoHead";
 
