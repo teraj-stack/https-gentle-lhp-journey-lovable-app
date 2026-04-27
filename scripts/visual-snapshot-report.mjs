@@ -633,8 +633,18 @@ const loadTrendsHistory = async ({ historyRaw, noHistory, currentRun }) => {
     if (err.code === "ENOENT") {
       // Pierwszy run — historii jeszcze nie ma. Pokażemy w UI sam current point
       // jako placeholder ("zbieramy dane").
-      const points = [{ ...currentRun, isCurrent: true }];
-      return { source: path.relative(PROJECT_ROOT, historyPath), points, isFirstRun: true };
+      const points = [{
+        ...currentRun,
+        isCurrent: true,
+        command: currentRun.command ?? "",
+        flags: currentRun.flags ?? Object.fromEntries(TREND_FLAG_COLUMNS.map((n) => [n, ""])),
+      }];
+      return {
+        source: path.relative(PROJECT_ROOT, historyPath),
+        points,
+        isFirstRun: true,
+        flagColumns: TREND_FLAG_COLUMNS,
+      };
     }
     console.warn(
       `[visual-snapshot-report] ⚠ Nie mogę odczytać ${path.relative(PROJECT_ROOT, historyPath)}: ${err.message}`,
