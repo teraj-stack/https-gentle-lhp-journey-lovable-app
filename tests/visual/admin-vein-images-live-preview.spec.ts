@@ -125,11 +125,11 @@ test.describe("AdminVeinImages — visual regression LIVE PREVIEW (4 viewporty)"
       await expect(previewSection).toBeVisible();
 
       // === STATE A: pusty draft (po wejściu na panel) ===
-      await assertLayoutDoesNotBreak(page, viewport.width);
+      await assertLayoutDoesNotBreak(page, viewport.width, "light");
       await expect(previewSection).toHaveScreenshot(
         `live-preview-${viewport.name}-state-a-empty.png`,
         {
-          maxDiffPixelRatio: 0.03,
+          maxDiffPixelRatio: LIVE_PREVIEW_SNAPSHOT_DIFF_RATIO,
           animations: "disabled",
         },
       );
@@ -143,11 +143,11 @@ test.describe("AdminVeinImages — visual regression LIVE PREVIEW (4 viewporty)"
         previewSection.locator(`img[alt="${newAlt}"]`).first(),
       ).toBeVisible();
 
-      await assertLayoutDoesNotBreak(page, viewport.width);
+      await assertLayoutDoesNotBreak(page, viewport.width, "light");
       await expect(previewSection).toHaveScreenshot(
         `live-preview-${viewport.name}-state-b-alt-edited.png`,
         {
-          maxDiffPixelRatio: 0.03,
+          maxDiffPixelRatio: LIVE_PREVIEW_SNAPSHOT_DIFF_RATIO,
           animations: "disabled",
         },
       );
@@ -160,12 +160,12 @@ test.describe("AdminVeinImages — visual regression LIVE PREVIEW (4 viewporty)"
         previewSection.getByText(newCap, { exact: false }).first(),
       ).toBeVisible();
 
-      await assertLayoutDoesNotBreak(page, viewport.width);
-      await assertCaptionNotClipped(page);
+      await assertLayoutDoesNotBreak(page, viewport.width, "light");
+      await assertCaptionNotClipped(page, "light");
       await expect(previewSection).toHaveScreenshot(
         `live-preview-${viewport.name}-state-c-alt-and-caption.png`,
         {
-          maxDiffPixelRatio: 0.03,
+          maxDiffPixelRatio: LIVE_PREVIEW_SNAPSHOT_DIFF_RATIO,
           animations: "disabled",
         },
       );
