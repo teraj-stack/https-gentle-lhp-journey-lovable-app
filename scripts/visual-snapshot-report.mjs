@@ -1429,6 +1429,52 @@ const renderHtml = ({
     @media (prefers-color-scheme: dark) {
       .trend-dot-current { stroke: #1a1a1a; }
     }
+    .trends-filter {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .5rem .75rem;
+      align-items: flex-end;
+      margin: 0 0 .75rem;
+      padding: .5rem .75rem;
+      border: 1px dashed rgba(127,127,127,.25);
+      border-radius: 6px;
+      background: rgba(127,127,127,.03);
+    }
+    .trends-filter-label {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      font-size: .75rem;
+      opacity: .85;
+      font-family: ui-monospace, monospace;
+    }
+    .trends-filter-select {
+      font-size: .8rem;
+      padding: 2px 4px;
+      max-width: 220px;
+      background: inherit;
+      color: inherit;
+      border: 1px solid rgba(127,127,127,.35);
+      border-radius: 4px;
+    }
+    .trends-filter-command { max-width: 320px; }
+    .trends-filter-reset {
+      font-size: .75rem;
+      padding: 4px 10px;
+      background: rgba(127,127,127,.12);
+      color: inherit;
+      border: 1px solid rgba(127,127,127,.3);
+      border-radius: 4px;
+      cursor: pointer;
+      align-self: end;
+    }
+    .trends-filter-reset:hover { background: rgba(127,127,127,.22); }
+    .trends-empty {
+      margin: .25rem 0 .75rem;
+      font-size: .85rem;
+      opacity: .8;
+      font-style: italic;
+    }
   </style>
 </head>
 <body>
