@@ -27,6 +27,7 @@ import {
 import schematImg from "@/assets/profilaktyka-zylakow-schemat.png";
 import RiskQuiz from "@/components/profilaktyka/RiskQuiz";
 import ExercisesSection from "@/components/profilaktyka/ExercisesSection";
+import VenousInsufficiencyImage from "@/components/shared/VenousInsufficiencyImage";
 
 const easeOut = [0.16, 1, 0.3, 1] as const;
 
@@ -247,6 +248,13 @@ const ProfilaktykaZylakow = () => {
             />
           </div>
         </motion.section>
+
+        {/* Anatomia: dlaczego warto zapobiegać */}
+        <VenousInsufficiencyImage
+          fadeUp={fadeUp}
+          title="Co dokładnie chronisz, dbając o nogi"
+          subtitle="Profilaktyka żylaków to ochrona zastawek. Gdy zaczynają się one rozszczelniać, krew cofa się ku dołowi, ścianki słabną, a wokół naczynia narasta stan zapalny — proces, który po latach trudno cofnąć."
+        />
 
         {/* Czynniki ryzyka */}
         <section className="space-y-8">

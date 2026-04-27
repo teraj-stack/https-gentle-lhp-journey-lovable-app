@@ -4,6 +4,7 @@ import Breadcrumbs from "@/components/layout/Breadcrumbs";
 import { BREADCRUMBS_MAP } from "@/lib/breadcrumbsMap";
 import SeoHead from "@/components/shared/SeoHead";
 import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
+import VenousInsufficiencyImage from "@/components/shared/VenousInsufficiencyImage";
 import { ArrowRight, Zap, Droplets, Scissors, Sparkles, Sun } from "lucide-react";
 
 const sectionAnim = {
@@ -85,6 +86,16 @@ const Flebologia = () => {
               Bez strippingu, bez blizn — z szybkim powrotem do aktywności.
             </p>
           </motion.div>
+        </div>
+      </section>
+
+      {/* Anatomia niewydolności żylnej */}
+      <section className="pb-4 md:pb-8">
+        <div className="container mx-auto px-4 max-w-5xl">
+          <VenousInsufficiencyImage
+            title="Mechanika żylaków — od zastawki do widocznego naczynia"
+            subtitle="Każdy zabieg flebologiczny w CML celuje w konkretne ogniwo tej kaskady: laser zamyka chory pień, mikroflebektomia usuwa żylakowate bocznice, skleroterapia eliminuje resztkowe naczynia, a CLaCS — drobne pajączki. Diagnostyka USG Doppler decyduje, gdzie zaczynamy."
+          />
         </div>
       </section>
 
