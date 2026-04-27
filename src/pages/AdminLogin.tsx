@@ -1,14 +1,36 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import SeoHead from "@/components/shared/SeoHead";
+
+/**
+ * Tryb E2E: ukryty formularz email/hasło, włączany przez:
+ *  - query param `?e2e=1` (najwygodniejszy w testach Playwright — `goto('/admin/login?e2e=1')`),
+ *  - lub build-time flag `VITE_ENABLE_EMAIL_LOGIN=1` (do lokalnego dev/staging buildu).
+ *
+ * UWAGA bezpieczeństwo: formularz nie tworzy konta ani nie omija żadnej polityki —
+ * wywołuje `supabase.auth.signInWithPassword`, który i tak jest publicznie dostępny
+ * przez REST API Supabase. Ukrycie formularza w UI to wyłącznie ergonomia
+ * (operator widzi domyślnie tylko Google), a nie security boundary. Konto musi
+ * istnieć w Supabase Auth ORAZ mieć wpis w `user_roles` z rolą `admin`, żeby
+ * dostać się do `/admin/*` (sprawdza to `useIsAdmin`).
+ */
+const E2E_LOGIN_FLAG = import.meta.env.VITE_ENABLE_EMAIL_LOGIN === "1";
 
 const AdminLogin = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [authLoading, setAuthLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [emailLoginError, setEmailLoginError] = useState<string | null>(null);
+
+  const showEmailForm = E2E_LOGIN_FLAG || searchParams.get("e2e") === "1";
 
   useEffect(() => {
     let isMounted = true;
@@ -54,6 +76,19 @@ const AdminLogin = () => {
     }
   };
 
+  const handleEmailLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setEmailLoginError(null);
+    setIsSubmitting(true);
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) {
+      setEmailLoginError(error.message);
+      setIsSubmitting(false);
+      return;
+    }
+    // onAuthStateChange handler navigates to /admin on SIGNED_IN.
+  };
+
   return (
     <>
       <SeoHead title="Panel administracyjny — Logowanie" description="Zaloguj się do panelu administracyjnego" path="/admin/login" />
@@ -72,6 +107,59 @@ const AdminLogin = () => {
             </svg>
             {isSubmitting ? "Przekierowuję do Google..." : "Zaloguj się przez Google"}
           </Button>
+
+          {showEmailForm && (
+            <form
+              onSubmit={handleEmailLogin}
+              className="space-y-3 rounded-lg border border-dashed border-border/60 bg-muted/20 p-4 text-left"
+              aria-label="Logowanie email/hasło (tryb E2E)"
+              data-testid="e2e-login-form"
+            >
+              <div className="text-[11px] uppercase tracking-wider text-muted-foreground text-center">
+                Tryb E2E — logowanie email/hasło
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="e2e-email" className="text-xs">
+                  Email
+                </Label>
+                <Input
+                  id="e2e-email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  disabled={authLoading || isSubmitting}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="e2e-password" className="text-xs">
+                  Hasło
+                </Label>
+                <Input
+                  id="e2e-password"
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  disabled={authLoading || isSubmitting}
+                />
+              </div>
+              {emailLoginError && (
+                <p className="text-xs text-destructive" role="alert">
+                  {emailLoginError}
+                </p>
+              )}
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={authLoading || isSubmitting}
+              >
+                {isSubmitting ? "Loguję…" : "Zaloguj się (E2E)"}
+              </Button>
+            </form>
+          )}
         </div>
       </div>
     </>
