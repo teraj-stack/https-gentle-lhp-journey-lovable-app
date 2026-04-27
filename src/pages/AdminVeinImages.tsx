@@ -57,6 +57,8 @@ interface FieldStats {
   budget: number;
   overBudget: boolean;
   underMin: boolean;
+  /** Lista czytelnych komunikatów błędu — pusta = pole valid. */
+  errors: string[];
   segments?: { text: string; length: number; overBudget: boolean }[];
 }
 
@@ -64,16 +66,27 @@ const buildStats = (
   value: string,
   budget: number,
   isCaption: boolean,
+  fieldLabel: string,
 ): FieldStats => {
   const length = value.length;
-  const stats: FieldStats = {
-    length,
-    budget,
-    overBudget: length > budget,
-    underMin: !isCaption && length < ALT_MIN,
-  };
+  const errors: string[] = [];
+  const overBudget = length > budget;
+  const underMin = !isCaption && length < ALT_MIN;
+
+  if (underMin) {
+    errors.push(
+      `${fieldLabel}: min ${ALT_MIN} znaków (brakuje ${ALT_MIN - length}).`,
+    );
+  }
+  if (overBudget) {
+    errors.push(
+      `${fieldLabel}: max ${budget} znaków (przekroczone o ${length - budget}).`,
+    );
+  }
+
+  let segments: FieldStats["segments"];
   if (isCaption) {
-    stats.segments = value.split("·").map((segment) => {
+    segments = value.split("·").map((segment) => {
       const text = segment.trim();
       return {
         text,
@@ -81,30 +94,62 @@ const buildStats = (
         overBudget: text.length > SEGMENT_BUDGET,
       };
     });
+    const overSegments = segments.filter((s) => s.overBudget);
+    if (overSegments.length > 0) {
+      const list = overSegments
+        .map((s) => `"${s.text.slice(0, 24)}${s.text.length > 24 ? "…" : ""}" (${s.length})`)
+        .join(", ");
+      errors.push(
+        `Segment „·" max ${SEGMENT_BUDGET} znaków. Za długie: ${list}.`,
+      );
+    }
   }
-  return stats;
+
+  return { length, budget, overBudget, underMin, errors, segments };
 };
 
 const StatsBadge = ({ stats }: { stats: FieldStats }) => {
-  const hasError = stats.overBudget || stats.underMin;
+  const hasError = stats.errors.length > 0;
   return (
     <span
       className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-mono ${
         hasError
           ? "bg-destructive/15 text-destructive border border-destructive/30"
-          : "bg-muted text-muted-foreground border border-border/40"
+          : "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30"
       }`}
-      title={
-        stats.underMin
-          ? `Min ${ALT_MIN} znaków (alt)`
-          : stats.overBudget
-            ? `Max ${stats.budget} znaków`
-            : "OK"
-      }
+      title={hasError ? stats.errors.join(" ") : "OK — w limitach bazy"}
+      aria-live="polite"
     >
       {stats.length}/{stats.budget}
       {stats.underMin && " ↓"}
+      {stats.overBudget && " ↑"}
+      {!hasError && " ✓"}
     </span>
+  );
+};
+
+const ErrorList = ({
+  errors,
+  id,
+}: {
+  errors: string[];
+  id: string;
+}) => {
+  if (errors.length === 0) return null;
+  return (
+    <ul
+      id={id}
+      role="alert"
+      aria-live="polite"
+      className="mt-1.5 space-y-0.5 text-[11px] text-destructive"
+    >
+      {errors.map((err, idx) => (
+        <li key={idx} className="flex items-start gap-1.5 leading-snug">
+          <span aria-hidden className="mt-0.5">⚠</span>
+          <span>{err}</span>
+        </li>
+      ))}
+    </ul>
   );
 };
 
@@ -113,7 +158,7 @@ const SegmentList = ({
 }: {
   segments: NonNullable<FieldStats["segments"]>;
 }) => (
-  <ul className="mt-2 grid gap-1 text-[11px]">
+  <ul className="mt-2 grid gap-1 text-[11px]" aria-label="Segmenty figcaption">
     {segments.map((segment, idx) => (
       <li
         key={`${segment.text}-${idx}`}
@@ -123,7 +168,7 @@ const SegmentList = ({
             : "border-border/30 bg-card/40 text-foreground/80"
         }`}
       >
-        <span className="truncate font-mono">{segment.text}</span>
+        <span className="truncate font-mono">{segment.text || <em className="opacity-60">pusty</em>}</span>
         <span className="font-mono shrink-0">
           {segment.length}/{SEGMENT_BUDGET}
         </span>
@@ -232,12 +277,39 @@ const AdminVeinImages = () => {
 
   const stats = useMemo(
     () => ({
-      mainAlt: buildStats(draft.mainAlt, ALT_BUDGET, false),
-      mainCaption: buildStats(draft.mainCaption, CAPTION_BUDGET, true),
-      perforatorAlt: buildStats(draft.perforatorAlt, ALT_BUDGET, false),
-      perforatorCaption: buildStats(draft.perforatorCaption, CAPTION_BUDGET, true),
+      mainAlt: buildStats(draft.mainAlt, ALT_BUDGET, false, "alt główny"),
+      mainCaption: buildStats(
+        draft.mainCaption,
+        CAPTION_BUDGET,
+        true,
+        "figcaption główny",
+      ),
+      perforatorAlt: buildStats(
+        draft.perforatorAlt,
+        ALT_BUDGET,
+        false,
+        "alt perforator",
+      ),
+      perforatorCaption: buildStats(
+        draft.perforatorCaption,
+        CAPTION_BUDGET,
+        true,
+        "figcaption perforator",
+      ),
     }),
     [draft],
+  );
+
+  /** Mapa „czy slot ma jakikolwiek błąd walidacji?" — używana do disabled na Save. */
+  const slotHasErrors = useMemo(
+    () => ({
+      main:
+        stats.mainAlt.errors.length > 0 || stats.mainCaption.errors.length > 0,
+      perforator:
+        stats.perforatorAlt.errors.length > 0 ||
+        stats.perforatorCaption.errors.length > 0,
+    }),
+    [stats],
   );
 
   const updateDraft = (field: keyof DraftFields, value: string) => {
@@ -268,23 +340,17 @@ const AdminVeinImages = () => {
 
   const saveSlot = async (slot: VeinImageSlot) => {
     if (!isAdmin) return;
+    if (slotHasErrors[slot]) {
+      toast.error(
+        "Popraw błędy walidacji oznaczone na czerwono przed zapisem.",
+      );
+      return;
+    }
     const altField = slot === "main" ? "mainAlt" : "perforatorAlt";
     const captionField = slot === "main" ? "mainCaption" : "perforatorCaption";
     const altValue = draft[altField];
     const captionValue = draft[captionField];
-    const altStats = buildStats(altValue, ALT_BUDGET, false);
-    const captionStats = buildStats(captionValue, CAPTION_BUDGET, true);
-    if (
-      altStats.overBudget ||
-      altStats.underMin ||
-      captionStats.overBudget ||
-      captionStats.segments?.some((s) => s.overBudget)
-    ) {
-      toast.error(
-        "Walidacja: alt 60-220, caption ≤110, segment ≤40 znaków.",
-      );
-      return;
-    }
+
     setSaving(slot);
     try {
       const { data: existing, error: lookupError } = await supabase
@@ -523,10 +589,19 @@ const AdminVeinImages = () => {
                 const isSaving = saving === slot;
                 const dbRow =
                   slot === "main" ? overrides.main : overrides.perforator;
+                const altInvalid = altStats.errors.length > 0;
+                const captionInvalid = captionStats.errors.length > 0;
+                const slotInvalid = altInvalid || captionInvalid;
+                const altErrId = `${slot}-alt-err`;
+                const captionErrId = `${slot}-caption-err`;
                 return (
                   <div
                     key={slot}
-                    className="rounded-xl border border-border/40 bg-card/30 p-4 space-y-3"
+                    className={`rounded-xl border p-4 space-y-3 transition-colors ${
+                      slotInvalid
+                        ? "border-destructive/50 bg-destructive/5"
+                        : "border-border/40 bg-card/30"
+                    }`}
                   >
                     <div className="flex items-center justify-between gap-2">
                       <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -559,8 +634,15 @@ const AdminVeinImages = () => {
                         value={draft[altField]}
                         onChange={(e) => updateDraft(altField, e.target.value)}
                         rows={4}
-                        className="w-full text-[12px] leading-relaxed rounded-md border border-border/50 bg-background/60 px-2 py-1.5 font-mono text-foreground/90 focus:outline-none focus:ring-2 focus:ring-primary/40"
+                        aria-invalid={altInvalid || undefined}
+                        aria-describedby={altInvalid ? altErrId : undefined}
+                        className={`w-full text-[12px] leading-relaxed rounded-md border bg-background/60 px-2 py-1.5 font-mono text-foreground/90 focus:outline-none focus:ring-2 transition-colors ${
+                          altInvalid
+                            ? "border-destructive/60 focus:ring-destructive/40"
+                            : "border-border/50 focus:ring-primary/40"
+                        }`}
                       />
+                      <ErrorList errors={altStats.errors} id={altErrId} />
                     </div>
 
                     {/* Caption */}
@@ -581,7 +663,19 @@ const AdminVeinImages = () => {
                           updateDraft(captionField, e.target.value)
                         }
                         rows={2}
-                        className="w-full text-[12px] leading-relaxed rounded-md border border-border/50 bg-background/60 px-2 py-1.5 font-mono text-foreground/90 focus:outline-none focus:ring-2 focus:ring-primary/40"
+                        aria-invalid={captionInvalid || undefined}
+                        aria-describedby={
+                          captionInvalid ? captionErrId : undefined
+                        }
+                        className={`w-full text-[12px] leading-relaxed rounded-md border bg-background/60 px-2 py-1.5 font-mono text-foreground/90 focus:outline-none focus:ring-2 transition-colors ${
+                          captionInvalid
+                            ? "border-destructive/60 focus:ring-destructive/40"
+                            : "border-border/50 focus:ring-primary/40"
+                        }`}
+                      />
+                      <ErrorList
+                        errors={captionStats.errors}
+                        id={captionErrId}
                       />
                       {captionStats.segments && (
                         <SegmentList segments={captionStats.segments} />
@@ -596,11 +690,20 @@ const AdminVeinImages = () => {
                       </span>
                       <Button
                         size="sm"
-                        disabled={isSaving}
+                        disabled={isSaving || slotInvalid}
                         onClick={() => saveSlot(slot)}
+                        title={
+                          slotInvalid
+                            ? "Popraw błędy walidacji przed zapisem"
+                            : "Zapisz do bazy"
+                        }
                       >
                         <Save className="w-3.5 h-3.5 mr-1" />
-                        {isSaving ? "Zapisywanie…" : "Zapisz"}
+                        {isSaving
+                          ? "Zapisywanie…"
+                          : slotInvalid
+                            ? "Popraw błędy"
+                            : "Zapisz"}
                       </Button>
                     </div>
                   </div>
