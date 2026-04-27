@@ -260,6 +260,19 @@ const validateImportRow = (alt: string, caption: string): string[] => {
 
 type ImportRowStatus = "create" | "update" | "noop" | "error";
 
+/**
+ * Strategia obsługi duplikatów `page_key+slot` w pliku CSV:
+ *  - "first": pierwsze wystąpienie wygrywa (default — backward compatible).
+ *    Kolejne duplikaty lądują z `status: "error"` i nie są commitowane.
+ *  - "last": ostatnie wystąpienie wygrywa. Wcześniejsze duplikaty dostają
+ *    `status: "noop"` z notką "nadpisany przez linię X" (nie blokują importu,
+ *    nie są commitowane — ich miejsce zajmie późniejszy wpis).
+ *
+ * Wybór jest reaktywny w dialogu preview — admin widzi natychmiast jak
+ * zmienia się rozkład create/update/noop/error po przełączeniu radio.
+ */
+type DedupStrategy = "first" | "last";
+
 interface ImportRow {
   /** 1-based linia w pliku CSV (header = 1, dane od 2). */
   line: number;
