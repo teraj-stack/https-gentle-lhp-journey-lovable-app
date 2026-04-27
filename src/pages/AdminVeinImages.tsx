@@ -1449,6 +1449,9 @@ const AdminVeinImages = () => {
         };
       });
 
+      // Reset strategii do default „first" przy każdym nowym pliku — admin
+      // nie powinien dziedziczyć wyboru z poprzedniego importu.
+      setDedupStrategy("first");
       setImportPreview({ fileName: file.name, parsedRows });
     } catch (err) {
       toast.error(
