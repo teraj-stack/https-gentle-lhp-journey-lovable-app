@@ -229,7 +229,7 @@ visual-regression:
 
 ```
 visual-report.zip
-├── index.html                 # samowystarczalny raport (CSS + JS inline)
+├── index.html                 # samowystarczalny raport (CSS + JS inline) — zawiera też sekcję "Trendy oszczędności IO" (sparkline'y png/discovery z history.csv)
 ├── savings.json               # strukturalny dump podsumowania (atrybucja per-flaga + top10 skipped trios)
 ├── savings.csv                # 1-wierszowy CSV z agregatami (snapshot bieżącego runa)
 ├── history.csv                # auto-append: header + N wierszy (po jednym per run); --no-history żeby wyłączyć
