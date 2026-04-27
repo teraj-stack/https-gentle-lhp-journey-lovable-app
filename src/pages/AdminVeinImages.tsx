@@ -415,6 +415,7 @@ const applyDedupStrategy = (
       caption: row.caption,
       status,
       errors,
+      fieldIssues: row.fieldIssues,
       currentAlt: row.currentAlt,
       currentCaption: row.currentCaption,
     };
