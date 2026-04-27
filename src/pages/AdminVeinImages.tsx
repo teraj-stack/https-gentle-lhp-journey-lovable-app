@@ -2358,73 +2358,165 @@ const AdminVeinImages = () => {
                     key={row.line}
                     className={`rounded-md border px-3 py-2 text-[11px] ${statusColor}`}
                   >
-                    <div className="flex items-center justify-between gap-2 mb-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono opacity-60">L{row.line}</span>
-                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded font-mono text-[9px] uppercase tracking-wider bg-background/40">
-                          {statusIcon}
-                          {statusLabel}
-                        </span>
-                        <span className="font-mono text-foreground/85">
-                          {row.pageKey ?? "?"} / {row.slot ?? "?"}
-                        </span>
-                      </div>
-                      <span className="font-mono opacity-60">
-                        alt:{row.alt.length} · cap:{row.caption.length}
-                      </span>
-                    </div>
-                    {row.errors.length > 0 && (
-                      <ul className="mb-1 space-y-0.5">
-                        {row.errors.map((e, idx) => (
-                          <li key={idx} className="flex items-start gap-1">
-                            <FileWarning className="w-3 h-3 mt-0.5 shrink-0" />
-                            <span>{e}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                    {row.status === "update" && (
-                      <details className="mt-1">
-                        <summary className="cursor-pointer opacity-70 hover:opacity-100 select-none">
-                          pokaż diff
-                        </summary>
-                        <div className="mt-1 grid gap-1 font-mono text-[10px]">
-                          <div className="rounded border border-border/30 bg-background/30 p-1.5">
-                            <span className="opacity-60">stary alt:</span>{" "}
-                            <span className="break-words">{row.currentAlt}</span>
+                    {(() => {
+                      const altIssues = row.fieldIssues.filter((i) => i.field === "alt");
+                      const capIssues = row.fieldIssues.filter((i) => i.field === "caption");
+                      const altEmpty = altIssues.some((i) => i.kind === "empty");
+                      const capEmpty = capIssues.some((i) => i.kind === "empty");
+                      const altClass = altIssues.length
+                        ? "text-destructive font-semibold"
+                        : "opacity-60";
+                      const capClass = capIssues.length
+                        ? "text-destructive font-semibold"
+                        : "opacity-60";
+                      return (
+                        <>
+                          <div className="flex items-center justify-between gap-2 mb-1">
+                            <div className="flex items-center gap-2">
+                              <span className="font-mono opacity-60">L{row.line}</span>
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded font-mono text-[9px] uppercase tracking-wider bg-background/40">
+                                {statusIcon}
+                                {statusLabel}
+                              </span>
+                              <span className="font-mono text-foreground/85">
+                                {row.pageKey ?? "?"} / {row.slot ?? "?"}
+                              </span>
+                            </div>
+                            <span
+                              className="font-mono"
+                              title={
+                                row.fieldIssues.length
+                                  ? row.fieldIssues.map((i) => i.message).join(" · ")
+                                  : `alt ${ALT_MIN}–${ALT_BUDGET} zn., caption ≤${CAPTION_BUDGET} zn.`
+                              }
+                            >
+                              <span className={altClass}>
+                                alt:{altEmpty ? "∅" : row.alt.length}
+                              </span>
+                              <span className="opacity-40"> · </span>
+                              <span className={capClass}>
+                                cap:{capEmpty ? "∅" : row.caption.length}
+                              </span>
+                            </span>
                           </div>
-                          <div className="rounded border border-border/30 bg-background/30 p-1.5">
-                            <span className="opacity-60">nowy alt:</span>{" "}
-                            <span className="break-words">{row.alt}</span>
-                          </div>
-                          <div className="rounded border border-border/30 bg-background/30 p-1.5">
-                            <span className="opacity-60">stary caption:</span>{" "}
-                            <span className="break-words">{row.currentCaption}</span>
-                          </div>
-                          <div className="rounded border border-border/30 bg-background/30 p-1.5">
-                            <span className="opacity-60">nowy caption:</span>{" "}
-                            <span className="break-words">{row.caption}</span>
-                          </div>
-                        </div>
-                      </details>
-                    )}
-                    {(row.status === "create" || (row.status === "error" && !row.currentAlt)) && (
-                      <details className="mt-1">
-                        <summary className="cursor-pointer opacity-70 hover:opacity-100 select-none">
-                          pokaż treść
-                        </summary>
-                        <div className="mt-1 grid gap-1 font-mono text-[10px]">
-                          <div className="rounded border border-border/30 bg-background/30 p-1.5">
-                            <span className="opacity-60">alt:</span>{" "}
-                            <span className="break-words">{row.alt || <em className="opacity-50">(pusty)</em>}</span>
-                          </div>
-                          <div className="rounded border border-border/30 bg-background/30 p-1.5">
-                            <span className="opacity-60">caption:</span>{" "}
-                            <span className="break-words">{row.caption || <em className="opacity-50">(pusty)</em>}</span>
-                          </div>
-                        </div>
-                      </details>
-                    )}
+                          {row.fieldIssues.length > 0 && (
+                            <div className="mb-1 flex flex-wrap gap-1">
+                              {row.fieldIssues.map((issue, idx) => {
+                                const fieldLabel = issue.field === "alt" ? "alt" : "caption";
+                                const kindLabel = {
+                                  empty: "puste",
+                                  tooShort: "za krótkie",
+                                  tooLong: "za długie",
+                                  segment: "segment",
+                                }[issue.kind];
+                                return (
+                                  <span
+                                    key={`fi-${idx}`}
+                                    className="inline-flex items-center gap-1 rounded border border-destructive/40 bg-destructive/10 px-1.5 py-0.5 font-mono text-[10px]"
+                                    title={issue.message}
+                                  >
+                                    <FileWarning className="w-3 h-3 shrink-0" />
+                                    <span className="font-semibold uppercase tracking-wider">
+                                      {fieldLabel}
+                                    </span>
+                                    <span className="opacity-80">{kindLabel}</span>
+                                    {issue.kind === "segment" && issue.segmentLength != null && (
+                                      <span className="opacity-60">
+                                        ({issue.segmentLength}/{SEGMENT_BUDGET})
+                                      </span>
+                                    )}
+                                  </span>
+                                );
+                              })}
+                            </div>
+                          )}
+                          {row.errors.length > 0 && (
+                            <ul className="mb-1 space-y-0.5">
+                              {row.errors.map((e, idx) => (
+                                <li key={idx} className="flex items-start gap-1">
+                                  <FileWarning className="w-3 h-3 mt-0.5 shrink-0" />
+                                  <span>{e}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                          {row.status === "update" && (
+                            <details className="mt-1">
+                              <summary className="cursor-pointer opacity-70 hover:opacity-100 select-none">
+                                pokaż diff
+                              </summary>
+                              <div className="mt-1 grid gap-1 font-mono text-[10px]">
+                                <div className="rounded border border-border/30 bg-background/30 p-1.5">
+                                  <span className="opacity-60">stary alt:</span>{" "}
+                                  <span className="break-words">{row.currentAlt}</span>
+                                </div>
+                                <div
+                                  className={`rounded border p-1.5 ${
+                                    altIssues.length
+                                      ? "border-destructive/50 bg-destructive/10"
+                                      : "border-border/30 bg-background/30"
+                                  }`}
+                                >
+                                  <span className="opacity-60">nowy alt:</span>{" "}
+                                  <span className="break-words">
+                                    {row.alt || <em className="opacity-50">(pusty)</em>}
+                                  </span>
+                                </div>
+                                <div className="rounded border border-border/30 bg-background/30 p-1.5">
+                                  <span className="opacity-60">stary caption:</span>{" "}
+                                  <span className="break-words">{row.currentCaption}</span>
+                                </div>
+                                <div
+                                  className={`rounded border p-1.5 ${
+                                    capIssues.length
+                                      ? "border-destructive/50 bg-destructive/10"
+                                      : "border-border/30 bg-background/30"
+                                  }`}
+                                >
+                                  <span className="opacity-60">nowy caption:</span>{" "}
+                                  <span className="break-words">
+                                    {row.caption || <em className="opacity-50">(pusty)</em>}
+                                  </span>
+                                </div>
+                              </div>
+                            </details>
+                          )}
+                          {(row.status === "create" || (row.status === "error" && !row.currentAlt)) && (
+                            <details className="mt-1" open={row.fieldIssues.length > 0}>
+                              <summary className="cursor-pointer opacity-70 hover:opacity-100 select-none">
+                                pokaż treść
+                              </summary>
+                              <div className="mt-1 grid gap-1 font-mono text-[10px]">
+                                <div
+                                  className={`rounded border p-1.5 ${
+                                    altIssues.length
+                                      ? "border-destructive/50 bg-destructive/10"
+                                      : "border-border/30 bg-background/30"
+                                  }`}
+                                >
+                                  <span className="opacity-60">alt:</span>{" "}
+                                  <span className="break-words">
+                                    {row.alt || <em className="opacity-50">(pusty)</em>}
+                                  </span>
+                                </div>
+                                <div
+                                  className={`rounded border p-1.5 ${
+                                    capIssues.length
+                                      ? "border-destructive/50 bg-destructive/10"
+                                      : "border-border/30 bg-background/30"
+                                  }`}
+                                >
+                                  <span className="opacity-60">caption:</span>{" "}
+                                  <span className="break-words">
+                                    {row.caption || <em className="opacity-50">(pusty)</em>}
+                                  </span>
+                                </div>
+                              </div>
+                            </details>
+                          )}
+                        </>
+                      );
+                    })()}
                   </div>
                 );
               })}
