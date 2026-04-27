@@ -44,7 +44,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { LogOut, ShieldAlert, Save, RotateCcw, Database, FileJson, FileSpreadsheet, Trash2, Clock, User, History, Upload, CheckCircle2, AlertTriangle, FileWarning, Search, X } from "lucide-react";
+import { LogOut, ShieldAlert, Save, RotateCcw, Database, FileJson, FileSpreadsheet, Trash2, Clock, User, History, Upload, CheckCircle2, AlertTriangle, FileWarning, Search, X, ClipboardCopy, Check } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import SeoHead from "@/components/shared/SeoHead";
