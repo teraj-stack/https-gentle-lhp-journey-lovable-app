@@ -2049,6 +2049,27 @@ const renderHtml = ({
       }
       if (emptyEl) emptyEl.hidden = pts.length !== 0;
       sparks.forEach(function (fig) { redrawSpark(fig, pts); });
+      // Highlight wiersza w tabeli kombinacji, który odpowiada AKTUALNEMU
+      // stanowi selectów (wszystkie kolumny muszą się zgadzać). Brak highlightu
+      // = stan nie pokrywa się z żadną pełną kombinacją (np. user wybrał tylko
+      // command, a flag_max_copy zostawił "(wszystkie)").
+      if (combosBody && combosRows.length) {
+        var allSet = filterKeys.every(function (k) { return state[k]; });
+        var activeIdx = -1;
+        if (allSet) {
+          for (var ci = 0; ci < combosRows.length; ci++) {
+            var match = true;
+            for (var fi = 0; fi < filterKeys.length; fi++) {
+              if (combosRows[ci].values[fi] !== state[filterKeys[fi]]) { match = false; break; }
+            }
+            if (match) { activeIdx = ci; break; }
+          }
+        }
+        var rows = combosBody.querySelectorAll("tr[data-combo-idx]");
+        for (var ri = 0; ri < rows.length; ri++) {
+          rows[ri].classList.toggle("is-active", parseInt(rows[ri].getAttribute("data-combo-idx"), 10) === activeIdx);
+        }
+      }
     }
 
     selects.forEach(function (sel) {
