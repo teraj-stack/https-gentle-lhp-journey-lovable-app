@@ -147,8 +147,8 @@ export const assertFrameFitsViewport = async (
       `prawą krawędzią (right=${right.toFixed(2)}) przekracza viewport ` +
       `(vw=${viewportWidth}) o ${overflow.toFixed(2)}px ` +
       `(twardy próg = ${HARD_OVERFLOW_CEILING_PX}px). ` +
-      `Najczęstsza przyczyna: grid template z fixed `lg:grid-cols-[1fr_440px]` ` +
-      `nie przełącza się na single column w danym breakpoincie.`,
+      `Najczęstsza przyczyna: grid template z fixed kolumną (np. ` +
+      `lg:grid-cols-[1fr_440px]) nie przełącza się na single column w danym breakpoincie.`,
   ).toBeLessThanOrEqual(HARD_OVERFLOW_CEILING_PX);
 
   // Soft próg — fractional viewport / DPR rounding.
