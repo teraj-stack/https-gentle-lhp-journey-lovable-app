@@ -110,6 +110,9 @@ const PAGES: readonly PagePreset[] = [
   },
 ] as const;
 
+type ViewportMode = "mobile" | "desktop";
+type Mode = "view" | "edit";
+
 const ALT_MIN = 60;
 const ALT_BUDGET = 220;
 const CAPTION_BUDGET = 110;
