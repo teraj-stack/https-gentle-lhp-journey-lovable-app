@@ -387,7 +387,15 @@ const renderCardLinks = (t, playwrightReportRel) => {
   return `<footer class="card-links" aria-label="Linki do szczegółów Playwrighta">${links.join("")}</footer>`;
 };
 
-const renderHtml = ({ trios, generatedAt, totalFailures, playwrightReportRel, truncation }) => {
+const renderHtml = ({
+  trios,
+  generatedAt,
+  totalFailures,
+  playwrightReportRel,
+  truncation,
+  copyTruncation,
+  discoveryTruncation,
+}) => {
   // Zbieramy unikalne wartości viewport / state z trios, żeby wypełnić <select>'y.
   // Sortujemy alfabetycznie dla deterministycznej kolejności w UI (łatwiej znaleźć).
   const viewportSet = new Set();
