@@ -230,12 +230,39 @@ visual-regression:
 ```
 visual-report.zip
 ├── index.html                 # samowystarczalny raport (CSS + JS inline)
+├── savings.json               # strukturalny dump podsumowania (atrybucja per-flaga + top10 skipped trios)
+├── savings.csv                # 1-wierszowy CSV z agregatami (do append'owania do history)
 └── assets/
     ├── 000-<stem>-expected.png
     ├── 000-<stem>-actual.png
     ├── 000-<stem>-diff.png
     └── ...                    # 3 obrazy per failed snapshot
 ```
+
+### Trend analysis (savings.json / savings.csv)
+
+Pliki `savings.json` i `savings.csv` w `REPORT_DIR` zawierają to samo, co
+sekcja `📊 Atrybucja oszczędności` w konsoli, w postaci do dalszej analizy:
+
+- **`savings.json`** (schemaVersion: 1) — pełny dump: `limits`, `trio`, `pngCopy`,
+  `discoveryReaddir` (każdy z `baseline`/`processed`/`saved`/`savedPct`),
+  `attribution` per-flaga (`perGroup`, `maxFailures`, `maxCopy`, `maxDiscovery`)
+  oraz `topSkippedTrios` (top 10 z folderem/viewport/state/pngCount).
+- **`savings.csv`** — 1 wiersz + header, kolumny w **stabilnej kolejności**
+  (`generatedAt`, `trio_*`, `png_*`, `discovery_*`, `limit_*`, `attr_*`).
+  Zaprojektowane do append'owania:
+
+```bash
+# W CI: dopisuj każdy run do history.csv
+tail -n +2 test-results/visual-report/savings.csv >> history.csv
+
+# Analiza trendów (DuckDB):
+duckdb -c "SELECT generatedAt, png_saved_pct, discovery_saved_pct \
+           FROM read_csv_auto('history.csv') ORDER BY generatedAt DESC LIMIT 20;"
+```
+
+Pliki zapisywane są ZAWSZE (nawet gdy `saved == 0`), żeby trendy w czasie
+miały ciągłość punktów (zera są informacją, że danego dnia nic nie obcięto).
 
 Wszystkie ścieżki w `index.html` są **relatywne** od katalogu, w którym leży
 `index.html` — czyli ZIP można rozpakować gdziekolwiek i otworzyć bezpośrednio
