@@ -2409,8 +2409,28 @@ const renderHtml = ({
         });
       }
       var lines = [cols.join(",")].concat(rowsCells.map(function (r) { return r.join(","); }));
+      var csvText = lines.join("\n") + "\n";
+
+      // Split CSVs (na potrzeby trybu „zip-split"): osobny plik dla każdej
+      // metryki, tylko 2 kolumny `generatedAt,value` — gotowy do importu do
+      // narzędzi single-series (np. Grafana CSV plugin, Datawrapper) bez
+      // potrzeby selektowania kolumn po stronie usera.
+      function buildSingleSeriesCsv(metricKey) {
+        var head = "generatedAt,value";
+        var body = pts.map(function (p) {
+          var v = p[metricKey];
+          var cell = typeof v === "number" ? v.toFixed(2) : "";
+          return csvEscape(p.generatedAt || "") + "," + cell;
+        });
+        return [head].concat(body).join("\n") + "\n";
+      }
+      var splitCsvs = {
+        "png-saved.csv": buildSingleSeriesCsv("png"),
+        "discovery-saved.csv": buildSingleSeriesCsv("discovery"),
+      };
+
       return {
-        csv: lines.join("\n") + "\n",
+        csv: csvText,
         count: pts.length,
         total: allPoints.length,
         state: state,
@@ -2419,6 +2439,7 @@ const renderHtml = ({
         missingCount: missingCount,
         headerCells: cols,
         rowsCells: rowsCells,
+        splitCsvs: splitCsvs,
       };
     }
     function shortHash(s) {
