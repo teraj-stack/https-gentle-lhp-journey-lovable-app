@@ -2308,6 +2308,7 @@ const renderHtml = ({
     var exportBtn = root.querySelector("[data-trend-export]");
     var exportStatus = root.querySelector("[data-trend-export-status]");
     var exportModeSelect = root.querySelector("[data-trend-export-mode]");
+    var exportFormatSelect = root.querySelector("[data-trend-export-format]");
     var fullSchemaCols = (data.fullSchemaColumns && data.fullSchemaColumns.length)
       ? data.fullSchemaColumns
       : null;
