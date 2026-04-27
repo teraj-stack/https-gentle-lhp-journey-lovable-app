@@ -1200,7 +1200,14 @@ const renderHtml = ({
 };
 
 const main = async () => {
-  const { maxFailures, maxCopy, maxDiscovery, sort: sortRaw } = parseCliArgs(process.argv);
+  const {
+    maxFailures,
+    maxCopy,
+    maxDiscovery,
+    maxPerViewport,
+    maxPerState,
+    sort: sortRaw,
+  } = parseCliArgs(process.argv);
 
   // Sanity: czy są w ogóle wyniki?
   try {
