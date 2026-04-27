@@ -282,6 +282,15 @@ duckdb -c "SELECT generatedAt, png_saved_pct, discovery_saved_pct \
 — stara historia nie zostaje skorumpowana. Zarchiwizuj wtedy stary plik
 (`mv history.csv history-v1.csv`), kolejny run wygeneruje świeży.
 
+**Sparkline'y w `index.html`**: jeśli `history.csv` istnieje (i ma kolumny
+`generatedAt` / `png_saved_pct` / `discovery_saved_pct`), raport renderuje
+sekcję **„Trendy oszczędności IO"** z dwoma inline SVG (PNG copy saved % +
+Discovery readdir saved %). Skala Y: 0–100%, oś X: kolejność runów (max 50
+ostatnich punktów). Ostatnia kropka = bieżący run (większa, oznaczona
+„(this run)" w `<title>`-tooltipie). Pierwszy run pokazuje tylko jeden punkt
++ notkę „historia zacznie się zbierać od następnego uruchomienia". Brak JS,
+zero deps — działa z `file://`. `--no-history` wyłącza także sekcję trends.
+
 `savings.json`/`savings.csv` zapisywane są ZAWSZE (nawet gdy `saved == 0`),
 żeby trendy w czasie miały ciągłość punktów (zera są informacją, że danego
 dnia nic nie obcięto).
