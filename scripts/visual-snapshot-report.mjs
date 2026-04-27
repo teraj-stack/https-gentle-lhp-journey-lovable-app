@@ -1078,6 +1078,13 @@ const renderHtml = ({
         </label>
         ${flagSelects}
         <button type="button" class="trends-filter-reset" data-trend-reset>Resetuj</button>
+        <label class="trends-filter-label trends-filter-export-mode" title="Skrócony: tylko kolumny obecne w wykresach. Pełny schemat: wszystkie kolumny savings.csv (puste tam, gdzie raport nie ma danych).">
+          tryb eksportu
+          <select class="trends-filter-select" data-trend-export-mode>
+            <option value="subset" selected>Skrócony</option>
+            <option value="full">Pełny schemat</option>
+          </select>
+        </label>
         <button type="button" class="trends-filter-export" data-trend-export title="Pobierz przefiltrowane wiersze jako CSV (kompatybilny ze schematem savings.csv/history.csv)">⬇ Eksportuj CSV</button>
         <span class="trends-filter-export-status" data-trend-export-status role="status" aria-live="polite"></span>
       </div>`;
