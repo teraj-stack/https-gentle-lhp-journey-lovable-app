@@ -1252,6 +1252,7 @@ const renderHtml = ({
        </aside>`
     : ""}
   ${summaryLine}
+  ${trendsSection}
   ${omittedSection}
   ${breakdownSection}
   ${filterBar}
