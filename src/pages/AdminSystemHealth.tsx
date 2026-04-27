@@ -4790,6 +4790,15 @@ const AdminSystemHealth = () => {
           expiresAt={jumpLabel.expiresAt}
         />
       )}
+      {/*
+        Wspólny dialog potwierdzenia eksportu — obsługuje WSZYSTKIE
+        eksporty JSON/CSV w tym widoku (focus-prefs backup, retry-records
+        per source). Stan trzyma `useExportConfirmation` (`exportDialog`).
+      */}
+      <ConfirmExportDialog
+        {...exportDialog.dialogProps}
+        title="Pobrać plik?"
+      />
     </>
   );
 };
