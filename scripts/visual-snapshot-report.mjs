@@ -940,19 +940,17 @@ const renderHtml = ({
     // X: równomierne rozmieszczenie (index, NIE czas — gęsto pakowane runy
     // czasowo i tak wyglądałyby liniowo; index pokazuje kolejność a nie odstępy).
     // Y: 0% na dole, 100% na górze.
-    const xFor = (i) =>
-      points.length === 1
-        ? PAD_L + innerW / 2
-        : PAD_L + (i / (points.length - 1)) * innerW;
+    const xFor = (i, n) =>
+      n === 1 ? PAD_L + innerW / 2 : PAD_L + (i / (n - 1)) * innerW;
     const yFor = (pct) => PAD_T + (1 - Math.max(0, Math.min(100, pct)) / 100) * innerH;
 
     const buildSpark = (key, color, label) => {
       const polyline = points
-        .map((p, i) => `${xFor(i).toFixed(1)},${yFor(p[key]).toFixed(1)}`)
+        .map((p, i) => `${xFor(i, points.length).toFixed(1)},${yFor(p[key]).toFixed(1)}`)
         .join(" ");
       const dots = points
         .map((p, i) => {
-          const cx = xFor(i).toFixed(1);
+          const cx = xFor(i, points.length).toFixed(1);
           const cy = yFor(p[key]).toFixed(1);
           const isCurrent = p.isCurrent;
           const r = isCurrent ? 4 : 2.2;
@@ -969,34 +967,85 @@ const renderHtml = ({
       const lastTs = points[points.length - 1].generatedAt
         ? points[points.length - 1].generatedAt.slice(0, 10)
         : "now";
+      // data-spark="<key>" + data-color="<hex>" — JS filtra używa tych atrybutów,
+      // żeby przerysować <g class="trend-series"> bez zmiany innych elementów SVG.
       return `
-        <figure class="trend-chart">
-          <figcaption>${escapeHtml(label)} <span class="trend-current">${last.toFixed(1)}%</span></figcaption>
-          <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${escapeHtml(label)} trend (${points.length} runów)">
+        <figure class="trend-chart" data-spark="${escapeHtml(key)}" data-color="${escapeHtml(color)}">
+          <figcaption>${escapeHtml(label)} <span class="trend-current" data-trend-current>${last.toFixed(1)}%</span></figcaption>
+          <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${escapeHtml(label)} trend (${points.length} runów)" data-trend-svg data-w="${W}" data-h="${H}" data-pad-l="${PAD_L}" data-pad-r="${PAD_R}" data-pad-t="${PAD_T}" data-pad-b="${PAD_B}">
             <line x1="${PAD_L}" y1="${PAD_T}" x2="${PAD_L}" y2="${H - PAD_B}" class="trend-axis" />
             <line x1="${PAD_L}" y1="${H - PAD_B}" x2="${W - PAD_R}" y2="${H - PAD_B}" class="trend-axis" />
             <text x="${PAD_L - 4}" y="${PAD_T + 4}" text-anchor="end" class="trend-axis-label">100%</text>
             <text x="${PAD_L - 4}" y="${H - PAD_B}" text-anchor="end" class="trend-axis-label">0%</text>
-            <text x="${PAD_L}" y="${H - 2}" text-anchor="start" class="trend-axis-label">${escapeHtml(first)}</text>
-            <text x="${W - PAD_R}" y="${H - 2}" text-anchor="end" class="trend-axis-label">${escapeHtml(lastTs)}</text>
-            ${points.length > 1 ? `<polyline points="${polyline}" fill="none" stroke="${color}" stroke-width="1.5" />` : ""}
-            ${dots}
+            <text x="${PAD_L}" y="${H - 2}" text-anchor="start" class="trend-axis-label" data-trend-first>${escapeHtml(first)}</text>
+            <text x="${W - PAD_R}" y="${H - 2}" text-anchor="end" class="trend-axis-label" data-trend-last>${escapeHtml(lastTs)}</text>
+            <g class="trend-series" data-trend-series>
+              ${points.length > 1 ? `<polyline points="${polyline}" fill="none" stroke="${color}" stroke-width="1.5" />` : ""}
+              ${dots}
+            </g>
           </svg>
         </figure>`;
     };
 
     const note = trends.isFirstRun
       ? `<p class="trend-note">📈 Pierwszy run — historia zacznie się zbierać od następnego uruchomienia (<code>${escapeHtml(trends.source)}</code>).</p>`
-      : `<p class="trend-note">📈 ${points.length} ${points.length === 1 ? "run" : "runów"}${trends.truncated ? ` (z ${trends.totalPoints}, pokazano ostatnie 50)` : ""} z <code>${escapeHtml(trends.source)}</code>. Ostatnia kropka = ten run.</p>`;
+      : `<p class="trend-note">📈 <span data-trend-count>${points.length} ${points.length === 1 ? "run" : "runów"}${trends.truncated ? ` (z ${trends.totalPoints}, pokazano ostatnie 50)` : ""}</span> z <code>${escapeHtml(trends.source)}</code>. Ostatnia kropka = ten run.</p>`;
+
+    // ---- Filtr trendów: command + flag_* ----
+    // Selecty są budowane z unikalnych wartości w `points` (po stronie klienta,
+    // żeby JSON był source of truth). Etykieta "(brak)" oznacza wiersz z pustą
+    // wartością — np. starsze history.csv bez kolumn flag_*.
+    const flagLabels = {
+      flag_max_failures: "max-failures",
+      flag_max_per_viewport: "max-per-viewport",
+      flag_max_per_state: "max-per-state",
+      flag_max_copy: "max-copy",
+      flag_max_discovery: "max-discovery",
+      flag_no_history: "no-history",
+      flag_history_path: "history-path",
+    };
+    const flagCols = trends.flagColumns || [];
+    const flagSelects = flagCols
+      .map((name) => `
+          <label class="trends-filter-label">
+            ${escapeHtml(flagLabels[name] || name)}
+            <select class="trends-filter-select" data-trend-filter="${escapeHtml(name)}">
+              <option value="">(wszystkie)</option>
+            </select>
+          </label>`)
+      .join("");
+
+    const filterBar = `
+      <div class="trends-filter" role="group" aria-label="Filtry trendów">
+        <label class="trends-filter-label">
+          command
+          <select class="trends-filter-select trends-filter-command" data-trend-filter="command">
+            <option value="">(wszystkie)</option>
+          </select>
+        </label>
+        ${flagSelects}
+        <button type="button" class="trends-filter-reset" data-trend-reset>Resetuj</button>
+      </div>`;
+
+    // Embed pełnych danych (z command/flags) jako JSON. Klient czyta ten blok
+    // przez document.getElementById, NIE eval — zero ryzyka XSS (escapujemy </).
+    const jsonPayload = JSON.stringify({
+      points,
+      flagColumns: flagCols,
+      flagLabels,
+    }).replace(/</g, "\\u003c");
 
     return `
-    <section class="trends" aria-label="Trendy oszczędności IO między runami">
+    <section class="trends" aria-label="Trendy oszczędności IO między runami" data-trends-root>
       <h2 class="trends-title">Trendy oszczędności IO</h2>
       ${note}
+      ${filterBar}
+      <p class="trends-empty" data-trends-empty hidden>Żaden run nie pasuje do filtra. Wyczyść, żeby zobaczyć wszystkie.</p>
       <div class="trends-grid">
         ${buildSpark("png", "#c9a84c", "PNG copy saved %")}
         ${buildSpark("discovery", "#8ab4f8", "Discovery readdir saved %")}
       </div>
+      <script type="application/json" id="trends-json">${jsonPayload}</script>
     </section>`;
   })();
 
