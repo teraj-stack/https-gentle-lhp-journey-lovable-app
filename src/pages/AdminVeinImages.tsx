@@ -285,10 +285,12 @@ const AdminVeinImages = () => {
     lastSeededKey.current = activeKey;
   }, [activeKey, overrides.main, overrides.perforator]);
 
-  // Po 1.6s wygaszamy flash highlight (re-render → warunek `Date.now() - lastSaved.at < 1500` staje się false).
+  // Po 1.6s wygaszamy flash highlight border (lastSaved zostaje, ale border wraca do default).
+  const [flashOn, setFlashOn] = useState(false);
   useEffect(() => {
     if (!lastSaved) return;
-    const t = setTimeout(() => setLastSaved((cur) => (cur === lastSaved ? cur : cur)), 1600);
+    setFlashOn(true);
+    const t = setTimeout(() => setFlashOn(false), 1600);
     return () => clearTimeout(t);
   }, [lastSaved]);
 
