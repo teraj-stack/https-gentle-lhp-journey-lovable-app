@@ -240,6 +240,74 @@ const StatsBadge = ({ stats }: { stats: FieldStats }) => {
   );
 };
 
+const ReadabilityRow = ({
+  stats,
+  viewport,
+  kind,
+}: {
+  stats: FieldStats;
+  viewport: ViewportMode;
+  kind: "alt" | "caption";
+}) => {
+  const r = stats.readability;
+  if (!r) return null;
+  const lineLimit = CAPTION_LINE_WARN[viewport];
+  const columnPx = CAPTION_COLUMN_PX[viewport];
+  const items: { label: string; value: string; warn: boolean; title: string }[] =
+    [];
+
+  items.push({
+    label: "słowa",
+    value: `${r.wordCount}`,
+    warn: false,
+    title: `Czas czytania ≈ ${r.readingSeconds}s przy ${READING_WPM} wpm`,
+  });
+
+  if (kind === "caption") {
+    items.push({
+      label: "linie",
+      value: `~${r.estimatedLines} (max ${lineLimit})`,
+      warn: r.linesWarn,
+      title: `Szacunkowe linie figcaption w kolumnie ${columnPx}px na ${viewport}. Powyżej limitu rośnie ryzyko przeoczenia.`,
+    });
+    items.push({
+      label: "najdłuższy segment",
+      value: `${r.longestSegmentPx}px / ${columnPx}px`,
+      warn: r.segmentTruncationRisk,
+      title: r.segmentTruncationRisk
+        ? "Segment lub słowo szersze niż kolumna — ryzyko ucięcia / złamania w środku słowa."
+        : "Mieści się w szerokości kolumny — bez ryzyka ucięcia.",
+    });
+  } else {
+    items.push({
+      label: "czytanie",
+      value: `${r.readingSeconds}s`,
+      warn: false,
+      title: `Czas dla screen readera ≈ ${r.readingSeconds}s przy ${READING_WPM} wpm`,
+    });
+  }
+
+  return (
+    <div className="mt-1.5 flex flex-wrap gap-1">
+      {items.map((it) => (
+        <span
+          key={it.label}
+          title={it.title}
+          className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-mono border ${
+            it.warn
+              ? "bg-amber-500/10 text-amber-300 border-amber-500/30"
+              : "bg-card/40 text-muted-foreground border-border/30"
+          }`}
+        >
+          {it.warn && "⚠"}
+          <span className="opacity-70">{it.label}:</span>
+          <span>{it.value}</span>
+        </span>
+      ))}
+    </div>
+  );
+};
+
 const SegmentList = ({ segments }: { segments: NonNullable<FieldStats["segments"]> }) => (
   <ul className="mt-2 grid gap-1 text-[11px]">
     {segments.map((segment, idx) => (
