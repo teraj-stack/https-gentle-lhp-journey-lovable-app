@@ -153,6 +153,20 @@ co przeżyje. Klucze (CSV, `-` = malejąco): `viewport`, `state`, `path`, `stem`
 
 Nieznane klucze → warning, pomijane (CI nie wybucha za literówkę).
 
+**Podsumowanie oszczędności w konsoli** (tylko gdy faktycznie obcięto):
+
+```
+[visual-snapshot-report] 💾 Oszczędność: 60 mniej PNG copy: 90/150 (60%), 50 mniej discovery readdir: 30/80 (62%).
+[visual-snapshot-report]   ├─ trio: baseline=80 (allFailed.length), rendered=30, saved=50 | limity: --max-failures=30, --max-failures-per-viewport=∞, --max-failures-per-state=∞
+[visual-snapshot-report]   ├─ PNG copy: baseline=150 (suma expected+actual+diff z allFailed), processed=90, saved=60 | limit: --max-copy=∞ (copyLimit=30/30 trio)
+[visual-snapshot-report]   └─ discovery readdir: baseline=80 (allFailed.length), processed=30, saved=50 | limit: --max-discovery=∞ (discoveryLimit=30/30 trio)
+```
+
+Breakdown pozwala policzyć dokładny zysk IO względem pełnego scenariusza
+bez limitów: `baseline` = co zrobiłby skrypt bez `--max-*`, `processed` =
+co faktycznie wykonał, `saved` = `baseline - processed`. Limity (`∞` = brak)
+pokazują, który flag ile zaoszczędził.
+
 **Komentarz w PR z linkiem do artifactu** (opcjonalnie):
 
 ```yaml
