@@ -2879,46 +2879,9 @@ const main = async () => {
   // CSV: header + jeden wiersz. Schema flat (bez nestingu) żeby spreadsheet/duckdb
   // mogły to czytać bez gimnastyki. Kolejność kolumn STABILNA — append do history
   // wymaga tej samej kolejności między runami.
-  const csvCols = [
-    "generatedAt",
-    "trio_baseline",
-    "trio_rendered",
-    "trio_saved",
-    "trio_saved_pct",
-    "png_baseline",
-    "png_processed",
-    "png_saved",
-    "png_saved_pct",
-    "discovery_baseline",
-    "discovery_processed",
-    "discovery_saved",
-    "discovery_saved_pct",
-    "limit_max_failures",
-    "limit_max_per_viewport",
-    "limit_max_per_state",
-    "limit_max_copy",
-    "limit_max_discovery",
-    "attr_per_group_png",
-    "attr_per_group_discovery",
-    "attr_max_failures_png",
-    "attr_max_failures_discovery",
-    "attr_max_copy_png",
-    "attr_max_discovery_readdir",
-    // Run context — pełne wartości flag + komenda. Pozwala filtrować trendy
-    // typu "tylko runy z --max-copy=200" albo "tylko CI (npm run …)".
-    // CSV-escape (cudzysłowy) bo command/history-path mogą zawierać spacje
-    // i przecinki — patrz `csvEscape` poniżej.
-    "flag_max_failures",
-    "flag_max_per_viewport",
-    "flag_max_per_state",
-    "flag_max_copy",
-    "flag_max_discovery",
-    "flag_no_history",
-    "flag_history_path",
-    "command",
-    "node_version",
-    "cwd_basename",
-  ];
+  // Schema kolumn — patrz module-level SAVINGS_CSV_COLUMNS. Trzymamy alias
+  // `csvCols` lokalnie żeby zminimalizować zmiany w istniejącym kodzie zapisu.
+  const csvCols = SAVINGS_CSV_COLUMNS;
   const limitCsv = (v) => (v === null || v === undefined ? "" : String(v));
   /**
    * RFC 4180 CSV escape: jeśli wartość zawiera `,`, `"`, `\n` lub `\r`,
