@@ -2277,6 +2277,31 @@ const AdminVeinImages = () => {
                   do aktualizacji: {importPreviewRows.filter((r) => r.status === "update").length} ·
                   bez zmian: {importPreviewRows.filter((r) => r.status === "noop").length} ·
                   z błędami: {importPreviewRows.filter((r) => r.status === "error").length}
+                  {(() => {
+                    const altMissing = importPreviewRows.filter((r) =>
+                      r.fieldIssues.some((i) => i.field === "alt" && i.kind === "empty"),
+                    ).length;
+                    const capMissing = importPreviewRows.filter((r) =>
+                      r.fieldIssues.some((i) => i.field === "caption" && i.kind === "empty"),
+                    ).length;
+                    const overLimit = importPreviewRows.filter((r) =>
+                      r.fieldIssues.some(
+                        (i) => i.kind === "tooLong" || i.kind === "tooShort" || i.kind === "segment",
+                      ),
+                    ).length;
+                    if (altMissing + capMissing + overLimit === 0) return null;
+                    return (
+                      <>
+                        {" · "}
+                        <span className="text-destructive font-semibold">
+                          braki/limity:{" "}
+                          {altMissing > 0 && <>alt∅×{altMissing} </>}
+                          {capMissing > 0 && <>cap∅×{capMissing} </>}
+                          {overLimit > 0 && <>poza limitem×{overLimit}</>}
+                        </span>
+                      </>
+                    );
+                  })()}
                 </>
               ) : null}
             </DialogDescription>
