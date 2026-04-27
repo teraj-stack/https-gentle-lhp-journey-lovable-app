@@ -265,7 +265,9 @@ const ConfirmExportDialog: React.FC<ConfirmExportDialogProps> = ({
         </p>
 
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={isExporting}>{cancelLabel}</AlertDialogCancel>
+          <AlertDialogCancel disabled={isExporting} aria-keyshortcuts="Escape">
+            {cancelLabel}
+          </AlertDialogCancel>
           <AlertDialogAction
             onClick={(event) => {
               if (isExporting) {
