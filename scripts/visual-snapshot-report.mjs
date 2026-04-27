@@ -1723,6 +1723,173 @@ const main = async () => {
       });
     }
   }
+
+  // Persystencja podsumowania oszczędności do JSON+CSV — niezależnie od tego,
+  // czy coś zostało zaoszczędzone (zera też się liczą dla trend analysis między
+  // runami w CI). JSON = pełny strukturalny dump (per-flaga atrybucja, top trios),
+  // CSV = jeden wiersz z agregatami (łatwe do append'owania do historii w CI:
+  // `cat new-savings.csv | tail -n +2 >> history.csv`).
+  // Liczone PONOWNIE tutaj, żeby działało nawet gdy `if (pngSaved > 0)` powyżej
+  // się nie wykonał (zero savings → JSON nadal opisuje stan "no truncation").
+  const trioBaselineJson = allFailed.length;
+  const trioRenderedJson = failed.length;
+  const renderedSetJson = new Set(failed.map((t) => t.stem + "::" + t.dir));
+  const skippedJson = allFailed.filter((t) => !renderedSetJson.has(t.stem + "::" + t.dir));
+  const countPngsJson = (trios) => {
+    let n = 0;
+    for (const t of trios) {
+      if (t.expected) n++;
+      if (t.actual) n++;
+      if (t.diff) n++;
+    }
+    return n;
+  };
+  const perGroupTriosJson = omittedByGroup.map((o) => o.trio);
+  const maxFailuresTriosJson =
+    maxFailures !== null && perGroupFiltered.length > maxFailures
+      ? perGroupFiltered.slice(maxFailures)
+      : [];
+  const perGroupByReasonJson = { viewport: 0, state: 0 };
+  for (const o of omittedByGroup) {
+    perGroupByReasonJson[o.reason] = (perGroupByReasonJson[o.reason] ?? 0) + 1;
+  }
+  const pct = (saved, baseline) =>
+    baseline > 0 ? Math.round((saved / baseline) * 1000) / 10 : 0; // 1 miejsce po przecinku
+
+  const savingsSummary = {
+    schemaVersion: 1,
+    generatedAt: new Date().toISOString(),
+    limits: {
+      maxFailures: maxFailures,
+      maxFailuresPerViewport: maxPerViewport,
+      maxFailuresPerState: maxPerState,
+      maxCopy: maxCopy,
+      maxDiscovery: maxDiscovery,
+    },
+    trio: {
+      baseline: trioBaselineJson,
+      rendered: trioRenderedJson,
+      saved: trioBaselineJson - trioRenderedJson,
+      savedPct: pct(trioBaselineJson - trioRenderedJson, trioBaselineJson),
+    },
+    pngCopy: {
+      baseline: pngBaseline,
+      processed: pngCopied,
+      saved: pngSaved,
+      savedPct: pct(pngSaved, pngBaseline),
+    },
+    discoveryReaddir: {
+      baseline: discoveryBaseline,
+      processed: discoveryRuns,
+      saved: discoverySaved,
+      savedPct: pct(discoverySaved, discoveryBaseline),
+    },
+    attribution: {
+      perGroup: {
+        flag: { maxPerViewport, maxPerState },
+        byReason: perGroupByReasonJson,
+        pngSaved: countPngsJson(perGroupTriosJson),
+        discoverySaved: perGroupTriosJson.length,
+      },
+      maxFailures: {
+        flag: { maxFailures },
+        pngSaved: countPngsJson(maxFailuresTriosJson),
+        discoverySaved: maxFailuresTriosJson.length,
+      },
+      maxCopy: {
+        flag: { maxCopy },
+        pngSaved: countPngsJson(failed.slice(copyLimit)),
+        discoverySaved: 0,
+      },
+      maxDiscovery: {
+        flag: { maxDiscovery },
+        pngSaved: 0,
+        discoverySaved: Math.max(0, failed.length - discoveryLimit),
+      },
+    },
+    topSkippedTrios: skippedJson
+      .map((t) => ({
+        stem: t.stem,
+        folder: path.relative(PROJECT_ROOT, t.dir) || ".",
+        viewport: t._viewport,
+        state: t._state,
+        pngCount: (t.expected ? 1 : 0) + (t.actual ? 1 : 0) + (t.diff ? 1 : 0),
+      }))
+      .sort((a, b) => b.pngCount - a.pngCount || a.stem.localeCompare(b.stem))
+      .slice(0, 10), // 10 (nie 3) — w JSON więcej kontekstu się przyda do analizy
+  };
+
+  const savingsJsonPath = path.join(REPORT_DIR, "savings.json");
+  await fs.writeFile(savingsJsonPath, JSON.stringify(savingsSummary, null, 2), "utf8");
+
+  // CSV: header + jeden wiersz. Schema flat (bez nestingu) żeby spreadsheet/duckdb
+  // mogły to czytać bez gimnastyki. Kolejność kolumn STABILNA — append do history
+  // wymaga tej samej kolejności między runami.
+  const csvCols = [
+    "generatedAt",
+    "trio_baseline",
+    "trio_rendered",
+    "trio_saved",
+    "trio_saved_pct",
+    "png_baseline",
+    "png_processed",
+    "png_saved",
+    "png_saved_pct",
+    "discovery_baseline",
+    "discovery_processed",
+    "discovery_saved",
+    "discovery_saved_pct",
+    "limit_max_failures",
+    "limit_max_per_viewport",
+    "limit_max_per_state",
+    "limit_max_copy",
+    "limit_max_discovery",
+    "attr_per_group_png",
+    "attr_per_group_discovery",
+    "attr_max_failures_png",
+    "attr_max_failures_discovery",
+    "attr_max_copy_png",
+    "attr_max_discovery_readdir",
+  ];
+  const limitCsv = (v) => (v === null || v === undefined ? "" : String(v));
+  const csvRow = [
+    savingsSummary.generatedAt,
+    savingsSummary.trio.baseline,
+    savingsSummary.trio.rendered,
+    savingsSummary.trio.saved,
+    savingsSummary.trio.savedPct,
+    savingsSummary.pngCopy.baseline,
+    savingsSummary.pngCopy.processed,
+    savingsSummary.pngCopy.saved,
+    savingsSummary.pngCopy.savedPct,
+    savingsSummary.discoveryReaddir.baseline,
+    savingsSummary.discoveryReaddir.processed,
+    savingsSummary.discoveryReaddir.saved,
+    savingsSummary.discoveryReaddir.savedPct,
+    limitCsv(maxFailures),
+    limitCsv(maxPerViewport),
+    limitCsv(maxPerState),
+    limitCsv(maxCopy),
+    limitCsv(maxDiscovery),
+    savingsSummary.attribution.perGroup.pngSaved,
+    savingsSummary.attribution.perGroup.discoverySaved,
+    savingsSummary.attribution.maxFailures.pngSaved,
+    savingsSummary.attribution.maxFailures.discoverySaved,
+    savingsSummary.attribution.maxCopy.pngSaved,
+    savingsSummary.attribution.maxDiscovery.discoverySaved,
+  ];
+  const savingsCsvPath = path.join(REPORT_DIR, "savings.csv");
+  await fs.writeFile(
+    savingsCsvPath,
+    `${csvCols.join(",")}\n${csvRow.join(",")}\n`,
+    "utf8",
+  );
+
+  console.log(
+    `[visual-snapshot-report] 📁 Zapisano podsumowanie: ` +
+      `${path.relative(PROJECT_ROOT, savingsJsonPath)}, ` +
+      `${path.relative(PROJECT_ROOT, savingsCsvPath)}`,
+  );
 };
 
 main().catch((err) => {
