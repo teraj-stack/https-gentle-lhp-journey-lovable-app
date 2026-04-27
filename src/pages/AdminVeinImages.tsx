@@ -144,6 +144,98 @@ const parseCsv = (raw: string): string[][] => {
   return rows.filter((r) => r.length > 1 || (r.length === 1 && r[0].trim() !== ""));
 };
 
+/**
+ * Mapuje nieoczywiste warianty nagłówków CSV na 4 kanoniczne pola
+ * (page_key/slot/alt/caption). Pozwala adminowi importować pliki edytowane
+ * w Excelu/Google Sheets, które często „normalizują" nazwy kolumn:
+ *  - „Page Key" / „page-key" / „PAGE_KEY" / „Strona" → page_key
+ *  - „Slot" / „Wariant" / „Typ"                      → slot
+ *  - „Alt" / „Alt text" / „Opis alternatywny"        → alt
+ *  - „Caption" / „Podpis" / „Figcaption"             → caption
+ *
+ * Normalizacja: lower-case + usuwanie spacji/myślników/podkreśleń → klucz
+ * porównania; każdy wariant jest „przyklejony" do tego samego klucza.
+ *
+ * Zwraca:
+ *  - `indices`: index kolumny per kanoniczne pole (–1 jeśli nie znaleziono),
+ *  - `matchedHeader`: oryginalna etykieta z CSV, którą rozpoznaliśmy
+ *    (do toastu „Rozpoznano nagłówki: Page Key → page_key"); pusty string,
+ *    gdy pole nie zostało znalezione.
+ */
+const CANONICAL_FIELDS = ["page_key", "slot", "alt", "caption"] as const;
+type CanonicalField = (typeof CANONICAL_FIELDS)[number];
+
+const normalizeHeaderToken = (s: string): string =>
+  s
+    .replace(/^\uFEFF/, "")
+    .trim()
+    .toLowerCase()
+    // collapse separator characters: spaces, dashes, underscores, dots
+    .replace(/[\s_\-.]+/g, "");
+
+const HEADER_ALIASES: Record<CanonicalField, readonly string[]> = {
+  page_key: [
+    "pagekey",
+    "page",
+    "pageid",
+    "key",
+    "strona",
+    "stronaklucz",
+    "kluczstrony",
+  ],
+  slot: ["slot", "wariant", "typ", "type", "variant", "rodzaj"],
+  alt: ["alt", "alttext", "altattribute", "opisalternatywny", "altopis"],
+  caption: [
+    "caption",
+    "figcaption",
+    "podpis",
+    "podpisobrazka",
+    "opis",
+    "description",
+  ],
+};
+
+interface CsvHeaderMapping {
+  indices: Record<CanonicalField, number>;
+  matchedHeader: Record<CanonicalField, string>;
+}
+
+const resolveCsvHeaderMapping = (rawHeader: readonly string[]): CsvHeaderMapping => {
+  const indices: Record<CanonicalField, number> = {
+    page_key: -1,
+    slot: -1,
+    alt: -1,
+    caption: -1,
+  };
+  const matchedHeader: Record<CanonicalField, string> = {
+    page_key: "",
+    slot: "",
+    alt: "",
+    caption: "",
+  };
+  // Mapa znormalizowany_token → kanoniczne pole (zbudowana raz).
+  const aliasMap = new Map<string, CanonicalField>();
+  for (const field of CANONICAL_FIELDS) {
+    aliasMap.set(normalizeHeaderToken(field), field);
+    for (const alias of HEADER_ALIASES[field]) {
+      aliasMap.set(alias, field);
+    }
+  }
+  rawHeader.forEach((cell, i) => {
+    const norm = normalizeHeaderToken(cell);
+    const field = aliasMap.get(norm);
+    if (!field) return;
+    // First-match-wins per field — chroni przed sytuacją gdzie obie kolumny
+    // „caption" i „opis" są w pliku (bardzo nieprawdopodobne, ale safe).
+    if (indices[field] === -1) {
+      indices[field] = i;
+      matchedHeader[field] = cell.trim();
+    }
+  });
+  return { indices, matchedHeader };
+};
+
+
 const VALID_PAGE_KEYS = new Set<VeinImagePageKey>(
   VEIN_IMAGE_PAGE_PRESETS.map((p) => p.key),
 );
