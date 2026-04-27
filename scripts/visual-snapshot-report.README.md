@@ -330,6 +330,17 @@ pasujących do wszystkich aktywnych selectów (AND), bez re-runu skryptu.
   `?trend_command=...&trend_flag_max_copy=200`, dzięki czemu można udostępnić
   link do konkretnego widoku trendu (np. „CI z `--max-copy=200`").
 - Przycisk **Resetuj** czyści wszystkie selecty i pokazuje pełną historię.
+- Przycisk **⬇ Eksportuj CSV** pobiera AKTUALNIE przefiltrowany zbiór runów do
+  nowego pliku `savings-filtered-<timestamp>-<hash>.csv` (Blob + `a[download]`,
+  zero deps, działa też z `file://`). Schemat: `generatedAt, png_saved_pct,
+  discovery_saved_pct, isCurrent, command, flag_*` — podzbiór kolumn
+  `savings.csv`/`history.csv` obecny w embedded `trends-json`. Wartości są
+  RFC 4180-escaped (cudzysłowy w polach z przecinkami/newline'ami), więc plik
+  można od razu wczytać do DuckDB / Excela / Pandas. Hash w nazwie =
+  deterministyczny djb2 stanu filtra (kolejne eksporty tej samej kombinacji
+  nie nadpisują siebie z różnych timestampów). Status („Pobrano N/M → nazwa")
+  wyświetla się obok przycisku; jeśli filtr nie zwrócił żadnego wiersza,
+  eksport jest blokowany z komunikatem „Brak wierszy do eksportu".
 - Pod selectami znajduje się rozwijana sekcja **„Unikalne kombinacje
   `command` + `flag_*`"** — tabela wszystkich krotek wartości, które
   rzeczywiście wystąpiły w `history.csv`, posortowana malejąco po liczbie
