@@ -385,6 +385,27 @@ pasujących do wszystkich aktywnych selectów (AND), bez re-runu skryptu.
   jeden-do-jednego. Jeśli potrzebujesz odwrotnej kolejności (najnowsze
   pierwsze) — odwróć kolumnę `generatedAt` w arkuszu po imporcie; eksport
   celowo nie udostępnia toggla, żeby zachować jedno źródło prawdy.
+
+  **Format eksportu** (select „format" obok trybu):
+  - **CSV** (domyślny) — pojedynczy plik `savings-filtered-<mode>-<ts>-<hash>.csv`.
+  - **ZIP (CSV + metadata)** — `…<hash>.zip` zawierający spakowany CSV oraz
+    `metadata.json` z manifestem (timestamp, filtr, tryb, lista kolumn,
+    `missingColumnsAsEmpty`, `sortContract`). Wygodne, gdy filtr zwraca
+    setki/tysiące wierszy lub gdy chcesz zachować razem dane + kontekst, w
+    jakim powstały (do code review, do bug-reportu, do archiwum).
+  - **ZIP split (PNG/discovery)** — to samo co wyżej + dodatkowe pliki
+    `png-saved.csv` i `discovery-saved.csv` (po dwie kolumny:
+    `generatedAt,value`). Pomyślane pod narzędzia single-series (Datawrapper,
+    Grafana CSV plugin, gnuplot), które nie lubią szerokich tabel z
+    `flag_*`.
+
+  ZIP używa metody **STORE** (kompresja=0) napisanej od zera (~80 linii,
+  zero deps, bez `CompressionStream` — działa we wszystkich przeglądarkach z
+  `Blob`+`URL.createObjectURL`). Deterministyczny: timestamp wpisu = epoka
+  DOS (1980-01-01), nazwy w UTF-8 (bit 11). Plik otwiera się natywnie w
+  Eksploratorze Windows, Finderze macOS, `unzip`/`bsdtar` na Linuxie.
+  Limity: max 4 GiB total / 65535 plików (zero ryzyka — eksport CSV ma
+  rzędy KB-MB, kilka plików).
 - Pod selectami znajduje się rozwijana sekcja **„Unikalne kombinacje
   `command` + `flag_*`"** — tabela wszystkich krotek wartości, które
   rzeczywiście wystąpiły w `history.csv`, posortowana malejąco po liczbie
