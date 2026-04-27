@@ -200,6 +200,8 @@ const parseCliArgs = (argv) => {
     maxFailures: flags.maxFailures.value,
     maxCopy: flags.maxCopy.value,
     maxDiscovery: flags.maxDiscovery.value,
+    maxPerViewport: flags.maxPerViewport.value,
+    maxPerState: flags.maxPerState.value,
     sort: flags.sort.value, // string lub null (=> default)
   };
 };
