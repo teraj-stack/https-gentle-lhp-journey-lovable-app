@@ -196,6 +196,8 @@ const AdminVeinImages = () => {
   );
   const [viewport, setViewport] = useState<ViewportMode>("desktop");
   const [saving, setSaving] = useState<VeinImageSlot | null>(null);
+  const [exporting, setExporting] = useState<"json" | "csv" | null>(null);
+  const [resettingAll, setResettingAll] = useState(false);
   /** Bump po każdym udanym zapisie — wymusza remount podglądu CMS (force-fresh render). */
   const [savedTick, setSavedTick] = useState(0);
   /** Timestamp + slot ostatniego zapisu — driver krótkiego flash highlightu. */
