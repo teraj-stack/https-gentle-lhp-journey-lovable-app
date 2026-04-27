@@ -2282,9 +2282,27 @@ const main = async () => {
         issues.push(`liczba wierszy danych ${actualData} ≠ oczekiwane ${dataRowCount}`);
       }
       // Sprawdź szerokość każdego wiersza — pomaga wykryć przecinki w polach
-      // albo desync między csvCols a csvRow w kodzie.
+      // albo desync między csvCols a csvRow w kodzie. Parser RFC 4180-aware
+      // (cudzysłowy zawijają pola z `,` / `"` / newline).
+      const splitCsvRow = (line) => {
+        const out = [];
+        let cur = "";
+        let inQuotes = false;
+        for (let j = 0; j < line.length; j++) {
+          const ch = line[j];
+          if (inQuotes) {
+            if (ch === '"' && line[j + 1] === '"') { cur += '"'; j++; }
+            else if (ch === '"') { inQuotes = false; }
+            else { cur += ch; }
+          } else if (ch === '"') { inQuotes = true; }
+          else if (ch === ",") { out.push(cur); cur = ""; }
+          else { cur += ch; }
+        }
+        out.push(cur);
+        return out;
+      };
       for (let i = 1; i < lines.length; i++) {
-        const cells = lines[i].split(",");
+        const cells = splitCsvRow(lines[i]);
         if (cells.length !== expectedCols.length) {
           issues.push(`wiersz #${i}: ${cells.length} kolumn ≠ ${expectedCols.length}`);
           break;
