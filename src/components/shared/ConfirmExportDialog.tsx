@@ -28,7 +28,7 @@
  * subtelne tła w tych samych skalach co istniejące „chips" w aplikacji.
  */
 import * as React from "react";
-import { Download, FileJson, FileSpreadsheet, FileText } from "lucide-react";
+import { Download, FileJson, FileSpreadsheet, FileText, Loader2 } from "lucide-react";
 
 import {
   AlertDialog,
@@ -77,6 +77,12 @@ export interface ConfirmExportDialogProps {
   confirmLabel?: string;
   /** Tekst przycisku anulowania. Domyślnie „Anuluj". */
   cancelLabel?: string;
+  /**
+   * Gdy true: spinner zamiast ikony download, oba przyciski disabled
+   * (Anuluj też — bo i tak nie przerwie operacji JS), aria-busy na content.
+   * Hook useExportConfirmation propaguje to automatycznie podczas await run().
+   */
+  isExporting?: boolean;
 }
 
 const FORMAT_META: Record<
@@ -115,13 +121,15 @@ const ConfirmExportDialog: React.FC<ConfirmExportDialogProps> = ({
   description,
   confirmLabel = "Pobierz",
   cancelLabel = "Anuluj",
+  isExporting = false,
 }) => {
   const meta = FORMAT_META[format];
   const Icon = meta.Icon;
+  const exportingLabel = "Pobieranie…";
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent>
+      <AlertDialogContent aria-busy={isExporting}>
         <AlertDialogHeader>
           <AlertDialogTitle className="flex items-center gap-2.5">
             <span
@@ -198,17 +206,29 @@ const ConfirmExportDialog: React.FC<ConfirmExportDialogProps> = ({
         )}
 
         <AlertDialogFooter>
-          <AlertDialogCancel>{cancelLabel}</AlertDialogCancel>
+          <AlertDialogCancel disabled={isExporting}>{cancelLabel}</AlertDialogCancel>
           <AlertDialogAction
-            onClick={() => {
-              // Świadomie nie await — Radix domknie dialog niezależnie,
-              // a wywołujący sam łapie błędy w toast.
+            onClick={(event) => {
+              if (isExporting) {
+                // Defensywnie: gdyby Radix nie zablokował kliku przy disabled,
+                // nie odpalamy drugiego runa.
+                event.preventDefault();
+                return;
+              }
+              // Świadomie nie await — błędy łapie wywołujący przez toast,
+              // a hook trzyma stan isExporting do czasu rozliczenia promise.
               void onConfirm();
             }}
+            disabled={isExporting}
             className="gap-2"
+            aria-live="polite"
           >
-            <Download className="h-4 w-4" aria-hidden="true" />
-            {confirmLabel}
+            {isExporting ? (
+              <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+            ) : (
+              <Download className="h-4 w-4" aria-hidden="true" />
+            )}
+            {isExporting ? exportingLabel : confirmLabel}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

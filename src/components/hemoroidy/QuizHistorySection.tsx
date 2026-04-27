@@ -22,6 +22,7 @@ import {
   ShieldCheck,
   AlertTriangle,
   AlertOctagon,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useQuizHistory, type QuizHistoryEntry } from "@/hooks/useQuizHistory";
@@ -177,15 +178,22 @@ const QuizHistorySection = () => {
             variant="outline"
             size="sm"
             onClick={handleExportRequest}
+            disabled={exportConfirm.isExporting || history.length === 0}
+            aria-busy={exportConfirm.isExporting}
             className="gap-2 border-primary/30 text-primary hover:bg-primary/10 hover:text-primary"
           >
-            <Download className="w-3.5 h-3.5" />
-            Eksport JSON
+            {exportConfirm.isExporting ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <Download className="w-3.5 h-3.5" />
+            )}
+            {exportConfirm.isExporting ? "Pobieranie…" : "Eksport JSON"}
           </Button>
           <Button
             variant="outline"
             size="sm"
             onClick={handleClear}
+            disabled={exportConfirm.isExporting}
             className="gap-2 text-muted-foreground hover:text-destructive"
           >
             <Trash2 className="w-3.5 h-3.5" />
