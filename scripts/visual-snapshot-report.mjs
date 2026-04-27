@@ -29,9 +29,26 @@
  *   node scripts/visual-snapshot-report.mjs --max-failures=50
  *   node scripts/visual-snapshot-report.mjs -m 50
  *   node scripts/visual-snapshot-report.mjs --max-copy=20 --max-discovery=50
+ *   node scripts/visual-snapshot-report.mjs --sort=viewport,-state
+ *   node scripts/visual-snapshot-report.mjs --sort=status,path --max-failures=50
  *   MAX_FAILURES=50 node scripts/visual-snapshot-report.mjs
- *   MAX_COPY=20 MAX_DISCOVERY=50 node scripts/visual-snapshot-report.mjs
+ *   MAX_COPY=20 MAX_DISCOVERY=50 SORT=viewport,state node scripts/visual-snapshot-report.mjs
  *   (opcjonalnie po `bun run test:e2e`)
+ *
+ * Sortowanie (`--sort=<keys>`, env `SORT`, default `path,stem`):
+ *   Steruje kolejnością trio PRZED `--max-failures`, więc decyduje, co
+ *   wpadnie do pierwszych N i co trafi do sekcji "omitted". Wartość to
+ *   lista kluczy oddzielonych przecinkami; prefix `-` = malejąco. Klucze:
+ *     viewport — small-mobile / mobile / tablet / desktop (alfabetycznie)
+ *     state    — np. state-a-empty / dark-state-c-...
+ *     path     — katalog testu (Playwright spec)
+ *     stem     — pełna nazwa snapshota (zawsze finalny tie-breaker)
+ *     status   — failed (realne regresje) przed incomplete (brak baseline)
+ *   Przykłady:
+ *     --sort=status,viewport   → najpierw failed, w obrębie po viewport
+ *     --sort=viewport,-state   → mobile pierwsze, w obrębie odwrócony state
+ *     --sort=-status           → najpierw incomplete (np. po dodaniu nowego specu)
+ *   Nieznane klucze → warning + skip; pusta wartość → fallback na default.
  *
  * Fail-fast — trzy poziomy obcinania (od najbardziej do najmniej agresywnego):
  *
@@ -104,24 +121,49 @@ const TRACE_VIEWER_URL = "https://trace.playwright.dev/";
  * (raport bez limitu). Celowo NIE crashujemy — skrypt jest idempotentny
  * narzędziem post-run, nie chcemy żeby literówka w CI wywaliła build.
  */
+// Klucze dozwolone dla --sort. Każdy ma `extract(t)` zwracający string/number
+// porównywalny w localeCompare. Wybór sterowany priorytetami debugowania:
+//   viewport → grupuje regresje per breakpoint (mobile vs desktop pierwsze)
+//   state    → grupuje per scenariusz (state-a-empty vs dark-state-c-...)
+//   path     → katalog testu (Playwright spec → łatwiej re-runować całą sutę)
+//   stem     → pełna nazwa snapshota (default tie-breaker)
+//   status   → "failed" przed "incomplete" (priorytet realnych regresji)
+const SORT_KEYS = {
+  viewport: (t) => t._viewport,
+  state: (t) => t._state,
+  path: (t) => t.dir,
+  stem: (t) => t.stem,
+  // Lower-case sort: "failed" < "incomplete" alfabetycznie, co dobrze pasuje
+  // do intencji ("najpierw realne regresje, potem brak baseline'u").
+  status: (t) => (t.expected && t.actual && t.diff ? "failed" : "incomplete"),
+};
+const DEFAULT_SORT = "path,stem"; // Back-compat z poprzednim zachowaniem.
+
 const parseCliArgs = (argv) => {
-  // Mapa: nazwa flagi → { aliases:[], envVar, value:null }
-  // Trzymamy razem, żeby pętla parsująca była jedna i nie powtarzać kodu.
+  // Mapa: nazwa flagi → { aliases:[], envVar, value:null, kind }
+  // kind = "int" (dodatnia liczba) | "str" (dowolny string, walidacja per-flag)
   const flags = {
-    maxFailures: { long: "--max-failures", short: "-m", env: "MAX_FAILURES", value: null },
-    maxCopy: { long: "--max-copy", short: null, env: "MAX_COPY", value: null },
-    maxDiscovery: { long: "--max-discovery", short: null, env: "MAX_DISCOVERY", value: null },
+    maxFailures: { long: "--max-failures", short: "-m", env: "MAX_FAILURES", value: null, kind: "int" },
+    maxCopy: { long: "--max-copy", short: null, env: "MAX_COPY", value: null, kind: "int" },
+    maxDiscovery: { long: "--max-discovery", short: null, env: "MAX_DISCOVERY", value: null, kind: "int" },
+    sort: { long: "--sort", short: null, env: "SORT", value: null, kind: "str" },
   };
 
   const tryAssign = (flagKey, raw, source) => {
     if (raw === null || raw === undefined) return;
-    const n = Number.parseInt(raw, 10);
-    if (Number.isInteger(n) && n > 0) {
-      flags[flagKey].value = n;
+    const def = flags[flagKey];
+    if (def.kind === "int") {
+      const n = Number.parseInt(raw, 10);
+      if (Number.isInteger(n) && n > 0) {
+        def.value = n;
+      } else {
+        console.warn(
+          `[visual-snapshot-report] Ignoruję ${source}="${raw}" — oczekiwano dodatniej liczby całkowitej.`,
+        );
+      }
     } else {
-      console.warn(
-        `[visual-snapshot-report] Ignoruję ${source}="${raw}" — oczekiwano dodatniej liczby całkowitej.`,
-      );
+      // String — walidacja per-flag w consume site.
+      def.value = String(raw);
     }
   };
 
@@ -154,6 +196,58 @@ const parseCliArgs = (argv) => {
     maxFailures: flags.maxFailures.value,
     maxCopy: flags.maxCopy.value,
     maxDiscovery: flags.maxDiscovery.value,
+    sort: flags.sort.value, // string lub null (=> default)
+  };
+};
+
+/**
+ * Parsuje "--sort=viewport,-state,path" → [{key:"viewport",dir:1},
+ * {key:"state",dir:-1},{key:"path",dir:1}]. Klucze nieznane → warning + skip
+ * (NIE crash — back-compat z polityką "literówka w CI nie wywala buildu").
+ * Pusty/null input → null (caller użyje DEFAULT_SORT).
+ */
+const parseSortSpec = (raw) => {
+  if (!raw) return null;
+  const parts = String(raw)
+    .split(",")
+    .map((p) => p.trim())
+    .filter(Boolean);
+  const spec = [];
+  for (const p of parts) {
+    const dir = p.startsWith("-") ? -1 : 1;
+    const key = p.replace(/^[+-]/, "");
+    if (!Object.prototype.hasOwnProperty.call(SORT_KEYS, key)) {
+      console.warn(
+        `[visual-snapshot-report] Ignoruję klucz sortowania "${key}" — dozwolone: ${Object.keys(SORT_KEYS).join(", ")}.`,
+      );
+      continue;
+    }
+    spec.push({ key, dir });
+  }
+  return spec.length > 0 ? spec : null;
+};
+
+/**
+ * Buduje comparator z [{key,dir}, ...]. Zawsze dokleja `stem` jako finalny
+ * tie-breaker, żeby output był deterministyczny nawet gdy user poda tylko
+ * "viewport" (inaczej fs.readdir order by się zachowała w obrębie viewportu).
+ */
+const buildComparator = (spec) => {
+  const withTieBreaker = [...spec];
+  if (!withTieBreaker.some((s) => s.key === "stem")) {
+    withTieBreaker.push({ key: "stem", dir: 1 });
+  }
+  return (a, b) => {
+    for (const { key, dir } of withTieBreaker) {
+      const va = SORT_KEYS[key](a);
+      const vb = SORT_KEYS[key](b);
+      const cmp =
+        typeof va === "number" && typeof vb === "number"
+          ? va - vb
+          : String(va).localeCompare(String(vb));
+      if (cmp !== 0) return cmp * dir;
+    }
+    return 0;
   };
 };
 
@@ -1100,7 +1194,7 @@ const renderHtml = ({
 };
 
 const main = async () => {
-  const { maxFailures, maxCopy, maxDiscovery } = parseCliArgs(process.argv);
+  const { maxFailures, maxCopy, maxDiscovery, sort: sortRaw } = parseCliArgs(process.argv);
 
   // Sanity: czy są w ogóle wyniki?
   try {
@@ -1124,14 +1218,28 @@ const main = async () => {
   // -actual/-expected/-diff w test-results, więc naturalnie ich tu nie widzimy.
   const allFailed = trios.filter((t) => t.diff || !(t.expected && t.actual));
 
+  // Pre-kompute viewport/state per trio — używane zarówno w sort comparator,
+  // jak i później w renderHtml / liście "omitted". Trzymamy w prywatnych
+  // polach `_viewport` / `_state`, żeby nie duplikować wywołań parseSnapshotName.
+  for (const t of allFailed) {
+    const parsed = parseSnapshotName(t.stem + "-actual.png");
+    t._viewport = parsed.viewport;
+    t._state = parsed.state;
+  }
+
   // Sortowanie deterministyczne PRZED ewentualnym obcięciem przez --max-failures.
-  // Bez tego "pierwsze N" zależałoby od kolejności fs.readdir, która jest
-  // platform/file-system specific (Linux: zwykle inode, macOS: zwykle alfa).
-  // Sortujemy po katalogu testu + stem — daje stabilny output cross-OS.
-  allFailed.sort((a, b) => {
-    if (a.dir !== b.dir) return a.dir.localeCompare(b.dir);
-    return a.stem.localeCompare(b.stem);
-  });
+  // Bez tego "pierwsze N" zależałoby od kolejności fs.readdir (platform-specific).
+  // User może nadpisać porządek przez --sort, np.:
+  //   --sort=viewport,-state    (najpierw mobile, w obrębie odwrócony state)
+  //   --sort=status,path        (najpierw realne failures, potem incomplete)
+  // buildComparator dokleja stem jako finalny tie-breaker (cross-OS stability).
+  const sortSpec = parseSortSpec(sortRaw) || parseSortSpec(DEFAULT_SORT);
+  allFailed.sort(buildComparator(sortSpec));
+
+  if (sortRaw) {
+    const human = sortSpec.map((s) => (s.dir === -1 ? `-${s.key}` : s.key)).join(",");
+    console.log(`[visual-snapshot-report] Sortowanie: ${human}`);
+  }
 
   // Fail-fast (poziom 1): obetnij globalnie PRZED dalszą obróbką.
   // Wszystko poza tym slice'em w ogóle nie wchodzi do raportu.
@@ -1221,10 +1329,12 @@ const main = async () => {
           // o viewport/state z parseSnapshotName, żeby user mógł zorientować
           // się GDZIE są dalsze regresje bez re-runa skryptu bez limitu.
           // testName = nazwa katalogu Playwrighta — jednoznaczny lokator.
-          omitted: allFailed.slice(maxFailures).map((t) => {
-            const { viewport, state } = parseSnapshotName(t.stem + "-actual.png");
-            return { stem: t.stem, viewport, state, testName: t.testName };
-          }),
+          omitted: allFailed.slice(maxFailures).map((t) => ({
+            stem: t.stem,
+            viewport: t._viewport,
+            state: t._state,
+            testName: t.testName,
+          })),
         }
       : null,
     copyTruncation:
