@@ -2794,7 +2794,40 @@ const AdminVeinImages = () => {
           }
         }}
       >
-        <AlertDialogContent className="max-w-2xl">
+        <AlertDialogContent
+          className="max-w-2xl"
+          onKeyDown={(e) => {
+            // Enter = potwierdź pobranie, Esc obsługuje natywnie Radix przez
+            // onOpenChange(false). Nie odpalamy gdy focus jest w input/textarea
+            // (nie ma w tym dialogu, ale defensywnie) ani gdy trwa już export.
+            if (
+              e.key !== "Enter" ||
+              e.shiftKey ||
+              e.altKey ||
+              e.ctrlKey ||
+              e.metaKey
+            )
+              return;
+            if (exporting !== null || preparingPreview !== null) return;
+            const target = e.target as HTMLElement | null;
+            if (!target) return;
+            const tag = target.tagName;
+            if (
+              tag === "INPUT" ||
+              tag === "TEXTAREA" ||
+              tag === "SELECT" ||
+              target.isContentEditable
+            )
+              return;
+            e.preventDefault();
+            e.stopPropagation();
+            const which = pendingExport;
+            setPendingExport(null);
+            setExportPreview(null);
+            if (which === "json") void exportJson();
+            else if (which === "csv") void exportCsv();
+          }}
+        >
           <AlertDialogHeader>
             <AlertDialogTitle>
               Pobrać plik {pendingExport === "json" ? "JSON" : "CSV"}?
