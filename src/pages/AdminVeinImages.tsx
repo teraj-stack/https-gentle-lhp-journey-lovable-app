@@ -725,6 +725,16 @@ const AdminVeinImages = () => {
     [activeKey],
   );
 
+  /**
+   * Finalna lista wierszy preview po zastosowaniu strategii dedupu.
+   * Reaktywna względem `dedupStrategy` — zmiana radio przelicza statusy
+   * (np. duplikaty z „error" na „noop") bez ponownego parsowania pliku.
+   */
+  const importPreviewRows = useMemo<ImportRow[]>(
+    () =>
+      importPreview ? applyDedupStrategy(importPreview.parsedRows, dedupStrategy) : [],
+    [importPreview, dedupStrategy],
+  );
   const [drafts, setDrafts] = useState<Record<VeinImagePageKey, DraftFields>>(
     () =>
       VEIN_IMAGE_PAGE_PRESETS.reduce(
