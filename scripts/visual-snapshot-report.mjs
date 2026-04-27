@@ -42,6 +42,17 @@ const PROJECT_ROOT = path.resolve(__dirname, "..");
 const TEST_RESULTS_DIR = path.join(PROJECT_ROOT, "test-results");
 const REPORT_DIR = path.join(TEST_RESULTS_DIR, "visual-report");
 const ASSETS_DIR = path.join(REPORT_DIR, "assets");
+// Domyślna lokalizacja Playwright HTML reportera.
+// Jeśli projekt używa innego (np. ENV PLAYWRIGHT_HTML_REPORT), readinę tu fallback.
+const PLAYWRIGHT_REPORT_DIR = path.join(
+  PROJECT_ROOT,
+  process.env.PLAYWRIGHT_HTML_REPORT || "playwright-report",
+);
+// Trace Viewer hostowany przez Playwright zespół — przyjmuje URL do trace.zip.
+// Działa, jeśli plik jest dostępny przez HTTP (np. CI artifact link).
+// Lokalnie linkujemy file:// — Trace Viewer wymaga drag-and-drop,
+// więc dla lokalnych runów dajemy też przycisk "Pokaż trace lokalnie".
+const TRACE_VIEWER_URL = "https://trace.playwright.dev/";
 
 /**
  * Filtr ścieżek — interesują nas TYLKO nieudane snapshoty z spec'ów live preview.
