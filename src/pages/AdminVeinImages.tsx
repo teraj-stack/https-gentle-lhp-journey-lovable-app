@@ -1413,14 +1413,17 @@ const AdminVeinImages = () => {
         dbMap.set(`${r.page_key}:${r.slot}`, { alt: r.alt, caption: r.caption });
       }
 
-      const seen = new Set<string>();
-      const rows: ImportRow[] = matrix.slice(1).map((cells, i) => {
+      // Etap 1: parsing per-row BEZ dedupu i bez finalnego statusu —
+      // dedup robimy w applyDedupStrategy() reaktywnie wg wybranego
+      // przełącznika (first/last). Validacje pól robimy tutaj bo nie zależą
+      // od strategii.
+      const parsedRows: ParsedImportRow[] = matrix.slice(1).map((cells, i) => {
         const line = i + 2;
         const rawPage = (cells[idx.page_key] ?? "").trim();
         const rawSlot = (cells[idx.slot] ?? "").trim();
         const alt = cells[idx.alt] ?? "";
         const caption = cells[idx.caption] ?? "";
-        const errors: string[] = [];
+        const baseErrors: string[] = [];
 
         const pageKey = VALID_PAGE_KEYS.has(rawPage as VeinImagePageKey)
           ? (rawPage as VeinImagePageKey)
@@ -1428,24 +1431,11 @@ const AdminVeinImages = () => {
         const slot = (VALID_SLOTS as string[]).includes(rawSlot)
           ? (rawSlot as VeinImageSlot)
           : null;
-        if (!pageKey) errors.push(`nieznany page_key: "${rawPage}"`);
-        if (!slot) errors.push(`nieznany slot: "${rawSlot}" (oczekiwano main/perforator)`);
-        if (pageKey && slot) {
-          const dedupKey = `${pageKey}:${slot}`;
-          if (seen.has(dedupKey)) {
-            errors.push("duplikat page_key+slot — pierwsze wystąpienie wygrywa");
-          } else {
-            seen.add(dedupKey);
-          }
-        }
-        errors.push(...validateImportRow(alt, caption));
+        if (!pageKey) baseErrors.push(`nieznany page_key: "${rawPage}"`);
+        if (!slot) baseErrors.push(`nieznany slot: "${rawSlot}" (oczekiwano main/perforator)`);
+        baseErrors.push(...validateImportRow(alt, caption));
 
         const current = pageKey && slot ? dbMap.get(`${pageKey}:${slot}`) : undefined;
-        let status: ImportRowStatus;
-        if (errors.length > 0) status = "error";
-        else if (!current) status = "create";
-        else if (current.alt === alt && current.caption === caption) status = "noop";
-        else status = "update";
 
         return {
           line,
@@ -1453,14 +1443,13 @@ const AdminVeinImages = () => {
           slot,
           alt,
           caption,
-          status,
-          errors,
+          baseErrors,
           currentAlt: current?.alt,
           currentCaption: current?.caption,
         };
       });
 
-      setImportPreview({ fileName: file.name, rows });
+      setImportPreview({ fileName: file.name, parsedRows });
     } catch (err) {
       toast.error(
         `Błąd parsowania CSV: ${err instanceof Error ? err.message : String(err)}`,
