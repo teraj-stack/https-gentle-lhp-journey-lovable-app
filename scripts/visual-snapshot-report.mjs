@@ -1389,14 +1389,24 @@ const main = async () => {
   // faktycznie wykonujemy. Karta zawsze powstaje (metadata jest darmowa);
   // pomijamy tylko drogie IO. Flagujemy `copySkipped` w obiekcie trio,
   // żeby renderHtml mógł pokazać placeholder zamiast brakującego obrazka.
+  // Liczniki realnie wykonanej pracy (do raportu w konsoli).
+  // - pngCopied  → faktyczne fs.copyFile (max 3 per trio, ale skipowane gdy
+  //   plik nie istnieje, więc nie używamy `copyLimit*3`).
+  // - discoveryRuns → faktyczne wywołania discoverPlaywrightArtifacts.
+  // Baseline (co zrobilibyśmy bez ŻADNYCH limitów) liczymy osobno na
+  // `allFailed`, żeby pokazać "ile zaoszczędziłeś" niezależnie który limit
+  // (per-grupa, --max-failures, --max-copy, --max-discovery) to spowodował.
+  let pngCopied = 0;
+  let discoveryRuns = 0;
+
   for (let i = 0; i < failed.length; i++) {
     const t = failed[i];
     const prefix = `${i.toString().padStart(3, "0")}-${t.stem}`;
 
     if (i < copyLimit) {
-      if (t.expected) t.expectedAsset = await copyAsset(t.expected, prefix, "expected");
-      if (t.actual) t.actualAsset = await copyAsset(t.actual, prefix, "actual");
-      if (t.diff) t.diffAsset = await copyAsset(t.diff, prefix, "diff");
+      if (t.expected) { t.expectedAsset = await copyAsset(t.expected, prefix, "expected"); pngCopied++; }
+      if (t.actual) { t.actualAsset = await copyAsset(t.actual, prefix, "actual"); pngCopied++; }
+      if (t.diff) { t.diffAsset = await copyAsset(t.diff, prefix, "diff"); pngCopied++; }
     } else {
       // Placeholder mode: nie kopiujemy obrazków, ale flagujemy żeby cell()
       // pokazał czytelny komunikat zamiast "brak baseline'u".
@@ -1405,6 +1415,7 @@ const main = async () => {
 
     if (i < discoveryLimit) {
       const artifacts = await discoverPlaywrightArtifacts(t.dir);
+      discoveryRuns++;
       // Konwertujemy bezwzględne ścieżki na relatywne od REPORT_DIR — przenośność.
       t.tracePath = artifacts.trace ? path.relative(REPORT_DIR, artifacts.trace) : null;
       t.videoPath = artifacts.video ? path.relative(REPORT_DIR, artifacts.video) : null;
@@ -1422,6 +1433,20 @@ const main = async () => {
     // testDirPath jest darmowy (path.relative, brak IO) → zawsze ustawiamy.
     t.testDirPath = path.relative(REPORT_DIR, t.dir);
   }
+
+  // Baseline — co byśmy zrobili bez żadnych limitów (czyli bez per-grupa,
+  // bez --max-failures, bez --max-copy, bez --max-discovery).
+  // Liczymy realnie istniejące pliki w trio, żeby porównanie było uczciwe
+  // (nie wszystkie trio mają komplet 3 PNG — incomplete też wpada do allFailed).
+  let pngBaseline = 0;
+  for (const t of allFailed) {
+    if (t.expected) pngBaseline++;
+    if (t.actual) pngBaseline++;
+    if (t.diff) pngBaseline++;
+  }
+  const discoveryBaseline = allFailed.length;
+  const pngSaved = pngBaseline - pngCopied;
+  const discoverySaved = discoveryBaseline - discoveryRuns;
 
   const playwrightReportRel = await discoverPlaywrightReport();
 
