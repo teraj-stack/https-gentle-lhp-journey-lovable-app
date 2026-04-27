@@ -58,40 +58,60 @@ export type DialogProps = Pick<
   | "recordsLabel"
   | "sizeLabel"
   | "description"
+  | "isExporting"
 >;
 
 export interface UseExportConfirmationApi {
   /** Otwiera dialog z opisem konkretnego eksportu. */
   request: (req: ExportRequest) => void;
+  /**
+   * True przez cały czas trwania `run()` po kliku „Pobierz".
+   * Call site może użyć do wyłączenia toolbar buttonów / pokazania spinnera
+   * obok nich (poza dialogiem). Dialog sam też pokaże spinner.
+   */
+  isExporting: boolean;
   /** Spread bezpośrednio na <ConfirmExportDialog />. */
   dialogProps: DialogProps;
 }
 
 export const useExportConfirmation = (): UseExportConfirmationApi => {
   const [pending, setPending] = useState<ExportRequest | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
 
   const request = useCallback((req: ExportRequest) => {
     setPending(req);
   }, []);
 
-  const onOpenChange = useCallback((next: boolean) => {
-    if (!next) setPending(null);
-  }, []);
+  const onOpenChange = useCallback(
+    (next: boolean) => {
+      // Blokujemy zamknięcie dialogu, gdy trwa export — user nie powinien móc
+      // anulować w trakcie pisania pliku (i tak nie przerwie operacji JS).
+      if (isExporting) return;
+      if (!next) setPending(null);
+    },
+    [isExporting],
+  );
 
   const onConfirm = useCallback(async () => {
     const current = pending;
-    if (!current) return;
-    // Najpierw zamykamy dialog (Radix sam to zrobi, ale czyścimy `pending`),
-    // potem odpalamy export — jeśli rzuci, toast w call site to obsłuży.
-    setPending(null);
-    await current.run();
-  }, [pending]);
+    if (!current || isExporting) return;
+    setIsExporting(true);
+    try {
+      await current.run();
+    } finally {
+      // Najpierw odflagowujemy export, potem zamykamy dialog — kolejność
+      // pozwala onOpenChange przepuścić zamknięcie.
+      setIsExporting(false);
+      setPending(null);
+    }
+  }, [pending, isExporting]);
 
   const dialogProps: DialogProps = useMemo(
     () => ({
       open: pending !== null,
       onOpenChange,
       onConfirm,
+      isExporting,
       // Domyślne wartości placeholderów dla zamkniętego stanu — Radix i tak
       // nie renderuje content, ale TS wymaga stringów.
       filename: pending?.filename ?? "",
@@ -100,8 +120,8 @@ export const useExportConfirmation = (): UseExportConfirmationApi => {
       sizeLabel: pending?.sizeLabel,
       description: pending?.description,
     }),
-    [pending, onOpenChange, onConfirm],
+    [pending, onOpenChange, onConfirm, isExporting],
   );
 
-  return { request, dialogProps };
+  return { request, isExporting, dialogProps };
 };
