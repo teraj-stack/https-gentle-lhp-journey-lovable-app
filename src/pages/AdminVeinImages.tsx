@@ -36,7 +36,8 @@ import VenousInsufficiencyImage from "@/components/shared/VenousInsufficiencyIma
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { LogOut, ShieldAlert, Save, RotateCcw, Database, FileJson, FileSpreadsheet, Trash2, Clock, User, History } from "lucide-react";
+import { LogOut, ShieldAlert, Save, RotateCcw, Database, FileJson, FileSpreadsheet, Trash2, Clock, User, History, Upload, CheckCircle2, AlertTriangle, FileWarning } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import SeoHead from "@/components/shared/SeoHead";
 
@@ -133,6 +134,97 @@ const describeSaveError = (
     description: raw || "Nieznany błąd serwera. Sprawdź połączenie i spróbuj ponownie.",
   };
 };
+
+/**
+ * Minimalny parser CSV zgodny z RFC 4180:
+ *  - cudzysłowy do eskejpowania pól z przecinkiem/nową linią,
+ *  - "" w obrębie pola = literalny ",
+ *  - akceptuje BOM (\uFEFF) i końce linii \r\n / \n.
+ *  - Tolerancyjny na trailing newline.
+ */
+const parseCsv = (raw: string): string[][] => {
+  const text = raw.replace(/^\uFEFF/, "");
+  const rows: string[][] = [];
+  let row: string[] = [];
+  let field = "";
+  let inQuotes = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inQuotes) {
+      if (c === '"') {
+        if (text[i + 1] === '"') {
+          field += '"';
+          i++;
+        } else {
+          inQuotes = false;
+        }
+      } else {
+        field += c;
+      }
+    } else {
+      if (c === '"') {
+        inQuotes = true;
+      } else if (c === ",") {
+        row.push(field);
+        field = "";
+      } else if (c === "\r") {
+        // ignore — \n closes row
+      } else if (c === "\n") {
+        row.push(field);
+        rows.push(row);
+        row = [];
+        field = "";
+      } else {
+        field += c;
+      }
+    }
+  }
+  // Flush last field/row jeśli plik nie kończy się \n.
+  if (field.length > 0 || row.length > 0) {
+    row.push(field);
+    rows.push(row);
+  }
+  // Filtruj puste linie końcowe.
+  return rows.filter((r) => r.length > 1 || (r.length === 1 && r[0].trim() !== ""));
+};
+
+const VALID_PAGE_KEYS = new Set<VeinImagePageKey>(
+  VEIN_IMAGE_PAGE_PRESETS.map((p) => p.key),
+);
+const VALID_SLOTS: VeinImageSlot[] = ["main", "perforator"];
+
+/** Te same reguły co trigger Postgres `validate_vein_image_override`. */
+const validateImportRow = (alt: string, caption: string): string[] => {
+  const errs: string[] = [];
+  if (alt.length < ALT_MIN || alt.length > ALT_BUDGET) {
+    errs.push(`alt ${alt.length}/${ALT_MIN}–${ALT_BUDGET} znaków`);
+  }
+  if (caption.length > CAPTION_BUDGET) {
+    errs.push(`caption ${caption.length}/≤${CAPTION_BUDGET} znaków`);
+  }
+  for (const seg of caption.split(" · ")) {
+    if (seg.length > SEGMENT_BUDGET) {
+      errs.push(`segment "${seg.slice(0, 24)}${seg.length > 24 ? "…" : ""}" ${seg.length}/≤${SEGMENT_BUDGET}`);
+    }
+  }
+  return errs;
+};
+
+type ImportRowStatus = "create" | "update" | "noop" | "error";
+
+interface ImportRow {
+  /** 1-based linia w pliku CSV (header = 1, dane od 2). */
+  line: number;
+  pageKey: VeinImagePageKey | null;
+  slot: VeinImageSlot | null;
+  alt: string;
+  caption: string;
+  status: ImportRowStatus;
+  errors: string[];
+  /** Aktualne wartości w bazie — do prezentacji diffu. */
+  currentAlt?: string;
+  currentCaption?: string;
+}
 
 interface FieldStats {
   length: number;
@@ -440,6 +532,14 @@ const AdminVeinImages = () => {
   const [previewMode, setPreviewMode] = useState<"draft" | "cms">("draft");
   /** Klucz: `${pageKey}:${slot}` — slot, dla którego trwa rollback z historii. */
   const [restoringSlot, setRestoringSlot] = useState<string | null>(null);
+  /** Ukryty <input type="file"> — trigger przez Button. */
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  /** Otwarty dialog z preview parsowanego CSV. */
+  const [importPreview, setImportPreview] = useState<{
+    fileName: string;
+    rows: ImportRow[];
+  } | null>(null);
+  const [importing, setImporting] = useState(false);
 
   const active = useMemo(
     () =>
@@ -849,6 +949,206 @@ const AdminVeinImages = () => {
     }
   };
 
+  /**
+   * Parsuje plik CSV i przygotowuje preview importu (otwiera dialog).
+   * Wymagane kolumny: page_key, slot, alt, caption.
+   * Dodatkowe kolumny (np. updated_at, updated_by) są ignorowane — pozwala
+   * to wziąć eksportowany CSV, edytować w Excelu i zaimportować z powrotem.
+   *
+   * Walidacja LOKALNIE = lustrzane odbicie triggera serwera, więc preview
+   * pokazuje błędy zanim cokolwiek pójdzie do bazy. Mimo to commit i tak
+   * łapie ewentualne błędy serwera per-row (graceful degradation).
+   */
+  const handleImportFile = async (file: File) => {
+    try {
+      const text = await file.text();
+      const matrix = parseCsv(text);
+      if (matrix.length === 0) {
+        toast.error("Plik CSV jest pusty.");
+        return;
+      }
+      const header = matrix[0]!.map((h) => h.trim().toLowerCase());
+      const idx = {
+        page_key: header.indexOf("page_key"),
+        slot: header.indexOf("slot"),
+        alt: header.indexOf("alt"),
+        caption: header.indexOf("caption"),
+      };
+      if (idx.page_key < 0 || idx.slot < 0 || idx.alt < 0 || idx.caption < 0) {
+        toast.error(
+          "Brak wymaganych kolumn. Wymagane: page_key, slot, alt, caption.",
+        );
+        return;
+      }
+
+      const dbRows = await fetchAllOverrides();
+      const dbMap = new Map<string, { alt: string; caption: string }>();
+      for (const r of dbRows) {
+        dbMap.set(`${r.page_key}:${r.slot}`, { alt: r.alt, caption: r.caption });
+      }
+
+      const seen = new Set<string>();
+      const rows: ImportRow[] = matrix.slice(1).map((cells, i) => {
+        const line = i + 2;
+        const rawPage = (cells[idx.page_key] ?? "").trim();
+        const rawSlot = (cells[idx.slot] ?? "").trim();
+        const alt = cells[idx.alt] ?? "";
+        const caption = cells[idx.caption] ?? "";
+        const errors: string[] = [];
+
+        const pageKey = VALID_PAGE_KEYS.has(rawPage as VeinImagePageKey)
+          ? (rawPage as VeinImagePageKey)
+          : null;
+        const slot = (VALID_SLOTS as string[]).includes(rawSlot)
+          ? (rawSlot as VeinImageSlot)
+          : null;
+        if (!pageKey) errors.push(`nieznany page_key: "${rawPage}"`);
+        if (!slot) errors.push(`nieznany slot: "${rawSlot}" (oczekiwano main/perforator)`);
+        if (pageKey && slot) {
+          const dedupKey = `${pageKey}:${slot}`;
+          if (seen.has(dedupKey)) {
+            errors.push("duplikat page_key+slot — pierwsze wystąpienie wygrywa");
+          } else {
+            seen.add(dedupKey);
+          }
+        }
+        errors.push(...validateImportRow(alt, caption));
+
+        const current = pageKey && slot ? dbMap.get(`${pageKey}:${slot}`) : undefined;
+        let status: ImportRowStatus;
+        if (errors.length > 0) status = "error";
+        else if (!current) status = "create";
+        else if (current.alt === alt && current.caption === caption) status = "noop";
+        else status = "update";
+
+        return {
+          line,
+          pageKey,
+          slot,
+          alt,
+          caption,
+          status,
+          errors,
+          currentAlt: current?.alt,
+          currentCaption: current?.caption,
+        };
+      });
+
+      setImportPreview({ fileName: file.name, rows });
+    } catch (err) {
+      toast.error(
+        `Błąd parsowania CSV: ${err instanceof Error ? err.message : String(err)}`,
+      );
+    }
+  };
+
+  /**
+   * Wykonuje upsert dla wszystkich wierszy create/update z preview.
+   * Każdy wiersz idzie osobnym requestem — granularne raportowanie błędów,
+   * a liczba operacji jest mała (max 8).
+   */
+  const commitImport = async () => {
+    if (!importPreview || !isAdmin) return;
+    const applicable = importPreview.rows.filter(
+      (r) => (r.status === "create" || r.status === "update") && r.pageKey && r.slot,
+    );
+    if (applicable.length === 0) {
+      toast.info("Nic do zaimportowania (brak zmian).");
+      return;
+    }
+    setImporting(true);
+    let okCount = 0;
+    const failures: { row: ImportRow; message: string }[] = [];
+    try {
+      for (const row of applicable) {
+        const payload = {
+          page_key: row.pageKey!,
+          slot: row.slot!,
+          alt: row.alt,
+          caption: row.caption,
+          updated_by: session?.user.email ?? null,
+        };
+        try {
+          const { data: existing, error: lookupError } = await supabase
+            .from("vein_image_overrides")
+            .select("id")
+            .eq("page_key", row.pageKey!)
+            .eq("slot", row.slot!)
+            .maybeSingle();
+          if (lookupError) throw lookupError;
+          if (existing) {
+            const { error } = await supabase
+              .from("vein_image_overrides")
+              .update(payload)
+              .eq("id", existing.id);
+            if (error) throw error;
+          } else {
+            const { error } = await supabase
+              .from("vein_image_overrides")
+              .insert(payload);
+            if (error) throw error;
+          }
+          okCount++;
+        } catch (err) {
+          failures.push({
+            row,
+            message: err instanceof Error ? err.message : String(err),
+          });
+        }
+      }
+
+      // Sync drafts dla wszystkich zaimportowanych stron + invalidate cache.
+      setDrafts((prev) => {
+        const next = { ...prev };
+        for (const r of applicable) {
+          if (!r.pageKey || !r.slot) continue;
+          const altField = r.slot === "main" ? "mainAlt" : "perforatorAlt";
+          const captionField = r.slot === "main" ? "mainCaption" : "perforatorCaption";
+          next[r.pageKey] = {
+            ...next[r.pageKey],
+            [altField]: r.alt,
+            [captionField]: r.caption,
+          };
+        }
+        return next;
+      });
+      await queryClient.invalidateQueries({ queryKey: VEIN_IMAGE_QUERY_KEY });
+      await queryClient.invalidateQueries({ queryKey: VEIN_IMAGE_HISTORY_QUERY_KEY });
+      setSavedTick((t) => t + 1);
+      setPreviewMode("cms");
+
+      if (failures.length === 0) {
+        toast.success(`Zaimportowano ${okCount} ${okCount === 1 ? "wiersz" : "wierszy"}.`);
+        setImportPreview(null);
+      } else {
+        toast.error(
+          `Zaimportowano ${okCount}/${applicable.length}. Błędy: ${failures.length}.`,
+          {
+            description: failures
+              .slice(0, 3)
+              .map((f) => `Linia ${f.row.line} (${f.row.pageKey}/${f.row.slot}): ${f.message}`)
+              .join(" • "),
+            duration: 10000,
+          },
+        );
+        setImportPreview((prev) =>
+          prev
+            ? {
+                ...prev,
+                rows: prev.rows.map((r) => {
+                  const f = failures.find((x) => x.row.line === r.line);
+                  if (!f) return r.status === "create" || r.status === "update" ? { ...r, status: "noop" } : r;
+                  return { ...r, status: "error", errors: [...r.errors, `serwer: ${f.message}`] };
+                }),
+              }
+            : prev,
+        );
+      }
+    } finally {
+      setImporting(false);
+    }
+  };
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate("/admin/login", { replace: true });
@@ -1003,6 +1303,26 @@ const AdminVeinImages = () => {
                 <FileSpreadsheet className="w-3.5 h-3.5 mr-1" />
                 {exporting === "csv" ? "Eksport…" : "Export CSV"}
               </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => fileInputRef.current?.click()}
+                title="Hurtowo podmień alt/caption z pliku CSV (kolumny: page_key, slot, alt, caption)"
+              >
+                <Upload className="w-3.5 h-3.5 mr-1" /> Import CSV
+              </Button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".csv,text/csv"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleImportFile(file);
+                  // Reset wartości, żeby ten sam plik dało się wybrać ponownie po edycji.
+                  e.target.value = "";
+                }}
+              />
               <span className="w-px h-6 bg-border/50 mx-1" aria-hidden />
               <Button
                 variant="outline"
@@ -1310,6 +1630,159 @@ const AdminVeinImages = () => {
           </div>
         </main>
       </div>
+
+      {/* Dialog: preview importu CSV */}
+      <Dialog
+        open={importPreview !== null}
+        onOpenChange={(open) => {
+          if (!open && !importing) setImportPreview(null);
+        }}
+      >
+        <DialogContent className="max-w-4xl max-h-[85vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Upload className="w-4 h-4" />
+              Import CSV — preview
+            </DialogTitle>
+            <DialogDescription className="text-xs">
+              Plik: <span className="font-mono">{importPreview?.fileName}</span> ·{" "}
+              {importPreview ? (
+                <>
+                  do utworzenia: {importPreview.rows.filter((r) => r.status === "create").length} ·
+                  do aktualizacji: {importPreview.rows.filter((r) => r.status === "update").length} ·
+                  bez zmian: {importPreview.rows.filter((r) => r.status === "noop").length} ·
+                  z błędami: {importPreview.rows.filter((r) => r.status === "error").length}
+                </>
+              ) : null}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex-1 overflow-auto -mx-6 px-6">
+            <div className="space-y-2">
+              {importPreview?.rows.map((row) => {
+                const statusColor = {
+                  create: "bg-emerald-500/10 text-emerald-400 border-emerald-500/30",
+                  update: "bg-amber-500/10 text-amber-400 border-amber-500/30",
+                  noop: "bg-muted/20 text-muted-foreground border-border/30",
+                  error: "bg-destructive/10 text-destructive border-destructive/40",
+                }[row.status];
+                const statusIcon = {
+                  create: <CheckCircle2 className="w-3 h-3" />,
+                  update: <RotateCcw className="w-3 h-3" />,
+                  noop: <Database className="w-3 h-3" />,
+                  error: <AlertTriangle className="w-3 h-3" />,
+                }[row.status];
+                const statusLabel = {
+                  create: "nowy",
+                  update: "aktualizacja",
+                  noop: "bez zmian",
+                  error: "błąd",
+                }[row.status];
+                return (
+                  <div
+                    key={row.line}
+                    className={`rounded-md border px-3 py-2 text-[11px] ${statusColor}`}
+                  >
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono opacity-60">L{row.line}</span>
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded font-mono text-[9px] uppercase tracking-wider bg-background/40">
+                          {statusIcon}
+                          {statusLabel}
+                        </span>
+                        <span className="font-mono text-foreground/85">
+                          {row.pageKey ?? "?"} / {row.slot ?? "?"}
+                        </span>
+                      </div>
+                      <span className="font-mono opacity-60">
+                        alt:{row.alt.length} · cap:{row.caption.length}
+                      </span>
+                    </div>
+                    {row.errors.length > 0 && (
+                      <ul className="mb-1 space-y-0.5">
+                        {row.errors.map((e, idx) => (
+                          <li key={idx} className="flex items-start gap-1">
+                            <FileWarning className="w-3 h-3 mt-0.5 shrink-0" />
+                            <span>{e}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    {row.status === "update" && (
+                      <details className="mt-1">
+                        <summary className="cursor-pointer opacity-70 hover:opacity-100 select-none">
+                          pokaż diff
+                        </summary>
+                        <div className="mt-1 grid gap-1 font-mono text-[10px]">
+                          <div className="rounded border border-border/30 bg-background/30 p-1.5">
+                            <span className="opacity-60">stary alt:</span>{" "}
+                            <span className="break-words">{row.currentAlt}</span>
+                          </div>
+                          <div className="rounded border border-border/30 bg-background/30 p-1.5">
+                            <span className="opacity-60">nowy alt:</span>{" "}
+                            <span className="break-words">{row.alt}</span>
+                          </div>
+                          <div className="rounded border border-border/30 bg-background/30 p-1.5">
+                            <span className="opacity-60">stary caption:</span>{" "}
+                            <span className="break-words">{row.currentCaption}</span>
+                          </div>
+                          <div className="rounded border border-border/30 bg-background/30 p-1.5">
+                            <span className="opacity-60">nowy caption:</span>{" "}
+                            <span className="break-words">{row.caption}</span>
+                          </div>
+                        </div>
+                      </details>
+                    )}
+                    {(row.status === "create" || (row.status === "error" && !row.currentAlt)) && (
+                      <details className="mt-1">
+                        <summary className="cursor-pointer opacity-70 hover:opacity-100 select-none">
+                          pokaż treść
+                        </summary>
+                        <div className="mt-1 grid gap-1 font-mono text-[10px]">
+                          <div className="rounded border border-border/30 bg-background/30 p-1.5">
+                            <span className="opacity-60">alt:</span>{" "}
+                            <span className="break-words">{row.alt || <em className="opacity-50">(pusty)</em>}</span>
+                          </div>
+                          <div className="rounded border border-border/30 bg-background/30 p-1.5">
+                            <span className="opacity-60">caption:</span>{" "}
+                            <span className="break-words">{row.caption || <em className="opacity-50">(pusty)</em>}</span>
+                          </div>
+                        </div>
+                      </details>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <DialogFooter className="flex-row justify-between gap-2 sm:justify-between">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setImportPreview(null)}
+              disabled={importing}
+            >
+              Anuluj
+            </Button>
+            <Button
+              size="sm"
+              onClick={commitImport}
+              disabled={
+                importing ||
+                !importPreview ||
+                importPreview.rows.every((r) => r.status !== "create" && r.status !== "update")
+              }
+              title="Wykonaj upsert dla wierszy nowy/aktualizacja"
+            >
+              <Save className="w-3.5 h-3.5 mr-1" />
+              {importing
+                ? "Importowanie…"
+                : `Zatwierdź (${importPreview?.rows.filter((r) => r.status === "create" || r.status === "update").length ?? 0})`}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };
