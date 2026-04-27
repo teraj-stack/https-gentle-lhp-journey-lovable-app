@@ -44,7 +44,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { LogOut, ShieldAlert, Save, RotateCcw, Database, FileJson, FileSpreadsheet, Trash2, Clock, User, History, Upload, CheckCircle2, AlertTriangle, FileWarning, Search, X } from "lucide-react";
+import { LogOut, ShieldAlert, Save, RotateCcw, Database, FileJson, FileSpreadsheet, Trash2, Clock, User, History, Upload, CheckCircle2, AlertTriangle, FileWarning, Search, X, ClipboardCopy, Check } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import SeoHead from "@/components/shared/SeoHead";
@@ -474,7 +474,9 @@ const AdminVeinImages = () => {
   );
   const [viewport, setViewport] = useState<ViewportMode>("desktop");
   const [saving, setSaving] = useState<VeinImageSlot | null>(null);
-  const [exporting, setExporting] = useState<"json" | "csv" | null>(null);
+  const [exporting, setExporting] = useState<"json" | "csv" | "json-copy" | null>(null);
+  // Krótki „✓ Skopiowano" feedback na przycisku kopiowania (2 s).
+  const [jsonCopied, setJsonCopied] = useState(false);
   /**
    * Filtry eksportu — pozwalają pobrać podzbiór overrides zamiast całej tabeli.
    * "all" = bez filtra (dotychczasowe zachowanie). Filtr jest stosowany lokalnie
@@ -900,6 +902,56 @@ const AdminVeinImages = () => {
     } catch (err) {
       toast.error(
         `Błąd eksportu JSON: ${err instanceof Error ? err.message : String(err)}`,
+      );
+    } finally {
+      setExporting(null);
+    }
+  };
+
+  /**
+   * Kopiuje wyfiltrowany payload JSON do schowka — ten sam shape co exportJson
+   * (exported_at/exported_by/filter/total/overrides), żeby można było wkleić
+   * do Postmana / drugiego konta admina i zaimportować bez różnicy względem
+   * pliku. Używa Clipboard API (wymaga HTTPS / localhost — admin panel zawsze
+   * leci po HTTPS, więc bezpiecznie).
+   */
+  const copyJsonToClipboard = async () => {
+    setExporting("json-copy");
+    try {
+      const allRows = await fetchAllOverrides();
+      const { rows } = applyExportFilters(allRows);
+      if (rows.length === 0) {
+        toast.info(
+          `Brak overrides do skopiowania dla filtra: ${exportFilterSummary()}.`,
+        );
+        return;
+      }
+      const payload = {
+        exported_at: new Date().toISOString(),
+        exported_by: session?.user.email ?? null,
+        filter: {
+          page_key: exportPageKey,
+          slot: exportSlot,
+        },
+        total: rows.length,
+        overrides: rows,
+      };
+      const json = JSON.stringify(payload, null, 2);
+      if (!navigator.clipboard?.writeText) {
+        toast.error(
+          'Schowek niedostępny w tej przeglądarce — użyj „Export JSON".',
+        );
+        return;
+      }
+      await navigator.clipboard.writeText(json);
+      setJsonCopied(true);
+      window.setTimeout(() => setJsonCopied(false), 2000);
+      toast.success(
+        `Skopiowano JSON (${rows.length} overrides, ${exportFilterSummary()}) do schowka`,
+      );
+    } catch (err) {
+      toast.error(
+        `Nie udało się skopiować JSON: ${err instanceof Error ? err.message : String(err)}`,
       );
     } finally {
       setExporting(null);
@@ -1529,6 +1581,25 @@ const AdminVeinImages = () => {
               >
                 <FileJson className="w-3.5 h-3.5 mr-1" />
                 {exporting === "json" ? "Eksport…" : "Export JSON"}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={copyJsonToClipboard}
+                disabled={exporting !== null}
+                title={`Skopiuj JSON do schowka — ten sam payload co Export JSON (${exportFilterSummary()})`}
+                aria-label="Kopiuj JSON do schowka"
+              >
+                {jsonCopied ? (
+                  <Check className="w-3.5 h-3.5 mr-1 text-primary" aria-hidden="true" />
+                ) : (
+                  <ClipboardCopy className="w-3.5 h-3.5 mr-1" aria-hidden="true" />
+                )}
+                {exporting === "json-copy"
+                  ? "Kopiowanie…"
+                  : jsonCopied
+                    ? "Skopiowano"
+                    : "Kopiuj JSON"}
               </Button>
               <Button
                 variant="outline"
