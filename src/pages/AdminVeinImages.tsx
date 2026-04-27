@@ -38,6 +38,25 @@ const ALT_BUDGET = 220;
 const CAPTION_BUDGET = 110;
 const SEGMENT_BUDGET = 40;
 
+/**
+ * Zwraca polski względny czas (np. „3 godz. temu", „wczoraj", „przed chwilą").
+ * Używa Intl.RelativeTimeFormat — zero-dep, działa w SSR i w przeglądarce.
+ */
+const RELATIVE_FMT = new Intl.RelativeTimeFormat("pl", { numeric: "auto" });
+const formatRelativeTime = (iso: string): string => {
+  const then = new Date(iso).getTime();
+  if (Number.isNaN(then)) return "—";
+  const diffSec = Math.round((then - Date.now()) / 1000);
+  const abs = Math.abs(diffSec);
+  if (abs < 45) return RELATIVE_FMT.format(Math.round(diffSec / 1), "second");
+  if (abs < 3600) return RELATIVE_FMT.format(Math.round(diffSec / 60), "minute");
+  if (abs < 86400) return RELATIVE_FMT.format(Math.round(diffSec / 3600), "hour");
+  if (abs < 86400 * 7) return RELATIVE_FMT.format(Math.round(diffSec / 86400), "day");
+  if (abs < 86400 * 30) return RELATIVE_FMT.format(Math.round(diffSec / (86400 * 7)), "week");
+  if (abs < 86400 * 365) return RELATIVE_FMT.format(Math.round(diffSec / (86400 * 30)), "month");
+  return RELATIVE_FMT.format(Math.round(diffSec / (86400 * 365)), "year");
+};
+
 interface DraftFields {
   mainAlt: string;
   mainCaption: string;
