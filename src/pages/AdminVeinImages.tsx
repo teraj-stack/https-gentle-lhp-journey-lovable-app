@@ -1264,6 +1264,78 @@ const AdminVeinImages = () => {
         </header>
 
         <main className="max-w-7xl mx-auto px-4 py-6 md:px-8 space-y-6">
+          {/* Search + slot filter */}
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="relative flex-1 min-w-[220px] max-w-md">
+              <Search
+                className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none"
+                aria-hidden
+              />
+              <Input
+                type="search"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Szukaj po stronie, page_key lub treści alt/caption…"
+                aria-label="Wyszukiwarka rekordów vein-images"
+                className="h-9 pl-8 pr-8 text-sm"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery("")}
+                  aria-label="Wyczyść wyszukiwanie"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+            <div
+              role="radiogroup"
+              aria-label="Filtr slotu"
+              className="flex gap-1 rounded-lg border border-border/50 bg-card/60 p-1"
+            >
+              {(["all", "main", "perforator"] as const).map((opt) => {
+                const isActive = opt === slotFilter;
+                const label = opt === "all" ? "Wszystkie sloty" : opt === "main" ? "Główny" : "Perforator";
+                return (
+                  <button
+                    key={opt}
+                    type="button"
+                    role="radio"
+                    aria-checked={isActive}
+                    onClick={() => setSlotFilter(opt)}
+                    className={`px-2.5 py-1 text-[12px] font-medium rounded-md transition-colors ${
+                      isActive
+                        ? "bg-primary text-primary-foreground"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+            {isFilterActive && (
+              <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                <span aria-live="polite">
+                  {filteredPresets.length}/{VEIN_IMAGE_PAGE_PRESETS.length} stron
+                </span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 px-2 text-[11px]"
+                  onClick={() => {
+                    setSearchQuery("");
+                    setSlotFilter("all");
+                  }}
+                >
+                  Wyczyść filtry
+                </Button>
+              </div>
+            )}
+          </div>
+
           {/* Page tabs + viewport */}
           <div className="flex flex-wrap items-center gap-3">
             <div
@@ -1271,32 +1343,38 @@ const AdminVeinImages = () => {
               aria-label="Strona"
               className="flex flex-wrap gap-1 rounded-lg border border-border/50 bg-card/60 p-1"
             >
-              {VEIN_IMAGE_PAGE_PRESETS.map((page) => {
-                const isActive = page.key === activeKey;
-                const hasOverride = overrides.main || overrides.perforator;
-                return (
-                  <button
-                    key={page.key}
-                    type="button"
-                    role="tab"
-                    aria-selected={isActive}
-                    onClick={() => {
-                      setActiveKey(page.key);
-                      lastSeededKey.current = null;
-                    }}
-                    className={`px-3 py-1.5 text-[12px] font-medium rounded-md transition-colors flex items-center gap-1.5 ${
-                      isActive
-                        ? "bg-primary text-primary-foreground"
-                        : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
-                    }`}
-                  >
-                    {page.label}
-                    {isActive && hasOverride && (
-                      <Database className="w-3 h-3 opacity-70" />
-                    )}
-                  </button>
-                );
-              })}
+              {filteredPresets.length === 0 ? (
+                <span className="px-3 py-1.5 text-[12px] italic text-muted-foreground">
+                  Brak stron pasujących do filtra
+                </span>
+              ) : (
+                filteredPresets.map((page) => {
+                  const isActive = page.key === activeKey;
+                  const hasOverride = overrides.main || overrides.perforator;
+                  return (
+                    <button
+                      key={page.key}
+                      type="button"
+                      role="tab"
+                      aria-selected={isActive}
+                      onClick={() => {
+                        setActiveKey(page.key);
+                        lastSeededKey.current = null;
+                      }}
+                      className={`px-3 py-1.5 text-[12px] font-medium rounded-md transition-colors flex items-center gap-1.5 ${
+                        isActive
+                          ? "bg-primary text-primary-foreground"
+                          : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                      }`}
+                    >
+                      {page.label}
+                      {isActive && hasOverride && (
+                        <Database className="w-3 h-3 opacity-70" />
+                      )}
+                    </button>
+                  );
+                })
+              )}
             </div>
 
             <div
