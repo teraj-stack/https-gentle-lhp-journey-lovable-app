@@ -1672,7 +1672,223 @@ const renderHtml = ({
       }
     });
   })();
+
+  // ---- Trendy: filtrowanie wykresów po command + flag_* ----
+  // Stan filtra: w-pamięci + URL (?trend_<key>=<value>) + localStorage,
+  // żeby udostępniony link / refresh zachowywał wybór. SVG re-rysuje się w JS:
+  // wymieniamy tylko zawartość <g data-trend-series>, oś + label timestamps
+  // aktualizujemy in-place. Brak danych → empty-state z hintem o resetcie.
+  (function () {
+    var root = document.querySelector("[data-trends-root]");
+    var jsonNode = document.getElementById("trends-json");
+    if (!root || !jsonNode) return;
+    var data;
+    try { data = JSON.parse(jsonNode.textContent || "{}"); }
+    catch (e) { return; }
+    var allPoints = (data && data.points) || [];
+    var flagCols = (data && data.flagColumns) || [];
+    var flagLabels = (data && data.flagLabels) || {};
+    if (!allPoints.length) return;
+
+    var STORAGE_KEY = "visual-report-trends-filter-v1";
+    var URL_PREFIX = "trend_"; // np. ?trend_command=...&trend_flag_max_copy=200
+    var selects = Array.prototype.slice.call(root.querySelectorAll("[data-trend-filter]"));
+    var resetBtn = root.querySelector("[data-trend-reset]");
+    var emptyEl = root.querySelector("[data-trends-empty]");
+    var sparks = Array.prototype.slice.call(root.querySelectorAll("[data-spark]"));
+    var countEl = root.querySelector("[data-trend-count]");
+    var SVG_NS = "http://www.w3.org/2000/svg";
+
+    // Etykieta "(brak)" dla pustych wartości — dystyngwuje "explicit empty"
+    // od "wszystkie" w UI. Internal value pozostaje "" (URL-friendly).
+    var EMPTY_LABEL = "(brak)";
+
+    function valueOf(p, key) {
+      if (key === "command") return p.command || "";
+      return (p.flags && p.flags[key]) || "";
+    }
+    function uniqueValues(key) {
+      var seen = Object.create(null);
+      var out = [];
+      for (var i = 0; i < allPoints.length; i++) {
+        var v = valueOf(allPoints[i], key);
+        if (!seen[v]) { seen[v] = true; out.push(v); }
+      }
+      // Sort: niepuste alfabetycznie, "" na końcu (jako "(brak)").
+      out.sort(function (a, b) {
+        if (a === "" && b !== "") return 1;
+        if (b === "" && a !== "") return -1;
+        return a < b ? -1 : a > b ? 1 : 0;
+      });
+      return out;
+    }
+
+    // Wypełnij selecty unikalnymi wartościami (zachowując "(wszystkie)" jako pierwszy).
+    selects.forEach(function (sel) {
+      var key = sel.getAttribute("data-trend-filter");
+      var values = uniqueValues(key);
+      values.forEach(function (v) {
+        var opt = document.createElement("option");
+        opt.value = v;
+        opt.textContent = v === "" ? EMPTY_LABEL : v;
+        sel.appendChild(opt);
+      });
+    });
+
+    function readUrl() {
+      var p = new URLSearchParams(window.location.search);
+      var s = {};
+      selects.forEach(function (sel) {
+        var key = sel.getAttribute("data-trend-filter");
+        var v = p.get(URL_PREFIX + key);
+        if (v !== null) s[key] = v;
+      });
+      return s;
+    }
+    function readStorage() {
+      try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"); }
+      catch (e) { return {}; }
+    }
+    var initial = (function () {
+      var u = readUrl();
+      var s = readStorage();
+      var out = {};
+      selects.forEach(function (sel) {
+        var key = sel.getAttribute("data-trend-filter");
+        out[key] = (key in u) ? u[key] : (s[key] || "");
+      });
+      return out;
+    })();
+    selects.forEach(function (sel) {
+      var key = sel.getAttribute("data-trend-filter");
+      // Tylko jeśli wartość istnieje w options — inaczej fallback do "(wszystkie)".
+      var val = initial[key] || "";
+      var found = Array.prototype.some.call(sel.options, function (o) { return o.value === val; });
+      sel.value = found ? val : "";
+    });
+
+    function persist(state) {
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
+      var p = new URLSearchParams(window.location.search);
+      Object.keys(state).forEach(function (key) {
+        if (state[key]) p.set(URL_PREFIX + key, state[key]);
+        else p.delete(URL_PREFIX + key);
+      });
+      var qs = p.toString();
+      var url = window.location.pathname + (qs ? "?" + qs : "") + window.location.hash;
+      window.history.replaceState(null, "", url);
+    }
+
+    function currentState() {
+      var s = {};
+      selects.forEach(function (sel) {
+        s[sel.getAttribute("data-trend-filter")] = sel.value;
+      });
+      return s;
+    }
+
+    function filterPoints(state) {
+      return allPoints.filter(function (p) {
+        for (var i = 0; i < selects.length; i++) {
+          var key = selects[i].getAttribute("data-trend-filter");
+          var want = state[key];
+          if (!want) continue;
+          if (valueOf(p, key) !== want) return false;
+        }
+        return true;
+      });
+    }
+
+    function clamp(n, lo, hi) { return n < lo ? lo : n > hi ? hi : n; }
+
+    function redrawSpark(figure, points) {
+      var svg = figure.querySelector("[data-trend-svg]");
+      var series = figure.querySelector("[data-trend-series]");
+      var current = figure.querySelector("[data-trend-current]");
+      var firstEl = figure.querySelector("[data-trend-first]");
+      var lastEl = figure.querySelector("[data-trend-last]");
+      if (!svg || !series) return;
+      var key = figure.getAttribute("data-spark");
+      var color = figure.getAttribute("data-color") || "#888";
+      var W = parseFloat(svg.getAttribute("data-w"));
+      var H = parseFloat(svg.getAttribute("data-h"));
+      var PAD_L = parseFloat(svg.getAttribute("data-pad-l"));
+      var PAD_R = parseFloat(svg.getAttribute("data-pad-r"));
+      var PAD_T = parseFloat(svg.getAttribute("data-pad-t"));
+      var PAD_B = parseFloat(svg.getAttribute("data-pad-b"));
+      var innerW = W - PAD_L - PAD_R;
+      var innerH = H - PAD_T - PAD_B;
+
+      // Wyczyść stare kropki / polyline.
+      while (series.firstChild) series.removeChild(series.firstChild);
+
+      if (!points.length) {
+        if (current) current.textContent = "—";
+        if (firstEl) firstEl.textContent = "";
+        if (lastEl) lastEl.textContent = "";
+        return;
+      }
+
+      var n = points.length;
+      function xFor(i) { return n === 1 ? PAD_L + innerW / 2 : PAD_L + (i / (n - 1)) * innerW; }
+      function yFor(pct) { return PAD_T + (1 - clamp(pct, 0, 100) / 100) * innerH; }
+
+      if (n > 1) {
+        var poly = document.createElementNS(SVG_NS, "polyline");
+        poly.setAttribute("fill", "none");
+        poly.setAttribute("stroke", color);
+        poly.setAttribute("stroke-width", "1.5");
+        var pts = points.map(function (p, i) {
+          return xFor(i).toFixed(1) + "," + yFor(p[key]).toFixed(1);
+        }).join(" ");
+        poly.setAttribute("points", pts);
+        series.appendChild(poly);
+      }
+      points.forEach(function (p, i) {
+        var c = document.createElementNS(SVG_NS, "circle");
+        c.setAttribute("cx", xFor(i).toFixed(1));
+        c.setAttribute("cy", yFor(p[key]).toFixed(1));
+        c.setAttribute("r", p.isCurrent ? "4" : "2.2");
+        c.setAttribute("class", p.isCurrent ? "trend-dot trend-dot-current" : "trend-dot");
+        c.setAttribute("fill", color);
+        var title = document.createElementNS(SVG_NS, "title");
+        var ts = (p.generatedAt || "").replace("T", " ").replace(/\.\d+Z$/, "Z");
+        title.textContent = ts + " — " + p[key].toFixed(1) + "%" + (p.isCurrent ? " (this run)" : "");
+        c.appendChild(title);
+        series.appendChild(c);
+      });
+
+      var last = points[n - 1][key];
+      if (current) current.textContent = last.toFixed(1) + "%";
+      if (firstEl) firstEl.textContent = (points[0].generatedAt || "").slice(0, 10);
+      if (lastEl) lastEl.textContent = (points[n - 1].generatedAt || "now").slice(0, 10);
+      svg.setAttribute("aria-label", (figure.querySelector("figcaption") || {}).textContent + " (" + n + " runów)");
+    }
+
+    function apply() {
+      var state = currentState();
+      persist(state);
+      var pts = filterPoints(state);
+      if (countEl) {
+        countEl.textContent = pts.length + " z " + allPoints.length + " " + (allPoints.length === 1 ? "run" : "runów");
+      }
+      if (emptyEl) emptyEl.hidden = pts.length !== 0;
+      sparks.forEach(function (fig) { redrawSpark(fig, pts); });
+    }
+
+    selects.forEach(function (sel) {
+      sel.addEventListener("change", apply);
+    });
+    if (resetBtn) {
+      resetBtn.addEventListener("click", function () {
+        selects.forEach(function (sel) { sel.value = ""; });
+        apply();
+      });
+    }
+    apply();
+  })();
   </script>
+
 </body>
 </html>`;
 };
