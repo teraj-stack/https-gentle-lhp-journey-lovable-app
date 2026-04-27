@@ -1766,7 +1766,7 @@ const AdminVeinImages = () => {
                 variant="outline"
                 size="sm"
                 onClick={() => fileInputRef.current?.click()}
-                title="Hurtowo podmień alt/caption z pliku CSV (kolumny: page_key, slot, alt, caption)"
+                title="Hurtowo podmień alt/caption z pliku CSV. Akceptujemy nagłówki w PL/EN i z różnymi separatorami (np. „Page Key", „Strona", „page-key" → page_key)."
               >
                 <Upload className="w-3.5 h-3.5 mr-1" /> Import CSV
               </Button>
