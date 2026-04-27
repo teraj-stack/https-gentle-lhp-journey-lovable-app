@@ -24,6 +24,11 @@
  *   bun run test:e2e -- tests/visual/admin-vein-images-live-preview-dark.spec.ts --update-snapshots
  */
 import { test, expect, type Page, type Route } from "../../playwright-fixture";
+import {
+  assertLayoutDoesNotBreak,
+  assertCaptionNotClipped,
+  LIVE_PREVIEW_SNAPSHOT_DIFF_RATIO,
+} from "./_helpers/livePreviewLayoutAssertions";
 
 const ADMIN_EMAIL = process.env.ADMIN_E2E_EMAIL ?? "";
 const ADMIN_PASSWORD = process.env.ADMIN_E2E_PASSWORD ?? "";
