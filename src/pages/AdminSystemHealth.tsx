@@ -924,28 +924,50 @@ const AdminSystemHealth = () => {
     });
   }, []);
   // Eksport WSZYSTKICH 3 wariantów do pliku .json — admin dostaje pełny backup,
-  // nie tylko aktywny variant.
+  // nie tylko aktywny variant. Najpierw pokazujemy ConfirmExportDialog
+  // (anty-przypadkowy klik), dopiero po potwierdzeniu zapisujemy plik.
   const handleExportFocusPrefs = () => {
+    let json: string;
+    let stamp: string;
+    let filename: string;
     try {
-      const json = exportFocusPrefsToJson(focusPrefsByVariant);
-      const blob = new Blob([json], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      const stamp = new Date().toISOString().slice(0, 10);
-      a.href = url;
-      a.download = `focus-prefs-${stamp}.json`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      toast.success("Wyeksportowano preferencje", {
-        description: `${a.download} (3 warianty: light/dark/HC)`,
-      });
+      json = exportFocusPrefsToJson(focusPrefsByVariant);
+      stamp = new Date().toISOString().slice(0, 10);
+      filename = `focus-prefs-${stamp}.json`;
     } catch (err) {
       toast.error("Błąd eksportu", {
         description: err instanceof Error ? err.message : "Nieznany błąd",
       });
+      return;
     }
+    exportDialog.request({
+      filename,
+      format: "json",
+      recordsLabel: "3 warianty (light / dark / HC)",
+      sizeLabel: formatExportSize(new Blob([json]).size),
+      description:
+        "Backup wszystkich preferencji focus toast. Plik zostanie zapisany lokalnie — nie wysyłamy go nigdzie.",
+      run: () => {
+        try {
+          const blob = new Blob([json], { type: "application/json" });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          toast.success("Wyeksportowano preferencje", {
+            description: `${filename} (3 warianty: light/dark/HC)`,
+          });
+        } catch (err) {
+          toast.error("Błąd eksportu", {
+            description: err instanceof Error ? err.message : "Nieznany błąd",
+          });
+        }
+      },
+    });
   };
   /**
    * Wspólny helper kopiowania do schowka z 2-stopniowym fallbackiem:
