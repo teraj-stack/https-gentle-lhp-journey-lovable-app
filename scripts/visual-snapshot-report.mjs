@@ -1537,6 +1537,7 @@ const main = async () => {
       maxDiscovery !== null && failed.length > maxDiscovery
         ? { processed: discoveryLimit, total: failed.length, limit: maxDiscovery }
         : null,
+    trends: trendsData, // null gdy brak history lub --no-history
   });
 
   const indexPath = path.join(REPORT_DIR, "index.html");
