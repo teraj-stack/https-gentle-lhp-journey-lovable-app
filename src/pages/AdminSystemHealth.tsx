@@ -18,6 +18,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tooltip as UITooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import ConfirmExportDialog, { formatExportSize } from "@/components/shared/ConfirmExportDialog";
+import { useExportConfirmation } from "@/hooks/useExportConfirmation";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
@@ -589,6 +591,11 @@ const AdminSystemHealth = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const { isAdmin, loading: adminLoading } = useIsAdmin();
+  // Wspólny dialog potwierdzenia dla WSZYSTKICH eksportów JSON/CSV w tym widoku
+  // (focus-prefs backup + retry-records inspekcja). Jeden hook = jeden dialog
+  // mount na końcu drzewa, każdy handler woła `exportDialog.request({ ... })`
+  // zamiast bezpośrednio pisać Blob na dysk.
+  const exportDialog = useExportConfirmation();
   const [retryFilterIp, setRetryFilterIp] = useState("");
   const [retryFilterUa, setRetryFilterUa] = useState("");
   const [retryDenoOnly, setRetryDenoOnly] = useState(false);
@@ -917,28 +924,50 @@ const AdminSystemHealth = () => {
     });
   }, []);
   // Eksport WSZYSTKICH 3 wariantów do pliku .json — admin dostaje pełny backup,
-  // nie tylko aktywny variant.
+  // nie tylko aktywny variant. Najpierw pokazujemy ConfirmExportDialog
+  // (anty-przypadkowy klik), dopiero po potwierdzeniu zapisujemy plik.
   const handleExportFocusPrefs = () => {
+    let json: string;
+    let stamp: string;
+    let filename: string;
     try {
-      const json = exportFocusPrefsToJson(focusPrefsByVariant);
-      const blob = new Blob([json], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      const stamp = new Date().toISOString().slice(0, 10);
-      a.href = url;
-      a.download = `focus-prefs-${stamp}.json`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      toast.success("Wyeksportowano preferencje", {
-        description: `${a.download} (3 warianty: light/dark/HC)`,
-      });
+      json = exportFocusPrefsToJson(focusPrefsByVariant);
+      stamp = new Date().toISOString().slice(0, 10);
+      filename = `focus-prefs-${stamp}.json`;
     } catch (err) {
       toast.error("Błąd eksportu", {
         description: err instanceof Error ? err.message : "Nieznany błąd",
       });
+      return;
     }
+    exportDialog.request({
+      filename,
+      format: "json",
+      recordsLabel: "3 warianty (light / dark / HC)",
+      sizeLabel: formatExportSize(new Blob([json]).size),
+      description:
+        "Backup wszystkich preferencji focus toast. Plik zostanie zapisany lokalnie — nie wysyłamy go nigdzie.",
+      run: () => {
+        try {
+          const blob = new Blob([json], { type: "application/json" });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          toast.success("Wyeksportowano preferencje", {
+            description: `${filename} (3 warianty: light/dark/HC)`,
+          });
+        } catch (err) {
+          toast.error("Błąd eksportu", {
+            description: err instanceof Error ? err.message : "Nieznany błąd",
+          });
+        }
+      },
+    });
   };
   /**
    * Wspólny helper kopiowania do schowka z 2-stopniowym fallbackiem:
@@ -4117,7 +4146,6 @@ const AdminSystemHealth = () => {
                 variant="outline"
                 size="sm"
                 className="h-8 gap-1.5 shrink-0"
-                
                 onClick={() => {
                   if (!inspectSource || inspectFilteredRecords.length === 0) return;
                   // Eksport tylko aktualnie wyświetlanych rekordów (po filtrach IP+UA + tekst).
@@ -4129,21 +4157,36 @@ const AdminSystemHealth = () => {
                     count: inspectFilteredRecords.length,
                     records: inspectFilteredRecords,
                   };
-                  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
-                  const url = URL.createObjectURL(blob);
+                  const json = JSON.stringify(payload, null, 2);
                   const safeIp = inspectSource.ip.replace(/[^a-z0-9.-]/gi, "_");
                   const ts = new Date().toISOString().replace(/[:.]/g, "-");
-                  const a = document.createElement("a");
-                  a.href = url;
-                  a.download = `retry-records_${safeIp}_${ts}.json`;
-                  document.body.appendChild(a);
-                  a.click();
-                  document.body.removeChild(a);
-                  URL.revokeObjectURL(url);
-                  toast.success(`Wyeksportowano ${inspectFilteredRecords.length} rekordów`);
+                  const filename = `retry-records_${safeIp}_${ts}.json`;
+                  // Najpierw potwierdzenie przez wspólny ConfirmExportDialog,
+                  // dopiero potem zapis na dysk — chroni przed przypadkowym
+                  // pobraniem pliku z surowymi metadanymi requestów.
+                  exportDialog.request({
+                    filename,
+                    format: "json",
+                    recordsLabel: `${inspectFilteredRecords.length} rekord(ów) · IP ${inspectSource.ip}`,
+                    sizeLabel: formatExportSize(new Blob([json]).size),
+                    description:
+                      "Plik zawiera surowe metadane requestów (IP, User-Agent, payload). Trzymaj go w bezpiecznym miejscu.",
+                    run: () => {
+                      const blob = new Blob([json], { type: "application/json" });
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement("a");
+                      a.href = url;
+                      a.download = filename;
+                      document.body.appendChild(a);
+                      a.click();
+                      document.body.removeChild(a);
+                      URL.revokeObjectURL(url);
+                      toast.success(`Wyeksportowano ${inspectFilteredRecords.length} rekordów`);
+                    },
+                  });
                 }}
-                disabled={inspectFilteredRecords.length === 0}
-                title="Pobierz aktualnie wyświetlane rekordy jako JSON"
+                disabled={inspectFilteredRecords.length === 0 || exportDialog.isExporting}
+                title="Pobierz aktualnie wyświetlane rekordy jako JSON (z potwierdzeniem)"
               >
                 <Download className="h-3.5 w-3.5" />
                 Eksportuj
@@ -4747,6 +4790,15 @@ const AdminSystemHealth = () => {
           expiresAt={jumpLabel.expiresAt}
         />
       )}
+      {/*
+        Wspólny dialog potwierdzenia eksportu — obsługuje WSZYSTKIE
+        eksporty JSON/CSV w tym widoku (focus-prefs backup, retry-records
+        per source). Stan trzyma `useExportConfirmation` (`exportDialog`).
+      */}
+      <ConfirmExportDialog
+        {...exportDialog.dialogProps}
+        title="Pobrać plik?"
+      />
     </>
   );
 };
