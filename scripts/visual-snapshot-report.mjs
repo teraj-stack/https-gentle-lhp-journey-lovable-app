@@ -2529,7 +2529,7 @@ const renderHtml = ({
     // ---- Minimalny ZIP writer (zero-deps, browser-only) ----
     // Używamy metody STORE (kompresja=0) — pliki CSV i tak dobrze się
     // kompresują przez transport HTTP, a brak DEFLATE pozwala uniknąć
-    // ~3 KB kodu i zależności od `CompressionStream` (niedostępne w
+    // ~3 KB kodu i zależności od CompressionStream (niedostępne w
     // starszych Safari / Firefox bez ESR). Format binarny: lokalne nagłówki
     // (PK\x03\x04) per plik, central directory (PK\x01\x02), end-of-central-
     // directory (PK\x05\x06). Patrz APPNOTE.TXT 4.3.6–4.3.16.
