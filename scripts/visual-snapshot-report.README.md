@@ -161,9 +161,11 @@ Nieznane klucze → warning, pomijane (CI nie wybucha za literówkę).
 [visual-snapshot-report]   ├─ PNG copy: baseline=150 (suma expected+actual+diff z allFailed), processed=90, saved=60 | limit: --max-copy=∞ (copyLimit=30/30 trio)
 [visual-snapshot-report]   └─ discovery readdir: baseline=80 (allFailed.length), processed=30, saved=50 | limit: --max-discovery=∞ (discoveryLimit=30/30 trio)
 [visual-snapshot-report] 📊 Atrybucja oszczędności per-flaga:
-[visual-snapshot-report]   ├─ [1] Truncation (--max-failures=30): PNG: 50, readdir: 50
+[visual-snapshot-report]   ├─ [1a] Per-grupa truncation (--max-failures-per-viewport=5, --max-failures-per-state=∞ → viewport=20): PNG: 20, readdir: 20
+[visual-snapshot-report]   ├─ [1b] Global truncation (--max-failures=30): PNG: 30, readdir: 30
 [visual-snapshot-report]   ├─ [2] PNG cap (--max-copy=∞): 0 (flaga nieaktywna lub bez efektu)
 [visual-snapshot-report]   └─ [3] Discovery cap (--max-discovery=∞): 0 (flaga nieaktywna lub bez efektu)
+[visual-snapshot-report]   ▶ Dominujący mechanizm: [1b] --max-failures → 60 ops zaoszczędzonych (60%).
 [visual-snapshot-report] 🏆 Top 3 oszczędzonych trio (z 50 pominiętych):
 [visual-snapshot-report]   ├─ #1 admin-dark-desktop-state-c (3 PNG + 1 readdir) — tests/visual/admin-vein-images-live-preview-dark.spec.ts-snapshots
 [visual-snapshot-report]   ├─ #2 tooltip-mobile-state-b (3 PNG + 1 readdir) — tests/visual/tooltip-last-change.spec.ts-snapshots
@@ -175,14 +177,17 @@ bez limitów: `baseline` = co zrobiłby skrypt bez `--max-*`, `processed` =
 co faktycznie wykonał, `saved` = `baseline - processed`. Limity (`∞` = brak)
 pokazują, który flag ile zaoszczędził.
 
-**Atrybucja per-flaga** rozbija totale na 3 etapy pipeline'u (suma = totale):
-1. **`--max-failures` (+ per-viewport/per-state)** — wycina trio przed kopiowaniem, oszczędza i PNG i readdir.
-2. **`--max-copy`** — skipuje PNG copy w trio które przeżyły truncation; oszczędza TYLKO PNG.
-3. **`--max-discovery`** — skipuje readdir w trio które przeżyły truncation; oszczędza TYLKO readdir.
+**Atrybucja per-flaga** rozbija totale na 4 sekcje pipeline'u (suma = totale):
+1. **`[1a]` Per-grupa** (`--max-failures-per-viewport`/`-per-state`) — proporcjonalne kapowanie ZANIM zadziała globalny limit. Sufix `→ viewport=N, state=M` pokazuje konkretnie który flag ile trio wyrzucił.
+2. **`[1b]` Global** (`--max-failures`) — globalny limit na to co zostało po `[1a]`. Oszczędza i PNG i readdir.
+3. **`[2]` PNG cap** (`--max-copy`) — skipuje PNG copy w trio które przeżyły truncation; oszczędza TYLKO PNG.
+4. **`[3]` Discovery cap** (`--max-discovery`) — skipuje readdir w trio które przeżyły truncation; oszczędza TYLKO readdir.
 
-Dzięki temu od razu widać, czy warto dokręcić `--max-copy` (gdy `[1]` pokazuje
-duży readdir-saving, ale małe PNG-saving — znaczy że IO siedzi w discovery,
-nie w kopiowaniu) lub odwrotnie. Top 3 ranking sortowany po liczbie PNG
+Linia **`▶ Dominujący mechanizm`** wskazuje sekcję z największym sumarycznym
+zyskiem IO (PNG + readdir) — najszybszy sygnał "co tu obcięło robotę". Dzięki
+temu od razu widać czy warto dokręcić per-grupa (`[1a]` dominuje) czy raczej
+globalny limit (`[1b]`), albo czy IO siedzi w kopiowaniu PNG (`[2]`) vs
+discovery readdir (`[3]`). Top 3 ranking sortowany po liczbie PNG
 (tie-break: stem alfabetycznie) — najszybszy sygnał, które trio najbardziej
 ciążyły w IO i warto je rozwiązać/przenieść do osobnego runa.
 
