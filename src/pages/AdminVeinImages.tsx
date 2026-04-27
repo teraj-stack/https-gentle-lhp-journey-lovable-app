@@ -731,6 +731,26 @@ const AdminVeinImages = () => {
    * `exportJson`/`exportCsv`, Cancel po prostu czyści stan.
    */
   const [pendingExport, setPendingExport] = useState<"json" | "csv" | null>(null);
+  /**
+   * Snapshot tego, co dokładnie znajdzie się w pobieranym pliku — wyliczany
+   * w `requestExport()` zaraz po kliknięciu „Export JSON/CSV". Pokazujemy
+   * w AlertDialogu ROZSZERZONY summary (nazwa pliku, liczba wierszy, kolumny,
+   * breakdown per page_key/slot, próbka), żeby admin mógł świadomie potwierdzić
+   * lub anulować zanim plik trafi na dysk.
+   *
+   * `null` = brak snapshotu (dialog zamknięty albo trwa fetch — wtedy pokazujemy loader).
+   */
+  const [exportPreview, setExportPreview] = useState<{
+    format: "json" | "csv";
+    filename: string;
+    filterSummary: string;
+    total: number;
+    columns: string[];
+    breakdown: { page_key: string; slot: string; count: number }[];
+    sample: { page_key: string; slot: string; alt: string | null; caption: string | null }[];
+  } | null>(null);
+  // Loader na czas fetch + budowy preview (przycisk „Export …" → spinner).
+  const [preparingPreview, setPreparingPreview] = useState<"json" | "csv" | null>(null);
   // Krótki „✓ Skopiowano" feedback na przycisku kopiowania (2 s).
   const [jsonCopied, setJsonCopied] = useState(false);
   /**
