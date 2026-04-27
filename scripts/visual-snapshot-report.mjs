@@ -2121,6 +2121,12 @@ const main = async () => {
       }))
       .sort((a, b) => b.pngCount - a.pngCount || a.stem.localeCompare(b.stem))
       .slice(0, 10), // 10 (nie 3) — w JSON więcej kontekstu się przyda do analizy
+    byGroup: {
+      // Agregaty per-grupa do analizy "która grupa najwięcej oszczędza".
+      // Klucz mapy = wartość zwracana przez parseSnapshotName (slugi).
+      viewport: byViewport,
+      state: byState,
+    },
   };
 
   const savingsJsonPath = path.join(REPORT_DIR, "savings.json");
