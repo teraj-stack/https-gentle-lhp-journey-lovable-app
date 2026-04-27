@@ -719,6 +719,16 @@ const renderHtml = ({ trios, generatedAt, totalFailures, playwrightReportRel, tr
       color: var(--accent); text-decoration: none; font-size: 12px;
     }
     .header-link:hover { border-color: var(--accent); }
+    .truncation-banner {
+      max-width: 1400px; margin: 0 auto 16px;
+      padding: 12px 16px; background: rgba(255,167,38,.12);
+      border: 1px solid var(--warn); border-left-width: 4px; border-radius: 6px;
+      color: var(--fg); font-size: 13px;
+    }
+    .truncation-banner code {
+      background: rgba(127,127,127,.15); padding: 1px 6px;
+      border-radius: 3px; font-size: 12px;
+    }
   </style>
 </head>
 <body>
