@@ -102,6 +102,7 @@ const Flebologia = () => {
             perforatorAlt="Schemat niewydolnego perforatora — łącznika między układem głębokim a powierzchownym, którego refluks dociąża powierzchowne żyły i napędza powstawanie żylaków"
             perforatorCaption="Niewydolny perforator · Dociąża układ powierzchowny · Punkt diagnostyki USG Doppler"
           />
+          <VeinImageDevOverlay pageKey="flebologia" />
         </div>
       </section>
 

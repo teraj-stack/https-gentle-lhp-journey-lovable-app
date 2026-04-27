@@ -114,6 +114,7 @@ const Mikroflebektomia = () => (
         perforatorAlt="Schemat niewydolnego perforatora — często zasila żylakowate bocznice usuwane mikroflebektomią; jego ocena USG Doppler decyduje o zakresie zabiegu"
         perforatorCaption="Niewydolny perforator · Zasilacz żylakowatej bocznicy · Ocena USG Doppler przed zabiegiem"
       />
+      <VeinImageDevOverlay pageKey="mikroflebektomia" />
       {/* Intro */}
       <motion.section {...fadeUp}>
         <h2 className="section-title mb-3 text-center">Przełom w leczeniu zaawansowanych żylaków</h2>
