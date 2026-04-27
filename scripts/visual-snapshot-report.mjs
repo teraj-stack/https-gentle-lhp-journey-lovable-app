@@ -622,7 +622,7 @@ const TREND_FLAG_COLUMNS = [
  *  2. UI raportu mogło zaproponować eksport „pełny schemat" — wiersze
  *     wyrównane do tego samego nagłówka, z pustymi wartościami w polach,
  *     których embedded payload (`points`) nie zawiera (większość metryk
- *     trio_*/png_baseline/attribution_*/node_version/cwd_basename istnieje
+ *     trio_X/png_baseline/attribution_X/node_version/cwd_basename istnieje
  *     wyłącznie w oryginalnym CSV, nie w UI).
  *
  * Kolejność jest STABILNA — append do `history.csv` zakłada identyczny header
