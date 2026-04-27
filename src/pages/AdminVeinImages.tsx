@@ -474,7 +474,9 @@ const AdminVeinImages = () => {
   );
   const [viewport, setViewport] = useState<ViewportMode>("desktop");
   const [saving, setSaving] = useState<VeinImageSlot | null>(null);
-  const [exporting, setExporting] = useState<"json" | "csv" | null>(null);
+  const [exporting, setExporting] = useState<"json" | "csv" | "json-copy" | null>(null);
+  // Krótki „✓ Skopiowano" feedback na przycisku kopiowania (2 s).
+  const [jsonCopied, setJsonCopied] = useState(false);
   /**
    * Filtry eksportu — pozwalają pobrać podzbiór overrides zamiast całej tabeli.
    * "all" = bez filtra (dotychczasowe zachowanie). Filtr jest stosowany lokalnie
