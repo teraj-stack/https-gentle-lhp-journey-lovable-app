@@ -908,6 +908,56 @@ const AdminVeinImages = () => {
     }
   };
 
+  /**
+   * Kopiuje wyfiltrowany payload JSON do schowka — ten sam shape co exportJson
+   * (exported_at/exported_by/filter/total/overrides), żeby można było wkleić
+   * do Postmana / drugiego konta admina i zaimportować bez różnicy względem
+   * pliku. Używa Clipboard API (wymaga HTTPS / localhost — admin panel zawsze
+   * leci po HTTPS, więc bezpiecznie).
+   */
+  const copyJsonToClipboard = async () => {
+    setExporting("json-copy");
+    try {
+      const allRows = await fetchAllOverrides();
+      const { rows } = applyExportFilters(allRows);
+      if (rows.length === 0) {
+        toast.info(
+          `Brak overrides do skopiowania dla filtra: ${exportFilterSummary()}.`,
+        );
+        return;
+      }
+      const payload = {
+        exported_at: new Date().toISOString(),
+        exported_by: session?.user.email ?? null,
+        filter: {
+          page_key: exportPageKey,
+          slot: exportSlot,
+        },
+        total: rows.length,
+        overrides: rows,
+      };
+      const json = JSON.stringify(payload, null, 2);
+      if (!navigator.clipboard?.writeText) {
+        toast.error(
+          "Schowek niedostępny w tej przeglądarce — użyj „Export JSON".",
+        );
+        return;
+      }
+      await navigator.clipboard.writeText(json);
+      setJsonCopied(true);
+      window.setTimeout(() => setJsonCopied(false), 2000);
+      toast.success(
+        `Skopiowano JSON (${rows.length} overrides, ${exportFilterSummary()}) do schowka`,
+      );
+    } catch (err) {
+      toast.error(
+        `Nie udało się skopiować JSON: ${err instanceof Error ? err.message : String(err)}`,
+      );
+    } finally {
+      setExporting(null);
+    }
+  };
+
   /** Escapuje pole CSV zgodnie z RFC 4180. */
   const csvCell = (v: unknown): string => {
     const s = v === null || v === undefined ? "" : String(v);
