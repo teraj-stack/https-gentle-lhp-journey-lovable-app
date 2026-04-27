@@ -679,22 +679,53 @@ const AdminVeinImages = () => {
               })}
             </div>
 
-            <div className="ml-auto flex items-center gap-2">
+            <div className="ml-auto flex flex-wrap items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={exportJson}
+                disabled={exporting !== null}
+                title="Pobierz wszystkie overrides z bazy jako JSON"
+              >
+                <FileJson className="w-3.5 h-3.5 mr-1" />
+                {exporting === "json" ? "Eksport…" : "Export JSON"}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={exportCsv}
+                disabled={exporting !== null}
+                title="Pobierz wszystkie overrides z bazy jako CSV (Excel-friendly)"
+              >
+                <FileSpreadsheet className="w-3.5 h-3.5 mr-1" />
+                {exporting === "csv" ? "Eksport…" : "Export CSV"}
+              </Button>
+              <span className="w-px h-6 bg-border/50 mx-1" aria-hidden />
               <Button
                 variant="outline"
                 size="sm"
                 onClick={resetToProps}
-                title="Cofnij draft do hardkodowanych propsów"
+                title="Cofnij draft do hardkodowanych propsów (tylko ta strona, lokalnie)"
               >
-                <RotateCcw className="w-3.5 h-3.5 mr-1" /> Reset do propsów
+                <RotateCcw className="w-3.5 h-3.5 mr-1" /> Reset draft
               </Button>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={resetToDb}
-                title="Załaduj wartości aktualnie zapisane w bazie"
+                title="Załaduj wartości aktualnie zapisane w bazie (tylko ta strona)"
               >
                 <Database className="w-3.5 h-3.5 mr-1" /> Reset do bazy
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={resetAllToDefaults}
+                disabled={resettingAll}
+                title="Usuń WSZYSTKIE overrides ze wszystkich stron — strony wrócą do wartości seedowych"
+              >
+                <Trash2 className="w-3.5 h-3.5 mr-1" />
+                {resettingAll ? "Resetuję…" : "Reset wszystkich"}
               </Button>
             </div>
           </div>
