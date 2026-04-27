@@ -80,61 +80,9 @@ const presetToDraft = (p: VeinImagePagePreset): DraftFields => ({
   perforatorCaption: p.perforatorCaption,
 });
 
-/**
- * Mapuje błąd zwrócony przez Supabase/Postgres na czytelny komunikat dla admina.
- *
- * Trigger `validate_vein_image_override` rzuca po polsku (RAISE EXCEPTION),
- * więc message zazwyczaj jest gotowy do pokazania. Ten helper:
- *  - rozpoznaje 3 reguły walidacji (alt, caption, segment) i nadaje tytuł,
- *  - obsługuje błędy RLS (42501) i unique constraint (23505),
- *  - zawsze dorzuca czytelny opis ze szczegółami z bazy.
- */
-const describeSaveError = (
-  err: unknown,
-  slot: VeinImageSlot,
-  pageLabel: string,
-): { title: string; description: string } => {
-  const slotLabel = slot === "main" ? "główny obraz" : "perforator";
-  const ctx = `${pageLabel} · ${slotLabel}`;
-  const e = err as { message?: string; code?: string; details?: string } | null;
-  const raw = (e?.message ?? String(err)).trim();
-  const code = e?.code;
-
-  if (code === "42501" || /row-level security/i.test(raw)) {
-    return {
-      title: `Brak uprawnień (${ctx})`,
-      description: "Twoje konto nie ma roli admina dla tej tabeli. Zaloguj się ponownie lub poproś o uprawnienia.",
-    };
-  }
-  if (code === "23505" || /duplicate key|unique constraint/i.test(raw)) {
-    return {
-      title: `Konflikt: wpis już istnieje (${ctx})`,
-      description: "Inna sesja zapisała ten sam slot. Odśwież stronę i spróbuj ponownie.",
-    };
-  }
-  if (/alt musi mieć/i.test(raw)) {
-    return {
-      title: `Walidacja serwera odrzuciła alt (${ctx})`,
-      description: `${raw} Wymóg: alt 60–220 znaków.`,
-    };
-  }
-  if (/caption nie może przekraczać/i.test(raw)) {
-    return {
-      title: `Walidacja serwera odrzuciła caption (${ctx})`,
-      description: `${raw} Wymóg: caption ≤110 znaków.`,
-    };
-  }
-  if (/segment caption/i.test(raw)) {
-    return {
-      title: `Za długi segment "·" w caption (${ctx})`,
-      description: `${raw} Wymóg: każdy segment oddzielony „ · " ≤40 znaków.`,
-    };
-  }
-  return {
-    title: `Błąd zapisu (${ctx})`,
-    description: raw || "Nieznany błąd serwera. Sprawdź połączenie i spróbuj ponownie.",
-  };
-};
+// Logika zapisu + mapowanie błędów żyje w `@/lib/veinImageSave` jako single
+// source of truth (testowane w Vitest bez mountowania całego panelu admin).
+import { performSaveSlot, describeSaveError } from "@/lib/veinImageSave";
 
 /**
  * Minimalny parser CSV zgodny z RFC 4180:
@@ -749,36 +697,18 @@ const AdminVeinImages = () => {
 
     setSaving(slot);
     try {
-      const { data: existing, error: lookupError } = await supabase
-        .from("vein_image_overrides")
-        .select("id")
-        .eq("page_key", activeKey)
-        .eq("slot", slot)
-        .maybeSingle();
-      if (lookupError) throw lookupError;
-
-      const payload = {
-        page_key: activeKey,
-        slot,
-        alt: altValue,
-        caption: captionValue,
-        updated_by: session?.user.email ?? null,
-      };
-
-      if (existing) {
-        const { error } = await supabase
-          .from("vein_image_overrides")
-          .update(payload)
-          .eq("id", existing.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from("vein_image_overrides")
-          .insert(payload);
-        if (error) throw error;
-      }
-
-      await queryClient.invalidateQueries({ queryKey: VEIN_IMAGE_QUERY_KEY });
+      // Pełna logika lookup → insert/update + invalidacja cache żyje w
+      // performSaveSlot — ta sama funkcja, którą pokrywają testy Vitest.
+      await performSaveSlot(
+        {
+          pageKey: activeKey,
+          slot,
+          alt: altValue,
+          caption: captionValue,
+          updatedBy: session?.user.email ?? null,
+        },
+        { supabase, queryClient },
+      );
       // Wymuś świeży render podglądu CMS i pokaż flash highlight.
       setSavedTick((t) => t + 1);
       setLastSaved({ at: Date.now(), slot, pageKey: activeKey });
