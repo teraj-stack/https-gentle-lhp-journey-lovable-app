@@ -1114,7 +1114,19 @@ const main = async () => {
     totalFailures: failed.length,
     playwrightReportRel,
     truncation: truncatedBy
-      ? { shown: failed.length, total: allFailed.length, limit: maxFailures }
+      ? {
+          shown: failed.length,
+          total: allFailed.length,
+          limit: maxFailures,
+          // Pełna lista pominiętych trio (wszystko po slice'ie). Wzbogacamy
+          // o viewport/state z parseSnapshotName, żeby user mógł zorientować
+          // się GDZIE są dalsze regresje bez re-runa skryptu bez limitu.
+          // testName = nazwa katalogu Playwrighta — jednoznaczny lokator.
+          omitted: allFailed.slice(maxFailures).map((t) => {
+            const { viewport, state } = parseSnapshotName(t.stem + "-actual.png");
+            return { stem: t.stem, viewport, state, testName: t.testName };
+          }),
+        }
       : null,
     copyTruncation:
       maxCopy !== null && failed.length > maxCopy
