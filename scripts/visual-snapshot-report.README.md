@@ -282,6 +282,21 @@ sekcja `📊 Atrybucja oszczędności` w konsoli, w postaci do dalszej analizy:
   podanej w `--history` (np. `--history=metrics/visual.csv` →
   `metrics/visual-by-viewport.csv` + `metrics/visual-by-state.csv`).
 
+### Filtr trendów w `index.html`
+
+Sekcja **„Trendy oszczędności IO"** w wygenerowanym `index.html` zawiera
+interaktywny filtr (selecty) dla kolumn **`command`** + każdej `flag_*`.
+Wybór ogranicza wykresy `png_saved_pct` / `discovery_saved_pct` do runów
+pasujących do wszystkich aktywnych selectów (AND), bez re-runu skryptu.
+
+- Wartości selectów są budowane na bazie `history.csv` (unikalne wartości w
+  danej kolumnie). Brakująca wartość (np. starsze wiersze bez `flag_*`)
+  jest etykietowana jako **„(brak)"** i pozostaje filtrowalna.
+- Stan filtra jest zapisywany w `localStorage` oraz w URL jako
+  `?trend_command=...&trend_flag_max_copy=200`, dzięki czemu można udostępnić
+  link do konkretnego widoku trendu (np. „CI z `--max-copy=200`").
+- Przycisk **Resetuj** czyści wszystkie selecty i pokazuje pełną historię.
+
 ```bash
 # Custom path:
 node scripts/visual-snapshot-report.mjs --history=metrics/visual-history.csv
