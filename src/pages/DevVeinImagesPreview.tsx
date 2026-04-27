@@ -409,7 +409,7 @@ const DevVeinImagesPreview = () => {
             <p className="text-[11px] text-muted-foreground">
               dev-only · {active.route}
               {isAdmin === false && (
-                <span className="ml-2 text-amber-500/80">
+                <span className="ml-2 text-destructive/80">
                   · zaloguj się jako admin, żeby zapisywać do bazy
                 </span>
               )}
