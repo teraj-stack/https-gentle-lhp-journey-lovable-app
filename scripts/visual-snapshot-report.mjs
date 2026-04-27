@@ -853,7 +853,45 @@ const renderHtml = ({
       background: rgba(127,127,127,.15); padding: 1px 6px;
       border-radius: 3px; font-size: 12px;
     }
-    /* Placeholder dla figure gdy --max-copy obciął kopiowanie — bardziej
+    /* Sekcja "Pominięte przez --max-failures" — zwijana lista trio bez kart.
+       Tabela ma stałą max-height + scroll, żeby 500+ wierszy nie rozwalało layoutu. */
+    .omitted-section {
+      max-width: 1400px; margin: 0 auto 16px;
+      background: var(--card); border: 1px solid var(--border);
+      border-left: 4px solid var(--warn); border-radius: 6px; padding: 12px 16px;
+    }
+    .omitted-section > summary {
+      cursor: pointer; list-style: none; display: flex;
+      align-items: center; justify-content: space-between; gap: 12px;
+      flex-wrap: wrap; font-size: 14px;
+    }
+    .omitted-section > summary::-webkit-details-marker { display: none; }
+    .omitted-section > summary::before {
+      content: "▶"; display: inline-block; margin-right: 8px;
+      transition: transform .15s; color: var(--muted); font-size: 10px;
+    }
+    .omitted-section[open] > summary::before { transform: rotate(90deg); }
+    .omitted-summary-label { display: inline-flex; align-items: center; gap: 6px; }
+    .omitted-copy-btn { margin-left: auto; }
+    .omitted-table-wrap {
+      max-height: 360px; overflow: auto; margin-top: 12px;
+      border: 1px solid var(--border); border-radius: 4px;
+    }
+    .omitted-table {
+      width: 100%; border-collapse: collapse; font-size: 12px;
+    }
+    .omitted-table th, .omitted-table td {
+      padding: 6px 10px; text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+    .omitted-table thead th {
+      position: sticky; top: 0; background: var(--card);
+      color: var(--muted); font-weight: 600; z-index: 1;
+    }
+    .omitted-table tbody tr:hover { background: rgba(127,127,127,.06); }
+    .omitted-table code { font-size: 11px; word-break: break-all; }
+    .omitted-testname { color: var(--muted); font-size: 11px; word-break: break-all; }
+    .omitted-hint { margin: 10px 4px 0; color: var(--muted); font-size: 12px; }
        neutralny niż czerwony "missing", żeby user nie myślał że to błąd. */
     .missing-copy-skipped .missing-box {
       background: rgba(127,127,127,.08);
