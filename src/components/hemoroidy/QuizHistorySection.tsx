@@ -22,6 +22,7 @@ import {
   ShieldCheck,
   AlertTriangle,
   AlertOctagon,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useQuizHistory, type QuizHistoryEntry } from "@/hooks/useQuizHistory";
