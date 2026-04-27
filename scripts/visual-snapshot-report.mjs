@@ -790,6 +790,45 @@ const renderHtml = ({ trios, generatedAt, totalFailures, playwrightReportRel }) 
     });
 
     applyFilter();
+
+    // ---- Clipboard helpers dla deep linków Playwrighta ----
+    // [data-copy="..."]          → button kopiuje wartość do clipboardu, brak nawigacji
+    // [data-copy-on-click="..."] → link działa normalnie (target=_blank), ale po drodze
+    //                              kopiuje wartość (np. nazwę testu do wklejenia w search)
+    function flashCopied(el) {
+      el.classList.add("is-copied");
+      var orig = el.textContent;
+      el.textContent = "✓ Skopiowano";
+      setTimeout(function () {
+        el.classList.remove("is-copied");
+        el.textContent = orig;
+      }, 1200);
+    }
+    function copyText(text) {
+      // Preferuj nowoczesne API; fallback dla file:// gdzie clipboard może być zablokowany.
+      if (navigator.clipboard && window.isSecureContext) {
+        return navigator.clipboard.writeText(text);
+      }
+      var ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed"; ta.style.opacity = "0";
+      document.body.appendChild(ta); ta.select();
+      try { document.execCommand("copy"); } finally { document.body.removeChild(ta); }
+      return Promise.resolve();
+    }
+    document.addEventListener("click", function (e) {
+      var btn = e.target.closest("[data-copy]");
+      if (btn) {
+        e.preventDefault();
+        copyText(btn.getAttribute("data-copy")).then(function () { flashCopied(btn); });
+        return;
+      }
+      var link = e.target.closest("[data-copy-on-click]");
+      if (link) {
+        // NIE preventDefault — link ma się otworzyć normalnie.
+        copyText(link.getAttribute("data-copy-on-click")).catch(function () {});
+      }
+    });
   })();
   </script>
 </body>
