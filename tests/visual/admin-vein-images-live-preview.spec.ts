@@ -80,68 +80,12 @@ const longAlt = (suffix: string): string =>
 const longCaption = (suffix: string): string =>
   `VISUAL ${suffix} · podgląd renderu · ryc. snapshot`;
 
-/**
- * Asercje anty-łamliwości layoutu — niezależne od snapshota.
- * Łapią najczęstsze regresje responsywne nawet bez baseline'u (przy pierwszym runie).
- */
-const assertLayoutDoesNotBreak = async (page: Page, viewportWidth: number) => {
-  // 1) Brak horizontal scroll na całej stronie (najczęstszy objaw "pęknięcia" UI).
-  const pageMetrics = await page.evaluate(() => ({
-    scrollWidth: document.documentElement.scrollWidth,
-    clientWidth: document.documentElement.clientWidth,
-  }));
-  // Tolerancja 1px na sub-pixel rounding.
-  expect(
-    pageMetrics.scrollWidth,
-    `Strona nie powinna mieć horizontalnego scrolla (scrollW=${pageMetrics.scrollWidth} > clientW=${pageMetrics.clientWidth} przy viewport ${viewportWidth}px)`,
-  ).toBeLessThanOrEqual(pageMetrics.clientWidth + 1);
+// Asercje anty-łamliwości layoutu (overflow strony, frame w viewporcie, draft img)
+// oraz asercja figcaption są wspólne dla light/dark — patrz `_helpers/livePreviewLayoutAssertions.ts`,
+// gdzie zdefiniowano nazwane progi tolerancji (SUBPIXEL_ROUNDING_PX, HARD_OVERFLOW_CEILING_PX,
+// VIEWPORT_FIT_TOLERANCE_PX, TEXT_OVERFLOW_TOLERANCE_PX) z dwustronnym sprawdzaniem
+// (soft próg = sub-pixel noise OK, hard ceiling = realna regresja).
 
-  // 2) Frame preview mieści się w viewporcie.
-  const frame = page.getByTestId("live-preview-frame");
-  await expect(frame).toBeVisible();
-  const box = await frame.boundingBox();
-  expect(box, "live-preview-frame musi mieć boundingBox").not.toBeNull();
-  if (box) {
-    expect(
-      box.x + box.width,
-      `live-preview-frame wystaje poza viewport (right=${box.x + box.width}, vw=${viewportWidth})`,
-    ).toBeLessThanOrEqual(viewportWidth + 1);
-    expect(box.width, "live-preview-frame ma zerową szerokość").toBeGreaterThan(0);
-  }
-
-  // 3) Draft <img> jest widoczny i ma niezerowy render.
-  const draftImg = page
-    .getByTestId("live-preview-section")
-    .locator("img")
-    .first();
-  await expect(draftImg).toBeVisible();
-  const imgBox = await draftImg.boundingBox();
-  expect(imgBox?.width ?? 0, "draft <img> ma zerową szerokość").toBeGreaterThan(0);
-  expect(imgBox?.height ?? 0, "draft <img> ma zerową wysokość").toBeGreaterThan(0);
-};
-
-/**
- * Asercja, że figcaption draftu się nie ucina (overflow-x).
- * Tolerancja 1px na sub-pixel rounding różnych silników renderujących.
- */
-const assertCaptionNotClipped = async (page: Page) => {
-  const captionsOverflow = await page
-    .getByTestId("live-preview-section")
-    .locator("figcaption")
-    .evaluateAll((nodes) =>
-      nodes.map((n) => ({
-        scrollW: n.scrollWidth,
-        clientW: n.clientWidth,
-        text: n.textContent?.slice(0, 40) ?? "",
-      })),
-    );
-  for (const c of captionsOverflow) {
-    expect(
-      c.scrollW,
-      `figcaption "${c.text}" obcięte: scrollW=${c.scrollW} > clientW=${c.clientW}`,
-    ).toBeLessThanOrEqual(c.clientW + 1);
-  }
-};
 
 const VIEWPORTS = [
   { name: "small-mobile", width: 320, height: 568 },
