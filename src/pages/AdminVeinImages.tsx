@@ -653,7 +653,77 @@ const AdminVeinImages = () => {
     }
   };
 
-  /** Trigger przeglądarkowego pobrania pliku tekstowego. */
+  /**
+   * Przywraca alt+caption z wybranej wersji historii.
+   * Wykonuje upsert do `vein_image_overrides` (trigger logujący zapisze
+   * automatycznie poprzednią wersję jako nowy snapshot — działa cykl audytu).
+   * Aktualizuje też lokalny draft, żeby UI od razu pokazywał przywróconą treść.
+   */
+  const restoreFromHistory = async (row: VeinImageOverrideHistoryRow) => {
+    if (!isAdmin) return;
+    const slotKey = `${row.page_key}:${row.slot}`;
+    setRestoringSlot(slotKey);
+    try {
+      const { data: existing, error: lookupError } = await supabase
+        .from("vein_image_overrides")
+        .select("id")
+        .eq("page_key", row.page_key)
+        .eq("slot", row.slot)
+        .maybeSingle();
+      if (lookupError) throw lookupError;
+
+      const payload = {
+        page_key: row.page_key,
+        slot: row.slot,
+        alt: row.alt,
+        caption: row.caption,
+        updated_by: session?.user.email ?? null,
+      };
+
+      if (existing) {
+        const { error } = await supabase
+          .from("vein_image_overrides")
+          .update(payload)
+          .eq("id", existing.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from("vein_image_overrides")
+          .insert(payload);
+        if (error) throw error;
+      }
+
+      // Sync local draft + zapytania.
+      const altField = row.slot === "main" ? "mainAlt" : "perforatorAlt";
+      const captionField = row.slot === "main" ? "mainCaption" : "perforatorCaption";
+      setDrafts((prev) => ({
+        ...prev,
+        [row.page_key]: {
+          ...prev[row.page_key],
+          [altField]: row.alt,
+          [captionField]: row.caption,
+        },
+      }));
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: VEIN_IMAGE_QUERY_KEY }),
+        queryClient.invalidateQueries({ queryKey: [...VEIN_IMAGE_HISTORY_QUERY_KEY, row.page_key, row.slot] }),
+      ]);
+      setSavedTick((t) => t + 1);
+      setLastSaved({ at: Date.now(), slot: row.slot, pageKey: row.page_key });
+      setPreviewMode("cms");
+      toast.success(
+        `Przywrócono wersję z ${new Date(row.recorded_at).toLocaleString("pl-PL", { dateStyle: "short", timeStyle: "short" })}`,
+      );
+    } catch (err) {
+      const pageLabel = VEIN_IMAGE_PAGE_PRESETS.find((p) => p.key === row.page_key)?.label ?? row.page_key;
+      const { title, description } = describeSaveError(err, row.slot, pageLabel);
+      toast.error(`Rollback nie powiódł się: ${title}`, { description, duration: 8000 });
+    } finally {
+      setRestoringSlot(null);
+    }
+  };
+
+
   const downloadFile = (filename: string, content: string, mime: string) => {
     const blob = new Blob([content], { type: `${mime};charset=utf-8` });
     const url = URL.createObjectURL(blob);
