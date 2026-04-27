@@ -2332,9 +2332,40 @@ const renderHtml = ({
       }
       return ""; // brak w embedded payload — pusta wartość
     }
+    /**
+     * Stabilna kolejność wierszy eksportu == kolejność wykresu trendów.
+     *
+     * Kontrakt:
+     *   • allPoints przychodzi z serwera już posortowany rosnąco po
+     *     generatedAt (history.csv) z bieżącym runem dopiętym na końcu.
+     *   • filterPoints() jest .filter()-em → zachowuje porządek wejścia.
+     *   • Eksport CSV i podgląd 20 wierszy MUSZĄ używać tej samej tablicy
+     *     w tej samej kolejności, żeby user widział dokładnie to, co rysuje
+     *     sparkline (najstarszy → najnowszy, isCurrent ostatni).
+     *
+     * Dla odporności na regresje robimy jeszcze jeden stabilny sort kopii:
+     * Array.prototype.sort jest stabilny (ES2019), więc punkty z identycznym
+     * generatedAt zachowują wzajemną kolejność z history.csv, a bieżący run
+     * (isCurrent) idzie ZAWSZE na sam koniec swojej grupy timestampów —
+     * dokładnie tak, jak rysowany jest ostatni punkt na sparkline.
+     */
+    function sortExportPointsLikeChart(pts) {
+      var copy = pts.slice();
+      copy.sort(function (a, b) {
+        var ta = a.generatedAt || "";
+        var tb = b.generatedAt || "";
+        if (ta < tb) return -1;
+        if (ta > tb) return 1;
+        // Tie-breaker: isCurrent zawsze na końcu (jak na wykresie).
+        var ca = a.isCurrent ? 1 : 0;
+        var cb = b.isCurrent ? 1 : 0;
+        return ca - cb;
+      });
+      return copy;
+    }
     function buildExportRows() {
       var state = currentState();
-      var pts = filterPoints(state);
+      var pts = sortExportPointsLikeChart(filterPoints(state));
       var mode = (exportModeSelect && exportModeSelect.value) || "subset";
       var cols;
       var rowsCells = [];
