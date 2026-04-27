@@ -69,6 +69,7 @@ const QuizHemoroidy = lazy(() => import("@/pages/QuizHemoroidy"));
 const EbmHemoroidy = lazy(() => import("@/pages/EbmHemoroidy"));
 const DziennikHemoroidy = lazy(() => import("@/pages/DziennikHemoroidy"));
 const FaldyOdbytu = lazy(() => import("@/pages/FaldyOdbytu"));
+const SeksAnalnyHemoroidy = lazy(() => import("@/pages/SeksAnalnyHemoroidy"));
 const Ginekomastia = lazy(() => import("@/pages/Ginekomastia"));
 const GinekomastiaGruczolowa = lazy(() => import("@/pages/GinekomastiaGruczolowa"));
 const GinekomastiaTluszczowa = lazy(() => import("@/pages/GinekomastiaTluszczowa"));
@@ -149,6 +150,7 @@ const App = () => (
               <Route path="/dla-pacjenta/ebm-hemoroidy" element={<EbmHemoroidy />} />
               <Route path="/dla-pacjenta/dziennik-hemoroidy" element={<DziennikHemoroidy />} />
               <Route path="/dla-pacjenta/faldy-odbytu" element={<FaldyOdbytu />} />
+              <Route path="/wiedza/seks-analny-a-hemoroidy" element={<SeksAnalnyHemoroidy />} />
               <Route path="/leczenie/ginekomastia" element={<Ginekomastia />} />
               <Route path="/leczenie/ginekomastia-gruczolowa" element={<GinekomastiaGruczolowa />} />
               <Route path="/leczenie/ginekomastia-tluszczowa" element={<GinekomastiaTluszczowa />} />

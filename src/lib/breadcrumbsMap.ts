@@ -93,6 +93,9 @@ export const BREADCRUMBS_MAP: Record<string, BreadcrumbItem[]> = {
   // Wiedza › Materiały
   "/dla-pacjenta/ebook-pajaczki": [WIEDZA, DLA_PACJENTA, { label: "E-book: Pajączki" }],
 
+  // Wiedza › Tematy intymne
+  "/wiedza/seks-analny-a-hemoroidy": [WIEDZA, { label: "Tematy intymne" }, { label: "Seks analny a hemoroidy" }],
+
   // Zalecenia po zabiegach (kontekstowo do procedury)
   "/dla-pacjenta/zalecenia-po-lhp": [ZABIEG, PROKTOLOGIA, { label: "LHP", href: "/leczenie/lhp" }, { label: "Zalecenia po zabiegu" }],
   "/dla-pacjenta/zalecenia-po-filac": [ZABIEG, PROKTOLOGIA, { label: "FiLaC", href: "/leczenie/filac" }, { label: "Zalecenia po zabiegu" }],
