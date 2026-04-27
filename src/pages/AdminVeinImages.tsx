@@ -1464,7 +1464,7 @@ const AdminVeinImages = () => {
    */
   const commitImport = async () => {
     if (!importPreview || !isAdmin) return;
-    const applicable = importPreview.rows.filter(
+    const applicable = importPreviewRows.filter(
       (r) => (r.status === "create" || r.status === "update") && r.pageKey && r.slot,
     );
     if (applicable.length === 0) {
