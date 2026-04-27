@@ -939,7 +939,7 @@ const AdminVeinImages = () => {
       const json = JSON.stringify(payload, null, 2);
       if (!navigator.clipboard?.writeText) {
         toast.error(
-          "Schowek niedostępny w tej przeglądarce — użyj „Export JSON".",
+          'Schowek niedostępny w tej przeglądarce — użyj „Export JSON".',
         );
         return;
       }
