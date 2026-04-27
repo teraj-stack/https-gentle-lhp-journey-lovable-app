@@ -1,30 +1,37 @@
 /**
- * Dev-only strona podglądu alt + figcaption dla VenousInsufficiencyImage.
+ * Dev-only strona podglądu + edycji alt + figcaption dla VenousInsufficiencyImage.
  *
- * Cel: jeden ekran, w którym redaktor / osoba pisząca treść może:
- *   1. Przełączyć się między 4 stronami (EVLT, Mikroflebektomia, Flebologia,
- *      Profilaktyka żylaków).
- *   2. Zobaczyć dokładnie, jak alt i figcaption renderują się przy szerokości
- *      mobile (375px) i desktop (1280px) — żeby od razu wychwycić ucięte
- *      słowa lub łamanie segmentów caption.
- *   3. Zobaczyć "raw" wartości alt/caption + statystyki długości pod budżet
- *      mobile (≤220 znaków alt, ≤110 znaków caption, ≤40 znaków per segment).
+ * Tryby:
+ *   - VIEW: tylko podgląd, dane czytane z propsów źródłowych + ewentualne
+ *     overrides z bazy `vein_image_overrides`.
+ *   - EDIT: lokalne stany alt/caption są edytowalne; podgląd komponentu
+ *     odświeża się natychmiast (controlled props). Bez round-trippu do bazy.
  *
- * Strona:
- *   - jest dev-only (gated `import.meta.env.DEV`); na produkcji 404.
- *   - NIE używa Layout/Header/Footer — minimalny chrome.
- *   - reużywa hooka useVeinImageOverridesForPage (CMS overrides, jeśli baza
- *     ma wpisy, zostaną pokazane zamiast hardkodowanych fallbacków — ten sam
- *     efekt jak na produkcji).
+ * Zapis do bazy:
+ *   - Wymaga zalogowanego admina (RLS na `vein_image_overrides`).
+ *   - Po zapisie: invalidacja React Query (klucz VEIN_IMAGE_QUERY_KEY) →
+ *     wszystkie strony konsumujące hook się odświeżają, w tym ten panel.
+ *   - Dla nieadminów / niezalogowanych: edycja działa lokalnie (preview-only),
+ *     przycisk zapisu jest disabled z tooltipem.
  *
- * Mobile preview = element z width:375px scalowany przez transform; layout
- * dziecka liczy się od 375px (kontener nie pozwala mu się rozjechać). To
- * pokazuje rzeczywiste łamanie tekstu na małym ekranie BEZ konieczności
- * zmiany devtoolsowego viewportu.
+ * Reset:
+ *   - „Reset do propsów" cofnie lokalne edycje do hardkodowanych wartości
+ *     (snapshot z PAGES poniżej).
+ *   - „Reset do bazy" załaduje aktualne wartości z bazy (lub propsy, jeśli
+ *     baza pusta dla tej strony).
  */
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import VenousInsufficiencyImage from "@/components/shared/VenousInsufficiencyImage";
-import type { VeinImagePageKey } from "@/hooks/useVeinImageOverrides";
+import {
+  VEIN_IMAGE_QUERY_KEY,
+  useVeinImageOverridesForPage,
+  type VeinImagePageKey,
+  type VeinImageSlot,
+} from "@/hooks/useVeinImageOverrides";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface PagePreset {
   key: VeinImagePageKey;
@@ -38,13 +45,6 @@ interface PagePreset {
   perforatorCaption: string;
 }
 
-/**
- * UWAGA: te wartości są SYNCHRONIZOWANE z propsami w plikach stron
- * (EVLT.tsx, Mikroflebektomia.tsx, Flebologia.tsx, ProfilaktykaZylakow.tsx).
- * Test `VenousInsufficiencyImage.altCaption.test.tsx` weryfikuje, że
- * stringi tutaj występują w plikach źródłowych — gdy się rozjedzie, test
- * faila i trzeba zsynchronizować obie strony.
- */
 const PAGES: readonly PagePreset[] = [
   {
     key: "evlt",
@@ -110,6 +110,7 @@ const PAGES: readonly PagePreset[] = [
   },
 ] as const;
 
+const ALT_MIN = 60;
 const ALT_BUDGET = 220;
 const CAPTION_BUDGET = 110;
 const SEGMENT_BUDGET = 40;
@@ -118,6 +119,7 @@ interface FieldStats {
   length: number;
   budget: number;
   overBudget: boolean;
+  underMin?: boolean;
   segments?: { text: string; length: number; overBudget: boolean }[];
 }
 
@@ -131,6 +133,7 @@ const buildStats = (
     length,
     budget,
     overBudget: length > budget,
+    underMin: !isCaption && length < ALT_MIN,
   };
   if (isCaption) {
     stats.segments = value.split("·").map((segment) => {
@@ -145,17 +148,28 @@ const buildStats = (
   return stats;
 };
 
-const StatsBadge = ({ stats }: { stats: FieldStats }) => (
-  <span
-    className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-mono ${
-      stats.overBudget
-        ? "bg-destructive/15 text-destructive border border-destructive/30"
-        : "bg-muted text-muted-foreground border border-border/40"
-    }`}
-  >
-    {stats.length}/{stats.budget}
-  </span>
-);
+const StatsBadge = ({ stats }: { stats: FieldStats }) => {
+  const hasError = stats.overBudget || stats.underMin;
+  return (
+    <span
+      className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-mono ${
+        hasError
+          ? "bg-destructive/15 text-destructive border border-destructive/30"
+          : "bg-muted text-muted-foreground border border-border/40"
+      }`}
+      title={
+        stats.underMin
+          ? `Min ${ALT_MIN} znaków (alt)`
+          : stats.overBudget
+            ? `Max ${stats.budget} znaków`
+            : ""
+      }
+    >
+      {stats.length}/{stats.budget}
+      {stats.underMin && " ↓"}
+    </span>
+  );
+};
 
 const SegmentList = ({ segments }: { segments: NonNullable<FieldStats["segments"]> }) => (
   <ul className="mt-2 grid gap-1 text-[11px]">
@@ -178,30 +192,197 @@ const SegmentList = ({ segments }: { segments: NonNullable<FieldStats["segments"
 );
 
 type ViewportMode = "mobile" | "desktop";
+type Mode = "view" | "edit";
 
 const VIEWPORTS: Record<ViewportMode, { width: number; label: string }> = {
   mobile: { width: 375, label: "Mobile · 375px (iPhone)" },
   desktop: { width: 1280, label: "Desktop · 1280px" },
 };
 
+interface DraftFields {
+  mainAlt: string;
+  mainCaption: string;
+  perforatorAlt: string;
+  perforatorCaption: string;
+}
+
+const presetToDraft = (preset: PagePreset): DraftFields => ({
+  mainAlt: preset.mainAlt,
+  mainCaption: preset.mainCaption,
+  perforatorAlt: preset.perforatorAlt,
+  perforatorCaption: preset.perforatorCaption,
+});
+
 const DevVeinImagesPreview = () => {
   const [activeKey, setActiveKey] = useState<VeinImagePageKey>(PAGES[0]!.key);
   const [viewport, setViewport] = useState<ViewportMode>("mobile");
+  const [mode, setMode] = useState<Mode>("view");
+  const [saving, setSaving] = useState<VeinImageSlot | null>(null);
+  const queryClient = useQueryClient();
+  const { isAdmin } = useIsAdmin();
+  const { toast } = useToast();
 
   const active = useMemo(
     () => PAGES.find((page) => page.key === activeKey) ?? PAGES[0]!,
     [activeKey],
   );
 
+  // Drafts per page — zachowujemy edycje przy przełączaniu zakładek.
+  const [drafts, setDrafts] = useState<Record<VeinImagePageKey, DraftFields>>(
+    () =>
+      PAGES.reduce(
+        (acc, p) => {
+          acc[p.key] = presetToDraft(p);
+          return acc;
+        },
+        {} as Record<VeinImagePageKey, DraftFields>,
+      ),
+  );
+
+  const draft = drafts[activeKey];
+
+  // Hook do bazy — pokazuje aktualne overrides per page.
+  const overrides = useVeinImageOverridesForPage(activeKey);
+  const lastSeededKey = useRef<VeinImagePageKey | null>(null);
+
+  // Gdy baza dostarczy override dla aktywnej strony, jednorazowo seedujemy
+  // draft (tylko jeśli draft jest jeszcze równy hardkodowanemu presetowi).
+  useEffect(() => {
+    if (lastSeededKey.current === activeKey) return;
+    if (!overrides.main && !overrides.perforator) return;
+    const preset = PAGES.find((p) => p.key === activeKey);
+    if (!preset) return;
+    setDrafts((prev) => {
+      const current = prev[activeKey];
+      const isPristine =
+        current.mainAlt === preset.mainAlt &&
+        current.mainCaption === preset.mainCaption &&
+        current.perforatorAlt === preset.perforatorAlt &&
+        current.perforatorCaption === preset.perforatorCaption;
+      if (!isPristine) return prev;
+      return {
+        ...prev,
+        [activeKey]: {
+          mainAlt: overrides.main?.alt ?? preset.mainAlt,
+          mainCaption: overrides.main?.caption ?? preset.mainCaption,
+          perforatorAlt: overrides.perforator?.alt ?? preset.perforatorAlt,
+          perforatorCaption: overrides.perforator?.caption ?? preset.perforatorCaption,
+        },
+      };
+    });
+    lastSeededKey.current = activeKey;
+  }, [activeKey, overrides.main, overrides.perforator]);
+
   const stats = useMemo(
     () => ({
-      mainAlt: buildStats(active.mainAlt, ALT_BUDGET, false),
-      mainCaption: buildStats(active.mainCaption, CAPTION_BUDGET, true),
-      perforatorAlt: buildStats(active.perforatorAlt, ALT_BUDGET, false),
-      perforatorCaption: buildStats(active.perforatorCaption, CAPTION_BUDGET, true),
+      mainAlt: buildStats(draft.mainAlt, ALT_BUDGET, false),
+      mainCaption: buildStats(draft.mainCaption, CAPTION_BUDGET, true),
+      perforatorAlt: buildStats(draft.perforatorAlt, ALT_BUDGET, false),
+      perforatorCaption: buildStats(draft.perforatorCaption, CAPTION_BUDGET, true),
     }),
-    [active],
+    [draft],
   );
+
+  const updateDraft = (field: keyof DraftFields, value: string) => {
+    setDrafts((prev) => ({
+      ...prev,
+      [activeKey]: { ...prev[activeKey], [field]: value },
+    }));
+  };
+
+  const resetToProps = () => {
+    setDrafts((prev) => ({ ...prev, [activeKey]: presetToDraft(active) }));
+    toast({ title: "Przywrócono propsy źródłowe", description: active.label });
+  };
+
+  const resetToDb = () => {
+    const preset = active;
+    setDrafts((prev) => ({
+      ...prev,
+      [activeKey]: {
+        mainAlt: overrides.main?.alt ?? preset.mainAlt,
+        mainCaption: overrides.main?.caption ?? preset.mainCaption,
+        perforatorAlt: overrides.perforator?.alt ?? preset.perforatorAlt,
+        perforatorCaption: overrides.perforator?.caption ?? preset.perforatorCaption,
+      },
+    }));
+    toast({ title: "Załadowano wartości z bazy", description: active.label });
+  };
+
+  const saveSlot = async (slot: VeinImageSlot) => {
+    if (!isAdmin) {
+      toast({
+        title: "Brak uprawnień",
+        description: "Tylko admin może zapisywać overrides do bazy.",
+        variant: "destructive",
+      });
+      return;
+    }
+    const altField = slot === "main" ? "mainAlt" : "perforatorAlt";
+    const captionField = slot === "main" ? "mainCaption" : "perforatorCaption";
+    const altValue = draft[altField];
+    const captionValue = draft[captionField];
+    const altStats = buildStats(altValue, ALT_BUDGET, false);
+    const captionStats = buildStats(captionValue, CAPTION_BUDGET, true);
+    if (
+      altStats.overBudget ||
+      altStats.underMin ||
+      captionStats.overBudget ||
+      captionStats.segments?.some((s) => s.overBudget)
+    ) {
+      toast({
+        title: "Walidacja nie przeszła",
+        description:
+          "Sprawdź długości — alt 60-220, caption ≤110, segment ≤40 znaków.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setSaving(slot);
+    try {
+      const { data: existing, error: lookupError } = await supabase
+        .from("vein_image_overrides")
+        .select("id")
+        .eq("page_key", activeKey)
+        .eq("slot", slot)
+        .maybeSingle();
+      if (lookupError) throw lookupError;
+
+      const payload = {
+        page_key: activeKey,
+        slot,
+        alt: altValue,
+        caption: captionValue,
+      };
+
+      if (existing) {
+        const { error } = await supabase
+          .from("vein_image_overrides")
+          .update(payload)
+          .eq("id", existing.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from("vein_image_overrides")
+          .insert(payload);
+        if (error) throw error;
+      }
+
+      await queryClient.invalidateQueries({ queryKey: VEIN_IMAGE_QUERY_KEY });
+      toast({
+        title: "Zapisano",
+        description: `${active.label} · ${slot === "main" ? "główny obraz" : "perforator"}`,
+      });
+    } catch (err) {
+      toast({
+        title: "Błąd zapisu",
+        description: err instanceof Error ? err.message : String(err),
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(null);
+    }
+  };
 
   if (!import.meta.env.DEV) {
     return (
@@ -217,6 +398,7 @@ const DevVeinImagesPreview = () => {
   }
 
   const viewportConfig = VIEWPORTS[viewport];
+  const isEdit = mode === "edit";
 
   return (
     <main className="min-h-screen bg-background text-foreground">
@@ -226,7 +408,39 @@ const DevVeinImagesPreview = () => {
             <h1 className="text-base font-bold">Vein Images — Preview</h1>
             <p className="text-[11px] text-muted-foreground">
               dev-only · {active.route}
+              {isAdmin === false && (
+                <span className="ml-2 text-amber-500/80">
+                  · zaloguj się jako admin, żeby zapisywać do bazy
+                </span>
+              )}
             </p>
+          </div>
+
+          {/* Mode toggle */}
+          <div
+            role="radiogroup"
+            aria-label="Tryb"
+            className="flex gap-1 rounded-lg border border-border/40 bg-card/60 p-1"
+          >
+            {(["view", "edit"] as Mode[]).map((m) => {
+              const isActive = m === mode;
+              return (
+                <button
+                  key={m}
+                  type="button"
+                  role="radio"
+                  aria-checked={isActive}
+                  onClick={() => setMode(m)}
+                  className={`px-2.5 py-1 text-[12px] font-medium rounded-md transition-colors ${
+                    isActive
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                  }`}
+                >
+                  {m === "view" ? "👁️ Podgląd" : "✏️ Edycja"}
+                </button>
+              );
+            })}
           </div>
 
           {/* Page tabs */}
@@ -243,7 +457,10 @@ const DevVeinImagesPreview = () => {
                   type="button"
                   role="tab"
                   aria-selected={isActive}
-                  onClick={() => setActiveKey(page.key)}
+                  onClick={() => {
+                    setActiveKey(page.key);
+                    lastSeededKey.current = null; // pozwól ponownie zaseedować z bazy
+                  }}
                   className={`px-2.5 py-1 text-[12px] font-medium rounded-md transition-colors ${
                     isActive
                       ? "bg-primary text-primary-foreground"
@@ -262,31 +479,53 @@ const DevVeinImagesPreview = () => {
             aria-label="Viewport"
             className="flex gap-1 rounded-lg border border-border/40 bg-card/60 p-1"
           >
-            {(Object.keys(VIEWPORTS) as ViewportMode[]).map((mode) => {
-              const isActive = mode === viewport;
+            {(Object.keys(VIEWPORTS) as ViewportMode[]).map((m) => {
+              const isActive = m === viewport;
               return (
                 <button
-                  key={mode}
+                  key={m}
                   type="button"
                   role="radio"
                   aria-checked={isActive}
-                  onClick={() => setViewport(mode)}
+                  onClick={() => setViewport(m)}
                   className={`px-2.5 py-1 text-[12px] font-medium rounded-md transition-colors ${
                     isActive
                       ? "bg-primary text-primary-foreground"
                       : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
                   }`}
                 >
-                  {mode === "mobile" ? "📱 Mobile" : "🖥️ Desktop"}
+                  {m === "mobile" ? "📱 Mobile" : "🖥️ Desktop"}
                 </button>
               );
             })}
           </div>
         </div>
+
+        {isEdit && (
+          <div className="max-w-7xl mx-auto px-4 pb-3 flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={resetToProps}
+              className="px-2.5 py-1 text-[11px] font-medium rounded-md border border-border/40 bg-card/60 text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
+            >
+              ↺ Reset do propsów
+            </button>
+            <button
+              type="button"
+              onClick={resetToDb}
+              className="px-2.5 py-1 text-[11px] font-medium rounded-md border border-border/40 bg-card/60 text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
+            >
+              ↺ Reset do bazy
+            </button>
+            <span className="text-[11px] text-muted-foreground">
+              Edycja jest live — podgląd po lewej aktualizuje się natychmiast.
+            </span>
+          </div>
+        )}
       </header>
 
-      <div className="max-w-7xl mx-auto px-4 py-6 grid gap-6 lg:grid-cols-[1fr_360px]">
-        {/* Live preview */}
+      <div className="max-w-7xl mx-auto px-4 py-6 grid gap-6 lg:grid-cols-[1fr_420px]">
+        {/* Live preview — KLUCZOWE: czyta DRAFT, nie pageKey, żeby override nie nadpisywał edycji. */}
         <section
           aria-label="Podgląd renderu"
           className="rounded-xl border border-border/40 bg-card/30 p-4 overflow-x-auto"
@@ -299,92 +538,139 @@ const DevVeinImagesPreview = () => {
             style={{ width: viewportConfig.width, maxWidth: "100%" }}
           >
             <div className="p-4">
-              {/* Reużywamy realny komponent — to samo co na produkcji */}
               <VenousInsufficiencyImage
-                key={`${active.key}-${viewport}`}
-                pageKey={active.key}
+                key={`${active.key}-${viewport}-${isEdit ? "edit" : "view"}`}
+                /* W trybie EDIT NIE przekazujemy pageKey — komponent użyłby
+                   wtedy bazy zamiast naszego draftu. W VIEW przekazujemy
+                   pageKey, żeby zobaczyć stan produkcyjny (z bazą). */
+                pageKey={isEdit ? undefined : active.key}
                 title={active.title}
                 subtitle={active.subtitle}
-                mainAlt={active.mainAlt}
-                mainCaption={active.mainCaption}
-                perforatorAlt={active.perforatorAlt}
-                perforatorCaption={active.perforatorCaption}
+                mainAlt={draft.mainAlt}
+                mainCaption={draft.mainCaption}
+                perforatorAlt={draft.perforatorAlt}
+                perforatorCaption={draft.perforatorCaption}
               />
             </div>
           </div>
         </section>
 
-        {/* Raw values + stats */}
+        {/* Editor / stats panel */}
         <aside
           aria-label="Wartości alt i figcaption"
           className="space-y-4 text-sm"
         >
-          <div className="rounded-xl border border-border/40 bg-card/30 p-4">
-            <div className="flex items-center justify-between gap-2 mb-2">
-              <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Główny obraz · alt
-              </h2>
-              <StatsBadge stats={stats.mainAlt} />
-            </div>
-            <p className="text-[12px] leading-relaxed text-foreground/90 break-words">
-              {active.mainAlt}
-            </p>
-          </div>
+          {(["main", "perforator"] as VeinImageSlot[]).map((slot) => {
+            const slotLabel = slot === "main" ? "Główny obraz" : "Perforator";
+            const altField = slot === "main" ? "mainAlt" : "perforatorAlt";
+            const captionField =
+              slot === "main" ? "mainCaption" : "perforatorCaption";
+            const altStats = stats[altField];
+            const captionStats = stats[captionField];
+            const isSaving = saving === slot;
+            return (
+              <div
+                key={slot}
+                className="rounded-xl border border-border/40 bg-card/30 p-4 space-y-3"
+              >
+                <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  {slotLabel}
+                </h2>
 
-          <div className="rounded-xl border border-border/40 bg-card/30 p-4">
-            <div className="flex items-center justify-between gap-2 mb-2">
-              <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Główny obraz · figcaption
-              </h2>
-              <StatsBadge stats={stats.mainCaption} />
-            </div>
-            <p className="text-[12px] leading-relaxed text-foreground/90 break-words">
-              {active.mainCaption}
-            </p>
-            {stats.mainCaption.segments && (
-              <SegmentList segments={stats.mainCaption.segments} />
-            )}
-          </div>
+                {/* Alt */}
+                <div>
+                  <div className="flex items-center justify-between gap-2 mb-1">
+                    <label
+                      htmlFor={`${slot}-alt`}
+                      className="text-[11px] font-medium text-foreground/80"
+                    >
+                      alt
+                    </label>
+                    <StatsBadge stats={altStats} />
+                  </div>
+                  {isEdit ? (
+                    <textarea
+                      id={`${slot}-alt`}
+                      value={draft[altField]}
+                      onChange={(e) => updateDraft(altField, e.target.value)}
+                      rows={4}
+                      className="w-full text-[12px] leading-relaxed rounded-md border border-border/50 bg-background/60 px-2 py-1.5 font-mono text-foreground/90 focus:outline-none focus:ring-2 focus:ring-primary/40"
+                    />
+                  ) : (
+                    <p className="text-[12px] leading-relaxed text-foreground/90 break-words">
+                      {draft[altField]}
+                    </p>
+                  )}
+                </div>
 
-          <div className="rounded-xl border border-border/40 bg-card/30 p-4">
-            <div className="flex items-center justify-between gap-2 mb-2">
-              <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Perforator · alt
-              </h2>
-              <StatsBadge stats={stats.perforatorAlt} />
-            </div>
-            <p className="text-[12px] leading-relaxed text-foreground/90 break-words">
-              {active.perforatorAlt}
-            </p>
-          </div>
+                {/* Caption */}
+                <div>
+                  <div className="flex items-center justify-between gap-2 mb-1">
+                    <label
+                      htmlFor={`${slot}-caption`}
+                      className="text-[11px] font-medium text-foreground/80"
+                    >
+                      figcaption
+                    </label>
+                    <StatsBadge stats={captionStats} />
+                  </div>
+                  {isEdit ? (
+                    <textarea
+                      id={`${slot}-caption`}
+                      value={draft[captionField]}
+                      onChange={(e) => updateDraft(captionField, e.target.value)}
+                      rows={2}
+                      className="w-full text-[12px] leading-relaxed rounded-md border border-border/50 bg-background/60 px-2 py-1.5 font-mono text-foreground/90 focus:outline-none focus:ring-2 focus:ring-primary/40"
+                    />
+                  ) : (
+                    <p className="text-[12px] leading-relaxed text-foreground/90 break-words">
+                      {draft[captionField]}
+                    </p>
+                  )}
+                  {captionStats.segments && (
+                    <SegmentList segments={captionStats.segments} />
+                  )}
+                </div>
 
-          <div className="rounded-xl border border-border/40 bg-card/30 p-4">
-            <div className="flex items-center justify-between gap-2 mb-2">
-              <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Perforator · figcaption
-              </h2>
-              <StatsBadge stats={stats.perforatorCaption} />
-            </div>
-            <p className="text-[12px] leading-relaxed text-foreground/90 break-words">
-              {active.perforatorCaption}
-            </p>
-            {stats.perforatorCaption.segments && (
-              <SegmentList segments={stats.perforatorCaption.segments} />
-            )}
-          </div>
+                {isEdit && (
+                  <div className="flex items-center justify-between gap-2 pt-1">
+                    <span className="text-[10px] text-muted-foreground">
+                      {overrides.main || overrides.perforator
+                        ? "Baza ma override — zapis go nadpisze."
+                        : "Brak wpisu w bazie — zapis utworzy nowy."}
+                    </span>
+                    <button
+                      type="button"
+                      disabled={!isAdmin || isSaving}
+                      onClick={() => saveSlot(slot)}
+                      title={
+                        !isAdmin
+                          ? "Wymaga admina (Lovable Cloud RLS)"
+                          : "Zapisz override do bazy"
+                      }
+                      className="px-3 py-1 text-[11px] font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed"
+                    >
+                      {isSaving ? "Zapisywanie…" : "💾 Zapisz do bazy"}
+                    </button>
+                  </div>
+                )}
+              </div>
+            );
+          })}
 
           <div className="rounded-xl border border-border/30 bg-muted/20 p-3 text-[11px] text-muted-foreground leading-relaxed">
             <p className="font-semibold text-foreground/80 mb-1">
               Mobile budget
             </p>
             <ul className="space-y-0.5 list-disc list-inside">
-              <li>Alt: max {ALT_BUDGET} znaków</li>
+              <li>Alt: {ALT_MIN}-{ALT_BUDGET} znaków</li>
               <li>Caption: max {CAPTION_BUDGET} znaków całość</li>
               <li>Segment „·": max {SEGMENT_BUDGET} znaków każdy</li>
             </ul>
             <p className="mt-2">
-              Jeśli baza <code>vein_image_overrides</code> ma wpis dla tej
-              strony, podgląd pokazuje wartości z bazy (override).
+              W trybie <strong>Edycja</strong> podgląd ignoruje bazę i pokazuje
+              draft. W trybie <strong>Podgląd</strong> komponent czyta z bazy
+              (jeśli istnieje override) — tak jak na produkcji.
             </p>
           </div>
         </aside>
