@@ -13,6 +13,14 @@ interface Props {
   hidePerforator?: boolean;
   /** Optional extra classes for the outer section. */
   className?: string;
+  /** Per-page alt text for the main valve comparison image. */
+  mainAlt?: string;
+  /** Per-page figcaption under the main valve comparison image. */
+  mainCaption?: string;
+  /** Per-page alt text for the perforator image. */
+  perforatorAlt?: string;
+  /** Per-page figcaption under the perforator image. */
+  perforatorCaption?: string;
 }
 
 /**
@@ -31,6 +39,10 @@ const VenousInsufficiencyImage = ({
   fadeUp,
   hidePerforator = false,
   className = "",
+  mainAlt = "Schemat porównawczy: zdrowe żyły z domkniętymi zastawkami i prawidłowym przepływem krwi obok żył z żylakami — osłabione ścianki, niedomykające się zastawki, cofanie krwi i stan zapalny",
+  mainCaption = "Zdrowe żyły · Domknięte zastawki · Żylaki · Niedomykające się zastawki · Stan zapalny",
+  perforatorAlt = "Schemat niewydolnego perforatora: niewydolność zastawek żylnych prowadzi do zastoju krwi żylnej i przeciążenia powierzchownych naczyń żylnych",
+  perforatorCaption = "Niewydolny perforator · Zastój krwi · Przeciążenie naczyń powierzchownych",
 }: Props) => {
   const motionProps = fadeUp ?? {};
 
@@ -58,7 +70,7 @@ const VenousInsufficiencyImage = ({
           <div className="rounded-lg sm:rounded-xl bg-white overflow-hidden">
             <img
               src={zastawkiImg}
-              alt="Schemat porównawczy: zdrowe żyły z domkniętymi zastawkami i prawidłowym przepływem krwi obok żył z żylakami — osłabione ścianki, niedomykające się zastawki, cofanie krwi i stan zapalny"
+              alt={mainAlt}
               loading="lazy"
               decoding="async"
               width={600}
@@ -69,8 +81,7 @@ const VenousInsufficiencyImage = ({
             />
           </div>
           <figcaption className="text-[11px] sm:text-xs text-muted-foreground/80 mt-2.5 sm:mt-3 text-center leading-snug sm:leading-relaxed px-1">
-            Zdrowe żyły · Domknięte zastawki · Żylaki · Niedomykające się
-            zastawki · Stan zapalny
+            {mainCaption}
           </figcaption>
         </figure>
 
@@ -80,7 +91,7 @@ const VenousInsufficiencyImage = ({
             <div className="rounded-lg sm:rounded-xl bg-white overflow-hidden flex-1 flex items-center justify-center">
               <img
                 src={perforatorImg}
-                alt="Schemat niewydolnego perforatora: niewydolność zastawek żylnych prowadzi do zastoju krwi żylnej i przeciążenia powierzchownych naczyń żylnych"
+                alt={perforatorAlt}
                 loading="lazy"
                 decoding="async"
                 width={200}
@@ -91,8 +102,7 @@ const VenousInsufficiencyImage = ({
               />
             </div>
             <figcaption className="text-[11px] sm:text-xs text-muted-foreground/80 mt-2.5 sm:mt-3 text-center leading-snug sm:leading-relaxed px-1">
-              Niewydolny perforator · Zastój krwi · Przeciążenie naczyń
-              powierzchownych
+              {perforatorCaption}
             </figcaption>
           </figure>
         )}
