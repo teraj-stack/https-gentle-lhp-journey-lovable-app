@@ -371,12 +371,17 @@ plik (`mv history.csv history-v1.csv`), kolejny run wygeneruje świeży.
 **Schema validation (savings*.csv)**: po zapisie `savings.csv`,
 `savings-by-viewport.csv` i `savings-by-state.csv` skrypt weryfikuje **liczbę
 kolumn**, **kolejność nagłówków** oraz **szerokość każdego wiersza danych**
-względem schematu in-memory. Każde odchylenie (np. ręczna edycja pliku, desync
-między `csvCols` a `csvRow` po refactorze, przecinek w polu) loguje warning
-typu `⚠ Schema mismatch w … — format zmienił się między wersjami` z listą
-różnic i sugestią `bump schemaVersion w savings.json`. Walidacja jest
-diagnostyczna (nie kończy procesu non-zero), żeby nie blokować CI z powodu
-samej zmiany formatu.
+względem schematu in-memory. Diff jest rozbity na trzy kategorie:
+**brakujące kolumny** (są w schemacie, ale nie ma ich w pliku — typowo nowa
+kolumna dodana w nowszej wersji skryptu, np. `command` / `flag_*`),
+**nadmiarowe kolumny** (są w pliku, ale schemat ich nie zna) oraz
+**REORDER nagłówków** (te same nazwy, inna kolejność — breaking change dla
+append do `history.csv`). Warning zawiera tabelaryczny **side-by-side diff**
+`idx | actual | expected` z markerem `≠` przy każdej rozbieżnej pozycji
+(skrócony do 40 wierszy). Każde odchylenie loguje warning typu
+`⚠ Schema mismatch w … — format zmienił się między wersjami` z sugestią
+`bump schemaVersion w savings.json`. Walidacja jest diagnostyczna (nie kończy
+procesu non-zero), żeby nie blokować CI z powodu samej zmiany formatu.
 
 **Sparkline'y w `index.html`**: jeśli `history.csv` istnieje (i ma kolumny
 `generatedAt` / `png_saved_pct` / `discovery_saved_pct`), raport renderuje
