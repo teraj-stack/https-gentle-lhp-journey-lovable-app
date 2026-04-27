@@ -3,6 +3,7 @@ import {
   useVeinImageOverridesForPage,
   type VeinImagePageKey,
 } from "@/hooks/useVeinImageOverrides";
+import { getVeinImagePreset } from "@/lib/veinImagePagePresets";
 
 interface Props {
   pageKey: VeinImagePageKey;
@@ -109,8 +110,24 @@ const VeinImageDevOverlayInner = ({
 
           {(["main", "perforator"] as const).map((slot) => {
             const row = slot === "main" ? main : perforator;
-            const altSource = row?.alt;
-            const capSource = row?.caption;
+            const preset = getVeinImagePreset(pageKey);
+            const presetAlt =
+              preset && (slot === "main" ? preset.mainAlt : preset.perforatorAlt);
+            const presetCap =
+              preset &&
+              (slot === "main" ? preset.mainCaption : preset.perforatorCaption);
+            const altSource = row?.alt ?? presetAlt;
+            const capSource = row?.caption ?? presetCap;
+            const altOrigin = row?.alt
+              ? "z CMS"
+              : presetAlt
+                ? "z propsu strony"
+                : "default komponentu";
+            const capOrigin = row?.caption
+              ? "z CMS"
+              : presetCap
+                ? "z propsu strony"
+                : "default komponentu";
             return (
               <div
                 key={slot}
@@ -127,16 +144,17 @@ const VeinImageDevOverlayInner = ({
                         : "bg-amber-500/10 text-amber-400"
                     }`}
                   >
-                    {row ? "z CMS" : "fallback z propsu"}
+                    {row ? "z CMS" : "fallback"}
                   </span>
                 </div>
 
                 <div>
-                  <div className="text-[10px] text-muted-foreground mb-0.5">
-                    alt
+                  <div className="text-[10px] text-muted-foreground mb-0.5 flex items-center justify-between gap-2">
+                    <span>alt</span>
+                    <span className="font-mono">{altOrigin}</span>
                   </div>
                   <div className="text-foreground/90 leading-snug">
-                    {altSource ?? <em>(brak — używany prop default)</em>}
+                    {altSource ?? <em>(brak)</em>}
                   </div>
                   {altSource && (
                     <StatList stats={buildStats(altSource, "alt")} />
@@ -144,11 +162,12 @@ const VeinImageDevOverlayInner = ({
                 </div>
 
                 <div>
-                  <div className="text-[10px] text-muted-foreground mb-0.5">
-                    figcaption
+                  <div className="text-[10px] text-muted-foreground mb-0.5 flex items-center justify-between gap-2">
+                    <span>figcaption</span>
+                    <span className="font-mono">{capOrigin}</span>
                   </div>
                   <div className="text-foreground/90 leading-snug">
-                    {capSource ?? <em>(brak — używany prop default)</em>}
+                    {capSource ?? <em>(brak)</em>}
                   </div>
                   {capSource && (
                     <StatList stats={buildStats(capSource, "caption")} />
