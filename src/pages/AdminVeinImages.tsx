@@ -899,7 +899,7 @@ const AdminVeinImages = () => {
    */
   const resetAllToDefaults = async () => {
     const ok = window.confirm(
-      "Usunąć WSZYSTKIE overrides ze wszystkich stron? Strony wrócą do hardkodowanych wartości seedowych. Przez 10 sekund po resecie pokażemy toast z opcją „Cofnij".",
+      'Usunąć WSZYSTKIE overrides ze wszystkich stron? Strony wrócą do hardkodowanych wartości seedowych. Przez 10 sekund po resecie pokażemy toast z opcją "Cofnij".',
     );
     if (!ok) return;
     setResettingAll(true);
