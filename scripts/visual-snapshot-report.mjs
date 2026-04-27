@@ -1563,35 +1563,48 @@ const main = async () => {
     );
 
     // Atrybucja per-flaga — rozbicie ŁĄCZNYCH oszczędności (pngSaved/discoverySaved)
-    // na trzy etapy pipeline'u, w kolejności w jakiej działają:
-    //   1. --max-failures (+ per-viewport/per-state) — wycina trio z `allFailed`
-    //      ZANIM cokolwiek się skopiuje/zdiscoveruje. Oszczędza i PNG i readdir.
-    //   2. --max-copy — wśród `failed` (trio które przeżyły) skipuje PNG copy
-    //      dla trio[i] gdy i >= copyLimit. Oszczędza TYLKO PNG.
-    //   3. --max-discovery — wśród `failed` skipuje readdir dla trio[i] gdy
-    //      i >= discoveryLimit. Oszczędza TYLKO readdir.
-    // Suma trzech sekcji = pngSaved + discoverySaved (sanity check w logach).
+    // na etapy pipeline'u, w kolejności w jakiej działają:
+    //   1a. --max-failures-per-viewport / --max-failures-per-state — proporcjonalne
+    //       kapowanie per grupa. Drop = `allFailed - perGroupFiltered`.
+    //   1b. --max-failures — globalny limit na wynik z 1a. Drop = `perGroupFiltered - failed`.
+    //   2.  --max-copy — wśród `failed` (trio które przeżyły) skipuje PNG copy
+    //       dla trio[i] gdy i >= copyLimit. Oszczędza TYLKO PNG.
+    //   3.  --max-discovery — wśród `failed` skipuje readdir dla trio[i] gdy
+    //       i >= discoveryLimit. Oszczędza TYLKO readdir.
+    // Suma sekcji = pngSaved + discoverySaved (sanity check w logach).
     const renderedSet = new Set(failed.map((t) => t.stem + "::" + t.dir));
     const skipped = allFailed.filter((t) => !renderedSet.has(t.stem + "::" + t.dir));
 
-    // 1. --max-failures (+ per-grupa)
-    let pngSavedByMaxFailures = 0;
-    for (const t of skipped) {
-      if (t.expected) pngSavedByMaxFailures++;
-      if (t.actual) pngSavedByMaxFailures++;
-      if (t.diff) pngSavedByMaxFailures++;
-    }
-    const discoverySavedByMaxFailures = skipped.length;
+    const countPngs = (trios) => {
+      let n = 0;
+      for (const t of trios) {
+        if (t.expected) n++;
+        if (t.actual) n++;
+        if (t.diff) n++;
+      }
+      return n;
+    };
 
-    // 2. --max-copy (PNG dla trio z `failed.slice(copyLimit)`)
-    let pngSavedByMaxCopy = 0;
-    for (const t of failed.slice(copyLimit)) {
-      if (t.expected) pngSavedByMaxCopy++;
-      if (t.actual) pngSavedByMaxCopy++;
-      if (t.diff) pngSavedByMaxCopy++;
-    }
+    // 1a. Per-grupa: trio z `omittedByGroup` (struktura { trio, reason, group, limit }).
+    //     Te trio NIGDY nie weszły do `perGroupFiltered`, więc oszczędziły zarówno
+    //     PNG copy jak i readdir. Reason mówi DOKŁADNIE która flaga (viewport vs state).
+    const perGroupTrios = omittedByGroup.map((o) => o.trio);
+    const pngSavedByPerGroup = countPngs(perGroupTrios);
+    const discoverySavedByPerGroup = perGroupTrios.length;
 
-    // 3. --max-discovery (readdir dla trio z `failed.slice(discoveryLimit)`)
+    // 1b. --max-failures: trio z `perGroupFiltered.slice(maxFailures)`. Czyli
+    //     przeżyły per-grupa ale wyleciały na globalnym limicie.
+    const maxFailuresTrios =
+      maxFailures !== null && perGroupFiltered.length > maxFailures
+        ? perGroupFiltered.slice(maxFailures)
+        : [];
+    const pngSavedByMaxFailures = countPngs(maxFailuresTrios);
+    const discoverySavedByMaxFailures = maxFailuresTrios.length;
+
+    // 2. --max-copy
+    const pngSavedByMaxCopy = countPngs(failed.slice(copyLimit));
+
+    // 3. --max-discovery
     const discoverySavedByMaxDiscovery = Math.max(0, failed.length - discoveryLimit);
 
     const fmtSection = (label, flag, png, discovery) => {
@@ -1602,10 +1615,34 @@ const main = async () => {
       return `${label} (${flag}): ${summary}`;
     };
 
+    // Per-group breakdown — rozbicie 1a na viewport vs state, żeby user widział
+    // który konkretnie limit per-grupa wyrzucił trio (a nie ogólnie "per-grupa").
+    const perGroupByReason = { viewport: 0, state: 0 };
+    for (const o of omittedByGroup) {
+      perGroupByReason[o.reason] = (perGroupByReason[o.reason] ?? 0) + 1;
+    }
+    const perGroupReasonParts = [];
+    if (perGroupByReason.viewport > 0)
+      perGroupReasonParts.push(`viewport=${perGroupByReason.viewport}`);
+    if (perGroupByReason.state > 0)
+      perGroupReasonParts.push(`state=${perGroupByReason.state}`);
+    const perGroupFlag =
+      `--max-failures-per-viewport=${fmtLimit(maxPerViewport)}, ` +
+      `--max-failures-per-state=${fmtLimit(maxPerState)}` +
+      (perGroupReasonParts.length > 0 ? ` → ${perGroupReasonParts.join(", ")}` : "");
+
     console.log(`[visual-snapshot-report] 📊 Atrybucja oszczędności per-flaga:`);
     console.log(
       `[visual-snapshot-report]   ├─ ${fmtSection(
-        "[1] Truncation",
+        "[1a] Per-grupa truncation",
+        perGroupFlag,
+        pngSavedByPerGroup,
+        discoverySavedByPerGroup,
+      )}`,
+    );
+    console.log(
+      `[visual-snapshot-report]   ├─ ${fmtSection(
+        "[1b] Global truncation",
         `--max-failures=${fmtLimit(maxFailures)}`,
         pngSavedByMaxFailures,
         discoverySavedByMaxFailures,
@@ -1627,10 +1664,31 @@ const main = async () => {
         discoverySavedByMaxDiscovery,
       )}`,
     );
-    // Sanity check — suma trzech sekcji MUSI się zgadzać z totalami. Jeśli się
+
+    // Dominujący mechanizm — najszybszy sygnał "co tu obcięło robotę". Liczymy
+    // łączny zysk IO (PNG + readdir) per sekcja i wskazujemy lidera. Często user
+    // chce wiedzieć: "to per-grupa zaoszczędziła czy globalny --max-failures?".
+    const sections = [
+      { name: "[1a] Per-grupa", io: pngSavedByPerGroup + discoverySavedByPerGroup },
+      { name: "[1b] --max-failures", io: pngSavedByMaxFailures + discoverySavedByMaxFailures },
+      { name: "[2] --max-copy", io: pngSavedByMaxCopy },
+      { name: "[3] --max-discovery", io: discoverySavedByMaxDiscovery },
+    ].filter((s) => s.io > 0);
+    if (sections.length > 0) {
+      sections.sort((a, b) => b.io - a.io);
+      const totalIo = sections.reduce((sum, s) => sum + s.io, 0);
+      const top = sections[0];
+      const pct = totalIo >= 10 ? ` (${Math.round((top.io / totalIo) * 100)}%)` : "";
+      console.log(
+        `[visual-snapshot-report]   ▶ Dominujący mechanizm: ${top.name} → ${top.io} ops zaoszczędzonych${pct}.`,
+      );
+    }
+
+    // Sanity check — suma sekcji MUSI się zgadzać z totalami. Jeśli się
     // rozjedzie, znaczy że logika atrybucji złapała regresję (nowy limit?).
-    const pngSumCheck = pngSavedByMaxFailures + pngSavedByMaxCopy;
-    const discoverySumCheck = discoverySavedByMaxFailures + discoverySavedByMaxDiscovery;
+    const pngSumCheck = pngSavedByPerGroup + pngSavedByMaxFailures + pngSavedByMaxCopy;
+    const discoverySumCheck =
+      discoverySavedByPerGroup + discoverySavedByMaxFailures + discoverySavedByMaxDiscovery;
     if (pngSumCheck !== pngSaved || discoverySumCheck !== discoverySaved) {
       console.warn(
         `[visual-snapshot-report] ⚠ Atrybucja niespójna: ` +
