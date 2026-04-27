@@ -92,51 +92,69 @@ const PLAYWRIGHT_REPORT_DIR = path.join(
 const TRACE_VIEWER_URL = "https://trace.playwright.dev/";
 
 /**
- * Parser argumentów CLI. Wspierane:
- *   --max-failures=N
- *   --max-failures N
- *   -m N
- *   env MAX_FAILURES=N (fallback gdy brak CLI)
+ * Parser argumentów CLI. Wspierane flagi (każda osobno walidowana):
+ *   --max-failures=N | --max-failures N | -m N | env MAX_FAILURES
+ *     globalny limit kart w raporcie (tnie przed wszystkim)
+ *   --max-copy=N | --max-copy N | env MAX_COPY
+ *     limit dla kopiowania PNG do assets/ (drogie IO)
+ *   --max-discovery=N | --max-discovery N | env MAX_DISCOVERY
+ *     limit dla discovery artefaktów Playwrighta (readdir per katalog)
  *
  * Walidacja: dodatnia liczba całkowita. Błędna wartość → warning + null
  * (raport bez limitu). Celowo NIE crashujemy — skrypt jest idempotentny
  * narzędziem post-run, nie chcemy żeby literówka w CI wywaliła build.
  */
 const parseCliArgs = (argv) => {
-  let maxFailures = null;
+  // Mapa: nazwa flagi → { aliases:[], envVar, value:null }
+  // Trzymamy razem, żeby pętla parsująca była jedna i nie powtarzać kodu.
+  const flags = {
+    maxFailures: { long: "--max-failures", short: "-m", env: "MAX_FAILURES", value: null },
+    maxCopy: { long: "--max-copy", short: null, env: "MAX_COPY", value: null },
+    maxDiscovery: { long: "--max-discovery", short: null, env: "MAX_DISCOVERY", value: null },
+  };
+
+  const tryAssign = (flagKey, raw, source) => {
+    if (raw === null || raw === undefined) return;
+    const n = Number.parseInt(raw, 10);
+    if (Number.isInteger(n) && n > 0) {
+      flags[flagKey].value = n;
+    } else {
+      console.warn(
+        `[visual-snapshot-report] Ignoruję ${source}="${raw}" — oczekiwano dodatniej liczby całkowitej.`,
+      );
+    }
+  };
+
   const args = argv.slice(2);
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
-    let raw = null;
-    if (a.startsWith("--max-failures=")) {
-      raw = a.slice("--max-failures=".length);
-    } else if (a === "--max-failures" || a === "-m") {
-      raw = args[i + 1];
-      i++; // zjada następny token
-    }
-    if (raw !== null && raw !== undefined) {
-      const n = Number.parseInt(raw, 10);
-      if (Number.isInteger(n) && n > 0) {
-        maxFailures = n;
-      } else {
-        console.warn(
-          `[visual-snapshot-report] Ignoruję --max-failures="${raw}" — oczekiwano dodatniej liczby całkowitej.`,
-        );
+    for (const [key, def] of Object.entries(flags)) {
+      // Forma --flag=value
+      if (a.startsWith(`${def.long}=`)) {
+        tryAssign(key, a.slice(def.long.length + 1), def.long);
+        break;
+      }
+      // Forma --flag value (lub -m value)
+      if (a === def.long || (def.short && a === def.short)) {
+        tryAssign(key, args[i + 1], a);
+        i++; // zjada następny token
+        break;
       }
     }
   }
-  // Env fallback tylko gdy CLI nic nie ustawił.
-  if (maxFailures === null && process.env.MAX_FAILURES) {
-    const n = Number.parseInt(process.env.MAX_FAILURES, 10);
-    if (Number.isInteger(n) && n > 0) {
-      maxFailures = n;
-    } else {
-      console.warn(
-        `[visual-snapshot-report] Ignoruję MAX_FAILURES="${process.env.MAX_FAILURES}" — oczekiwano dodatniej liczby całkowitej.`,
-      );
+
+  // Env fallback tylko dla flag, których CLI nie ustawił.
+  for (const [key, def] of Object.entries(flags)) {
+    if (flags[key].value === null && process.env[def.env]) {
+      tryAssign(key, process.env[def.env], def.env);
     }
   }
-  return { maxFailures };
+
+  return {
+    maxFailures: flags.maxFailures.value,
+    maxCopy: flags.maxCopy.value,
+    maxDiscovery: flags.maxDiscovery.value,
+  };
 };
 
 /**
