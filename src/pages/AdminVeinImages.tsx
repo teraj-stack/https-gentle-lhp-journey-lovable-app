@@ -697,36 +697,18 @@ const AdminVeinImages = () => {
 
     setSaving(slot);
     try {
-      const { data: existing, error: lookupError } = await supabase
-        .from("vein_image_overrides")
-        .select("id")
-        .eq("page_key", activeKey)
-        .eq("slot", slot)
-        .maybeSingle();
-      if (lookupError) throw lookupError;
-
-      const payload = {
-        page_key: activeKey,
-        slot,
-        alt: altValue,
-        caption: captionValue,
-        updated_by: session?.user.email ?? null,
-      };
-
-      if (existing) {
-        const { error } = await supabase
-          .from("vein_image_overrides")
-          .update(payload)
-          .eq("id", existing.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from("vein_image_overrides")
-          .insert(payload);
-        if (error) throw error;
-      }
-
-      await queryClient.invalidateQueries({ queryKey: VEIN_IMAGE_QUERY_KEY });
+      // Pełna logika lookup → insert/update + invalidacja cache żyje w
+      // performSaveSlot — ta sama funkcja, którą pokrywają testy Vitest.
+      await performSaveSlot(
+        {
+          pageKey: activeKey,
+          slot,
+          alt: altValue,
+          caption: captionValue,
+          updatedBy: session?.user.email ?? null,
+        },
+        { supabase, queryClient },
+      );
       // Wymuś świeży render podglądu CMS i pokaż flash highlight.
       setSavedTick((t) => t + 1);
       setLastSaved({ at: Date.now(), slot, pageKey: activeKey });
