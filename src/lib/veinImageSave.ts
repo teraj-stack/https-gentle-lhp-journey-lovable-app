@@ -47,24 +47,39 @@ export interface DescribedError {
 
 /**
  * Mapuje błąd `PostgrestError | Error | unknown` na komunikat dla UI.
- * Reguły lustrują trigger `validate_vein_image_override`:
- *  - alt 60–220 znaków,
- *  - caption ≤ 110 znaków,
- *  - segment „·" ≤ 40 znaków,
- *  - 42501 = brak uprawnień (RLS),
- *  - 23505 = unique violation (page_key+slot kolizja).
+ * Reguły lustrują trigger `validate_vein_image_override` + typowe błędy RLS/unique:
+ *  - 42501 / "row-level security" → brak uprawnień,
+ *  - 23505 / "duplicate key|unique constraint" → konflikt,
+ *  - "alt musi mieć" → walidacja długości alt (60–220),
+ *  - "caption nie może przekraczać" → walidacja długości caption (≤110),
+ *  - "segment caption" → segment „·" >40 znaków.
+ *
+ * Trigger po stronie Postgres rzuca po polsku — message zwykle jest gotowy
+ * do pokazania, helper dorzuca nagłówek i kontekst (page · slot).
  */
 export function describeSaveError(
   err: unknown,
   slot: VeinImageSlot,
   pageLabel: string,
 ): DescribedError {
-  // PostgrestError ma { message, code }; zwykły Error ma { message }.
-  // Akceptujemy oba przez duck-typing — żaden test nie polega na klasach.
-  const e = err as { message?: string; code?: string } | undefined;
+  const slotLabel = slot === "main" ? "główny obraz" : "perforator";
+  const ctx = `${pageLabel} · ${slotLabel}`;
+  const e = err as { message?: string; code?: string; details?: string } | null;
   const raw = (e?.message ?? String(err)).trim();
-  const ctx = `${pageLabel} · ${slot === "main" ? "główny obraz" : "perforator"}`;
+  const code = e?.code;
 
+  if (code === "42501" || /row-level security/i.test(raw)) {
+    return {
+      title: `Brak uprawnień (${ctx})`,
+      description: "Twoje konto nie ma roli admina dla tej tabeli. Zaloguj się ponownie lub poproś o uprawnienia.",
+    };
+  }
+  if (code === "23505" || /duplicate key|unique constraint/i.test(raw)) {
+    return {
+      title: `Konflikt: wpis już istnieje (${ctx})`,
+      description: "Inna sesja zapisała ten sam slot. Odśwież stronę i spróbuj ponownie.",
+    };
+  }
   if (/alt musi mieć/i.test(raw)) {
     return {
       title: `Walidacja serwera odrzuciła alt (${ctx})`,
@@ -73,31 +88,19 @@ export function describeSaveError(
   }
   if (/caption nie może przekraczać/i.test(raw)) {
     return {
-      title: `Walidacja serwera odrzuciła figcaption (${ctx})`,
-      description: `${raw} Wymóg: figcaption ≤110 znaków.`,
+      title: `Walidacja serwera odrzuciła caption (${ctx})`,
+      description: `${raw} Wymóg: caption ≤110 znaków.`,
     };
   }
   if (/segment caption/i.test(raw)) {
     return {
-      title: `Walidacja serwera odrzuciła segment figcaption (${ctx})`,
-      description: `${raw} Wymóg: każdy segment oddzielony „·" ≤40 znaków.`,
-    };
-  }
-  if (e?.code === "42501") {
-    return {
-      title: `Brak uprawnień do zapisu (${ctx})`,
-      description: "Sesja admina wygasła lub konto utraciło rolę. Zaloguj się ponownie.",
-    };
-  }
-  if (e?.code === "23505") {
-    return {
-      title: `Konflikt zapisu (${ctx})`,
-      description: "Inny wpis dla tej kombinacji page_key+slot już istnieje.",
+      title: `Za długi segment "·" w caption (${ctx})`,
+      description: `${raw} Wymóg: każdy segment oddzielony „ · " ≤40 znaków.`,
     };
   }
   return {
-    title: `Nie udało się zapisać (${ctx})`,
-    description: raw || "Nieznany błąd serwera.",
+    title: `Błąd zapisu (${ctx})`,
+    description: raw || "Nieznany błąd serwera. Sprawdź połączenie i spróbuj ponownie.",
   };
 }
 
