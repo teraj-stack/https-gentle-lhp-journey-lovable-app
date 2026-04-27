@@ -29,29 +29,29 @@ const PAGE_PROPS = {
   evlt: {
     title: "Skąd biorą się żylaki — co dokładnie zamyka EVLT?",
     mainAlt:
-      "Schemat porównawczy zdrowej żyły i żylaka — pokazuje refluks krwi przez niedomykające się zastawki w pniu odpiszczelowym/odstrzałkowym, który EVLT zamyka termicznie od środka",
+      "Schemat porównawczy zdrowej żyły i żylaka — niedomykalność zastawek w pniu żylnym powoduje refluks (cofanie krwi), który EVLT zamyka termicznie od środka",
     mainCaption:
       "Zdrowa zastawka · Refluks w pniu żylnym · Cel EVLT · Termiczne zamknięcie żyły",
     perforatorAlt:
-      "Schemat niewydolnego perforatora — żyły łączącej układ głęboki z powierzchownym; jego refluks często współistnieje z niewydolnością pnia leczonego EVLT",
+      "Schemat niewydolnego perforatora — żyły łączącej układ głęboki z powierzchownym; jego refluks często współistnieje z niewydolnością pnia żylnego leczonego EVLT",
     perforatorCaption:
-      "Niewydolny perforator · Często współistnieje z refluksem pnia · Diagnostyka USG Doppler przed EVLT",
+      "Niewydolny perforator · Współistnieje z refluksem pnia · Diagnostyka USG Doppler przed EVLT",
   },
   mikroflebektomia: {
     title: "Co dokładnie usuwa mikroflebektomia?",
     mainAlt:
-      "Schemat porównawczy zdrowej żyły i żylakowatej bocznicy — poszerzone naczynie z niedomykającymi się zastawkami i cofającą się krwią, które mikroflebektomia usuwa mechanicznie z mikronakłuć",
+      "Schemat porównawczy zdrowej żyły i żylakowatej bocznicy — poszerzone naczynie z niedomykalnością zastawek i refluksem (cofaniem krwi), które mikroflebektomia usuwa mechanicznie z mikronakłuć",
     mainCaption:
-      "Zdrowa bocznica · Żylakowata bocznica · Cel mikroflebektomii · Usunięcie z mikronakłuć",
+      "Zdrowa bocznica · Żylakowata bocznica · Refluks w bocznicy · Usunięcie z mikronakłuć",
     perforatorAlt:
       "Schemat niewydolnego perforatora — często zasila żylakowate bocznice usuwane mikroflebektomią; jego ocena USG Doppler decyduje o zakresie zabiegu",
     perforatorCaption:
-      "Niewydolny perforator · Zasilacz żylakowatej bocznicy · Ocena USG Doppler przed zabiegiem",
+      "Niewydolny perforator · Zasila żylakowatą bocznicę · Ocena USG Doppler przed zabiegiem",
   },
   flebologia: {
     title: "Mechanika żylaków — od zastawki do widocznego naczynia",
     mainAlt:
-      "Schemat mechaniki żylaków — zdrowe zastawki kontra niedomykające się zastawki w przewlekłej niewydolności żylnej; refluks, poszerzenie naczynia i stan zapalny prowadzące do widocznych żylaków",
+      "Schemat mechaniki żylaków — niedomykalność zastawek w przewlekłej niewydolności żylnej powoduje refluks (cofanie krwi), poszerzenie naczynia i stan zapalny prowadzący do widocznych żylaków",
     mainCaption:
       "Zastawka · Refluks · Poszerzenie naczynia · Stan zapalny · Widoczny żylak",
     perforatorAlt:
@@ -62,7 +62,7 @@ const PAGE_PROPS = {
   profilaktyka: {
     title: "Co dokładnie chronisz, dbając o nogi",
     mainAlt:
-      "Schemat porównawczy zdrowej zastawki żylnej i niedomykającej się zastawki — proces, któremu zapobiega regularny ruch, kompresjoterapia i pielęgnacja nóg",
+      "Schemat porównawczy zdrowej zastawki żylnej i niedomykalności zastawek prowadzącej do refluksu (cofania krwi) — proces, któremu zapobiega regularny ruch, kompresjoterapia i pielęgnacja nóg",
     mainCaption:
       "Zdrowa zastawka · Pierwsze rozszczelnienie · Refluks i stan zapalny · Etap, któremu zapobiegasz",
     perforatorAlt:

@@ -97,7 +97,7 @@ const Flebologia = () => {
             pageKey="flebologia"
             title="Mechanika żylaków — od zastawki do widocznego naczynia"
             subtitle="Każdy zabieg flebologiczny w CML celuje w konkretne ogniwo tej kaskady: laser zamyka chory pień, mikroflebektomia usuwa żylakowate bocznice, skleroterapia eliminuje resztkowe naczynia, a CLaCS — drobne pajączki. Diagnostyka USG Doppler decyduje, gdzie zaczynamy."
-            mainAlt="Schemat mechaniki żylaków — zdrowe zastawki kontra niedomykające się zastawki w przewlekłej niewydolności żylnej; refluks, poszerzenie naczynia i stan zapalny prowadzące do widocznych żylaków"
+            mainAlt="Schemat mechaniki żylaków — niedomykalność zastawek w przewlekłej niewydolności żylnej powoduje refluks (cofanie krwi), poszerzenie naczynia i stan zapalny prowadzący do widocznych żylaków"
             mainCaption="Zastawka · Refluks · Poszerzenie naczynia · Stan zapalny · Widoczny żylak"
             perforatorAlt="Schemat niewydolnego perforatora — łącznika między układem głębokim a powierzchownym, którego refluks dociąża powierzchowne żyły i napędza powstawanie żylaków"
             perforatorCaption="Niewydolny perforator · Dociąża układ powierzchowny · Punkt diagnostyki USG Doppler"
