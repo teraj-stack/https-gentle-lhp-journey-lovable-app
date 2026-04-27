@@ -509,6 +509,42 @@ export type Database = {
         }
         Relationships: []
       }
+      vein_image_override_history: {
+        Row: {
+          action: string
+          alt: string
+          caption: string
+          id: string
+          override_id: string | null
+          page_key: string
+          recorded_at: string
+          slot: string
+          updated_by: string | null
+        }
+        Insert: {
+          action: string
+          alt: string
+          caption: string
+          id?: string
+          override_id?: string | null
+          page_key: string
+          recorded_at?: string
+          slot: string
+          updated_by?: string | null
+        }
+        Update: {
+          action?: string
+          alt?: string
+          caption?: string
+          id?: string
+          override_id?: string | null
+          page_key?: string
+          recorded_at?: string
+          slot?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       vein_image_overrides: {
         Row: {
           alt: string
