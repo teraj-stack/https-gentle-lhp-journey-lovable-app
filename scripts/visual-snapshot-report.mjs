@@ -506,6 +506,65 @@ const renderCardLinks = (t, playwrightReportRel) => {
 };
 
 /**
+ * Agreguje metryki oszczędności (PNG copy / discovery readdir / trio) per grupa
+ * (viewport albo state). Pozwala odpowiedzieć: "która grupa najwięcej
+ * oszczędziła w tym runie i czy tendencja jest stabilna w history".
+ */
+const aggregateSavingsByGroup = ({
+  allFailed,
+  rendered,
+  copyLimit,
+  discoveryLimit,
+  keyFn,
+}) => {
+  const groups = new Map();
+  const ensure = (k) => {
+    if (!groups.has(k)) {
+      groups.set(k, {
+        trioBaseline: 0, trioRendered: 0,
+        pngBaseline: 0, pngProcessed: 0,
+        discoveryBaseline: 0, discoveryProcessed: 0,
+      });
+    }
+    return groups.get(k);
+  };
+  for (const t of allFailed) {
+    const g = ensure(keyFn(t));
+    g.trioBaseline++;
+    g.discoveryBaseline++;
+    if (t.expected) g.pngBaseline++;
+    if (t.actual) g.pngBaseline++;
+    if (t.diff) g.pngBaseline++;
+  }
+  for (let i = 0; i < rendered.length; i++) {
+    const t = rendered[i];
+    const g = ensure(keyFn(t));
+    g.trioRendered++;
+    if (i < copyLimit) {
+      if (t.expected) g.pngProcessed++;
+      if (t.actual) g.pngProcessed++;
+      if (t.diff) g.pngProcessed++;
+    }
+    if (i < discoveryLimit) g.discoveryProcessed++;
+  }
+  const pct = (saved, baseline) =>
+    baseline > 0 ? Math.round((saved / baseline) * 1000) / 10 : 0;
+  const out = {};
+  for (const [k, g] of groups) {
+    const trioSaved = g.trioBaseline - g.trioRendered;
+    const pngSaved = g.pngBaseline - g.pngProcessed;
+    const discoverySaved = g.discoveryBaseline - g.discoveryProcessed;
+    out[k] = {
+      trio: { baseline: g.trioBaseline, rendered: g.trioRendered, saved: trioSaved, savedPct: pct(trioSaved, g.trioBaseline) },
+      png: { baseline: g.pngBaseline, processed: g.pngProcessed, saved: pngSaved, savedPct: pct(pngSaved, g.pngBaseline) },
+      discovery: { baseline: g.discoveryBaseline, processed: g.discoveryProcessed, saved: discoverySaved, savedPct: pct(discoverySaved, g.discoveryBaseline) },
+    };
+  }
+  return out;
+};
+
+
+/**
  * Wczytuje historyczne wiersze z `history.csv` (jeśli istnieje) i zwraca
  * dane do narysowania sparkline'ów png_saved_pct + discovery_saved_pct.
  *
