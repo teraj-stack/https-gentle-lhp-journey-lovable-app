@@ -260,8 +260,7 @@ const SegmentList = ({ segments }: { segments: NonNullable<FieldStats["segments"
   </ul>
 );
 
-type ViewportMode = "mobile" | "desktop";
-type Mode = "view" | "edit";
+// (ViewportMode + Mode are declared above near the budget constants)
 
 const VIEWPORTS: Record<ViewportMode, { width: number; label: string }> = {
   mobile: { width: 375, label: "Mobile · 375px (iPhone)" },
