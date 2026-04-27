@@ -1585,6 +1585,25 @@ const AdminVeinImages = () => {
               <Button
                 variant="outline"
                 size="sm"
+                onClick={copyJsonToClipboard}
+                disabled={exporting !== null}
+                title={`Skopiuj JSON do schowka — ten sam payload co Export JSON (${exportFilterSummary()})`}
+                aria-label="Kopiuj JSON do schowka"
+              >
+                {jsonCopied ? (
+                  <Check className="w-3.5 h-3.5 mr-1 text-emerald-400" aria-hidden="true" />
+                ) : (
+                  <ClipboardCopy className="w-3.5 h-3.5 mr-1" aria-hidden="true" />
+                )}
+                {exporting === "json-copy"
+                  ? "Kopiowanie…"
+                  : jsonCopied
+                    ? "Skopiowano"
+                    : "Kopiuj JSON"}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={exportCsv}
                 disabled={exporting !== null}
                 title={`Pobierz overrides z bazy jako CSV — Excel-friendly (${exportFilterSummary()})`}
