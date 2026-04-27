@@ -231,7 +231,8 @@ visual-regression:
 visual-report.zip
 ├── index.html                 # samowystarczalny raport (CSS + JS inline)
 ├── savings.json               # strukturalny dump podsumowania (atrybucja per-flaga + top10 skipped trios)
-├── savings.csv                # 1-wierszowy CSV z agregatami (do append'owania do history)
+├── savings.csv                # 1-wierszowy CSV z agregatami (snapshot bieżącego runa)
+├── history.csv                # auto-append: header + N wierszy (po jednym per run); --no-history żeby wyłączyć
 └── assets/
     ├── 000-<stem>-expected.png
     ├── 000-<stem>-actual.png
