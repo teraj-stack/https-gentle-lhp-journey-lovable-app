@@ -37,6 +37,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { LogOut, ShieldAlert, Save, RotateCcw, Database, FileJson, FileSpreadsheet, Trash2, Clock, User, History, Upload, CheckCircle2, AlertTriangle, FileWarning, Search, X } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
@@ -468,6 +475,19 @@ const AdminVeinImages = () => {
   const [viewport, setViewport] = useState<ViewportMode>("desktop");
   const [saving, setSaving] = useState<VeinImageSlot | null>(null);
   const [exporting, setExporting] = useState<"json" | "csv" | null>(null);
+  /**
+   * Filtry eksportu — pozwalają pobrać podzbiór overrides zamiast całej tabeli.
+   * "all" = bez filtra (dotychczasowe zachowanie). Filtr jest stosowany lokalnie
+   * po `fetchAllOverrides()`, więc nie wymaga zmian w zapytaniu i działa też dla
+   * snapshotów eksportu (np. user może wziąć tylko sloty `perforator` ze
+   * wszystkich stron, albo tylko stronę `hemoroidy` z oboma slotami).
+   *
+   * Suffiks pliku zawiera aktywne filtry — łatwiej rozpoznać który eksport jest który.
+   */
+  const [exportPageKey, setExportPageKey] = useState<"all" | VeinImagePageKey>(
+    "all",
+  );
+  const [exportSlot, setExportSlot] = useState<"all" | VeinImageSlot>("all");
   const [resettingAll, setResettingAll] = useState(false);
   /** Bump po każdym udanym zapisie — wymusza remount podglądu CMS (force-fresh render). */
   const [savedTick, setSavedTick] = useState(0);
