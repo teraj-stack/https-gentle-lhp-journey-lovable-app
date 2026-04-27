@@ -587,6 +587,65 @@ const renderHtml = ({
       ? `<p class="empty">Brak nieudanych snapshotów live preview w tym runie. ✓</p>`
       : `<p class="summary">Znaleziono <strong>${totalFailures}</strong> nieudany snapshot live preview.</p>`;
 
+  // ---- Sekcja "Pominięte przez --max-failures" ----
+  // Jawna lista trio, które nie weszły do raportu, żeby user wiedział DOKŁADNIE
+  // co zostało odcięte (a nie tylko że "było ich więcej"). Renderujemy jako
+  // <details> domyślnie zwinięte — przy 500+ pominiętych nie chcemy wybuchu UI.
+  // Każdy wiersz pokazuje stem + viewport + state + testName, żeby user mógł:
+  //   1. Skopiować nazwę i wkleić w `--filter` na ponowny run,
+  //   2. Zobaczyć w breakdown czy pominięte nie są zdominowane przez jeden viewport.
+  // Dodatkowo dajemy przycisk "Kopiuj listę" (whitespace-separated stems),
+  // który ułatwia re-run po konkretne testy.
+  const omittedSection =
+    truncation && truncation.omitted && truncation.omitted.length > 0
+      ? (() => {
+          const stemsForCopy = truncation.omitted.map((o) => o.stem).join(" ");
+          const rows = truncation.omitted
+            .map(
+              (o) => `
+              <tr>
+                <td><code>${escapeHtml(o.stem)}</code></td>
+                <td>${escapeHtml(o.viewport)}</td>
+                <td>${escapeHtml(o.state)}</td>
+                <td class="omitted-testname">${escapeHtml(o.testName)}</td>
+              </tr>`,
+            )
+            .join("");
+          return `
+            <details class="omitted-section" open>
+              <summary>
+                <span class="omitted-summary-label">
+                  📋 Pominięte przez <code>--max-failures=${truncation.limit}</code>:
+                  <strong>${truncation.omitted.length}</strong> ${truncation.omitted.length === 1 ? "trio" : "trio"}
+                </span>
+                <button type="button"
+                        class="card-link card-link-button omitted-copy-btn"
+                        data-copy="${escapeHtml(stemsForCopy)}"
+                        title="Kopiuj wszystkie pominięte stems oddzielone spacją">
+                  📋 Kopiuj listę stems
+                </button>
+              </summary>
+              <div class="omitted-table-wrap">
+                <table class="omitted-table">
+                  <thead>
+                    <tr>
+                      <th>Stem</th>
+                      <th>Viewport</th>
+                      <th>State</th>
+                      <th>Test (katalog)</th>
+                    </tr>
+                  </thead>
+                  <tbody>${rows}</tbody>
+                </table>
+              </div>
+              <p class="omitted-hint">
+                Wskazówka: uruchom skrypt bez <code>--max-failures</code> (lub z większą wartością),
+                żeby zobaczyć karty z obrazami dla powyższych trio.
+              </p>
+            </details>`;
+        })()
+      : "";
+
   return `<!doctype html>
 <html lang="pl">
 <head>
