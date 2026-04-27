@@ -418,6 +418,132 @@ const AdminVeinImages = () => {
     }
   };
 
+  /** Trigger przeglądarkowego pobrania pliku tekstowego. */
+  const downloadFile = (filename: string, content: string, mime: string) => {
+    const blob = new Blob([content], { type: `${mime};charset=utf-8` });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  /** Pobiera WSZYSTKIE overrides z bazy (4 strony × 2 sloty = max 8 wierszy). */
+  const fetchAllOverrides = async () => {
+    const { data, error } = await supabase
+      .from("vein_image_overrides")
+      .select("page_key, slot, alt, caption, updated_at, updated_by")
+      .order("page_key", { ascending: true })
+      .order("slot", { ascending: true });
+    if (error) throw error;
+    return data ?? [];
+  };
+
+  const exportJson = async () => {
+    setExporting("json");
+    try {
+      const rows = await fetchAllOverrides();
+      const payload = {
+        exported_at: new Date().toISOString(),
+        exported_by: session?.user.email ?? null,
+        total: rows.length,
+        overrides: rows,
+      };
+      const stamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+      downloadFile(
+        `vein-image-overrides-${stamp}.json`,
+        JSON.stringify(payload, null, 2),
+        "application/json",
+      );
+      toast.success(`Wyeksportowano ${rows.length} overrides do JSON`);
+    } catch (err) {
+      toast.error(
+        `Błąd eksportu JSON: ${err instanceof Error ? err.message : String(err)}`,
+      );
+    } finally {
+      setExporting(null);
+    }
+  };
+
+  /** Escapuje pole CSV zgodnie z RFC 4180. */
+  const csvCell = (v: unknown): string => {
+    const s = v === null || v === undefined ? "" : String(v);
+    if (/[",\n\r]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+    return s;
+  };
+
+  const exportCsv = async () => {
+    setExporting("csv");
+    try {
+      const rows = await fetchAllOverrides();
+      const header = ["page_key", "slot", "alt", "caption", "updated_at", "updated_by"];
+      const lines = [header.join(",")];
+      for (const row of rows) {
+        lines.push(
+          header
+            .map((h) => csvCell((row as Record<string, unknown>)[h]))
+            .join(","),
+        );
+      }
+      const stamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+      // BOM dla poprawnego otwarcia w Excelu z polskimi znakami.
+      downloadFile(
+        `vein-image-overrides-${stamp}.csv`,
+        "\uFEFF" + lines.join("\r\n"),
+        "text/csv",
+      );
+      toast.success(`Wyeksportowano ${rows.length} overrides do CSV`);
+    } catch (err) {
+      toast.error(
+        `Błąd eksportu CSV: ${err instanceof Error ? err.message : String(err)}`,
+      );
+    } finally {
+      setExporting(null);
+    }
+  };
+
+  /** Czyści CAŁĄ tabelę vein_image_overrides — frontend wraca do PRESETS. */
+  const resetAllToDefaults = async () => {
+    const ok = window.confirm(
+      "Usunąć WSZYSTKIE overrides ze wszystkich stron? Strony wrócą do hardkodowanych wartości seedowych. Tej operacji nie da się cofnąć.",
+    );
+    if (!ok) return;
+    setResettingAll(true);
+    try {
+      // .delete() wymaga filtra; .neq na zawsze-prawdziwym warunku usuwa wszystko.
+      const { error } = await supabase
+        .from("vein_image_overrides")
+        .delete()
+        .neq("id", "00000000-0000-0000-0000-000000000000");
+      if (error) throw error;
+      await queryClient.invalidateQueries({ queryKey: VEIN_IMAGE_QUERY_KEY });
+      setDrafts(
+        VEIN_IMAGE_PAGE_PRESETS.reduce(
+          (acc, p) => {
+            acc[p.key] = presetToDraft(p);
+            return acc;
+          },
+          {} as Record<VeinImagePageKey, DraftFields>,
+        ),
+      );
+      lastSeededKey.current = null;
+      setSavedTick((t) => t + 1);
+      setPreviewMode("draft");
+      toast.success(
+        "Wszystkie overrides wyczyszczone — strony używają wartości seedowych",
+      );
+    } catch (err) {
+      toast.error(
+        `Błąd resetu: ${err instanceof Error ? err.message : String(err)}`,
+      );
+    } finally {
+      setResettingAll(false);
+    }
+  };
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate("/admin/login", { replace: true });
