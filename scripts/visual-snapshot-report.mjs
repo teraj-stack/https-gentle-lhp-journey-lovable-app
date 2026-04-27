@@ -700,10 +700,23 @@ const renderHtml = ({
     truncation && truncation.omitted && truncation.omitted.length > 0
       ? (() => {
           const stemsForCopy = truncation.omitted.map((o) => o.stem).join(" ");
+          // Mapowanie reason → human-readable badge. Każdy powód ma własny
+          // kolor (CSS class), żeby user szybko odróżnił "globalny limit"
+          // od "ta grupa miała za dużo regresji".
+          const reasonBadge = (o) => {
+            if (o.reason === "viewport") {
+              return `<span class="reason-badge reason-viewport" title="Limit per viewport: ${o.limit}">viewport &gt; ${escapeHtml(String(o.limit))}</span>`;
+            }
+            if (o.reason === "state") {
+              return `<span class="reason-badge reason-state" title="Limit per state: ${o.limit}">state &gt; ${escapeHtml(String(o.limit))}</span>`;
+            }
+            return `<span class="reason-badge reason-global" title="Globalny limit --max-failures: ${o.limit}">--max-failures</span>`;
+          };
           const rows = truncation.omitted
             .map(
               (o) => `
               <tr>
+                <td>${reasonBadge(o)}</td>
                 <td><code>${escapeHtml(o.stem)}</code></td>
                 <td>${escapeHtml(o.viewport)}</td>
                 <td>${escapeHtml(o.state)}</td>
@@ -711,12 +724,24 @@ const renderHtml = ({
               </tr>`,
             )
             .join("");
+          // Składamy nagłówek opisujący WSZYSTKIE aktywne limity.
+          const limitsParts = [];
+          if (truncation.perViewportLimit !== null) {
+            limitsParts.push(`<code>--max-failures-per-viewport=${truncation.perViewportLimit}</code>`);
+          }
+          if (truncation.perStateLimit !== null) {
+            limitsParts.push(`<code>--max-failures-per-state=${truncation.perStateLimit}</code>`);
+          }
+          if (truncation.limit !== null) {
+            limitsParts.push(`<code>--max-failures=${truncation.limit}</code>`);
+          }
+          const limitsLabel = limitsParts.length > 0 ? limitsParts.join(" + ") : "limity";
           return `
             <details class="omitted-section" open>
               <summary>
                 <span class="omitted-summary-label">
-                  📋 Pominięte przez <code>--max-failures=${truncation.limit}</code>:
-                  <strong>${truncation.omitted.length}</strong> ${truncation.omitted.length === 1 ? "trio" : "trio"}
+                  📋 Pominięte przez ${limitsLabel}:
+                  <strong>${truncation.omitted.length}</strong> trio
                 </span>
                 <button type="button"
                         class="card-link card-link-button omitted-copy-btn"
@@ -729,6 +754,7 @@ const renderHtml = ({
                 <table class="omitted-table">
                   <thead>
                     <tr>
+                      <th>Powód</th>
                       <th>Stem</th>
                       <th>Viewport</th>
                       <th>State</th>
@@ -739,8 +765,8 @@ const renderHtml = ({
                 </table>
               </div>
               <p class="omitted-hint">
-                Wskazówka: uruchom skrypt bez <code>--max-failures</code> (lub z większą wartością),
-                żeby zobaczyć karty z obrazami dla powyższych trio.
+                Wskazówka: zwiększ odpowiedni limit (per-grupa lub globalny) albo wyłącz go
+                całkowicie, żeby zobaczyć karty z obrazami dla powyższych trio.
               </p>
             </details>`;
         })()
