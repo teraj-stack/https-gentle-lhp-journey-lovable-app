@@ -1204,7 +1204,87 @@ const AdminVeinImages = () => {
     return parts.join(" · ");
   };
 
-  const exportJson = async () => {
+  /**
+   * Otwiera dialog potwierdzenia eksportu Z PEŁNYM SUMMARY treści pliku.
+   * 
+   * Flow:
+   *  1. Klik „Export JSON/CSV" → `requestExport(format)`.
+   *  2. Pobieramy overrides z bazy + aplikujemy aktywne filtry (te same co w `exportJson`/`exportCsv`).
+   *  3. Budujemy `exportPreview` (filename, total, kolumny, breakdown per page/slot, próbka 3 wierszy).
+   *  4. Otwieramy AlertDialog (`pendingExport = format`) — admin widzi DOKŁADNIE co pobierze.
+   *  5. Confirm → `exportJson()`/`exportCsv()` (re-fetch jest OK, dane się raczej nie zmienią
+   *     w ciągu sekund między kliknięciami; preview służy tylko do świadomej decyzji).
+   *  6. Cancel → czyścimy `pendingExport` + `exportPreview`, żaden plik nie idzie na dysk.
+   *
+   * Edge case: 0 wierszy → zamiast dialogu pokazujemy toast.info i nie otwieramy nic
+   * (spójnie z dotychczasowym zachowaniem `exportJson`/`exportCsv`).
+   */
+  const requestExport = async (format: "json" | "csv") => {
+    setPreparingPreview(format);
+    try {
+      const allRows = await fetchAllOverrides();
+      const { rows, suffix } = applyExportFilters(allRows);
+      if (rows.length === 0) {
+        toast.info(
+          `Brak overrides do eksportu dla filtra: ${exportFilterSummary()}.`,
+        );
+        return;
+      }
+      // Breakdown per (page_key, slot) — admin widzi rozkład, nie tylko sumę.
+      const breakdownMap = new Map<string, number>();
+      for (const r of rows) {
+        const key = `${r.page_key}|${r.slot}`;
+        breakdownMap.set(key, (breakdownMap.get(key) ?? 0) + 1);
+      }
+      const breakdown = Array.from(breakdownMap.entries())
+        .map(([k, count]) => {
+          const [page_key, slot] = k.split("|");
+          return { page_key, slot, count };
+        })
+        .sort((a, b) =>
+          a.page_key === b.page_key
+            ? a.slot.localeCompare(b.slot)
+            : a.page_key.localeCompare(b.page_key),
+        );
+      const stamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+      const filename =
+        format === "json"
+          ? `vein-image-overrides${suffix}-${stamp}.json`
+          : `vein-image-overrides${suffix}-${stamp}.csv`;
+      const columns =
+        format === "json"
+          ? [
+              "exported_at",
+              "exported_by",
+              "filter.page_key",
+              "filter.slot",
+              "total",
+              "overrides[] (page_key, slot, alt, caption, updated_at, updated_by)",
+            ]
+          : ["page_key", "slot", "alt", "caption", "updated_at", "updated_by"];
+      setExportPreview({
+        format,
+        filename,
+        filterSummary: exportFilterSummary(),
+        total: rows.length,
+        columns,
+        breakdown,
+        sample: rows.slice(0, 3).map((r) => ({
+          page_key: r.page_key,
+          slot: r.slot,
+          alt: (r as { alt: string | null }).alt ?? null,
+          caption: (r as { caption: string | null }).caption ?? null,
+        })),
+      });
+      setPendingExport(format);
+    } catch (err) {
+      toast.error(
+        `Nie udało się przygotować podglądu eksportu: ${err instanceof Error ? err.message : String(err)}`,
+      );
+    } finally {
+      setPreparingPreview(null);
+    }
+  };
     setExporting("json");
     try {
       const allRows = await fetchAllOverrides();
