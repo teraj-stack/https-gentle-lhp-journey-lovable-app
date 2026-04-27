@@ -1066,6 +1066,7 @@ const DiaryFullModule = ({
                 variant="outline"
                 size="sm"
                 onClick={handleExportDayPdf}
+                disabled={exportConfirm.isExporting}
                 className="h-8 text-xs border-primary/40 text-primary hover:bg-primary/10 hover:text-primary"
                 aria-label={`Pobierz wpis z dnia ${formatLongDate(activeDate)} jako PDF`}
               >
@@ -1077,11 +1078,17 @@ const DiaryFullModule = ({
                 variant="outline"
                 size="sm"
                 onClick={handleExportDayJson}
+                disabled={exportConfirm.isExporting}
+                aria-busy={exportConfirm.isExporting}
                 className="h-8 text-xs border-primary/40 text-primary hover:bg-primary/10 hover:text-primary"
                 aria-label={`Pobierz wpis z dnia ${formatLongDate(activeDate)} jako JSON`}
               >
-                <FileJson className="w-3.5 h-3.5 mr-1.5" />
-                JSON
+                {exportConfirm.isExporting ? (
+                  <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                ) : (
+                  <FileJson className="w-3.5 h-3.5 mr-1.5" />
+                )}
+                {exportConfirm.isExporting ? "Pobieranie…" : "JSON"}
               </Button>
             </>
           )}
@@ -1727,7 +1734,7 @@ const DiaryFullModule = ({
               size="lg"
               variant="hero"
               onClick={handleExportPdf}
-              disabled={!hasAnyData}
+              disabled={!hasAnyData || exportConfirm.isExporting}
               className="gap-2 h-auto min-h-11 py-2.5 px-5 whitespace-normal"
             >
               <FileDown className="w-4 h-4 shrink-0" />
@@ -1737,11 +1744,16 @@ const DiaryFullModule = ({
               size="lg"
               variant="outline"
               onClick={handleExportCsv}
-              disabled={!hasAnyData}
+              disabled={!hasAnyData || exportConfirm.isExporting}
+              aria-busy={exportConfirm.isExporting}
               className="gap-2 h-auto min-h-11 py-2.5 px-5 whitespace-normal border-primary/40 text-primary hover:bg-primary/10 hover:text-primary"
             >
-              <FileSpreadsheet className="w-4 h-4 shrink-0" />
-              Pobierz CSV (Excel)
+              {exportConfirm.isExporting ? (
+                <Loader2 className="w-4 h-4 shrink-0 animate-spin" />
+              ) : (
+                <FileSpreadsheet className="w-4 h-4 shrink-0" />
+              )}
+              {exportConfirm.isExporting ? "Pobieranie…" : "Pobierz CSV (Excel)"}
             </Button>
           </div>
 
