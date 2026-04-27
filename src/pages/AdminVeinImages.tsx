@@ -1564,7 +1564,7 @@ const AdminVeinImages = () => {
 
             {/* Editor */}
             <aside aria-label="Edycja alt i figcaption" className="space-y-4">
-              {(["main", "perforator"] as VeinImageSlot[]).map((slot) => {
+              {visibleSlots.map((slot) => {
                 const slotLabel =
                   slot === "main" ? "Główny obraz" : "Perforator";
                 const altField = slot === "main" ? "mainAlt" : "perforatorAlt";
