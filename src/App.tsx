@@ -170,6 +170,7 @@ const App = () => (
             <Route path="/admin/email-dashboard" element={<AdminEmailDashboard />} />
             <Route path="/admin/security" element={<AdminSecurityChecklist />} />
             <Route path="/admin/scroll-test" element={<AdminScrollTest />} />
+            <Route path="/admin/vein-images" element={<AdminVeinImages />} />
             
             <Route path="/unsubscribe" element={<Unsubscribe />} />
             <Route path="/reminder-opt-out" element={<ReminderOptOut />} />
