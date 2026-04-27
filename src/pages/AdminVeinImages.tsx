@@ -2000,12 +2000,16 @@ const AdminVeinImages = () => {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setPendingExport("json")}
-                disabled={exporting !== null}
-                title={`Pobierz overrides z bazy jako JSON (${exportFilterSummary()})`}
+                onClick={() => void requestExport("json")}
+                disabled={exporting !== null || preparingPreview !== null}
+                title={`Pobierz overrides z bazy jako JSON (${exportFilterSummary()}) — najpierw zobaczysz podgląd zawartości`}
               >
                 <FileJson className="w-3.5 h-3.5 mr-1" />
-                {exporting === "json" ? "Eksport…" : "Export JSON"}
+                {preparingPreview === "json"
+                  ? "Podgląd…"
+                  : exporting === "json"
+                    ? "Eksport…"
+                    : "Export JSON"}
               </Button>
               <Button
                 variant="outline"
