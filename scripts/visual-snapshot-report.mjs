@@ -1261,6 +1261,8 @@ const main = async () => {
     maxPerViewport,
     maxPerState,
     sort: sortRaw,
+    history: historyRaw,
+    noHistory,
   } = parseCliArgs(process.argv);
 
   // Sanity: czy są w ogóle wyniki?
