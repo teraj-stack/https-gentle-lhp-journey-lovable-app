@@ -232,7 +232,7 @@ describe("describeSaveError", () => {
     expect(out.description).toMatch(/≤110 znaków/);
   });
 
-  it("mapuje błąd segmentu „·" na opis z limitem 40", () => {
+  it("mapuje błąd segmentu z limitem 40", () => {
     const out = describeSaveError(
       { message: 'segment caption "bardzo długi tekst…" przekracza 40 znaków (ma 50)' },
       "main",
