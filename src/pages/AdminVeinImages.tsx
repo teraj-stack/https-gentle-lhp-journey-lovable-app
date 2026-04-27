@@ -135,6 +135,97 @@ const describeSaveError = (
   };
 };
 
+/**
+ * Minimalny parser CSV zgodny z RFC 4180:
+ *  - cudzysłowy do eskejpowania pól z przecinkiem/nową linią,
+ *  - "" w obrębie pola = literalny ",
+ *  - akceptuje BOM (\uFEFF) i końce linii \r\n / \n.
+ *  - Tolerancyjny na trailing newline.
+ */
+const parseCsv = (raw: string): string[][] => {
+  const text = raw.replace(/^\uFEFF/, "");
+  const rows: string[][] = [];
+  let row: string[] = [];
+  let field = "";
+  let inQuotes = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inQuotes) {
+      if (c === '"') {
+        if (text[i + 1] === '"') {
+          field += '"';
+          i++;
+        } else {
+          inQuotes = false;
+        }
+      } else {
+        field += c;
+      }
+    } else {
+      if (c === '"') {
+        inQuotes = true;
+      } else if (c === ",") {
+        row.push(field);
+        field = "";
+      } else if (c === "\r") {
+        // ignore — \n closes row
+      } else if (c === "\n") {
+        row.push(field);
+        rows.push(row);
+        row = [];
+        field = "";
+      } else {
+        field += c;
+      }
+    }
+  }
+  // Flush last field/row jeśli plik nie kończy się \n.
+  if (field.length > 0 || row.length > 0) {
+    row.push(field);
+    rows.push(row);
+  }
+  // Filtruj puste linie końcowe.
+  return rows.filter((r) => r.length > 1 || (r.length === 1 && r[0].trim() !== ""));
+};
+
+const VALID_PAGE_KEYS = new Set<VeinImagePageKey>(
+  VEIN_IMAGE_PAGE_PRESETS.map((p) => p.key),
+);
+const VALID_SLOTS: VeinImageSlot[] = ["main", "perforator"];
+
+/** Te same reguły co trigger Postgres `validate_vein_image_override`. */
+const validateImportRow = (alt: string, caption: string): string[] => {
+  const errs: string[] = [];
+  if (alt.length < ALT_MIN || alt.length > ALT_BUDGET) {
+    errs.push(`alt ${alt.length}/${ALT_MIN}–${ALT_BUDGET} znaków`);
+  }
+  if (caption.length > CAPTION_BUDGET) {
+    errs.push(`caption ${caption.length}/≤${CAPTION_BUDGET} znaków`);
+  }
+  for (const seg of caption.split(" · ")) {
+    if (seg.length > SEGMENT_BUDGET) {
+      errs.push(`segment "${seg.slice(0, 24)}${seg.length > 24 ? "…" : ""}" ${seg.length}/≤${SEGMENT_BUDGET}`);
+    }
+  }
+  return errs;
+};
+
+type ImportRowStatus = "create" | "update" | "noop" | "error";
+
+interface ImportRow {
+  /** 1-based linia w pliku CSV (header = 1, dane od 2). */
+  line: number;
+  pageKey: VeinImagePageKey | null;
+  slot: VeinImageSlot | null;
+  alt: string;
+  caption: string;
+  status: ImportRowStatus;
+  errors: string[];
+  /** Aktualne wartości w bazie — do prezentacji diffu. */
+  currentAlt?: string;
+  currentCaption?: string;
+}
+
 interface FieldStats {
   length: number;
   budget: number;
