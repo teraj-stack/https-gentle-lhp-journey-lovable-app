@@ -20,7 +20,7 @@ const PAGE_PROPS = {
     mainAlt:
       "Schemat porównawczy zdrowej żyły i żylaka — pokazuje refluks krwi przez niedomykające się zastawki w pniu odpiszczelowym/odstrzałkowym, który EVLT zamyka termicznie od środka",
     mainCaption:
-      "Zdrowa zastawka · Refluks w pniu żylnym · Cel EVLT — termiczne zamknięcie chorej żyły",
+      "Zdrowa zastawka · Refluks w pniu żylnym · Cel EVLT · Termiczne zamknięcie żyły",
     perforatorAlt:
       "Schemat niewydolnego perforatora — żyły łączącej układ głęboki z powierzchownym; jego refluks często współistnieje z niewydolnością pnia leczonego EVLT",
     perforatorCaption:
@@ -31,7 +31,7 @@ const PAGE_PROPS = {
     mainAlt:
       "Schemat porównawczy zdrowej żyły i żylakowatej bocznicy — poszerzone naczynie z niedomykającymi się zastawkami i cofającą się krwią, które mikroflebektomia usuwa mechanicznie z mikronakłuć",
     mainCaption:
-      "Zdrowa bocznica · Żylakowata bocznica · Cel mikroflebektomii — mechaniczne usunięcie z mikronakłuć",
+      "Zdrowa bocznica · Żylakowata bocznica · Cel mikroflebektomii · Usunięcie z mikronakłuć",
     perforatorAlt:
       "Schemat niewydolnego perforatora — często zasila żylakowate bocznice usuwane mikroflebektomią; jego ocena USG Doppler decyduje o zakresie zabiegu",
     perforatorCaption:
@@ -106,6 +106,40 @@ describe("VenousInsufficiencyImage — per-page alt & figcaption", () => {
       expect((mainCap.textContent ?? "").trim()).not.toBe(
         (perfCap.textContent ?? "").trim(),
       );
+    });
+
+    // ── MOBILE READABILITY GUARDS ──────────────────────────────────────
+    // Caption renderowany jest jako text-[11px] na 375px (px-1).
+    // Empirycznie segment dłuższy niż ~40 znaków zaczyna się dziwnie
+    // łamać na małym viewport. Total > 110 znaków daje 4+ linie
+    // — strona robi się zbyt „gadatliwa" pod obrazem.
+    it("każdy figcaption mieści się w mobile budget (≤110 znaków total)", () => {
+      const { mainCaption, perforatorCaption } = props;
+      expect(mainCaption.length).toBeLessThanOrEqual(110);
+      expect(perforatorCaption.length).toBeLessThanOrEqual(110);
+    });
+
+    it("żaden segment '·' figcaption nie przekracza 40 znaków", () => {
+      const { mainCaption, perforatorCaption } = props;
+      for (const cap of [mainCaption, perforatorCaption]) {
+        const segments = cap.split(/\s·\s/);
+        for (const seg of segments) {
+          expect(
+            seg.length,
+            `Segment "${seg}" w "${cap}" ma ${seg.length} znaków (limit 40 dla mobile)`,
+          ).toBeLessThanOrEqual(40);
+        }
+      }
+    });
+
+    it("każdy alt jest opisowy ale nie przekracza 220 znaków", () => {
+      const { mainAlt, perforatorAlt } = props;
+      // dolna granica: alt musi być opisowy dla SEO/dostępności
+      expect(mainAlt.length).toBeGreaterThanOrEqual(60);
+      expect(perforatorAlt.length).toBeGreaterThanOrEqual(60);
+      // górna granica: zbyt długi alt jest pomijany przez screen readery
+      expect(mainAlt.length).toBeLessThanOrEqual(220);
+      expect(perforatorAlt.length).toBeLessThanOrEqual(220);
     });
   });
 

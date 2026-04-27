@@ -98,7 +98,7 @@ const EVLT = () => (
         title="Skąd biorą się żylaki — co dokładnie zamyka EVLT?"
         subtitle="EVLT zamyka chorą żyłę odpiszczelową lub odstrzałkową od środka — eliminuje refluks, który napędza żylaki, perforatorowy zastój i stan zapalny widoczne na schemacie."
         mainAlt="Schemat porównawczy zdrowej żyły i żylaka — pokazuje refluks krwi przez niedomykające się zastawki w pniu odpiszczelowym/odstrzałkowym, który EVLT zamyka termicznie od środka"
-        mainCaption="Zdrowa zastawka · Refluks w pniu żylnym · Cel EVLT — termiczne zamknięcie chorej żyły"
+        mainCaption="Zdrowa zastawka · Refluks w pniu żylnym · Cel EVLT · Termiczne zamknięcie żyły"
         perforatorAlt="Schemat niewydolnego perforatora — żyły łączącej układ głęboki z powierzchownym; jego refluks często współistnieje z niewydolnością pnia leczonego EVLT"
         perforatorCaption="Niewydolny perforator · Często współistnieje z refluksem pnia · Diagnostyka USG Doppler przed EVLT"
       />
