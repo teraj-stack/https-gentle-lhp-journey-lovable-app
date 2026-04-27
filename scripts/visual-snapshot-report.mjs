@@ -1085,7 +1085,15 @@ const renderHtml = ({
             <option value="full">Pełny schemat</option>
           </select>
         </label>
-        <button type="button" class="trends-filter-export" data-trend-export title="Pokaż podgląd 20 pierwszych wierszy, potem pobierz przefiltrowane runy jako CSV (kompatybilny ze schematem savings.csv/history.csv)">⬇ Podgląd i eksport…</button>
+        <label class="trends-filter-label trends-filter-export-format" title="CSV: jeden plik. ZIP: spakowane CSV + metadata.json (deterministyczny). ZIP (split): osobne pliki png-saved.csv i discovery-saved.csv obok pełnego CSV — wygodne do narzędzi single-series.">
+          format
+          <select class="trends-filter-select" data-trend-export-format>
+            <option value="csv" selected>CSV</option>
+            <option value="zip">ZIP (CSV + metadata)</option>
+            <option value="zip-split">ZIP split (PNG/discovery)</option>
+          </select>
+        </label>
+        <button type="button" class="trends-filter-export" data-trend-export title="Pokaż podgląd 20 pierwszych wierszy, potem pobierz przefiltrowane runy w wybranym formacie">⬇ Podgląd i eksport…</button>
         <span class="trends-filter-export-status" data-trend-export-status role="status" aria-live="polite"></span>
       </div>`;
 
@@ -2300,6 +2308,7 @@ const renderHtml = ({
     var exportBtn = root.querySelector("[data-trend-export]");
     var exportStatus = root.querySelector("[data-trend-export-status]");
     var exportModeSelect = root.querySelector("[data-trend-export-mode]");
+    var exportFormatSelect = root.querySelector("[data-trend-export-format]");
     var fullSchemaCols = (data.fullSchemaColumns && data.fullSchemaColumns.length)
       ? data.fullSchemaColumns
       : null;
@@ -2400,8 +2409,28 @@ const renderHtml = ({
         });
       }
       var lines = [cols.join(",")].concat(rowsCells.map(function (r) { return r.join(","); }));
+      var csvText = lines.join("\n") + "\n";
+
+      // Split CSVs (na potrzeby trybu „zip-split"): osobny plik dla każdej
+      // metryki, tylko 2 kolumny generatedAt + value — gotowy do importu do
+      // narzędzi single-series (np. Grafana CSV plugin, Datawrapper) bez
+      // potrzeby selektowania kolumn po stronie usera.
+      function buildSingleSeriesCsv(metricKey) {
+        var head = "generatedAt,value";
+        var body = pts.map(function (p) {
+          var v = p[metricKey];
+          var cell = typeof v === "number" ? v.toFixed(2) : "";
+          return csvEscape(p.generatedAt || "") + "," + cell;
+        });
+        return [head].concat(body).join("\n") + "\n";
+      }
+      var splitCsvs = {
+        "png-saved.csv": buildSingleSeriesCsv("png"),
+        "discovery-saved.csv": buildSingleSeriesCsv("discovery"),
+      };
+
       return {
-        csv: lines.join("\n") + "\n",
+        csv: csvText,
         count: pts.length,
         total: allPoints.length,
         state: state,
@@ -2410,6 +2439,7 @@ const renderHtml = ({
         missingCount: missingCount,
         headerCells: cols,
         rowsCells: rowsCells,
+        splitCsvs: splitCsvs,
       };
     }
     function shortHash(s) {
@@ -2496,10 +2526,105 @@ const renderHtml = ({
       return cell;
     }
 
+    // ---- Minimalny ZIP writer (zero-deps, browser-only) ----
+    // Używamy metody STORE (kompresja=0) — pliki CSV i tak dobrze się
+    // kompresują przez transport HTTP, a brak DEFLATE pozwala uniknąć
+    // ~3 KB kodu i zależności od CompressionStream (niedostępne w
+    // starszych Safari / Firefox bez ESR). Format binarny: lokalne nagłówki
+    // (PK\x03\x04) per plik, central directory (PK\x01\x02), end-of-central-
+    // directory (PK\x05\x06). Patrz APPNOTE.TXT 4.3.6–4.3.16.
+    //
+    // Ograniczenia: brak ZIP64 (max 4 GiB total / per-file, max 65535 plików)
+    // — nas absolutnie nie dotyczy (eksport CSV maks. ~10 MB, kilka plików).
+    var CRC32_TABLE = (function () {
+      var t = new Uint32Array(256);
+      for (var n = 0; n < 256; n++) {
+        var c = n;
+        for (var k = 0; k < 8; k++) c = (c & 1) ? (0xedb88320 ^ (c >>> 1)) : (c >>> 1);
+        t[n] = c >>> 0;
+      }
+      return t;
+    })();
+    function crc32(bytes) {
+      var c = 0xffffffff;
+      for (var i = 0; i < bytes.length; i++) c = CRC32_TABLE[(c ^ bytes[i]) & 0xff] ^ (c >>> 8);
+      return (c ^ 0xffffffff) >>> 0;
+    }
+    function buildZip(files) {
+      // files: [{ name: "foo.csv", text: "..." }] — ASCII-safe nazwy.
+      var enc = new TextEncoder();
+      var localParts = [];
+      var centralParts = [];
+      var offset = 0;
+      for (var i = 0; i < files.length; i++) {
+        var f = files[i];
+        var nameBytes = enc.encode(f.name);
+        var dataBytes = enc.encode(f.text);
+        var crc = crc32(dataBytes);
+        var size = dataBytes.length;
+        // Local file header (30 B + name + data)
+        var lh = new Uint8Array(30 + nameBytes.length);
+        var lhv = new DataView(lh.buffer);
+        lhv.setUint32(0, 0x04034b50, true); // signature
+        lhv.setUint16(4, 20, true);          // version needed
+        lhv.setUint16(6, 0x0800, true);      // bit 11: UTF-8 filename
+        lhv.setUint16(8, 0, true);           // method = STORE
+        lhv.setUint16(10, 0, true);          // mod time (deterministyczne 0)
+        lhv.setUint16(12, 0x0021, true);     // mod date (1980-01-01)
+        lhv.setUint32(14, crc, true);
+        lhv.setUint32(18, size, true);       // compressed size = uncompressed
+        lhv.setUint32(22, size, true);
+        lhv.setUint16(26, nameBytes.length, true);
+        lhv.setUint16(28, 0, true);          // extra length
+        lh.set(nameBytes, 30);
+        localParts.push(lh, dataBytes);
+        // Central directory header (46 B + name)
+        var ch = new Uint8Array(46 + nameBytes.length);
+        var chv = new DataView(ch.buffer);
+        chv.setUint32(0, 0x02014b50, true);  // signature
+        chv.setUint16(4, 20, true);          // version made by
+        chv.setUint16(6, 20, true);          // version needed
+        chv.setUint16(8, 0x0800, true);      // UTF-8
+        chv.setUint16(10, 0, true);          // method
+        chv.setUint16(12, 0, true);          // mod time
+        chv.setUint16(14, 0x0021, true);     // mod date
+        chv.setUint32(16, crc, true);
+        chv.setUint32(20, size, true);
+        chv.setUint32(24, size, true);
+        chv.setUint16(28, nameBytes.length, true);
+        chv.setUint16(30, 0, true);          // extra
+        chv.setUint16(32, 0, true);          // comment
+        chv.setUint16(34, 0, true);          // disk #
+        chv.setUint16(36, 0, true);          // internal attrs
+        chv.setUint32(38, 0, true);          // external attrs
+        chv.setUint32(42, offset, true);     // relative offset of LFH
+        ch.set(nameBytes, 46);
+        centralParts.push(ch);
+        offset += lh.length + dataBytes.length;
+      }
+      var centralSize = centralParts.reduce(function (s, p) { return s + p.length; }, 0);
+      var centralOffset = offset;
+      var eocd = new Uint8Array(22);
+      var ev = new DataView(eocd.buffer);
+      ev.setUint32(0, 0x06054b50, true);
+      ev.setUint16(4, 0, true);              // disk #
+      ev.setUint16(6, 0, true);              // disk where CD starts
+      ev.setUint16(8, files.length, true);   // entries on this disk
+      ev.setUint16(10, files.length, true);  // total entries
+      ev.setUint32(12, centralSize, true);
+      ev.setUint32(16, centralOffset, true);
+      ev.setUint16(20, 0, true);             // comment length
+      return new Blob(localParts.concat(centralParts).concat([eocd]), {
+        type: "application/zip",
+      });
+    }
+
     function downloadPending() {
       if (!pendingExport) return;
       try {
-        var blob = new Blob([pendingExport.csv], { type: "text/csv;charset=utf-8" });
+        var blob = pendingExport.blob || new Blob([pendingExport.csv], {
+          type: pendingExport.mime || "text/csv;charset=utf-8",
+        });
         var url = URL.createObjectURL(blob);
         var a = document.createElement("a");
         a.href = url; a.download = pendingExport.filename;
@@ -2512,8 +2637,11 @@ const renderHtml = ({
             ? ("pełny schemat, " + pendingExport.colCount + " kol."
               + (pendingExport.missingCount ? ", " + pendingExport.missingCount + " pustych" : ""))
             : ("skrócony, " + pendingExport.colCount + " kol.");
+          var fmtLabel = pendingExport.format === "zip" ? " · ZIP"
+            : pendingExport.format === "zip-split" ? " · ZIP split (" + pendingExport.fileCount + " plików)"
+            : "";
           exportStatus.textContent = "Pobrano " + pendingExport.count + "/" + pendingExport.total
-            + " (" + ml + ") → " + pendingExport.filename;
+            + " (" + ml + fmtLabel + ") → " + pendingExport.filename;
         }
       } catch (e) {
         if (exportStatus) exportStatus.textContent = "Eksport nieudany: " + e.message;
@@ -2536,17 +2664,62 @@ const renderHtml = ({
           if (exportStatus) exportStatus.textContent = "Brak wierszy do eksportu (zmień filtr).";
           return;
         }
+        var format = (exportFormatSelect && exportFormatSelect.value) || "csv";
         var stamp = new Date().toISOString().replace(/[:.]/g, "-").replace(/Z$/, "Z");
-        var filterHash = shortHash(JSON.stringify(built.state) + "|" + built.mode);
-        pendingExport = {
-          csv: built.csv,
-          filename: "savings-filtered-" + built.mode + "-" + stamp + "-" + filterHash + ".csv",
-          count: built.count,
-          total: built.total,
-          mode: built.mode,
-          colCount: built.colCount,
-          missingCount: built.missingCount,
-        };
+        var filterHash = shortHash(JSON.stringify(built.state) + "|" + built.mode + "|" + format);
+        var baseName = "savings-filtered-" + built.mode + "-" + stamp + "-" + filterHash;
+
+        if (format === "zip" || format === "zip-split") {
+          // Manifest z metadanymi, żeby konsument ZIPa wiedział JAK powstał
+          // plik bez czytania nazwy: filtr, tryb, kontrakt sortowania,
+          // liczba runów, kolumny. Pretty-printed dla diff-friendly.
+          var manifest = {
+            generatedAt: new Date().toISOString(),
+            source: "visual-snapshot-report (savings trends)",
+            mode: built.mode,
+            format: format,
+            filter: built.state,
+            rowsExported: built.count,
+            rowsTotal: built.total,
+            columns: built.headerCells,
+            missingColumnsAsEmpty: built.missingCount,
+            sortContract: "generatedAt ASC, isCurrent last (matches sparkline order)",
+          };
+          var files = [
+            { name: baseName + ".csv", text: built.csv },
+            { name: "metadata.json", text: JSON.stringify(manifest, null, 2) + "\n" },
+          ];
+          if (format === "zip-split" && built.splitCsvs) {
+            Object.keys(built.splitCsvs).forEach(function (k) {
+              files.push({ name: k, text: built.splitCsvs[k] });
+            });
+          }
+          var zipBlob = buildZip(files);
+          pendingExport = {
+            blob: zipBlob,
+            mime: "application/zip",
+            filename: baseName + ".zip",
+            count: built.count,
+            total: built.total,
+            mode: built.mode,
+            colCount: built.colCount,
+            missingCount: built.missingCount,
+            format: format,
+            fileCount: files.length,
+          };
+        } else {
+          format = "csv";
+          pendingExport = {
+            csv: built.csv,
+            filename: baseName + ".csv",
+            count: built.count,
+            total: built.total,
+            mode: built.mode,
+            colCount: built.colCount,
+            missingCount: built.missingCount,
+            format: "csv",
+          };
+        }
         // Fallback dla przeglądarek bez <dialog> (Safari < 15.4): od razu
         // pobierz, ale poinformuj usera w statusie, że podgląd nieosiągalny.
         if (!previewDialog || typeof previewDialog.showModal !== "function") {
