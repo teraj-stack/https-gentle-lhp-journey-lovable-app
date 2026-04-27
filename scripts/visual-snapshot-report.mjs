@@ -734,6 +734,13 @@ const renderHtml = ({ trios, generatedAt, totalFailures, playwrightReportRel, tr
         : ` · <em>(Playwright HTML report nie znaleziony w <code>playwright-report/</code> — uruchom z reporterem html, żeby aktywować deep linki)</em>`
     }</p>
   </header>
+  ${truncation
+    ? `<aside class="truncation-banner" role="status">
+         ⚠ Fail-fast: pokazano <strong>${truncation.shown}</strong> z <strong>${truncation.total}</strong>
+         nieudanych snapshotów (limit <code>--max-failures=${truncation.limit}</code>).
+         Pełny zestaw zobaczysz po uruchomieniu skryptu bez tej flagi.
+       </aside>`
+    : ""}
   ${summaryLine}
   ${breakdownSection}
   ${filterBar}
