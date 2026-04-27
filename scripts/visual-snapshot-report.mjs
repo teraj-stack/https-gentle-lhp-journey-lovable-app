@@ -26,7 +26,20 @@
  *
  * Uruchamianie:
  *   node scripts/visual-snapshot-report.mjs
+ *   node scripts/visual-snapshot-report.mjs --max-failures=50
+ *   node scripts/visual-snapshot-report.mjs -m 50
+ *   MAX_FAILURES=50 node scripts/visual-snapshot-report.mjs
  *   (opcjonalnie po `bun run test:e2e`)
+ *
+ * Fail-fast (`--max-failures=N`):
+ *   Przy bardzo dużych zestawach (np. 500+ failed snapshotów) generowanie
+ *   pełnego raportu jest powolne — głównie z powodu kopiowania PNG do assets/
+ *   i discovery artefaktów Playwrighta per katalog. Flag `--max-failures=N`
+ *   sortuje failed trio deterministycznie (po relPath) i obcina do pierwszych
+ *   N PRZED kosztowną fazą kopiowania, dzięki czemu raport powstaje
+ *   "do pierwszych N regresji" — zwykle wystarczy żeby zobaczyć patterny.
+ *   Raport informuje o obcięciu w nagłówku, żeby user nie myślał że ma
+ *   tylko N regresji w sumie.
  *
  * Exit codes:
  *   0 — raport wygenerowany (nawet jeśli 0 failures — pusty raport informuje
