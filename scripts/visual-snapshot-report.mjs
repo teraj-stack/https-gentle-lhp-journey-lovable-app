@@ -1534,6 +1534,33 @@ const main = async () => {
       formatSaved(discoverySaved, discoveryBaseline, `discovery readdir: ${discoveryRuns}/${discoveryBaseline}`),
     ].filter(Boolean);
     console.log(`[visual-snapshot-report] 💾 Oszczędność: ${savings.join(", ")}.`);
+
+    // Szczegółowy breakdown — dokładne liczby baseline / limitów / processed,
+    // żeby w logach CI dało się policzyć "ile IO zostało zaoszczędzone względem
+    // pełnego scenariusza bez limitów". Bez tego user widzi tylko delty,
+    // a nie wie, jakie limity je wywołały i jakie były punkty odniesienia.
+    const fmtLimit = (v) => (v === null || v === undefined ? "∞" : String(v));
+    const trioBaseline = allFailed.length;
+    const trioRendered = failed.length;
+    const trioSaved = trioBaseline - trioRendered;
+
+    console.log(
+      `[visual-snapshot-report]   ├─ trio: baseline=${trioBaseline} (allFailed.length), ` +
+        `rendered=${trioRendered}, saved=${trioSaved} | limity: ` +
+        `--max-failures=${fmtLimit(maxFailures)}, ` +
+        `--max-failures-per-viewport=${fmtLimit(maxPerViewport)}, ` +
+        `--max-failures-per-state=${fmtLimit(maxPerState)}`,
+    );
+    console.log(
+      `[visual-snapshot-report]   ├─ PNG copy: baseline=${pngBaseline} (suma expected+actual+diff z allFailed), ` +
+        `processed=${pngCopied}, saved=${pngSaved} | limit: --max-copy=${fmtLimit(maxCopy)} ` +
+        `(copyLimit=${copyLimit}/${trioRendered} trio)`,
+    );
+    console.log(
+      `[visual-snapshot-report]   └─ discovery readdir: baseline=${discoveryBaseline} (allFailed.length), ` +
+        `processed=${discoveryRuns}, saved=${discoverySaved} | limit: --max-discovery=${fmtLimit(maxDiscovery)} ` +
+        `(discoveryLimit=${discoveryLimit}/${trioRendered} trio)`,
+    );
   }
 };
 
