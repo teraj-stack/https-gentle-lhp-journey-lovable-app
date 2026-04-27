@@ -295,10 +295,20 @@ duckdb -c "SELECT \"group\", AVG(png_saved_pct) AS avg_png_pct, \
 | `--history=PATH` | `HISTORY_CSV` | `<REPORT_DIR>/history.csv` | Custom ścieżka do persistent CSV. Wartości `off`/`false`/`none`/`no`/`0` wyłączają zapis. |
 | `--no-history` | `NO_HISTORY=1` | — | Skrót na wyłączenie auto-appendu. |
 
-**Schema guard**: jeśli istniejący `history.csv` ma inny nagłówek niż bieżący
-(np. nowa wersja skryptu dodała kolumny), append jest pomijany z warningiem
-— stara historia nie zostaje skorumpowana. Zarchiwizuj wtedy stary plik
-(`mv history.csv history-v1.csv`), kolejny run wygeneruje świeży.
+**Schema guard (history.csv)**: jeśli istniejący `history.csv` ma inny nagłówek
+niż bieżący (np. nowa wersja skryptu dodała kolumny), append jest pomijany z
+warningiem — stara historia nie zostaje skorumpowana. Zarchiwizuj wtedy stary
+plik (`mv history.csv history-v1.csv`), kolejny run wygeneruje świeży.
+
+**Schema validation (savings*.csv)**: po zapisie `savings.csv`,
+`savings-by-viewport.csv` i `savings-by-state.csv` skrypt weryfikuje **liczbę
+kolumn**, **kolejność nagłówków** oraz **szerokość każdego wiersza danych**
+względem schematu in-memory. Każde odchylenie (np. ręczna edycja pliku, desync
+między `csvCols` a `csvRow` po refactorze, przecinek w polu) loguje warning
+typu `⚠ Schema mismatch w … — format zmienił się między wersjami` z listą
+różnic i sugestią `bump schemaVersion w savings.json`. Walidacja jest
+diagnostyczna (nie kończy procesu non-zero), żeby nie blokować CI z powodu
+samej zmiany formatu.
 
 **Sparkline'y w `index.html`**: jeśli `history.csv` istnieje (i ma kolumny
 `generatedAt` / `png_saved_pct` / `discovery_saved_pct`), raport renderuje
