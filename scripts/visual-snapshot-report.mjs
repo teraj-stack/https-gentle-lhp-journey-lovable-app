@@ -1040,6 +1040,16 @@ const renderHtml = ({
       <h2 class="trends-title">Trendy oszczędności IO</h2>
       ${note}
       ${filterBar}
+      <details class="trends-combos" data-trends-combos>
+        <summary>Unikalne kombinacje <code>command</code> + <code>flag_*</code> <span class="trends-combos-count" data-trends-combos-count></span></summary>
+        <p class="trends-combos-hint">Kliknij wiersz, żeby ustawić selecty filtra na tę dokładnie kombinację. Sortowanie: malejąco po liczbie runów.</p>
+        <div class="trends-combos-scroll">
+          <table class="trends-combos-table" data-trends-combos-table>
+            <thead><tr data-trends-combos-head></tr></thead>
+            <tbody data-trends-combos-body></tbody>
+          </table>
+        </div>
+      </details>
       <p class="trends-empty" data-trends-empty hidden>Żaden run nie pasuje do filtra. Wyczyść, żeby zobaczyć wszystkie.</p>
       <div class="trends-grid">
         ${buildSpark("png", "#c9a84c", "PNG copy saved %")}
