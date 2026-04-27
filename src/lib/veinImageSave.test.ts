@@ -228,7 +228,7 @@ describe("describeSaveError", () => {
       "perforator",
       "Mikroflebektomia",
     );
-    expect(out.title).toMatch(/figcaption.*Mikroflebektomia.*perforator/i);
+    expect(out.title).toMatch(/caption.*Mikroflebektomia.*perforator/i);
     expect(out.description).toMatch(/≤110 znaków/);
   });
 
@@ -249,7 +249,7 @@ describe("describeSaveError", () => {
       "EVLT",
     );
     expect(out.title).toMatch(/Brak uprawnień/);
-    expect(out.description).toMatch(/sesja|zaloguj/i);
+    expect(out.description).toMatch(/admina|zaloguj/i);
   });
 
   it("rozpoznaje 23505 (unique) → komunikat o konflikcie", () => {
@@ -259,12 +259,12 @@ describe("describeSaveError", () => {
       "Profilaktyka żylaków",
     );
     expect(out.title).toMatch(/Konflikt/);
-    expect(out.description).toMatch(/page_key\+slot/);
+    expect(out.description).toMatch(/Inna sesja|Odśwież/i);
   });
 
   it("fallback: nieznany błąd → ogólny tytuł z page+slot", () => {
     const out = describeSaveError(new Error("network down"), "main", "EVLT");
-    expect(out.title).toMatch(/Nie udało się zapisać.*EVLT.*główny obraz/i);
+    expect(out.title).toMatch(/Błąd zapisu.*EVLT.*główny obraz/i);
     expect(out.description).toBe("network down");
   });
 });
