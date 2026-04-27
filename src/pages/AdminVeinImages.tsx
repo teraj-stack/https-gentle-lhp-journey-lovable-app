@@ -840,23 +840,63 @@ const AdminVeinImages = () => {
     return data ?? [];
   };
 
+  /**
+   * Aplikuje aktywne filtry eksportu (page_key + slot) do listy z bazy
+   * i zwraca segment do nazwy pliku, np. "-pajaczki-perforator" / "" / "-perforator".
+   */
+  const applyExportFilters = <T extends { page_key: string; slot: string }>(
+    rows: T[],
+  ): { rows: T[]; suffix: string } => {
+    const filtered = rows.filter(
+      (r) =>
+        (exportPageKey === "all" || r.page_key === exportPageKey) &&
+        (exportSlot === "all" || r.slot === exportSlot),
+    );
+    const parts: string[] = [];
+    if (exportPageKey !== "all") parts.push(exportPageKey);
+    if (exportSlot !== "all") parts.push(exportSlot);
+    return { rows: filtered, suffix: parts.length ? `-${parts.join("-")}` : "" };
+  };
+
+  /** Krótki opis aktywnego filtra do toastów / hintów ("wszystkie / tylko strona X / tylko slot Y / strona X · slot Y"). */
+  const exportFilterSummary = (): string => {
+    if (exportPageKey === "all" && exportSlot === "all") return "wszystkie";
+    const parts: string[] = [];
+    if (exportPageKey !== "all") parts.push(`strona ${exportPageKey}`);
+    if (exportSlot !== "all") parts.push(`slot ${exportSlot}`);
+    return parts.join(" · ");
+  };
+
   const exportJson = async () => {
     setExporting("json");
     try {
-      const rows = await fetchAllOverrides();
+      const allRows = await fetchAllOverrides();
+      const { rows, suffix } = applyExportFilters(allRows);
+      if (rows.length === 0) {
+        toast.info(
+          `Brak overrides do eksportu dla filtra: ${exportFilterSummary()}.`,
+        );
+        return;
+      }
       const payload = {
         exported_at: new Date().toISOString(),
         exported_by: session?.user.email ?? null,
+        filter: {
+          page_key: exportPageKey,
+          slot: exportSlot,
+        },
         total: rows.length,
         overrides: rows,
       };
       const stamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
       downloadFile(
-        `vein-image-overrides-${stamp}.json`,
+        `vein-image-overrides${suffix}-${stamp}.json`,
         JSON.stringify(payload, null, 2),
         "application/json",
       );
-      toast.success(`Wyeksportowano ${rows.length} overrides do JSON`);
+      toast.success(
+        `Wyeksportowano ${rows.length} overrides do JSON (${exportFilterSummary()})`,
+      );
     } catch (err) {
       toast.error(
         `Błąd eksportu JSON: ${err instanceof Error ? err.message : String(err)}`,
