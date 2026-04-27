@@ -18,7 +18,9 @@
     "e2e:reset": "node scripts/e2e-seed-cli.mjs reset",
     "e2e:seed": "node scripts/e2e-seed-cli.mjs seed",
     "e2e:reset-and-seed": "node scripts/e2e-seed-cli.mjs reset-and-seed",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "test:visual:report": "node scripts/visual-snapshot-report.mjs",
+    "test:visual:live-preview": "playwright test tests/visual/admin-vein-images-live-preview; node scripts/visual-snapshot-report.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
