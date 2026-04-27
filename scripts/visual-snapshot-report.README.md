@@ -258,7 +258,19 @@ sekcja `📊 Atrybucja oszczędności` w konsoli, w postaci do dalszej analizy:
   najwięcej oszczędza w tym runie".
 - **`savings.csv`** — 1 wiersz + header (agregat całego runa), kolumny w
   **stabilnej kolejności** (`generatedAt`, `trio_*`, `png_*`, `discovery_*`,
-  `limit_*`, `attr_*`). Zaprojektowane do append'owania.
+  `limit_*`, `attr_*`, `flag_*`, `command`, `node_version`, `cwd_basename`).
+  Zaprojektowane do append'owania. Sekcja **`flag_*` + `command`** umożliwia
+  filtrowanie trendów po parametrach uruchomienia, np. w DuckDB:
+  ```sql
+  SELECT generatedAt, png_saved_pct, flag_max_copy
+  FROM read_csv_auto('test-results/visual-report/history.csv')
+  WHERE flag_max_copy = '200' AND flag_no_history = 'false'
+  ORDER BY generatedAt;
+  ```
+  Pola tekstowe (`command`, `flag_history_path`) są CSV-escape'owane wg
+  RFC 4180 (zawijane w `"` gdy zawierają `,`/`"`/newline). `flag_*` duplikują
+  wartości z `limit_*` semantycznie jako "input parameter" vs "metric" — stare
+  `limit_*` zostają dla kompatybilności wstecz z istniejącymi history.csv.
 - **`savings-by-viewport.csv` / `savings-by-state.csv`** — N wierszy + header,
   jeden wiersz na grupę. Kolumny: `generatedAt, group_kind, group, trio_*,
   png_*, discovery_*` (15 stable). Idealne do query typu "top oszczędzające
