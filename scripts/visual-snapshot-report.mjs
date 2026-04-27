@@ -2860,13 +2860,32 @@ const main = async () => {
       return false;
     }
     const lines = contents.split("\n").filter((l) => l.length > 0);
-    const headerCells = (lines[0] ?? "").split(",");
+    const headerCells = splitCsvRow(lines[0] ?? "");
     const issues = [];
     if (headerCells.length !== expectedCols.length) {
       issues.push(
         `liczba kolumn ${headerCells.length} ≠ oczekiwane ${expectedCols.length}`,
       );
     }
+    // Set-based diff: które kolumny brakują (są w schemacie, ale nie ma ich
+    // w pliku) i które są nadmiarowe (są w pliku, ale schemat ich nie zna).
+    // Pomaga wskazać dokładnie nową kolumnę dodaną w nowej wersji skryptu,
+    // której brakuje w starszym pliku, oraz odwrotnie.
+    const expectedSet = new Set(expectedCols);
+    const actualSet = new Set(headerCells);
+    const missingCols = expectedCols.filter((c) => !actualSet.has(c));
+    const unexpectedCols = headerCells.filter((c) => !expectedSet.has(c));
+    if (missingCols.length > 0) {
+      issues.push(
+        `brakujące kolumny (${missingCols.length}): ${missingCols.slice(0, 8).join(", ")}${missingCols.length > 8 ? ` (+${missingCols.length - 8})` : ""}`,
+      );
+    }
+    if (unexpectedCols.length > 0) {
+      issues.push(
+        `nadmiarowe kolumny (${unexpectedCols.length}): ${unexpectedCols.slice(0, 8).join(", ")}${unexpectedCols.length > 8 ? ` (+${unexpectedCols.length - 8})` : ""}`,
+      );
+    }
+    // Pozycyjna diff (ważna dla append do history.csv — kolejność musi się zgadzać).
     const orderMismatches = [];
     const maxLen = Math.max(headerCells.length, expectedCols.length);
     for (let i = 0; i < maxLen; i++) {
@@ -2874,8 +2893,17 @@ const main = async () => {
         orderMismatches.push(`#${i}: "${headerCells[i] ?? "<brak>"}" ≠ "${expectedCols[i] ?? "<brak>"}"`);
       }
     }
+    // Jeśli zestawy są równe, ale kolejność inna → to jest reorder (najczęstszy
+    // breaking change dla append-friendly CSV). Komunikat wyróżniamy osobno.
+    const sameSet =
+      missingCols.length === 0 &&
+      unexpectedCols.length === 0 &&
+      headerCells.length === expectedCols.length;
     if (orderMismatches.length > 0) {
-      issues.push(`kolejność nagłówków: ${orderMismatches.slice(0, 3).join("; ")}${orderMismatches.length > 3 ? ` (+${orderMismatches.length - 3})` : ""}`);
+      const label = sameSet ? "REORDER nagłówków" : "kolejność nagłówków";
+      issues.push(
+        `${label}: ${orderMismatches.slice(0, 5).join("; ")}${orderMismatches.length > 5 ? ` (+${orderMismatches.length - 5})` : ""}`,
+      );
     }
     if (typeof dataRowCount === "number") {
       const actualData = lines.length - 1;
@@ -2895,9 +2923,33 @@ const main = async () => {
       }
     }
     if (issues.length > 0) {
+      // Side-by-side diff nagłówków: indeks | actual | expected | mark.
+      // Pomaga od razu zlokalizować kolumnę, która "rozjechała" schemat.
+      const diffMaxLen = Math.max(headerCells.length, expectedCols.length);
+      const diffRows = [];
+      const colWidth = (arr) => Math.max(8, ...arr.map((s) => (s ?? "").length));
+      const wActual = colWidth(headerCells);
+      const wExpected = colWidth(expectedCols);
+      for (let i = 0; i < diffMaxLen; i++) {
+        const a = headerCells[i] ?? "<brak>";
+        const e = expectedCols[i] ?? "<brak>";
+        const mark = a === e ? "  " : "≠ ";
+        diffRows.push(
+          `   ${String(i).padStart(3)} | ${a.padEnd(wActual)} | ${e.padEnd(wExpected)} ${mark}`,
+        );
+      }
+      const headerLineForDiff =
+        `   ${"idx".padStart(3)} | ${"actual".padEnd(wActual)} | ${"expected".padEnd(wExpected)}`;
+      const sepLine =
+        `   ${"---".padStart(3)} | ${"-".repeat(wActual)} | ${"-".repeat(wExpected)}`;
+      // Limit diffu do 40 wierszy, żeby nie zaśmiecać konsoli przy dużych schemach.
+      const diffPreview = diffRows.slice(0, 40);
+      const diffSuffix =
+        diffRows.length > 40 ? `\n   … (+${diffRows.length - 40} więcej)` : "";
       console.warn(
         `[visual-snapshot-report] ⚠ Schema mismatch w ${rel} — format zmienił się między wersjami:\n` +
           issues.map((i) => `   • ${i}`).join("\n") +
+          `\n   diff nagłówków:\n${headerLineForDiff}\n${sepLine}\n${diffPreview.join("\n")}${diffSuffix}` +
           `\n   → bump schemaVersion w savings.json i zarchiwizuj stare CSV przed kolejnym runem.`,
       );
       return false;
