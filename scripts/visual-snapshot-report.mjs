@@ -565,6 +565,30 @@ const aggregateSavingsByGroup = ({
 
 
 /**
+ * RFC 4180-aware CSV row splitter (module-level, reused by trends loader
+ * i validator). Obsługuje pola w cudzysłowach z przecinkami / podwójnymi
+ * cudzysłowami w środku — niezbędne dla kolumn `command` i `flag_history_path`,
+ * które mogą zawierać spacje i przecinki.
+ */
+const splitCsvRow = (line) => {
+  const out = [];
+  let cur = "";
+  let inQuotes = false;
+  for (let j = 0; j < line.length; j++) {
+    const ch = line[j];
+    if (inQuotes) {
+      if (ch === '"' && line[j + 1] === '"') { cur += '"'; j++; }
+      else if (ch === '"') { inQuotes = false; }
+      else { cur += ch; }
+    } else if (ch === '"') { inQuotes = true; }
+    else if (ch === ",") { out.push(cur); cur = ""; }
+    else { cur += ch; }
+  }
+  out.push(cur);
+  return out;
+};
+
+/**
  * Wczytuje historyczne wiersze z `history.csv` (jeśli istnieje) i zwraca
  * dane do narysowania sparkline'ów png_saved_pct + discovery_saved_pct.
  *
@@ -574,7 +598,21 @@ const aggregateSavingsByGroup = ({
  *
  * "Bieżący run" jest dołączany na końcu z flagą isCurrent=true (oznaczany w UI),
  * żeby wykres pokazywał także TEN run, mimo że append do CSV zachodzi później.
+ *
+ * Każdy punkt zawiera oprócz png/discovery także `command` + wszystkie `flag_*`
+ * kolumny (jako string), dzięki czemu UI może filtrować wykres po parametrach
+ * uruchomienia bez re-runu skryptu.
  */
+const TREND_FLAG_COLUMNS = [
+  "flag_max_failures",
+  "flag_max_per_viewport",
+  "flag_max_per_state",
+  "flag_max_copy",
+  "flag_max_discovery",
+  "flag_no_history",
+  "flag_history_path",
+];
+
 const loadTrendsHistory = async ({ historyRaw, noHistory, currentRun }) => {
   const historySentinelOff = ["off", "false", "none", "no", "0"];
   const historyDisabled =
