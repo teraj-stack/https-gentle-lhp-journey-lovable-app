@@ -1088,6 +1088,10 @@ const renderHtml = ({
       points,
       flagColumns: flagCols,
       flagLabels,
+      // Pełna kanoniczna lista kolumn `savings.csv` — używana przez tryb
+      // eksportu „Pełny schemat" (puste stringi dla pól, których embedded
+      // payload nie zawiera, np. trio_*/png_baseline/attribution_*).
+      fullSchemaColumns: SAVINGS_CSV_COLUMNS,
     }).replace(/</g, "\\u003c");
 
     return `
