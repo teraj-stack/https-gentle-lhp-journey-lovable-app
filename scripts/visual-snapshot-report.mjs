@@ -1666,13 +1666,15 @@ const main = async () => {
   // index.html. Append nowego wiersza zachodzi POŹNIEJ — w tym renderze widać
   // historyczne runy + bieżący jako ostatnia kropka (oznaczona "now").
   // Resolver ścieżki history.csv MUSI być zgodny z logiką append na końcu skryptu.
+  const pctLocal = (saved, baseline) =>
+    baseline > 0 ? Math.round((saved / baseline) * 1000) / 10 : 0;
   const trendsData = await loadTrendsHistory({
     historyRaw,
     noHistory,
     currentRun: {
       generatedAt: new Date().toISOString(),
-      pngSavedPct: pct(pngSaved, pngBaseline),
-      discoverySavedPct: pct(discoverySaved, discoveryBaseline),
+      png: pctLocal(pngSaved, pngBaseline),
+      discovery: pctLocal(discoverySaved, discoveryBaseline),
     },
   });
 
