@@ -1656,6 +1656,16 @@ const AdminVeinImages = () => {
               <Button
                 variant="outline"
                 size="sm"
+                onClick={downloadCsvTemplate}
+                title="Pobierz przykładowy plik CSV z nagłówkami (page_key, slot, alt, caption) gotowy do wypełnienia pod Import CSV"
+                aria-label="Pobierz szablon CSV do importu"
+              >
+                <FileDown className="w-3.5 h-3.5 mr-1" aria-hidden="true" />
+                Szablon CSV
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => fileInputRef.current?.click()}
                 title="Hurtowo podmień alt/caption z pliku CSV (kolumny: page_key, slot, alt, caption)"
               >
