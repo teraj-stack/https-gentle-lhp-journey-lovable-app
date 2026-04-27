@@ -1085,7 +1085,15 @@ const renderHtml = ({
             <option value="full">Pełny schemat</option>
           </select>
         </label>
-        <button type="button" class="trends-filter-export" data-trend-export title="Pokaż podgląd 20 pierwszych wierszy, potem pobierz przefiltrowane runy jako CSV (kompatybilny ze schematem savings.csv/history.csv)">⬇ Podgląd i eksport…</button>
+        <label class="trends-filter-label trends-filter-export-format" title="CSV: jeden plik. ZIP: spakowane CSV + metadata.json (deterministyczny). ZIP (split): osobne pliki png-saved.csv i discovery-saved.csv obok pełnego CSV — wygodne do narzędzi single-series.">
+          format
+          <select class="trends-filter-select" data-trend-export-format>
+            <option value="csv" selected>CSV</option>
+            <option value="zip">ZIP (CSV + metadata)</option>
+            <option value="zip-split">ZIP split (PNG/discovery)</option>
+          </select>
+        </label>
+        <button type="button" class="trends-filter-export" data-trend-export title="Pokaż podgląd 20 pierwszych wierszy, potem pobierz przefiltrowane runy w wybranym formacie">⬇ Podgląd i eksport…</button>
         <span class="trends-filter-export-status" data-trend-export-status role="status" aria-live="polite"></span>
       </div>`;
 
