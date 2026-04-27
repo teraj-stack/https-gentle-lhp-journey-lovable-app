@@ -2160,8 +2160,39 @@ const main = async () => {
     "attr_max_failures_discovery",
     "attr_max_copy_png",
     "attr_max_discovery_readdir",
+    // Run context — pełne wartości flag + komenda. Pozwala filtrować trendy
+    // typu "tylko runy z --max-copy=200" albo "tylko CI (npm run …)".
+    // CSV-escape (cudzysłowy) bo command/history-path mogą zawierać spacje
+    // i przecinki — patrz `csvEscape` poniżej.
+    "flag_max_failures",
+    "flag_max_per_viewport",
+    "flag_max_per_state",
+    "flag_max_copy",
+    "flag_max_discovery",
+    "flag_no_history",
+    "flag_history_path",
+    "command",
+    "node_version",
+    "cwd_basename",
   ];
   const limitCsv = (v) => (v === null || v === undefined ? "" : String(v));
+  /**
+   * RFC 4180 CSV escape: jeśli wartość zawiera `,`, `"`, `\n` lub `\r`,
+   * zawijamy w cudzysłowy i podwajamy wewnętrzne `"`. Wszystkie pozostałe
+   * kolumny (numeryczne, ISO timestamp) są bezpieczne bez escape.
+   */
+  const csvEscape = (v) => {
+    if (v === null || v === undefined) return "";
+    const s = String(v);
+    return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+  // Komenda: argv[0]=node binary path → tylko basename, reszta as-is.
+  // Daje czytelne "node visual-snapshot-report.mjs --max-copy=200" zamiast
+  // pełnej ścieżki /usr/local/bin/node.
+  const commandStr = [
+    path.basename(process.argv[0] ?? "node"),
+    ...process.argv.slice(1).map((a) => path.basename(a) === a ? a : path.relative(PROJECT_ROOT, a) || a),
+  ].join(" ");
   const csvRow = [
     savingsSummary.generatedAt,
     savingsSummary.trio.baseline,
@@ -2187,6 +2218,19 @@ const main = async () => {
     savingsSummary.attribution.maxFailures.discoverySaved,
     savingsSummary.attribution.maxCopy.pngSaved,
     savingsSummary.attribution.maxDiscovery.discoverySaved,
+    // Run context — duplikujemy limit_* w nowych kolumnach `flag_*` żeby
+    // semantycznie oddzielić "metric" od "input parameter" (limit_* zostają
+    // dla kompatybilności wstecz z istniejącymi history.csv).
+    limitCsv(maxFailures),
+    limitCsv(maxPerViewport),
+    limitCsv(maxPerState),
+    limitCsv(maxCopy),
+    limitCsv(maxDiscovery),
+    noHistory ? "true" : "false",
+    csvEscape(historyRaw ?? ""),
+    csvEscape(commandStr),
+    csvEscape(process.version),
+    csvEscape(path.basename(PROJECT_ROOT)),
   ];
   const savingsCsvPath = path.join(REPORT_DIR, "savings.csv");
   const headerLine = csvCols.join(",");
