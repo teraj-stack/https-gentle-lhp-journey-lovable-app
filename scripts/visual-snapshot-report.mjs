@@ -2336,28 +2336,26 @@ const renderHtml = ({
       var state = currentState();
       var pts = filterPoints(state);
       var mode = (exportModeSelect && exportModeSelect.value) || "subset";
-      var lines;
       var cols;
+      var rowsCells = [];
       var missingCount = 0;
       if (mode === "full" && fullSchemaCols) {
         cols = fullSchemaCols.slice();
-        // Policz kolumny mapowane do pustego stringa — pokażemy w statusie,
-        // żeby user wiedział, że plik ma „dziury" zamiast halucynowanych zer.
+        // Policz kolumny mapowane do pustego stringa — pokażemy w statusie
+        // i w nagłówku podglądu, żeby user wiedział, że plik ma „dziury"
+        // zamiast halucynowanych zer.
         cols.forEach(function (c) {
           if (c === "generatedAt" || c === "png_saved_pct" || c === "discovery_saved_pct" || c === "command") return;
           if (c.indexOf("flag_") === 0) return;
           missingCount++;
         });
-        lines = [cols.join(",")];
         pts.forEach(function (p) {
-          var row = cols.map(function (c) { return fullSchemaValueFor(p, c); });
-          lines.push(row.join(","));
+          rowsCells.push(cols.map(function (c) { return fullSchemaValueFor(p, c); }));
         });
       } else {
         mode = "subset";
         cols = ["generatedAt", "png_saved_pct", "discovery_saved_pct", "isCurrent", "command"]
           .concat(flagCols.map(function (c) { return c; }));
-        lines = [cols.join(",")];
         pts.forEach(function (p) {
           var row = [
             csvEscape(p.generatedAt || ""),
@@ -2367,9 +2365,10 @@ const renderHtml = ({
             csvEscape(p.command || ""),
           ];
           flagCols.forEach(function (c) { row.push(csvEscape((p.flags && p.flags[c]) || "")); });
-          lines.push(row.join(","));
+          rowsCells.push(row);
         });
       }
+      var lines = [cols.join(",")].concat(rowsCells.map(function (r) { return r.join(","); }));
       return {
         csv: lines.join("\n") + "\n",
         count: pts.length,
@@ -2378,6 +2377,8 @@ const renderHtml = ({
         mode: mode,
         colCount: cols.length,
         missingCount: missingCount,
+        headerCells: cols,
+        rowsCells: rowsCells,
       };
     }
     function shortHash(s) {
@@ -2387,6 +2388,107 @@ const renderHtml = ({
       for (var i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0;
       return ("00000000" + (h >>> 0).toString(16)).slice(-6);
     }
+
+    // ---- Dialog podglądu przed pobraniem (max 20 wierszy) ----
+    // Workflow:
+    //  1. Klik „⬇ Podgląd i eksport…" → buildExportRows() z aktualnego filtra,
+    //     renderujemy nagłówki + 20 pierwszych wierszy w <table>, otwieramy <dialog>.
+    //  2. „Anuluj" / Esc / klik backdropa → zamykamy bez zapisu (built jest GC).
+    //  3. „Pobierz CSV" → ten sam blob/anchor flow, co dotychczas, plus zamknięcie.
+    //
+    // Re-build per otwarcie zapewnia, że jeśli user zmieni filtr lub tryb po
+    // otwarciu (gdyby kiedyś), to my pokazujemy zawsze fresh data w momencie
+    // klikania „Podgląd". <dialog> jest natywny — zero deps, ESC działa za
+    // darmo, focus trap i a11y standardowe.
+    var previewDialog = root.querySelector("[data-export-preview-dialog]");
+    var previewMeta = root.querySelector("[data-export-preview-meta]");
+    var previewHead = root.querySelector("[data-export-preview-head]");
+    var previewBody = root.querySelector("[data-export-preview-body]");
+    var previewTrunc = root.querySelector("[data-export-preview-truncated]");
+    var previewCancel = root.querySelector("[data-export-preview-cancel]");
+    var previewConfirm = root.querySelector("[data-export-preview-confirm]");
+    var PREVIEW_LIMIT = 20;
+    var pendingExport = null; // {csv, filename, count, total, mode, colCount, missingCount}
+
+    function renderPreview(built) {
+      if (!previewHead || !previewBody) return;
+      previewHead.innerHTML = built.headerCells
+        .map(function (c) { return "<th>" + escapeText(c) + "</th>"; })
+        .join("");
+      var slice = built.rowsCells.slice(0, PREVIEW_LIMIT);
+      previewBody.innerHTML = slice
+        .map(function (r) {
+          return "<tr>" + r.map(function (cell) {
+            // CSV cells z RFC-4180 escape (cudzysłowy podwojone, całość owinięta
+            // w cudzysłowy). Dla podglądu „odpakowujemy" by user widział wartość
+            // jak w arkuszu, nie surowy CSV-string. Pusta komórka → klasa is-empty.
+            var raw = unwrapCsvCell(cell);
+            var cls = raw === "" ? ' class="is-empty"' : "";
+            var display = raw === "" ? "(puste)" : raw;
+            return "<td" + cls + " title=\"" + escapeAttr(raw) + "\">" + escapeText(display) + "</td>";
+          }).join("") + "</tr>";
+        })
+        .join("");
+      if (previewTrunc) {
+        if (built.count > PREVIEW_LIMIT) {
+          previewTrunc.hidden = false;
+          previewTrunc.textContent = "Pokazuję " + PREVIEW_LIMIT + " z " + built.count
+            + " wierszy. Pełny zbiór trafi do pobranego pliku.";
+        } else {
+          previewTrunc.hidden = true;
+          previewTrunc.textContent = "";
+        }
+      }
+      if (previewMeta) {
+        var modeLabel = built.mode === "full"
+          ? ("tryb pełny, " + built.colCount + " kolumn"
+            + (built.missingCount ? " (" + built.missingCount + " pustych)" : ""))
+          : ("tryb skrócony, " + built.colCount + " kolumn");
+        previewMeta.textContent = built.count + "/" + built.total + " runów · " + modeLabel;
+      }
+    }
+    function escapeText(s) {
+      return String(s == null ? "" : s)
+        .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+    function escapeAttr(s) {
+      return escapeText(s).replace(/"/g, "&quot;");
+    }
+    function unwrapCsvCell(cell) {
+      // Odwrotność csvEscape: jeśli wartość jest opakowana cudzysłowami,
+      // ściągamy je i podwojone "" zamieniamy na pojedyncze. Wartości nie-
+      // escapowane (numeryczne, ISO timestamp) wracają jak są.
+      if (typeof cell !== "string") return cell == null ? "" : String(cell);
+      if (cell.length >= 2 && cell.charCodeAt(0) === 34 && cell.charCodeAt(cell.length - 1) === 34) {
+        return cell.slice(1, -1).replace(/""/g, '"');
+      }
+      return cell;
+    }
+
+    function downloadPending() {
+      if (!pendingExport) return;
+      try {
+        var blob = new Blob([pendingExport.csv], { type: "text/csv;charset=utf-8" });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement("a");
+        a.href = url; a.download = pendingExport.filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+        if (exportStatus) {
+          var ml = pendingExport.mode === "full"
+            ? ("pełny schemat, " + pendingExport.colCount + " kol."
+              + (pendingExport.missingCount ? ", " + pendingExport.missingCount + " pustych" : ""))
+            : ("skrócony, " + pendingExport.colCount + " kol.");
+          exportStatus.textContent = "Pobrano " + pendingExport.count + "/" + pendingExport.total
+            + " (" + ml + ") → " + pendingExport.filename;
+        }
+      } catch (e) {
+        if (exportStatus) exportStatus.textContent = "Eksport nieudany: " + e.message;
+      }
+    }
+
     if (exportBtn) {
       // Disable trybu „full" gdy serwer nie embedował SAVINGS_CSV_COLUMNS
       // (np. starszy raport / regresja w buildzie). User widzi czemu.
@@ -2405,25 +2507,51 @@ const renderHtml = ({
         }
         var stamp = new Date().toISOString().replace(/[:.]/g, "-").replace(/Z$/, "Z");
         var filterHash = shortHash(JSON.stringify(built.state) + "|" + built.mode);
-        var name = "savings-filtered-" + built.mode + "-" + stamp + "-" + filterHash + ".csv";
-        try {
-          var blob = new Blob([built.csv], { type: "text/csv;charset=utf-8" });
-          var url = URL.createObjectURL(blob);
-          var a = document.createElement("a");
-          a.href = url; a.download = name;
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
-          if (exportStatus) {
-            var modeLabel = built.mode === "full"
-              ? ("pełny schemat, " + built.colCount + " kol." + (built.missingCount ? ", " + built.missingCount + " pustych" : ""))
-              : ("skrócony, " + built.colCount + " kol.");
-            exportStatus.textContent = "Pobrano " + built.count + "/" + built.total + " (" + modeLabel + ") → " + name;
+        pendingExport = {
+          csv: built.csv,
+          filename: "savings-filtered-" + built.mode + "-" + stamp + "-" + filterHash + ".csv",
+          count: built.count,
+          total: built.total,
+          mode: built.mode,
+          colCount: built.colCount,
+          missingCount: built.missingCount,
+        };
+        // Fallback dla przeglądarek bez <dialog> (Safari < 15.4): od razu
+        // pobierz, ale poinformuj usera w statusie, że podgląd nieosiągalny.
+        if (!previewDialog || typeof previewDialog.showModal !== "function") {
+          downloadPending();
+          if (exportStatus && exportStatus.textContent) {
+            exportStatus.textContent += " (podgląd niedostępny w tej przeglądarce)";
           }
-        } catch (e) {
-          if (exportStatus) exportStatus.textContent = "Eksport nieudany: " + e.message;
+          pendingExport = null;
+          return;
         }
+        renderPreview(built);
+        previewDialog.showModal();
+        if (previewConfirm) previewConfirm.focus();
+      });
+    }
+    if (previewCancel) {
+      previewCancel.addEventListener("click", function () {
+        if (previewDialog && previewDialog.open) previewDialog.close("cancel");
+      });
+    }
+    if (previewConfirm) {
+      previewConfirm.addEventListener("click", function () {
+        downloadPending();
+        if (previewDialog && previewDialog.open) previewDialog.close("confirm");
+      });
+    }
+    if (previewDialog) {
+      // Klik w backdrop (poza zawartością) → zamknij. <dialog> sam tego nie
+      // robi — sprawdzamy czy target == sam dialog (nie potomek).
+      previewDialog.addEventListener("click", function (e) {
+        if (e.target === previewDialog) previewDialog.close("backdrop");
+      });
+      previewDialog.addEventListener("close", function () {
+        // Po zamknięciu (z dowolnego powodu) zwolnij payload, żeby kolejny
+        // klik „Podgląd" zawsze miał fresh build.
+        pendingExport = null;
       });
     }
 
