@@ -2923,9 +2923,33 @@ const main = async () => {
       }
     }
     if (issues.length > 0) {
+      // Side-by-side diff nagłówków: indeks | actual | expected | mark.
+      // Pomaga od razu zlokalizować kolumnę, która "rozjechała" schemat.
+      const diffMaxLen = Math.max(headerCells.length, expectedCols.length);
+      const diffRows = [];
+      const colWidth = (arr) => Math.max(8, ...arr.map((s) => (s ?? "").length));
+      const wActual = colWidth(headerCells);
+      const wExpected = colWidth(expectedCols);
+      for (let i = 0; i < diffMaxLen; i++) {
+        const a = headerCells[i] ?? "<brak>";
+        const e = expectedCols[i] ?? "<brak>";
+        const mark = a === e ? "  " : "≠ ";
+        diffRows.push(
+          `   ${String(i).padStart(3)} | ${a.padEnd(wActual)} | ${e.padEnd(wExpected)} ${mark}`,
+        );
+      }
+      const headerLineForDiff =
+        `   ${"idx".padStart(3)} | ${"actual".padEnd(wActual)} | ${"expected".padEnd(wExpected)}`;
+      const sepLine =
+        `   ${"---".padStart(3)} | ${"-".repeat(wActual)} | ${"-".repeat(wExpected)}`;
+      // Limit diffu do 40 wierszy, żeby nie zaśmiecać konsoli przy dużych schemach.
+      const diffPreview = diffRows.slice(0, 40);
+      const diffSuffix =
+        diffRows.length > 40 ? `\n   … (+${diffRows.length - 40} więcej)` : "";
       console.warn(
         `[visual-snapshot-report] ⚠ Schema mismatch w ${rel} — format zmienił się między wersjami:\n` +
           issues.map((i) => `   • ${i}`).join("\n") +
+          `\n   diff nagłówków:\n${headerLineForDiff}\n${sepLine}\n${diffPreview.join("\n")}${diffSuffix}` +
           `\n   → bump schemaVersion w savings.json i zarchiwizuj stare CSV przed kolejnym runem.`,
       );
       return false;
