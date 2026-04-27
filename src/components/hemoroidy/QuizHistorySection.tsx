@@ -25,6 +25,8 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useQuizHistory, type QuizHistoryEntry } from "@/hooks/useQuizHistory";
+import ConfirmExportDialog from "@/components/shared/ConfirmExportDialog";
+import { useExportConfirmation } from "@/hooks/useExportConfirmation";
 
 const easeOut = [0.16, 1, 0.3, 1] as const;
 
@@ -77,6 +79,21 @@ const exportJson = (history: QuizHistoryEntry[]) => {
 
 const QuizHistorySection = () => {
   const { history, clearHistory } = useQuizHistory();
+  const exportConfirm = useExportConfirmation();
+
+  // Wrapper na export — otwiera dialog potwierdzenia zamiast bezpośrednio pobierać.
+  const handleExportRequest = () => {
+    if (history.length === 0) return;
+    const stamp = format(new Date(), "yyyy-MM-dd");
+    exportConfirm.request({
+      filename: `cml-historia-quizu-hemoroidy-${stamp}.json`,
+      format: "json",
+      recordsLabel: `${history.length} ${history.length === 1 ? "wynik" : "wyniki/wyników"} quizu`,
+      description:
+        "Plik JSON z historią Twoich wyników. Trafia tylko na Twoje urządzenie — nie wysyłamy go nigdzie.",
+      run: () => exportJson(history),
+    });
+  };
 
   const chartData: ChartPoint[] = useMemo(
     () =>
@@ -159,7 +176,7 @@ const QuizHistorySection = () => {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => exportJson(history)}
+            onClick={handleExportRequest}
             className="gap-2 border-primary/30 text-primary hover:bg-primary/10 hover:text-primary"
           >
             <Download className="w-3.5 h-3.5" />
@@ -435,6 +452,13 @@ const QuizHistorySection = () => {
       <p className="text-xs text-muted-foreground italic mt-5">
         Dane zapisywane wyłącznie w Twojej przeglądarce (localStorage). Nie wysyłamy ich na serwer.
       </p>
+
+      {/* Dialog potwierdzenia eksportu (JSON historii quizu). */}
+      <ConfirmExportDialog
+        {...exportConfirm.dialogProps}
+        title="Eksport historii quizu"
+        confirmLabel="Pobierz JSON"
+      />
     </motion.div>
   );
 };

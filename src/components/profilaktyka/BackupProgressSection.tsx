@@ -27,6 +27,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { useWorkoutStreak } from "@/hooks/useWorkoutStreak";
 import { downloadWorkoutProgressJson } from "@/lib/workoutProgressExport";
 import { parseWorkoutProgressFile } from "@/lib/workoutProgressImport";
+import ConfirmExportDialog from "@/components/shared/ConfirmExportDialog";
+import { useExportConfirmation } from "@/hooks/useExportConfirmation";
 import LastExportIndicator from "./LastExportIndicator";
 
 const easeOut = [0.16, 1, 0.3, 1] as const;
@@ -60,6 +62,7 @@ const BackupProgressSection = () => {
   const [copied, setCopied] = useState(false);
   const { currentStreak, totalDays, days, reset, mergeImportedDays } = useWorkoutStreak();
   // Scroll-to-anchor (#backup) obsługuje teraz globalny hook `useScrollToHash` w Layout.tsx.
+  const exportConfirm = useExportConfirmation();
 
   const handleCopySample = async () => {
     try {
@@ -95,12 +98,24 @@ const BackupProgressSection = () => {
       });
       return;
     }
-    const result = downloadWorkoutProgressJson({ currentStreak, totalDays, days });
-    if (result) {
-      toast.success("Postęp wyeksportowany do pliku JSON.", {
-        description: `${result.filename} · ${result.totalDays} ${result.totalDays === 1 ? "ukończony dzień" : "ukończonych dni"}`,
-      });
-    }
+    // Otwieramy dialog potwierdzenia z deterministyczną nazwą pliku (taka
+    // sama jak wygeneruje downloadWorkoutProgressJson na bazie dzisiejszej daty).
+    const stamp = new Date().toISOString().slice(0, 10);
+    exportConfirm.request({
+      filename: `cml-trening-postep-${stamp}.json`,
+      format: "json",
+      recordsLabel: `${totalDays} ${totalDays === 1 ? "ukończony dzień" : "ukończonych dni"} · streak ${currentStreak}`,
+      description:
+        "Plik trafia tylko na Twoje urządzenie — nigdzie go nie wysyłamy. Możesz go potem zaimportować w innej przeglądarce.",
+      run: () => {
+        const result = downloadWorkoutProgressJson({ currentStreak, totalDays, days });
+        if (result) {
+          toast.success("Postęp wyeksportowany do pliku JSON.", {
+            description: `${result.filename} · ${result.totalDays} ${result.totalDays === 1 ? "ukończony dzień" : "ukończonych dni"}`,
+          });
+        }
+      },
+    });
   };
 
   const handleImportClick = () => fileInputRef.current?.click();
@@ -337,6 +352,13 @@ const BackupProgressSection = () => {
           </>
         )}
       </div>
+
+      {/* Dialog potwierdzenia eksportu (JSON postępu treningu). */}
+      <ConfirmExportDialog
+        {...exportConfirm.dialogProps}
+        title="Eksport postępu treningu"
+        confirmLabel="Pobierz JSON"
+      />
     </motion.section>
   );
 };
