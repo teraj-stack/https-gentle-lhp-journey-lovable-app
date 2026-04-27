@@ -956,7 +956,7 @@ const renderHtml = ({ trios, generatedAt, totalFailures, playwrightReportRel, tr
 };
 
 const main = async () => {
-  const { maxFailures } = parseCliArgs(process.argv);
+  const { maxFailures, maxCopy, maxDiscovery } = parseCliArgs(process.argv);
 
   // Sanity: czy są w ogóle wyniki?
   try {
@@ -989,9 +989,8 @@ const main = async () => {
     return a.stem.localeCompare(b.stem);
   });
 
-  // Fail-fast: obetnij PRZED kopiowaniem assetów (drogie IO) i discovery
-  // artefaktów. Zachowujemy `totalFailures` osobno, żeby raport mógł
-  // pokazać "Pokazano N z M (obcięto przez --max-failures)".
+  // Fail-fast (poziom 1): obetnij globalnie PRZED dalszą obróbką.
+  // Wszystko poza tym slice'em w ogóle nie wchodzi do raportu.
   const truncatedBy = maxFailures !== null && allFailed.length > maxFailures;
   const failed = truncatedBy ? allFailed.slice(0, maxFailures) : allFailed;
 
@@ -1002,22 +1001,63 @@ const main = async () => {
     );
   }
 
-  // Kopiujemy obrazy do assets/, żeby HTML był samowystarczalny (CI artifact upload).
-  // Dodatkowo per trio wykrywamy artefakty Playwrighta (trace.zip / video / error-context),
-  // żeby raport mógł zaserwować deep-linki do szczegółów debug.
+  // Fail-fast (poziom 2 i 3): osobne limity dla DROGICH operacji per trio.
+  // - copyLimit  → ile pierwszych trio kopiuje 3 PNG do assets/ (najdroższe IO)
+  // - discoveryLimit → ile pierwszych trio robi readdir w katalogu testu
+  // Brak limitu (null) = obrabiamy wszystkie z `failed`. Limit > failed.length
+  // = no-op (nie crashujemy, po prostu nic nie obcinamy).
+  const copyLimit = maxCopy !== null ? Math.min(maxCopy, failed.length) : failed.length;
+  const discoveryLimit =
+    maxDiscovery !== null ? Math.min(maxDiscovery, failed.length) : failed.length;
+
+  if (maxCopy !== null && failed.length > maxCopy) {
+    console.log(
+      `[visual-snapshot-report] ⚠ Fail-fast (kopiowanie): kopiuję PNG dla pierwszych ${copyLimit} ` +
+        `z ${failed.length} trio (--max-copy=${maxCopy}). Reszta = placeholder.`,
+    );
+  }
+  if (maxDiscovery !== null && failed.length > maxDiscovery) {
+    console.log(
+      `[visual-snapshot-report] ⚠ Fail-fast (discovery): wykrywam artefakty Playwrighta dla ` +
+        `pierwszych ${discoveryLimit} z ${failed.length} trio (--max-discovery=${maxDiscovery}).`,
+    );
+  }
+
+  // Pętla obróbki per trio. Dwa niezależne progi sterują tym, ile pracy
+  // faktycznie wykonujemy. Karta zawsze powstaje (metadata jest darmowa);
+  // pomijamy tylko drogie IO. Flagujemy `copySkipped` w obiekcie trio,
+  // żeby renderHtml mógł pokazać placeholder zamiast brakującego obrazka.
   for (let i = 0; i < failed.length; i++) {
     const t = failed[i];
     const prefix = `${i.toString().padStart(3, "0")}-${t.stem}`;
-    if (t.expected) t.expectedAsset = await copyAsset(t.expected, prefix, "expected");
-    if (t.actual) t.actualAsset = await copyAsset(t.actual, prefix, "actual");
-    if (t.diff) t.diffAsset = await copyAsset(t.diff, prefix, "diff");
-    const artifacts = await discoverPlaywrightArtifacts(t.dir);
-    // Konwertujemy bezwzględne ścieżki na relatywne od REPORT_DIR — przenośność.
-    t.tracePath = artifacts.trace ? path.relative(REPORT_DIR, artifacts.trace) : null;
-    t.videoPath = artifacts.video ? path.relative(REPORT_DIR, artifacts.video) : null;
-    t.errorContextPath = artifacts.errorContext
-      ? path.relative(REPORT_DIR, artifacts.errorContext)
-      : null;
+
+    if (i < copyLimit) {
+      if (t.expected) t.expectedAsset = await copyAsset(t.expected, prefix, "expected");
+      if (t.actual) t.actualAsset = await copyAsset(t.actual, prefix, "actual");
+      if (t.diff) t.diffAsset = await copyAsset(t.diff, prefix, "diff");
+    } else {
+      // Placeholder mode: nie kopiujemy obrazków, ale flagujemy żeby cell()
+      // pokazał czytelny komunikat zamiast "brak baseline'u".
+      t.copySkipped = true;
+    }
+
+    if (i < discoveryLimit) {
+      const artifacts = await discoverPlaywrightArtifacts(t.dir);
+      // Konwertujemy bezwzględne ścieżki na relatywne od REPORT_DIR — przenośność.
+      t.tracePath = artifacts.trace ? path.relative(REPORT_DIR, artifacts.trace) : null;
+      t.videoPath = artifacts.video ? path.relative(REPORT_DIR, artifacts.video) : null;
+      t.errorContextPath = artifacts.errorContext
+        ? path.relative(REPORT_DIR, artifacts.errorContext)
+        : null;
+    } else {
+      // Discovery pominięte — link do Playwright reportu i folderu testu i tak
+      // działa (nie wymagają readdir per trio), więc footer NIE będzie pusty.
+      t.discoverySkipped = true;
+      t.tracePath = null;
+      t.videoPath = null;
+      t.errorContextPath = null;
+    }
+    // testDirPath jest darmowy (path.relative, brak IO) → zawsze ustawiamy.
     t.testDirPath = path.relative(REPORT_DIR, t.dir);
   }
 
@@ -1031,17 +1071,25 @@ const main = async () => {
     truncation: truncatedBy
       ? { shown: failed.length, total: allFailed.length, limit: maxFailures }
       : null,
+    copyTruncation:
+      maxCopy !== null && failed.length > maxCopy
+        ? { processed: copyLimit, total: failed.length, limit: maxCopy }
+        : null,
+    discoveryTruncation:
+      maxDiscovery !== null && failed.length > maxDiscovery
+        ? { processed: discoveryLimit, total: failed.length, limit: maxDiscovery }
+        : null,
   });
 
   const indexPath = path.join(REPORT_DIR, "index.html");
   await fs.writeFile(indexPath, html, "utf8");
 
   const noun = failed.length === 1 ? "snapshot" : "snapshotów";
-  const summary = truncatedBy
-    ? `${failed.length} z ${allFailed.length} ${noun} (obcięto)`
-    : `${failed.length} ${noun}`;
+  const parts = [truncatedBy ? `${failed.length} z ${allFailed.length} ${noun} (obcięto)` : `${failed.length} ${noun}`];
+  if (maxCopy !== null && failed.length > maxCopy) parts.push(`copy=${copyLimit}`);
+  if (maxDiscovery !== null && failed.length > maxDiscovery) parts.push(`discovery=${discoveryLimit}`);
   console.log(
-    `[visual-snapshot-report] ✓ Raport: ${path.relative(PROJECT_ROOT, indexPath)} (${summary})`,
+    `[visual-snapshot-report] ✓ Raport: ${path.relative(PROJECT_ROOT, indexPath)} (${parts.join(", ")})`,
   );
 };
 
