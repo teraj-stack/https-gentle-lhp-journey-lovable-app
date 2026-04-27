@@ -287,6 +287,96 @@ interface ImportRow {
   currentCaption?: string;
 }
 
+/**
+ * Surowy wiersz pliku przed deduplikacją — pojedynczy parsing run trzymamy
+ * w stanie dialogu (pre-dedup), żeby przełącznik strategii „pierwszy/ostatni"
+ * mógł reaktywnie przeliczać preview bez ponownego czytania pliku.
+ */
+interface ParsedImportRow {
+  line: number;
+  pageKey: VeinImagePageKey | null;
+  slot: VeinImageSlot | null;
+  alt: string;
+  caption: string;
+  /** Błędy NIEzwiązane z duplikatem (validacja pól, nieznany page_key/slot). */
+  baseErrors: string[];
+  currentAlt?: string;
+  currentCaption?: string;
+}
+
+/**
+ * Stosuje wybraną strategię dedupu do listy ParsedImportRow i mapuje wynik
+ * na ImportRow z finalnym statusem (create/update/noop/error).
+ *
+ * Algorithm:
+ *  1. Skanuje wiersze w kolejności pliku, zbiera mapę `winner per pageKey:slot`:
+ *     - "first" → pierwszy wygrywa (kolejne to duplikaty),
+ *     - "last"  → ostatni wygrywa (wcześniejsze to duplikaty).
+ *  2. Drugi pass produkuje ImportRow:
+ *     - winner z błędami pól → "error",
+ *     - winner bez current → "create",
+ *     - winner == current   → "noop",
+ *     - winner != current   → "update",
+ *     - duplikat (loser):
+ *       - dla "first" → "error" z notką „duplikat — wygrał wpis z linii X",
+ *       - dla "last"  → "noop"  (nadpisany przez wpis z linii X).
+ */
+const applyDedupStrategy = (
+  parsed: readonly ParsedImportRow[],
+  strategy: DedupStrategy,
+): ImportRow[] => {
+  const winnerLine = new Map<string, number>();
+  for (const row of parsed) {
+    if (!row.pageKey || !row.slot) continue;
+    const key = `${row.pageKey}:${row.slot}`;
+    if (strategy === "first") {
+      if (!winnerLine.has(key)) winnerLine.set(key, row.line);
+    } else {
+      winnerLine.set(key, row.line);
+    }
+  }
+
+  return parsed.map<ImportRow>((row) => {
+    const errors = [...row.baseErrors];
+    const key = row.pageKey && row.slot ? `${row.pageKey}:${row.slot}` : null;
+    const winner = key ? winnerLine.get(key) : undefined;
+    const isWinner = winner === row.line;
+    const isDuplicate = key !== null && winner !== undefined && !isWinner;
+
+    if (isDuplicate && strategy === "first") {
+      errors.push(`duplikat page_key+slot — wygrał wpis z linii ${winner}`);
+    }
+
+    let status: ImportRowStatus;
+    if (errors.length > 0) {
+      status = "error";
+    } else if (isDuplicate) {
+      // last-wins, brak błędów pól → ten wpis ignorujemy na rzecz późniejszego.
+      status = "noop";
+    } else {
+      const current =
+        row.currentAlt !== undefined || row.currentCaption !== undefined
+          ? { alt: row.currentAlt ?? "", caption: row.currentCaption ?? "" }
+          : undefined;
+      if (!current) status = "create";
+      else if (current.alt === row.alt && current.caption === row.caption) status = "noop";
+      else status = "update";
+    }
+
+    return {
+      line: row.line,
+      pageKey: row.pageKey,
+      slot: row.slot,
+      alt: row.alt,
+      caption: row.caption,
+      status,
+      errors,
+      currentAlt: row.currentAlt,
+      currentCaption: row.currentCaption,
+    };
+  });
+};
+
 interface FieldStats {
   length: number;
   budget: number;
