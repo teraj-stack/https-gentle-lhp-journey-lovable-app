@@ -796,12 +796,30 @@ const DevVeinImagesPreview = () => {
 
           <div className="rounded-xl border border-border/30 bg-muted/20 p-3 text-[11px] text-muted-foreground leading-relaxed">
             <p className="font-semibold text-foreground/80 mb-1">
-              Mobile budget
+              Budżety długości
             </p>
             <ul className="space-y-0.5 list-disc list-inside">
               <li>Alt: {ALT_MIN}-{ALT_BUDGET} znaków</li>
               <li>Caption: max {CAPTION_BUDGET} znaków całość</li>
               <li>Segment „·": max {SEGMENT_BUDGET} znaków każdy</li>
+            </ul>
+            <p className="mt-2 font-semibold text-foreground/80">
+              Czytelność dla {viewport === "mobile" ? "📱 Mobile" : "🖥️ Desktop"}
+            </p>
+            <ul className="space-y-0.5 list-disc list-inside">
+              <li>
+                Kolumna figcaption ≈ {CAPTION_COLUMN_PX[viewport]}px (≈
+                {Math.floor(CAPTION_COLUMN_PX[viewport] / CAPTION_CHAR_PX[viewport])}{" "}
+                znaków/linię)
+              </li>
+              <li>
+                Linie figcaption: ostrzeżenie powyżej {CAPTION_LINE_WARN[viewport]}{" "}
+                — ryzyko przeoczenia
+              </li>
+              <li>
+                ⚠ przy „najdłuższy segment" = ryzyko ucięcia / złamania słowa
+              </li>
+              <li>Czas czytania liczony przy {READING_WPM} wpm</li>
             </ul>
             <p className="mt-2">
               W trybie <strong>Edycja</strong> podgląd ignoruje bazę i pokazuje
