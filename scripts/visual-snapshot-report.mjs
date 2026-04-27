@@ -2045,8 +2045,23 @@ const main = async () => {
   const pct = (saved, baseline) =>
     baseline > 0 ? Math.round((saved / baseline) * 1000) / 10 : 0; // 1 miejsce po przecinku
 
+  // Per-grupa metryki (viewport + state). Każda grupa dostaje pełny shape:
+  // { trio, png, discovery } z baseline/processed/saved/savedPct.
+  // Wyniki używamy w 3 miejscach:
+  //   1. savingsSummary.byGroup → savings.json (sekcja do programatycznej analizy)
+  //   2. savings-by-viewport.csv / savings-by-state.csv (1 wiersz per grupa, append-friendly)
+  //   3. history-by-viewport.csv / history-by-state.csv (auto-append per run)
+  const byViewport = aggregateSavingsByGroup({
+    allFailed, rendered: failed, copyLimit, discoveryLimit,
+    keyFn: (t) => t._viewport,
+  });
+  const byState = aggregateSavingsByGroup({
+    allFailed, rendered: failed, copyLimit, discoveryLimit,
+    keyFn: (t) => t._state,
+  });
+
   const savingsSummary = {
-    schemaVersion: 1,
+    schemaVersion: 2, // bump: dodano `byGroup`
     generatedAt: new Date().toISOString(),
     limits: {
       maxFailures: maxFailures,
