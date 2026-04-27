@@ -231,7 +231,8 @@ visual-regression:
 visual-report.zip
 ├── index.html                 # samowystarczalny raport (CSS + JS inline)
 ├── savings.json               # strukturalny dump podsumowania (atrybucja per-flaga + top10 skipped trios)
-├── savings.csv                # 1-wierszowy CSV z agregatami (do append'owania do history)
+├── savings.csv                # 1-wierszowy CSV z agregatami (snapshot bieżącego runa)
+├── history.csv                # auto-append: header + N wierszy (po jednym per run); --no-history żeby wyłączyć
 └── assets/
     ├── 000-<stem>-expected.png
     ├── 000-<stem>-actual.png
@@ -250,19 +251,40 @@ sekcja `📊 Atrybucja oszczędności` w konsoli, w postaci do dalszej analizy:
   oraz `topSkippedTrios` (top 10 z folderem/viewport/state/pngCount).
 - **`savings.csv`** — 1 wiersz + header, kolumny w **stabilnej kolejności**
   (`generatedAt`, `trio_*`, `png_*`, `discovery_*`, `limit_*`, `attr_*`).
-  Zaprojektowane do append'owania:
+  Zaprojektowane do append'owania.
+- **`history.csv`** — automatycznie aktualizowany przez skrypt po każdym
+  runie (default: `<REPORT_DIR>/history.csv`). Pierwszy run tworzy plik z
+  nagłówkiem, kolejne dopisują wyłącznie wiersz danych. Zwykle wystarczy
+  trzymać go poza ZIP-em (np. w cache CI lub osobnym artefakcie), żeby
+  porównywać runy w czasie.
 
 ```bash
-# W CI: dopisuj każdy run do history.csv
-tail -n +2 test-results/visual-report/savings.csv >> history.csv
+# Custom path:
+node scripts/visual-snapshot-report.mjs --history=metrics/visual-history.csv
+
+# Wyłączenie auto-appendu (np. w PR-ach, gdzie history nie ma sensu):
+node scripts/visual-snapshot-report.mjs --no-history
+# albo: HISTORY_CSV=off node scripts/visual-snapshot-report.mjs
 
 # Analiza trendów (DuckDB):
 duckdb -c "SELECT generatedAt, png_saved_pct, discovery_saved_pct \
-           FROM read_csv_auto('history.csv') ORDER BY generatedAt DESC LIMIT 20;"
+           FROM read_csv_auto('test-results/visual-report/history.csv') \
+           ORDER BY generatedAt DESC LIMIT 20;"
 ```
 
-Pliki zapisywane są ZAWSZE (nawet gdy `saved == 0`), żeby trendy w czasie
-miały ciągłość punktów (zera są informacją, że danego dnia nic nie obcięto).
+| Flaga | Env | Default | Co robi |
+|---|---|---|---|
+| `--history=PATH` | `HISTORY_CSV` | `<REPORT_DIR>/history.csv` | Custom ścieżka do persistent CSV. Wartości `off`/`false`/`none`/`no`/`0` wyłączają zapis. |
+| `--no-history` | `NO_HISTORY=1` | — | Skrót na wyłączenie auto-appendu. |
+
+**Schema guard**: jeśli istniejący `history.csv` ma inny nagłówek niż bieżący
+(np. nowa wersja skryptu dodała kolumny), append jest pomijany z warningiem
+— stara historia nie zostaje skorumpowana. Zarchiwizuj wtedy stary plik
+(`mv history.csv history-v1.csv`), kolejny run wygeneruje świeży.
+
+`savings.json`/`savings.csv` zapisywane są ZAWSZE (nawet gdy `saved == 0`),
+żeby trendy w czasie miały ciągłość punktów (zera są informacją, że danego
+dnia nic nie obcięto).
 
 Wszystkie ścieżki w `index.html` są **relatywne** od katalogu, w którym leży
 `index.html` — czyli ZIP można rozpakować gdziekolwiek i otworzyć bezpośrednio
