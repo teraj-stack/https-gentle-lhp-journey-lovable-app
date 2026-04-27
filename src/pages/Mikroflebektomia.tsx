@@ -108,7 +108,7 @@ const Mikroflebektomia = () => (
         title="Co dokładnie usuwa mikroflebektomia?"
         subtitle={`„Sznury" pod skórą to żylaki bocznic — żył, w których ścianki osłabły, zastawki przestały się domykać, a krew zaczęła się cofać. Mikroflebektomia usuwa je z drobnych nakłuć, bez nacinania skóry.`}
         mainAlt="Schemat porównawczy zdrowej żyły i żylakowatej bocznicy — poszerzone naczynie z niedomykającymi się zastawkami i cofającą się krwią, które mikroflebektomia usuwa mechanicznie z mikronakłuć"
-        mainCaption="Zdrowa bocznica · Żylakowata bocznica · Cel mikroflebektomii — mechaniczne usunięcie z mikronakłuć"
+        mainCaption="Zdrowa bocznica · Żylakowata bocznica · Cel mikroflebektomii · Usunięcie z mikronakłuć"
         perforatorAlt="Schemat niewydolnego perforatora — często zasila żylakowate bocznice usuwane mikroflebektomią; jego ocena USG Doppler decyduje o zakresie zabiegu"
         perforatorCaption="Niewydolny perforator · Zasilacz żylakowatej bocznicy · Ocena USG Doppler przed zabiegiem"
       />
