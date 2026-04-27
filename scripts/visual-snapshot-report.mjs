@@ -154,12 +154,25 @@ const escapeHtml = (s) =>
     .replace(/"/g, "&quot;");
 
 const renderHtml = ({ trios, generatedAt, totalFailures }) => {
-  const cards = trios
-    .map((t, idx) => {
-      const { viewport, state } = parseSnapshotName(t.stem + "-actual.png");
-      const isComplete = t.expected && t.actual && t.diff;
-      const status = isComplete ? "FAILED" : "INCOMPLETE";
-      const statusClass = isComplete ? "status-failed" : "status-incomplete";
+  // Zbieramy unikalne wartości viewport / state z trios, żeby wypełnić <select>'y.
+  // Sortujemy alfabetycznie dla deterministycznej kolejności w UI (łatwiej znaleźć).
+  const viewportSet = new Set();
+  const stateSet = new Set();
+  const enriched = trios.map((t, idx) => {
+    const { viewport, state } = parseSnapshotName(t.stem + "-actual.png");
+    viewportSet.add(viewport);
+    stateSet.add(state);
+    const isComplete = t.expected && t.actual && t.diff;
+    const status = isComplete ? "failed" : "incomplete"; // lower-case dla data-attr / filtra
+    return { ...t, idx, viewport, state, status };
+  });
+  const viewports = Array.from(viewportSet).sort();
+  const states = Array.from(stateSet).sort();
+
+  const cards = enriched
+    .map((t) => {
+      const statusUpper = t.status.toUpperCase();
+      const statusClass = t.status === "failed" ? "status-failed" : "status-incomplete";
       const cell = (label, asset, fallback) =>
         asset
           ? `<figure>
@@ -172,15 +185,23 @@ const renderHtml = ({ trios, generatedAt, totalFailures }) => {
                <figcaption>${escapeHtml(label)}</figcaption>
                <div class="missing-box">${escapeHtml(fallback)}</div>
              </figure>`;
+      // data-* atrybuty są tym, na czym filtruje JS w runtime — żaden re-run nie jest potrzebny.
+      // data-search agreguje wszystko, co jest sensowne do free-text search (stem + ścieżka katalogu testu).
+      const searchHaystack = `${t.stem} ${t.testName}`.toLowerCase();
       return `
-        <article class="card" id="snap-${idx}">
+        <article class="card"
+                 id="snap-${t.idx}"
+                 data-viewport="${escapeHtml(t.viewport)}"
+                 data-state="${escapeHtml(t.state)}"
+                 data-status="${escapeHtml(t.status)}"
+                 data-search="${escapeHtml(searchHaystack)}">
           <header class="card-header">
             <div>
               <h2>${escapeHtml(t.stem)}</h2>
               <p class="meta">
-                <span class="badge ${statusClass}">${status}</span>
-                <span class="badge badge-viewport">${escapeHtml(viewport)}</span>
-                <span class="badge badge-state">${escapeHtml(state)}</span>
+                <span class="badge ${statusClass}">${statusUpper}</span>
+                <span class="badge badge-viewport">${escapeHtml(t.viewport)}</span>
+                <span class="badge badge-state">${escapeHtml(t.state)}</span>
               </p>
               <p class="path">${escapeHtml(t.testName)}</p>
             </div>
@@ -193,6 +214,46 @@ const renderHtml = ({ trios, generatedAt, totalFailures }) => {
         </article>`;
     })
     .join("\n");
+
+  const renderOptions = (values) =>
+    values
+      .map((v) => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`)
+      .join("");
+  const filterBar = totalFailures === 0
+    ? ""
+    : `
+    <section class="filter-bar" aria-label="Filtry raportu">
+      <div class="filter-group">
+        <label for="f-viewport">Viewport</label>
+        <select id="f-viewport">
+          <option value="">— wszystkie —</option>
+          ${renderOptions(viewports)}
+        </select>
+      </div>
+      <div class="filter-group">
+        <label for="f-state">State</label>
+        <select id="f-state">
+          <option value="">— wszystkie —</option>
+          ${renderOptions(states)}
+        </select>
+      </div>
+      <div class="filter-group">
+        <label for="f-status">Status</label>
+        <select id="f-status">
+          <option value="">— wszystkie —</option>
+          <option value="failed">FAILED</option>
+          <option value="incomplete">INCOMPLETE</option>
+        </select>
+      </div>
+      <div class="filter-group filter-group-grow">
+        <label for="f-q">Szukaj (stem / ścieżka)</label>
+        <input id="f-q" type="search" placeholder="np. dark-state-c lub mobile" autocomplete="off" />
+      </div>
+      <div class="filter-group filter-group-actions">
+        <button type="button" id="f-reset" class="btn-reset">Wyczyść</button>
+      </div>
+      <p class="filter-counter" id="f-counter" aria-live="polite"></p>
+    </section>`;
 
   const summaryLine =
     totalFailures === 0
@@ -288,6 +349,46 @@ const renderHtml = ({ trios, generatedAt, totalFailures }) => {
       padding: 24px; border: 1px dashed var(--border); border-radius: 4px;
       color: var(--muted); text-align: center; font-style: italic; font-size: 13px;
     }
+    /* ---- Filter bar ---- */
+    .filter-bar {
+      max-width: 1400px; margin: 0 auto 24px;
+      padding: 16px; background: var(--card);
+      border: 1px solid var(--border); border-radius: 8px;
+      display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end;
+    }
+    .filter-group { display: flex; flex-direction: column; gap: 4px; min-width: 140px; }
+    .filter-group-grow { flex: 1 1 220px; }
+    .filter-group-actions { justify-content: flex-end; min-width: auto; }
+    .filter-group label {
+      font-size: 11px; font-weight: 600; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .filter-group select,
+    .filter-group input {
+      background: var(--bg); color: var(--fg);
+      border: 1px solid var(--border); border-radius: 4px;
+      padding: 6px 8px; font: inherit; min-height: 32px;
+    }
+    .filter-group select:focus,
+    .filter-group input:focus,
+    .btn-reset:focus {
+      outline: 2px solid var(--accent); outline-offset: 2px;
+    }
+    .btn-reset {
+      background: transparent; color: var(--fg);
+      border: 1px solid var(--border); border-radius: 4px;
+      padding: 6px 12px; cursor: pointer; font: inherit; min-height: 32px;
+    }
+    .btn-reset:hover { border-color: var(--accent); color: var(--accent); }
+    .filter-counter {
+      flex-basis: 100%; margin: 4px 0 0; color: var(--muted); font-size: 12px;
+    }
+    .card[hidden] { display: none; }
+    .no-results {
+      max-width: 1400px; margin: 0 auto;
+      padding: 24px; background: var(--card); border: 1px dashed var(--border);
+      border-radius: 8px; text-align: center; color: var(--muted);
+    }
   </style>
 </head>
 <body>
@@ -296,7 +397,90 @@ const renderHtml = ({ trios, generatedAt, totalFailures }) => {
     <p class="meta">Wygenerowano: ${escapeHtml(generatedAt)} · Źródło: <code>test-results/</code></p>
   </header>
   ${summaryLine}
-  ${cards}
+  ${filterBar}
+  <div id="cards-container">${cards}</div>
+  <p id="no-results" class="no-results" hidden>Żaden snapshot nie pasuje do filtra. Wyczyść filtr, żeby zobaczyć wszystkie.</p>
+  <script>
+  (function () {
+    // Filtrowanie po stronie klienta — żaden re-run testów nie jest potrzebny.
+    // Stan filtra jest synchronizowany z URL (query params) i z localStorage,
+    // żeby przeładowanie strony / udostępnienie linka zachowywało wybór.
+    var STORAGE_KEY = "visual-report-filter-v1";
+    var $ = function (id) { return document.getElementById(id); };
+    var fields = ["viewport", "state", "status", "q"];
+    var inputs = {
+      viewport: $("f-viewport"),
+      state: $("f-state"),
+      status: $("f-status"),
+      q: $("f-q"),
+    };
+    if (!inputs.viewport) return; // brak filter-bar (0 failures) — nic nie robimy.
+
+    var cards = Array.prototype.slice.call(document.querySelectorAll(".card"));
+    var counter = $("f-counter");
+    var noResults = $("no-results");
+
+    function readUrlState() {
+      var p = new URLSearchParams(window.location.search);
+      var s = {};
+      fields.forEach(function (k) { s[k] = p.get(k) || ""; });
+      return s;
+    }
+    function readStorageState() {
+      try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"); }
+      catch (e) { return {}; }
+    }
+    // URL ma pierwszeństwo nad localStorage (link "głębszy" niż preferencja sesji).
+    var urlState = readUrlState();
+    var stored = readStorageState();
+    var initial = {};
+    fields.forEach(function (k) { initial[k] = urlState[k] || stored[k] || ""; });
+    fields.forEach(function (k) { if (inputs[k]) inputs[k].value = initial[k]; });
+
+    function applyFilter() {
+      var v = inputs.viewport.value;
+      var st = inputs.state.value;
+      var status = inputs.status.value;
+      var q = inputs.q.value.trim().toLowerCase();
+      var visible = 0;
+      cards.forEach(function (card) {
+        var matchV = !v || card.dataset.viewport === v;
+        var matchS = !st || card.dataset.state === st;
+        var matchSt = !status || card.dataset.status === status;
+        var matchQ = !q || (card.dataset.search || "").indexOf(q) !== -1;
+        var show = matchV && matchS && matchSt && matchQ;
+        card.hidden = !show;
+        if (show) visible++;
+      });
+      counter.textContent = "Pokazano " + visible + " z " + cards.length + " snapshotów.";
+      noResults.hidden = visible !== 0;
+
+      // Zapis stanu do URL (bez przeładowania) i do localStorage.
+      var p = new URLSearchParams();
+      var snapshot = {};
+      fields.forEach(function (k) {
+        var val = inputs[k].value;
+        snapshot[k] = val;
+        if (val) p.set(k, val);
+      });
+      var query = p.toString();
+      var newUrl = window.location.pathname + (query ? "?" + query : "") + window.location.hash;
+      window.history.replaceState(null, "", newUrl);
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot)); } catch (e) {}
+    }
+
+    fields.forEach(function (k) {
+      var ev = inputs[k].tagName === "SELECT" ? "change" : "input";
+      inputs[k].addEventListener(ev, applyFilter);
+    });
+    $("f-reset").addEventListener("click", function () {
+      fields.forEach(function (k) { inputs[k].value = ""; });
+      applyFilter();
+    });
+
+    applyFilter();
+  })();
+  </script>
 </body>
 </html>`;
 };
