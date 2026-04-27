@@ -565,6 +565,30 @@ const aggregateSavingsByGroup = ({
 
 
 /**
+ * RFC 4180-aware CSV row splitter (module-level, reused by trends loader
+ * i validator). Obsługuje pola w cudzysłowach z przecinkami / podwójnymi
+ * cudzysłowami w środku — niezbędne dla kolumn `command` i `flag_history_path`,
+ * które mogą zawierać spacje i przecinki.
+ */
+const splitCsvRow = (line) => {
+  const out = [];
+  let cur = "";
+  let inQuotes = false;
+  for (let j = 0; j < line.length; j++) {
+    const ch = line[j];
+    if (inQuotes) {
+      if (ch === '"' && line[j + 1] === '"') { cur += '"'; j++; }
+      else if (ch === '"') { inQuotes = false; }
+      else { cur += ch; }
+    } else if (ch === '"') { inQuotes = true; }
+    else if (ch === ",") { out.push(cur); cur = ""; }
+    else { cur += ch; }
+  }
+  out.push(cur);
+  return out;
+};
+
+/**
  * Wczytuje historyczne wiersze z `history.csv` (jeśli istnieje) i zwraca
  * dane do narysowania sparkline'ów png_saved_pct + discovery_saved_pct.
  *
@@ -574,7 +598,21 @@ const aggregateSavingsByGroup = ({
  *
  * "Bieżący run" jest dołączany na końcu z flagą isCurrent=true (oznaczany w UI),
  * żeby wykres pokazywał także TEN run, mimo że append do CSV zachodzi później.
+ *
+ * Każdy punkt zawiera oprócz png/discovery także `command` + wszystkie `flag_*`
+ * kolumny (jako string), dzięki czemu UI może filtrować wykres po parametrach
+ * uruchomienia bez re-runu skryptu.
  */
+const TREND_FLAG_COLUMNS = [
+  "flag_max_failures",
+  "flag_max_per_viewport",
+  "flag_max_per_state",
+  "flag_max_copy",
+  "flag_max_discovery",
+  "flag_no_history",
+  "flag_history_path",
+];
+
 const loadTrendsHistory = async ({ historyRaw, noHistory, currentRun }) => {
   const historySentinelOff = ["off", "false", "none", "no", "0"];
   const historyDisabled =
@@ -595,8 +633,18 @@ const loadTrendsHistory = async ({ historyRaw, noHistory, currentRun }) => {
     if (err.code === "ENOENT") {
       // Pierwszy run — historii jeszcze nie ma. Pokażemy w UI sam current point
       // jako placeholder ("zbieramy dane").
-      const points = [{ ...currentRun, isCurrent: true }];
-      return { source: path.relative(PROJECT_ROOT, historyPath), points, isFirstRun: true };
+      const points = [{
+        ...currentRun,
+        isCurrent: true,
+        command: currentRun.command ?? "",
+        flags: currentRun.flags ?? Object.fromEntries(TREND_FLAG_COLUMNS.map((n) => [n, ""])),
+      }];
+      return {
+        source: path.relative(PROJECT_ROOT, historyPath),
+        points,
+        isFirstRun: true,
+        flagColumns: TREND_FLAG_COLUMNS,
+      };
     }
     console.warn(
       `[visual-snapshot-report] ⚠ Nie mogę odczytać ${path.relative(PROJECT_ROOT, historyPath)}: ${err.message}`,
@@ -604,11 +652,11 @@ const loadTrendsHistory = async ({ historyRaw, noHistory, currentRun }) => {
     return null;
   }
 
-  // Prosty CSV parser: savings.csv nie zawiera przecinków/cudzysłowów wewnątrz pól
-  // (generatedAt = ISO string, reszta to liczby), więc split(",") wystarcza.
-  const lines = raw.split("\n").filter((l) => l.length > 0);
+  // RFC 4180-aware split: history.csv może zawierać kolumny `command` /
+  // `flag_history_path` z przecinkami i cudzysłowami (patrz csvEscape przy zapisie).
+  const lines = raw.split(/\r?\n/).filter((l) => l.length > 0);
   if (lines.length === 0) return null;
-  const header = lines[0].split(",");
+  const header = splitCsvRow(lines[0]);
   const idxTime = header.indexOf("generatedAt");
   const idxPng = header.indexOf("png_saved_pct");
   const idxDisc = header.indexOf("discovery_saved_pct");
@@ -619,18 +667,44 @@ const loadTrendsHistory = async ({ historyRaw, noHistory, currentRun }) => {
     );
     return null;
   }
+  const idxCommand = header.indexOf("command");
+  // Mapa: nazwa flagi → indeks kolumny w history.csv (-1 gdy brak — starsze
+  // pliki bez kolumn flag_*; takie wiersze dostaną pusty string i są filtrowalne
+  // jako "(brak)" w UI).
+  const flagIdx = Object.fromEntries(
+    TREND_FLAG_COLUMNS.map((name) => [name, header.indexOf(name)]),
+  );
 
   const points = [];
   for (let i = 1; i < lines.length; i++) {
-    const cols = lines[i].split(",");
+    const cols = splitCsvRow(lines[i]);
     const t = cols[idxTime];
     const png = Number.parseFloat(cols[idxPng]);
     const disc = Number.parseFloat(cols[idxDisc]);
     if (!t || !Number.isFinite(png) || !Number.isFinite(disc)) continue;
-    points.push({ generatedAt: t, png, discovery: disc, isCurrent: false });
+    const flags = {};
+    for (const name of TREND_FLAG_COLUMNS) {
+      const idx = flagIdx[name];
+      flags[name] = idx >= 0 ? (cols[idx] ?? "") : "";
+    }
+    points.push({
+      generatedAt: t,
+      png,
+      discovery: disc,
+      isCurrent: false,
+      command: idxCommand >= 0 ? (cols[idxCommand] ?? "") : "",
+      flags,
+    });
   }
   // Dodaj bieżący run jako ostatnia kropka (nie ma go jeszcze w CSV).
-  points.push({ ...currentRun, isCurrent: true });
+  // currentRun.command + currentRun.flags pochodzą z głównego flow (te same
+  // wartości, które za chwilę pójdą do append history.csv).
+  points.push({
+    ...currentRun,
+    isCurrent: true,
+    command: currentRun.command ?? "",
+    flags: currentRun.flags ?? Object.fromEntries(TREND_FLAG_COLUMNS.map((n) => [n, ""])),
+  });
 
   // Limit: ostatnie 50 punktów, żeby SVG nie eksplodowało.
   const limited = points.slice(-50);
@@ -640,6 +714,7 @@ const loadTrendsHistory = async ({ historyRaw, noHistory, currentRun }) => {
     totalPoints: points.length,
     truncated: points.length > limited.length,
     isFirstRun: false,
+    flagColumns: TREND_FLAG_COLUMNS,
   };
 };
 
@@ -865,19 +940,17 @@ const renderHtml = ({
     // X: równomierne rozmieszczenie (index, NIE czas — gęsto pakowane runy
     // czasowo i tak wyglądałyby liniowo; index pokazuje kolejność a nie odstępy).
     // Y: 0% na dole, 100% na górze.
-    const xFor = (i) =>
-      points.length === 1
-        ? PAD_L + innerW / 2
-        : PAD_L + (i / (points.length - 1)) * innerW;
+    const xFor = (i, n) =>
+      n === 1 ? PAD_L + innerW / 2 : PAD_L + (i / (n - 1)) * innerW;
     const yFor = (pct) => PAD_T + (1 - Math.max(0, Math.min(100, pct)) / 100) * innerH;
 
     const buildSpark = (key, color, label) => {
       const polyline = points
-        .map((p, i) => `${xFor(i).toFixed(1)},${yFor(p[key]).toFixed(1)}`)
+        .map((p, i) => `${xFor(i, points.length).toFixed(1)},${yFor(p[key]).toFixed(1)}`)
         .join(" ");
       const dots = points
         .map((p, i) => {
-          const cx = xFor(i).toFixed(1);
+          const cx = xFor(i, points.length).toFixed(1);
           const cy = yFor(p[key]).toFixed(1);
           const isCurrent = p.isCurrent;
           const r = isCurrent ? 4 : 2.2;
@@ -894,34 +967,85 @@ const renderHtml = ({
       const lastTs = points[points.length - 1].generatedAt
         ? points[points.length - 1].generatedAt.slice(0, 10)
         : "now";
+      // data-spark="<key>" + data-color="<hex>" — JS filtra używa tych atrybutów,
+      // żeby przerysować <g class="trend-series"> bez zmiany innych elementów SVG.
       return `
-        <figure class="trend-chart">
-          <figcaption>${escapeHtml(label)} <span class="trend-current">${last.toFixed(1)}%</span></figcaption>
-          <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${escapeHtml(label)} trend (${points.length} runów)">
+        <figure class="trend-chart" data-spark="${escapeHtml(key)}" data-color="${escapeHtml(color)}">
+          <figcaption>${escapeHtml(label)} <span class="trend-current" data-trend-current>${last.toFixed(1)}%</span></figcaption>
+          <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${escapeHtml(label)} trend (${points.length} runów)" data-trend-svg data-w="${W}" data-h="${H}" data-pad-l="${PAD_L}" data-pad-r="${PAD_R}" data-pad-t="${PAD_T}" data-pad-b="${PAD_B}">
             <line x1="${PAD_L}" y1="${PAD_T}" x2="${PAD_L}" y2="${H - PAD_B}" class="trend-axis" />
             <line x1="${PAD_L}" y1="${H - PAD_B}" x2="${W - PAD_R}" y2="${H - PAD_B}" class="trend-axis" />
             <text x="${PAD_L - 4}" y="${PAD_T + 4}" text-anchor="end" class="trend-axis-label">100%</text>
             <text x="${PAD_L - 4}" y="${H - PAD_B}" text-anchor="end" class="trend-axis-label">0%</text>
-            <text x="${PAD_L}" y="${H - 2}" text-anchor="start" class="trend-axis-label">${escapeHtml(first)}</text>
-            <text x="${W - PAD_R}" y="${H - 2}" text-anchor="end" class="trend-axis-label">${escapeHtml(lastTs)}</text>
-            ${points.length > 1 ? `<polyline points="${polyline}" fill="none" stroke="${color}" stroke-width="1.5" />` : ""}
-            ${dots}
+            <text x="${PAD_L}" y="${H - 2}" text-anchor="start" class="trend-axis-label" data-trend-first>${escapeHtml(first)}</text>
+            <text x="${W - PAD_R}" y="${H - 2}" text-anchor="end" class="trend-axis-label" data-trend-last>${escapeHtml(lastTs)}</text>
+            <g class="trend-series" data-trend-series>
+              ${points.length > 1 ? `<polyline points="${polyline}" fill="none" stroke="${color}" stroke-width="1.5" />` : ""}
+              ${dots}
+            </g>
           </svg>
         </figure>`;
     };
 
     const note = trends.isFirstRun
       ? `<p class="trend-note">📈 Pierwszy run — historia zacznie się zbierać od następnego uruchomienia (<code>${escapeHtml(trends.source)}</code>).</p>`
-      : `<p class="trend-note">📈 ${points.length} ${points.length === 1 ? "run" : "runów"}${trends.truncated ? ` (z ${trends.totalPoints}, pokazano ostatnie 50)` : ""} z <code>${escapeHtml(trends.source)}</code>. Ostatnia kropka = ten run.</p>`;
+      : `<p class="trend-note">📈 <span data-trend-count>${points.length} ${points.length === 1 ? "run" : "runów"}${trends.truncated ? ` (z ${trends.totalPoints}, pokazano ostatnie 50)` : ""}</span> z <code>${escapeHtml(trends.source)}</code>. Ostatnia kropka = ten run.</p>`;
+
+    // ---- Filtr trendów: command + flag_* ----
+    // Selecty są budowane z unikalnych wartości w `points` (po stronie klienta,
+    // żeby JSON był source of truth). Etykieta "(brak)" oznacza wiersz z pustą
+    // wartością — np. starsze history.csv bez kolumn flag_*.
+    const flagLabels = {
+      flag_max_failures: "max-failures",
+      flag_max_per_viewport: "max-per-viewport",
+      flag_max_per_state: "max-per-state",
+      flag_max_copy: "max-copy",
+      flag_max_discovery: "max-discovery",
+      flag_no_history: "no-history",
+      flag_history_path: "history-path",
+    };
+    const flagCols = trends.flagColumns || [];
+    const flagSelects = flagCols
+      .map((name) => `
+          <label class="trends-filter-label">
+            ${escapeHtml(flagLabels[name] || name)}
+            <select class="trends-filter-select" data-trend-filter="${escapeHtml(name)}">
+              <option value="">(wszystkie)</option>
+            </select>
+          </label>`)
+      .join("");
+
+    const filterBar = `
+      <div class="trends-filter" role="group" aria-label="Filtry trendów">
+        <label class="trends-filter-label">
+          command
+          <select class="trends-filter-select trends-filter-command" data-trend-filter="command">
+            <option value="">(wszystkie)</option>
+          </select>
+        </label>
+        ${flagSelects}
+        <button type="button" class="trends-filter-reset" data-trend-reset>Resetuj</button>
+      </div>`;
+
+    // Embed pełnych danych (z command/flags) jako JSON. Klient czyta ten blok
+    // przez document.getElementById, NIE eval — zero ryzyka XSS (escapujemy </).
+    const jsonPayload = JSON.stringify({
+      points,
+      flagColumns: flagCols,
+      flagLabels,
+    }).replace(/</g, "\\u003c");
 
     return `
-    <section class="trends" aria-label="Trendy oszczędności IO między runami">
+    <section class="trends" aria-label="Trendy oszczędności IO między runami" data-trends-root>
       <h2 class="trends-title">Trendy oszczędności IO</h2>
       ${note}
+      ${filterBar}
+      <p class="trends-empty" data-trends-empty hidden>Żaden run nie pasuje do filtra. Wyczyść, żeby zobaczyć wszystkie.</p>
       <div class="trends-grid">
         ${buildSpark("png", "#c9a84c", "PNG copy saved %")}
         ${buildSpark("discovery", "#8ab4f8", "Discovery readdir saved %")}
       </div>
+      <script type="application/json" id="trends-json">${jsonPayload}</script>
     </section>`;
   })();
 
@@ -1305,6 +1429,52 @@ const renderHtml = ({
     @media (prefers-color-scheme: dark) {
       .trend-dot-current { stroke: #1a1a1a; }
     }
+    .trends-filter {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .5rem .75rem;
+      align-items: flex-end;
+      margin: 0 0 .75rem;
+      padding: .5rem .75rem;
+      border: 1px dashed rgba(127,127,127,.25);
+      border-radius: 6px;
+      background: rgba(127,127,127,.03);
+    }
+    .trends-filter-label {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      font-size: .75rem;
+      opacity: .85;
+      font-family: ui-monospace, monospace;
+    }
+    .trends-filter-select {
+      font-size: .8rem;
+      padding: 2px 4px;
+      max-width: 220px;
+      background: inherit;
+      color: inherit;
+      border: 1px solid rgba(127,127,127,.35);
+      border-radius: 4px;
+    }
+    .trends-filter-command { max-width: 320px; }
+    .trends-filter-reset {
+      font-size: .75rem;
+      padding: 4px 10px;
+      background: rgba(127,127,127,.12);
+      color: inherit;
+      border: 1px solid rgba(127,127,127,.3);
+      border-radius: 4px;
+      cursor: pointer;
+      align-self: end;
+    }
+    .trends-filter-reset:hover { background: rgba(127,127,127,.22); }
+    .trends-empty {
+      margin: .25rem 0 .75rem;
+      font-size: .85rem;
+      opacity: .8;
+      font-style: italic;
+    }
   </style>
 </head>
 <body>
@@ -1502,7 +1672,223 @@ const renderHtml = ({
       }
     });
   })();
+
+  // ---- Trendy: filtrowanie wykresów po command + flag_* ----
+  // Stan filtra: w-pamięci + URL (?trend_<key>=<value>) + localStorage,
+  // żeby udostępniony link / refresh zachowywał wybór. SVG re-rysuje się w JS:
+  // wymieniamy tylko zawartość <g data-trend-series>, oś + label timestamps
+  // aktualizujemy in-place. Brak danych → empty-state z hintem o resetcie.
+  (function () {
+    var root = document.querySelector("[data-trends-root]");
+    var jsonNode = document.getElementById("trends-json");
+    if (!root || !jsonNode) return;
+    var data;
+    try { data = JSON.parse(jsonNode.textContent || "{}"); }
+    catch (e) { return; }
+    var allPoints = (data && data.points) || [];
+    var flagCols = (data && data.flagColumns) || [];
+    var flagLabels = (data && data.flagLabels) || {};
+    if (!allPoints.length) return;
+
+    var STORAGE_KEY = "visual-report-trends-filter-v1";
+    var URL_PREFIX = "trend_"; // np. ?trend_command=...&trend_flag_max_copy=200
+    var selects = Array.prototype.slice.call(root.querySelectorAll("[data-trend-filter]"));
+    var resetBtn = root.querySelector("[data-trend-reset]");
+    var emptyEl = root.querySelector("[data-trends-empty]");
+    var sparks = Array.prototype.slice.call(root.querySelectorAll("[data-spark]"));
+    var countEl = root.querySelector("[data-trend-count]");
+    var SVG_NS = "http://www.w3.org/2000/svg";
+
+    // Etykieta "(brak)" dla pustych wartości — dystyngwuje "explicit empty"
+    // od "wszystkie" w UI. Internal value pozostaje "" (URL-friendly).
+    var EMPTY_LABEL = "(brak)";
+
+    function valueOf(p, key) {
+      if (key === "command") return p.command || "";
+      return (p.flags && p.flags[key]) || "";
+    }
+    function uniqueValues(key) {
+      var seen = Object.create(null);
+      var out = [];
+      for (var i = 0; i < allPoints.length; i++) {
+        var v = valueOf(allPoints[i], key);
+        if (!seen[v]) { seen[v] = true; out.push(v); }
+      }
+      // Sort: niepuste alfabetycznie, "" na końcu (jako "(brak)").
+      out.sort(function (a, b) {
+        if (a === "" && b !== "") return 1;
+        if (b === "" && a !== "") return -1;
+        return a < b ? -1 : a > b ? 1 : 0;
+      });
+      return out;
+    }
+
+    // Wypełnij selecty unikalnymi wartościami (zachowując "(wszystkie)" jako pierwszy).
+    selects.forEach(function (sel) {
+      var key = sel.getAttribute("data-trend-filter");
+      var values = uniqueValues(key);
+      values.forEach(function (v) {
+        var opt = document.createElement("option");
+        opt.value = v;
+        opt.textContent = v === "" ? EMPTY_LABEL : v;
+        sel.appendChild(opt);
+      });
+    });
+
+    function readUrl() {
+      var p = new URLSearchParams(window.location.search);
+      var s = {};
+      selects.forEach(function (sel) {
+        var key = sel.getAttribute("data-trend-filter");
+        var v = p.get(URL_PREFIX + key);
+        if (v !== null) s[key] = v;
+      });
+      return s;
+    }
+    function readStorage() {
+      try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"); }
+      catch (e) { return {}; }
+    }
+    var initial = (function () {
+      var u = readUrl();
+      var s = readStorage();
+      var out = {};
+      selects.forEach(function (sel) {
+        var key = sel.getAttribute("data-trend-filter");
+        out[key] = (key in u) ? u[key] : (s[key] || "");
+      });
+      return out;
+    })();
+    selects.forEach(function (sel) {
+      var key = sel.getAttribute("data-trend-filter");
+      // Tylko jeśli wartość istnieje w options — inaczej fallback do "(wszystkie)".
+      var val = initial[key] || "";
+      var found = Array.prototype.some.call(sel.options, function (o) { return o.value === val; });
+      sel.value = found ? val : "";
+    });
+
+    function persist(state) {
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
+      var p = new URLSearchParams(window.location.search);
+      Object.keys(state).forEach(function (key) {
+        if (state[key]) p.set(URL_PREFIX + key, state[key]);
+        else p.delete(URL_PREFIX + key);
+      });
+      var qs = p.toString();
+      var url = window.location.pathname + (qs ? "?" + qs : "") + window.location.hash;
+      window.history.replaceState(null, "", url);
+    }
+
+    function currentState() {
+      var s = {};
+      selects.forEach(function (sel) {
+        s[sel.getAttribute("data-trend-filter")] = sel.value;
+      });
+      return s;
+    }
+
+    function filterPoints(state) {
+      return allPoints.filter(function (p) {
+        for (var i = 0; i < selects.length; i++) {
+          var key = selects[i].getAttribute("data-trend-filter");
+          var want = state[key];
+          if (!want) continue;
+          if (valueOf(p, key) !== want) return false;
+        }
+        return true;
+      });
+    }
+
+    function clamp(n, lo, hi) { return n < lo ? lo : n > hi ? hi : n; }
+
+    function redrawSpark(figure, points) {
+      var svg = figure.querySelector("[data-trend-svg]");
+      var series = figure.querySelector("[data-trend-series]");
+      var current = figure.querySelector("[data-trend-current]");
+      var firstEl = figure.querySelector("[data-trend-first]");
+      var lastEl = figure.querySelector("[data-trend-last]");
+      if (!svg || !series) return;
+      var key = figure.getAttribute("data-spark");
+      var color = figure.getAttribute("data-color") || "#888";
+      var W = parseFloat(svg.getAttribute("data-w"));
+      var H = parseFloat(svg.getAttribute("data-h"));
+      var PAD_L = parseFloat(svg.getAttribute("data-pad-l"));
+      var PAD_R = parseFloat(svg.getAttribute("data-pad-r"));
+      var PAD_T = parseFloat(svg.getAttribute("data-pad-t"));
+      var PAD_B = parseFloat(svg.getAttribute("data-pad-b"));
+      var innerW = W - PAD_L - PAD_R;
+      var innerH = H - PAD_T - PAD_B;
+
+      // Wyczyść stare kropki / polyline.
+      while (series.firstChild) series.removeChild(series.firstChild);
+
+      if (!points.length) {
+        if (current) current.textContent = "—";
+        if (firstEl) firstEl.textContent = "";
+        if (lastEl) lastEl.textContent = "";
+        return;
+      }
+
+      var n = points.length;
+      function xFor(i) { return n === 1 ? PAD_L + innerW / 2 : PAD_L + (i / (n - 1)) * innerW; }
+      function yFor(pct) { return PAD_T + (1 - clamp(pct, 0, 100) / 100) * innerH; }
+
+      if (n > 1) {
+        var poly = document.createElementNS(SVG_NS, "polyline");
+        poly.setAttribute("fill", "none");
+        poly.setAttribute("stroke", color);
+        poly.setAttribute("stroke-width", "1.5");
+        var pts = points.map(function (p, i) {
+          return xFor(i).toFixed(1) + "," + yFor(p[key]).toFixed(1);
+        }).join(" ");
+        poly.setAttribute("points", pts);
+        series.appendChild(poly);
+      }
+      points.forEach(function (p, i) {
+        var c = document.createElementNS(SVG_NS, "circle");
+        c.setAttribute("cx", xFor(i).toFixed(1));
+        c.setAttribute("cy", yFor(p[key]).toFixed(1));
+        c.setAttribute("r", p.isCurrent ? "4" : "2.2");
+        c.setAttribute("class", p.isCurrent ? "trend-dot trend-dot-current" : "trend-dot");
+        c.setAttribute("fill", color);
+        var title = document.createElementNS(SVG_NS, "title");
+        var ts = (p.generatedAt || "").replace("T", " ").replace(/\.\d+Z$/, "Z");
+        title.textContent = ts + " — " + p[key].toFixed(1) + "%" + (p.isCurrent ? " (this run)" : "");
+        c.appendChild(title);
+        series.appendChild(c);
+      });
+
+      var last = points[n - 1][key];
+      if (current) current.textContent = last.toFixed(1) + "%";
+      if (firstEl) firstEl.textContent = (points[0].generatedAt || "").slice(0, 10);
+      if (lastEl) lastEl.textContent = (points[n - 1].generatedAt || "now").slice(0, 10);
+      svg.setAttribute("aria-label", (figure.querySelector("figcaption") || {}).textContent + " (" + n + " runów)");
+    }
+
+    function apply() {
+      var state = currentState();
+      persist(state);
+      var pts = filterPoints(state);
+      if (countEl) {
+        countEl.textContent = pts.length + " z " + allPoints.length + " " + (allPoints.length === 1 ? "run" : "runów");
+      }
+      if (emptyEl) emptyEl.hidden = pts.length !== 0;
+      sparks.forEach(function (fig) { redrawSpark(fig, pts); });
+    }
+
+    selects.forEach(function (sel) {
+      sel.addEventListener("change", apply);
+    });
+    if (resetBtn) {
+      resetBtn.addEventListener("click", function () {
+        selects.forEach(function (sel) { sel.value = ""; });
+        apply();
+      });
+    }
+    apply();
+  })();
   </script>
+
 </body>
 </html>`;
 };
@@ -1727,6 +2113,23 @@ const main = async () => {
   // Resolver ścieżki history.csv MUSI być zgodny z logiką append na końcu skryptu.
   const pctLocal = (saved, baseline) =>
     baseline > 0 ? Math.round((saved / baseline) * 1000) / 10 : 0;
+  // Komenda + flagi bieżącego runu — IDENTYCZNA logika jak przy zapisie do
+  // savings.csv/history.csv (patrz `csvRow` niżej), żeby UI filtra trendów
+  // pokazywał tę samą wartość, która zostanie zapisana w historii.
+  const flagToStr = (v) => (v === null || v === undefined ? "" : String(v));
+  const trendsCommandStr = [
+    path.basename(process.argv[0] ?? "node"),
+    ...process.argv.slice(1).map((a) => path.basename(a) === a ? a : path.relative(PROJECT_ROOT, a) || a),
+  ].join(" ");
+  const trendsCurrentFlags = {
+    flag_max_failures: flagToStr(maxFailures),
+    flag_max_per_viewport: flagToStr(maxPerViewport),
+    flag_max_per_state: flagToStr(maxPerState),
+    flag_max_copy: flagToStr(maxCopy),
+    flag_max_discovery: flagToStr(maxDiscovery),
+    flag_no_history: noHistory ? "true" : "false",
+    flag_history_path: flagToStr(historyRaw ?? ""),
+  };
   const trendsData = await loadTrendsHistory({
     historyRaw,
     noHistory,
@@ -1734,6 +2137,8 @@ const main = async () => {
       generatedAt: new Date().toISOString(),
       png: pctLocal(pngSaved, pngBaseline),
       discovery: pctLocal(discoverySaved, discoveryBaseline),
+      command: trendsCommandStr,
+      flags: trendsCurrentFlags,
     },
   });
 
@@ -2282,25 +2687,9 @@ const main = async () => {
         issues.push(`liczba wierszy danych ${actualData} ≠ oczekiwane ${dataRowCount}`);
       }
       // Sprawdź szerokość każdego wiersza — pomaga wykryć przecinki w polach
-      // albo desync między csvCols a csvRow w kodzie. Parser RFC 4180-aware
-      // (cudzysłowy zawijają pola z `,` / `"` / newline).
-      const splitCsvRow = (line) => {
-        const out = [];
-        let cur = "";
-        let inQuotes = false;
-        for (let j = 0; j < line.length; j++) {
-          const ch = line[j];
-          if (inQuotes) {
-            if (ch === '"' && line[j + 1] === '"') { cur += '"'; j++; }
-            else if (ch === '"') { inQuotes = false; }
-            else { cur += ch; }
-          } else if (ch === '"') { inQuotes = true; }
-          else if (ch === ",") { out.push(cur); cur = ""; }
-          else { cur += ch; }
-        }
-        out.push(cur);
-        return out;
-      };
+      // albo desync między csvCols a csvRow w kodzie. Używamy module-level
+      // `splitCsvRow` (RFC 4180-aware), współdzielonego z trendsem historii.
+
       for (let i = 1; i < lines.length; i++) {
         const cells = splitCsvRow(lines[i]);
         if (cells.length !== expectedCols.length) {
