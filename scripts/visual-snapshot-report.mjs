@@ -642,11 +642,11 @@ const loadTrendsHistory = async ({ historyRaw, noHistory, currentRun }) => {
     return null;
   }
 
-  // Prosty CSV parser: savings.csv nie zawiera przecinków/cudzysłowów wewnątrz pól
-  // (generatedAt = ISO string, reszta to liczby), więc split(",") wystarcza.
-  const lines = raw.split("\n").filter((l) => l.length > 0);
+  // RFC 4180-aware split: history.csv może zawierać kolumny `command` /
+  // `flag_history_path` z przecinkami i cudzysłowami (patrz csvEscape przy zapisie).
+  const lines = raw.split(/\r?\n/).filter((l) => l.length > 0);
   if (lines.length === 0) return null;
-  const header = lines[0].split(",");
+  const header = splitCsvRow(lines[0]);
   const idxTime = header.indexOf("generatedAt");
   const idxPng = header.indexOf("png_saved_pct");
   const idxDisc = header.indexOf("discovery_saved_pct");
@@ -657,18 +657,44 @@ const loadTrendsHistory = async ({ historyRaw, noHistory, currentRun }) => {
     );
     return null;
   }
+  const idxCommand = header.indexOf("command");
+  // Mapa: nazwa flagi → indeks kolumny w history.csv (-1 gdy brak — starsze
+  // pliki bez kolumn flag_*; takie wiersze dostaną pusty string i są filtrowalne
+  // jako "(brak)" w UI).
+  const flagIdx = Object.fromEntries(
+    TREND_FLAG_COLUMNS.map((name) => [name, header.indexOf(name)]),
+  );
 
   const points = [];
   for (let i = 1; i < lines.length; i++) {
-    const cols = lines[i].split(",");
+    const cols = splitCsvRow(lines[i]);
     const t = cols[idxTime];
     const png = Number.parseFloat(cols[idxPng]);
     const disc = Number.parseFloat(cols[idxDisc]);
     if (!t || !Number.isFinite(png) || !Number.isFinite(disc)) continue;
-    points.push({ generatedAt: t, png, discovery: disc, isCurrent: false });
+    const flags = {};
+    for (const name of TREND_FLAG_COLUMNS) {
+      const idx = flagIdx[name];
+      flags[name] = idx >= 0 ? (cols[idx] ?? "") : "";
+    }
+    points.push({
+      generatedAt: t,
+      png,
+      discovery: disc,
+      isCurrent: false,
+      command: idxCommand >= 0 ? (cols[idxCommand] ?? "") : "",
+      flags,
+    });
   }
   // Dodaj bieżący run jako ostatnia kropka (nie ma go jeszcze w CSV).
-  points.push({ ...currentRun, isCurrent: true });
+  // currentRun.command + currentRun.flags pochodzą z głównego flow (te same
+  // wartości, które za chwilę pójdą do append history.csv).
+  points.push({
+    ...currentRun,
+    isCurrent: true,
+    command: currentRun.command ?? "",
+    flags: currentRun.flags ?? Object.fromEntries(TREND_FLAG_COLUMNS.map((n) => [n, ""])),
+  });
 
   // Limit: ostatnie 50 punktów, żeby SVG nie eksplodowało.
   const limited = points.slice(-50);
@@ -678,6 +704,7 @@ const loadTrendsHistory = async ({ historyRaw, noHistory, currentRun }) => {
     totalPoints: points.length,
     truncated: points.length > limited.length,
     isFirstRun: false,
+    flagColumns: TREND_FLAG_COLUMNS,
   };
 };
 
