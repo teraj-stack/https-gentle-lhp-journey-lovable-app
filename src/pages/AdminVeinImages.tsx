@@ -1285,6 +1285,8 @@ const AdminVeinImages = () => {
       setPreparingPreview(null);
     }
   };
+
+  const exportJson = async () => {
     setExporting("json");
     try {
       const allRows = await fetchAllOverrides();
