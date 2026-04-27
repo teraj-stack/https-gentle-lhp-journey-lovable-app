@@ -230,9 +230,13 @@ visual-regression:
 ```
 visual-report.zip
 ├── index.html                 # samowystarczalny raport (CSS + JS inline) — zawiera też sekcję "Trendy oszczędności IO" (sparkline'y png/discovery z history.csv)
-├── savings.json               # strukturalny dump podsumowania (atrybucja per-flaga + top10 skipped trios)
-├── savings.csv                # 1-wierszowy CSV z agregatami (snapshot bieżącego runa)
+├── savings.json               # strukturalny dump podsumowania (atrybucja per-flaga + top10 skipped trios + byGroup)
+├── savings.csv                # 1-wierszowy CSV z agregatami całego runa (snapshot bieżącego runa)
+├── savings-by-viewport.csv    # N wierszy (1 per viewport) — baseline/processed/saved/savedPct per grupa
+├── savings-by-state.csv       # N wierszy (1 per state) — analog jak wyżej
 ├── history.csv                # auto-append: header + N wierszy (po jednym per run); --no-history żeby wyłączyć
+├── history-by-viewport.csv    # auto-append: header + M wierszy (M = #viewports × #runów)
+├── history-by-state.csv       # auto-append: header + M wierszy (analog dla state)
 └── assets/
     ├── 000-<stem>-expected.png
     ├── 000-<stem>-actual.png
