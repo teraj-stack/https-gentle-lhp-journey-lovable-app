@@ -29,7 +29,7 @@ import {
 } from "@/lib/veinImagePagePresets";
 import VenousInsufficiencyImage from "@/components/shared/VenousInsufficiencyImage";
 import { Button } from "@/components/ui/button";
-import { LogOut, ShieldAlert, Save, RotateCcw, Database, Download, FileJson, FileSpreadsheet, Trash2 } from "lucide-react";
+import { LogOut, ShieldAlert, Save, RotateCcw, Database, FileJson, FileSpreadsheet, Trash2, Clock, User } from "lucide-react";
 import { toast } from "sonner";
 import SeoHead from "@/components/shared/SeoHead";
 
