@@ -810,6 +810,22 @@ const renderHtml = ({
          Pełny zestaw zobaczysz po uruchomieniu skryptu bez tej flagi.
        </aside>`
     : ""}
+  ${copyTruncation
+    ? `<aside class="truncation-banner truncation-banner-soft" role="status">
+         ⚠ Fail-fast (kopiowanie PNG): skopiowano obrazy dla pierwszych
+         <strong>${copyTruncation.processed}</strong> z <strong>${copyTruncation.total}</strong>
+         trio (limit <code>--max-copy=${copyTruncation.limit}</code>).
+         Pozostałe karty pokazują metadane bez podglądu — pełną triadę znajdziesz w katalogu artefaktów.
+       </aside>`
+    : ""}
+  ${discoveryTruncation
+    ? `<aside class="truncation-banner truncation-banner-soft" role="status">
+         ⚠ Fail-fast (discovery artefaktów): wykryto trace/video/error-context dla pierwszych
+         <strong>${discoveryTruncation.processed}</strong> z <strong>${discoveryTruncation.total}</strong>
+         trio (limit <code>--max-discovery=${discoveryTruncation.limit}</code>).
+         Reszta kart ma tylko podstawowy footer (Playwright report + folder).
+       </aside>`
+    : ""}
   ${summaryLine}
   ${breakdownSection}
   ${filterBar}
