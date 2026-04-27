@@ -277,12 +277,39 @@ const AdminVeinImages = () => {
 
   const stats = useMemo(
     () => ({
-      mainAlt: buildStats(draft.mainAlt, ALT_BUDGET, false),
-      mainCaption: buildStats(draft.mainCaption, CAPTION_BUDGET, true),
-      perforatorAlt: buildStats(draft.perforatorAlt, ALT_BUDGET, false),
-      perforatorCaption: buildStats(draft.perforatorCaption, CAPTION_BUDGET, true),
+      mainAlt: buildStats(draft.mainAlt, ALT_BUDGET, false, "alt główny"),
+      mainCaption: buildStats(
+        draft.mainCaption,
+        CAPTION_BUDGET,
+        true,
+        "figcaption główny",
+      ),
+      perforatorAlt: buildStats(
+        draft.perforatorAlt,
+        ALT_BUDGET,
+        false,
+        "alt perforator",
+      ),
+      perforatorCaption: buildStats(
+        draft.perforatorCaption,
+        CAPTION_BUDGET,
+        true,
+        "figcaption perforator",
+      ),
     }),
     [draft],
+  );
+
+  /** Mapa „czy slot ma jakikolwiek błąd walidacji?" — używana do disabled na Save. */
+  const slotHasErrors = useMemo(
+    () => ({
+      main:
+        stats.mainAlt.errors.length > 0 || stats.mainCaption.errors.length > 0,
+      perforator:
+        stats.perforatorAlt.errors.length > 0 ||
+        stats.perforatorCaption.errors.length > 0,
+    }),
+    [stats],
   );
 
   const updateDraft = (field: keyof DraftFields, value: string) => {
@@ -313,23 +340,17 @@ const AdminVeinImages = () => {
 
   const saveSlot = async (slot: VeinImageSlot) => {
     if (!isAdmin) return;
+    if (slotHasErrors[slot]) {
+      toast.error(
+        "Popraw błędy walidacji oznaczone na czerwono przed zapisem.",
+      );
+      return;
+    }
     const altField = slot === "main" ? "mainAlt" : "perforatorAlt";
     const captionField = slot === "main" ? "mainCaption" : "perforatorCaption";
     const altValue = draft[altField];
     const captionValue = draft[captionField];
-    const altStats = buildStats(altValue, ALT_BUDGET, false);
-    const captionStats = buildStats(captionValue, CAPTION_BUDGET, true);
-    if (
-      altStats.overBudget ||
-      altStats.underMin ||
-      captionStats.overBudget ||
-      captionStats.segments?.some((s) => s.overBudget)
-    ) {
-      toast.error(
-        "Walidacja: alt 60-220, caption ≤110, segment ≤40 znaków.",
-      );
-      return;
-    }
+
     setSaving(slot);
     try {
       const { data: existing, error: lookupError } = await supabase
