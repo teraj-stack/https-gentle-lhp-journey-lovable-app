@@ -438,6 +438,8 @@ const AdminVeinImages = () => {
   } | null>(null);
   /** Tryb podglądu: draft (live edycja) vs cms (to co jest w bazie po zapisie). */
   const [previewMode, setPreviewMode] = useState<"draft" | "cms">("draft");
+  /** Klucz: `${pageKey}:${slot}` — slot, dla którego trwa rollback z historii. */
+  const [restoringSlot, setRestoringSlot] = useState<string | null>(null);
 
   const active = useMemo(
     () =>
