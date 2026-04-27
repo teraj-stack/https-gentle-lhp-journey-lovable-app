@@ -1262,7 +1262,12 @@ const AdminVeinImages = () => {
                     </div>
 
                     <div className="flex items-center justify-end gap-2 pt-1">
-
+                      <HistoryPopover
+                        pageKey={activeKey}
+                        slot={slot}
+                        onRestore={restoreFromHistory}
+                        restoring={restoringSlot === `${activeKey}:${slot}`}
+                      />
                       <Button
                         size="sm"
                         disabled={isSaving || slotInvalid}
