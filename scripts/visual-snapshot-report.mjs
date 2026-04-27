@@ -28,18 +28,42 @@
  *   node scripts/visual-snapshot-report.mjs
  *   node scripts/visual-snapshot-report.mjs --max-failures=50
  *   node scripts/visual-snapshot-report.mjs -m 50
+ *   node scripts/visual-snapshot-report.mjs --max-copy=20 --max-discovery=50
  *   MAX_FAILURES=50 node scripts/visual-snapshot-report.mjs
+ *   MAX_COPY=20 MAX_DISCOVERY=50 node scripts/visual-snapshot-report.mjs
  *   (opcjonalnie po `bun run test:e2e`)
  *
- * Fail-fast (`--max-failures=N`):
- *   Przy bardzo dużych zestawach (np. 500+ failed snapshotów) generowanie
- *   pełnego raportu jest powolne — głównie z powodu kopiowania PNG do assets/
- *   i discovery artefaktów Playwrighta per katalog. Flag `--max-failures=N`
- *   sortuje failed trio deterministycznie (po relPath) i obcina do pierwszych
- *   N PRZED kosztowną fazą kopiowania, dzięki czemu raport powstaje
- *   "do pierwszych N regresji" — zwykle wystarczy żeby zobaczyć patterny.
- *   Raport informuje o obcięciu w nagłówku, żeby user nie myślał że ma
- *   tylko N regresji w sumie.
+ * Fail-fast — trzy poziomy obcinania (od najbardziej do najmniej agresywnego):
+ *
+ *   --max-failures=N (alias -m, env MAX_FAILURES)
+ *     Globalny limit kart w raporcie. Sortuje failed trio deterministycznie
+ *     (po dir + stem) i zostawia pierwsze N. Wszystko poza tym jest pomijane:
+ *     karty NIE są renderowane, asset NIE jest kopiowany, discovery NIE biegnie.
+ *     Najszybsze, ale traci kontekst (user nie zobaczy że ma więcej regresji
+ *     niż N — jest tylko banner z totalem).
+ *
+ *   --max-copy=N (env MAX_COPY)
+ *     Limit dla DROGIEGO kopiowania PNG (3 pliki * fs.copyFile per trio).
+ *     Pierwsze N trio dostaje pełną triadę obrazów; reszta renderuje się jako
+ *     karta z placeholderami "(pominięto kopiowanie — --max-copy)" — user wie
+ *     że regresja istnieje, widzi metadane (viewport / state / nazwę), ale nie
+ *     ma podglądu pikseli. Idealne gdy chcesz zobaczyć GDZIE są regresje
+ *     (breakdown per viewport/state) bez płacenia za 1500 plików IO.
+ *
+ *   --max-discovery=N (env MAX_DISCOVERY)
+ *     Limit dla discovery artefaktów Playwrighta (trace.zip / video / error-context).
+ *     Każde discovery to readdir + heurystyki — tanie pojedynczo, ale 500x się
+ *     skaluje. Pierwsze N trio dostaje pełne deep-linki (Trace Viewer, Video,
+ *     Error context); reszta tylko podstawowy footer (Playwright report + folder).
+ *
+ *   Hierarchia: --max-failures TNIE FIRST (przed wszystkim), więc
+ *   --max-copy / --max-discovery działają na już obcięty zbiór. Jeśli
+ *   --max-copy > liczby kart po --max-failures, jest no-op (i odwrotnie).
+ *   Wszystkie limity są niezależne — można łączyć dowolnie. Brak limitu
+ *   = pełna obróbka wszystkich kart (back-compat z poprzednim zachowaniem).
+ *
+ *   Walidacja: dodatnie liczby całkowite. Złe wartości → warning + brak limitu
+ *   (skrypt jest idempotentnym narzędziem post-run, nie wywalamy CI za literówkę).
  *
  * Exit codes:
  *   0 — raport wygenerowany (nawet jeśli 0 failures — pusty raport informuje
@@ -68,51 +92,69 @@ const PLAYWRIGHT_REPORT_DIR = path.join(
 const TRACE_VIEWER_URL = "https://trace.playwright.dev/";
 
 /**
- * Parser argumentów CLI. Wspierane:
- *   --max-failures=N
- *   --max-failures N
- *   -m N
- *   env MAX_FAILURES=N (fallback gdy brak CLI)
+ * Parser argumentów CLI. Wspierane flagi (każda osobno walidowana):
+ *   --max-failures=N | --max-failures N | -m N | env MAX_FAILURES
+ *     globalny limit kart w raporcie (tnie przed wszystkim)
+ *   --max-copy=N | --max-copy N | env MAX_COPY
+ *     limit dla kopiowania PNG do assets/ (drogie IO)
+ *   --max-discovery=N | --max-discovery N | env MAX_DISCOVERY
+ *     limit dla discovery artefaktów Playwrighta (readdir per katalog)
  *
  * Walidacja: dodatnia liczba całkowita. Błędna wartość → warning + null
  * (raport bez limitu). Celowo NIE crashujemy — skrypt jest idempotentny
  * narzędziem post-run, nie chcemy żeby literówka w CI wywaliła build.
  */
 const parseCliArgs = (argv) => {
-  let maxFailures = null;
+  // Mapa: nazwa flagi → { aliases:[], envVar, value:null }
+  // Trzymamy razem, żeby pętla parsująca była jedna i nie powtarzać kodu.
+  const flags = {
+    maxFailures: { long: "--max-failures", short: "-m", env: "MAX_FAILURES", value: null },
+    maxCopy: { long: "--max-copy", short: null, env: "MAX_COPY", value: null },
+    maxDiscovery: { long: "--max-discovery", short: null, env: "MAX_DISCOVERY", value: null },
+  };
+
+  const tryAssign = (flagKey, raw, source) => {
+    if (raw === null || raw === undefined) return;
+    const n = Number.parseInt(raw, 10);
+    if (Number.isInteger(n) && n > 0) {
+      flags[flagKey].value = n;
+    } else {
+      console.warn(
+        `[visual-snapshot-report] Ignoruję ${source}="${raw}" — oczekiwano dodatniej liczby całkowitej.`,
+      );
+    }
+  };
+
   const args = argv.slice(2);
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
-    let raw = null;
-    if (a.startsWith("--max-failures=")) {
-      raw = a.slice("--max-failures=".length);
-    } else if (a === "--max-failures" || a === "-m") {
-      raw = args[i + 1];
-      i++; // zjada następny token
-    }
-    if (raw !== null && raw !== undefined) {
-      const n = Number.parseInt(raw, 10);
-      if (Number.isInteger(n) && n > 0) {
-        maxFailures = n;
-      } else {
-        console.warn(
-          `[visual-snapshot-report] Ignoruję --max-failures="${raw}" — oczekiwano dodatniej liczby całkowitej.`,
-        );
+    for (const [key, def] of Object.entries(flags)) {
+      // Forma --flag=value
+      if (a.startsWith(`${def.long}=`)) {
+        tryAssign(key, a.slice(def.long.length + 1), def.long);
+        break;
+      }
+      // Forma --flag value (lub -m value)
+      if (a === def.long || (def.short && a === def.short)) {
+        tryAssign(key, args[i + 1], a);
+        i++; // zjada następny token
+        break;
       }
     }
   }
-  // Env fallback tylko gdy CLI nic nie ustawił.
-  if (maxFailures === null && process.env.MAX_FAILURES) {
-    const n = Number.parseInt(process.env.MAX_FAILURES, 10);
-    if (Number.isInteger(n) && n > 0) {
-      maxFailures = n;
-    } else {
-      console.warn(
-        `[visual-snapshot-report] Ignoruję MAX_FAILURES="${process.env.MAX_FAILURES}" — oczekiwano dodatniej liczby całkowitej.`,
-      );
+
+  // Env fallback tylko dla flag, których CLI nie ustawił.
+  for (const [key, def] of Object.entries(flags)) {
+    if (flags[key].value === null && process.env[def.env]) {
+      tryAssign(key, process.env[def.env], def.env);
     }
   }
-  return { maxFailures };
+
+  return {
+    maxFailures: flags.maxFailures.value,
+    maxCopy: flags.maxCopy.value,
+    maxDiscovery: flags.maxDiscovery.value,
+  };
 };
 
 /**
@@ -345,7 +387,15 @@ const renderCardLinks = (t, playwrightReportRel) => {
   return `<footer class="card-links" aria-label="Linki do szczegółów Playwrighta">${links.join("")}</footer>`;
 };
 
-const renderHtml = ({ trios, generatedAt, totalFailures, playwrightReportRel, truncation }) => {
+const renderHtml = ({
+  trios,
+  generatedAt,
+  totalFailures,
+  playwrightReportRel,
+  truncation,
+  copyTruncation,
+  discoveryTruncation,
+}) => {
   // Zbieramy unikalne wartości viewport / state z trios, żeby wypełnić <select>'y.
   // Sortujemy alfabetycznie dla deterministycznej kolejności w UI (łatwiej znaleźć).
   const viewportSet = new Set();
@@ -365,18 +415,27 @@ const renderHtml = ({ trios, generatedAt, totalFailures, playwrightReportRel, tr
     .map((t) => {
       const statusUpper = t.status.toUpperCase();
       const statusClass = t.status === "failed" ? "status-failed" : "status-incomplete";
-      const cell = (label, asset, fallback) =>
-        asset
-          ? `<figure>
+      // Gdy --max-copy obciął kopiowanie dla tego trio, pokazujemy dedykowany
+      // placeholder (informujący że plik istnieje, ale nie został skopiowany)
+      // zamiast ogólnego "brak baseline'u" — inaczej user pomyli to z incomplete.
+      const cell = (label, asset, fallback) => {
+        if (asset) {
+          return `<figure>
                <figcaption>${escapeHtml(label)}</figcaption>
                <a href="${escapeHtml(asset)}" target="_blank" rel="noopener">
                  <img loading="lazy" src="${escapeHtml(asset)}" alt="${escapeHtml(label)} — ${escapeHtml(t.stem)}" />
                </a>
-             </figure>`
-          : `<figure class="missing">
-               <figcaption>${escapeHtml(label)}</figcaption>
-               <div class="missing-box">${escapeHtml(fallback)}</div>
              </figure>`;
+        }
+        const isCopySkipped = t.copySkipped;
+        const message = isCopySkipped
+          ? "Pominięto kopiowanie (--max-copy). Patrz: folder artefaktów."
+          : fallback;
+        return `<figure class="missing${isCopySkipped ? " missing-copy-skipped" : ""}">
+               <figcaption>${escapeHtml(label)}</figcaption>
+               <div class="missing-box">${escapeHtml(message)}</div>
+             </figure>`;
+      };
       // data-* atrybuty są tym, na czym filtruje JS w runtime — żaden re-run nie jest potrzebny.
       // data-search agreguje wszystko, co jest sensowne do free-text search (stem + ścieżka katalogu testu).
       const searchHaystack = `${t.stem} ${t.testName}`.toLowerCase();
@@ -725,9 +784,21 @@ const renderHtml = ({ trios, generatedAt, totalFailures, playwrightReportRel, tr
       border: 1px solid var(--warn); border-left-width: 4px; border-radius: 6px;
       color: var(--fg); font-size: 13px;
     }
+    /* Soft variant — używana dla --max-copy / --max-discovery, czyli ograniczeń
+       optymalizacyjnych (nie obcinają kart, tylko ich zawartość). */
+    .truncation-banner-soft {
+      background: rgba(127,127,127,.08);
+      border-color: rgba(127,127,127,.4);
+    }
     .truncation-banner code {
       background: rgba(127,127,127,.15); padding: 1px 6px;
       border-radius: 3px; font-size: 12px;
+    }
+    /* Placeholder dla figure gdy --max-copy obciął kopiowanie — bardziej
+       neutralny niż czerwony "missing", żeby user nie myślał że to błąd. */
+    .missing-copy-skipped .missing-box {
+      background: rgba(127,127,127,.08);
+      border-style: dashed;
     }
   </style>
 </head>
@@ -749,6 +820,22 @@ const renderHtml = ({ trios, generatedAt, totalFailures, playwrightReportRel, tr
          ⚠ Fail-fast: pokazano <strong>${truncation.shown}</strong> z <strong>${truncation.total}</strong>
          nieudanych snapshotów (limit <code>--max-failures=${truncation.limit}</code>).
          Pełny zestaw zobaczysz po uruchomieniu skryptu bez tej flagi.
+       </aside>`
+    : ""}
+  ${copyTruncation
+    ? `<aside class="truncation-banner truncation-banner-soft" role="status">
+         ⚠ Fail-fast (kopiowanie PNG): skopiowano obrazy dla pierwszych
+         <strong>${copyTruncation.processed}</strong> z <strong>${copyTruncation.total}</strong>
+         trio (limit <code>--max-copy=${copyTruncation.limit}</code>).
+         Pozostałe karty pokazują metadane bez podglądu — pełną triadę znajdziesz w katalogu artefaktów.
+       </aside>`
+    : ""}
+  ${discoveryTruncation
+    ? `<aside class="truncation-banner truncation-banner-soft" role="status">
+         ⚠ Fail-fast (discovery artefaktów): wykryto trace/video/error-context dla pierwszych
+         <strong>${discoveryTruncation.processed}</strong> z <strong>${discoveryTruncation.total}</strong>
+         trio (limit <code>--max-discovery=${discoveryTruncation.limit}</code>).
+         Reszta kart ma tylko podstawowy footer (Playwright report + folder).
        </aside>`
     : ""}
   ${summaryLine}
@@ -914,7 +1001,7 @@ const renderHtml = ({ trios, generatedAt, totalFailures, playwrightReportRel, tr
 };
 
 const main = async () => {
-  const { maxFailures } = parseCliArgs(process.argv);
+  const { maxFailures, maxCopy, maxDiscovery } = parseCliArgs(process.argv);
 
   // Sanity: czy są w ogóle wyniki?
   try {
@@ -947,9 +1034,8 @@ const main = async () => {
     return a.stem.localeCompare(b.stem);
   });
 
-  // Fail-fast: obetnij PRZED kopiowaniem assetów (drogie IO) i discovery
-  // artefaktów. Zachowujemy `totalFailures` osobno, żeby raport mógł
-  // pokazać "Pokazano N z M (obcięto przez --max-failures)".
+  // Fail-fast (poziom 1): obetnij globalnie PRZED dalszą obróbką.
+  // Wszystko poza tym slice'em w ogóle nie wchodzi do raportu.
   const truncatedBy = maxFailures !== null && allFailed.length > maxFailures;
   const failed = truncatedBy ? allFailed.slice(0, maxFailures) : allFailed;
 
@@ -960,22 +1046,63 @@ const main = async () => {
     );
   }
 
-  // Kopiujemy obrazy do assets/, żeby HTML był samowystarczalny (CI artifact upload).
-  // Dodatkowo per trio wykrywamy artefakty Playwrighta (trace.zip / video / error-context),
-  // żeby raport mógł zaserwować deep-linki do szczegółów debug.
+  // Fail-fast (poziom 2 i 3): osobne limity dla DROGICH operacji per trio.
+  // - copyLimit  → ile pierwszych trio kopiuje 3 PNG do assets/ (najdroższe IO)
+  // - discoveryLimit → ile pierwszych trio robi readdir w katalogu testu
+  // Brak limitu (null) = obrabiamy wszystkie z `failed`. Limit > failed.length
+  // = no-op (nie crashujemy, po prostu nic nie obcinamy).
+  const copyLimit = maxCopy !== null ? Math.min(maxCopy, failed.length) : failed.length;
+  const discoveryLimit =
+    maxDiscovery !== null ? Math.min(maxDiscovery, failed.length) : failed.length;
+
+  if (maxCopy !== null && failed.length > maxCopy) {
+    console.log(
+      `[visual-snapshot-report] ⚠ Fail-fast (kopiowanie): kopiuję PNG dla pierwszych ${copyLimit} ` +
+        `z ${failed.length} trio (--max-copy=${maxCopy}). Reszta = placeholder.`,
+    );
+  }
+  if (maxDiscovery !== null && failed.length > maxDiscovery) {
+    console.log(
+      `[visual-snapshot-report] ⚠ Fail-fast (discovery): wykrywam artefakty Playwrighta dla ` +
+        `pierwszych ${discoveryLimit} z ${failed.length} trio (--max-discovery=${maxDiscovery}).`,
+    );
+  }
+
+  // Pętla obróbki per trio. Dwa niezależne progi sterują tym, ile pracy
+  // faktycznie wykonujemy. Karta zawsze powstaje (metadata jest darmowa);
+  // pomijamy tylko drogie IO. Flagujemy `copySkipped` w obiekcie trio,
+  // żeby renderHtml mógł pokazać placeholder zamiast brakującego obrazka.
   for (let i = 0; i < failed.length; i++) {
     const t = failed[i];
     const prefix = `${i.toString().padStart(3, "0")}-${t.stem}`;
-    if (t.expected) t.expectedAsset = await copyAsset(t.expected, prefix, "expected");
-    if (t.actual) t.actualAsset = await copyAsset(t.actual, prefix, "actual");
-    if (t.diff) t.diffAsset = await copyAsset(t.diff, prefix, "diff");
-    const artifacts = await discoverPlaywrightArtifacts(t.dir);
-    // Konwertujemy bezwzględne ścieżki na relatywne od REPORT_DIR — przenośność.
-    t.tracePath = artifacts.trace ? path.relative(REPORT_DIR, artifacts.trace) : null;
-    t.videoPath = artifacts.video ? path.relative(REPORT_DIR, artifacts.video) : null;
-    t.errorContextPath = artifacts.errorContext
-      ? path.relative(REPORT_DIR, artifacts.errorContext)
-      : null;
+
+    if (i < copyLimit) {
+      if (t.expected) t.expectedAsset = await copyAsset(t.expected, prefix, "expected");
+      if (t.actual) t.actualAsset = await copyAsset(t.actual, prefix, "actual");
+      if (t.diff) t.diffAsset = await copyAsset(t.diff, prefix, "diff");
+    } else {
+      // Placeholder mode: nie kopiujemy obrazków, ale flagujemy żeby cell()
+      // pokazał czytelny komunikat zamiast "brak baseline'u".
+      t.copySkipped = true;
+    }
+
+    if (i < discoveryLimit) {
+      const artifacts = await discoverPlaywrightArtifacts(t.dir);
+      // Konwertujemy bezwzględne ścieżki na relatywne od REPORT_DIR — przenośność.
+      t.tracePath = artifacts.trace ? path.relative(REPORT_DIR, artifacts.trace) : null;
+      t.videoPath = artifacts.video ? path.relative(REPORT_DIR, artifacts.video) : null;
+      t.errorContextPath = artifacts.errorContext
+        ? path.relative(REPORT_DIR, artifacts.errorContext)
+        : null;
+    } else {
+      // Discovery pominięte — link do Playwright reportu i folderu testu i tak
+      // działa (nie wymagają readdir per trio), więc footer NIE będzie pusty.
+      t.discoverySkipped = true;
+      t.tracePath = null;
+      t.videoPath = null;
+      t.errorContextPath = null;
+    }
+    // testDirPath jest darmowy (path.relative, brak IO) → zawsze ustawiamy.
     t.testDirPath = path.relative(REPORT_DIR, t.dir);
   }
 
@@ -989,17 +1116,25 @@ const main = async () => {
     truncation: truncatedBy
       ? { shown: failed.length, total: allFailed.length, limit: maxFailures }
       : null,
+    copyTruncation:
+      maxCopy !== null && failed.length > maxCopy
+        ? { processed: copyLimit, total: failed.length, limit: maxCopy }
+        : null,
+    discoveryTruncation:
+      maxDiscovery !== null && failed.length > maxDiscovery
+        ? { processed: discoveryLimit, total: failed.length, limit: maxDiscovery }
+        : null,
   });
 
   const indexPath = path.join(REPORT_DIR, "index.html");
   await fs.writeFile(indexPath, html, "utf8");
 
   const noun = failed.length === 1 ? "snapshot" : "snapshotów";
-  const summary = truncatedBy
-    ? `${failed.length} z ${allFailed.length} ${noun} (obcięto)`
-    : `${failed.length} ${noun}`;
+  const parts = [truncatedBy ? `${failed.length} z ${allFailed.length} ${noun} (obcięto)` : `${failed.length} ${noun}`];
+  if (maxCopy !== null && failed.length > maxCopy) parts.push(`copy=${copyLimit}`);
+  if (maxDiscovery !== null && failed.length > maxDiscovery) parts.push(`discovery=${discoveryLimit}`);
   console.log(
-    `[visual-snapshot-report] ✓ Raport: ${path.relative(PROJECT_ROOT, indexPath)} (${summary})`,
+    `[visual-snapshot-report] ✓ Raport: ${path.relative(PROJECT_ROOT, indexPath)} (${parts.join(", ")})`,
   );
 };
 
