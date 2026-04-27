@@ -1474,12 +1474,58 @@ const AdminVeinImages = () => {
             </div>
 
             <div className="ml-auto flex flex-wrap items-center gap-2">
+              {/*
+                Filtry eksportu — pozwalają zawęzić co trafia do JSON/CSV.
+                "Wszystkie" zachowuje dotychczasowe zachowanie. Kompaktowe
+                Selecty wpasowują się w toolbar (te same h-8 co Button size="sm").
+                Filename zawiera aktywne filtry (suffix), żeby user nie pomylił
+                eksportów po nazwie pliku.
+              */}
+              <Select
+                value={exportPageKey}
+                onValueChange={(v) =>
+                  setExportPageKey(v as "all" | VeinImagePageKey)
+                }
+              >
+                <SelectTrigger
+                  className="h-8 w-[150px] text-xs"
+                  aria-label="Filtr eksportu: strona"
+                  title="Eksportuj tylko wybraną stronę (page_key)"
+                >
+                  <SelectValue placeholder="Strona" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Wszystkie strony</SelectItem>
+                  {VEIN_IMAGE_PAGE_PRESETS.map((p) => (
+                    <SelectItem key={p.key} value={p.key}>
+                      {p.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select
+                value={exportSlot}
+                onValueChange={(v) => setExportSlot(v as "all" | VeinImageSlot)}
+              >
+                <SelectTrigger
+                  className="h-8 w-[130px] text-xs"
+                  aria-label="Filtr eksportu: slot"
+                  title="Eksportuj tylko wybrany slot (main / perforator)"
+                >
+                  <SelectValue placeholder="Slot" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Oba sloty</SelectItem>
+                  <SelectItem value="main">main</SelectItem>
+                  <SelectItem value="perforator">perforator</SelectItem>
+                </SelectContent>
+              </Select>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={exportJson}
                 disabled={exporting !== null}
-                title="Pobierz wszystkie overrides z bazy jako JSON"
+                title={`Pobierz overrides z bazy jako JSON (${exportFilterSummary()})`}
               >
                 <FileJson className="w-3.5 h-3.5 mr-1" />
                 {exporting === "json" ? "Eksport…" : "Export JSON"}
@@ -1489,7 +1535,7 @@ const AdminVeinImages = () => {
                 size="sm"
                 onClick={exportCsv}
                 disabled={exporting !== null}
-                title="Pobierz wszystkie overrides z bazy jako CSV (Excel-friendly)"
+                title={`Pobierz overrides z bazy jako CSV — Excel-friendly (${exportFilterSummary()})`}
               >
                 <FileSpreadsheet className="w-3.5 h-3.5 mr-1" />
                 {exporting === "csv" ? "Eksport…" : "Export CSV"}
