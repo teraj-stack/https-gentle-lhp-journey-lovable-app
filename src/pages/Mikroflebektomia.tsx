@@ -13,6 +13,7 @@ import PreparationRecoveryCards from "@/components/shared/PreparationRecoveryCar
 import TestimonialsSection from "@/components/shared/TestimonialsSection";
 import MikroflebektomiaFAQ from "@/components/mikroflebektomia/MikroflebektomiaFAQ";
 import VenousInsufficiencyImage from "@/components/shared/VenousInsufficiencyImage";
+import VeinImageDevOverlay from "@/components/dev/VeinImageDevOverlay";
 
 const summary = [
   { label: "Przygotowanie", value: "Konsultacja flebologiczna oraz USG Doppler w celu mapowania żył" },

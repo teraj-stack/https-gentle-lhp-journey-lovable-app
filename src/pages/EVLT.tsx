@@ -17,6 +17,7 @@ import RecoveryBoostBanner from "@/components/shared/RecoveryBoostBanner";
 import PreparationRecoveryCards from "@/components/shared/PreparationRecoveryCards";
 import TestimonialsSection from "@/components/shared/TestimonialsSection";
 import VenousInsufficiencyImage from "@/components/shared/VenousInsufficiencyImage";
+import VeinImageDevOverlay from "@/components/dev/VeinImageDevOverlay";
 
 const evltSummary = [
   { label: "Przygotowanie", value: "Konsultacja flebologiczna oraz USG Doppler w celu mapowania niewydolnych żył" },

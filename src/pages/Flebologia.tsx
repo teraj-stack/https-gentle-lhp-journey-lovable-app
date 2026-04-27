@@ -5,6 +5,7 @@ import { BREADCRUMBS_MAP } from "@/lib/breadcrumbsMap";
 import SeoHead from "@/components/shared/SeoHead";
 import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 import VenousInsufficiencyImage from "@/components/shared/VenousInsufficiencyImage";
+import VeinImageDevOverlay from "@/components/dev/VeinImageDevOverlay";
 import { ArrowRight, Zap, Droplets, Scissors, Sparkles, Sun } from "lucide-react";
 
 const sectionAnim = {
