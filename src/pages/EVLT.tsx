@@ -94,6 +94,7 @@ const EVLT = () => (
 
       {/* Anatomia niewydolności żylnej — co naprawia EVLT */}
       <VenousInsufficiencyImage
+        pageKey="evlt"
         fadeUp={fadeUp}
         title="Skąd biorą się żylaki — co dokładnie zamyka EVLT?"
         subtitle="EVLT zamyka chorą żyłę odpiszczelową lub odstrzałkową od środka — eliminuje refluks, który napędza żylaki, perforatorowy zastój i stan zapalny widoczne na schemacie."

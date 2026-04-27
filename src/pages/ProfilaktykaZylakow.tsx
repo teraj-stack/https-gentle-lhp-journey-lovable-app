@@ -251,6 +251,7 @@ const ProfilaktykaZylakow = () => {
 
         {/* Anatomia: dlaczego warto zapobiegać */}
         <VenousInsufficiencyImage
+          pageKey="profilaktyka"
           fadeUp={fadeUp}
           title="Co dokładnie chronisz, dbając o nogi"
           subtitle="Profilaktyka żylaków to ochrona zastawek. Gdy zaczynają się one rozszczelniać, krew cofa się ku dołowi, ścianki słabną, a wokół naczynia narasta stan zapalny — proces, który po latach trudno cofnąć."

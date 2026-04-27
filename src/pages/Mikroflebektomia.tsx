@@ -104,6 +104,7 @@ const Mikroflebektomia = () => (
 
       {/* Anatomia żylaków — co usuwamy mikroflebektomią */}
       <VenousInsufficiencyImage
+        pageKey="mikroflebektomia"
         fadeUp={fadeUp}
         title="Co dokładnie usuwa mikroflebektomia?"
         subtitle={`„Sznury" pod skórą to żylaki bocznic — żył, w których ścianki osłabły, zastawki przestały się domykać, a krew zaczęła się cofać. Mikroflebektomia usuwa je z drobnych nakłuć, bez nacinania skóry.`}

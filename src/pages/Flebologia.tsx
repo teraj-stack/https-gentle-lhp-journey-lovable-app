@@ -93,6 +93,7 @@ const Flebologia = () => {
       <section className="pb-4 md:pb-8">
         <div className="container mx-auto px-4 max-w-5xl">
           <VenousInsufficiencyImage
+            pageKey="flebologia"
             title="Mechanika żylaków — od zastawki do widocznego naczynia"
             subtitle="Każdy zabieg flebologiczny w CML celuje w konkretne ogniwo tej kaskady: laser zamyka chory pień, mikroflebektomia usuwa żylakowate bocznice, skleroterapia eliminuje resztkowe naczynia, a CLaCS — drobne pajączki. Diagnostyka USG Doppler decyduje, gdzie zaczynamy."
             mainAlt="Schemat mechaniki żylaków — zdrowe zastawki kontra niedomykające się zastawki w przewlekłej niewydolności żylnej; refluks, poszerzenie naczynia i stan zapalny prowadzące do widocznych żylaków"
