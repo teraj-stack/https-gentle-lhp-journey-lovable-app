@@ -28,18 +28,42 @@
  *   node scripts/visual-snapshot-report.mjs
  *   node scripts/visual-snapshot-report.mjs --max-failures=50
  *   node scripts/visual-snapshot-report.mjs -m 50
+ *   node scripts/visual-snapshot-report.mjs --max-copy=20 --max-discovery=50
  *   MAX_FAILURES=50 node scripts/visual-snapshot-report.mjs
+ *   MAX_COPY=20 MAX_DISCOVERY=50 node scripts/visual-snapshot-report.mjs
  *   (opcjonalnie po `bun run test:e2e`)
  *
- * Fail-fast (`--max-failures=N`):
- *   Przy bardzo dużych zestawach (np. 500+ failed snapshotów) generowanie
- *   pełnego raportu jest powolne — głównie z powodu kopiowania PNG do assets/
- *   i discovery artefaktów Playwrighta per katalog. Flag `--max-failures=N`
- *   sortuje failed trio deterministycznie (po relPath) i obcina do pierwszych
- *   N PRZED kosztowną fazą kopiowania, dzięki czemu raport powstaje
- *   "do pierwszych N regresji" — zwykle wystarczy żeby zobaczyć patterny.
- *   Raport informuje o obcięciu w nagłówku, żeby user nie myślał że ma
- *   tylko N regresji w sumie.
+ * Fail-fast — trzy poziomy obcinania (od najbardziej do najmniej agresywnego):
+ *
+ *   --max-failures=N (alias -m, env MAX_FAILURES)
+ *     Globalny limit kart w raporcie. Sortuje failed trio deterministycznie
+ *     (po dir + stem) i zostawia pierwsze N. Wszystko poza tym jest pomijane:
+ *     karty NIE są renderowane, asset NIE jest kopiowany, discovery NIE biegnie.
+ *     Najszybsze, ale traci kontekst (user nie zobaczy że ma więcej regresji
+ *     niż N — jest tylko banner z totalem).
+ *
+ *   --max-copy=N (env MAX_COPY)
+ *     Limit dla DROGIEGO kopiowania PNG (3 pliki * fs.copyFile per trio).
+ *     Pierwsze N trio dostaje pełną triadę obrazów; reszta renderuje się jako
+ *     karta z placeholderami "(pominięto kopiowanie — --max-copy)" — user wie
+ *     że regresja istnieje, widzi metadane (viewport / state / nazwę), ale nie
+ *     ma podglądu pikseli. Idealne gdy chcesz zobaczyć GDZIE są regresje
+ *     (breakdown per viewport/state) bez płacenia za 1500 plików IO.
+ *
+ *   --max-discovery=N (env MAX_DISCOVERY)
+ *     Limit dla discovery artefaktów Playwrighta (trace.zip / video / error-context).
+ *     Każde discovery to readdir + heurystyki — tanie pojedynczo, ale 500x się
+ *     skaluje. Pierwsze N trio dostaje pełne deep-linki (Trace Viewer, Video,
+ *     Error context); reszta tylko podstawowy footer (Playwright report + folder).
+ *
+ *   Hierarchia: --max-failures TNIE FIRST (przed wszystkim), więc
+ *   --max-copy / --max-discovery działają na już obcięty zbiór. Jeśli
+ *   --max-copy > liczby kart po --max-failures, jest no-op (i odwrotnie).
+ *   Wszystkie limity są niezależne — można łączyć dowolnie. Brak limitu
+ *   = pełna obróbka wszystkich kart (back-compat z poprzednim zachowaniem).
+ *
+ *   Walidacja: dodatnie liczby całkowite. Złe wartości → warning + brak limitu
+ *   (skrypt jest idempotentnym narzędziem post-run, nie wywalamy CI za literówkę).
  *
  * Exit codes:
  *   0 — raport wygenerowany (nawet jeśli 0 failures — pusty raport informuje
