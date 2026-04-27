@@ -58,6 +58,7 @@ const AdminSecurityChecklist = lazy(() => import("@/pages/AdminSecurityChecklist
 const AdminScrollTest = lazy(() => import("@/pages/AdminScrollTest"));
 const DevTooltipPreview = lazy(() => import("@/pages/DevTooltipPreview"));
 const DevI18nContract = lazy(() => import("@/pages/DevI18nContract"));
+const DevVeinImagesPreview = lazy(() => import("@/pages/DevVeinImagesPreview"));
 
 const Unsubscribe = lazy(() => import("@/pages/Unsubscribe"));
 const ReminderOptOut = lazy(() => import("@/pages/ReminderOptOut"));
@@ -174,6 +175,7 @@ const App = () => (
             <Route path="/booking-action" element={<BookingAction />} />
             <Route path="/dev/tooltip-preview" element={<DevTooltipPreview />} />
             <Route path="/dev/i18n-contract" element={<DevI18nContract />} />
+            <Route path="/dev/vein-images-preview" element={<DevVeinImagesPreview />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
