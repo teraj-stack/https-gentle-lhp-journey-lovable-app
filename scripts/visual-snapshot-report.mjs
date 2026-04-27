@@ -26,7 +26,20 @@
  *
  * Uruchamianie:
  *   node scripts/visual-snapshot-report.mjs
+ *   node scripts/visual-snapshot-report.mjs --max-failures=50
+ *   node scripts/visual-snapshot-report.mjs -m 50
+ *   MAX_FAILURES=50 node scripts/visual-snapshot-report.mjs
  *   (opcjonalnie po `bun run test:e2e`)
+ *
+ * Fail-fast (`--max-failures=N`):
+ *   Przy bardzo dużych zestawach (np. 500+ failed snapshotów) generowanie
+ *   pełnego raportu jest powolne — głównie z powodu kopiowania PNG do assets/
+ *   i discovery artefaktów Playwrighta per katalog. Flag `--max-failures=N`
+ *   sortuje failed trio deterministycznie (po relPath) i obcina do pierwszych
+ *   N PRZED kosztowną fazą kopiowania, dzięki czemu raport powstaje
+ *   "do pierwszych N regresji" — zwykle wystarczy żeby zobaczyć patterny.
+ *   Raport informuje o obcięciu w nagłówku, żeby user nie myślał że ma
+ *   tylko N regresji w sumie.
  *
  * Exit codes:
  *   0 — raport wygenerowany (nawet jeśli 0 failures — pusty raport informuje
@@ -53,6 +66,54 @@ const PLAYWRIGHT_REPORT_DIR = path.join(
 // Lokalnie linkujemy file:// — Trace Viewer wymaga drag-and-drop,
 // więc dla lokalnych runów dajemy też przycisk "Pokaż trace lokalnie".
 const TRACE_VIEWER_URL = "https://trace.playwright.dev/";
+
+/**
+ * Parser argumentów CLI. Wspierane:
+ *   --max-failures=N
+ *   --max-failures N
+ *   -m N
+ *   env MAX_FAILURES=N (fallback gdy brak CLI)
+ *
+ * Walidacja: dodatnia liczba całkowita. Błędna wartość → warning + null
+ * (raport bez limitu). Celowo NIE crashujemy — skrypt jest idempotentny
+ * narzędziem post-run, nie chcemy żeby literówka w CI wywaliła build.
+ */
+const parseCliArgs = (argv) => {
+  let maxFailures = null;
+  const args = argv.slice(2);
+  for (let i = 0; i < args.length; i++) {
+    const a = args[i];
+    let raw = null;
+    if (a.startsWith("--max-failures=")) {
+      raw = a.slice("--max-failures=".length);
+    } else if (a === "--max-failures" || a === "-m") {
+      raw = args[i + 1];
+      i++; // zjada następny token
+    }
+    if (raw !== null && raw !== undefined) {
+      const n = Number.parseInt(raw, 10);
+      if (Number.isInteger(n) && n > 0) {
+        maxFailures = n;
+      } else {
+        console.warn(
+          `[visual-snapshot-report] Ignoruję --max-failures="${raw}" — oczekiwano dodatniej liczby całkowitej.`,
+        );
+      }
+    }
+  }
+  // Env fallback tylko gdy CLI nic nie ustawił.
+  if (maxFailures === null && process.env.MAX_FAILURES) {
+    const n = Number.parseInt(process.env.MAX_FAILURES, 10);
+    if (Number.isInteger(n) && n > 0) {
+      maxFailures = n;
+    } else {
+      console.warn(
+        `[visual-snapshot-report] Ignoruję MAX_FAILURES="${process.env.MAX_FAILURES}" — oczekiwano dodatniej liczby całkowitej.`,
+      );
+    }
+  }
+  return { maxFailures };
+};
 
 /**
  * Filtr ścieżek — interesują nas TYLKO nieudane snapshoty z spec'ów live preview.
@@ -284,7 +345,7 @@ const renderCardLinks = (t, playwrightReportRel) => {
   return `<footer class="card-links" aria-label="Linki do szczegółów Playwrighta">${links.join("")}</footer>`;
 };
 
-const renderHtml = ({ trios, generatedAt, totalFailures, playwrightReportRel }) => {
+const renderHtml = ({ trios, generatedAt, totalFailures, playwrightReportRel, truncation }) => {
   // Zbieramy unikalne wartości viewport / state z trios, żeby wypełnić <select>'y.
   // Sortujemy alfabetycznie dla deterministycznej kolejności w UI (łatwiej znaleźć).
   const viewportSet = new Set();
@@ -658,6 +719,16 @@ const renderHtml = ({ trios, generatedAt, totalFailures, playwrightReportRel }) 
       color: var(--accent); text-decoration: none; font-size: 12px;
     }
     .header-link:hover { border-color: var(--accent); }
+    .truncation-banner {
+      max-width: 1400px; margin: 0 auto 16px;
+      padding: 12px 16px; background: rgba(255,167,38,.12);
+      border: 1px solid var(--warn); border-left-width: 4px; border-radius: 6px;
+      color: var(--fg); font-size: 13px;
+    }
+    .truncation-banner code {
+      background: rgba(127,127,127,.15); padding: 1px 6px;
+      border-radius: 3px; font-size: 12px;
+    }
   </style>
 </head>
 <body>
@@ -673,6 +744,13 @@ const renderHtml = ({ trios, generatedAt, totalFailures, playwrightReportRel }) 
         : ` · <em>(Playwright HTML report nie znaleziony w <code>playwright-report/</code> — uruchom z reporterem html, żeby aktywować deep linki)</em>`
     }</p>
   </header>
+  ${truncation
+    ? `<aside class="truncation-banner" role="status">
+         ⚠ Fail-fast: pokazano <strong>${truncation.shown}</strong> z <strong>${truncation.total}</strong>
+         nieudanych snapshotów (limit <code>--max-failures=${truncation.limit}</code>).
+         Pełny zestaw zobaczysz po uruchomieniu skryptu bez tej flagi.
+       </aside>`
+    : ""}
   ${summaryLine}
   ${breakdownSection}
   ${filterBar}
@@ -836,6 +914,8 @@ const renderHtml = ({ trios, generatedAt, totalFailures, playwrightReportRel }) 
 };
 
 const main = async () => {
+  const { maxFailures } = parseCliArgs(process.argv);
+
   // Sanity: czy są w ogóle wyniki?
   try {
     await fs.access(TEST_RESULTS_DIR);
@@ -856,7 +936,29 @@ const main = async () => {
   // Zostawiamy tylko "interesujące" trio: failed (jest diff) lub incomplete
   // (brakuje któregokolwiek z 3 plików). Snapshoty które przeszły nie zostawiają
   // -actual/-expected/-diff w test-results, więc naturalnie ich tu nie widzimy.
-  const failed = trios.filter((t) => t.diff || !(t.expected && t.actual));
+  const allFailed = trios.filter((t) => t.diff || !(t.expected && t.actual));
+
+  // Sortowanie deterministyczne PRZED ewentualnym obcięciem przez --max-failures.
+  // Bez tego "pierwsze N" zależałoby od kolejności fs.readdir, która jest
+  // platform/file-system specific (Linux: zwykle inode, macOS: zwykle alfa).
+  // Sortujemy po katalogu testu + stem — daje stabilny output cross-OS.
+  allFailed.sort((a, b) => {
+    if (a.dir !== b.dir) return a.dir.localeCompare(b.dir);
+    return a.stem.localeCompare(b.stem);
+  });
+
+  // Fail-fast: obetnij PRZED kopiowaniem assetów (drogie IO) i discovery
+  // artefaktów. Zachowujemy `totalFailures` osobno, żeby raport mógł
+  // pokazać "Pokazano N z M (obcięto przez --max-failures)".
+  const truncatedBy = maxFailures !== null && allFailed.length > maxFailures;
+  const failed = truncatedBy ? allFailed.slice(0, maxFailures) : allFailed;
+
+  if (truncatedBy) {
+    console.log(
+      `[visual-snapshot-report] ⚠ Fail-fast: znaleziono ${allFailed.length} failed snapshotów, ` +
+        `obcięto do pierwszych ${maxFailures} (--max-failures).`,
+    );
+  }
 
   // Kopiujemy obrazy do assets/, żeby HTML był samowystarczalny (CI artifact upload).
   // Dodatkowo per trio wykrywamy artefakty Playwrighta (trace.zip / video / error-context),
@@ -884,14 +986,20 @@ const main = async () => {
     generatedAt: new Date().toISOString(),
     totalFailures: failed.length,
     playwrightReportRel,
+    truncation: truncatedBy
+      ? { shown: failed.length, total: allFailed.length, limit: maxFailures }
+      : null,
   });
 
   const indexPath = path.join(REPORT_DIR, "index.html");
   await fs.writeFile(indexPath, html, "utf8");
 
+  const noun = failed.length === 1 ? "snapshot" : "snapshotów";
+  const summary = truncatedBy
+    ? `${failed.length} z ${allFailed.length} ${noun} (obcięto)`
+    : `${failed.length} ${noun}`;
   console.log(
-    `[visual-snapshot-report] ✓ Raport: ${path.relative(PROJECT_ROOT, indexPath)} ` +
-      `(${failed.length} ${failed.length === 1 ? "snapshot" : "snapshotów"})`,
+    `[visual-snapshot-report] ✓ Raport: ${path.relative(PROJECT_ROOT, indexPath)} (${summary})`,
   );
 };
 
