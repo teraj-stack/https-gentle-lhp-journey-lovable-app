@@ -104,24 +104,49 @@ const TRACE_VIEWER_URL = "https://trace.playwright.dev/";
  * (raport bez limitu). Celowo NIE crashujemy — skrypt jest idempotentny
  * narzędziem post-run, nie chcemy żeby literówka w CI wywaliła build.
  */
+// Klucze dozwolone dla --sort. Każdy ma `extract(t)` zwracający string/number
+// porównywalny w localeCompare. Wybór sterowany priorytetami debugowania:
+//   viewport → grupuje regresje per breakpoint (mobile vs desktop pierwsze)
+//   state    → grupuje per scenariusz (state-a-empty vs dark-state-c-...)
+//   path     → katalog testu (Playwright spec → łatwiej re-runować całą sutę)
+//   stem     → pełna nazwa snapshota (default tie-breaker)
+//   status   → "failed" przed "incomplete" (priorytet realnych regresji)
+const SORT_KEYS = {
+  viewport: (t) => t._viewport,
+  state: (t) => t._state,
+  path: (t) => t.dir,
+  stem: (t) => t.stem,
+  // Lower-case sort: "failed" < "incomplete" alfabetycznie, co dobrze pasuje
+  // do intencji ("najpierw realne regresje, potem brak baseline'u").
+  status: (t) => (t.expected && t.actual && t.diff ? "failed" : "incomplete"),
+};
+const DEFAULT_SORT = "path,stem"; // Back-compat z poprzednim zachowaniem.
+
 const parseCliArgs = (argv) => {
-  // Mapa: nazwa flagi → { aliases:[], envVar, value:null }
-  // Trzymamy razem, żeby pętla parsująca była jedna i nie powtarzać kodu.
+  // Mapa: nazwa flagi → { aliases:[], envVar, value:null, kind }
+  // kind = "int" (dodatnia liczba) | "str" (dowolny string, walidacja per-flag)
   const flags = {
-    maxFailures: { long: "--max-failures", short: "-m", env: "MAX_FAILURES", value: null },
-    maxCopy: { long: "--max-copy", short: null, env: "MAX_COPY", value: null },
-    maxDiscovery: { long: "--max-discovery", short: null, env: "MAX_DISCOVERY", value: null },
+    maxFailures: { long: "--max-failures", short: "-m", env: "MAX_FAILURES", value: null, kind: "int" },
+    maxCopy: { long: "--max-copy", short: null, env: "MAX_COPY", value: null, kind: "int" },
+    maxDiscovery: { long: "--max-discovery", short: null, env: "MAX_DISCOVERY", value: null, kind: "int" },
+    sort: { long: "--sort", short: null, env: "SORT", value: null, kind: "str" },
   };
 
   const tryAssign = (flagKey, raw, source) => {
     if (raw === null || raw === undefined) return;
-    const n = Number.parseInt(raw, 10);
-    if (Number.isInteger(n) && n > 0) {
-      flags[flagKey].value = n;
+    const def = flags[flagKey];
+    if (def.kind === "int") {
+      const n = Number.parseInt(raw, 10);
+      if (Number.isInteger(n) && n > 0) {
+        def.value = n;
+      } else {
+        console.warn(
+          `[visual-snapshot-report] Ignoruję ${source}="${raw}" — oczekiwano dodatniej liczby całkowitej.`,
+        );
+      }
     } else {
-      console.warn(
-        `[visual-snapshot-report] Ignoruję ${source}="${raw}" — oczekiwano dodatniej liczby całkowitej.`,
-      );
+      // String — walidacja per-flag w consume site.
+      def.value = String(raw);
     }
   };
 
@@ -154,6 +179,58 @@ const parseCliArgs = (argv) => {
     maxFailures: flags.maxFailures.value,
     maxCopy: flags.maxCopy.value,
     maxDiscovery: flags.maxDiscovery.value,
+    sort: flags.sort.value, // string lub null (=> default)
+  };
+};
+
+/**
+ * Parsuje "--sort=viewport,-state,path" → [{key:"viewport",dir:1},
+ * {key:"state",dir:-1},{key:"path",dir:1}]. Klucze nieznane → warning + skip
+ * (NIE crash — back-compat z polityką "literówka w CI nie wywala buildu").
+ * Pusty/null input → null (caller użyje DEFAULT_SORT).
+ */
+const parseSortSpec = (raw) => {
+  if (!raw) return null;
+  const parts = String(raw)
+    .split(",")
+    .map((p) => p.trim())
+    .filter(Boolean);
+  const spec = [];
+  for (const p of parts) {
+    const dir = p.startsWith("-") ? -1 : 1;
+    const key = p.replace(/^[+-]/, "");
+    if (!Object.prototype.hasOwnProperty.call(SORT_KEYS, key)) {
+      console.warn(
+        `[visual-snapshot-report] Ignoruję klucz sortowania "${key}" — dozwolone: ${Object.keys(SORT_KEYS).join(", ")}.`,
+      );
+      continue;
+    }
+    spec.push({ key, dir });
+  }
+  return spec.length > 0 ? spec : null;
+};
+
+/**
+ * Buduje comparator z [{key,dir}, ...]. Zawsze dokleja `stem` jako finalny
+ * tie-breaker, żeby output był deterministyczny nawet gdy user poda tylko
+ * "viewport" (inaczej fs.readdir order by się zachowała w obrębie viewportu).
+ */
+const buildComparator = (spec) => {
+  const withTieBreaker = [...spec];
+  if (!withTieBreaker.some((s) => s.key === "stem")) {
+    withTieBreaker.push({ key: "stem", dir: 1 });
+  }
+  return (a, b) => {
+    for (const { key, dir } of withTieBreaker) {
+      const va = SORT_KEYS[key](a);
+      const vb = SORT_KEYS[key](b);
+      const cmp =
+        typeof va === "number" && typeof vb === "number"
+          ? va - vb
+          : String(va).localeCompare(String(vb));
+      if (cmp !== 0) return cmp * dir;
+    }
+    return 0;
   };
 };
 
