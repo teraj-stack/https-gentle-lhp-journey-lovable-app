@@ -1898,7 +1898,7 @@ const AdminVeinImages = () => {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={exportJson}
+                onClick={() => setPendingExport("json")}
                 disabled={exporting !== null}
                 title={`Pobierz overrides z bazy jako JSON (${exportFilterSummary()})`}
               >
@@ -1927,7 +1927,7 @@ const AdminVeinImages = () => {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={exportCsv}
+                onClick={() => setPendingExport("csv")}
                 disabled={exporting !== null}
                 title={`Pobierz overrides z bazy jako CSV — Excel-friendly (${exportFilterSummary()})`}
               >
