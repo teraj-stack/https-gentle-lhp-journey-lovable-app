@@ -541,6 +541,10 @@ const AdminVeinImages = () => {
     rows: ImportRow[];
   } | null>(null);
   const [importing, setImporting] = useState(false);
+  /** Wyszukiwarka — filtruje strony po label/key oraz po treści alt/caption draftu. */
+  const [searchQuery, setSearchQuery] = useState("");
+  /** Filtr slotów — pokaż tylko main, tylko perforator albo oba. */
+  const [slotFilter, setSlotFilter] = useState<"all" | VeinImageSlot>("all");
 
   const active = useMemo(
     () =>
