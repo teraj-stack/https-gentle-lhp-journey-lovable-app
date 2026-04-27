@@ -1122,6 +1122,24 @@ const renderHtml = ({
         ${buildSpark("discovery", "#8ab4f8", "Discovery readdir saved %")}
       </div>
       <script type="application/json" id="trends-json">${jsonPayload}</script>
+      <dialog class="export-preview-dialog" data-export-preview-dialog aria-labelledby="export-preview-title">
+        <div class="export-preview-header">
+          <h3 id="export-preview-title">Podgląd eksportu CSV</h3>
+          <p class="export-preview-meta" data-export-preview-meta></p>
+        </div>
+        <div class="export-preview-body">
+          <table class="export-preview-table" data-export-preview-table>
+            <thead><tr data-export-preview-head></tr></thead>
+            <tbody data-export-preview-body></tbody>
+          </table>
+          <p class="export-preview-truncated" data-export-preview-truncated hidden></p>
+        </div>
+        <div class="export-preview-footer">
+          <span class="spacer" aria-hidden="true"></span>
+          <button type="button" class="export-preview-cancel" data-export-preview-cancel>Anuluj</button>
+          <button type="button" class="export-preview-confirm" data-export-preview-confirm>⬇ Pobierz CSV</button>
+        </div>
+      </dialog>
     </section>`;
   })();
 
