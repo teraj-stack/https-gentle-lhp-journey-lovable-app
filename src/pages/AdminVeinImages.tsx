@@ -260,6 +260,19 @@ const validateImportRow = (alt: string, caption: string): string[] => {
 
 type ImportRowStatus = "create" | "update" | "noop" | "error";
 
+/**
+ * Strategia obsługi duplikatów `page_key+slot` w pliku CSV:
+ *  - "first": pierwsze wystąpienie wygrywa (default — backward compatible).
+ *    Kolejne duplikaty lądują z `status: "error"` i nie są commitowane.
+ *  - "last": ostatnie wystąpienie wygrywa. Wcześniejsze duplikaty dostają
+ *    `status: "noop"` z notką "nadpisany przez linię X" (nie blokują importu,
+ *    nie są commitowane — ich miejsce zajmie późniejszy wpis).
+ *
+ * Wybór jest reaktywny w dialogu preview — admin widzi natychmiast jak
+ * zmienia się rozkład create/update/noop/error po przełączeniu radio.
+ */
+type DedupStrategy = "first" | "last";
+
 interface ImportRow {
   /** 1-based linia w pliku CSV (header = 1, dane od 2). */
   line: number;
@@ -273,6 +286,96 @@ interface ImportRow {
   currentAlt?: string;
   currentCaption?: string;
 }
+
+/**
+ * Surowy wiersz pliku przed deduplikacją — pojedynczy parsing run trzymamy
+ * w stanie dialogu (pre-dedup), żeby przełącznik strategii „pierwszy/ostatni"
+ * mógł reaktywnie przeliczać preview bez ponownego czytania pliku.
+ */
+interface ParsedImportRow {
+  line: number;
+  pageKey: VeinImagePageKey | null;
+  slot: VeinImageSlot | null;
+  alt: string;
+  caption: string;
+  /** Błędy NIEzwiązane z duplikatem (validacja pól, nieznany page_key/slot). */
+  baseErrors: string[];
+  currentAlt?: string;
+  currentCaption?: string;
+}
+
+/**
+ * Stosuje wybraną strategię dedupu do listy ParsedImportRow i mapuje wynik
+ * na ImportRow z finalnym statusem (create/update/noop/error).
+ *
+ * Algorithm:
+ *  1. Skanuje wiersze w kolejności pliku, zbiera mapę `winner per pageKey:slot`:
+ *     - "first" → pierwszy wygrywa (kolejne to duplikaty),
+ *     - "last"  → ostatni wygrywa (wcześniejsze to duplikaty).
+ *  2. Drugi pass produkuje ImportRow:
+ *     - winner z błędami pól → "error",
+ *     - winner bez current → "create",
+ *     - winner == current   → "noop",
+ *     - winner != current   → "update",
+ *     - duplikat (loser):
+ *       - dla "first" → "error" z notką „duplikat — wygrał wpis z linii X",
+ *       - dla "last"  → "noop"  (nadpisany przez wpis z linii X).
+ */
+const applyDedupStrategy = (
+  parsed: readonly ParsedImportRow[],
+  strategy: DedupStrategy,
+): ImportRow[] => {
+  const winnerLine = new Map<string, number>();
+  for (const row of parsed) {
+    if (!row.pageKey || !row.slot) continue;
+    const key = `${row.pageKey}:${row.slot}`;
+    if (strategy === "first") {
+      if (!winnerLine.has(key)) winnerLine.set(key, row.line);
+    } else {
+      winnerLine.set(key, row.line);
+    }
+  }
+
+  return parsed.map<ImportRow>((row) => {
+    const errors = [...row.baseErrors];
+    const key = row.pageKey && row.slot ? `${row.pageKey}:${row.slot}` : null;
+    const winner = key ? winnerLine.get(key) : undefined;
+    const isWinner = winner === row.line;
+    const isDuplicate = key !== null && winner !== undefined && !isWinner;
+
+    if (isDuplicate && strategy === "first") {
+      errors.push(`duplikat page_key+slot — wygrał wpis z linii ${winner}`);
+    }
+
+    let status: ImportRowStatus;
+    if (errors.length > 0) {
+      status = "error";
+    } else if (isDuplicate) {
+      // last-wins, brak błędów pól → ten wpis ignorujemy na rzecz późniejszego.
+      status = "noop";
+    } else {
+      const current =
+        row.currentAlt !== undefined || row.currentCaption !== undefined
+          ? { alt: row.currentAlt ?? "", caption: row.currentCaption ?? "" }
+          : undefined;
+      if (!current) status = "create";
+      else if (current.alt === row.alt && current.caption === row.caption) status = "noop";
+      else status = "update";
+    }
+
+    return {
+      line: row.line,
+      pageKey: row.pageKey,
+      slot: row.slot,
+      alt: row.alt,
+      caption: row.caption,
+      status,
+      errors,
+      currentAlt: row.currentAlt,
+      currentCaption: row.currentCaption,
+    };
+  });
+};
 
 interface FieldStats {
   length: number;
@@ -597,11 +700,18 @@ const AdminVeinImages = () => {
   const [restoringSlot, setRestoringSlot] = useState<string | null>(null);
   /** Ukryty <input type="file"> — trigger przez Button. */
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-  /** Otwarty dialog z preview parsowanego CSV. */
+  /**
+   * Otwarty dialog z preview parsowanego CSV.
+   * Trzymamy `parsedRows` (pre-dedup) — finalna lista `ImportRow` jest
+   * derywowana memoicznie z `parsedRows × dedupStrategy`, co pozwala na
+   * reaktywne przełączanie strategii bez ponownego parsowania pliku.
+   */
   const [importPreview, setImportPreview] = useState<{
     fileName: string;
-    rows: ImportRow[];
+    parsedRows: ParsedImportRow[];
   } | null>(null);
+  /** Strategia dedupu duplikatów page_key+slot w pliku CSV (domyślnie „first"). */
+  const [dedupStrategy, setDedupStrategy] = useState<DedupStrategy>("first");
   const [importing, setImporting] = useState(false);
   /** Wyszukiwarka — filtruje strony po label/key oraz po treści alt/caption draftu. */
   const [searchQuery, setSearchQuery] = useState("");
@@ -615,6 +725,16 @@ const AdminVeinImages = () => {
     [activeKey],
   );
 
+  /**
+   * Finalna lista wierszy preview po zastosowaniu strategii dedupu.
+   * Reaktywna względem `dedupStrategy` — zmiana radio przelicza statusy
+   * (np. duplikaty z „error" na „noop") bez ponownego parsowania pliku.
+   */
+  const importPreviewRows = useMemo<ImportRow[]>(
+    () =>
+      importPreview ? applyDedupStrategy(importPreview.parsedRows, dedupStrategy) : [],
+    [importPreview, dedupStrategy],
+  );
   const [drafts, setDrafts] = useState<Record<VeinImagePageKey, DraftFields>>(
     () =>
       VEIN_IMAGE_PAGE_PRESETS.reduce(
@@ -1293,14 +1413,17 @@ const AdminVeinImages = () => {
         dbMap.set(`${r.page_key}:${r.slot}`, { alt: r.alt, caption: r.caption });
       }
 
-      const seen = new Set<string>();
-      const rows: ImportRow[] = matrix.slice(1).map((cells, i) => {
+      // Etap 1: parsing per-row BEZ dedupu i bez finalnego statusu —
+      // dedup robimy w applyDedupStrategy() reaktywnie wg wybranego
+      // przełącznika (first/last). Validacje pól robimy tutaj bo nie zależą
+      // od strategii.
+      const parsedRows: ParsedImportRow[] = matrix.slice(1).map((cells, i) => {
         const line = i + 2;
         const rawPage = (cells[idx.page_key] ?? "").trim();
         const rawSlot = (cells[idx.slot] ?? "").trim();
         const alt = cells[idx.alt] ?? "";
         const caption = cells[idx.caption] ?? "";
-        const errors: string[] = [];
+        const baseErrors: string[] = [];
 
         const pageKey = VALID_PAGE_KEYS.has(rawPage as VeinImagePageKey)
           ? (rawPage as VeinImagePageKey)
@@ -1308,24 +1431,11 @@ const AdminVeinImages = () => {
         const slot = (VALID_SLOTS as string[]).includes(rawSlot)
           ? (rawSlot as VeinImageSlot)
           : null;
-        if (!pageKey) errors.push(`nieznany page_key: "${rawPage}"`);
-        if (!slot) errors.push(`nieznany slot: "${rawSlot}" (oczekiwano main/perforator)`);
-        if (pageKey && slot) {
-          const dedupKey = `${pageKey}:${slot}`;
-          if (seen.has(dedupKey)) {
-            errors.push("duplikat page_key+slot — pierwsze wystąpienie wygrywa");
-          } else {
-            seen.add(dedupKey);
-          }
-        }
-        errors.push(...validateImportRow(alt, caption));
+        if (!pageKey) baseErrors.push(`nieznany page_key: "${rawPage}"`);
+        if (!slot) baseErrors.push(`nieznany slot: "${rawSlot}" (oczekiwano main/perforator)`);
+        baseErrors.push(...validateImportRow(alt, caption));
 
         const current = pageKey && slot ? dbMap.get(`${pageKey}:${slot}`) : undefined;
-        let status: ImportRowStatus;
-        if (errors.length > 0) status = "error";
-        else if (!current) status = "create";
-        else if (current.alt === alt && current.caption === caption) status = "noop";
-        else status = "update";
 
         return {
           line,
@@ -1333,14 +1443,16 @@ const AdminVeinImages = () => {
           slot,
           alt,
           caption,
-          status,
-          errors,
+          baseErrors,
           currentAlt: current?.alt,
           currentCaption: current?.caption,
         };
       });
 
-      setImportPreview({ fileName: file.name, rows });
+      // Reset strategii do default „first" przy każdym nowym pliku — admin
+      // nie powinien dziedziczyć wyboru z poprzedniego importu.
+      setDedupStrategy("first");
+      setImportPreview({ fileName: file.name, parsedRows });
     } catch (err) {
       toast.error(
         `Błąd parsowania CSV: ${err instanceof Error ? err.message : String(err)}`,
@@ -1355,7 +1467,7 @@ const AdminVeinImages = () => {
    */
   const commitImport = async () => {
     if (!importPreview || !isAdmin) return;
-    const applicable = importPreview.rows.filter(
+    const applicable = importPreviewRows.filter(
       (r) => (r.status === "create" || r.status === "update") && r.pageKey && r.slot,
     );
     if (applicable.length === 0) {
@@ -1437,14 +1549,21 @@ const AdminVeinImages = () => {
             duration: 10000,
           },
         );
+        // Po częściowym failu: dopisujemy `serwer: …` do baseErrors w
+        // odpowiednich parsedRows (przez .line lookup). Sukcesy nie wymagają
+        // dodatkowej akcji — i tak po refetchu przejdą na status "noop"
+        // przy ponownym otwarciu, ale tu zachowujemy preview do wglądu.
         setImportPreview((prev) =>
           prev
             ? {
                 ...prev,
-                rows: prev.rows.map((r) => {
+                parsedRows: prev.parsedRows.map((r) => {
                   const f = failures.find((x) => x.row.line === r.line);
-                  if (!f) return r.status === "create" || r.status === "update" ? { ...r, status: "noop" } : r;
-                  return { ...r, status: "error", errors: [...r.errors, `serwer: ${f.message}`] };
+                  if (!f) return r;
+                  return {
+                    ...r,
+                    baseErrors: [...r.baseErrors, `serwer: ${f.message}`],
+                  };
                 }),
               }
             : prev,
@@ -2107,18 +2226,68 @@ const AdminVeinImages = () => {
               Plik: <span className="font-mono">{importPreview?.fileName}</span> ·{" "}
               {importPreview ? (
                 <>
-                  do utworzenia: {importPreview.rows.filter((r) => r.status === "create").length} ·
-                  do aktualizacji: {importPreview.rows.filter((r) => r.status === "update").length} ·
-                  bez zmian: {importPreview.rows.filter((r) => r.status === "noop").length} ·
-                  z błędami: {importPreview.rows.filter((r) => r.status === "error").length}
+                  do utworzenia: {importPreviewRows.filter((r) => r.status === "create").length} ·
+                  do aktualizacji: {importPreviewRows.filter((r) => r.status === "update").length} ·
+                  bez zmian: {importPreviewRows.filter((r) => r.status === "noop").length} ·
+                  z błędami: {importPreviewRows.filter((r) => r.status === "error").length}
                 </>
               ) : null}
             </DialogDescription>
           </DialogHeader>
 
+          {/*
+            Toolbar dialogu: przełącznik strategii dedupu duplikatów page_key+slot.
+            Reaktywny — zmiana radio przelicza importPreviewRows przez useMemo,
+            statusy wierszy odświeżają się natychmiast (np. duplikat z „error"
+            staje się „noop" przy strategii „last").
+          */}
+          <div
+            className="flex flex-wrap items-center gap-3 -mt-2 mb-1 rounded-md border border-border/40 bg-muted/20 px-3 py-2"
+            role="radiogroup"
+            aria-label="Strategia obsługi duplikatów page_key+slot"
+          >
+            <span className="text-[11px] font-sans uppercase tracking-[0.18em] text-muted-foreground">
+              Duplikaty
+            </span>
+            <label className="flex items-center gap-1.5 text-xs cursor-pointer select-none">
+              <input
+                type="radio"
+                name="dedup-strategy"
+                value="first"
+                checked={dedupStrategy === "first"}
+                onChange={() => setDedupStrategy("first")}
+                className="accent-primary"
+                aria-label="Pierwsze wystąpienie wygrywa"
+              />
+              <span>
+                Pierwszy wygrywa{" "}
+                <span className="text-muted-foreground">
+                  (kolejne → błąd)
+                </span>
+              </span>
+            </label>
+            <label className="flex items-center gap-1.5 text-xs cursor-pointer select-none">
+              <input
+                type="radio"
+                name="dedup-strategy"
+                value="last"
+                checked={dedupStrategy === "last"}
+                onChange={() => setDedupStrategy("last")}
+                className="accent-primary"
+                aria-label="Ostatni wpis wygrywa"
+              />
+              <span>
+                Ostatni wygrywa{" "}
+                <span className="text-muted-foreground">
+                  (wcześniejsze → bez zmian)
+                </span>
+              </span>
+            </label>
+          </div>
+
           <div className="flex-1 overflow-auto -mx-6 px-6">
             <div className="space-y-2">
-              {importPreview?.rows.map((row) => {
+              {importPreviewRows.map((row) => {
                 const statusColor = {
                   create: "bg-emerald-500/10 text-emerald-400 border-emerald-500/30",
                   update: "bg-amber-500/10 text-amber-400 border-amber-500/30",
@@ -2230,14 +2399,14 @@ const AdminVeinImages = () => {
               disabled={
                 importing ||
                 !importPreview ||
-                importPreview.rows.every((r) => r.status !== "create" && r.status !== "update")
+                importPreviewRows.every((r) => r.status !== "create" && r.status !== "update")
               }
               title="Wykonaj upsert dla wierszy nowy/aktualizacja"
             >
               <Save className="w-3.5 h-3.5 mr-1" />
               {importing
                 ? "Importowanie…"
-                : `Zatwierdź (${importPreview?.rows.filter((r) => r.status === "create" || r.status === "update").length ?? 0})`}
+                : `Zatwierdź (${importPreviewRows.filter((r) => r.status === "create" || r.status === "update").length})`}
             </Button>
           </DialogFooter>
         </DialogContent>
