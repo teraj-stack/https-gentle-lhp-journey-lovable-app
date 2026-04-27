@@ -29,7 +29,7 @@ import {
 } from "@/lib/veinImagePagePresets";
 import VenousInsufficiencyImage from "@/components/shared/VenousInsufficiencyImage";
 import { Button } from "@/components/ui/button";
-import { LogOut, ShieldAlert, Save, RotateCcw, Database, Download, FileJson, FileSpreadsheet, Trash2 } from "lucide-react";
+import { LogOut, ShieldAlert, Save, RotateCcw, Database, FileJson, FileSpreadsheet, Trash2, Clock, User } from "lucide-react";
 import { toast } from "sonner";
 import SeoHead from "@/components/shared/SeoHead";
 
@@ -37,6 +37,25 @@ const ALT_MIN = 60;
 const ALT_BUDGET = 220;
 const CAPTION_BUDGET = 110;
 const SEGMENT_BUDGET = 40;
+
+/**
+ * Zwraca polski względny czas (np. „3 godz. temu", „wczoraj", „przed chwilą").
+ * Używa Intl.RelativeTimeFormat — zero-dep, działa w SSR i w przeglądarce.
+ */
+const RELATIVE_FMT = new Intl.RelativeTimeFormat("pl", { numeric: "auto" });
+const formatRelativeTime = (iso: string): string => {
+  const then = new Date(iso).getTime();
+  if (Number.isNaN(then)) return "—";
+  const diffSec = Math.round((then - Date.now()) / 1000);
+  const abs = Math.abs(diffSec);
+  if (abs < 45) return RELATIVE_FMT.format(Math.round(diffSec / 1), "second");
+  if (abs < 3600) return RELATIVE_FMT.format(Math.round(diffSec / 60), "minute");
+  if (abs < 86400) return RELATIVE_FMT.format(Math.round(diffSec / 3600), "hour");
+  if (abs < 86400 * 7) return RELATIVE_FMT.format(Math.round(diffSec / 86400), "day");
+  if (abs < 86400 * 30) return RELATIVE_FMT.format(Math.round(diffSec / (86400 * 7)), "week");
+  if (abs < 86400 * 365) return RELATIVE_FMT.format(Math.round(diffSec / (86400 * 30)), "month");
+  return RELATIVE_FMT.format(Math.round(diffSec / (86400 * 365)), "year");
+};
 
 interface DraftFields {
   mainAlt: string;
@@ -860,6 +879,40 @@ const AdminVeinImages = () => {
                       </span>
                     </div>
 
+                    {/* Audit panel — kto i kiedy ostatnio edytował override w bazie. */}
+                    {dbRow ? (
+                      <div className="rounded-md border border-border/40 bg-background/40 px-2.5 py-2 grid gap-1 text-[11px]">
+                        <div className="flex items-center gap-1.5 text-foreground/85">
+                          <User className="w-3 h-3 shrink-0 opacity-70" aria-hidden />
+                          <span className="font-mono truncate" title={dbRow.updated_by ?? "(brak adresu — system)"}>
+                            {dbRow.updated_by ?? <em className="text-muted-foreground not-italic">system / brak adresu</em>}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-muted-foreground">
+                          <Clock className="w-3 h-3 shrink-0 opacity-70" aria-hidden />
+                          <time
+                            dateTime={dbRow.updated_at}
+                            title={new Date(dbRow.updated_at).toLocaleString("pl-PL", {
+                              dateStyle: "full",
+                              timeStyle: "medium",
+                            })}
+                          >
+                            {formatRelativeTime(dbRow.updated_at)}
+                            <span className="opacity-60 ml-1.5 font-mono">
+                              ({new Date(dbRow.updated_at).toLocaleString("pl-PL", {
+                                dateStyle: "short",
+                                timeStyle: "short",
+                              })})
+                            </span>
+                          </time>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="rounded-md border border-dashed border-border/40 px-2.5 py-2 text-[11px] text-muted-foreground italic">
+                        Brak wpisu w bazie — pierwszy zapis utworzy nowy override.
+                      </div>
+                    )}
+
                     {/* Alt */}
                     <div>
                       <div className="flex items-center justify-between gap-2 mb-1">
@@ -924,12 +977,8 @@ const AdminVeinImages = () => {
                       )}
                     </div>
 
-                    <div className="flex items-center justify-between gap-2 pt-1">
-                      <span className="text-[10px] text-muted-foreground">
-                        {dbRow
-                          ? `Ostatnia zmiana: ${new Date(dbRow.updated_at).toLocaleString("pl-PL")}${dbRow.updated_by ? ` · ${dbRow.updated_by}` : ""}`
-                          : "Brak wpisu w bazie — zapis utworzy nowy."}
-                      </span>
+                    <div className="flex items-center justify-end gap-2 pt-1">
+
                       <Button
                         size="sm"
                         disabled={isSaving || slotInvalid}
