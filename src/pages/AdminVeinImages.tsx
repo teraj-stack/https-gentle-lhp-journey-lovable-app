@@ -44,7 +44,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { LogOut, ShieldAlert, Save, RotateCcw, Database, FileJson, FileSpreadsheet, Trash2, Clock, User, History, Upload, CheckCircle2, AlertTriangle, FileWarning, Search, X, ClipboardCopy, Check } from "lucide-react";
+import { LogOut, ShieldAlert, Save, RotateCcw, Database, FileJson, FileSpreadsheet, Trash2, Clock, User, History, Upload, CheckCircle2, AlertTriangle, FileWarning, Search, X, ClipboardCopy, Check, FileDown } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import SeoHead from "@/components/shared/SeoHead";
@@ -816,6 +816,48 @@ const AdminVeinImages = () => {
     } finally {
       setRestoringSlot(null);
     }
+  };
+
+  /**
+   * Pobiera „pusty" szablon CSV gotowy do wypełnienia pod Import CSV.
+   *
+   * Zawartość: nagłówek (page_key, slot, alt, caption) + 1 wiersz przykładowy
+   * per kombinacja (page_key × slot) z VEIN_IMAGE_PAGE_PRESETS, z realnymi
+   * wartościami z presetów jako wzorzec stylistyczny. Admin może je nadpisać
+   * lub usunąć niepotrzebne wiersze przed importem.
+   *
+   * Synchronicznie (bez async/setExporting) — to czysty download statycznych
+   * danych, nie woła bazy.
+   */
+  const downloadCsvTemplate = () => {
+    const header = ["page_key", "slot", "alt", "caption"];
+    const lines = [header.join(",")];
+    for (const preset of VEIN_IMAGE_PAGE_PRESETS) {
+      lines.push(
+        [preset.key, "main", preset.mainAlt, preset.mainCaption]
+          .map(csvCell)
+          .join(","),
+      );
+      lines.push(
+        [
+          preset.key,
+          "perforator",
+          preset.perforatorAlt,
+          preset.perforatorCaption,
+        ]
+          .map(csvCell)
+          .join(","),
+      );
+    }
+    // BOM dla Excela + CRLF zgodnie z RFC 4180 (te same konwencje co exportCsv).
+    downloadFile(
+      "vein-image-overrides-template.csv",
+      "\uFEFF" + lines.join("\r\n"),
+      "text/csv",
+    );
+    toast.success(
+      `Pobrano szablon CSV (${VEIN_IMAGE_PAGE_PRESETS.length * 2} wierszy przykładowych)`,
+    );
   };
 
 
@@ -1610,6 +1652,16 @@ const AdminVeinImages = () => {
               >
                 <FileSpreadsheet className="w-3.5 h-3.5 mr-1" />
                 {exporting === "csv" ? "Eksport…" : "Export CSV"}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={downloadCsvTemplate}
+                title="Pobierz przykładowy plik CSV z nagłówkami (page_key, slot, alt, caption) gotowy do wypełnienia pod Import CSV"
+                aria-label="Pobierz szablon CSV do importu"
+              >
+                <FileDown className="w-3.5 h-3.5 mr-1" aria-hidden="true" />
+                Szablon CSV
               </Button>
               <Button
                 variant="outline"
