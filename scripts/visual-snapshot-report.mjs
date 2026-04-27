@@ -1517,6 +1517,24 @@ const main = async () => {
   console.log(
     `[visual-snapshot-report] ✓ Raport: ${path.relative(PROJECT_ROOT, indexPath)} (${parts.join(", ")})`,
   );
+
+  // Raport oszczędności pracy. Pokazujemy TYLKO gdy faktycznie coś zostało
+  // pominięte — bez limitów (saved == 0) nie spamujemy konsoli zerami.
+  // % liczymy względem baseline (co byłoby zrobione bez limitów), żeby user
+  // od razu widział "60% mniej IO" zamiast surowych liczb. Dla bardzo małych
+  // baselinów (np. 3 PNG) % byłby mylący, więc poniżej 10 pokazujemy tylko liczby.
+  if (pngSaved > 0 || discoverySaved > 0) {
+    const formatSaved = (saved, baseline, label) => {
+      if (saved === 0) return null;
+      const pct = baseline >= 10 ? ` (${Math.round((saved / baseline) * 100)}%)` : "";
+      return `${saved} mniej ${label}${pct}`;
+    };
+    const savings = [
+      formatSaved(pngSaved, pngBaseline, `PNG copy: ${pngCopied}/${pngBaseline}`),
+      formatSaved(discoverySaved, discoveryBaseline, `discovery readdir: ${discoveryRuns}/${discoveryBaseline}`),
+    ].filter(Boolean);
+    console.log(`[visual-snapshot-report] 💾 Oszczędność: ${savings.join(", ")}.`);
+  }
 };
 
 main().catch((err) => {
