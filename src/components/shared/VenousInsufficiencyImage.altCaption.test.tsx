@@ -106,6 +106,39 @@ describe("VenousInsufficiencyImage — per-page alt & figcaption", () => {
       expect((mainCap.textContent ?? "").trim()).not.toBe(
         (perfCap.textContent ?? "").trim(),
       );
+
+    // ── MOBILE READABILITY GUARDS ──────────────────────────────────────
+    // Caption renderowany jest jako text-[11px] na 375px (px-1).
+    // Empirycznie segment dłuższy niż ~40 znaków zaczyna się dziwnie
+    // łamać na małym viewport. Total > 110 znaków daje 4+ linie
+    // — strona robi się zbyt „gadatliwa" pod obrazem.
+    it("każdy figcaption mieści się w mobile budget (≤110 znaków total)", () => {
+      const { mainCaption, perforatorCaption } = props;
+      expect(mainCaption.length).toBeLessThanOrEqual(110);
+      expect(perforatorCaption.length).toBeLessThanOrEqual(110);
+    });
+
+    it("żaden segment '·' figcaption nie przekracza 40 znaków", () => {
+      const { mainCaption, perforatorCaption } = props;
+      for (const cap of [mainCaption, perforatorCaption]) {
+        const segments = cap.split(/\s·\s/);
+        for (const seg of segments) {
+          expect(
+            seg.length,
+            `Segment "${seg}" w "${cap}" ma ${seg.length} znaków (limit 40 dla mobile)`,
+          ).toBeLessThanOrEqual(40);
+        }
+      }
+    });
+
+    it("każdy alt jest opisowy ale nie przekracza 220 znaków", () => {
+      const { mainAlt, perforatorAlt } = props;
+      // dolna granica: alt musi być opisowy dla SEO/dostępności
+      expect(mainAlt.length).toBeGreaterThanOrEqual(60);
+      expect(perforatorAlt.length).toBeGreaterThanOrEqual(60);
+      // górna granica: zbyt długi alt jest pomijany przez screen readery
+      expect(mainAlt.length).toBeLessThanOrEqual(220);
+      expect(perforatorAlt.length).toBeLessThanOrEqual(220);
     });
   });
 
