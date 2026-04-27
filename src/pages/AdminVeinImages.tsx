@@ -322,6 +322,8 @@ interface ImportRow {
   caption: string;
   status: ImportRowStatus;
   errors: string[];
+  /** Strukturalne błędy per-pole (alt/caption) — pozwalają preview podświetlać konkretne pola. */
+  fieldIssues: FieldIssue[];
   /** Aktualne wartości w bazie — do prezentacji diffu. */
   currentAlt?: string;
   currentCaption?: string;
@@ -340,6 +342,8 @@ interface ParsedImportRow {
   caption: string;
   /** Błędy NIEzwiązane z duplikatem (validacja pól, nieznany page_key/slot). */
   baseErrors: string[];
+  /** Strukturalne błędy walidacji per-pole (alt/caption). */
+  fieldIssues: FieldIssue[];
   currentAlt?: string;
   currentCaption?: string;
 }
