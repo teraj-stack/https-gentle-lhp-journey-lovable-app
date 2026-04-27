@@ -1630,6 +1630,159 @@ const AdminVeinImages = () => {
           </div>
         </main>
       </div>
+
+      {/* Dialog: preview importu CSV */}
+      <Dialog
+        open={importPreview !== null}
+        onOpenChange={(open) => {
+          if (!open && !importing) setImportPreview(null);
+        }}
+      >
+        <DialogContent className="max-w-4xl max-h-[85vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Upload className="w-4 h-4" />
+              Import CSV — preview
+            </DialogTitle>
+            <DialogDescription className="text-xs">
+              Plik: <span className="font-mono">{importPreview?.fileName}</span> ·{" "}
+              {importPreview ? (
+                <>
+                  do utworzenia: {importPreview.rows.filter((r) => r.status === "create").length} ·
+                  do aktualizacji: {importPreview.rows.filter((r) => r.status === "update").length} ·
+                  bez zmian: {importPreview.rows.filter((r) => r.status === "noop").length} ·
+                  z błędami: {importPreview.rows.filter((r) => r.status === "error").length}
+                </>
+              ) : null}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex-1 overflow-auto -mx-6 px-6">
+            <div className="space-y-2">
+              {importPreview?.rows.map((row) => {
+                const statusColor = {
+                  create: "bg-emerald-500/10 text-emerald-400 border-emerald-500/30",
+                  update: "bg-amber-500/10 text-amber-400 border-amber-500/30",
+                  noop: "bg-muted/20 text-muted-foreground border-border/30",
+                  error: "bg-destructive/10 text-destructive border-destructive/40",
+                }[row.status];
+                const statusIcon = {
+                  create: <CheckCircle2 className="w-3 h-3" />,
+                  update: <RotateCcw className="w-3 h-3" />,
+                  noop: <Database className="w-3 h-3" />,
+                  error: <AlertTriangle className="w-3 h-3" />,
+                }[row.status];
+                const statusLabel = {
+                  create: "nowy",
+                  update: "aktualizacja",
+                  noop: "bez zmian",
+                  error: "błąd",
+                }[row.status];
+                return (
+                  <div
+                    key={row.line}
+                    className={`rounded-md border px-3 py-2 text-[11px] ${statusColor}`}
+                  >
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono opacity-60">L{row.line}</span>
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded font-mono text-[9px] uppercase tracking-wider bg-background/40">
+                          {statusIcon}
+                          {statusLabel}
+                        </span>
+                        <span className="font-mono text-foreground/85">
+                          {row.pageKey ?? "?"} / {row.slot ?? "?"}
+                        </span>
+                      </div>
+                      <span className="font-mono opacity-60">
+                        alt:{row.alt.length} · cap:{row.caption.length}
+                      </span>
+                    </div>
+                    {row.errors.length > 0 && (
+                      <ul className="mb-1 space-y-0.5">
+                        {row.errors.map((e, idx) => (
+                          <li key={idx} className="flex items-start gap-1">
+                            <FileWarning className="w-3 h-3 mt-0.5 shrink-0" />
+                            <span>{e}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    {row.status === "update" && (
+                      <details className="mt-1">
+                        <summary className="cursor-pointer opacity-70 hover:opacity-100 select-none">
+                          pokaż diff
+                        </summary>
+                        <div className="mt-1 grid gap-1 font-mono text-[10px]">
+                          <div className="rounded border border-border/30 bg-background/30 p-1.5">
+                            <span className="opacity-60">stary alt:</span>{" "}
+                            <span className="break-words">{row.currentAlt}</span>
+                          </div>
+                          <div className="rounded border border-border/30 bg-background/30 p-1.5">
+                            <span className="opacity-60">nowy alt:</span>{" "}
+                            <span className="break-words">{row.alt}</span>
+                          </div>
+                          <div className="rounded border border-border/30 bg-background/30 p-1.5">
+                            <span className="opacity-60">stary caption:</span>{" "}
+                            <span className="break-words">{row.currentCaption}</span>
+                          </div>
+                          <div className="rounded border border-border/30 bg-background/30 p-1.5">
+                            <span className="opacity-60">nowy caption:</span>{" "}
+                            <span className="break-words">{row.caption}</span>
+                          </div>
+                        </div>
+                      </details>
+                    )}
+                    {(row.status === "create" || (row.status === "error" && !row.currentAlt)) && (
+                      <details className="mt-1">
+                        <summary className="cursor-pointer opacity-70 hover:opacity-100 select-none">
+                          pokaż treść
+                        </summary>
+                        <div className="mt-1 grid gap-1 font-mono text-[10px]">
+                          <div className="rounded border border-border/30 bg-background/30 p-1.5">
+                            <span className="opacity-60">alt:</span>{" "}
+                            <span className="break-words">{row.alt || <em className="opacity-50">(pusty)</em>}</span>
+                          </div>
+                          <div className="rounded border border-border/30 bg-background/30 p-1.5">
+                            <span className="opacity-60">caption:</span>{" "}
+                            <span className="break-words">{row.caption || <em className="opacity-50">(pusty)</em>}</span>
+                          </div>
+                        </div>
+                      </details>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <DialogFooter className="flex-row justify-between gap-2 sm:justify-between">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setImportPreview(null)}
+              disabled={importing}
+            >
+              Anuluj
+            </Button>
+            <Button
+              size="sm"
+              onClick={commitImport}
+              disabled={
+                importing ||
+                !importPreview ||
+                importPreview.rows.every((r) => r.status !== "create" && r.status !== "update")
+              }
+              title="Wykonaj upsert dla wierszy nowy/aktualizacja"
+            >
+              <Save className="w-3.5 h-3.5 mr-1" />
+              {importing
+                ? "Importowanie…"
+                : `Zatwierdź (${importPreview?.rows.filter((r) => r.status === "create" || r.status === "update").length ?? 0})`}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };
