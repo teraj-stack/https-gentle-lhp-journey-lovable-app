@@ -1177,7 +1177,7 @@ const renderHtml = ({
 };
 
 const main = async () => {
-  const { maxFailures, maxCopy, maxDiscovery } = parseCliArgs(process.argv);
+  const { maxFailures, maxCopy, maxDiscovery, sort: sortRaw } = parseCliArgs(process.argv);
 
   // Sanity: czy są w ogóle wyniki?
   try {
@@ -1201,14 +1201,28 @@ const main = async () => {
   // -actual/-expected/-diff w test-results, więc naturalnie ich tu nie widzimy.
   const allFailed = trios.filter((t) => t.diff || !(t.expected && t.actual));
 
+  // Pre-kompute viewport/state per trio — używane zarówno w sort comparator,
+  // jak i później w renderHtml / liście "omitted". Trzymamy w prywatnych
+  // polach `_viewport` / `_state`, żeby nie duplikować wywołań parseSnapshotName.
+  for (const t of allFailed) {
+    const parsed = parseSnapshotName(t.stem + "-actual.png");
+    t._viewport = parsed.viewport;
+    t._state = parsed.state;
+  }
+
   // Sortowanie deterministyczne PRZED ewentualnym obcięciem przez --max-failures.
-  // Bez tego "pierwsze N" zależałoby od kolejności fs.readdir, która jest
-  // platform/file-system specific (Linux: zwykle inode, macOS: zwykle alfa).
-  // Sortujemy po katalogu testu + stem — daje stabilny output cross-OS.
-  allFailed.sort((a, b) => {
-    if (a.dir !== b.dir) return a.dir.localeCompare(b.dir);
-    return a.stem.localeCompare(b.stem);
-  });
+  // Bez tego "pierwsze N" zależałoby od kolejności fs.readdir (platform-specific).
+  // User może nadpisać porządek przez --sort, np.:
+  //   --sort=viewport,-state    (najpierw mobile, w obrębie odwrócony state)
+  //   --sort=status,path        (najpierw realne failures, potem incomplete)
+  // buildComparator dokleja stem jako finalny tie-breaker (cross-OS stability).
+  const sortSpec = parseSortSpec(sortRaw) || parseSortSpec(DEFAULT_SORT);
+  allFailed.sort(buildComparator(sortSpec));
+
+  if (sortRaw) {
+    const human = sortSpec.map((s) => (s.dir === -1 ? `-${s.key}` : s.key)).join(",");
+    console.log(`[visual-snapshot-report] Sortowanie: ${human}`);
+  }
 
   // Fail-fast (poziom 1): obetnij globalnie PRZED dalszą obróbką.
   // Wszystko poza tym slice'em w ogóle nie wchodzi do raportu.
