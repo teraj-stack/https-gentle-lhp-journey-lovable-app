@@ -187,4 +187,4 @@ Netlify Drop, Cloudflare Pages drop-zone) — nie wymaga build stepu.
 | `Nie znaleziono raportu` | `test:visual:report` nie był uruchomiony | Najpierw `bun run test:visual:report` |
 | `'zip' niedostępny` | Brak CLI w PATH | `apt-get install zip` (Linux), preinstall na ubuntu-latest |
 | Pusty ZIP / brak failed snapshotów | Wszystkie testy przeszły ✓ | Działa zgodnie z planem |
-| Artifact >100MB | Dużo failures × duże PNG | Użyj `--max-failures=N` (patrz powyżej) |
+| Artifact >100MB | Dużo failures × duże PNG | Użyj `--max-failures=N` lub `--max-copy=N` (kopiuj tylko top N obrazków) |
