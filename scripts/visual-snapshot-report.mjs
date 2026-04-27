@@ -146,6 +146,10 @@ const parseCliArgs = (argv) => {
     maxFailures: { long: "--max-failures", short: "-m", env: "MAX_FAILURES", value: null, kind: "int" },
     maxCopy: { long: "--max-copy", short: null, env: "MAX_COPY", value: null, kind: "int" },
     maxDiscovery: { long: "--max-discovery", short: null, env: "MAX_DISCOVERY", value: null, kind: "int" },
+    // Per-grupę limity (round-robin po viewport / state). Działają NIEZALEŻNIE
+    // od --max-failures: można połączyć ("max 5 per viewport, do 50 łącznie").
+    maxPerViewport: { long: "--max-failures-per-viewport", short: null, env: "MAX_FAILURES_PER_VIEWPORT", value: null, kind: "int" },
+    maxPerState: { long: "--max-failures-per-state", short: null, env: "MAX_FAILURES_PER_STATE", value: null, kind: "int" },
     sort: { long: "--sort", short: null, env: "SORT", value: null, kind: "str" },
   };
 
