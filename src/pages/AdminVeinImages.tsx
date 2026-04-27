@@ -576,7 +576,7 @@ const AdminVeinImages = () => {
             <section
               aria-label="Podgląd renderu"
               className={`rounded-xl border bg-card/30 p-4 overflow-x-auto transition-all duration-500 ${
-                lastSaved && Date.now() - lastSaved.at < 1500
+                flashOn
                   ? "border-emerald-500/60 ring-2 ring-emerald-500/30"
                   : "border-border/40"
               }`}
