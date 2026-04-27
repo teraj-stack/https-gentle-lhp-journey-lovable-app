@@ -949,6 +949,206 @@ const AdminVeinImages = () => {
     }
   };
 
+  /**
+   * Parsuje plik CSV i przygotowuje preview importu (otwiera dialog).
+   * Wymagane kolumny: page_key, slot, alt, caption.
+   * Dodatkowe kolumny (np. updated_at, updated_by) są ignorowane — pozwala
+   * to wziąć eksportowany CSV, edytować w Excelu i zaimportować z powrotem.
+   *
+   * Walidacja LOKALNIE = lustrzane odbicie triggera serwera, więc preview
+   * pokazuje błędy zanim cokolwiek pójdzie do bazy. Mimo to commit i tak
+   * łapie ewentualne błędy serwera per-row (graceful degradation).
+   */
+  const handleImportFile = async (file: File) => {
+    try {
+      const text = await file.text();
+      const matrix = parseCsv(text);
+      if (matrix.length === 0) {
+        toast.error("Plik CSV jest pusty.");
+        return;
+      }
+      const header = matrix[0]!.map((h) => h.trim().toLowerCase());
+      const idx = {
+        page_key: header.indexOf("page_key"),
+        slot: header.indexOf("slot"),
+        alt: header.indexOf("alt"),
+        caption: header.indexOf("caption"),
+      };
+      if (idx.page_key < 0 || idx.slot < 0 || idx.alt < 0 || idx.caption < 0) {
+        toast.error(
+          "Brak wymaganych kolumn. Wymagane: page_key, slot, alt, caption.",
+        );
+        return;
+      }
+
+      const dbRows = await fetchAllOverrides();
+      const dbMap = new Map<string, { alt: string; caption: string }>();
+      for (const r of dbRows) {
+        dbMap.set(`${r.page_key}:${r.slot}`, { alt: r.alt, caption: r.caption });
+      }
+
+      const seen = new Set<string>();
+      const rows: ImportRow[] = matrix.slice(1).map((cells, i) => {
+        const line = i + 2;
+        const rawPage = (cells[idx.page_key] ?? "").trim();
+        const rawSlot = (cells[idx.slot] ?? "").trim();
+        const alt = cells[idx.alt] ?? "";
+        const caption = cells[idx.caption] ?? "";
+        const errors: string[] = [];
+
+        const pageKey = VALID_PAGE_KEYS.has(rawPage as VeinImagePageKey)
+          ? (rawPage as VeinImagePageKey)
+          : null;
+        const slot = (VALID_SLOTS as string[]).includes(rawSlot)
+          ? (rawSlot as VeinImageSlot)
+          : null;
+        if (!pageKey) errors.push(`nieznany page_key: "${rawPage}"`);
+        if (!slot) errors.push(`nieznany slot: "${rawSlot}" (oczekiwano main/perforator)`);
+        if (pageKey && slot) {
+          const dedupKey = `${pageKey}:${slot}`;
+          if (seen.has(dedupKey)) {
+            errors.push("duplikat page_key+slot — pierwsze wystąpienie wygrywa");
+          } else {
+            seen.add(dedupKey);
+          }
+        }
+        errors.push(...validateImportRow(alt, caption));
+
+        const current = pageKey && slot ? dbMap.get(`${pageKey}:${slot}`) : undefined;
+        let status: ImportRowStatus;
+        if (errors.length > 0) status = "error";
+        else if (!current) status = "create";
+        else if (current.alt === alt && current.caption === caption) status = "noop";
+        else status = "update";
+
+        return {
+          line,
+          pageKey,
+          slot,
+          alt,
+          caption,
+          status,
+          errors,
+          currentAlt: current?.alt,
+          currentCaption: current?.caption,
+        };
+      });
+
+      setImportPreview({ fileName: file.name, rows });
+    } catch (err) {
+      toast.error(
+        `Błąd parsowania CSV: ${err instanceof Error ? err.message : String(err)}`,
+      );
+    }
+  };
+
+  /**
+   * Wykonuje upsert dla wszystkich wierszy create/update z preview.
+   * Każdy wiersz idzie osobnym requestem — granularne raportowanie błędów,
+   * a liczba operacji jest mała (max 8).
+   */
+  const commitImport = async () => {
+    if (!importPreview || !isAdmin) return;
+    const applicable = importPreview.rows.filter(
+      (r) => (r.status === "create" || r.status === "update") && r.pageKey && r.slot,
+    );
+    if (applicable.length === 0) {
+      toast.info("Nic do zaimportowania (brak zmian).");
+      return;
+    }
+    setImporting(true);
+    let okCount = 0;
+    const failures: { row: ImportRow; message: string }[] = [];
+    try {
+      for (const row of applicable) {
+        const payload = {
+          page_key: row.pageKey!,
+          slot: row.slot!,
+          alt: row.alt,
+          caption: row.caption,
+          updated_by: session?.user.email ?? null,
+        };
+        try {
+          const { data: existing, error: lookupError } = await supabase
+            .from("vein_image_overrides")
+            .select("id")
+            .eq("page_key", row.pageKey!)
+            .eq("slot", row.slot!)
+            .maybeSingle();
+          if (lookupError) throw lookupError;
+          if (existing) {
+            const { error } = await supabase
+              .from("vein_image_overrides")
+              .update(payload)
+              .eq("id", existing.id);
+            if (error) throw error;
+          } else {
+            const { error } = await supabase
+              .from("vein_image_overrides")
+              .insert(payload);
+            if (error) throw error;
+          }
+          okCount++;
+        } catch (err) {
+          failures.push({
+            row,
+            message: err instanceof Error ? err.message : String(err),
+          });
+        }
+      }
+
+      // Sync drafts dla wszystkich zaimportowanych stron + invalidate cache.
+      setDrafts((prev) => {
+        const next = { ...prev };
+        for (const r of applicable) {
+          if (!r.pageKey || !r.slot) continue;
+          const altField = r.slot === "main" ? "mainAlt" : "perforatorAlt";
+          const captionField = r.slot === "main" ? "mainCaption" : "perforatorCaption";
+          next[r.pageKey] = {
+            ...next[r.pageKey],
+            [altField]: r.alt,
+            [captionField]: r.caption,
+          };
+        }
+        return next;
+      });
+      await queryClient.invalidateQueries({ queryKey: VEIN_IMAGE_QUERY_KEY });
+      await queryClient.invalidateQueries({ queryKey: VEIN_IMAGE_HISTORY_QUERY_KEY });
+      setSavedTick((t) => t + 1);
+      setPreviewMode("cms");
+
+      if (failures.length === 0) {
+        toast.success(`Zaimportowano ${okCount} ${okCount === 1 ? "wiersz" : "wierszy"}.`);
+        setImportPreview(null);
+      } else {
+        toast.error(
+          `Zaimportowano ${okCount}/${applicable.length}. Błędy: ${failures.length}.`,
+          {
+            description: failures
+              .slice(0, 3)
+              .map((f) => `Linia ${f.row.line} (${f.row.pageKey}/${f.row.slot}): ${f.message}`)
+              .join(" • "),
+            duration: 10000,
+          },
+        );
+        setImportPreview((prev) =>
+          prev
+            ? {
+                ...prev,
+                rows: prev.rows.map((r) => {
+                  const f = failures.find((x) => x.row.line === r.line);
+                  if (!f) return r.status === "create" || r.status === "update" ? { ...r, status: "noop" } : r;
+                  return { ...r, status: "error", errors: [...r.errors, `serwer: ${f.message}`] };
+                }),
+              }
+            : prev,
+        );
+      }
+    } finally {
+      setImporting(false);
+    }
+  };
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate("/admin/login", { replace: true });
