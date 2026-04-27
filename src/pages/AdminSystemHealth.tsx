@@ -591,6 +591,11 @@ const AdminSystemHealth = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const { isAdmin, loading: adminLoading } = useIsAdmin();
+  // Wspólny dialog potwierdzenia dla WSZYSTKICH eksportów JSON/CSV w tym widoku
+  // (focus-prefs backup + retry-records inspekcja). Jeden hook = jeden dialog
+  // mount na końcu drzewa, każdy handler woła `exportDialog.request({ ... })`
+  // zamiast bezpośrednio pisać Blob na dysk.
+  const exportDialog = useExportConfirmation();
   const [retryFilterIp, setRetryFilterIp] = useState("");
   const [retryFilterUa, setRetryFilterUa] = useState("");
   const [retryDenoOnly, setRetryDenoOnly] = useState(false);
