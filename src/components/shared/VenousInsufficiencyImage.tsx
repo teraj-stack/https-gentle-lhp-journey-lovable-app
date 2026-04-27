@@ -49,10 +49,10 @@ const VenousInsufficiencyImage = ({
   fadeUp,
   hidePerforator = false,
   className = "",
-  mainAlt = "Schemat porównawczy: zdrowe żyły z domkniętymi zastawkami i prawidłowym przepływem krwi obok żył z żylakami — osłabione ścianki, niedomykające się zastawki, cofanie krwi i stan zapalny",
-  mainCaption = "Zdrowe żyły · Domknięte zastawki · Żylaki · Niedomykające się zastawki · Stan zapalny",
-  perforatorAlt = "Schemat niewydolnego perforatora: niewydolność zastawek żylnych prowadzi do zastoju krwi żylnej i przeciążenia powierzchownych naczyń żylnych",
-  perforatorCaption = "Niewydolny perforator · Zastój krwi · Przeciążenie naczyń powierzchownych",
+  mainAlt,
+  mainCaption,
+  perforatorAlt,
+  perforatorCaption,
   pageKey,
 }: Props) => {
   const motionProps = fadeUp ?? {};
@@ -63,15 +63,44 @@ const VenousInsufficiencyImage = ({
   const overrides = useVeinImageOverridesForPage(
     pageKey ?? ("__none__" as VeinImagePageKey),
   );
-  const effectiveMainAlt = pageKey && overrides.main?.alt ? overrides.main.alt : mainAlt;
+
+  // Resolution priority (alt/caption MUST never be empty for SSR/SEO/a11y):
+  //   1. CMS override (vein_image_overrides table) — admin-edited, async
+  //   2. Explicit prop passed by the page — synchronous, always available
+  //   3. Page preset from VEIN_IMAGE_PAGE_PRESETS — synchronous fallback
+  //      (covers the case when a page forgets to pass props)
+  //   4. Generic component default — last-resort, never empty
+  const preset = pageKey ? getVeinImagePreset(pageKey) : undefined;
+
+  const GENERIC_MAIN_ALT =
+    "Schemat porównawczy: zdrowe żyły z domkniętymi zastawkami i prawidłowym przepływem krwi obok żył z żylakami — osłabione ścianki, niedomykające się zastawki, cofanie krwi i stan zapalny";
+  const GENERIC_MAIN_CAPTION =
+    "Zdrowe żyły · Domknięte zastawki · Żylaki · Niedomykające się zastawki · Stan zapalny";
+  const GENERIC_PERF_ALT =
+    "Schemat niewydolnego perforatora: niewydolność zastawek żylnych prowadzi do zastoju krwi żylnej i przeciążenia powierzchownych naczyń żylnych";
+  const GENERIC_PERF_CAPTION =
+    "Niewydolny perforator · Zastój krwi · Przeciążenie naczyń powierzchownych";
+
+  const effectiveMainAlt =
+    (pageKey && overrides.main?.alt) ||
+    mainAlt ||
+    preset?.mainAlt ||
+    GENERIC_MAIN_ALT;
   const effectiveMainCaption =
-    pageKey && overrides.main?.caption ? overrides.main.caption : mainCaption;
+    (pageKey && overrides.main?.caption) ||
+    mainCaption ||
+    preset?.mainCaption ||
+    GENERIC_MAIN_CAPTION;
   const effectivePerforatorAlt =
-    pageKey && overrides.perforator?.alt ? overrides.perforator.alt : perforatorAlt;
+    (pageKey && overrides.perforator?.alt) ||
+    perforatorAlt ||
+    preset?.perforatorAlt ||
+    GENERIC_PERF_ALT;
   const effectivePerforatorCaption =
-    pageKey && overrides.perforator?.caption
-      ? overrides.perforator.caption
-      : perforatorCaption;
+    (pageKey && overrides.perforator?.caption) ||
+    perforatorCaption ||
+    preset?.perforatorCaption ||
+    GENERIC_PERF_CAPTION;
 
   return (
     <motion.section
