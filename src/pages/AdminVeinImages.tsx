@@ -2396,14 +2396,14 @@ const AdminVeinImages = () => {
               disabled={
                 importing ||
                 !importPreview ||
-                importPreview.rows.every((r) => r.status !== "create" && r.status !== "update")
+                importPreviewRows.every((r) => r.status !== "create" && r.status !== "update")
               }
               title="Wykonaj upsert dla wierszy nowy/aktualizacja"
             >
               <Save className="w-3.5 h-3.5 mr-1" />
               {importing
                 ? "Importowanie…"
-                : `Zatwierdź (${importPreview?.rows.filter((r) => r.status === "create" || r.status === "update").length ?? 0})`}
+                : `Zatwierdź (${importPreviewRows.filter((r) => r.status === "create" || r.status === "update").length})`}
             </Button>
           </DialogFooter>
         </DialogContent>
