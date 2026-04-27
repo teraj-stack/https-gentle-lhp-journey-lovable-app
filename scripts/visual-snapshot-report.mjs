@@ -635,12 +635,43 @@ const renderHtml = ({ trios, generatedAt, totalFailures, playwrightReportRel }) 
     .breakdown-row:hover { background: rgba(127,127,127,.08); }
     .breakdown-row:focus { outline: 2px solid var(--accent); outline-offset: -2px; }
     .breakdown-row.is-active { background: rgba(79,195,247,.12); }
+    /* ---- Card links (Playwright deep links) ---- */
+    .card-links {
+      display: flex; flex-wrap: wrap; gap: 8px;
+      padding: 12px 16px; border-top: 1px solid var(--border);
+      background: rgba(127,127,127,.04);
+    }
+    .card-link {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 6px 10px; border-radius: 4px;
+      border: 1px solid var(--border); background: var(--bg);
+      color: var(--fg); text-decoration: none; font-size: 12px;
+      font-family: inherit; cursor: pointer;
+    }
+    .card-link:hover { border-color: var(--accent); color: var(--accent); }
+    .card-link:focus { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .card-link-primary { border-color: var(--accent); color: var(--accent); font-weight: 600; }
+    .card-link.is-copied { border-color: var(--accent); background: rgba(79,195,247,.15); }
+    .header-link {
+      display: inline-block; margin-left: 12px; padding: 4px 10px;
+      border: 1px solid var(--border); border-radius: 4px;
+      color: var(--accent); text-decoration: none; font-size: 12px;
+    }
+    .header-link:hover { border-color: var(--accent); }
   </style>
 </head>
 <body>
   <header class="page-header">
-    <h1>Visual snapshot report — live preview</h1>
-    <p class="meta">Wygenerowano: ${escapeHtml(generatedAt)} · Źródło: <code>test-results/</code></p>
+    <h1>Visual snapshot report — live preview${
+      playwrightReportRel
+        ? ` <a class="header-link" href="${escapeHtml(playwrightReportRel)}" target="_blank" rel="noopener">📊 Otwórz pełny Playwright report</a>`
+        : ""
+    }</h1>
+    <p class="meta">Wygenerowano: ${escapeHtml(generatedAt)} · Źródło: <code>test-results/</code>${
+      playwrightReportRel
+        ? ""
+        : ` · <em>(Playwright HTML report nie znaleziony w <code>playwright-report/</code> — uruchom z reporterem html, żeby aktywować deep linki)</em>`
+    }</p>
   </header>
   ${summaryLine}
   ${breakdownSection}
