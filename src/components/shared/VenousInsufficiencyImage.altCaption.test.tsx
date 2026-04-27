@@ -20,7 +20,7 @@ const PAGE_PROPS = {
     mainAlt:
       "Schemat porównawczy zdrowej żyły i żylaka — pokazuje refluks krwi przez niedomykające się zastawki w pniu odpiszczelowym/odstrzałkowym, który EVLT zamyka termicznie od środka",
     mainCaption:
-      "Zdrowa zastawka · Refluks w pniu żylnym · Cel EVLT — termiczne zamknięcie chorej żyły",
+      "Zdrowa zastawka · Refluks w pniu żylnym · Cel EVLT · Termiczne zamknięcie żyły",
     perforatorAlt:
       "Schemat niewydolnego perforatora — żyły łączącej układ głęboki z powierzchownym; jego refluks często współistnieje z niewydolnością pnia leczonego EVLT",
     perforatorCaption:
@@ -31,7 +31,7 @@ const PAGE_PROPS = {
     mainAlt:
       "Schemat porównawczy zdrowej żyły i żylakowatej bocznicy — poszerzone naczynie z niedomykającymi się zastawkami i cofającą się krwią, które mikroflebektomia usuwa mechanicznie z mikronakłuć",
     mainCaption:
-      "Zdrowa bocznica · Żylakowata bocznica · Cel mikroflebektomii — mechaniczne usunięcie z mikronakłuć",
+      "Zdrowa bocznica · Żylakowata bocznica · Cel mikroflebektomii · Usunięcie z mikronakłuć",
     perforatorAlt:
       "Schemat niewydolnego perforatora — często zasila żylakowate bocznice usuwane mikroflebektomią; jego ocena USG Doppler decyduje o zakresie zabiegu",
     perforatorCaption:
