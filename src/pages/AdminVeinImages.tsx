@@ -393,8 +393,12 @@ const AdminVeinImages = () => {
       }
 
       await queryClient.invalidateQueries({ queryKey: VEIN_IMAGE_QUERY_KEY });
+      // Wymuś świeży render podglądu CMS i pokaż flash highlight.
+      setSavedTick((t) => t + 1);
+      setLastSaved({ at: Date.now(), slot, pageKey: activeKey });
+      setPreviewMode("cms");
       toast.success(
-        `Zapisano: ${active.label} · ${slot === "main" ? "główny obraz" : "perforator"}`,
+        `Zapisano: ${active.label} · ${slot === "main" ? "główny obraz" : "perforator"} — podgląd odświeżony z bazy`,
       );
     } catch (err) {
       toast.error(
