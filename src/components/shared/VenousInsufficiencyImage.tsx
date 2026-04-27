@@ -96,7 +96,7 @@ const VenousInsufficiencyImage = ({
           <div className="rounded-lg sm:rounded-xl bg-white overflow-hidden">
             <img
               src={zastawkiImg}
-              alt={mainAlt}
+              alt={effectiveMainAlt}
               loading="lazy"
               decoding="async"
               width={600}
@@ -107,7 +107,7 @@ const VenousInsufficiencyImage = ({
             />
           </div>
           <figcaption className="text-[11px] sm:text-xs text-muted-foreground/80 mt-2.5 sm:mt-3 text-center leading-snug sm:leading-relaxed px-1">
-            {mainCaption}
+            {effectiveMainCaption}
           </figcaption>
         </figure>
 
@@ -117,7 +117,7 @@ const VenousInsufficiencyImage = ({
             <div className="rounded-lg sm:rounded-xl bg-white overflow-hidden flex-1 flex items-center justify-center">
               <img
                 src={perforatorImg}
-                alt={perforatorAlt}
+                alt={effectivePerforatorAlt}
                 loading="lazy"
                 decoding="async"
                 width={200}
@@ -128,7 +128,7 @@ const VenousInsufficiencyImage = ({
               />
             </div>
             <figcaption className="text-[11px] sm:text-xs text-muted-foreground/80 mt-2.5 sm:mt-3 text-center leading-snug sm:leading-relaxed px-1">
-              {perforatorCaption}
+              {effectivePerforatorCaption}
             </figcaption>
           </figure>
         )}
