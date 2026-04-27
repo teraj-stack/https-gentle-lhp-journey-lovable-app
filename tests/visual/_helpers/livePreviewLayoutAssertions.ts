@@ -253,3 +253,270 @@ export const assertCaptionNotClipped = async (
     ).toBeLessThanOrEqual(c.clientW + TEXT_OVERFLOW_TOLERANCE_PX);
   }
 };
+
+// ============================================================================
+// PROGI A11Y
+// ============================================================================
+
+/**
+ * Minimalny rozmiar touch target dla WCAG 2.5.8 (Target Size — Minimum, Level AA).
+ * Specyfikacja mówi 24×24 CSS px, mierząc bbox elementu interaktywnego.
+ *
+ * Stosujemy do tab buttons w sekcji „Tryb podglądu" (Draft / CMS) — to jedyne
+ * interaktywne elementy w obrębie `live-preview-section` na małych ekranach.
+ *
+ * UWAGA: WCAG 2.2 podnosi do 24px tylko jeśli element nie jest w „inline text",
+ * nie ma „equivalent" alternatywy itp. Dla prostoty trzymamy twardy próg 24px
+ * dla wszystkich tabów — jeśli regresja go obniży, mamy realny problem na mobile.
+ */
+export const MIN_TOUCH_TARGET_PX = 24;
+
+/**
+ * Maksymalna szerokość viewportu, dla której uruchamiamy ostrzejsze asercje
+ * touch target (małe ekrany — telefony portrait). Powyżej tej wartości
+ * zakładamy że user ma wskaźnik precyzyjny (mysz/trackpad/tablet z rysikiem)
+ * i mniejsze targety są akceptowalne.
+ *
+ * 600px = standardowy breakpoint między „phone" a „tablet" w MD/Tailwind sm.
+ */
+export const SMALL_SCREEN_MAX_WIDTH_PX = 600;
+
+// ============================================================================
+// ASERCJE A11Y
+// ============================================================================
+
+/**
+ * Asercja: każdy `<img>` w sekcji draftu ma niepuste, sensowne `alt`.
+ *
+ * - `alt=""` jest DOZWOLONE dla obrazów dekoracyjnych przez WCAG, ale dla
+ *   draftu w panelu CMS pusty alt = regresja edytora (user nie widzi co edytuje).
+ * - Trim'ujemy whitespace, bo `alt="   "` to to samo co pusty z punktu widzenia AT.
+ * - Asercja działa tylko na widocznych <img> — element ukryty (display:none) nie
+ *   wpływa na czytniki ekranu.
+ */
+export const assertDraftImagesHaveAlt = async (
+  page: Page,
+  themeLabel: "light" | "dark" = "light",
+): Promise<void> => {
+  const imageInfo = await page
+    .getByTestId("live-preview-section")
+    .locator("img")
+    .evaluateAll((nodes) =>
+      nodes
+        .filter((n) => {
+          // Pomijamy ukryte obrazy — nie są w accessibility tree.
+          const style = window.getComputedStyle(n);
+          return style.display !== "none" && style.visibility !== "hidden";
+        })
+        .map((n) => ({
+          alt: n.getAttribute("alt"),
+          src: n.getAttribute("src")?.slice(0, 60) ?? "(brak src)",
+          // role=presentation/none to świadome wycofanie obrazu z a11y tree —
+          // wtedy alt może być pusty.
+          role: n.getAttribute("role"),
+          ariaHidden: n.getAttribute("aria-hidden") === "true",
+        })),
+    );
+
+  expect(
+    imageInfo.length,
+    `[${themeLabel}] live-preview-section nie zawiera ŻADNEGO widocznego <img> — ` +
+      `regresja: draft image nie został wyrenderowany.`,
+  ).toBeGreaterThan(0);
+
+  for (const img of imageInfo) {
+    // Obrazy świadomie wycofane z a11y tree mogą mieć pusty alt.
+    if (img.role === "presentation" || img.role === "none" || img.ariaHidden) continue;
+
+    expect(
+      img.alt,
+      `[${themeLabel}] <img src="${img.src}…"> nie ma atrybutu alt. ` +
+        `WCAG 1.1.1 wymaga alt="" (dekoracyjny) LUB opisowego tekstu. ` +
+        `Brak atrybutu = regresja accessibility.`,
+    ).not.toBeNull();
+
+    const altTrimmed = (img.alt ?? "").trim();
+    expect(
+      altTrimmed.length,
+      `[${themeLabel}] <img src="${img.src}…"> ma pusty/whitespace alt ("${img.alt}"). ` +
+        `Dla draftu w CMS oczekujemy opisowego tekstu — pusty alt to regresja UX edytora.`,
+    ).toBeGreaterThan(0);
+  }
+};
+
+/**
+ * Asercja: sekcja `live-preview-section` ma accessible name (aria-label / aria-labelledby).
+ * Bez nazwy sekcja jest „landmark" bez etykiety i czytniki ją pomijają.
+ */
+export const assertPreviewSectionHasAccessibleName = async (
+  page: Page,
+  themeLabel: "light" | "dark" = "light",
+): Promise<void> => {
+  const accInfo = await page
+    .getByTestId("live-preview-section")
+    .evaluate((n) => ({
+      ariaLabel: n.getAttribute("aria-label"),
+      ariaLabelledby: n.getAttribute("aria-labelledby"),
+      tagName: n.tagName.toLowerCase(),
+    }));
+
+  const hasName =
+    (accInfo.ariaLabel?.trim().length ?? 0) > 0 ||
+    (accInfo.ariaLabelledby?.trim().length ?? 0) > 0;
+
+  expect(
+    hasName,
+    `[${themeLabel}] <${accInfo.tagName} data-testid="live-preview-section"> ` +
+      `nie ma accessible name (aria-label ani aria-labelledby). ` +
+      `Sekcje/landmarks bez nazwy są pomijane przez czytniki ekranu.`,
+  ).toBe(true);
+};
+
+/**
+ * Asercja focus state na kontrolkach „Tryb podglądu" (Draft/CMS taby).
+ *
+ * Sprawdza:
+ *  1) Każdy tab daje się sfokusować (`page.locator(...).focus()` → activeElement).
+ *  2) Po focusie ma WIDOCZNY indicator: outline o niezerowej szerokości
+ *     LUB box-shadow inny niż "none" LUB ring (Tailwind `focus-visible:ring-*`).
+ *     Łapie regresje typu `outline: none` bez zastępstwa.
+ *  3) Tab kluczem klawiatury przeniesie focus między tabami (sequential focus
+ *     navigation działa — element jest w tab order, nie ma `tabindex="-1"`).
+ */
+export const assertPreviewTabsHaveFocusState = async (
+  page: Page,
+  themeLabel: "light" | "dark" = "light",
+): Promise<void> => {
+  const tabs = page
+    .getByTestId("live-preview-section")
+    .getByRole("tab");
+
+  const tabCount = await tabs.count();
+  expect(
+    tabCount,
+    `[${themeLabel}] Oczekiwano ≥2 role="tab" w live-preview-section ` +
+      `(Draft + CMS), znaleziono ${tabCount}.`,
+  ).toBeGreaterThanOrEqual(2);
+
+  for (let i = 0; i < tabCount; i++) {
+    const tab = tabs.nth(i);
+    const tabText = (await tab.textContent())?.trim() ?? `tab[${i}]`;
+
+    // 1) Focus.
+    await tab.focus();
+    const isFocused = await tab.evaluate((el) => el === document.activeElement);
+    expect(
+      isFocused,
+      `[${themeLabel}] tab "${tabText}" nie przyjął focusu po .focus() — ` +
+        `prawdopodobnie ma tabindex="-1" lub disabled bez wizualnej informacji.`,
+    ).toBe(true);
+
+    // 2) Wizualny indicator focusa.
+    const focusVisuals = await tab.evaluate((el) => {
+      const style = window.getComputedStyle(el);
+      // outline-style: none + outline-width: 0 = brak outline.
+      const outlineWidth = parseFloat(style.outlineWidth) || 0;
+      const outlineStyle = style.outlineStyle;
+      const hasOutline = outlineStyle !== "none" && outlineWidth > 0;
+      // box-shadow: "none" gdy brak; cokolwiek innego = ring/glow indicator.
+      const boxShadow = style.boxShadow;
+      const hasBoxShadow = boxShadow !== "none" && boxShadow.length > 0;
+      return { outlineWidth, outlineStyle, boxShadow, hasOutline, hasBoxShadow };
+    });
+
+    const hasFocusIndicator = focusVisuals.hasOutline || focusVisuals.hasBoxShadow;
+    expect(
+      hasFocusIndicator,
+      `[${themeLabel}] tab "${tabText}" w stanie :focus nie ma żadnego ` +
+        `wizualnego indicatora (outline=${focusVisuals.outlineStyle}/` +
+        `${focusVisuals.outlineWidth}px, box-shadow="${focusVisuals.boxShadow}"). ` +
+        `WCAG 2.4.7 (Focus Visible) wymaga widocznego wskaźnika focusa — ` +
+        `regresja: ktoś dodał \`outline: none\` bez zastępstwa.`,
+    ).toBe(true);
+  }
+
+  // 3) Sequential focus navigation — Tab key przesuwa focus na NEXT tab.
+  // Cofamy się na pierwszy tab, naciskamy Tab, sprawdzamy że focus poszedł dalej.
+  await tabs.first().focus();
+  const firstActive = await page.evaluate(
+    () => document.activeElement?.textContent?.trim() ?? "",
+  );
+  await page.keyboard.press("Tab");
+  const afterTabActive = await page.evaluate(
+    () => document.activeElement?.textContent?.trim() ?? "",
+  );
+  // Nie sprawdzamy że focus poszedł na drugi tab konkretnie (między tabami
+  // mogą być inne focusable elementy w przyszłości) — sprawdzamy że focus
+  // w ogóle SIĘ PRZESUNĄŁ (sequential nav działa).
+  expect(
+    afterTabActive,
+    `[${themeLabel}] Tab key nie przesunął focusa z "${firstActive}" — ` +
+      `pierwszy tab prawdopodobnie wypadł z tab order.`,
+  ).not.toBe(firstActive);
+};
+
+/**
+ * Asercja minimalnego rozmiaru touch target dla tabów na MAŁYCH EKRANACH.
+ *
+ * - WCAG 2.5.8 (AA): bbox ≥ 24×24 CSS px.
+ * - Wykonywana TYLKO gdy `viewportWidth ≤ SMALL_SCREEN_MAX_WIDTH_PX` (≤600px).
+ *   Na desktop/tablet ten próg jest mniej krytyczny (precyzyjny wskaźnik),
+ *   więc nie zaśmiecamy logu nadmiarowymi asercjami.
+ *
+ * Zwraca wcześnie (no-op) dla viewportów > 600px.
+ */
+export const assertTouchTargetsOnSmallScreens = async (
+  page: Page,
+  viewportWidth: number,
+  themeLabel: "light" | "dark" = "light",
+): Promise<void> => {
+  if (viewportWidth > SMALL_SCREEN_MAX_WIDTH_PX) return;
+
+  const tabs = page
+    .getByTestId("live-preview-section")
+    .getByRole("tab");
+  const tabCount = await tabs.count();
+
+  for (let i = 0; i < tabCount; i++) {
+    const tab = tabs.nth(i);
+    const tabText = (await tab.textContent())?.trim() ?? `tab[${i}]`;
+    const box = await tab.boundingBox();
+    expect(
+      box,
+      `[${themeLabel}] tab "${tabText}" nie ma boundingBox — ` +
+        `prawdopodobnie display:none lub poza viewportem.`,
+    ).not.toBeNull();
+    if (!box) continue;
+
+    expect(
+      box.width,
+      `[${themeLabel}] tab "${tabText}" ma szerokość ${box.width.toFixed(1)}px ` +
+        `< ${MIN_TOUCH_TARGET_PX}px (WCAG 2.5.8). ` +
+        `Viewport ${viewportWidth}px — small screen, target za mały na tap'a palcem.`,
+    ).toBeGreaterThanOrEqual(MIN_TOUCH_TARGET_PX);
+
+    expect(
+      box.height,
+      `[${themeLabel}] tab "${tabText}" ma wysokość ${box.height.toFixed(1)}px ` +
+        `< ${MIN_TOUCH_TARGET_PX}px (WCAG 2.5.8). ` +
+        `Viewport ${viewportWidth}px — small screen, target za niski na tap'a palcem.`,
+    ).toBeGreaterThanOrEqual(MIN_TOUCH_TARGET_PX);
+  }
+};
+
+/**
+ * Composite a11y assertion — wywołuje wszystkie powyższe w jednym miejscu.
+ * Używaj w spec'ach jako pojedynczego punktu wejścia, żeby nowe asercje
+ * automatycznie dołączały się do istniejących testów.
+ */
+export const assertDraftA11y = async (
+  page: Page,
+  viewportWidth: number,
+  themeLabel: "light" | "dark" = "light",
+): Promise<void> => {
+  await assertPreviewSectionHasAccessibleName(page, themeLabel);
+  await assertDraftImagesHaveAlt(page, themeLabel);
+  await assertPreviewTabsHaveFocusState(page, themeLabel);
+  await assertTouchTargetsOnSmallScreens(page, viewportWidth, themeLabel);
+};
+

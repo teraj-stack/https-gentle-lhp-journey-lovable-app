@@ -27,6 +27,7 @@ import { test, expect, type Page, type Route } from "../../playwright-fixture";
 import {
   assertLayoutDoesNotBreak,
   assertCaptionNotClipped,
+  assertDraftA11y,
   LIVE_PREVIEW_SNAPSHOT_DIFF_RATIO,
 } from "./_helpers/livePreviewLayoutAssertions";
 
@@ -160,6 +161,12 @@ test.describe("AdminVeinImages — visual regression LIVE PREVIEW [DARK] (4 view
 
       // === STATE A: pusty draft (po wejściu na panel) ===
       await assertLayoutDoesNotBreak(page, viewport.width, "dark");
+      // A11y check (focus state, alt text, touch targets na małych ekranach).
+      // Wywoływane raz w STATE A — semantyka a11y nie zmienia się od fill'owania
+      // textareas. Blur'ujemy aktywny element przed snapshotem, żeby focus ring
+      // nie wszedł do baseline'u i nie różnił się między uruchomieniami.
+      await assertDraftA11y(page, viewport.width, "dark");
+      await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
       await expect(previewSection).toHaveScreenshot(
         `live-preview-${viewport.name}-dark-state-a-empty.png`,
         {
