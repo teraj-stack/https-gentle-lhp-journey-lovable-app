@@ -68,6 +68,54 @@ const PLAYWRIGHT_REPORT_DIR = path.join(
 const TRACE_VIEWER_URL = "https://trace.playwright.dev/";
 
 /**
+ * Parser argumentów CLI. Wspierane:
+ *   --max-failures=N
+ *   --max-failures N
+ *   -m N
+ *   env MAX_FAILURES=N (fallback gdy brak CLI)
+ *
+ * Walidacja: dodatnia liczba całkowita. Błędna wartość → warning + null
+ * (raport bez limitu). Celowo NIE crashujemy — skrypt jest idempotentny
+ * narzędziem post-run, nie chcemy żeby literówka w CI wywaliła build.
+ */
+const parseCliArgs = (argv) => {
+  let maxFailures = null;
+  const args = argv.slice(2);
+  for (let i = 0; i < args.length; i++) {
+    const a = args[i];
+    let raw = null;
+    if (a.startsWith("--max-failures=")) {
+      raw = a.slice("--max-failures=".length);
+    } else if (a === "--max-failures" || a === "-m") {
+      raw = args[i + 1];
+      i++; // zjada następny token
+    }
+    if (raw !== null && raw !== undefined) {
+      const n = Number.parseInt(raw, 10);
+      if (Number.isInteger(n) && n > 0) {
+        maxFailures = n;
+      } else {
+        console.warn(
+          `[visual-snapshot-report] Ignoruję --max-failures="${raw}" — oczekiwano dodatniej liczby całkowitej.`,
+        );
+      }
+    }
+  }
+  // Env fallback tylko gdy CLI nic nie ustawił.
+  if (maxFailures === null && process.env.MAX_FAILURES) {
+    const n = Number.parseInt(process.env.MAX_FAILURES, 10);
+    if (Number.isInteger(n) && n > 0) {
+      maxFailures = n;
+    } else {
+      console.warn(
+        `[visual-snapshot-report] Ignoruję MAX_FAILURES="${process.env.MAX_FAILURES}" — oczekiwano dodatniej liczby całkowitej.`,
+      );
+    }
+  }
+  return { maxFailures };
+};
+
+/**
  * Filtr ścieżek — interesują nas TYLKO nieudane snapshoty z spec'ów live preview.
  * Inne wizualne testy (np. tooltip-last-change.spec.ts) celowo pomijamy,
  * żeby raport był skupiony na live preview.
