@@ -916,7 +916,14 @@ const AdminVeinImages = () => {
   const exportCsv = async () => {
     setExporting("csv");
     try {
-      const rows = await fetchAllOverrides();
+      const allRows = await fetchAllOverrides();
+      const { rows, suffix } = applyExportFilters(allRows);
+      if (rows.length === 0) {
+        toast.info(
+          `Brak overrides do eksportu dla filtra: ${exportFilterSummary()}.`,
+        );
+        return;
+      }
       const header = ["page_key", "slot", "alt", "caption", "updated_at", "updated_by"];
       const lines = [header.join(",")];
       for (const row of rows) {
@@ -929,11 +936,13 @@ const AdminVeinImages = () => {
       const stamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
       // BOM dla poprawnego otwarcia w Excelu z polskimi znakami.
       downloadFile(
-        `vein-image-overrides-${stamp}.csv`,
+        `vein-image-overrides${suffix}-${stamp}.csv`,
         "\uFEFF" + lines.join("\r\n"),
         "text/csv",
       );
-      toast.success(`Wyeksportowano ${rows.length} overrides do CSV`);
+      toast.success(
+        `Wyeksportowano ${rows.length} overrides do CSV (${exportFilterSummary()})`,
+      );
     } catch (err) {
       toast.error(
         `Błąd eksportu CSV: ${err instanceof Error ? err.message : String(err)}`,
