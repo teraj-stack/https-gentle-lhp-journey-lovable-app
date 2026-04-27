@@ -2197,6 +2197,69 @@ const main = async () => {
     "utf8",
   );
 
+  /**
+   * Walidacja schematu CSV: porównuje pierwszą linię świeżo zapisanego pliku
+   * z oczekiwanymi kolumnami (count + kolejność). Wykrywa:
+   *  - mismatch liczby kolumn (np. dodano/usunięto kolumnę bez bumpa schemaVersion)
+   *  - zmianę kolejności (breaking change dla append do history.csv)
+   *  - mismatch szerokości wiersza danych (header vs row column count)
+   * Zwraca `true` gdy OK; loguje warn i zwraca `false` gdy schema się rozjechał.
+   */
+  const validateCsvSchema = async (filePath, expectedCols, { dataRowCount } = {}) => {
+    const rel = path.relative(PROJECT_ROOT, filePath);
+    let contents;
+    try {
+      contents = await fs.readFile(filePath, "utf8");
+    } catch (err) {
+      console.warn(`[visual-snapshot-report] ⚠ Schema check ${rel}: nie mogę odczytać (${err.message}).`);
+      return false;
+    }
+    const lines = contents.split("\n").filter((l) => l.length > 0);
+    const headerCells = (lines[0] ?? "").split(",");
+    const issues = [];
+    if (headerCells.length !== expectedCols.length) {
+      issues.push(
+        `liczba kolumn ${headerCells.length} ≠ oczekiwane ${expectedCols.length}`,
+      );
+    }
+    const orderMismatches = [];
+    const maxLen = Math.max(headerCells.length, expectedCols.length);
+    for (let i = 0; i < maxLen; i++) {
+      if (headerCells[i] !== expectedCols[i]) {
+        orderMismatches.push(`#${i}: "${headerCells[i] ?? "<brak>"}" ≠ "${expectedCols[i] ?? "<brak>"}"`);
+      }
+    }
+    if (orderMismatches.length > 0) {
+      issues.push(`kolejność nagłówków: ${orderMismatches.slice(0, 3).join("; ")}${orderMismatches.length > 3 ? ` (+${orderMismatches.length - 3})` : ""}`);
+    }
+    if (typeof dataRowCount === "number") {
+      const actualData = lines.length - 1;
+      if (actualData !== dataRowCount) {
+        issues.push(`liczba wierszy danych ${actualData} ≠ oczekiwane ${dataRowCount}`);
+      }
+      // Sprawdź szerokość każdego wiersza — pomaga wykryć przecinki w polach
+      // albo desync między csvCols a csvRow w kodzie.
+      for (let i = 1; i < lines.length; i++) {
+        const cells = lines[i].split(",");
+        if (cells.length !== expectedCols.length) {
+          issues.push(`wiersz #${i}: ${cells.length} kolumn ≠ ${expectedCols.length}`);
+          break;
+        }
+      }
+    }
+    if (issues.length > 0) {
+      console.warn(
+        `[visual-snapshot-report] ⚠ Schema mismatch w ${rel} — format zmienił się między wersjami:\n` +
+          issues.map((i) => `   • ${i}`).join("\n") +
+          `\n   → bump schemaVersion w savings.json i zarchiwizuj stare CSV przed kolejnym runem.`,
+      );
+      return false;
+    }
+    return true;
+  };
+
+  await validateCsvSchema(savingsCsvPath, csvCols, { dataRowCount: 1 });
+
   // Per-grupa CSV (1 wiersz per grupa). Schema flat — analog savings.csv,
   // ale dla pojedynczej grupy (viewport albo state). Ułatwia DuckDB query
   // typu "która grupa najmocniej oszczędziła w ostatnim tygodniu".
@@ -2246,6 +2309,8 @@ const main = async () => {
     `${groupHeaderLine}\n${stateRows.join("\n")}${stateRows.length ? "\n" : ""}`,
     "utf8",
   );
+  await validateCsvSchema(savingsByViewportPath, groupCsvCols, { dataRowCount: viewportRows.length });
+  await validateCsvSchema(savingsByStatePath, groupCsvCols, { dataRowCount: stateRows.length });
 
   // Auto-append do history.csv (trend między uruchomieniami).
   // Reguły:
