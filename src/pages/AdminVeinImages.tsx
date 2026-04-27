@@ -2015,7 +2015,7 @@ const AdminVeinImages = () => {
                 variant="outline"
                 size="sm"
                 onClick={copyJsonToClipboard}
-                disabled={exporting !== null}
+                disabled={exporting !== null || preparingPreview !== null}
                 title={`Skopiuj JSON do schowka — ten sam payload co Export JSON (${exportFilterSummary()})`}
                 aria-label="Kopiuj JSON do schowka"
               >
