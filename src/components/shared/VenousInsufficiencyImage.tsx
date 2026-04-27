@@ -1,7 +1,10 @@
 import { motion } from "framer-motion";
 import zastawkiImg from "@/assets/niewydolnosc-zylna-zastawki.webp";
 import perforatorImg from "@/assets/niewydolny-perforator.webp";
-
+import {
+  useVeinImageOverridesForPage,
+  type VeinImagePageKey,
+} from "@/hooks/useVeinImageOverrides";
 interface Props {
   /** Optional title above the images. */
   title?: string;
