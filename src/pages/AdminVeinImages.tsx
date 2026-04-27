@@ -1174,18 +1174,25 @@ const AdminVeinImages = () => {
         toast.error("Plik CSV jest pusty.");
         return;
       }
-      const header = matrix[0]!.map((h) => h.trim().toLowerCase());
-      const idx = {
-        page_key: header.indexOf("page_key"),
-        slot: header.indexOf("slot"),
-        alt: header.indexOf("alt"),
-        caption: header.indexOf("caption"),
-      };
-      if (idx.page_key < 0 || idx.slot < 0 || idx.alt < 0 || idx.caption < 0) {
+      const rawHeader = matrix[0]!;
+      const mapping = resolveCsvHeaderMapping(rawHeader);
+      const idx = mapping.indices;
+      const missing = (["page_key", "slot", "alt", "caption"] as const).filter(
+        (k) => idx[k] < 0,
+      );
+      if (missing.length > 0) {
         toast.error(
-          "Brak wymaganych kolumn. Wymagane: page_key, slot, alt, caption.",
+          `Brak wymaganych kolumn: ${missing.join(", ")}. Akceptowane warianty nagłówków: page_key/Page Key/Strona, slot/Slot/Wariant, alt/Alt text/Opis alternatywny, caption/Caption/Podpis.`,
         );
         return;
+      }
+      // Pokaż adminowi co system wykrył — szczególnie ważne, gdy mapowanie
+      // zadziałało na nieoczywistym wariancie (np. „Page Key" → page_key).
+      const remapped = (Object.keys(idx) as Array<keyof typeof idx>)
+        .filter((k) => mapping.matchedHeader[k] && mapping.matchedHeader[k] !== k)
+        .map((k) => `${mapping.matchedHeader[k]} → ${k}`);
+      if (remapped.length > 0) {
+        toast.info(`Rozpoznano nagłówki: ${remapped.join(", ")}`);
       }
 
       const dbRows = await fetchAllOverrides();
