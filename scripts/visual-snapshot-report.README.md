@@ -160,12 +160,18 @@ Nieznane klucze → warning, pomijane (CI nie wybucha za literówkę).
 [visual-snapshot-report]   ├─ trio: baseline=80 (allFailed.length), rendered=30, saved=50 | limity: --max-failures=30, --max-failures-per-viewport=∞, --max-failures-per-state=∞
 [visual-snapshot-report]   ├─ PNG copy: baseline=150 (suma expected+actual+diff z allFailed), processed=90, saved=60 | limit: --max-copy=∞ (copyLimit=30/30 trio)
 [visual-snapshot-report]   └─ discovery readdir: baseline=80 (allFailed.length), processed=30, saved=50 | limit: --max-discovery=∞ (discoveryLimit=30/30 trio)
+[visual-snapshot-report] 🏆 Top 3 oszczędzonych trio (z 50 pominiętych):
+[visual-snapshot-report]   ├─ #1 admin-dark-desktop-state-c (3 PNG + 1 readdir) — tests/visual/admin-vein-images-live-preview-dark.spec.ts-snapshots
+[visual-snapshot-report]   ├─ #2 tooltip-mobile-state-b (3 PNG + 1 readdir) — tests/visual/tooltip-last-change.spec.ts-snapshots
+[visual-snapshot-report]   └─ #3 admin-tablet-state-a (2 PNG + 1 readdir) — tests/visual/admin-vein-images.spec.ts-snapshots
 ```
 
 Breakdown pozwala policzyć dokładny zysk IO względem pełnego scenariusza
 bez limitów: `baseline` = co zrobiłby skrypt bez `--max-*`, `processed` =
 co faktycznie wykonał, `saved` = `baseline - processed`. Limity (`∞` = brak)
-pokazują, który flag ile zaoszczędził.
+pokazują, który flag ile zaoszczędził. Top 3 ranking sortowany po liczbie PNG
+(tie-break: stem alfabetycznie) — najszybszy sygnał, które trio najbardziej
+ciążyły w IO i warto je rozwiązać/przenieść do osobnego runa.
 
 **Komentarz w PR z linkiem do artifactu** (opcjonalnie):
 
