@@ -1085,7 +1085,7 @@ const renderHtml = ({
             <option value="full">Pełny schemat</option>
           </select>
         </label>
-        <button type="button" class="trends-filter-export" data-trend-export title="Pobierz przefiltrowane wiersze jako CSV (kompatybilny ze schematem savings.csv/history.csv)">⬇ Eksportuj CSV</button>
+        <button type="button" class="trends-filter-export" data-trend-export title="Pokaż podgląd 20 pierwszych wierszy, potem pobierz przefiltrowane runy jako CSV (kompatybilny ze schematem savings.csv/history.csv)">⬇ Podgląd i eksport…</button>
         <span class="trends-filter-export-status" data-trend-export-status role="status" aria-live="polite"></span>
       </div>`;
 
