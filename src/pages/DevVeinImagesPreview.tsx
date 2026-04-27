@@ -737,9 +737,8 @@ const DevVeinImagesPreview = () => {
                       {draft[altField]}
                     </p>
                   )}
+                  <ReadabilityRow stats={altStats} viewport={viewport} kind="alt" />
                 </div>
-
-                {/* Caption */}
                 <div>
                   <div className="flex items-center justify-between gap-2 mb-1">
                     <label
