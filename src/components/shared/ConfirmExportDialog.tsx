@@ -240,6 +240,30 @@ const ConfirmExportDialog: React.FC<ConfirmExportDialogProps> = ({
           <p className="text-xs text-muted-foreground leading-relaxed">{description}</p>
         )}
 
+        {/*
+          Keyboard hint — pomaga klawiaturowym i screen-reader userom
+          zauważyć skróty. `aria-hidden` bo SR i tak słyszą instrukcję
+          dialogu Radixa; tu chodzi o wzrokową wskazówkę.
+        */}
+        <p
+          className="text-[11px] text-muted-foreground/80 flex items-center gap-2 flex-wrap"
+          aria-hidden="true"
+        >
+          <span className="inline-flex items-center gap-1">
+            <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-[10px]">
+              Enter
+            </kbd>
+            <span>aby pobrać</span>
+          </span>
+          <span className="text-muted-foreground/40">·</span>
+          <span className="inline-flex items-center gap-1">
+            <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-[10px]">
+              Esc
+            </kbd>
+            <span>aby anulować</span>
+          </span>
+        </p>
+
         <AlertDialogFooter>
           <AlertDialogCancel disabled={isExporting}>{cancelLabel}</AlertDialogCancel>
           <AlertDialogAction
@@ -257,6 +281,7 @@ const ConfirmExportDialog: React.FC<ConfirmExportDialogProps> = ({
             disabled={isExporting}
             className="gap-2"
             aria-live="polite"
+            aria-keyshortcuts="Enter"
           >
             {isExporting ? (
               <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
