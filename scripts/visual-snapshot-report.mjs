@@ -164,7 +164,52 @@ const escapeHtml = (s) =>
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
 
-const renderHtml = ({ trios, generatedAt, totalFailures }) => {
+/**
+ * Wykrywa dodatkowe artefakty Playwrighta w katalogu testu (`t.dir`):
+ *  - trace.zip          → link do Trace Viewera (https://trace.playwright.dev/)
+ *  - video.webm / *.webm → link do nagrania
+ *  - error-context.md   → snapshot stanu DOM/console (Playwright 1.40+)
+ *
+ * Wszystko relatywne do REPORT_DIR, żeby zachować przenośność (CI artifact upload
+ * pakuje cały `test-results/`, więc relatywne ścieżki działają out-of-the-box).
+ */
+const discoverPlaywrightArtifacts = async (testDir) => {
+  let entries = [];
+  try {
+    entries = await fs.readdir(testDir, { withFileTypes: true });
+  } catch {
+    return { trace: null, video: null, errorContext: null };
+  }
+  const find = (predicate) => {
+    const hit = entries.find((e) => e.isFile() && predicate(e.name));
+    return hit ? path.join(testDir, hit.name) : null;
+  };
+  return {
+    trace: find((n) => n === "trace.zip" || n.endsWith(".trace.zip")),
+    video: find((n) => n.endsWith(".webm")),
+    errorContext: find((n) => n === "error-context.md"),
+  };
+};
+
+/**
+ * Sprawdza, czy Playwright HTML report istnieje. Zwraca relatywną ścieżkę
+ * od REPORT_DIR do `index.html` reportera lub null, jeśli go nie ma.
+ *
+ * Uwaga: Playwright HTML reporter NIE eksponuje deep-linków per test case
+ * przez stabilny URL — testId jest hashem generowanym przy renderze. Dlatego
+ * linkujemy do listy + kopiujemy nazwę testu do clipboardu, żeby user wkleił
+ * w search box reportera.
+ */
+const discoverPlaywrightReport = async () => {
+  try {
+    await fs.access(path.join(PLAYWRIGHT_REPORT_DIR, "index.html"));
+    return path.relative(REPORT_DIR, path.join(PLAYWRIGHT_REPORT_DIR, "index.html"));
+  } catch {
+    return null;
+  }
+};
+
+const renderHtml = ({ trios, generatedAt, totalFailures, playwrightReportRel }) => {
   // Zbieramy unikalne wartości viewport / state z trios, żeby wypełnić <select>'y.
   // Sortujemy alfabetycznie dla deterministycznej kolejności w UI (łatwiej znaleźć).
   const viewportSet = new Set();
