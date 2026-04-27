@@ -731,6 +731,26 @@ const AdminVeinImages = () => {
    * `exportJson`/`exportCsv`, Cancel po prostu czyści stan.
    */
   const [pendingExport, setPendingExport] = useState<"json" | "csv" | null>(null);
+  /**
+   * Snapshot tego, co dokładnie znajdzie się w pobieranym pliku — wyliczany
+   * w `requestExport()` zaraz po kliknięciu „Export JSON/CSV". Pokazujemy
+   * w AlertDialogu ROZSZERZONY summary (nazwa pliku, liczba wierszy, kolumny,
+   * breakdown per page_key/slot, próbka), żeby admin mógł świadomie potwierdzić
+   * lub anulować zanim plik trafi na dysk.
+   *
+   * `null` = brak snapshotu (dialog zamknięty albo trwa fetch — wtedy pokazujemy loader).
+   */
+  const [exportPreview, setExportPreview] = useState<{
+    format: "json" | "csv";
+    filename: string;
+    filterSummary: string;
+    total: number;
+    columns: string[];
+    breakdown: { page_key: string; slot: string; count: number }[];
+    sample: { page_key: string; slot: string; alt: string | null; caption: string | null }[];
+  } | null>(null);
+  // Loader na czas fetch + budowy preview (przycisk „Export …" → spinner).
+  const [preparingPreview, setPreparingPreview] = useState<"json" | "csv" | null>(null);
   // Krótki „✓ Skopiowano" feedback na przycisku kopiowania (2 s).
   const [jsonCopied, setJsonCopied] = useState(false);
   /**
@@ -1182,6 +1202,88 @@ const AdminVeinImages = () => {
     if (exportPageKey !== "all") parts.push(`strona ${exportPageKey}`);
     if (exportSlot !== "all") parts.push(`slot ${exportSlot}`);
     return parts.join(" · ");
+  };
+
+  /**
+   * Otwiera dialog potwierdzenia eksportu Z PEŁNYM SUMMARY treści pliku.
+   * 
+   * Flow:
+   *  1. Klik „Export JSON/CSV" → `requestExport(format)`.
+   *  2. Pobieramy overrides z bazy + aplikujemy aktywne filtry (te same co w `exportJson`/`exportCsv`).
+   *  3. Budujemy `exportPreview` (filename, total, kolumny, breakdown per page/slot, próbka 3 wierszy).
+   *  4. Otwieramy AlertDialog (`pendingExport = format`) — admin widzi DOKŁADNIE co pobierze.
+   *  5. Confirm → `exportJson()`/`exportCsv()` (re-fetch jest OK, dane się raczej nie zmienią
+   *     w ciągu sekund między kliknięciami; preview służy tylko do świadomej decyzji).
+   *  6. Cancel → czyścimy `pendingExport` + `exportPreview`, żaden plik nie idzie na dysk.
+   *
+   * Edge case: 0 wierszy → zamiast dialogu pokazujemy toast.info i nie otwieramy nic
+   * (spójnie z dotychczasowym zachowaniem `exportJson`/`exportCsv`).
+   */
+  const requestExport = async (format: "json" | "csv") => {
+    setPreparingPreview(format);
+    try {
+      const allRows = await fetchAllOverrides();
+      const { rows, suffix } = applyExportFilters(allRows);
+      if (rows.length === 0) {
+        toast.info(
+          `Brak overrides do eksportu dla filtra: ${exportFilterSummary()}.`,
+        );
+        return;
+      }
+      // Breakdown per (page_key, slot) — admin widzi rozkład, nie tylko sumę.
+      const breakdownMap = new Map<string, number>();
+      for (const r of rows) {
+        const key = `${r.page_key}|${r.slot}`;
+        breakdownMap.set(key, (breakdownMap.get(key) ?? 0) + 1);
+      }
+      const breakdown = Array.from(breakdownMap.entries())
+        .map(([k, count]) => {
+          const [page_key, slot] = k.split("|");
+          return { page_key, slot, count };
+        })
+        .sort((a, b) =>
+          a.page_key === b.page_key
+            ? a.slot.localeCompare(b.slot)
+            : a.page_key.localeCompare(b.page_key),
+        );
+      const stamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+      const filename =
+        format === "json"
+          ? `vein-image-overrides${suffix}-${stamp}.json`
+          : `vein-image-overrides${suffix}-${stamp}.csv`;
+      const columns =
+        format === "json"
+          ? [
+              "exported_at",
+              "exported_by",
+              "filter.page_key",
+              "filter.slot",
+              "total",
+              "overrides[] (page_key, slot, alt, caption, updated_at, updated_by)",
+            ]
+          : ["page_key", "slot", "alt", "caption", "updated_at", "updated_by"];
+      setExportPreview({
+        format,
+        filename,
+        filterSummary: exportFilterSummary(),
+        total: rows.length,
+        columns,
+        breakdown,
+        sample: rows.slice(0, 3).map((r) => ({
+          page_key: r.page_key,
+          slot: r.slot,
+          alt: (r as { alt: string | null }).alt ?? null,
+          caption: (r as { caption: string | null }).caption ?? null,
+        })),
+      });
+      setPendingExport(format);
+    } catch (err) {
+      toast.error(
+        `Nie udało się przygotować podglądu eksportu: ${err instanceof Error ? err.message : String(err)}`,
+      );
+    } finally {
+      setPreparingPreview(null);
+    }
   };
 
   const exportJson = async () => {
@@ -1898,18 +2000,22 @@ const AdminVeinImages = () => {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setPendingExport("json")}
-                disabled={exporting !== null}
-                title={`Pobierz overrides z bazy jako JSON (${exportFilterSummary()})`}
+                onClick={() => void requestExport("json")}
+                disabled={exporting !== null || preparingPreview !== null}
+                title={`Pobierz overrides z bazy jako JSON (${exportFilterSummary()}) — najpierw zobaczysz podgląd zawartości`}
               >
                 <FileJson className="w-3.5 h-3.5 mr-1" />
-                {exporting === "json" ? "Eksport…" : "Export JSON"}
+                {preparingPreview === "json"
+                  ? "Podgląd…"
+                  : exporting === "json"
+                    ? "Eksport…"
+                    : "Export JSON"}
               </Button>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={copyJsonToClipboard}
-                disabled={exporting !== null}
+                disabled={exporting !== null || preparingPreview !== null}
                 title={`Skopiuj JSON do schowka — ten sam payload co Export JSON (${exportFilterSummary()})`}
                 aria-label="Kopiuj JSON do schowka"
               >
@@ -1927,12 +2033,16 @@ const AdminVeinImages = () => {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setPendingExport("csv")}
-                disabled={exporting !== null}
-                title={`Pobierz overrides z bazy jako CSV — Excel-friendly (${exportFilterSummary()})`}
+                onClick={() => void requestExport("csv")}
+                disabled={exporting !== null || preparingPreview !== null}
+                title={`Pobierz overrides z bazy jako CSV — Excel-friendly (${exportFilterSummary()}) — najpierw zobaczysz podgląd zawartości`}
               >
                 <FileSpreadsheet className="w-3.5 h-3.5 mr-1" />
-                {exporting === "csv" ? "Eksport…" : "Export CSV"}
+                {preparingPreview === "csv"
+                  ? "Podgląd…"
+                  : exporting === "csv"
+                    ? "Eksport…"
+                    : "Export CSV"}
               </Button>
               <Button
                 variant="outline"
@@ -2678,32 +2788,155 @@ const AdminVeinImages = () => {
       <AlertDialog
         open={pendingExport !== null}
         onOpenChange={(open) => {
-          if (!open) setPendingExport(null);
+          if (!open) {
+            setPendingExport(null);
+            setExportPreview(null);
+          }
         }}
       >
-        <AlertDialogContent>
+        <AlertDialogContent className="max-w-2xl">
           <AlertDialogHeader>
             <AlertDialogTitle>
               Pobrać plik {pendingExport === "json" ? "JSON" : "CSV"}?
             </AlertDialogTitle>
-            <AlertDialogDescription>
-              Eksport obejmie overrides z bazy dla filtra:{" "}
-              <span className="font-mono">{exportFilterSummary()}</span>. Plik zostanie
-              zapisany przez przeglądarkę. Możesz anulować, jeśli kliknięcie było
-              przypadkowe.
+            <AlertDialogDescription asChild>
+              <div className="space-y-3 text-sm">
+                <p>
+                  Sprawdź zawartość przed pobraniem. Plik zostanie zapisany
+                  przez przeglądarkę dopiero po potwierdzeniu — możesz anulować,
+                  jeśli kliknięcie było przypadkowe.
+                </p>
+                {exportPreview && (
+                  <>
+                    {/* Meta: nazwa pliku + filtr + liczba wierszy */}
+                    <div className="rounded-md border border-border bg-muted/40 p-3 space-y-1.5">
+                      <div className="flex items-baseline justify-between gap-2 flex-wrap">
+                        <span className="text-xs uppercase tracking-wide text-muted-foreground">
+                          Nazwa pliku
+                        </span>
+                        <code className="font-mono text-xs break-all">
+                          {exportPreview.filename}
+                        </code>
+                      </div>
+                      <div className="flex items-baseline justify-between gap-2 flex-wrap">
+                        <span className="text-xs uppercase tracking-wide text-muted-foreground">
+                          Filtr
+                        </span>
+                        <span className="font-mono text-xs">
+                          {exportPreview.filterSummary}
+                        </span>
+                      </div>
+                      <div className="flex items-baseline justify-between gap-2 flex-wrap">
+                        <span className="text-xs uppercase tracking-wide text-muted-foreground">
+                          Liczba wierszy
+                        </span>
+                        <span className="font-mono text-xs">
+                          {exportPreview.total}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Kolumny / kształt payloadu */}
+                    <div>
+                      <div className="text-xs uppercase tracking-wide text-muted-foreground mb-1">
+                        {exportPreview.format === "json"
+                          ? "Pola w pliku JSON"
+                          : "Kolumny w pliku CSV"}
+                      </div>
+                      <div className="flex flex-wrap gap-1">
+                        {exportPreview.columns.map((c) => (
+                          <code
+                            key={c}
+                            className="font-mono text-[11px] px-1.5 py-0.5 rounded bg-muted border border-border"
+                          >
+                            {c}
+                          </code>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Breakdown per page_key/slot */}
+                    <div>
+                      <div className="text-xs uppercase tracking-wide text-muted-foreground mb-1">
+                        Rozkład wierszy
+                      </div>
+                      <ul className="text-xs font-mono space-y-0.5 max-h-32 overflow-auto">
+                        {exportPreview.breakdown.map((b) => (
+                          <li
+                            key={`${b.page_key}|${b.slot}`}
+                            className="flex justify-between gap-3"
+                          >
+                            <span>
+                              {b.page_key} · {b.slot}
+                            </span>
+                            <span className="text-muted-foreground">
+                              {b.count}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    {/* Próbka pierwszych 3 wierszy — żeby admin szybko ocenił treść */}
+                    {exportPreview.sample.length > 0 && (
+                      <div>
+                        <div className="text-xs uppercase tracking-wide text-muted-foreground mb-1">
+                          Podgląd (pierwsze {exportPreview.sample.length} z{" "}
+                          {exportPreview.total})
+                        </div>
+                        <ul className="text-xs space-y-1 max-h-40 overflow-auto">
+                          {exportPreview.sample.map((s, i) => (
+                            <li
+                              key={i}
+                              className="rounded border border-border p-1.5 bg-muted/30"
+                            >
+                              <div className="font-mono text-[11px] text-muted-foreground">
+                                {s.page_key} · {s.slot}
+                              </div>
+                              <div className="truncate">
+                                <span className="text-muted-foreground">
+                                  alt:
+                                </span>{" "}
+                                {s.alt ?? <em className="opacity-60">(brak)</em>}
+                              </div>
+                              <div className="truncate">
+                                <span className="text-muted-foreground">
+                                  caption:
+                                </span>{" "}
+                                {s.caption ?? (
+                                  <em className="opacity-60">(brak)</em>
+                                )}
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Anuluj</AlertDialogCancel>
+            <AlertDialogCancel
+              onClick={() => {
+                setPendingExport(null);
+                setExportPreview(null);
+              }}
+            >
+              Anuluj
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
                 const which = pendingExport;
                 setPendingExport(null);
+                setExportPreview(null);
                 if (which === "json") void exportJson();
                 else if (which === "csv") void exportCsv();
               }}
             >
               Pobierz {pendingExport === "json" ? "JSON" : "CSV"}
+              {exportPreview ? ` (${exportPreview.total})` : ""}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
