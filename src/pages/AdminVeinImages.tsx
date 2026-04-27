@@ -2223,18 +2223,68 @@ const AdminVeinImages = () => {
               Plik: <span className="font-mono">{importPreview?.fileName}</span> ·{" "}
               {importPreview ? (
                 <>
-                  do utworzenia: {importPreview.rows.filter((r) => r.status === "create").length} ·
-                  do aktualizacji: {importPreview.rows.filter((r) => r.status === "update").length} ·
-                  bez zmian: {importPreview.rows.filter((r) => r.status === "noop").length} ·
-                  z błędami: {importPreview.rows.filter((r) => r.status === "error").length}
+                  do utworzenia: {importPreviewRows.filter((r) => r.status === "create").length} ·
+                  do aktualizacji: {importPreviewRows.filter((r) => r.status === "update").length} ·
+                  bez zmian: {importPreviewRows.filter((r) => r.status === "noop").length} ·
+                  z błędami: {importPreviewRows.filter((r) => r.status === "error").length}
                 </>
               ) : null}
             </DialogDescription>
           </DialogHeader>
 
+          {/*
+            Toolbar dialogu: przełącznik strategii dedupu duplikatów page_key+slot.
+            Reaktywny — zmiana radio przelicza importPreviewRows przez useMemo,
+            statusy wierszy odświeżają się natychmiast (np. duplikat z „error"
+            staje się „noop" przy strategii „last").
+          */}
+          <div
+            className="flex flex-wrap items-center gap-3 -mt-2 mb-1 rounded-md border border-border/40 bg-muted/20 px-3 py-2"
+            role="radiogroup"
+            aria-label="Strategia obsługi duplikatów page_key+slot"
+          >
+            <span className="text-[11px] font-sans uppercase tracking-[0.18em] text-muted-foreground">
+              Duplikaty
+            </span>
+            <label className="flex items-center gap-1.5 text-xs cursor-pointer select-none">
+              <input
+                type="radio"
+                name="dedup-strategy"
+                value="first"
+                checked={dedupStrategy === "first"}
+                onChange={() => setDedupStrategy("first")}
+                className="accent-primary"
+                aria-label="Pierwsze wystąpienie wygrywa"
+              />
+              <span>
+                Pierwszy wygrywa{" "}
+                <span className="text-muted-foreground">
+                  (kolejne → błąd)
+                </span>
+              </span>
+            </label>
+            <label className="flex items-center gap-1.5 text-xs cursor-pointer select-none">
+              <input
+                type="radio"
+                name="dedup-strategy"
+                value="last"
+                checked={dedupStrategy === "last"}
+                onChange={() => setDedupStrategy("last")}
+                className="accent-primary"
+                aria-label="Ostatni wpis wygrywa"
+              />
+              <span>
+                Ostatni wygrywa{" "}
+                <span className="text-muted-foreground">
+                  (wcześniejsze → bez zmian)
+                </span>
+              </span>
+            </label>
+          </div>
+
           <div className="flex-1 overflow-auto -mx-6 px-6">
             <div className="space-y-2">
-              {importPreview?.rows.map((row) => {
+              {importPreviewRows.map((row) => {
                 const statusColor = {
                   create: "bg-emerald-500/10 text-emerald-400 border-emerald-500/30",
                   update: "bg-amber-500/10 text-amber-400 border-amber-500/30",
