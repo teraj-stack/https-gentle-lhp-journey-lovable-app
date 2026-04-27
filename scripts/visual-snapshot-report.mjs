@@ -1564,6 +1564,98 @@ const renderHtml = ({
       padding-bottom: 6px;
       min-height: 1em;
     }
+    /* ---- Dialog podglądu eksportu ---- */
+    .export-preview-dialog {
+      max-width: min(960px, 95vw);
+      width: 95vw;
+      border: 1px solid rgba(201,168,76,.45);
+      border-radius: 10px;
+      background: #1b1b1f;
+      color: #e8e8e8;
+      padding: 0;
+      box-shadow: 0 30px 80px rgba(0,0,0,.5);
+    }
+    .export-preview-dialog::backdrop { background: rgba(0,0,0,.55); }
+    .export-preview-header {
+      padding: 14px 18px 8px;
+      border-bottom: 1px solid rgba(127,127,127,.25);
+    }
+    .export-preview-header h3 {
+      margin: 0 0 4px;
+      font-size: 1rem;
+      color: #c9a84c;
+    }
+    .export-preview-meta {
+      font-size: .75rem;
+      opacity: .8;
+      font-family: ui-monospace, monospace;
+    }
+    .export-preview-body {
+      padding: 8px 18px 4px;
+      max-height: 55vh;
+      overflow: auto;
+    }
+    .export-preview-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: ui-monospace, monospace;
+      font-size: .72rem;
+    }
+    .export-preview-table th,
+    .export-preview-table td {
+      border: 1px solid rgba(127,127,127,.22);
+      padding: 3px 6px;
+      text-align: left;
+      white-space: nowrap;
+      max-width: 240px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .export-preview-table th {
+      position: sticky;
+      top: 0;
+      background: #25252b;
+      z-index: 1;
+    }
+    .export-preview-table td.is-empty { opacity: .35; font-style: italic; }
+    .export-preview-table tr:nth-child(even) td { background: rgba(127,127,127,.05); }
+    .export-preview-truncated {
+      font-size: .72rem;
+      opacity: .75;
+      padding: 6px 0 0;
+      font-style: italic;
+    }
+    .export-preview-footer {
+      padding: 10px 18px 14px;
+      border-top: 1px solid rgba(127,127,127,.25);
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .export-preview-footer .spacer { flex: 1; }
+    .export-preview-cancel,
+    .export-preview-confirm {
+      font-size: .8rem;
+      padding: 6px 14px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .export-preview-cancel {
+      background: rgba(127,127,127,.15);
+      color: inherit;
+      border: 1px solid rgba(127,127,127,.35);
+    }
+    .export-preview-cancel:hover { background: rgba(127,127,127,.25); }
+    .export-preview-confirm {
+      background: rgba(201,168,76,.22);
+      color: #f4dfa3;
+      border: 1px solid rgba(201,168,76,.6);
+      font-weight: 600;
+    }
+    .export-preview-confirm:hover { background: rgba(201,168,76,.36); }
     .trends-empty {
       margin: .25rem 0 .75rem;
       font-size: .85rem;
