@@ -241,22 +241,62 @@ const VALID_PAGE_KEYS = new Set<VeinImagePageKey>(
 );
 const VALID_SLOTS: VeinImageSlot[] = ["main", "perforator"];
 
+/**
+ * Strukturalna walidacja per-pole — pozwala preview podświetlać konkretne
+ * pola (alt/caption) zamiast tylko wyświetlać tekstowe komunikaty.
+ *
+ * `kind`:
+ *  - "empty"   — pole puste (alt/caption),
+ *  - "tooShort"— wartość poniżej minimum (alt < ALT_MIN),
+ *  - "tooLong" — wartość powyżej maksimum (alt > ALT_BUDGET, caption > CAPTION_BUDGET),
+ *  - "segment" — pojedynczy segment caption przekracza SEGMENT_BUDGET.
+ */
+type FieldIssueField = "alt" | "caption";
+type FieldIssueKind = "empty" | "tooShort" | "tooLong" | "segment";
+
+interface FieldIssue {
+  field: FieldIssueField;
+  kind: FieldIssueKind;
+  message: string;
+  /** Dla "segment" — fragment naruszający limit (skrócony do podglądu). */
+  segment?: string;
+  /** Dla "segment" — pełna długość znaków segmentu. */
+  segmentLength?: number;
+}
+
 /** Te same reguły co trigger Postgres `validate_vein_image_override`. */
-const validateImportRow = (alt: string, caption: string): string[] => {
-  const errs: string[] = [];
-  if (alt.length < ALT_MIN || alt.length > ALT_BUDGET) {
-    errs.push(`alt ${alt.length}/${ALT_MIN}–${ALT_BUDGET} znaków`);
+const validateImportRowFields = (alt: string, caption: string): FieldIssue[] => {
+  const issues: FieldIssue[] = [];
+  if (alt.length === 0) {
+    issues.push({ field: "alt", kind: "empty", message: `alt jest pusty (wymagane ${ALT_MIN}–${ALT_BUDGET} zn.)` });
+  } else if (alt.length < ALT_MIN) {
+    issues.push({ field: "alt", kind: "tooShort", message: `alt za krótki: ${alt.length}/${ALT_MIN}–${ALT_BUDGET} zn.` });
+  } else if (alt.length > ALT_BUDGET) {
+    issues.push({ field: "alt", kind: "tooLong", message: `alt za długi: ${alt.length}/${ALT_MIN}–${ALT_BUDGET} zn.` });
   }
-  if (caption.length > CAPTION_BUDGET) {
-    errs.push(`caption ${caption.length}/≤${CAPTION_BUDGET} znaków`);
+  if (caption.length === 0) {
+    issues.push({ field: "caption", kind: "empty", message: `caption jest pusty (limit ≤${CAPTION_BUDGET} zn.)` });
+  } else if (caption.length > CAPTION_BUDGET) {
+    issues.push({ field: "caption", kind: "tooLong", message: `caption za długi: ${caption.length}/≤${CAPTION_BUDGET} zn.` });
   }
   for (const seg of caption.split(" · ")) {
     if (seg.length > SEGMENT_BUDGET) {
-      errs.push(`segment "${seg.slice(0, 24)}${seg.length > 24 ? "…" : ""}" ${seg.length}/≤${SEGMENT_BUDGET}`);
+      const preview = `${seg.slice(0, 24)}${seg.length > 24 ? "…" : ""}`;
+      issues.push({
+        field: "caption",
+        kind: "segment",
+        message: `segment "${preview}" ${seg.length}/≤${SEGMENT_BUDGET} zn.`,
+        segment: preview,
+        segmentLength: seg.length,
+      });
     }
   }
-  return errs;
+  return issues;
 };
+
+/** Wstecznie kompatybilny adapter — używany tylko przez stare ścieżki. */
+const validateImportRow = (alt: string, caption: string): string[] =>
+  validateImportRowFields(alt, caption).map((i) => i.message);
 
 type ImportRowStatus = "create" | "update" | "noop" | "error";
 
