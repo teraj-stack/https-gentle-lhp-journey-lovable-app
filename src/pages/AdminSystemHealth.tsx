@@ -4146,7 +4146,6 @@ const AdminSystemHealth = () => {
                 variant="outline"
                 size="sm"
                 className="h-8 gap-1.5 shrink-0"
-                
                 onClick={() => {
                   if (!inspectSource || inspectFilteredRecords.length === 0) return;
                   // Eksport tylko aktualnie wyświetlanych rekordów (po filtrach IP+UA + tekst).
@@ -4158,21 +4157,36 @@ const AdminSystemHealth = () => {
                     count: inspectFilteredRecords.length,
                     records: inspectFilteredRecords,
                   };
-                  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
-                  const url = URL.createObjectURL(blob);
+                  const json = JSON.stringify(payload, null, 2);
                   const safeIp = inspectSource.ip.replace(/[^a-z0-9.-]/gi, "_");
                   const ts = new Date().toISOString().replace(/[:.]/g, "-");
-                  const a = document.createElement("a");
-                  a.href = url;
-                  a.download = `retry-records_${safeIp}_${ts}.json`;
-                  document.body.appendChild(a);
-                  a.click();
-                  document.body.removeChild(a);
-                  URL.revokeObjectURL(url);
-                  toast.success(`Wyeksportowano ${inspectFilteredRecords.length} rekordów`);
+                  const filename = `retry-records_${safeIp}_${ts}.json`;
+                  // Najpierw potwierdzenie przez wspólny ConfirmExportDialog,
+                  // dopiero potem zapis na dysk — chroni przed przypadkowym
+                  // pobraniem pliku z surowymi metadanymi requestów.
+                  exportDialog.request({
+                    filename,
+                    format: "json",
+                    recordsLabel: `${inspectFilteredRecords.length} rekord(ów) · IP ${inspectSource.ip}`,
+                    sizeLabel: formatExportSize(new Blob([json]).size),
+                    description:
+                      "Plik zawiera surowe metadane requestów (IP, User-Agent, payload). Trzymaj go w bezpiecznym miejscu.",
+                    run: () => {
+                      const blob = new Blob([json], { type: "application/json" });
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement("a");
+                      a.href = url;
+                      a.download = filename;
+                      document.body.appendChild(a);
+                      a.click();
+                      document.body.removeChild(a);
+                      URL.revokeObjectURL(url);
+                      toast.success(`Wyeksportowano ${inspectFilteredRecords.length} rekordów`);
+                    },
+                  });
                 }}
-                disabled={inspectFilteredRecords.length === 0}
-                title="Pobierz aktualnie wyświetlane rekordy jako JSON"
+                disabled={inspectFilteredRecords.length === 0 || exportDialog.isExporting}
+                title="Pobierz aktualnie wyświetlane rekordy jako JSON (z potwierdzeniem)"
               >
                 <Download className="h-3.5 w-3.5" />
                 Eksportuj
