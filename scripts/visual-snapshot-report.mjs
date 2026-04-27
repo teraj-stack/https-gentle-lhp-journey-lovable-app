@@ -1254,14 +1254,72 @@ const main = async () => {
     console.log(`[visual-snapshot-report] Sortowanie: ${human}`);
   }
 
+  // Fail-fast (poziom 0): kapowanie per-grupę PRZED globalnym --max-failures.
+  // Cel: gdy mamy 400 regresji w mobile + 5 w tablet, samo --max-failures=50
+  // mogłoby całkowicie zjeść tablet (utrata małej, ale ważnej grupy).
+  // Algorytm: dla każdej grupy (viewport / state) zostawiamy pierwsze N
+  // (zgodnie z aktualnym sortowaniem). Reszta wpada do `omittedByGroup`,
+  // żeby renderHtml mógł pokazać dokładnie co i z jakiego powodu wypadło.
+  // Sortowanie WEWNĄTRZ grupy jest zachowane bo iterujemy po `allFailed`
+  // które już jest posortowane przez `buildComparator`.
+  const omittedByGroup = []; // [{ trio, reason: "viewport"|"state", group: "mobile"|... }]
+  let perGroupFiltered = allFailed;
+
+  const applyPerGroupCap = (input, getKey, limit, reasonLabel) => {
+    if (limit === null) return input;
+    const counts = new Map();
+    const kept = [];
+    for (const t of input) {
+      const k = getKey(t);
+      const cur = counts.get(k) || 0;
+      if (cur < limit) {
+        counts.set(k, cur + 1);
+        kept.push(t);
+      } else {
+        omittedByGroup.push({ trio: t, reason: reasonLabel, group: k, limit });
+      }
+    }
+    return kept;
+  };
+
+  perGroupFiltered = applyPerGroupCap(
+    perGroupFiltered,
+    (t) => t._viewport,
+    maxPerViewport,
+    "viewport",
+  );
+  perGroupFiltered = applyPerGroupCap(
+    perGroupFiltered,
+    (t) => t._state,
+    maxPerState,
+    "state",
+  );
+
+  if (maxPerViewport !== null && perGroupFiltered.length < allFailed.length) {
+    const dropped = allFailed.length - perGroupFiltered.length;
+    console.log(
+      `[visual-snapshot-report] ⚠ Per-grupa: po --max-failures-per-viewport=${maxPerViewport} ` +
+        `i --max-failures-per-state=${maxPerState ?? "∞"} zostało ${perGroupFiltered.length} ` +
+        `z ${allFailed.length} trio (odrzucono ${dropped}).`,
+    );
+  } else if (maxPerState !== null && perGroupFiltered.length < allFailed.length) {
+    const dropped = allFailed.length - perGroupFiltered.length;
+    console.log(
+      `[visual-snapshot-report] ⚠ Per-grupa: po --max-failures-per-state=${maxPerState} ` +
+        `zostało ${perGroupFiltered.length} z ${allFailed.length} trio (odrzucono ${dropped}).`,
+    );
+  }
+
   // Fail-fast (poziom 1): obetnij globalnie PRZED dalszą obróbką.
   // Wszystko poza tym slice'em w ogóle nie wchodzi do raportu.
-  const truncatedBy = maxFailures !== null && allFailed.length > maxFailures;
-  const failed = truncatedBy ? allFailed.slice(0, maxFailures) : allFailed;
+  // UWAGA: pracujemy na `perGroupFiltered`, więc --max-failures działa NA WIERZCHU
+  // per-group cap (najpierw balansujemy, potem ograniczamy globalnie).
+  const truncatedBy = maxFailures !== null && perGroupFiltered.length > maxFailures;
+  const failed = truncatedBy ? perGroupFiltered.slice(0, maxFailures) : perGroupFiltered;
 
   if (truncatedBy) {
     console.log(
-      `[visual-snapshot-report] ⚠ Fail-fast: znaleziono ${allFailed.length} failed snapshotów, ` +
+      `[visual-snapshot-report] ⚠ Fail-fast: ${perGroupFiltered.length} trio po per-grupa cap, ` +
         `obcięto do pierwszych ${maxFailures} (--max-failures).`,
     );
   }
