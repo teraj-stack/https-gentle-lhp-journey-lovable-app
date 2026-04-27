@@ -897,6 +897,8 @@ const renderHtml = ({ trios, generatedAt, totalFailures, playwrightReportRel }) 
 };
 
 const main = async () => {
+  const { maxFailures } = parseCliArgs(process.argv);
+
   // Sanity: czy są w ogóle wyniki?
   try {
     await fs.access(TEST_RESULTS_DIR);
@@ -917,7 +919,29 @@ const main = async () => {
   // Zostawiamy tylko "interesujące" trio: failed (jest diff) lub incomplete
   // (brakuje któregokolwiek z 3 plików). Snapshoty które przeszły nie zostawiają
   // -actual/-expected/-diff w test-results, więc naturalnie ich tu nie widzimy.
-  const failed = trios.filter((t) => t.diff || !(t.expected && t.actual));
+  const allFailed = trios.filter((t) => t.diff || !(t.expected && t.actual));
+
+  // Sortowanie deterministyczne PRZED ewentualnym obcięciem przez --max-failures.
+  // Bez tego "pierwsze N" zależałoby od kolejności fs.readdir, która jest
+  // platform/file-system specific (Linux: zwykle inode, macOS: zwykle alfa).
+  // Sortujemy po katalogu testu + stem — daje stabilny output cross-OS.
+  allFailed.sort((a, b) => {
+    if (a.dir !== b.dir) return a.dir.localeCompare(b.dir);
+    return a.stem.localeCompare(b.stem);
+  });
+
+  // Fail-fast: obetnij PRZED kopiowaniem assetów (drogie IO) i discovery
+  // artefaktów. Zachowujemy `totalFailures` osobno, żeby raport mógł
+  // pokazać "Pokazano N z M (obcięto przez --max-failures)".
+  const truncatedBy = maxFailures !== null && allFailed.length > maxFailures;
+  const failed = truncatedBy ? allFailed.slice(0, maxFailures) : allFailed;
+
+  if (truncatedBy) {
+    console.log(
+      `[visual-snapshot-report] ⚠ Fail-fast: znaleziono ${allFailed.length} failed snapshotów, ` +
+        `obcięto do pierwszych ${maxFailures} (--max-failures).`,
+    );
+  }
 
   // Kopiujemy obrazy do assets/, żeby HTML był samowystarczalny (CI artifact upload).
   // Dodatkowo per trio wykrywamy artefakty Playwrighta (trace.zip / video / error-context),
@@ -945,14 +969,18 @@ const main = async () => {
     generatedAt: new Date().toISOString(),
     totalFailures: failed.length,
     playwrightReportRel,
+    truncation: truncatedBy
+      ? { shown: failed.length, total: allFailed.length, limit: maxFailures }
+      : null,
   });
 
   const indexPath = path.join(REPORT_DIR, "index.html");
   await fs.writeFile(indexPath, html, "utf8");
 
+  const suffix = truncatedBy ? ` z ${allFailed.length} (obcięto)` : "";
   console.log(
     `[visual-snapshot-report] ✓ Raport: ${path.relative(PROJECT_ROOT, indexPath)} ` +
-      `(${failed.length} ${failed.length === 1 ? "snapshot" : "snapshotów"})`,
+      `(${failed.length}${suffix} ${failed.length === 1 ? "snapshot" : "snapshotów"})`,
   );
 };
 
