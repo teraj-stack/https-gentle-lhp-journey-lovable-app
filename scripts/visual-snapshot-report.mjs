@@ -1561,6 +1561,34 @@ const main = async () => {
         `processed=${discoveryRuns}, saved=${discoverySaved} | limit: --max-discovery=${fmtLimit(maxDiscovery)} ` +
         `(discoveryLimit=${discoveryLimit}/${trioRendered} trio)`,
     );
+
+    // Top 3 najwięcej oszczędzonych trio — czyli te, które wpadły do allFailed,
+    // ale NIE do `failed` (zostały obcięte przez per-grupa lub --max-failures).
+    // Ranking po liczbie PNG (expected+actual+diff) — to one ważą najwięcej w IO.
+    // Tie-break: stem alfabetycznie (deterministyczny output dla CI snapshotów).
+    const renderedSet = new Set(failed.map((t) => t.stem + "::" + t.dir));
+    const skipped = allFailed.filter((t) => !renderedSet.has(t.stem + "::" + t.dir));
+    if (skipped.length > 0) {
+      const ranked = skipped
+        .map((t) => ({
+          trio: t,
+          pngCount: (t.expected ? 1 : 0) + (t.actual ? 1 : 0) + (t.diff ? 1 : 0),
+        }))
+        .sort((a, b) => b.pngCount - a.pngCount || a.trio.stem.localeCompare(b.trio.stem))
+        .slice(0, 3);
+
+      console.log(
+        `[visual-snapshot-report] 🏆 Top ${ranked.length} oszczędzonych trio (z ${skipped.length} pominiętych):`,
+      );
+      ranked.forEach((r, i) => {
+        const prefix = i === ranked.length - 1 ? "└─" : "├─";
+        const folder = path.relative(PROJECT_ROOT, r.trio.dir) || ".";
+        console.log(
+          `[visual-snapshot-report]   ${prefix} #${i + 1} ${r.trio.stem} ` +
+            `(${r.pngCount} PNG + 1 readdir) — ${folder}`,
+        );
+      });
+    }
   }
 };
 
