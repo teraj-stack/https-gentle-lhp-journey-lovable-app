@@ -3051,12 +3051,180 @@ const main = async () => {
     );
   }
 
+  // ---- savings-index.json ----
+  // Precomputed index po kolumnach `command` + `flag_*`, żeby konsumenci
+  // (dashboard, JS w index.html, queries ad-hoc) mogli filtrować trendy
+  // BEZ ponownego parsowania całego history.csv. Indeks zawiera per krotka:
+  //   - count, firstAt, lastAt
+  //   - aggregaty min/max/avg/last dla png_saved_pct + discovery_saved_pct
+  //   - rowOffsets (1-based pozycje wierszy danych w history.csv) — pozwala
+  //     `awk 'NR==offset+1'` lub `tail/sed` skoczyć do konkretnych runów.
+  // Ścieżka: SIEDZI OBOK history.csv (`<dir>/savings-index.json`), więc
+  // custom --history=metrics/visual.csv → metrics/savings-index.json.
+  // Gdy history wyłączone — indeks jest mini-snapshotem bieżącego runu
+  // w REPORT_DIR (1 entry), ciągle przydatny do programatycznych workflow.
+  const buildSavingsIndex = async ({ historyCsvPath, fallback }) => {
+    let rows = [];
+    let sourceLabel = null;
+    if (historyCsvPath) {
+      try {
+        const raw = await fs.readFile(historyCsvPath, "utf8");
+        const lines = raw.split(/\r?\n/).filter((l) => l.length > 0);
+        if (lines.length >= 2) {
+          const header = splitCsvRow(lines[0]);
+          const idx = (name) => header.indexOf(name);
+          const idxTime = idx("generatedAt");
+          const idxPng = idx("png_saved_pct");
+          const idxDisc = idx("discovery_saved_pct");
+          const idxCommand = idx("command");
+          const flagIdx = Object.fromEntries(
+            TREND_FLAG_COLUMNS.map((n) => [n, idx(n)]),
+          );
+          for (let i = 1; i < lines.length; i++) {
+            const cols = splitCsvRow(lines[i]);
+            const t = cols[idxTime];
+            const png = Number.parseFloat(cols[idxPng]);
+            const disc = Number.parseFloat(cols[idxDisc]);
+            if (!t || !Number.isFinite(png) || !Number.isFinite(disc)) continue;
+            const flags = {};
+            for (const name of TREND_FLAG_COLUMNS) {
+              const j = flagIdx[name];
+              flags[name] = j >= 0 ? (cols[j] ?? "") : "";
+            }
+            rows.push({
+              rowOffset: i, // 1-based: wiersz danych #i (header = NR 1, data #1 = NR 2)
+              generatedAt: t,
+              png_saved_pct: png,
+              discovery_saved_pct: disc,
+              command: idxCommand >= 0 ? (cols[idxCommand] ?? "") : "",
+              flags,
+            });
+          }
+          sourceLabel = path.relative(PROJECT_ROOT, historyCsvPath);
+        }
+      } catch (err) {
+        if (err.code !== "ENOENT") {
+          console.warn(
+            `[visual-snapshot-report] ⚠ savings-index: nie mogę odczytać ${path.relative(PROJECT_ROOT, historyCsvPath)}: ${err.message}`,
+          );
+        }
+      }
+    }
+    if (rows.length === 0) {
+      // Fallback: bieżący run (single entry). Daje konsumentom ZAWSZE
+      // walidny shape — łatwiej testować, niezależnie od stanu history.
+      rows = [{
+        rowOffset: 1,
+        generatedAt: savingsSummary.generatedAt,
+        png_saved_pct: savingsSummary.pngCopy.savedPct,
+        discovery_saved_pct: savingsSummary.discoveryReaddir.savedPct,
+        command: trendsCommandStr,
+        flags: trendsCurrentFlags,
+      }];
+      sourceLabel = "current-run-only";
+    }
+
+    // Grupowanie: klucz = JSON.stringify([command, ...flagValues]) wg kolejności
+    // TREND_FLAG_COLUMNS — deterministyczny i serializowalny.
+    const groups = new Map();
+    for (const row of rows) {
+      const tupleValues = [row.command, ...TREND_FLAG_COLUMNS.map((n) => row.flags[n] ?? "")];
+      const key = JSON.stringify(tupleValues);
+      let g = groups.get(key);
+      if (!g) {
+        g = {
+          key,
+          command: row.command,
+          flags: { ...row.flags },
+          count: 0,
+          firstAt: row.generatedAt,
+          lastAt: row.generatedAt,
+          rowOffsets: [],
+          png: { min: row.png_saved_pct, max: row.png_saved_pct, sum: 0, last: row.png_saved_pct },
+          discovery: { min: row.discovery_saved_pct, max: row.discovery_saved_pct, sum: 0, last: row.discovery_saved_pct },
+        };
+        groups.set(key, g);
+      }
+      g.count += 1;
+      g.rowOffsets.push(row.rowOffset);
+      if (row.generatedAt < g.firstAt) g.firstAt = row.generatedAt;
+      if (row.generatedAt > g.lastAt) {
+        g.lastAt = row.generatedAt;
+        g.png.last = row.png_saved_pct;
+        g.discovery.last = row.discovery_saved_pct;
+      }
+      if (row.png_saved_pct < g.png.min) g.png.min = row.png_saved_pct;
+      if (row.png_saved_pct > g.png.max) g.png.max = row.png_saved_pct;
+      if (row.discovery_saved_pct < g.discovery.min) g.discovery.min = row.discovery_saved_pct;
+      if (row.discovery_saved_pct > g.discovery.max) g.discovery.max = row.discovery_saved_pct;
+      g.png.sum += row.png_saved_pct;
+      g.discovery.sum += row.discovery_saved_pct;
+    }
+
+    const entries = Array.from(groups.values()).map((g) => ({
+      command: g.command,
+      flags: g.flags,
+      count: g.count,
+      firstAt: g.firstAt,
+      lastAt: g.lastAt,
+      rowOffsets: g.rowOffsets,
+      png_saved_pct: {
+        min: Math.round(g.png.min * 10) / 10,
+        max: Math.round(g.png.max * 10) / 10,
+        avg: Math.round((g.png.sum / g.count) * 10) / 10,
+        last: Math.round(g.png.last * 10) / 10,
+      },
+      discovery_saved_pct: {
+        min: Math.round(g.discovery.min * 10) / 10,
+        max: Math.round(g.discovery.max * 10) / 10,
+        avg: Math.round((g.discovery.sum / g.count) * 10) / 10,
+        last: Math.round(g.discovery.last * 10) / 10,
+      },
+    }));
+    // Sort: malejąco po count (najczęstsze kombinacje na górze), potem po command.
+    entries.sort((a, b) => {
+      if (b.count !== a.count) return b.count - a.count;
+      return a.command < b.command ? -1 : a.command > b.command ? 1 : 0;
+    });
+
+    // Ścieżka: obok history.csv jeśli istnieje, inaczej w REPORT_DIR.
+    const indexPath = historyCsvPath
+      ? path.join(path.dirname(historyCsvPath), "savings-index.json")
+      : fallback;
+    const payload = {
+      // Bumpować przy zmianie shape (np. nowa kolumna flag_*) — konsumenci
+      // mogą `if (schemaVersion !== 1) refuse` zamiast crashować.
+      schemaVersion: 1,
+      generatedAt: savingsSummary.generatedAt,
+      source: sourceLabel,
+      flagColumns: TREND_FLAG_COLUMNS,
+      totals: {
+        rows: rows.length,
+        uniqueCombinations: entries.length,
+      },
+      entries,
+    };
+    await fs.mkdir(path.dirname(indexPath), { recursive: true });
+    await fs.writeFile(indexPath, `${JSON.stringify(payload, null, 2)}\n`, "utf8");
+    return indexPath;
+  };
+
+  const savingsIndexPath = await buildSavingsIndex({
+    historyCsvPath: historyDisabled
+      ? null
+      : (historyRaw
+        ? (path.isAbsolute(historyRaw) ? historyRaw : path.resolve(PROJECT_ROOT, historyRaw))
+        : path.join(REPORT_DIR, "history.csv")),
+    fallback: path.join(REPORT_DIR, "savings-index.json"),
+  });
+
   console.log(
     `[visual-snapshot-report] 📁 Zapisano podsumowanie: ` +
       `${path.relative(PROJECT_ROOT, savingsJsonPath)}, ` +
       `${path.relative(PROJECT_ROOT, savingsCsvPath)}, ` +
       `${path.relative(PROJECT_ROOT, savingsByViewportPath)}, ` +
-      `${path.relative(PROJECT_ROOT, savingsByStatePath)}`,
+      `${path.relative(PROJECT_ROOT, savingsByStatePath)}, ` +
+      `${path.relative(PROJECT_ROOT, savingsIndexPath)}`,
   );
 };
 

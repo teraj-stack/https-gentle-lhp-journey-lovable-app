@@ -281,6 +281,40 @@ sekcja `📊 Atrybucja oszczędności` w konsoli, w postaci do dalszej analizy:
   wyłącznie wiersze danych. Per-grupa history dostają sufix względem ścieżki
   podanej w `--history` (np. `--history=metrics/visual.csv` →
   `metrics/visual-by-viewport.csv` + `metrics/visual-by-state.csv`).
+- **`savings-index.json`** — precomputed index po `(command, flag_*)`,
+  zapisywany OBOK `history.csv` (np. `metrics/savings-index.json` przy
+  custom `--history=metrics/visual.csv`). Pozwala filtrować trendy bez
+  ponownego parsowania całego CSV. Shape:
+  ```jsonc
+  {
+    "schemaVersion": 1,
+    "generatedAt": "2026-04-27T...",
+    "source": "test-results/visual-report/history.csv",
+    "flagColumns": ["flag_max_failures", /* ... */],
+    "totals": { "rows": 142, "uniqueCombinations": 7 },
+    "entries": [
+      {
+        "command": "node visual-snapshot-report.mjs --max-copy=200",
+        "flags": { "flag_max_copy": "200", /* ... */ },
+        "count": 38,
+        "firstAt": "2026-03-01T...",
+        "lastAt":  "2026-04-27T...",
+        "rowOffsets": [12, 18, 25, /* ... 1-based: data row #N w history.csv */],
+        "png_saved_pct":       { "min": 50.0, "max": 78.2, "avg": 64.1, "last": 67.0 },
+        "discovery_saved_pct": { "min": 40.0, "max": 70.5, "avg": 55.3, "last": 60.0 }
+      }
+    ]
+  }
+  ```
+  - `entries` posortowane malejąco po `count` (najczęstsze kombinacje na górze).
+  - `rowOffsets` to 1-based pozycje wierszy DANYCH w `history.csv` (wiersz #1
+    = pierwsza linia po nagłówku, czyli `awk 'NR==offset+1'` lub `sed -n "$((offset+1))p"`).
+  - Gdy `--no-history` aktywny, indeks zawiera tylko 1 entry z bieżącego runu
+    (zapisany w `<REPORT_DIR>/savings-index.json`) — konsumenci dostają zawsze
+    walidny shape.
+  - Bumpować `schemaVersion` przy zmianie struktury (nowa kolumna `flag_*`,
+    nowa metryka), żeby konsumenci mogli odmówić starego formatu zamiast
+    crashować.
 
 ### Filtr trendów w `index.html`
 
