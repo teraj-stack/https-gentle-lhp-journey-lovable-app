@@ -892,6 +892,7 @@ const renderHtml = ({
     .omitted-table code { font-size: 11px; word-break: break-all; }
     .omitted-testname { color: var(--muted); font-size: 11px; word-break: break-all; }
     .omitted-hint { margin: 10px 4px 0; color: var(--muted); font-size: 12px; }
+    /* Placeholder dla figure gdy --max-copy obciął kopiowanie — bardziej
        neutralny niż czerwony "missing", żeby user nie myślał że to błąd. */
     .missing-copy-skipped .missing-box {
       background: rgba(127,127,127,.08);
