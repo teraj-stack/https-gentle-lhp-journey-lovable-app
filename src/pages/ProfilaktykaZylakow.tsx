@@ -261,6 +261,7 @@ const ProfilaktykaZylakow = () => {
           perforatorAlt="Schemat niewydolnego perforatora — pokazuje, dlaczego długie stanie i siedzenie obciąża układ żylny; czynnik ryzyka, który łagodzi aktywność i kompresjoterapia"
           perforatorCaption="Niewydolny perforator · Obciążenie z długiego stania · Łagodzony ruchem i kompresją"
         />
+        <VeinImageDevOverlay pageKey="profilaktyka" />
 
         {/* Czynniki ryzyka */}
         <section className="space-y-8">

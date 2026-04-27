@@ -104,6 +104,7 @@ const EVLT = () => (
         perforatorAlt="Schemat niewydolnego perforatora — żyły łączącej układ głęboki z powierzchownym; jego refluks często współistnieje z niewydolnością pnia leczonego EVLT"
         perforatorCaption="Niewydolny perforator · Często współistnieje z refluksem pnia · Diagnostyka USG Doppler przed EVLT"
       />
+      <VeinImageDevOverlay pageKey="evlt" />
 
       {/* Przyczyny + Sygnały */}
       <div className="grid lg:grid-cols-2 gap-12">
