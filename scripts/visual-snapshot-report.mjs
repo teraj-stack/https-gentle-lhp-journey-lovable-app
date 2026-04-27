@@ -173,6 +173,10 @@ const parseCliArgs = (argv) => {
           `[visual-snapshot-report] Ignoruję ${source}="${raw}" — oczekiwano dodatniej liczby całkowitej.`,
         );
       }
+    } else if (def.kind === "bool") {
+      // Bool flag: presence (CLI bez wartości) lub env truthy ("1"/"true"/"yes").
+      const s = String(raw).toLowerCase();
+      def.value = s === "" || s === "1" || s === "true" || s === "yes" || s === "on";
     } else {
       // String — walidacja per-flag w consume site.
       def.value = String(raw);
@@ -188,10 +192,14 @@ const parseCliArgs = (argv) => {
         tryAssign(key, a.slice(def.long.length + 1), def.long);
         break;
       }
-      // Forma --flag value (lub -m value)
+      // Forma --flag value (lub -m value); dla bool: --flag bez wartości
       if (a === def.long || (def.short && a === def.short)) {
-        tryAssign(key, args[i + 1], a);
-        i++; // zjada następny token
+        if (def.kind === "bool") {
+          tryAssign(key, "", a);
+        } else {
+          tryAssign(key, args[i + 1], a);
+          i++; // zjada następny token
+        }
         break;
       }
     }
