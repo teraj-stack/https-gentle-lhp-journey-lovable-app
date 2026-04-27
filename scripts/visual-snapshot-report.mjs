@@ -994,10 +994,12 @@ const main = async () => {
   const indexPath = path.join(REPORT_DIR, "index.html");
   await fs.writeFile(indexPath, html, "utf8");
 
-  const suffix = truncatedBy ? ` z ${allFailed.length} (obcięto)` : "";
+  const noun = failed.length === 1 ? "snapshot" : "snapshotów";
+  const summary = truncatedBy
+    ? `${failed.length} z ${allFailed.length} ${noun} (obcięto)`
+    : `${failed.length} ${noun}`;
   console.log(
-    `[visual-snapshot-report] ✓ Raport: ${path.relative(PROJECT_ROOT, indexPath)} ` +
-      `(${failed.length}${suffix} ${failed.length === 1 ? "snapshot" : "snapshotów"})`,
+    `[visual-snapshot-report] ✓ Raport: ${path.relative(PROJECT_ROOT, indexPath)} (${summary})`,
   );
 };
 
