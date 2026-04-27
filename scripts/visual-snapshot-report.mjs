@@ -29,9 +29,26 @@
  *   node scripts/visual-snapshot-report.mjs --max-failures=50
  *   node scripts/visual-snapshot-report.mjs -m 50
  *   node scripts/visual-snapshot-report.mjs --max-copy=20 --max-discovery=50
+ *   node scripts/visual-snapshot-report.mjs --sort=viewport,-state
+ *   node scripts/visual-snapshot-report.mjs --sort=status,path --max-failures=50
  *   MAX_FAILURES=50 node scripts/visual-snapshot-report.mjs
- *   MAX_COPY=20 MAX_DISCOVERY=50 node scripts/visual-snapshot-report.mjs
+ *   MAX_COPY=20 MAX_DISCOVERY=50 SORT=viewport,state node scripts/visual-snapshot-report.mjs
  *   (opcjonalnie po `bun run test:e2e`)
+ *
+ * Sortowanie (`--sort=<keys>`, env `SORT`, default `path,stem`):
+ *   Steruje kolejnością trio PRZED `--max-failures`, więc decyduje, co
+ *   wpadnie do pierwszych N i co trafi do sekcji "omitted". Wartość to
+ *   lista kluczy oddzielonych przecinkami; prefix `-` = malejąco. Klucze:
+ *     viewport — small-mobile / mobile / tablet / desktop (alfabetycznie)
+ *     state    — np. state-a-empty / dark-state-c-...
+ *     path     — katalog testu (Playwright spec)
+ *     stem     — pełna nazwa snapshota (zawsze finalny tie-breaker)
+ *     status   — failed (realne regresje) przed incomplete (brak baseline)
+ *   Przykłady:
+ *     --sort=status,viewport   → najpierw failed, w obrębie po viewport
+ *     --sort=viewport,-state   → mobile pierwsze, w obrębie odwrócony state
+ *     --sort=-status           → najpierw incomplete (np. po dodaniu nowego specu)
+ *   Nieznane klucze → warning + skip; pusta wartość → fallback na default.
  *
  * Fail-fast — trzy poziomy obcinania (od najbardziej do najmniej agresywnego):
  *
