@@ -46,6 +46,16 @@ import {
 } from "@/components/ui/select";
 import { LogOut, ShieldAlert, Save, RotateCcw, Database, FileJson, FileSpreadsheet, Trash2, Clock, User, History, Upload, CheckCircle2, AlertTriangle, FileWarning, Search, X, ClipboardCopy, Check, FileDown } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import SeoHead from "@/components/shared/SeoHead";
 
@@ -715,6 +725,12 @@ const AdminVeinImages = () => {
   const [viewport, setViewport] = useState<ViewportMode>("desktop");
   const [saving, setSaving] = useState<VeinImageSlot | null>(null);
   const [exporting, setExporting] = useState<"json" | "csv" | "json-copy" | null>(null);
+  /**
+   * Eksport wymaga potwierdzenia (anty-przypadkowy klik). Trzymamy żądany format
+   * w stanie — gdy != null, AlertDialog jest otwarty. Confirm wywołuje właściwy
+   * `exportJson`/`exportCsv`, Cancel po prostu czyści stan.
+   */
+  const [pendingExport, setPendingExport] = useState<"json" | "csv" | null>(null);
   // Krótki „✓ Skopiowano" feedback na przycisku kopiowania (2 s).
   const [jsonCopied, setJsonCopied] = useState(false);
   /**
@@ -1882,7 +1898,7 @@ const AdminVeinImages = () => {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={exportJson}
+                onClick={() => setPendingExport("json")}
                 disabled={exporting !== null}
                 title={`Pobierz overrides z bazy jako JSON (${exportFilterSummary()})`}
               >
@@ -1911,7 +1927,7 @@ const AdminVeinImages = () => {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={exportCsv}
+                onClick={() => setPendingExport("csv")}
                 disabled={exporting !== null}
                 title={`Pobierz overrides z bazy jako CSV — Excel-friendly (${exportFilterSummary()})`}
               >
@@ -2653,6 +2669,45 @@ const AdminVeinImages = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/*
+        Potwierdzenie eksportu — chroni przed przypadkowym klikiem w „Export JSON/CSV".
+        Otwiera się gdy `pendingExport` != null. Confirm wywołuje właściwy handler
+        i zamyka dialog; Cancel po prostu czyści stan (żaden plik się nie pobiera).
+      */}
+      <AlertDialog
+        open={pendingExport !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingExport(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Pobrać plik {pendingExport === "json" ? "JSON" : "CSV"}?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Eksport obejmie overrides z bazy dla filtra:{" "}
+              <span className="font-mono">{exportFilterSummary()}</span>. Plik zostanie
+              zapisany przez przeglądarkę. Możesz anulować, jeśli kliknięcie było
+              przypadkowe.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Anuluj</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                const which = pendingExport;
+                setPendingExport(null);
+                if (which === "json") void exportJson();
+                else if (which === "csv") void exportCsv();
+              }}
+            >
+              Pobierz {pendingExport === "json" ? "JSON" : "CSV"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 };
