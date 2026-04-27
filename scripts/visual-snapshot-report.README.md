@@ -129,6 +129,21 @@ Hierarchia: `--max-failures` tnie pierwsze, więc `--max-copy` / `--max-discover
 działają już na obcięty zbiór. Kombinacje są niezależne — można podać jedną,
 dwie albo wszystkie trzy.
 
+**Sterowanie KOLEJNOŚCIĄ obcinania (`--sort`, env `SORT`)**:
+
+`--max-failures` zostawia *pierwsze N* po sortowaniu, więc to `--sort` decyduje,
+co przeżyje. Klucze (CSV, `-` = malejąco): `viewport`, `state`, `path`, `stem`,
+`status` (failed < incomplete). Domyślnie `path,stem`.
+
+| Cel | Komenda |
+|---|---|
+| Top 50 realnych regresji (incomplete na koniec) | `--sort=status,viewport --max-failures=50` |
+| Najpierw mobile + tablet (krytyczne dla UX) | `--sort=viewport --max-failures=80` |
+| Sprawdź najnowsze stany w obrębie viewport | `--sort=viewport,-state` |
+| Tylko incomplete (po dodaniu nowego specu) | `--sort=-status` |
+
+Nieznane klucze → warning, pomijane (CI nie wybucha za literówkę).
+
 **Komentarz w PR z linkiem do artifactu** (opcjonalnie):
 
 ```yaml
