@@ -115,18 +115,83 @@ const ALT_BUDGET = 220;
 const CAPTION_BUDGET = 110;
 const SEGMENT_BUDGET = 40;
 
+// Empirycznie skalibrowane szerokości pojedynczego znaku (px) dla figcaption
+// renderowanego klasą `text-[11px] sm:text-xs` w VenousInsufficiencyImage.
+// Mobile używa text-[11px] (~6.2 px/zn), desktop sm:text-xs (~6.6 px/zn).
+const CAPTION_CHAR_PX: Record<ViewportMode, number> = {
+  mobile: 6.2,
+  desktop: 6.6,
+};
+// Szerokość kolumny figcaption ≈ szerokość wewn. obrazka (kontener - padding).
+// Mobile (375): 375 - 16*2 (px-4 outer) - 16*2 (p-4 inner) ≈ 311 px,
+// minus px-1 figcaption ≈ 303. Desktop (1280) liczymy realistycznie dla
+// obrazka 2-kolumnowego: ~ (1280 - 64 - 64) / 2 ≈ 576 px.
+const CAPTION_COLUMN_PX: Record<ViewportMode, number> = {
+  mobile: 303,
+  desktop: 560,
+};
+// Linie figcaption — komfortowy próg czytelności na mobile.
+const CAPTION_LINE_WARN: Record<ViewportMode, number> = {
+  mobile: 3,
+  desktop: 2,
+};
+// Średnio: czytelność spada gdy >18 słów / linijkę przy gęstym layoutcie.
+const READING_WPM = 220;
+
+interface ReadabilityHints {
+  estimatedLines: number;
+  linesWarn: boolean;
+  longestSegmentPx: number;
+  segmentTruncationRisk: boolean;
+  readingSeconds: number;
+  wordCount: number;
+}
+
 interface FieldStats {
   length: number;
   budget: number;
   overBudget: boolean;
   underMin?: boolean;
   segments?: { text: string; length: number; overBudget: boolean }[];
+  readability?: ReadabilityHints;
 }
+
+const buildReadability = (
+  value: string,
+  viewport: ViewportMode,
+  segments: { text: string; length: number }[] | undefined,
+): ReadabilityHints => {
+  const charPx = CAPTION_CHAR_PX[viewport];
+  const columnPx = CAPTION_COLUMN_PX[viewport];
+  const charsPerLine = Math.max(1, Math.floor(columnPx / charPx));
+  const estimatedLines = Math.max(1, Math.ceil(value.length / charsPerLine));
+  const longestSegmentLen = segments
+    ? Math.max(0, ...segments.map((s) => s.length))
+    : value.length;
+  const longestSegmentPx = longestSegmentLen * charPx;
+  // Ryzyko ucięcia: pojedynczy segment albo całe słowo nie mieści się w kolumnie.
+  const longestWord = value
+    .split(/\s+/)
+    .reduce((max, w) => Math.max(max, w.length), 0);
+  const segmentTruncationRisk =
+    longestSegmentPx > columnPx || longestWord * charPx > columnPx;
+  const wordCount = value.trim() ? value.trim().split(/\s+/).length : 0;
+  const readingSeconds = Math.max(1, Math.round((wordCount / READING_WPM) * 60));
+  return {
+    estimatedLines,
+    linesWarn: estimatedLines > CAPTION_LINE_WARN[viewport],
+    longestSegmentPx: Math.round(longestSegmentPx),
+    segmentTruncationRisk,
+    readingSeconds,
+    wordCount,
+  };
+};
 
 const buildStats = (
   value: string,
   budget: number,
   isCaption: boolean,
+  viewport: ViewportMode,
 ): FieldStats => {
   const length = value.length;
   const stats: FieldStats = {
@@ -145,6 +210,7 @@ const buildStats = (
       };
     });
   }
+  stats.readability = buildReadability(value, viewport, stats.segments);
   return stats;
 };
 
