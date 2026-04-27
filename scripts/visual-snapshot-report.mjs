@@ -713,18 +713,31 @@ const main = async () => {
   const failed = trios.filter((t) => t.diff || !(t.expected && t.actual));
 
   // Kopiujemy obrazy do assets/, żeby HTML był samowystarczalny (CI artifact upload).
+  // Dodatkowo per trio wykrywamy artefakty Playwrighta (trace.zip / video / error-context),
+  // żeby raport mógł zaserwować deep-linki do szczegółów debug.
   for (let i = 0; i < failed.length; i++) {
     const t = failed[i];
     const prefix = `${i.toString().padStart(3, "0")}-${t.stem}`;
     if (t.expected) t.expectedAsset = await copyAsset(t.expected, prefix, "expected");
     if (t.actual) t.actualAsset = await copyAsset(t.actual, prefix, "actual");
     if (t.diff) t.diffAsset = await copyAsset(t.diff, prefix, "diff");
+    const artifacts = await discoverPlaywrightArtifacts(t.dir);
+    // Konwertujemy bezwzględne ścieżki na relatywne od REPORT_DIR — przenośność.
+    t.tracePath = artifacts.trace ? path.relative(REPORT_DIR, artifacts.trace) : null;
+    t.videoPath = artifacts.video ? path.relative(REPORT_DIR, artifacts.video) : null;
+    t.errorContextPath = artifacts.errorContext
+      ? path.relative(REPORT_DIR, artifacts.errorContext)
+      : null;
+    t.testDirPath = path.relative(REPORT_DIR, t.dir);
   }
+
+  const playwrightReportRel = await discoverPlaywrightReport();
 
   const html = renderHtml({
     trios: failed,
     generatedAt: new Date().toISOString(),
     totalFailures: failed.length,
+    playwrightReportRel,
   });
 
   const indexPath = path.join(REPORT_DIR, "index.html");
