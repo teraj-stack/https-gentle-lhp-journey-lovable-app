@@ -587,6 +587,65 @@ const renderHtml = ({
       ? `<p class="empty">Brak nieudanych snapshotów live preview w tym runie. ✓</p>`
       : `<p class="summary">Znaleziono <strong>${totalFailures}</strong> nieudany snapshot live preview.</p>`;
 
+  // ---- Sekcja "Pominięte przez --max-failures" ----
+  // Jawna lista trio, które nie weszły do raportu, żeby user wiedział DOKŁADNIE
+  // co zostało odcięte (a nie tylko że "było ich więcej"). Renderujemy jako
+  // <details> domyślnie zwinięte — przy 500+ pominiętych nie chcemy wybuchu UI.
+  // Każdy wiersz pokazuje stem + viewport + state + testName, żeby user mógł:
+  //   1. Skopiować nazwę i wkleić w `--filter` na ponowny run,
+  //   2. Zobaczyć w breakdown czy pominięte nie są zdominowane przez jeden viewport.
+  // Dodatkowo dajemy przycisk "Kopiuj listę" (whitespace-separated stems),
+  // który ułatwia re-run po konkretne testy.
+  const omittedSection =
+    truncation && truncation.omitted && truncation.omitted.length > 0
+      ? (() => {
+          const stemsForCopy = truncation.omitted.map((o) => o.stem).join(" ");
+          const rows = truncation.omitted
+            .map(
+              (o) => `
+              <tr>
+                <td><code>${escapeHtml(o.stem)}</code></td>
+                <td>${escapeHtml(o.viewport)}</td>
+                <td>${escapeHtml(o.state)}</td>
+                <td class="omitted-testname">${escapeHtml(o.testName)}</td>
+              </tr>`,
+            )
+            .join("");
+          return `
+            <details class="omitted-section" open>
+              <summary>
+                <span class="omitted-summary-label">
+                  📋 Pominięte przez <code>--max-failures=${truncation.limit}</code>:
+                  <strong>${truncation.omitted.length}</strong> ${truncation.omitted.length === 1 ? "trio" : "trio"}
+                </span>
+                <button type="button"
+                        class="card-link card-link-button omitted-copy-btn"
+                        data-copy="${escapeHtml(stemsForCopy)}"
+                        title="Kopiuj wszystkie pominięte stems oddzielone spacją">
+                  📋 Kopiuj listę stems
+                </button>
+              </summary>
+              <div class="omitted-table-wrap">
+                <table class="omitted-table">
+                  <thead>
+                    <tr>
+                      <th>Stem</th>
+                      <th>Viewport</th>
+                      <th>State</th>
+                      <th>Test (katalog)</th>
+                    </tr>
+                  </thead>
+                  <tbody>${rows}</tbody>
+                </table>
+              </div>
+              <p class="omitted-hint">
+                Wskazówka: uruchom skrypt bez <code>--max-failures</code> (lub z większą wartością),
+                żeby zobaczyć karty z obrazami dla powyższych trio.
+              </p>
+            </details>`;
+        })()
+      : "";
+
   return `<!doctype html>
 <html lang="pl">
 <head>
@@ -794,6 +853,45 @@ const renderHtml = ({
       background: rgba(127,127,127,.15); padding: 1px 6px;
       border-radius: 3px; font-size: 12px;
     }
+    /* Sekcja "Pominięte przez --max-failures" — zwijana lista trio bez kart.
+       Tabela ma stałą max-height + scroll, żeby 500+ wierszy nie rozwalało layoutu. */
+    .omitted-section {
+      max-width: 1400px; margin: 0 auto 16px;
+      background: var(--card); border: 1px solid var(--border);
+      border-left: 4px solid var(--warn); border-radius: 6px; padding: 12px 16px;
+    }
+    .omitted-section > summary {
+      cursor: pointer; list-style: none; display: flex;
+      align-items: center; justify-content: space-between; gap: 12px;
+      flex-wrap: wrap; font-size: 14px;
+    }
+    .omitted-section > summary::-webkit-details-marker { display: none; }
+    .omitted-section > summary::before {
+      content: "▶"; display: inline-block; margin-right: 8px;
+      transition: transform .15s; color: var(--muted); font-size: 10px;
+    }
+    .omitted-section[open] > summary::before { transform: rotate(90deg); }
+    .omitted-summary-label { display: inline-flex; align-items: center; gap: 6px; }
+    .omitted-copy-btn { margin-left: auto; }
+    .omitted-table-wrap {
+      max-height: 360px; overflow: auto; margin-top: 12px;
+      border: 1px solid var(--border); border-radius: 4px;
+    }
+    .omitted-table {
+      width: 100%; border-collapse: collapse; font-size: 12px;
+    }
+    .omitted-table th, .omitted-table td {
+      padding: 6px 10px; text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+    .omitted-table thead th {
+      position: sticky; top: 0; background: var(--card);
+      color: var(--muted); font-weight: 600; z-index: 1;
+    }
+    .omitted-table tbody tr:hover { background: rgba(127,127,127,.06); }
+    .omitted-table code { font-size: 11px; word-break: break-all; }
+    .omitted-testname { color: var(--muted); font-size: 11px; word-break: break-all; }
+    .omitted-hint { margin: 10px 4px 0; color: var(--muted); font-size: 12px; }
     /* Placeholder dla figure gdy --max-copy obciął kopiowanie — bardziej
        neutralny niż czerwony "missing", żeby user nie myślał że to błąd. */
     .missing-copy-skipped .missing-box {
@@ -839,6 +937,7 @@ const renderHtml = ({
        </aside>`
     : ""}
   ${summaryLine}
+  ${omittedSection}
   ${breakdownSection}
   ${filterBar}
   <div id="cards-container">${cards}</div>
@@ -1114,7 +1213,19 @@ const main = async () => {
     totalFailures: failed.length,
     playwrightReportRel,
     truncation: truncatedBy
-      ? { shown: failed.length, total: allFailed.length, limit: maxFailures }
+      ? {
+          shown: failed.length,
+          total: allFailed.length,
+          limit: maxFailures,
+          // Pełna lista pominiętych trio (wszystko po slice'ie). Wzbogacamy
+          // o viewport/state z parseSnapshotName, żeby user mógł zorientować
+          // się GDZIE są dalsze regresje bez re-runa skryptu bez limitu.
+          // testName = nazwa katalogu Playwrighta — jednoznaczny lokator.
+          omitted: allFailed.slice(maxFailures).map((t) => {
+            const { viewport, state } = parseSnapshotName(t.stem + "-actual.png");
+            return { stem: t.stem, viewport, state, testName: t.testName };
+          }),
+        }
       : null,
     copyTruncation:
       maxCopy !== null && failed.length > maxCopy
