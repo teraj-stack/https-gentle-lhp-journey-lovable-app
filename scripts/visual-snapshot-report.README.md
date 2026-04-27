@@ -230,9 +230,13 @@ visual-regression:
 ```
 visual-report.zip
 ├── index.html                 # samowystarczalny raport (CSS + JS inline) — zawiera też sekcję "Trendy oszczędności IO" (sparkline'y png/discovery z history.csv)
-├── savings.json               # strukturalny dump podsumowania (atrybucja per-flaga + top10 skipped trios)
-├── savings.csv                # 1-wierszowy CSV z agregatami (snapshot bieżącego runa)
+├── savings.json               # strukturalny dump podsumowania (atrybucja per-flaga + top10 skipped trios + byGroup)
+├── savings.csv                # 1-wierszowy CSV z agregatami całego runa (snapshot bieżącego runa)
+├── savings-by-viewport.csv    # N wierszy (1 per viewport) — baseline/processed/saved/savedPct per grupa
+├── savings-by-state.csv       # N wierszy (1 per state) — analog jak wyżej
 ├── history.csv                # auto-append: header + N wierszy (po jednym per run); --no-history żeby wyłączyć
+├── history-by-viewport.csv    # auto-append: header + M wierszy (M = #viewports × #runów)
+├── history-by-state.csv       # auto-append: header + M wierszy (analog dla state)
 └── assets/
     ├── 000-<stem>-expected.png
     ├── 000-<stem>-actual.png
@@ -245,18 +249,26 @@ visual-report.zip
 Pliki `savings.json` i `savings.csv` w `REPORT_DIR` zawierają to samo, co
 sekcja `📊 Atrybucja oszczędności` w konsoli, w postaci do dalszej analizy:
 
-- **`savings.json`** (schemaVersion: 1) — pełny dump: `limits`, `trio`, `pngCopy`,
+- **`savings.json`** (schemaVersion: 2) — pełny dump: `limits`, `trio`, `pngCopy`,
   `discoveryReaddir` (każdy z `baseline`/`processed`/`saved`/`savedPct`),
-  `attribution` per-flaga (`perGroup`, `maxFailures`, `maxCopy`, `maxDiscovery`)
-  oraz `topSkippedTrios` (top 10 z folderem/viewport/state/pngCount).
-- **`savings.csv`** — 1 wiersz + header, kolumny w **stabilnej kolejności**
-  (`generatedAt`, `trio_*`, `png_*`, `discovery_*`, `limit_*`, `attr_*`).
-  Zaprojektowane do append'owania.
-- **`history.csv`** — automatycznie aktualizowany przez skrypt po każdym
-  runie (default: `<REPORT_DIR>/history.csv`). Pierwszy run tworzy plik z
-  nagłówkiem, kolejne dopisują wyłącznie wiersz danych. Zwykle wystarczy
-  trzymać go poza ZIP-em (np. w cache CI lub osobnym artefakcie), żeby
-  porównywać runy w czasie.
+  `attribution` per-flaga (`perGroup`, `maxFailures`, `maxCopy`, `maxDiscovery`),
+  `topSkippedTrios` (top 10) oraz **`byGroup`** = `{ viewport: {...}, state: {...} }`,
+  gdzie każda grupa (np. `mobile`, `tablet`) ma pełen shape `{ trio, png, discovery }`
+  z `baseline/processed/saved/savedPct`. Pozwala odpowiedzieć: "która grupa
+  najwięcej oszczędza w tym runie".
+- **`savings.csv`** — 1 wiersz + header (agregat całego runa), kolumny w
+  **stabilnej kolejności** (`generatedAt`, `trio_*`, `png_*`, `discovery_*`,
+  `limit_*`, `attr_*`). Zaprojektowane do append'owania.
+- **`savings-by-viewport.csv` / `savings-by-state.csv`** — N wierszy + header,
+  jeden wiersz na grupę. Kolumny: `generatedAt, group_kind, group, trio_*,
+  png_*, discovery_*` (15 stable). Idealne do query typu "top oszczędzające
+  grupy w czasie" bez konieczności rozpakowywania JSON.
+- **`history.csv` / `history-by-viewport.csv` / `history-by-state.csv`** —
+  automatycznie aktualizowane przez skrypt po każdym runie (default:
+  `<REPORT_DIR>/`). Pierwszy run tworzy plik z nagłówkiem, kolejne dopisują
+  wyłącznie wiersze danych. Per-grupa history dostają sufix względem ścieżki
+  podanej w `--history` (np. `--history=metrics/visual.csv` →
+  `metrics/visual-by-viewport.csv` + `metrics/visual-by-state.csv`).
 
 ```bash
 # Custom path:
@@ -270,6 +282,12 @@ node scripts/visual-snapshot-report.mjs --no-history
 duckdb -c "SELECT generatedAt, png_saved_pct, discovery_saved_pct \
            FROM read_csv_auto('test-results/visual-report/history.csv') \
            ORDER BY generatedAt DESC LIMIT 20;"
+
+# Top oszczędzające viewporty (średnia z ostatnich runów):
+duckdb -c "SELECT \"group\", AVG(png_saved_pct) AS avg_png_pct, \
+                  AVG(discovery_saved_pct) AS avg_disc_pct, COUNT(*) AS runs \
+           FROM read_csv_auto('test-results/visual-report/history-by-viewport.csv') \
+           GROUP BY \"group\" ORDER BY avg_png_pct DESC;"
 ```
 
 | Flaga | Env | Default | Co robi |

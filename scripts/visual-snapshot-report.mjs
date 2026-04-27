@@ -506,6 +506,65 @@ const renderCardLinks = (t, playwrightReportRel) => {
 };
 
 /**
+ * Agreguje metryki oszczędności (PNG copy / discovery readdir / trio) per grupa
+ * (viewport albo state). Pozwala odpowiedzieć: "która grupa najwięcej
+ * oszczędziła w tym runie i czy tendencja jest stabilna w history".
+ */
+const aggregateSavingsByGroup = ({
+  allFailed,
+  rendered,
+  copyLimit,
+  discoveryLimit,
+  keyFn,
+}) => {
+  const groups = new Map();
+  const ensure = (k) => {
+    if (!groups.has(k)) {
+      groups.set(k, {
+        trioBaseline: 0, trioRendered: 0,
+        pngBaseline: 0, pngProcessed: 0,
+        discoveryBaseline: 0, discoveryProcessed: 0,
+      });
+    }
+    return groups.get(k);
+  };
+  for (const t of allFailed) {
+    const g = ensure(keyFn(t));
+    g.trioBaseline++;
+    g.discoveryBaseline++;
+    if (t.expected) g.pngBaseline++;
+    if (t.actual) g.pngBaseline++;
+    if (t.diff) g.pngBaseline++;
+  }
+  for (let i = 0; i < rendered.length; i++) {
+    const t = rendered[i];
+    const g = ensure(keyFn(t));
+    g.trioRendered++;
+    if (i < copyLimit) {
+      if (t.expected) g.pngProcessed++;
+      if (t.actual) g.pngProcessed++;
+      if (t.diff) g.pngProcessed++;
+    }
+    if (i < discoveryLimit) g.discoveryProcessed++;
+  }
+  const pct = (saved, baseline) =>
+    baseline > 0 ? Math.round((saved / baseline) * 1000) / 10 : 0;
+  const out = {};
+  for (const [k, g] of groups) {
+    const trioSaved = g.trioBaseline - g.trioRendered;
+    const pngSaved = g.pngBaseline - g.pngProcessed;
+    const discoverySaved = g.discoveryBaseline - g.discoveryProcessed;
+    out[k] = {
+      trio: { baseline: g.trioBaseline, rendered: g.trioRendered, saved: trioSaved, savedPct: pct(trioSaved, g.trioBaseline) },
+      png: { baseline: g.pngBaseline, processed: g.pngProcessed, saved: pngSaved, savedPct: pct(pngSaved, g.pngBaseline) },
+      discovery: { baseline: g.discoveryBaseline, processed: g.discoveryProcessed, saved: discoverySaved, savedPct: pct(discoverySaved, g.discoveryBaseline) },
+    };
+  }
+  return out;
+};
+
+
+/**
  * Wczytuje historyczne wiersze z `history.csv` (jeśli istnieje) i zwraca
  * dane do narysowania sparkline'ów png_saved_pct + discovery_saved_pct.
  *
@@ -1986,8 +2045,23 @@ const main = async () => {
   const pct = (saved, baseline) =>
     baseline > 0 ? Math.round((saved / baseline) * 1000) / 10 : 0; // 1 miejsce po przecinku
 
+  // Per-grupa metryki (viewport + state). Każda grupa dostaje pełny shape:
+  // { trio, png, discovery } z baseline/processed/saved/savedPct.
+  // Wyniki używamy w 3 miejscach:
+  //   1. savingsSummary.byGroup → savings.json (sekcja do programatycznej analizy)
+  //   2. savings-by-viewport.csv / savings-by-state.csv (1 wiersz per grupa, append-friendly)
+  //   3. history-by-viewport.csv / history-by-state.csv (auto-append per run)
+  const byViewport = aggregateSavingsByGroup({
+    allFailed, rendered: failed, copyLimit, discoveryLimit,
+    keyFn: (t) => t._viewport,
+  });
+  const byState = aggregateSavingsByGroup({
+    allFailed, rendered: failed, copyLimit, discoveryLimit,
+    keyFn: (t) => t._state,
+  });
+
   const savingsSummary = {
-    schemaVersion: 1,
+    schemaVersion: 2, // bump: dodano `byGroup`
     generatedAt: new Date().toISOString(),
     limits: {
       maxFailures: maxFailures,
@@ -2047,6 +2121,12 @@ const main = async () => {
       }))
       .sort((a, b) => b.pngCount - a.pngCount || a.stem.localeCompare(b.stem))
       .slice(0, 10), // 10 (nie 3) — w JSON więcej kontekstu się przyda do analizy
+    byGroup: {
+      // Agregaty per-grupa do analizy "która grupa najwięcej oszczędza".
+      // Klucz mapy = wartość zwracana przez parseSnapshotName (slugi).
+      viewport: byViewport,
+      state: byState,
+    },
   };
 
   const savingsJsonPath = path.join(REPORT_DIR, "savings.json");
@@ -2117,19 +2197,114 @@ const main = async () => {
     "utf8",
   );
 
+  // Per-grupa CSV (1 wiersz per grupa). Schema flat — analog savings.csv,
+  // ale dla pojedynczej grupy (viewport albo state). Ułatwia DuckDB query
+  // typu "która grupa najmocniej oszczędziła w ostatnim tygodniu".
+  const groupCsvCols = [
+    "generatedAt",
+    "group_kind",   // "viewport" | "state"
+    "group",        // np. "mobile", "tablet", "state-a"
+    "trio_baseline",
+    "trio_rendered",
+    "trio_saved",
+    "trio_saved_pct",
+    "png_baseline",
+    "png_processed",
+    "png_saved",
+    "png_saved_pct",
+    "discovery_baseline",
+    "discovery_processed",
+    "discovery_saved",
+    "discovery_saved_pct",
+  ];
+  const groupHeaderLine = groupCsvCols.join(",");
+  const buildGroupRows = (kind, byMap) =>
+    Object.entries(byMap)
+      .sort((a, b) => a[0].localeCompare(b[0])) // stabilna kolejność grup
+      .map(([k, m]) =>
+        [
+          savingsSummary.generatedAt,
+          kind,
+          k,
+          m.trio.baseline, m.trio.rendered, m.trio.saved, m.trio.savedPct,
+          m.png.baseline, m.png.processed, m.png.saved, m.png.savedPct,
+          m.discovery.baseline, m.discovery.processed, m.discovery.saved, m.discovery.savedPct,
+        ].join(","),
+      );
+
+  const viewportRows = buildGroupRows("viewport", byViewport);
+  const stateRows = buildGroupRows("state", byState);
+  const savingsByViewportPath = path.join(REPORT_DIR, "savings-by-viewport.csv");
+  const savingsByStatePath = path.join(REPORT_DIR, "savings-by-state.csv");
+  await fs.writeFile(
+    savingsByViewportPath,
+    `${groupHeaderLine}\n${viewportRows.join("\n")}${viewportRows.length ? "\n" : ""}`,
+    "utf8",
+  );
+  await fs.writeFile(
+    savingsByStatePath,
+    `${groupHeaderLine}\n${stateRows.join("\n")}${stateRows.length ? "\n" : ""}`,
+    "utf8",
+  );
+
   // Auto-append do history.csv (trend między uruchomieniami).
   // Reguły:
   // - default: <REPORT_DIR>/history.csv
   // - --no-history (lub NO_HISTORY=1) → skip
-  // - --history=off|false|none → skip (sentinel string)
-  // - --history=path → custom path (relative do PROJECT_ROOT albo absolute)
+  // - --history=path → custom path tylko dla głównego history; per-grupa
+  //   pliki dostają ścieżkę pochodną (suffix `-by-viewport`/`-by-state`),
+  //   bo CSV mają inny schema i nie mogą żyć w tym samym pliku.
   // - guard: jeśli istniejący plik ma INNY nagłówek (np. dodano kolumny w nowej
   //   wersji skryptu) → log warn + skip append (nie korumpujemy starej historii).
-  //   User powinien zarchiwizować stary plik i pozwolić wygenerować nowy.
   const historySentinelOff = ["off", "false", "none", "no", "0"];
   const historyDisabled =
     noHistory ||
     (historyRaw && historySentinelOff.includes(String(historyRaw).toLowerCase()));
+
+  /**
+   * Wspólna logika append: lazy-create header gdy brak pliku, schema-guard
+   * gdy istnieje. Zwraca true gdy faktycznie dopisano.
+   */
+  const appendHistory = async (label, targetPath, header, dataLines) => {
+    if (dataLines.length === 0) {
+      // Brak grup (np. allFailed.length === 0) — nie tworzymy pustego pliku.
+      return;
+    }
+    let appendOk = true;
+    let existed = false;
+    try {
+      const existing = await fs.readFile(targetPath, "utf8");
+      existed = true;
+      const firstLine = existing.split("\n", 1)[0] ?? "";
+      if (firstLine !== header) {
+        console.warn(
+          `[visual-snapshot-report] ⚠ Pomijam append do ${path.relative(PROJECT_ROOT, targetPath)} ` +
+            `— istniejący nagłówek różni się od bieżącego (schema mismatch). ` +
+            `Zarchiwizuj stary plik, kolejny run wygeneruje świeży.`,
+        );
+        appendOk = false;
+      }
+    } catch (err) {
+      if (err.code !== "ENOENT") {
+        console.warn(
+          `[visual-snapshot-report] ⚠ Nie mogę odczytać ${path.relative(PROJECT_ROOT, targetPath)}: ${err.message}`,
+        );
+        appendOk = false;
+      }
+    }
+    if (!appendOk) return;
+    await fs.mkdir(path.dirname(targetPath), { recursive: true });
+    const body = `${dataLines.join("\n")}\n`;
+    const payload = existed ? body : `${header}\n${body}`;
+    await fs.appendFile(targetPath, payload, "utf8");
+    const contents = await fs.readFile(targetPath, "utf8");
+    const dataRows = contents.split("\n").filter((l) => l.length > 0).length - 1;
+    console.log(
+      `[visual-snapshot-report] 📈 ${label}: ${path.relative(PROJECT_ROOT, targetPath)} ` +
+        `(+${dataLines.length}, ${dataRows} ${dataRows === 1 ? "wiersz" : "wierszy"} łącznie${existed ? "" : ", utworzono nowy plik"}).`,
+    );
+  };
+
   if (!historyDisabled) {
     const historyPath = historyRaw
       ? path.isAbsolute(historyRaw)
@@ -2137,42 +2312,27 @@ const main = async () => {
         : path.resolve(PROJECT_ROOT, historyRaw)
       : path.join(REPORT_DIR, "history.csv");
 
-    let appendOk = true;
-    let existed = false;
-    try {
-      const existing = await fs.readFile(historyPath, "utf8");
-      existed = true;
-      const firstLine = existing.split("\n", 1)[0] ?? "";
-      if (firstLine !== headerLine) {
-        console.warn(
-          `[visual-snapshot-report] ⚠ Pomijam append do ${path.relative(PROJECT_ROOT, historyPath)} ` +
-            `— istniejący nagłówek różni się od bieżącego (schema mismatch). ` +
-            `Zarchiwizuj stary plik (np. mv history.csv history-v1.csv), ` +
-            `kolejny run wygeneruje świeży z aktualnym nagłówkiem.`,
-        );
-        appendOk = false;
-      }
-    } catch (err) {
-      if (err.code !== "ENOENT") {
-        console.warn(
-          `[visual-snapshot-report] ⚠ Nie mogę odczytać ${path.relative(PROJECT_ROOT, historyPath)}: ${err.message}`,
-        );
-        appendOk = false;
-      }
-    }
+    // Per-grupa history: pochodna od głównej ścieżki (suffix przed .csv).
+    // To pozwala custom --history=metrics/visual.csv → metrics/visual-by-viewport.csv.
+    const deriveGroupHistoryPath = (suffix) => {
+      const ext = path.extname(historyPath);
+      const base = ext ? historyPath.slice(0, -ext.length) : historyPath;
+      return `${base}-${suffix}${ext || ".csv"}`;
+    };
 
-    if (appendOk) {
-      await fs.mkdir(path.dirname(historyPath), { recursive: true });
-      const payload = existed ? `${dataLine}\n` : `${headerLine}\n${dataLine}\n`;
-      await fs.appendFile(historyPath, payload, "utf8");
-      // Liczba wierszy danych po append (bez headera) — szybki sygnał trendu w CI logu.
-      const contents = await fs.readFile(historyPath, "utf8");
-      const dataRows = contents.split("\n").filter((l) => l.length > 0).length - 1;
-      console.log(
-        `[visual-snapshot-report] 📈 History append: ${path.relative(PROJECT_ROOT, historyPath)} ` +
-          `(${dataRows} ${dataRows === 1 ? "wiersz" : "wierszy"} łącznie${existed ? "" : ", utworzono nowy plik"}).`,
-      );
-    }
+    await appendHistory("History append", historyPath, headerLine, [dataLine]);
+    await appendHistory(
+      "History append (by viewport)",
+      deriveGroupHistoryPath("by-viewport"),
+      groupHeaderLine,
+      viewportRows,
+    );
+    await appendHistory(
+      "History append (by state)",
+      deriveGroupHistoryPath("by-state"),
+      groupHeaderLine,
+      stateRows,
+    );
   } else {
     console.log(
       `[visual-snapshot-report] ⏭  History append wyłączony (--no-history / HISTORY_CSV=off).`,
@@ -2182,7 +2342,9 @@ const main = async () => {
   console.log(
     `[visual-snapshot-report] 📁 Zapisano podsumowanie: ` +
       `${path.relative(PROJECT_ROOT, savingsJsonPath)}, ` +
-      `${path.relative(PROJECT_ROOT, savingsCsvPath)}`,
+      `${path.relative(PROJECT_ROOT, savingsCsvPath)}, ` +
+      `${path.relative(PROJECT_ROOT, savingsByViewportPath)}, ` +
+      `${path.relative(PROJECT_ROOT, savingsByStatePath)}`,
   );
 };
 
