@@ -1467,6 +1467,21 @@ const main = async () => {
 
   const playwrightReportRel = await discoverPlaywrightReport();
 
+  // Trendy: wczytujemy istniejący history.csv (jeśli jest) PRZED renderem
+  // index.html. Append nowego wiersza zachodzi POŹNIEJ — w tym renderze widać
+  // historyczne runy + bieżący jako ostatnia kropka (oznaczona "now").
+  // Resolver ścieżki history.csv MUSI być zgodny z logiką append na końcu skryptu.
+  const trendsData = await loadTrendsHistory({
+    historyRaw,
+    noHistory,
+    currentRun: {
+      generatedAt: new Date().toISOString(),
+      pngSavedPct: pct(pngSaved, pngBaseline),
+      discoverySavedPct: pct(discoverySaved, discoveryBaseline),
+    },
+  });
+
+
   const html = renderHtml({
     trios: failed,
     generatedAt: new Date().toISOString(),
