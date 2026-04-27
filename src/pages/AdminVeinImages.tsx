@@ -37,6 +37,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { LogOut, ShieldAlert, Save, RotateCcw, Database, FileJson, FileSpreadsheet, Trash2, Clock, User, History, Upload, CheckCircle2, AlertTriangle, FileWarning, Search, X } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
@@ -468,6 +475,19 @@ const AdminVeinImages = () => {
   const [viewport, setViewport] = useState<ViewportMode>("desktop");
   const [saving, setSaving] = useState<VeinImageSlot | null>(null);
   const [exporting, setExporting] = useState<"json" | "csv" | null>(null);
+  /**
+   * Filtry eksportu — pozwalają pobrać podzbiór overrides zamiast całej tabeli.
+   * "all" = bez filtra (dotychczasowe zachowanie). Filtr jest stosowany lokalnie
+   * po `fetchAllOverrides()`, więc nie wymaga zmian w zapytaniu i działa też dla
+   * snapshotów eksportu (np. user może wziąć tylko sloty `perforator` ze
+   * wszystkich stron, albo tylko stronę `hemoroidy` z oboma slotami).
+   *
+   * Suffiks pliku zawiera aktywne filtry — łatwiej rozpoznać który eksport jest który.
+   */
+  const [exportPageKey, setExportPageKey] = useState<"all" | VeinImagePageKey>(
+    "all",
+  );
+  const [exportSlot, setExportSlot] = useState<"all" | VeinImageSlot>("all");
   const [resettingAll, setResettingAll] = useState(false);
   /** Bump po każdym udanym zapisie — wymusza remount podglądu CMS (force-fresh render). */
   const [savedTick, setSavedTick] = useState(0);
@@ -820,23 +840,63 @@ const AdminVeinImages = () => {
     return data ?? [];
   };
 
+  /**
+   * Aplikuje aktywne filtry eksportu (page_key + slot) do listy z bazy
+   * i zwraca segment do nazwy pliku, np. "-pajaczki-perforator" / "" / "-perforator".
+   */
+  const applyExportFilters = <T extends { page_key: string; slot: string }>(
+    rows: T[],
+  ): { rows: T[]; suffix: string } => {
+    const filtered = rows.filter(
+      (r) =>
+        (exportPageKey === "all" || r.page_key === exportPageKey) &&
+        (exportSlot === "all" || r.slot === exportSlot),
+    );
+    const parts: string[] = [];
+    if (exportPageKey !== "all") parts.push(exportPageKey);
+    if (exportSlot !== "all") parts.push(exportSlot);
+    return { rows: filtered, suffix: parts.length ? `-${parts.join("-")}` : "" };
+  };
+
+  /** Krótki opis aktywnego filtra do toastów / hintów ("wszystkie / tylko strona X / tylko slot Y / strona X · slot Y"). */
+  const exportFilterSummary = (): string => {
+    if (exportPageKey === "all" && exportSlot === "all") return "wszystkie";
+    const parts: string[] = [];
+    if (exportPageKey !== "all") parts.push(`strona ${exportPageKey}`);
+    if (exportSlot !== "all") parts.push(`slot ${exportSlot}`);
+    return parts.join(" · ");
+  };
+
   const exportJson = async () => {
     setExporting("json");
     try {
-      const rows = await fetchAllOverrides();
+      const allRows = await fetchAllOverrides();
+      const { rows, suffix } = applyExportFilters(allRows);
+      if (rows.length === 0) {
+        toast.info(
+          `Brak overrides do eksportu dla filtra: ${exportFilterSummary()}.`,
+        );
+        return;
+      }
       const payload = {
         exported_at: new Date().toISOString(),
         exported_by: session?.user.email ?? null,
+        filter: {
+          page_key: exportPageKey,
+          slot: exportSlot,
+        },
         total: rows.length,
         overrides: rows,
       };
       const stamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
       downloadFile(
-        `vein-image-overrides-${stamp}.json`,
+        `vein-image-overrides${suffix}-${stamp}.json`,
         JSON.stringify(payload, null, 2),
         "application/json",
       );
-      toast.success(`Wyeksportowano ${rows.length} overrides do JSON`);
+      toast.success(
+        `Wyeksportowano ${rows.length} overrides do JSON (${exportFilterSummary()})`,
+      );
     } catch (err) {
       toast.error(
         `Błąd eksportu JSON: ${err instanceof Error ? err.message : String(err)}`,
@@ -856,7 +916,14 @@ const AdminVeinImages = () => {
   const exportCsv = async () => {
     setExporting("csv");
     try {
-      const rows = await fetchAllOverrides();
+      const allRows = await fetchAllOverrides();
+      const { rows, suffix } = applyExportFilters(allRows);
+      if (rows.length === 0) {
+        toast.info(
+          `Brak overrides do eksportu dla filtra: ${exportFilterSummary()}.`,
+        );
+        return;
+      }
       const header = ["page_key", "slot", "alt", "caption", "updated_at", "updated_by"];
       const lines = [header.join(",")];
       for (const row of rows) {
@@ -869,11 +936,13 @@ const AdminVeinImages = () => {
       const stamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
       // BOM dla poprawnego otwarcia w Excelu z polskimi znakami.
       downloadFile(
-        `vein-image-overrides-${stamp}.csv`,
+        `vein-image-overrides${suffix}-${stamp}.csv`,
         "\uFEFF" + lines.join("\r\n"),
         "text/csv",
       );
-      toast.success(`Wyeksportowano ${rows.length} overrides do CSV`);
+      toast.success(
+        `Wyeksportowano ${rows.length} overrides do CSV (${exportFilterSummary()})`,
+      );
     } catch (err) {
       toast.error(
         `Błąd eksportu CSV: ${err instanceof Error ? err.message : String(err)}`,
@@ -1405,12 +1474,58 @@ const AdminVeinImages = () => {
             </div>
 
             <div className="ml-auto flex flex-wrap items-center gap-2">
+              {/*
+                Filtry eksportu — pozwalają zawęzić co trafia do JSON/CSV.
+                "Wszystkie" zachowuje dotychczasowe zachowanie. Kompaktowe
+                Selecty wpasowują się w toolbar (te same h-8 co Button size="sm").
+                Filename zawiera aktywne filtry (suffix), żeby user nie pomylił
+                eksportów po nazwie pliku.
+              */}
+              <Select
+                value={exportPageKey}
+                onValueChange={(v) =>
+                  setExportPageKey(v as "all" | VeinImagePageKey)
+                }
+              >
+                <SelectTrigger
+                  className="h-8 w-[150px] text-xs"
+                  aria-label="Filtr eksportu: strona"
+                  title="Eksportuj tylko wybraną stronę (page_key)"
+                >
+                  <SelectValue placeholder="Strona" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Wszystkie strony</SelectItem>
+                  {VEIN_IMAGE_PAGE_PRESETS.map((p) => (
+                    <SelectItem key={p.key} value={p.key}>
+                      {p.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select
+                value={exportSlot}
+                onValueChange={(v) => setExportSlot(v as "all" | VeinImageSlot)}
+              >
+                <SelectTrigger
+                  className="h-8 w-[130px] text-xs"
+                  aria-label="Filtr eksportu: slot"
+                  title="Eksportuj tylko wybrany slot (main / perforator)"
+                >
+                  <SelectValue placeholder="Slot" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Oba sloty</SelectItem>
+                  <SelectItem value="main">main</SelectItem>
+                  <SelectItem value="perforator">perforator</SelectItem>
+                </SelectContent>
+              </Select>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={exportJson}
                 disabled={exporting !== null}
-                title="Pobierz wszystkie overrides z bazy jako JSON"
+                title={`Pobierz overrides z bazy jako JSON (${exportFilterSummary()})`}
               >
                 <FileJson className="w-3.5 h-3.5 mr-1" />
                 {exporting === "json" ? "Eksport…" : "Export JSON"}
@@ -1420,7 +1535,7 @@ const AdminVeinImages = () => {
                 size="sm"
                 onClick={exportCsv}
                 disabled={exporting !== null}
-                title="Pobierz wszystkie overrides z bazy jako CSV (Excel-friendly)"
+                title={`Pobierz overrides z bazy jako CSV — Excel-friendly (${exportFilterSummary()})`}
               >
                 <FileSpreadsheet className="w-3.5 h-3.5 mr-1" />
                 {exporting === "csv" ? "Eksport…" : "Export CSV"}
