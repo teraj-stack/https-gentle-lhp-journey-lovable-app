@@ -1329,10 +1329,12 @@ const main = async () => {
           // o viewport/state z parseSnapshotName, żeby user mógł zorientować
           // się GDZIE są dalsze regresje bez re-runa skryptu bez limitu.
           // testName = nazwa katalogu Playwrighta — jednoznaczny lokator.
-          omitted: allFailed.slice(maxFailures).map((t) => {
-            const { viewport, state } = parseSnapshotName(t.stem + "-actual.png");
-            return { stem: t.stem, viewport, state, testName: t.testName };
-          }),
+          omitted: allFailed.slice(maxFailures).map((t) => ({
+            stem: t.stem,
+            viewport: t._viewport,
+            state: t._state,
+            testName: t.testName,
+          })),
         }
       : null,
     copyTruncation:
