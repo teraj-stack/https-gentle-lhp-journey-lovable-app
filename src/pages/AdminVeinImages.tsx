@@ -57,6 +57,8 @@ interface FieldStats {
   budget: number;
   overBudget: boolean;
   underMin: boolean;
+  /** Lista czytelnych komunikatów błędu — pusta = pole valid. */
+  errors: string[];
   segments?: { text: string; length: number; overBudget: boolean }[];
 }
 
@@ -64,16 +66,27 @@ const buildStats = (
   value: string,
   budget: number,
   isCaption: boolean,
+  fieldLabel: string,
 ): FieldStats => {
   const length = value.length;
-  const stats: FieldStats = {
-    length,
-    budget,
-    overBudget: length > budget,
-    underMin: !isCaption && length < ALT_MIN,
-  };
+  const errors: string[] = [];
+  const overBudget = length > budget;
+  const underMin = !isCaption && length < ALT_MIN;
+
+  if (underMin) {
+    errors.push(
+      `${fieldLabel}: min ${ALT_MIN} znaków (brakuje ${ALT_MIN - length}).`,
+    );
+  }
+  if (overBudget) {
+    errors.push(
+      `${fieldLabel}: max ${budget} znaków (przekroczone o ${length - budget}).`,
+    );
+  }
+
+  let segments: FieldStats["segments"];
   if (isCaption) {
-    stats.segments = value.split("·").map((segment) => {
+    segments = value.split("·").map((segment) => {
       const text = segment.trim();
       return {
         text,
@@ -81,30 +94,62 @@ const buildStats = (
         overBudget: text.length > SEGMENT_BUDGET,
       };
     });
+    const overSegments = segments.filter((s) => s.overBudget);
+    if (overSegments.length > 0) {
+      const list = overSegments
+        .map((s) => `"${s.text.slice(0, 24)}${s.text.length > 24 ? "…" : ""}" (${s.length})`)
+        .join(", ");
+      errors.push(
+        `Segment „·" max ${SEGMENT_BUDGET} znaków. Za długie: ${list}.`,
+      );
+    }
   }
-  return stats;
+
+  return { length, budget, overBudget, underMin, errors, segments };
 };
 
 const StatsBadge = ({ stats }: { stats: FieldStats }) => {
-  const hasError = stats.overBudget || stats.underMin;
+  const hasError = stats.errors.length > 0;
   return (
     <span
       className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-mono ${
         hasError
           ? "bg-destructive/15 text-destructive border border-destructive/30"
-          : "bg-muted text-muted-foreground border border-border/40"
+          : "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30"
       }`}
-      title={
-        stats.underMin
-          ? `Min ${ALT_MIN} znaków (alt)`
-          : stats.overBudget
-            ? `Max ${stats.budget} znaków`
-            : "OK"
-      }
+      title={hasError ? stats.errors.join(" ") : "OK — w limitach bazy"}
+      aria-live="polite"
     >
       {stats.length}/{stats.budget}
       {stats.underMin && " ↓"}
+      {stats.overBudget && " ↑"}
+      {!hasError && " ✓"}
     </span>
+  );
+};
+
+const ErrorList = ({
+  errors,
+  id,
+}: {
+  errors: string[];
+  id: string;
+}) => {
+  if (errors.length === 0) return null;
+  return (
+    <ul
+      id={id}
+      role="alert"
+      aria-live="polite"
+      className="mt-1.5 space-y-0.5 text-[11px] text-destructive"
+    >
+      {errors.map((err, idx) => (
+        <li key={idx} className="flex items-start gap-1.5 leading-snug">
+          <span aria-hidden className="mt-0.5">⚠</span>
+          <span>{err}</span>
+        </li>
+      ))}
+    </ul>
   );
 };
 
@@ -113,7 +158,7 @@ const SegmentList = ({
 }: {
   segments: NonNullable<FieldStats["segments"]>;
 }) => (
-  <ul className="mt-2 grid gap-1 text-[11px]">
+  <ul className="mt-2 grid gap-1 text-[11px]" aria-label="Segmenty figcaption">
     {segments.map((segment, idx) => (
       <li
         key={`${segment.text}-${idx}`}
@@ -123,7 +168,7 @@ const SegmentList = ({
             : "border-border/30 bg-card/40 text-foreground/80"
         }`}
       >
-        <span className="truncate font-mono">{segment.text}</span>
+        <span className="truncate font-mono">{segment.text || <em className="opacity-60">pusty</em>}</span>
         <span className="font-mono shrink-0">
           {segment.length}/{SEGMENT_BUDGET}
         </span>
