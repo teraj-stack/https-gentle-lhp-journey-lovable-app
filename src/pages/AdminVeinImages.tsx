@@ -818,6 +818,48 @@ const AdminVeinImages = () => {
     }
   };
 
+  /**
+   * Pobiera „pusty" szablon CSV gotowy do wypełnienia pod Import CSV.
+   *
+   * Zawartość: nagłówek (page_key, slot, alt, caption) + 1 wiersz przykładowy
+   * per kombinacja (page_key × slot) z VEIN_IMAGE_PAGE_PRESETS, z realnymi
+   * wartościami z presetów jako wzorzec stylistyczny. Admin może je nadpisać
+   * lub usunąć niepotrzebne wiersze przed importem.
+   *
+   * Synchronicznie (bez async/setExporting) — to czysty download statycznych
+   * danych, nie woła bazy.
+   */
+  const downloadCsvTemplate = () => {
+    const header = ["page_key", "slot", "alt", "caption"];
+    const lines = [header.join(",")];
+    for (const preset of VEIN_IMAGE_PAGE_PRESETS) {
+      lines.push(
+        [preset.key, "main", preset.mainAlt, preset.mainCaption]
+          .map(csvCell)
+          .join(","),
+      );
+      lines.push(
+        [
+          preset.key,
+          "perforator",
+          preset.perforatorAlt,
+          preset.perforatorCaption,
+        ]
+          .map(csvCell)
+          .join(","),
+      );
+    }
+    // BOM dla Excela + CRLF zgodnie z RFC 4180 (te same konwencje co exportCsv).
+    downloadFile(
+      "vein-image-overrides-template.csv",
+      "\uFEFF" + lines.join("\r\n"),
+      "text/csv",
+    );
+    toast.success(
+      `Pobrano szablon CSV (${VEIN_IMAGE_PAGE_PRESETS.length * 2} wierszy przykładowych)`,
+    );
+  };
+
 
   const downloadFile = (filename: string, content: string, mime: string) => {
     const blob = new Blob([content], { type: `${mime};charset=utf-8` });
