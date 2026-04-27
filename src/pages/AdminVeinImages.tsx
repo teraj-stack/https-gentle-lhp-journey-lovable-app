@@ -1546,14 +1546,21 @@ const AdminVeinImages = () => {
             duration: 10000,
           },
         );
+        // Po częściowym failu: dopisujemy `serwer: …` do baseErrors w
+        // odpowiednich parsedRows (przez .line lookup). Sukcesy nie wymagają
+        // dodatkowej akcji — i tak po refetchu przejdą na status "noop"
+        // przy ponownym otwarciu, ale tu zachowujemy preview do wglądu.
         setImportPreview((prev) =>
           prev
             ? {
                 ...prev,
-                rows: prev.rows.map((r) => {
+                parsedRows: prev.parsedRows.map((r) => {
                   const f = failures.find((x) => x.row.line === r.line);
-                  if (!f) return r.status === "create" || r.status === "update" ? { ...r, status: "noop" } : r;
-                  return { ...r, status: "error", errors: [...r.errors, `serwer: ${f.message}`] };
+                  if (!f) return r;
+                  return {
+                    ...r,
+                    baseErrors: [...r.baseErrors, `serwer: ${f.message}`],
+                  };
                 }),
               }
             : prev,
