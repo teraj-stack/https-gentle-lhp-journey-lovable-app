@@ -56,6 +56,7 @@ const AdminSystemHealth = lazy(() => import("@/pages/AdminSystemHealth"));
 const AdminEmailDashboard = lazy(() => import("@/pages/AdminEmailDashboard"));
 const AdminSecurityChecklist = lazy(() => import("@/pages/AdminSecurityChecklist"));
 const AdminScrollTest = lazy(() => import("@/pages/AdminScrollTest"));
+const AdminVeinImages = lazy(() => import("@/pages/AdminVeinImages"));
 const DevTooltipPreview = lazy(() => import("@/pages/DevTooltipPreview"));
 const DevI18nContract = lazy(() => import("@/pages/DevI18nContract"));
 const DevVeinImagesPreview = lazy(() => import("@/pages/DevVeinImagesPreview"));
@@ -169,6 +170,7 @@ const App = () => (
             <Route path="/admin/email-dashboard" element={<AdminEmailDashboard />} />
             <Route path="/admin/security" element={<AdminSecurityChecklist />} />
             <Route path="/admin/scroll-test" element={<AdminScrollTest />} />
+            <Route path="/admin/vein-images" element={<AdminVeinImages />} />
             
             <Route path="/unsubscribe" element={<Unsubscribe />} />
             <Route path="/reminder-opt-out" element={<ReminderOptOut />} />
