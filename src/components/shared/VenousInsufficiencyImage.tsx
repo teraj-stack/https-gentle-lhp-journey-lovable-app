@@ -24,6 +24,12 @@ interface Props {
   perforatorAlt?: string;
   /** Per-page figcaption under the perforator image. */
   perforatorCaption?: string;
+  /**
+   * Optional CMS page key. When set, alt+caption are loaded from
+   * `vein_image_overrides` table and override hardcoded props.
+   * Hardcoded props remain SSR/initial-paint fallback for SEO.
+   */
+  pageKey?: VeinImagePageKey;
 }
 
 /**
@@ -46,8 +52,25 @@ const VenousInsufficiencyImage = ({
   mainCaption = "Zdrowe żyły · Domknięte zastawki · Żylaki · Niedomykające się zastawki · Stan zapalny",
   perforatorAlt = "Schemat niewydolnego perforatora: niewydolność zastawek żylnych prowadzi do zastoju krwi żylnej i przeciążenia powierzchownych naczyń żylnych",
   perforatorCaption = "Niewydolny perforator · Zastój krwi · Przeciążenie naczyń powierzchownych",
+  pageKey,
 }: Props) => {
   const motionProps = fadeUp ?? {};
+
+  // CMS overrides — fetched only when pageKey is provided.
+  // Hook is always called (Rules of Hooks); when pageKey is undefined,
+  // we just ignore the result.
+  const overrides = useVeinImageOverridesForPage(
+    pageKey ?? ("__none__" as VeinImagePageKey),
+  );
+  const effectiveMainAlt = pageKey && overrides.main?.alt ? overrides.main.alt : mainAlt;
+  const effectiveMainCaption =
+    pageKey && overrides.main?.caption ? overrides.main.caption : mainCaption;
+  const effectivePerforatorAlt =
+    pageKey && overrides.perforator?.alt ? overrides.perforator.alt : perforatorAlt;
+  const effectivePerforatorCaption =
+    pageKey && overrides.perforator?.caption
+      ? overrides.perforator.caption
+      : perforatorCaption;
 
   return (
     <motion.section
