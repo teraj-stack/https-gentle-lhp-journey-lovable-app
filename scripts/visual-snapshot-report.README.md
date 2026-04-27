@@ -107,15 +107,27 @@ jobs:
 
 ### Warianty
 
-**Fail-fast w CI** (gdy zestaw urośnie do setek failures):
+**Fail-fast w CI** (gdy zestaw urośnie do setek failures) — trzy niezależne flagi:
+
+| Flaga | Env | Co tnie | Kiedy używać |
+|---|---|---|---|
+| `--max-failures=N` (`-m N`) | `MAX_FAILURES` | Globalna liczba kart (najmocniejsze) | Chcesz zobaczyć tylko top N regresji |
+| `--max-copy=N` | `MAX_COPY` | Kopiowanie PNG do `assets/` (drogie IO) | Wszystkie karty potrzebne, ale podgląd pikseli tylko dla N |
+| `--max-discovery=N` | `MAX_DISCOVERY` | Discovery `trace.zip`/`video`/`error-context` per katalog | Karty + obrazy OK, ale chcesz oszczędzić `readdir` |
 
 ```yaml
-- name: Generate + pack visual report (fail-fast 50)
+- name: Generate + pack visual report (aggressive fail-fast)
   if: always()
   run: |
-    node scripts/visual-snapshot-report.mjs --max-failures=50
+    # Top 100 kart, podgląd pikseli dla 30, deep-linki dla 50.
+    node scripts/visual-snapshot-report.mjs \
+      --max-failures=100 --max-copy=30 --max-discovery=50
     bun run test:visual:report:pack
 ```
+
+Hierarchia: `--max-failures` tnie pierwsze, więc `--max-copy` / `--max-discovery`
+działają już na obcięty zbiór. Kombinacje są niezależne — można podać jedną,
+dwie albo wszystkie trzy.
 
 **Komentarz w PR z linkiem do artifactu** (opcjonalnie):
 
