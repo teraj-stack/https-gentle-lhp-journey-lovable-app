@@ -296,6 +296,13 @@ pasujących do wszystkich aktywnych selectów (AND), bez re-runu skryptu.
   `?trend_command=...&trend_flag_max_copy=200`, dzięki czemu można udostępnić
   link do konkretnego widoku trendu (np. „CI z `--max-copy=200`").
 - Przycisk **Resetuj** czyści wszystkie selecty i pokazuje pełną historię.
+- Pod selectami znajduje się rozwijana sekcja **„Unikalne kombinacje
+  `command` + `flag_*`"** — tabela wszystkich krotek wartości, które
+  rzeczywiście wystąpiły w `history.csv`, posortowana malejąco po liczbie
+  runów. Kliknięcie wiersza (lub Enter / Space na fokusie) ustawia selecty
+  filtra na DOKŁADNIE tę kombinację, dzięki czemu nie trzeba zgadywać,
+  które wartości wystąpiły razem. Aktywny preset jest podświetlony złotą
+  ramką po lewej stronie wiersza.
 
 ```bash
 # Custom path:
