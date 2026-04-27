@@ -2669,6 +2669,45 @@ const AdminVeinImages = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/*
+        Potwierdzenie eksportu — chroni przed przypadkowym klikiem w „Export JSON/CSV".
+        Otwiera się gdy `pendingExport` != null. Confirm wywołuje właściwy handler
+        i zamyka dialog; Cancel po prostu czyści stan (żaden plik się nie pobiera).
+      */}
+      <AlertDialog
+        open={pendingExport !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingExport(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Pobrać plik {pendingExport === "json" ? "JSON" : "CSV"}?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Eksport obejmie overrides z bazy dla filtra:{" "}
+              <span className="font-mono">{exportFilterSummary()}</span>. Plik zostanie
+              zapisany przez przeglądarkę. Możesz anulować, jeśli kliknięcie było
+              przypadkowe.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Anuluj</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                const which = pendingExport;
+                setPendingExport(null);
+                if (which === "json") void exportJson();
+                else if (which === "csv") void exportCsv();
+              }}
+            >
+              Pobierz {pendingExport === "json" ? "JSON" : "CSV"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 };
