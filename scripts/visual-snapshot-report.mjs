@@ -570,6 +570,17 @@ const renderHtml = ({ trios, generatedAt, totalFailures }) => {
       counter.textContent = "Pokazano " + visible + " z " + cards.length + " snapshotów.";
       noResults.hidden = visible !== 0;
 
+      // Zaznacz w breakdown wiersze, które odpowiadają aktywnym filtrom —
+      // user widzi od razu, którą "kategorię" ma zawężoną.
+      var breakdownRows = document.querySelectorAll(".breakdown-row");
+      Array.prototype.forEach.call(breakdownRows, function (row) {
+        var key = row.dataset.filterKey;
+        var val = row.dataset.filterValue;
+        var active = (key === "viewport" && v === val) || (key === "state" && st === val);
+        row.classList.toggle("is-active", active);
+        row.setAttribute("aria-pressed", active ? "true" : "false");
+      });
+
       // Zapis stanu do URL (bez przeładowania) i do localStorage.
       var p = new URLSearchParams();
       var snapshot = {};
@@ -591,6 +602,28 @@ const renderHtml = ({ trios, generatedAt, totalFailures }) => {
     $("f-reset").addEventListener("click", function () {
       fields.forEach(function (k) { inputs[k].value = ""; });
       applyFilter();
+    });
+
+    // Klikalne wiersze w breakdown — toggle filtra dla danego viewport / state.
+    // Drugi klik na ten sam wiersz = czyści ten wymiar (UX: row działa jak switch).
+    function toggleBreakdownFilter(row) {
+      var key = row.dataset.filterKey;
+      var val = row.dataset.filterValue;
+      if (!key || !inputs[key]) return;
+      inputs[key].value = inputs[key].value === val ? "" : val;
+      applyFilter();
+      // Przewiń do listy, żeby user widział wynik kliknięcia bez scrollowania.
+      var container = document.getElementById("cards-container");
+      if (container) container.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+    Array.prototype.forEach.call(document.querySelectorAll(".breakdown-row"), function (row) {
+      row.addEventListener("click", function () { toggleBreakdownFilter(row); });
+      row.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          toggleBreakdownFilter(row);
+        }
+      });
     });
 
     applyFilter();
