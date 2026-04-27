@@ -1562,12 +1562,87 @@ const main = async () => {
         `(discoveryLimit=${discoveryLimit}/${trioRendered} trio)`,
     );
 
+    // Atrybucja per-flaga — rozbicie ŁĄCZNYCH oszczędności (pngSaved/discoverySaved)
+    // na trzy etapy pipeline'u, w kolejności w jakiej działają:
+    //   1. --max-failures (+ per-viewport/per-state) — wycina trio z `allFailed`
+    //      ZANIM cokolwiek się skopiuje/zdiscoveruje. Oszczędza i PNG i readdir.
+    //   2. --max-copy — wśród `failed` (trio które przeżyły) skipuje PNG copy
+    //      dla trio[i] gdy i >= copyLimit. Oszczędza TYLKO PNG.
+    //   3. --max-discovery — wśród `failed` skipuje readdir dla trio[i] gdy
+    //      i >= discoveryLimit. Oszczędza TYLKO readdir.
+    // Suma trzech sekcji = pngSaved + discoverySaved (sanity check w logach).
+    const renderedSet = new Set(failed.map((t) => t.stem + "::" + t.dir));
+    const skipped = allFailed.filter((t) => !renderedSet.has(t.stem + "::" + t.dir));
+
+    // 1. --max-failures (+ per-grupa)
+    let pngSavedByMaxFailures = 0;
+    for (const t of skipped) {
+      if (t.expected) pngSavedByMaxFailures++;
+      if (t.actual) pngSavedByMaxFailures++;
+      if (t.diff) pngSavedByMaxFailures++;
+    }
+    const discoverySavedByMaxFailures = skipped.length;
+
+    // 2. --max-copy (PNG dla trio z `failed.slice(copyLimit)`)
+    let pngSavedByMaxCopy = 0;
+    for (const t of failed.slice(copyLimit)) {
+      if (t.expected) pngSavedByMaxCopy++;
+      if (t.actual) pngSavedByMaxCopy++;
+      if (t.diff) pngSavedByMaxCopy++;
+    }
+
+    // 3. --max-discovery (readdir dla trio z `failed.slice(discoveryLimit)`)
+    const discoverySavedByMaxDiscovery = Math.max(0, failed.length - discoveryLimit);
+
+    const fmtSection = (label, flag, png, discovery) => {
+      const parts = [];
+      if (png > 0) parts.push(`PNG: ${png}`);
+      if (discovery > 0) parts.push(`readdir: ${discovery}`);
+      const summary = parts.length > 0 ? parts.join(", ") : "0 (flaga nieaktywna lub bez efektu)";
+      return `${label} (${flag}): ${summary}`;
+    };
+
+    console.log(`[visual-snapshot-report] 📊 Atrybucja oszczędności per-flaga:`);
+    console.log(
+      `[visual-snapshot-report]   ├─ ${fmtSection(
+        "[1] Truncation",
+        `--max-failures=${fmtLimit(maxFailures)}`,
+        pngSavedByMaxFailures,
+        discoverySavedByMaxFailures,
+      )}`,
+    );
+    console.log(
+      `[visual-snapshot-report]   ├─ ${fmtSection(
+        "[2] PNG cap",
+        `--max-copy=${fmtLimit(maxCopy)}`,
+        pngSavedByMaxCopy,
+        0,
+      )}`,
+    );
+    console.log(
+      `[visual-snapshot-report]   └─ ${fmtSection(
+        "[3] Discovery cap",
+        `--max-discovery=${fmtLimit(maxDiscovery)}`,
+        0,
+        discoverySavedByMaxDiscovery,
+      )}`,
+    );
+    // Sanity check — suma trzech sekcji MUSI się zgadzać z totalami. Jeśli się
+    // rozjedzie, znaczy że logika atrybucji złapała regresję (nowy limit?).
+    const pngSumCheck = pngSavedByMaxFailures + pngSavedByMaxCopy;
+    const discoverySumCheck = discoverySavedByMaxFailures + discoverySavedByMaxDiscovery;
+    if (pngSumCheck !== pngSaved || discoverySumCheck !== discoverySaved) {
+      console.warn(
+        `[visual-snapshot-report] ⚠ Atrybucja niespójna: ` +
+          `suma sekcji PNG=${pngSumCheck} vs total=${pngSaved}, ` +
+          `readdir=${discoverySumCheck} vs total=${discoverySaved}.`,
+      );
+    }
+
     // Top 3 najwięcej oszczędzonych trio — czyli te, które wpadły do allFailed,
     // ale NIE do `failed` (zostały obcięte przez per-grupa lub --max-failures).
     // Ranking po liczbie PNG (expected+actual+diff) — to one ważą najwięcej w IO.
     // Tie-break: stem alfabetycznie (deterministyczny output dla CI snapshotów).
-    const renderedSet = new Set(failed.map((t) => t.stem + "::" + t.dir));
-    const skipped = allFailed.filter((t) => !renderedSet.has(t.stem + "::" + t.dir));
     if (skipped.length > 0) {
       const ranked = skipped
         .map((t) => ({
