@@ -13,6 +13,7 @@ import PreparationRecoveryCards from "@/components/shared/PreparationRecoveryCar
 import TestimonialsSection from "@/components/shared/TestimonialsSection";
 import MikroflebektomiaFAQ from "@/components/mikroflebektomia/MikroflebektomiaFAQ";
 import VenousInsufficiencyImage from "@/components/shared/VenousInsufficiencyImage";
+import VeinImageDevOverlay from "@/components/dev/VeinImageDevOverlay";
 
 const summary = [
   { label: "Przygotowanie", value: "Konsultacja flebologiczna oraz USG Doppler w celu mapowania żył" },
@@ -104,6 +105,7 @@ const Mikroflebektomia = () => (
 
       {/* Anatomia żylaków — co usuwamy mikroflebektomią */}
       <VenousInsufficiencyImage
+        pageKey="mikroflebektomia"
         fadeUp={fadeUp}
         title="Co dokładnie usuwa mikroflebektomia?"
         subtitle={`„Sznury" pod skórą to żylaki bocznic — żył, w których ścianki osłabły, zastawki przestały się domykać, a krew zaczęła się cofać. Mikroflebektomia usuwa je z drobnych nakłuć, bez nacinania skóry.`}
@@ -112,6 +114,7 @@ const Mikroflebektomia = () => (
         perforatorAlt="Schemat niewydolnego perforatora — często zasila żylakowate bocznice usuwane mikroflebektomią; jego ocena USG Doppler decyduje o zakresie zabiegu"
         perforatorCaption="Niewydolny perforator · Zasilacz żylakowatej bocznicy · Ocena USG Doppler przed zabiegiem"
       />
+      <VeinImageDevOverlay pageKey="mikroflebektomia" />
       {/* Intro */}
       <motion.section {...fadeUp}>
         <h2 className="section-title mb-3 text-center">Przełom w leczeniu zaawansowanych żylaków</h2>

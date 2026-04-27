@@ -5,6 +5,7 @@ import { BREADCRUMBS_MAP } from "@/lib/breadcrumbsMap";
 import SeoHead from "@/components/shared/SeoHead";
 import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 import VenousInsufficiencyImage from "@/components/shared/VenousInsufficiencyImage";
+import VeinImageDevOverlay from "@/components/dev/VeinImageDevOverlay";
 import { ArrowRight, Zap, Droplets, Scissors, Sparkles, Sun } from "lucide-react";
 
 const sectionAnim = {
@@ -93,6 +94,7 @@ const Flebologia = () => {
       <section className="pb-4 md:pb-8">
         <div className="container mx-auto px-4 max-w-5xl">
           <VenousInsufficiencyImage
+            pageKey="flebologia"
             title="Mechanika żylaków — od zastawki do widocznego naczynia"
             subtitle="Każdy zabieg flebologiczny w CML celuje w konkretne ogniwo tej kaskady: laser zamyka chory pień, mikroflebektomia usuwa żylakowate bocznice, skleroterapia eliminuje resztkowe naczynia, a CLaCS — drobne pajączki. Diagnostyka USG Doppler decyduje, gdzie zaczynamy."
             mainAlt="Schemat mechaniki żylaków — zdrowe zastawki kontra niedomykające się zastawki w przewlekłej niewydolności żylnej; refluks, poszerzenie naczynia i stan zapalny prowadzące do widocznych żylaków"
@@ -100,6 +102,7 @@ const Flebologia = () => {
             perforatorAlt="Schemat niewydolnego perforatora — łącznika między układem głębokim a powierzchownym, którego refluks dociąża powierzchowne żyły i napędza powstawanie żylaków"
             perforatorCaption="Niewydolny perforator · Dociąża układ powierzchowny · Punkt diagnostyki USG Doppler"
           />
+          <VeinImageDevOverlay pageKey="flebologia" />
         </div>
       </section>
 

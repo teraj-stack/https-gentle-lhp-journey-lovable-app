@@ -1,7 +1,10 @@
 import { motion } from "framer-motion";
 import zastawkiImg from "@/assets/niewydolnosc-zylna-zastawki.webp";
 import perforatorImg from "@/assets/niewydolny-perforator.webp";
-
+import {
+  useVeinImageOverridesForPage,
+  type VeinImagePageKey,
+} from "@/hooks/useVeinImageOverrides";
 interface Props {
   /** Optional title above the images. */
   title?: string;
@@ -21,6 +24,12 @@ interface Props {
   perforatorAlt?: string;
   /** Per-page figcaption under the perforator image. */
   perforatorCaption?: string;
+  /**
+   * Optional CMS page key. When set, alt+caption are loaded from
+   * `vein_image_overrides` table and override hardcoded props.
+   * Hardcoded props remain SSR/initial-paint fallback for SEO.
+   */
+  pageKey?: VeinImagePageKey;
 }
 
 /**
@@ -43,8 +52,25 @@ const VenousInsufficiencyImage = ({
   mainCaption = "Zdrowe żyły · Domknięte zastawki · Żylaki · Niedomykające się zastawki · Stan zapalny",
   perforatorAlt = "Schemat niewydolnego perforatora: niewydolność zastawek żylnych prowadzi do zastoju krwi żylnej i przeciążenia powierzchownych naczyń żylnych",
   perforatorCaption = "Niewydolny perforator · Zastój krwi · Przeciążenie naczyń powierzchownych",
+  pageKey,
 }: Props) => {
   const motionProps = fadeUp ?? {};
+
+  // CMS overrides — fetched only when pageKey is provided.
+  // Hook is always called (Rules of Hooks); when pageKey is undefined,
+  // we just ignore the result.
+  const overrides = useVeinImageOverridesForPage(
+    pageKey ?? ("__none__" as VeinImagePageKey),
+  );
+  const effectiveMainAlt = pageKey && overrides.main?.alt ? overrides.main.alt : mainAlt;
+  const effectiveMainCaption =
+    pageKey && overrides.main?.caption ? overrides.main.caption : mainCaption;
+  const effectivePerforatorAlt =
+    pageKey && overrides.perforator?.alt ? overrides.perforator.alt : perforatorAlt;
+  const effectivePerforatorCaption =
+    pageKey && overrides.perforator?.caption
+      ? overrides.perforator.caption
+      : perforatorCaption;
 
   return (
     <motion.section
@@ -70,7 +96,7 @@ const VenousInsufficiencyImage = ({
           <div className="rounded-lg sm:rounded-xl bg-white overflow-hidden">
             <img
               src={zastawkiImg}
-              alt={mainAlt}
+              alt={effectiveMainAlt}
               loading="lazy"
               decoding="async"
               width={600}
@@ -81,7 +107,7 @@ const VenousInsufficiencyImage = ({
             />
           </div>
           <figcaption className="text-[11px] sm:text-xs text-muted-foreground/80 mt-2.5 sm:mt-3 text-center leading-snug sm:leading-relaxed px-1">
-            {mainCaption}
+            {effectiveMainCaption}
           </figcaption>
         </figure>
 
@@ -91,7 +117,7 @@ const VenousInsufficiencyImage = ({
             <div className="rounded-lg sm:rounded-xl bg-white overflow-hidden flex-1 flex items-center justify-center">
               <img
                 src={perforatorImg}
-                alt={perforatorAlt}
+                alt={effectivePerforatorAlt}
                 loading="lazy"
                 decoding="async"
                 width={200}
@@ -102,7 +128,7 @@ const VenousInsufficiencyImage = ({
               />
             </div>
             <figcaption className="text-[11px] sm:text-xs text-muted-foreground/80 mt-2.5 sm:mt-3 text-center leading-snug sm:leading-relaxed px-1">
-              {perforatorCaption}
+              {effectivePerforatorCaption}
             </figcaption>
           </figure>
         )}

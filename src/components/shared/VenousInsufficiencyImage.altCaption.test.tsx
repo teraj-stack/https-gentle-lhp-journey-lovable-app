@@ -1,5 +1,16 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { render } from "@testing-library/react";
+
+// Mock CMS hook — testy weryfikują domyślne propsy/fallbacki, nie CMS.
+vi.mock("@/hooks/useVeinImageOverrides", () => ({
+  useVeinImageOverridesForPage: () => ({
+    main: undefined,
+    perforator: undefined,
+    isLoading: false,
+    error: null,
+  }),
+}));
+
 import VenousInsufficiencyImage from "./VenousInsufficiencyImage";
 
 /**

@@ -509,6 +509,36 @@ export type Database = {
         }
         Relationships: []
       }
+      vein_image_overrides: {
+        Row: {
+          alt: string
+          caption: string
+          id: string
+          page_key: string
+          slot: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          alt: string
+          caption: string
+          id?: string
+          page_key: string
+          slot: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          alt?: string
+          caption?: string
+          id?: string
+          page_key?: string
+          slot?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       recent_token_abuse_ips: {

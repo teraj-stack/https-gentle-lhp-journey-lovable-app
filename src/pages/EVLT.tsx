@@ -17,6 +17,7 @@ import RecoveryBoostBanner from "@/components/shared/RecoveryBoostBanner";
 import PreparationRecoveryCards from "@/components/shared/PreparationRecoveryCards";
 import TestimonialsSection from "@/components/shared/TestimonialsSection";
 import VenousInsufficiencyImage from "@/components/shared/VenousInsufficiencyImage";
+import VeinImageDevOverlay from "@/components/dev/VeinImageDevOverlay";
 
 const evltSummary = [
   { label: "Przygotowanie", value: "Konsultacja flebologiczna oraz USG Doppler w celu mapowania niewydolnych żył" },
@@ -94,6 +95,7 @@ const EVLT = () => (
 
       {/* Anatomia niewydolności żylnej — co naprawia EVLT */}
       <VenousInsufficiencyImage
+        pageKey="evlt"
         fadeUp={fadeUp}
         title="Skąd biorą się żylaki — co dokładnie zamyka EVLT?"
         subtitle="EVLT zamyka chorą żyłę odpiszczelową lub odstrzałkową od środka — eliminuje refluks, który napędza żylaki, perforatorowy zastój i stan zapalny widoczne na schemacie."
@@ -102,6 +104,7 @@ const EVLT = () => (
         perforatorAlt="Schemat niewydolnego perforatora — żyły łączącej układ głęboki z powierzchownym; jego refluks często współistnieje z niewydolnością pnia leczonego EVLT"
         perforatorCaption="Niewydolny perforator · Często współistnieje z refluksem pnia · Diagnostyka USG Doppler przed EVLT"
       />
+      <VeinImageDevOverlay pageKey="evlt" />
 
       {/* Przyczyny + Sygnały */}
       <div className="grid lg:grid-cols-2 gap-12">
