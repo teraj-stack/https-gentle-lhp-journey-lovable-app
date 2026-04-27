@@ -1591,7 +1591,7 @@ const AdminVeinImages = () => {
                 aria-label="Kopiuj JSON do schowka"
               >
                 {jsonCopied ? (
-                  <Check className="w-3.5 h-3.5 mr-1 text-emerald-400" aria-hidden="true" />
+                  <Check className="w-3.5 h-3.5 mr-1 text-primary" aria-hidden="true" />
                 ) : (
                   <ClipboardCopy className="w-3.5 h-3.5 mr-1" aria-hidden="true" />
                 )}
