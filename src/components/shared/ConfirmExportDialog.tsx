@@ -127,9 +127,44 @@ const ConfirmExportDialog: React.FC<ConfirmExportDialogProps> = ({
   const Icon = meta.Icon;
   const exportingLabel = "Pobieranie…";
 
+  /**
+   * Keyboard support: Enter = potwierdź, Esc = anuluj.
+   *
+   *  • Esc — Radix AlertDialog obsługuje natywnie przez `onOpenChange(false)`,
+   *    więc nie trzeba dodatkowego handlera (cancel path zostaje
+   *    automatycznie wywołany przez `useExportConfirmation`).
+   *  • Enter — Radix domyślnie focusuje przycisk Cancel (a11y best practice
+   *    dla destrukcyjnych dialogów), więc Enter nie potwierdziłby eksportu
+   *    bez przesunięcia focusa Tabem. Dodajemy globalny listener na
+   *    AlertDialogContent, który traktuje Enter jako „kliknięcie Pobierz",
+   *    o ile focus NIE jest w polu edytowalnym (input/textarea/contentEditable)
+   *    i export nie jest już w toku. Stop propagation + preventDefault, żeby
+   *    przeglądarka nie wysłała podwójnego eventu (np. gdy focus akurat jest
+   *    na przycisku Confirm — bez tego Enter wywołałby onConfirm dwa razy).
+   */
+  const handleKeyDown = React.useCallback(
+    (e: React.KeyboardEvent<HTMLDivElement>) => {
+      if (e.key !== "Enter" || e.shiftKey || e.altKey || e.ctrlKey || e.metaKey) return;
+      if (isExporting) return;
+      const target = e.target as HTMLElement | null;
+      if (!target) return;
+      const tag = target.tagName;
+      const isEditable =
+        tag === "INPUT" ||
+        tag === "TEXTAREA" ||
+        tag === "SELECT" ||
+        target.isContentEditable;
+      if (isEditable) return;
+      e.preventDefault();
+      e.stopPropagation();
+      void onConfirm();
+    },
+    [isExporting, onConfirm],
+  );
+
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent aria-busy={isExporting}>
+      <AlertDialogContent aria-busy={isExporting} onKeyDown={handleKeyDown}>
         <AlertDialogHeader>
           <AlertDialogTitle className="flex items-center gap-2.5">
             <span
