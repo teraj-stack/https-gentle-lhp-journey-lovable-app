@@ -784,9 +784,21 @@ const renderHtml = ({
       border: 1px solid var(--warn); border-left-width: 4px; border-radius: 6px;
       color: var(--fg); font-size: 13px;
     }
+    /* Soft variant — używana dla --max-copy / --max-discovery, czyli ograniczeń
+       optymalizacyjnych (nie obcinają kart, tylko ich zawartość). */
+    .truncation-banner-soft {
+      background: rgba(127,127,127,.08);
+      border-color: rgba(127,127,127,.4);
+    }
     .truncation-banner code {
       background: rgba(127,127,127,.15); padding: 1px 6px;
       border-radius: 3px; font-size: 12px;
+    }
+    /* Placeholder dla figure gdy --max-copy obciął kopiowanie — bardziej
+       neutralny niż czerwony "missing", żeby user nie myślał że to błąd. */
+    .missing-copy-skipped .missing-box {
+      background: rgba(127,127,127,.08);
+      border-style: dashed;
     }
   </style>
 </head>
