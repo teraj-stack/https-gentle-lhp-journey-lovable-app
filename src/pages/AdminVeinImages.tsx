@@ -2794,7 +2794,40 @@ const AdminVeinImages = () => {
           }
         }}
       >
-        <AlertDialogContent className="max-w-2xl">
+        <AlertDialogContent
+          className="max-w-2xl"
+          onKeyDown={(e) => {
+            // Enter = potwierdź pobranie, Esc obsługuje natywnie Radix przez
+            // onOpenChange(false). Nie odpalamy gdy focus jest w input/textarea
+            // (nie ma w tym dialogu, ale defensywnie) ani gdy trwa już export.
+            if (
+              e.key !== "Enter" ||
+              e.shiftKey ||
+              e.altKey ||
+              e.ctrlKey ||
+              e.metaKey
+            )
+              return;
+            if (exporting !== null || preparingPreview !== null) return;
+            const target = e.target as HTMLElement | null;
+            if (!target) return;
+            const tag = target.tagName;
+            if (
+              tag === "INPUT" ||
+              tag === "TEXTAREA" ||
+              tag === "SELECT" ||
+              target.isContentEditable
+            )
+              return;
+            e.preventDefault();
+            e.stopPropagation();
+            const which = pendingExport;
+            setPendingExport(null);
+            setExportPreview(null);
+            if (which === "json") void exportJson();
+            else if (which === "csv") void exportCsv();
+          }}
+        >
           <AlertDialogHeader>
             <AlertDialogTitle>
               Pobrać plik {pendingExport === "json" ? "JSON" : "CSV"}?
@@ -2917,8 +2950,28 @@ const AdminVeinImages = () => {
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
+          {/* Keyboard hint — wzrokowa wskazówka skrótów Enter/Esc. */}
+          <p
+            className="text-[11px] text-muted-foreground/80 flex items-center gap-2 flex-wrap"
+            aria-hidden="true"
+          >
+            <span className="inline-flex items-center gap-1">
+              <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-[10px]">
+                Enter
+              </kbd>
+              <span>aby pobrać</span>
+            </span>
+            <span className="text-muted-foreground/40">·</span>
+            <span className="inline-flex items-center gap-1">
+              <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-[10px]">
+                Esc
+              </kbd>
+              <span>aby anulować</span>
+            </span>
+          </p>
           <AlertDialogFooter>
             <AlertDialogCancel
+              aria-keyshortcuts="Escape"
               onClick={() => {
                 setPendingExport(null);
                 setExportPreview(null);
@@ -2927,6 +2980,7 @@ const AdminVeinImages = () => {
               Anuluj
             </AlertDialogCancel>
             <AlertDialogAction
+              aria-keyshortcuts="Enter"
               onClick={() => {
                 const which = pendingExport;
                 setPendingExport(null);
