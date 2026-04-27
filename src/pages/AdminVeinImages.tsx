@@ -563,29 +563,89 @@ const AdminVeinImages = () => {
           </div>
 
           <div className="grid gap-6 lg:grid-cols-[1fr_440px]">
-            {/* Live preview — w trybie edit nie przekazujemy pageKey,
-                żeby override nie nadpisywał draftu. */}
+            {/* Live preview — Draft (live z edytora) lub CMS (świeżo z bazy po Save). */}
             <section
               aria-label="Podgląd renderu"
-              className="rounded-xl border border-border/40 bg-card/30 p-4 overflow-x-auto"
+              className={`rounded-xl border bg-card/30 p-4 overflow-x-auto transition-all duration-500 ${
+                lastSaved && Date.now() - lastSaved.at < 1500
+                  ? "border-emerald-500/60 ring-2 ring-emerald-500/30"
+                  : "border-border/40"
+              }`}
             >
-              <p className="text-[11px] text-muted-foreground mb-3 font-mono">
-                {viewportConfig.label} · {active.route}
-              </p>
+              <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
+                <p className="text-[11px] text-muted-foreground font-mono">
+                  {viewportConfig.label} · {active.route}
+                </p>
+                <div
+                  className="inline-flex rounded-md border border-border/40 bg-background/60 p-0.5 text-[11px]"
+                  role="tablist"
+                  aria-label="Tryb podglądu"
+                >
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={previewMode === "draft"}
+                    onClick={() => setPreviewMode("draft")}
+                    className={`px-2.5 py-1 rounded transition-colors ${
+                      previewMode === "draft"
+                        ? "bg-primary text-primary-foreground"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    Draft (live)
+                  </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={previewMode === "cms"}
+                    onClick={() => setPreviewMode("cms")}
+                    className={`px-2.5 py-1 rounded transition-colors ${
+                      previewMode === "cms"
+                        ? "bg-primary text-primary-foreground"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    CMS (z bazy)
+                  </button>
+                </div>
+              </div>
+              {lastSaved && lastSaved.pageKey === activeKey && (
+                <p
+                  className="text-[10px] text-emerald-400 font-mono mb-2"
+                  aria-live="polite"
+                >
+                  ✓ Ostatni zapis: {lastSaved.slot === "main" ? "główny obraz" : "perforator"} ·{" "}
+                  {new Date(lastSaved.at).toLocaleTimeString("pl-PL")}
+                </p>
+              )}
               <div
                 className="mx-auto border border-border/40 rounded-lg bg-background overflow-hidden"
                 style={{ width: viewportConfig.width, maxWidth: "100%" }}
               >
                 <div className="p-4">
-                  <VenousInsufficiencyImage
-                    key={`${active.key}-${viewport}`}
-                    title={active.title}
-                    subtitle={active.subtitle}
-                    mainAlt={draft.mainAlt}
-                    mainCaption={draft.mainCaption}
-                    perforatorAlt={draft.perforatorAlt}
-                    perforatorCaption={draft.perforatorCaption}
-                  />
+                  {previewMode === "draft" ? (
+                    <VenousInsufficiencyImage
+                      key={`draft-${active.key}-${viewport}`}
+                      title={active.title}
+                      subtitle={active.subtitle}
+                      mainAlt={draft.mainAlt}
+                      mainCaption={draft.mainCaption}
+                      perforatorAlt={draft.perforatorAlt}
+                      perforatorCaption={draft.perforatorCaption}
+                    />
+                  ) : (
+                    <VenousInsufficiencyImage
+                      // savedTick wymusza pełny remount → świeży render z CMS po każdym Save.
+                      key={`cms-${active.key}-${viewport}-${savedTick}`}
+                      pageKey={active.key}
+                      title={active.title}
+                      subtitle={active.subtitle}
+                      mainAlt={active.mainAlt}
+                      mainCaption={active.mainCaption}
+                      perforatorAlt={active.perforatorAlt}
+                      perforatorCaption={active.perforatorCaption}
+                    />
+                  )}
                 </div>
               </div>
             </section>
