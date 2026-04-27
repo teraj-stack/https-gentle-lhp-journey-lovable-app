@@ -71,6 +71,62 @@ const presetToDraft = (p: VeinImagePagePreset): DraftFields => ({
   perforatorCaption: p.perforatorCaption,
 });
 
+/**
+ * Mapuje błąd zwrócony przez Supabase/Postgres na czytelny komunikat dla admina.
+ *
+ * Trigger `validate_vein_image_override` rzuca po polsku (RAISE EXCEPTION),
+ * więc message zazwyczaj jest gotowy do pokazania. Ten helper:
+ *  - rozpoznaje 3 reguły walidacji (alt, caption, segment) i nadaje tytuł,
+ *  - obsługuje błędy RLS (42501) i unique constraint (23505),
+ *  - zawsze dorzuca czytelny opis ze szczegółami z bazy.
+ */
+const describeSaveError = (
+  err: unknown,
+  slot: VeinImageSlot,
+  pageLabel: string,
+): { title: string; description: string } => {
+  const slotLabel = slot === "main" ? "główny obraz" : "perforator";
+  const ctx = `${pageLabel} · ${slotLabel}`;
+  const e = err as { message?: string; code?: string; details?: string } | null;
+  const raw = (e?.message ?? String(err)).trim();
+  const code = e?.code;
+
+  if (code === "42501" || /row-level security/i.test(raw)) {
+    return {
+      title: `Brak uprawnień (${ctx})`,
+      description: "Twoje konto nie ma roli admina dla tej tabeli. Zaloguj się ponownie lub poproś o uprawnienia.",
+    };
+  }
+  if (code === "23505" || /duplicate key|unique constraint/i.test(raw)) {
+    return {
+      title: `Konflikt: wpis już istnieje (${ctx})`,
+      description: "Inna sesja zapisała ten sam slot. Odśwież stronę i spróbuj ponownie.",
+    };
+  }
+  if (/alt musi mieć/i.test(raw)) {
+    return {
+      title: `Walidacja serwera odrzuciła alt (${ctx})`,
+      description: `${raw} Wymóg: alt 60–220 znaków.`,
+    };
+  }
+  if (/caption nie może przekraczać/i.test(raw)) {
+    return {
+      title: `Walidacja serwera odrzuciła caption (${ctx})`,
+      description: `${raw} Wymóg: caption ≤110 znaków.`,
+    };
+  }
+  if (/segment caption/i.test(raw)) {
+    return {
+      title: `Za długi segment "·" w caption (${ctx})`,
+      description: `${raw} Wymóg: każdy segment oddzielony „ · " ≤40 znaków.`,
+    };
+  }
+  return {
+    title: `Błąd zapisu (${ctx})`,
+    description: raw || "Nieznany błąd serwera. Sprawdź połączenie i spróbuj ponownie.",
+  };
+};
+
 interface FieldStats {
   length: number;
   budget: number;
