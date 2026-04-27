@@ -343,12 +343,12 @@ const DevVeinImagesPreview = () => {
 
   const stats = useMemo(
     () => ({
-      mainAlt: buildStats(draft.mainAlt, ALT_BUDGET, false),
-      mainCaption: buildStats(draft.mainCaption, CAPTION_BUDGET, true),
-      perforatorAlt: buildStats(draft.perforatorAlt, ALT_BUDGET, false),
-      perforatorCaption: buildStats(draft.perforatorCaption, CAPTION_BUDGET, true),
+      mainAlt: buildStats(draft.mainAlt, ALT_BUDGET, false, viewport),
+      mainCaption: buildStats(draft.mainCaption, CAPTION_BUDGET, true, viewport),
+      perforatorAlt: buildStats(draft.perforatorAlt, ALT_BUDGET, false, viewport),
+      perforatorCaption: buildStats(draft.perforatorCaption, CAPTION_BUDGET, true, viewport),
     }),
-    [draft],
+    [draft, viewport],
   );
 
   const updateDraft = (field: keyof DraftFields, value: string) => {
