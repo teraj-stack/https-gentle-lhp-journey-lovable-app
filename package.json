@@ -14,7 +14,11 @@
     "i18n:autofix": "node scripts/autofix-required-translation-keys.mjs",
     "i18n:check": "node scripts/autofix-required-translation-keys.mjs --check",
     "i18n:fixtures": "node scripts/generate-fixture-snippets.mjs",
-    "i18n:fixtures:check": "node scripts/generate-fixture-snippets.mjs --check"
+    "i18n:fixtures:check": "node scripts/generate-fixture-snippets.mjs --check",
+    "e2e:reset": "node scripts/e2e-seed-cli.mjs reset",
+    "e2e:seed": "node scripts/e2e-seed-cli.mjs seed",
+    "e2e:reset-and-seed": "node scripts/e2e-seed-cli.mjs reset-and-seed",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

@@ -1,0 +1,18 @@
+{
+  "$schema": "Seed dla testów E2E /admin/vein-images. Każdy wiersz musi spełniać: alt 60-220 znaków, caption ≤110, segmenty caption oddzielone ' · ' ≤40.",
+  "cleanupPrefix": "e2e-",
+  "rows": [
+    {
+      "page_key": "e2e-baseline",
+      "slot": "main",
+      "alt": "Baseline E2E – obraz głównego naczynia żylnego użyty w teście eksportu, importu CSV oraz live preview na panelu admina.",
+      "caption": "E2E baseline · slot main · seed deterministyczny"
+    },
+    {
+      "page_key": "e2e-baseline",
+      "slot": "perforator",
+      "alt": "Baseline E2E – schemat perforatora wykorzystywany do weryfikacji renderowania drugiego slotu i rollbacku undo w testach.",
+      "caption": "E2E baseline · slot perforator · seed"
+    }
+  ]
+}
