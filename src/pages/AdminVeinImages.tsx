@@ -2950,8 +2950,28 @@ const AdminVeinImages = () => {
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
+          {/* Keyboard hint — wzrokowa wskazówka skrótów Enter/Esc. */}
+          <p
+            className="text-[11px] text-muted-foreground/80 flex items-center gap-2 flex-wrap"
+            aria-hidden="true"
+          >
+            <span className="inline-flex items-center gap-1">
+              <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-[10px]">
+                Enter
+              </kbd>
+              <span>aby pobrać</span>
+            </span>
+            <span className="text-muted-foreground/40">·</span>
+            <span className="inline-flex items-center gap-1">
+              <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-[10px]">
+                Esc
+              </kbd>
+              <span>aby anulować</span>
+            </span>
+          </p>
           <AlertDialogFooter>
             <AlertDialogCancel
+              aria-keyshortcuts="Escape"
               onClick={() => {
                 setPendingExport(null);
                 setExportPreview(null);
@@ -2960,6 +2980,7 @@ const AdminVeinImages = () => {
               Anuluj
             </AlertDialogCancel>
             <AlertDialogAction
+              aria-keyshortcuts="Enter"
               onClick={() => {
                 const which = pendingExport;
                 setPendingExport(null);
