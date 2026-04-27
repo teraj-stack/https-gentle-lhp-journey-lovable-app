@@ -520,3 +520,123 @@ export const assertDraftA11y = async (
   await assertTouchTargetsOnSmallScreens(page, viewportWidth, themeLabel);
 };
 
+// ============================================================================
+// STABILIZACJA SNAPSHOTÓW — czekanie na zakończenie animacji/tranzycji
+// ============================================================================
+
+/**
+ * Domyślny timeout (ms) dla `waitForAnimationsToSettle`. Najdłuższa znana
+ * tranzycja w `live-preview-section` to `transition-all duration-500` na
+ * sekcji (flash po Save). Dajemy 2× zapas + bufor na fonts/layout settle.
+ */
+export const ANIMATION_SETTLE_TIMEOUT_MS = 1500;
+
+/**
+ * Mała pauza po settlement, żeby dać requestAnimationFrame flush + paint commit.
+ * 2 frames @ 60fps = ~33ms. Konieczne, bo `getAnimations().finished` rozwiązuje
+ * się ZARAZ po ostatnim tick'u animacji, ale composite może być jeszcze pending.
+ */
+export const POST_SETTLE_PAINT_BUFFER_MS = 50;
+
+/**
+ * Czeka aż WSZYSTKIE aktywne animacje i tranzycje CSS w obrębie sekcji
+ * `live-preview-section` (z subtree) zakończą się.
+ *
+ * Dlaczego nie tylko `animations: "disabled"` w `toHaveScreenshot`:
+ *  - Playwrightowy `animations: "disabled"` zatrzymuje CSS `@keyframes`
+ *    i przewija je do końca, ale NIE wpływa na `transition-*` property
+ *    triggered by state change (np. `border-color` po dodaniu klasy).
+ *  - Sekcja live-preview ma `transition-all duration-500` — flash po Save
+ *    może być w trakcie kiedy snapshot się odpala = flaky baseline.
+ *
+ * Implementacja:
+ *  - `Element.getAnimations({ subtree: true })` zwraca WSZYSTKIE Animation
+ *    objects (CSS animation + CSS transition + WAAPI) w drzewie.
+ *  - Każdy ma `.finished` Promise, który resolve'uje się gdy animacja
+ *    naturalnie się skończy lub jest sfinalizowana.
+ *  - `Promise.allSettled` — używamy zamiast `Promise.all`, bo Animation
+ *    może być cancelled (rejection); chcemy poczekać na "settled" niezależnie
+ *    od reason.
+ *  - Cały await jest opakowany w `Promise.race` z timeoutem — żeby NIGDY
+ *    nie zawiesić testu jeśli ktoś dorzuci `animation-iteration-count: infinite`
+ *    bez `animations: "disabled"` w innym miejscu.
+ *
+ * Defensywne fallbacki: jeśli `Element.getAnimations` nie istnieje (stara
+ * przeglądarka), zwraca natychmiast — API jest w Chromium/Firefox/WebKit
+ * od 2020+, więc fallback raczej nie wystrzeli na CI.
+ */
+export const waitForAnimationsToSettle = async (
+  page: Page,
+  options: { timeoutMs?: number; selector?: string } = {},
+): Promise<void> => {
+  const timeoutMs = options.timeoutMs ?? ANIMATION_SETTLE_TIMEOUT_MS;
+  const selector = options.selector ?? '[data-testid="live-preview-section"]';
+
+  await page.evaluate(
+    async ({ sel, t }) => {
+      const root = document.querySelector(sel);
+      if (!root) return;
+      const elWithGetAnimations = root as Element & {
+        getAnimations?: (opts?: { subtree?: boolean }) => Animation[];
+      };
+      if (typeof elWithGetAnimations.getAnimations !== "function") return;
+
+      const animations = elWithGetAnimations.getAnimations({ subtree: true });
+      if (animations.length === 0) return;
+
+      const allFinished = Promise.allSettled(animations.map((a) => a.finished));
+      const timeout = new Promise<void>((resolve) => {
+        // Po timeoucie kończymy await — kolejna asercja w spec może wykryć
+        // realny problem (np. infinite animation), ale snapshot się nie zawiesi.
+        window.setTimeout(() => resolve(), t);
+      });
+      await Promise.race([allFinished, timeout]);
+
+      // Po settlement — 2× rAF żeby pozwolić browserowi commit'ować paint.
+      await new Promise<void>((resolve) => {
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+      });
+    },
+    { sel: selector, t: timeoutMs },
+  );
+
+  // Mały JS-side bufor na composite layer flush (poza requestAnimationFrame
+  // jest jeszcze browser compositor — 50ms to bezpieczna heurystyka).
+  await page.waitForTimeout(POST_SETTLE_PAINT_BUFFER_MS);
+};
+
+/**
+ * Sanity check: po `waitForAnimationsToSettle` faktycznie nie ma już
+ * running animations w sekcji preview. Używaj w spec'ach gdy chcesz mieć
+ * pewność że stabilizacja zadziałała (np. po deliberatnym wytriggrowaniu
+ * tranzycji typu flash po Save).
+ *
+ * Liczy tylko animacje w stanie `"running"` — `"finished"` i `"paused"`
+ * (np. po `animations: "disabled"`) NIE liczą się jako problem.
+ */
+export const assertNoRunningAnimations = async (
+  page: Page,
+  themeLabel: "light" | "dark" = "light",
+  selector: string = '[data-testid="live-preview-section"]',
+): Promise<void> => {
+  const runningCount = await page.evaluate((sel) => {
+    const root = document.querySelector(sel);
+    if (!root) return 0;
+    const elWithGetAnimations = root as Element & {
+      getAnimations?: (opts?: { subtree?: boolean }) => Animation[];
+    };
+    if (typeof elWithGetAnimations.getAnimations !== "function") return 0;
+    return elWithGetAnimations
+      .getAnimations({ subtree: true })
+      .filter((a) => a.playState === "running").length;
+  }, selector);
+
+  expect(
+    runningCount,
+    `[${themeLabel}] live-preview-section nadal ma ${runningCount} działającą ` +
+      `animację/tranzycję po waitForAnimationsToSettle. Snapshot byłby flaky. ` +
+      `Sprawdź czy nie ma \`animation-iteration-count: infinite\` lub bardzo długiej tranzycji ` +
+      `(> ANIMATION_SETTLE_TIMEOUT_MS = ${ANIMATION_SETTLE_TIMEOUT_MS}ms).`,
+  ).toBe(0);
+};
+
