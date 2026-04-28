@@ -3443,6 +3443,41 @@ const renderHtml = ({
         var a = document.createElement("a");
         a.href = url; a.download = pendingExport.filename;
         document.body.appendChild(a);
+        // PARITY CHECK: porównujemy nazwę POKAZANĄ W MODALU
+        // (previewDownloadRowValue.textContent — to, co user zobaczył tuż
+        // przed klikiem „Pobierz") z nazwą REALNIE UŻYTĄ przy pobraniu
+        // (a.download — odczytane z DOM property po przypisaniu, gwarancja
+        // że nic między nie wstrzelił monkey-patcha). Wynik trafia do
+        // dedykowanego badge'a obok statusu eksportu.
+        var modalShownName = (previewDownloadRowValue && previewDownloadRowValue.textContent)
+          || (previewFilenameValue && previewFilenameValue.textContent)
+          || null;
+        var actualDownloadName = a.download;
+        var parityOk = modalShownName != null && modalShownName === actualDownloadName;
+        if (downloadParityBadge) {
+          downloadParityBadge.hidden = false;
+          downloadParityBadge.classList.remove("is-match", "is-mismatch");
+          if (!modalShownName) {
+            // Brak modala (Safari fallback) — chowamy badge, nie ma co porównywać.
+            downloadParityBadge.hidden = true;
+            downloadParityBadge.textContent = "";
+            downloadParityBadge.removeAttribute("title");
+          } else if (parityOk) {
+            downloadParityBadge.classList.add("is-match");
+            downloadParityBadge.textContent = "✓ Zgodne (modal == pobranie)";
+            downloadParityBadge.title = "Nazwa pokazana w modalu jest IDENTYCZNA z nazwą użytą w pobraniu:\n" + actualDownloadName;
+          } else {
+            downloadParityBadge.classList.add("is-mismatch");
+            downloadParityBadge.textContent = "⚠ Różni się (modal ≠ pobranie)";
+            downloadParityBadge.title = "Modal pokazał: " + modalShownName + "\nPobrano: " + actualDownloadName;
+          }
+        }
+        // Zachowujemy wynik w pendingExport, żeby ewentualne logi/diagnostyka
+        // miały do czego sięgnąć, oraz żeby downstream (verifyZip) mogło
+        // poszerzyć statusowy tekst o info o paritcie.
+        pendingExport.shownInModal = modalShownName;
+        pendingExport.actualDownloadName = actualDownloadName;
+        pendingExport.parityOk = parityOk;
         a.click();
         document.body.removeChild(a);
         setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
