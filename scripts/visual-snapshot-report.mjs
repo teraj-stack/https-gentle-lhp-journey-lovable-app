@@ -1093,8 +1093,21 @@ const renderHtml = ({
             <option value="zip-split">ZIP split (PNG/discovery)</option>
           </select>
         </label>
+        <label class="trends-filter-label trends-filter-zip-threshold" title="Powyżej tego progu (liczba przefiltrowanych wierszy) eksport zachowa się zgodnie z wybranym trybem poniżej. 0 = wyłącz.">
+          próg ZIP (wiersze)
+          <input type="number" class="trends-filter-input" data-trend-zip-threshold min="0" step="50" value="200" inputmode="numeric" style="max-width:88px" />
+        </label>
+        <label class="trends-filter-label trends-filter-zip-mode" title="Sugeruj: tylko podpowiedź w pasku statusu (CSV zostaje). Przełącz: jeśli format to CSV, automatycznie zmień na ZIP przed pobraniem (zapisuje wybór). Ignoruj: nic nie rób.">
+          po przekroczeniu
+          <select class="trends-filter-select" data-trend-zip-mode>
+            <option value="suggest" selected>Sugeruj ZIP</option>
+            <option value="switch">Przełącz na ZIP</option>
+            <option value="off">Ignoruj próg</option>
+          </select>
+        </label>
         <button type="button" class="trends-filter-export" data-trend-export title="Pokaż podgląd 20 pierwszych wierszy, potem pobierz przefiltrowane runy w wybranym formacie">⬇ Podgląd i eksport…</button>
         <span class="trends-filter-export-status" data-trend-export-status role="status" aria-live="polite"></span>
+        <span class="trends-filter-zip-hint" data-trend-zip-hint role="status" aria-live="polite" hidden></span>
       </div>`;
 
     // Embed pełnych danych (z command/flags) jako JSON. Klient czyta ten blok
