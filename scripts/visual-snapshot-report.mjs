@@ -2954,6 +2954,77 @@ const renderHtml = ({
       }
     }
 
+    // ---- Nazwa paczki eksportu (single source of truth) ----
+    // Generuje DOKŁADNIE tę samą nazwę co eksport — używa buildExportRows()
+    // (skrót filtra liczy się ze świeżego stanu selectów po apply()),
+    // bieżącego stempla czasowego i wybranego formatu (csv/zip/zip-split).
+    // Rozszerzenie: csv→.csv, zip|zip-split→.zip. Brak wierszy ⇒ null.
+    function computeExportBaseName() {
+      var built = buildExportRows();
+      if (!built.count) return null;
+      var format = (exportFormatSelect && exportFormatSelect.value) || "csv";
+      var th = getZipThreshold();
+      var zMode = getZipMode();
+      // Parytet z handlerem eksportu: gdy próg „switch" przekroczony i
+      // format = csv, podgląd nazwy pokazuje już .zip (to jest, co poleci).
+      if (th && zMode === "switch" && format === "csv" && built.count >= th) {
+        format = "zip";
+      }
+      var stamp = new Date().toISOString().replace(/[:.]/g, "-").replace(/Z$/, "Z");
+      var filterHash = shortHash(JSON.stringify(built.state) + "|" + built.mode + "|" + format);
+      var ext = (format === "zip" || format === "zip-split") ? ".zip" : ".csv";
+      return "savings-filtered-" + built.mode + "-" + stamp + "-" + filterHash + ext;
+    }
+
+    // Kopiowanie do schowka z fallbackiem (Clipboard API → execCommand).
+    function copyTextToClipboard(text) {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        return navigator.clipboard.writeText(text).then(function () { return true; })
+          .catch(function () { return legacyCopy(text); });
+      }
+      return Promise.resolve(legacyCopy(text));
+    }
+    function legacyCopy(text) {
+      try {
+        var ta = document.createElement("textarea");
+        ta.value = text;
+        ta.setAttribute("readonly", "");
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        var ok = document.execCommand && document.execCommand("copy");
+        document.body.removeChild(ta);
+        return !!ok;
+      } catch (e) { return false; }
+    }
+
+    if (copyNameBtn) {
+      var copyResetTimer = null;
+      var copyOriginalLabel = copyNameBtn.textContent;
+      copyNameBtn.addEventListener("click", function () {
+        var name = computeExportBaseName();
+        if (!name) {
+          if (exportStatus) exportStatus.textContent = "Brak wierszy — zmień filtr, żeby wygenerować nazwę.";
+          return;
+        }
+        copyTextToClipboard(name).then(function (ok) {
+          if (ok) {
+            copyNameBtn.classList.add("is-copied");
+            copyNameBtn.textContent = "✓ Skopiowano";
+            if (exportStatus) exportStatus.textContent = "Skopiowano nazwę: " + name;
+            if (copyResetTimer) clearTimeout(copyResetTimer);
+            copyResetTimer = setTimeout(function () {
+              copyNameBtn.classList.remove("is-copied");
+              copyNameBtn.textContent = copyOriginalLabel;
+            }, 2000);
+          } else if (exportStatus) {
+            exportStatus.textContent = "Nie udało się skopiować — nazwa: " + name;
+          }
+        });
+      });
+    }
+
     if (exportBtn) {
       // Disable trybu „full" gdy serwer nie embedował SAVINGS_CSV_COLUMNS
       // (np. starszy raport / regresja w buildzie). User widzi czemu.
