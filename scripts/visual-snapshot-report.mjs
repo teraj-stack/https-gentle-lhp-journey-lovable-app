@@ -4391,22 +4391,14 @@ const renderHtml = ({
       if (readyToastCountdown) readyToastCountdown.classList.remove("is-paused");
       persistReadyToastState();
     }
-      if (!readyToastIsPaused) return;
-      readyToastIsPaused = false;
-      if (!readyToast || readyToast.hidden) return;
-      var ms = readyToastRemainingMs;
-      readyToastRemainingMs = 0;
-      if (ms <= 0) { hideReadyToast(); return; }
-      readyToastCountdownDeadline = Date.now() + ms;
-      readyToastTimer = setTimeout(hideReadyToast, ms);
-      if (readyToastCountdown) readyToastCountdown.classList.remove("is-paused");
-    }
     function hideReadyToast() {
       if (readyToastTimer) { clearTimeout(readyToastTimer); readyToastTimer = null; }
       readyToastIsPaused = false;
       readyToastRemainingMs = 0;
       readyToastCountdownDeadline = 0;
       clearReadyToastCountdown();
+      readyToastLastSnapshot = null;
+      clearPersistedReadyToastState();
       if (!readyToast) return;
       readyToast.classList.remove("is-visible");
       setTimeout(function () {
