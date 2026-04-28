@@ -5010,9 +5010,111 @@ const renderHtml = ({
       });
     }
     if (previewConfirm) {
+      // Pre-download verify: tuż przed właściwym pobraniem czytamy zawartość
+      // schowka i porównujemy 1:1 z pendingExport.filename. Wynik trafia do
+      // małego badge'a obok przycisku „Pobierz" (data-export-preview-confirm-verify).
+      // Reguły:
+      //  · MATCH        → badge zielony, download startuje natychmiast.
+      //  · MISMATCH     → badge czerwony, modal NIE zamyka się od razu;
+      //                   wymagamy drugiego kliku „Pobierz" w ciągu 8s
+      //                   (potwierdzenie świadome).
+      //  · UNAVAILABLE  → badge złoty (Permissions denied / Safari /
+      //                   no-clipboard), download startuje (brak schowka
+      //                   nie powinien blokować pobrania pliku).
+      //  · CHECKING     → przycisk dostaje is-pending-verify (cursor:wait,
+      //                   opacity .7), żeby user nie klikał wielokrotnie.
+      // Stan flag confirmVerifyPassed resetowany przy każdym otwarciu modala.
+      var previewConfirmVerify = root.querySelector("[data-export-preview-confirm-verify]");
+      var confirmVerifyPassed = false; // staje true po MATCH lub po świadomym 2nd-clicku przy MISMATCH
+      var confirmMismatchToken = null; // timeout id dla okna „re-confirm po mismatch"
+      function setVerifyBadge(state, text, title) {
+        if (!previewConfirmVerify) return;
+        previewConfirmVerify.classList.remove("is-checking", "is-match", "is-mismatch", "is-unavailable");
+        if (!state) { previewConfirmVerify.hidden = true; previewConfirmVerify.textContent = ""; return; }
+        previewConfirmVerify.hidden = false;
+        previewConfirmVerify.classList.add("is-" + state);
+        previewConfirmVerify.textContent = text;
+        previewConfirmVerify.title = title || "";
+      }
+      function resetVerifyState() {
+        confirmVerifyPassed = false;
+        if (confirmMismatchToken) { clearTimeout(confirmMismatchToken); confirmMismatchToken = null; }
+        setVerifyBadge(null);
+      }
+      // Reset badge'a/flagi przy każdym kolejnym otwarciu modala — żeby
+      // poprzednia weryfikacja nie wpływała na nowy ZIP/CSV. Robimy to przez
+      // hook na previewDialog "close" (poniżej już istnieje cleanup pendingExport)
+      // — ale rejestrujemy też dodatkowy listener tylko do reset verify.
+      if (previewDialog) {
+        previewDialog.addEventListener("close", resetVerifyState);
+      }
       previewConfirm.addEventListener("click", function () {
-        downloadPending();
-        if (previewDialog && previewDialog.open) previewDialog.close("confirm");
+        // Jeśli user już raz przeszedł przez weryfikację (MATCH lub świadome
+        // potwierdzenie po MISMATCH) — pobieramy bez powtórnego check'a.
+        if (confirmVerifyPassed) {
+          downloadPending();
+          if (previewDialog && previewDialog.open) previewDialog.close("confirm");
+          return;
+        }
+        var expected = (pendingExport && pendingExport.filename) || "";
+        if (!expected) {
+          // Bez nazwy nie ma co weryfikować — fallback do oryginalnego flow.
+          downloadPending();
+          if (previewDialog && previewDialog.open) previewDialog.close("confirm");
+          return;
+        }
+        // CHECKING state — disable wizualnie, czytamy schowek async.
+        previewConfirm.classList.add("is-pending-verify");
+        setVerifyBadge("checking", "⏳ sprawdzam schowek…", "Czytam zawartość schowka, żeby porównać ze stringiem trafiającym do pliku.");
+        var clipPromise;
+        try {
+          clipPromise = (navigator.clipboard && typeof navigator.clipboard.readText === "function")
+            ? navigator.clipboard.readText()
+            : Promise.reject(new Error("no-clipboard-api"));
+        } catch (_e) {
+          clipPromise = Promise.reject(_e);
+        }
+        clipPromise.then(function (clip) {
+          previewConfirm.classList.remove("is-pending-verify");
+          var clipStr = String(clip == null ? "" : clip);
+          if (clipStr === expected) {
+            // MATCH — startujemy pobieranie natychmiast, badge na ~1s widoczny.
+            setVerifyBadge("match", "✓ schowek = nazwa pliku", "Wartość w schowku jest bit-identyczna z nazwą pliku, który zaraz pobierzesz.");
+            confirmVerifyPassed = true;
+            downloadPending();
+            if (previewDialog && previewDialog.open) previewDialog.close("confirm");
+            return;
+          }
+          // MISMATCH — NIE zamykamy modala, czekamy na 2nd click w ciągu 8s.
+          // Truncate clipboard string w tooltipie (max 200 znaków), żeby
+          // gigantyczne wklejone payloady nie rozsadzały tytułu HTML.
+          var clipShort = clipStr.length > 200 ? clipStr.slice(0, 200) + "…" : clipStr;
+          var tip = "Schowek różni się od nazwy pliku.\n"
+            + "W pliku: " + expected + "\n"
+            + "W schowku: " + (clipStr.length === 0 ? "(pusty)" : clipShort) + "\n\n"
+            + "Kliknij „Pobierz" jeszcze raz, żeby świadomie potwierdzić — albo użyj „⧉ Kopiuj nazwę", żeby najpierw zsynchronizować schowek.";
+          setVerifyBadge("mismatch", "⚠ schowek ≠ nazwa pliku — kliknij Pobierz ponownie", tip);
+          showPreviewToast("⚠ Schowek różni się od nazwy pliku — kliknij Pobierz ponownie, żeby potwierdzić.", "error", 4500);
+          confirmVerifyPassed = true; // następny click pominie check
+          // Re-confirm window: 8s. Po upływie wracamy do stanu „świeżego",
+          // żeby nie pobrać czegoś za 2 minuty bez ponownej weryfikacji.
+          if (confirmMismatchToken) clearTimeout(confirmMismatchToken);
+          confirmMismatchToken = setTimeout(function () {
+            confirmVerifyPassed = false;
+            setVerifyBadge(null);
+          }, 8000);
+        }).catch(function (err) {
+          // UNAVAILABLE — Permissions denied / Safari / brak API. Nie blokujemy
+          // pobrania (brak schowka != niezgodność), tylko sygnalizujemy.
+          previewConfirm.classList.remove("is-pending-verify");
+          var reason = err && err.name === "NotAllowedError"
+            ? "brak uprawnień do schowka"
+            : (err && err.message) || "schowek niedostępny";
+          setVerifyBadge("unavailable", "ℹ schowek niedostępny — pobieram", "Nie udało się odczytać schowka (" + reason + "). Pobieram plik bez weryfikacji — nazwa w pliku jest pewna (1:1 z pendingExport.filename).");
+          confirmVerifyPassed = true;
+          downloadPending();
+          if (previewDialog && previewDialog.open) previewDialog.close("confirm");
+        });
       });
     }
     // „📌 Zapisz w historii" — odkłada bieżącą nazwę pendingExport do
