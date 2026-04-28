@@ -1093,8 +1093,21 @@ const renderHtml = ({
             <option value="zip-split">ZIP split (PNG/discovery)</option>
           </select>
         </label>
+        <label class="trends-filter-label trends-filter-zip-threshold" title="Powyżej tego progu (liczba przefiltrowanych wierszy) eksport zachowa się zgodnie z wybranym trybem poniżej. 0 = wyłącz.">
+          próg ZIP (wiersze)
+          <input type="number" class="trends-filter-input" data-trend-zip-threshold min="0" step="50" value="200" inputmode="numeric" style="max-width:88px" />
+        </label>
+        <label class="trends-filter-label trends-filter-zip-mode" title="Sugeruj: tylko podpowiedź w pasku statusu (CSV zostaje). Przełącz: jeśli format to CSV, automatycznie zmień na ZIP przed pobraniem (zapisuje wybór). Ignoruj: nic nie rób.">
+          po przekroczeniu
+          <select class="trends-filter-select" data-trend-zip-mode>
+            <option value="suggest" selected>Sugeruj ZIP</option>
+            <option value="switch">Przełącz na ZIP</option>
+            <option value="off">Ignoruj próg</option>
+          </select>
+        </label>
         <button type="button" class="trends-filter-export" data-trend-export title="Pokaż podgląd 20 pierwszych wierszy, potem pobierz przefiltrowane runy w wybranym formacie">⬇ Podgląd i eksport…</button>
         <span class="trends-filter-export-status" data-trend-export-status role="status" aria-live="polite"></span>
+        <span class="trends-filter-zip-hint" data-trend-zip-hint role="status" aria-live="polite" hidden></span>
       </div>`;
 
     // Embed pełnych danych (z command/flags) jako JSON. Klient czyta ten blok
@@ -1558,6 +1571,24 @@ const renderHtml = ({
       color: inherit;
       border: 1px solid rgba(127,127,127,.35);
       border-radius: 4px;
+    }
+    .trends-filter-input {
+      font: inherit;
+      font-size: .8rem;
+      padding: 2px 4px;
+      background: inherit;
+      color: inherit;
+      border: 1px solid rgba(127,127,127,.35);
+      border-radius: 4px;
+    }
+    .trends-filter-zip-hint {
+      font-size: .75rem;
+      opacity: .85;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: rgba(201,168,76,.14);
+      color: inherit;
+      align-self: center;
     }
     .trends-filter-command { max-width: 320px; }
     .trends-filter-reset {
@@ -2273,6 +2304,7 @@ const renderHtml = ({
           rows[ri].classList.toggle("is-active", parseInt(rows[ri].getAttribute("data-combo-idx"), 10) === activeIdx);
         }
       }
+      if (typeof refreshZipHint === "function") refreshZipHint();
     }
 
     selects.forEach(function (sel) {
@@ -2309,6 +2341,77 @@ const renderHtml = ({
     var exportStatus = root.querySelector("[data-trend-export-status]");
     var exportModeSelect = root.querySelector("[data-trend-export-mode]");
     var exportFormatSelect = root.querySelector("[data-trend-export-format]");
+    var zipThresholdInput = root.querySelector("[data-trend-zip-threshold]");
+    var zipModeSelect = root.querySelector("[data-trend-zip-mode]");
+    var zipHintEl = root.querySelector("[data-trend-zip-hint]");
+    var ZIP_PREFS_KEY = "visual-report-zip-threshold-v1";
+    // Persist progu i trybu w localStorage, żeby user nie ustawiał ich
+    // przy każdym otwarciu raportu. Defensywnie: zły JSON / brak storage
+    // → zostają wartości domyślne z atrybutów inputów (200 / "suggest").
+    (function restoreZipPrefs() {
+      try {
+        var raw = localStorage.getItem(ZIP_PREFS_KEY);
+        if (!raw) return;
+        var saved = JSON.parse(raw);
+        if (zipThresholdInput && typeof saved.threshold === "number" && saved.threshold >= 0) {
+          zipThresholdInput.value = String(saved.threshold);
+        }
+        if (zipModeSelect && typeof saved.mode === "string"
+            && /^(suggest|switch|off)$/.test(saved.mode)) {
+          zipModeSelect.value = saved.mode;
+        }
+      } catch (_e) { /* noop */ }
+    })();
+    function persistZipPrefs() {
+      try {
+        localStorage.setItem(ZIP_PREFS_KEY, JSON.stringify({
+          threshold: getZipThreshold(),
+          mode: getZipMode(),
+        }));
+      } catch (_e) { /* noop */ }
+    }
+    function getZipThreshold() {
+      if (!zipThresholdInput) return 0;
+      var n = parseInt(zipThresholdInput.value, 10);
+      if (!isFinite(n) || n < 0) return 0;
+      return n;
+    }
+    function getZipMode() {
+      return (zipModeSelect && zipModeSelect.value) || "suggest";
+    }
+    // Live hint pod paskiem eksportu — informuje, czy aktualnie wyfiltrowane
+    // wiersze przekraczają próg i co się stanie po kliku „Pobierz".
+    function refreshZipHint() {
+      if (!zipHintEl) return;
+      var th = getZipThreshold();
+      var mode = getZipMode();
+      var fmt = (exportFormatSelect && exportFormatSelect.value) || "csv";
+      var count = filterPoints(currentState()).length;
+      if (!th || mode === "off" || fmt !== "csv" || count < th) {
+        zipHintEl.hidden = true;
+        zipHintEl.textContent = "";
+        return;
+      }
+      zipHintEl.hidden = false;
+      zipHintEl.textContent = mode === "switch"
+        ? "↪ " + count + " wierszy ≥ " + th + " — eksport automatycznie przejdzie na ZIP."
+        : "ⓘ " + count + " wierszy ≥ " + th + " — rozważ format ZIP (mniejszy plik, manifest).";
+    }
+    if (zipThresholdInput) {
+      zipThresholdInput.addEventListener("input", function () {
+        persistZipPrefs();
+        refreshZipHint();
+      });
+    }
+    if (zipModeSelect) {
+      zipModeSelect.addEventListener("change", function () {
+        persistZipPrefs();
+        refreshZipHint();
+      });
+    }
+    if (exportFormatSelect) {
+      exportFormatSelect.addEventListener("change", refreshZipHint);
+    }
     var fullSchemaCols = (data.fullSchemaColumns && data.fullSchemaColumns.length)
       ? data.fullSchemaColumns
       : null;
@@ -2722,7 +2825,8 @@ const renderHtml = ({
             : pendingExport.format === "zip-split" ? " · ZIP split (" + pendingExport.fileCount + " plików)"
             : "";
           exportStatus.textContent = "Pobrano " + pendingExport.count + "/" + pendingExport.total
-            + " (" + ml + fmtLabel + ") → " + pendingExport.filename;
+            + " (" + ml + fmtLabel + ") → " + pendingExport.filename
+            + (pendingExport.thresholdNote || "");
         }
       } catch (e) {
         if (exportStatus) exportStatus.textContent = "Eksport nieudany: " + e.message;
@@ -2746,6 +2850,25 @@ const renderHtml = ({
           return;
         }
         var format = (exportFormatSelect && exportFormatSelect.value) || "csv";
+        // Auto-przełącznik na ZIP po przekroczeniu progu (tylko gdy user
+        // nadal jest na CSV — szanujemy świadomy wybór ZIP/ZIP-split).
+        // Tryb „switch" nadpisuje select w UI (visible feedback), tryb
+        // „suggest" tylko dopisuje notkę do statusu — plik leci jako CSV.
+        var th = getZipThreshold();
+        var zMode = getZipMode();
+        var thresholdNote = "";
+        if (th && zMode !== "off" && format === "csv" && built.count >= th) {
+          if (zMode === "switch") {
+            format = "zip";
+            if (exportFormatSelect) {
+              exportFormatSelect.value = "zip";
+              persistZipPrefs(); // nie zmienia, ale aktualizuje hint
+            }
+            thresholdNote = " (auto-ZIP: " + built.count + " ≥ " + th + ")";
+          } else {
+            thresholdNote = " (powyżej progu " + th + " — rozważ ZIP)";
+          }
+        }
         var stamp = new Date().toISOString().replace(/[:.]/g, "-").replace(/Z$/, "Z");
         var filterHash = shortHash(JSON.stringify(built.state) + "|" + built.mode + "|" + format);
         var baseName = "savings-filtered-" + built.mode + "-" + stamp + "-" + filterHash;
@@ -2845,10 +2968,12 @@ const renderHtml = ({
             if (exportStatus) exportStatus.textContent = "Renderuję PNG sparkline'ów…";
             snapshotSparkPngs().then(function (pngs) {
               finalizeZip(pngs);
+              if (pendingExport) pendingExport.thresholdNote = thresholdNote;
               openPreviewOrDownload();
             }).catch(function () {
               // Nawet jeśli wszystkie PNG-i padną, eksport CSV-ów leci dalej.
               finalizeZip([]);
+              if (pendingExport) pendingExport.thresholdNote = thresholdNote;
               openPreviewOrDownload();
             });
             return; // dialog otworzy się w callbacku
@@ -2884,7 +3009,13 @@ const renderHtml = ({
           previewDialog.showModal();
           if (previewConfirm) previewConfirm.focus();
         }
-        openPreviewOrDownload();
+        // Doklej notkę progową (suggest/switch) do pendingExport — pojawi się
+        // w finalnym statusie „Pobrano …" obok nazwy pliku.
+        if (pendingExport) pendingExport.thresholdNote = thresholdNote;
+        if (typeof refreshZipHint === "function") refreshZipHint();
+        // Async (zip-split z PNG-ami) sam zawoła openPreviewOrDownload —
+        // wtedy pendingExport.thresholdNote jest podpinane w finalizeZip-callback.
+        if (pendingExport) openPreviewOrDownload();
       });
     }
     if (previewCancel) {

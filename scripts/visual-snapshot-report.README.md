@@ -420,6 +420,23 @@ pasujących do wszystkich aktywnych selectów (AND), bez re-runu skryptu.
     się w `files[]`). Tryb `zip` (bez split) celowo zostaje minimalny —
     tylko CSV + metadata, bez obrazków.
 
+  **Próg auto-ZIP** (input „próg ZIP (wiersze)" + select „po przekroczeniu"):
+  pozwala ustawić liczbę wierszy, od której eksport zachowuje się inaczej.
+  Domyślnie 200; `0` wyłącza próg. Tryby:
+  - **Sugeruj ZIP** (default) — pod paskiem eksportu pojawia się notka
+    „ⓘ N wierszy ≥ próg — rozważ format ZIP", ale plik leci jako CSV
+    (szanujemy wybór usera). Notka ląduje też w finalnym statusie
+    „Pobrano …".
+  - **Przełącz na ZIP** — gdy format = `CSV` i `count ≥ próg`, eksport
+    automatycznie zmienia select na `ZIP` *przed* zbudowaniem archiwum
+    (visible feedback w UI). Wybór ZIP/ZIP-split przez usera nigdy nie
+    jest nadpisywany w drugą stronę.
+  - **Ignoruj próg** — fully off, żaden hint ani auto-switch.
+
+  Próg + tryb są persistowane w `localStorage`
+  (klucz `visual-report-zip-threshold-v1`), więc kolejne otwarcia raportu
+  pamiętają preferencje.
+
   ZIP używa metody **STORE** (kompresja=0) napisanej od zera (~80 linii,
   zero deps, bez `CompressionStream` — działa we wszystkich przeglądarkach z
   `Blob`+`URL.createObjectURL`). Deterministyczny: timestamp wpisu = epoka
