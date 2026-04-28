@@ -3078,6 +3078,34 @@ const renderHtml = ({
     var previewDownloadRow = root.querySelector("[data-export-preview-download-row]");
     var previewDownloadRowValue = root.querySelector("[data-export-preview-download-row-value]");
     var previewDownloadRowMatch = root.querySelector("[data-export-preview-download-row-match]");
+    var previewToast = root.querySelector("[data-export-preview-toast]");
+    var previewToastTimer = null;
+    /**
+     * Pokazuje floating toast wewnątrz <dialog> (top-layer powyżej backdropa).
+     * Auto-hide po `ms` (default 1800ms). Ponowny call resetuje timer i tekst.
+     * `variant`: "success" (domyślnie, zielony) | "error" (czerwony).
+     * Bezpieczne przy braku elementu (Safari fallback bez dialogu).
+     */
+    function showPreviewToast(message, variant, ms) {
+      if (!previewToast) return;
+      previewToast.hidden = false;
+      previewToast.textContent = message;
+      previewToast.classList.remove("is-error");
+      if (variant === "error") previewToast.classList.add("is-error");
+      // Wymuszamy reflow, żeby nowa transition złapała `is-visible`
+      // nawet gdy poprzedni toast jeszcze się fade'ował.
+      // eslint-disable-next-line no-unused-expressions
+      previewToast.offsetWidth;
+      previewToast.classList.add("is-visible");
+      if (previewToastTimer) clearTimeout(previewToastTimer);
+      previewToastTimer = setTimeout(function () {
+        previewToast.classList.remove("is-visible");
+        // Po fade-out chowamy z DOM-flow (a11y SR nie czyta dwa razy).
+        setTimeout(function () {
+          if (!previewToast.classList.contains("is-visible")) previewToast.hidden = true;
+        }, 250);
+      }, ms || 1800);
+    }
     var PREVIEW_LIMIT = 20;
     var pendingExport = null; // {csv, filename, count, total, mode, colCount, missingCount}
 
