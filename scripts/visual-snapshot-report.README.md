@@ -513,6 +513,20 @@ pasujących do wszystkich aktywnych selectów (AND), bez re-runu skryptu.
    się z aktualnym formatem — także po auto-ZIP, więc user nie kliknie
    „Pobierz CSV", gdy faktycznie pobiera ZIP.
 
+   **Wyróżniony „download row" w stopce modala** (`⬇ Pobierany plik` tuż
+   nad przyciskami Anuluj/Pobierz): duży, monospace blok z pełną nazwą
+   pliku ZIP/CSV, łamaną na granicach znaków (`word-break: break-all`),
+   żeby user mógł zweryfikować nazwę „znak po znaku" tuż przed
+   potwierdzeniem. Renderowany z TEGO SAMEGO źródła co kompaktowy filename
+   w nagłówku (`pendingExport.filename`) — gwarantuje bit-identyczność z
+   nazwą trafiającą do `anchor.download` ORAZ do schowka po wygenerowaniu.
+   Po prawej stronie etykiety: badge **✓ identyczna ze schowkiem** (zielony)
+   lub **⚠ różni się od live** (czerwony, gdy filtry zmieniły się od
+   kliknięcia „Podgląd"). Klik / Enter / Space na nazwie kopiuje ją do
+   schowka (reuse `copyPreviewFilename` — wpis do historii i animacja
+   spójne z headerem). Cel: ostatnia, jednoznaczna szansa weryfikacji
+   nazwy paczki przed pobraniem.
+
    **Live preview nazwy paczki** (okienko `📦 Nazwa paczki: …` pod paskiem
    eksportu): pokazuje DOKŁADNIE tę nazwę, którą wygeneruje aktualny stan
    filtrów + format + próg auto-ZIP — z parytetem `computeExportBaseName()`.
