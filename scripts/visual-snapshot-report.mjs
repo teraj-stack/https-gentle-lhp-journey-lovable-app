@@ -4057,6 +4057,30 @@ const renderHtml = ({
         // (Safari < 15.4 bez <dialog>). Wydzielone, żeby async branch
         // (zip-split z PNG-ami) mógł zawołać dokładnie ten sam flow.
         function openPreviewOrDownload() {
+          // Natychmiastowy komunikat o gotowej paczce — pojawia się w
+          // pasku statusu eksportu ZANIM user otworzy dialog lub przewinie.
+          // Cel: jeśli generowanie ZIPa trwało (PNG snapshoty), user od
+          // razu widzi „Wygenerowano: <nazwa>.zip · 12 plików · ~340 KB"
+          // bez konieczności scrollowania do sekcji podglądu. Komunikat
+          // zostaje dopóki user nie kliknie „Pobierz" (downloadPending
+          // nadpisze go na „Pobrano …").
+          if (pendingExport && exportStatus) {
+            var sizeBytes = pendingExport.blob ? pendingExport.blob.size
+              : (pendingExport.csv ? pendingExport.csv.length : 0);
+            var sizeLabel = sizeBytes < 1024 ? sizeBytes + " B"
+              : sizeBytes < 1024 * 1024 ? Math.round(sizeBytes / 1024) + " KB"
+              : (sizeBytes / (1024 * 1024)).toFixed(1) + " MB";
+            var fmtTag = pendingExport.format === "zip" ? "ZIP"
+              : pendingExport.format === "zip-split"
+                ? "ZIP split (" + pendingExport.fileCount + " plików)"
+                : "CSV";
+            exportStatus.textContent = "✓ Wygenerowano " + fmtTag + ": "
+              + pendingExport.filename + " · ~" + sizeLabel
+              + " · gotowe do pobrania";
+            // Toast w dialogu (jeśli zaraz się otworzy) — pokażemy go
+            // PO showModal(), bo wcześniej previewToast jest poza
+            // top-layer i nie byłby widoczny. Reuse showPreviewToast.
+          }
           if (!previewDialog || typeof previewDialog.showModal !== "function") {
             downloadPending();
             if (exportStatus && exportStatus.textContent) {
@@ -4067,6 +4091,12 @@ const renderHtml = ({
           }
           renderPreview(built);
           previewDialog.showModal();
+          // Po otwarciu dialogu — krótki toast „✓ Wygenerowano: <nazwa>",
+          // żeby user widział nazwę także bez scrollowania w obrębie modala
+          // (dla małych viewportów download row może być pod fold).
+          if (pendingExport && typeof showPreviewToast === "function") {
+            showPreviewToast("✓ Wygenerowano: " + pendingExport.filename, "success", 2400);
+          }
           if (previewConfirm) previewConfirm.focus();
         }
         // Doklej notkę progową (suggest/switch) do pendingExport — pojawi się
