@@ -444,6 +444,19 @@ pasujących do wszystkich aktywnych selectów (AND), bez re-runu skryptu.
   Eksploratorze Windows, Finderze macOS, `unzip`/`bsdtar` na Linuxie.
   Limity: max 4 GiB total / 65535 plików (zero ryzyka — eksport CSV ma
   rzędy KB-MB, kilka plików).
+
+  **Walidacja po pobraniu** — bezpośrednio po zbudowaniu blobu skrypt
+  re-parsuje surowe bajty archiwum (bez bibliotek): sprawdza sygnaturę
+  EOCD, liczbę wpisów (musi się zgadzać z `pendingExport.fileCount`),
+  każdy Central Directory Header oraz Local File Header pod jego offsetem,
+  a następnie *przelicza CRC32* danych każdego pliku (METHOD=STORE = brak
+  dekompresji = de facto „rozpakowanie") i porównuje z deklaracją w CD.
+  Wynik dopisywany jest do statusu eksportu jako:
+  - `✓ walidacja ZIP OK (N plików, CRC32 zgodne)` — wszystko poprawne.
+  - `⚠ walidacja ZIP: …` — pierwsze 1–2 błędy w pasku statusu, pełna
+    lista w `console.warn` (`[visual-snapshot-report] ZIP validation
+    errors: […]`). Typowe przypadki: brak EOCD (uszkodzony blob),
+    mismatch liczby wpisów, mismatch CRC (corruption pamięci/transferu).
 - Pod selectami znajduje się rozwijana sekcja **„Unikalne kombinacje
   `command` + `flag_*`"** — tabela wszystkich krotek wartości, które
   rzeczywiście wystąpiły w `history.csv`, posortowana malejąco po liczbie

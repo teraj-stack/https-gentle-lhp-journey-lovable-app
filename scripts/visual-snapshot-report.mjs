@@ -2726,6 +2726,88 @@ const renderHtml = ({
       });
     }
 
+    // ---- Walidacja ZIP po stronie klienta (zero-deps) ----
+    // Po zbudowaniu archiwum re-parsujemy je z surowych bajtów (Blob →
+    // ArrayBuffer) i sprawdzamy:
+    //   1. EOCD (End Of Central Directory) — sygnaturę 0x06054b50 i liczbę
+    //      wpisów (musi się zgadzać z files.length).
+    //   2. Każdy Central Directory Header (0x02014b50) — czytamy nazwę,
+    //      offset Local File Headera, deklarowane CRC i rozmiar.
+    //   3. Każdy Local File Header (0x04034b50) pod tym offsetem — czytamy
+    //      surowe dane (METHOD=STORE, więc to jest „rozpakowanie") i
+    //      przeliczamy CRC32 na świeżo. Mismatch ⇒ błąd integralności.
+    // Funkcja jest defensywna: każdy mismatch dopisuje opis do listy
+    // błędów, a wynik to {ok, fileCount, errors[]}. Nie rzuca wyjątkami.
+    function verifyZip(blob, expectedFileCount) {
+      return blob.arrayBuffer().then(function (buf) {
+        var bytes = new Uint8Array(buf);
+        var dv = new DataView(buf);
+        var errors = [];
+        // Szukamy EOCD od końca (max 22 B + comment, u nas comment=0).
+        var eocdOffset = -1;
+        for (var i = bytes.length - 22; i >= Math.max(0, bytes.length - 65557); i--) {
+          if (dv.getUint32(i, true) === 0x06054b50) { eocdOffset = i; break; }
+        }
+        if (eocdOffset < 0) {
+          return { ok: false, fileCount: 0, errors: ["Brak sygnatury EOCD — archiwum uszkodzone."] };
+        }
+        var totalEntries = dv.getUint16(eocdOffset + 10, true);
+        var cdSize = dv.getUint32(eocdOffset + 12, true);
+        var cdOffset = dv.getUint32(eocdOffset + 16, true);
+        if (totalEntries !== expectedFileCount) {
+          errors.push("Liczba wpisów w EOCD (" + totalEntries + ") ≠ oczekiwana ("
+            + expectedFileCount + ").");
+        }
+        // Iteracja po Central Directory.
+        var cur = cdOffset;
+        var seen = 0;
+        var dec = (typeof TextDecoder !== "undefined") ? new TextDecoder("utf-8") : null;
+        while (cur < cdOffset + cdSize && seen < totalEntries) {
+          if (dv.getUint32(cur, true) !== 0x02014b50) {
+            errors.push("Brak sygnatury Central Directory @ offset " + cur + ".");
+            break;
+          }
+          var declCrc = dv.getUint32(cur + 16, true);
+          var declSize = dv.getUint32(cur + 24, true);
+          var nameLen = dv.getUint16(cur + 28, true);
+          var extraLen = dv.getUint16(cur + 30, true);
+          var commentLen = dv.getUint16(cur + 32, true);
+          var lfhOffset = dv.getUint32(cur + 42, true);
+          var nameBytes = bytes.subarray(cur + 46, cur + 46 + nameLen);
+          var name = dec ? dec.decode(nameBytes) : String.fromCharCode.apply(null, nameBytes);
+          // Local File Header pod offsetem
+          if (dv.getUint32(lfhOffset, true) !== 0x04034b50) {
+            errors.push("[" + name + "] brak sygnatury Local File Header @ " + lfhOffset + ".");
+          } else {
+            var lfhNameLen = dv.getUint16(lfhOffset + 26, true);
+            var lfhExtraLen = dv.getUint16(lfhOffset + 28, true);
+            var dataStart = lfhOffset + 30 + lfhNameLen + lfhExtraLen;
+            var dataEnd = dataStart + declSize;
+            if (dataEnd > bytes.length) {
+              errors.push("[" + name + "] dane wykraczają poza archiwum (size="
+                + declSize + ").");
+            } else {
+              var data = bytes.subarray(dataStart, dataEnd);
+              var actualCrc = crc32(data);
+              if (actualCrc !== declCrc) {
+                errors.push("[" + name + "] CRC mismatch (decl=0x"
+                  + declCrc.toString(16) + ", actual=0x" + actualCrc.toString(16) + ").");
+              }
+            }
+          }
+          cur += 46 + nameLen + extraLen + commentLen;
+          seen++;
+        }
+        if (seen !== expectedFileCount) {
+          errors.push("Odczytano " + seen + " wpisów Central Directory, oczekiwano "
+            + expectedFileCount + ".");
+        }
+        return { ok: errors.length === 0, fileCount: seen, errors: errors };
+      }).catch(function (e) {
+        return { ok: false, fileCount: 0, errors: ["Wyjątek walidacji: " + (e && e.message || e)] };
+      });
+    }
+
     // ---- Snapshot sparkline'ów do PNG (zero-deps, browser-only) ----
     // W trybie „zip-split" oprócz CSV pakujemy też obrazki PNG każdego
     // wykresu (po jednym pliku per [data-spark]). PNG jest renderowany
@@ -2827,6 +2909,30 @@ const renderHtml = ({
           exportStatus.textContent = "Pobrano " + pendingExport.count + "/" + pendingExport.total
             + " (" + ml + fmtLabel + ") → " + pendingExport.filename
             + (pendingExport.thresholdNote || "");
+          // Walidacja ZIP po pobraniu — czytamy bajty z blobu (te same,
+          // które poszły do pliku użytkownika), parsujemy EOCD + central
+          // directory + lokalne nagłówki i przeliczamy CRC32 każdego
+          // entry. Wynik dopinamy do statusu po krótkim opóźnieniu, żeby
+          // nie nadpisać komunikatu „Pobrano …" przed jego przeczytaniem.
+          if ((pendingExport.format === "zip" || pendingExport.format === "zip-split")
+              && pendingExport.blob && typeof pendingExport.blob.arrayBuffer === "function") {
+            var expected = pendingExport.fileCount;
+            var statusBase = exportStatus.textContent;
+            verifyZip(pendingExport.blob, expected).then(function (res) {
+              if (!exportStatus) return;
+              if (res.ok) {
+                exportStatus.textContent = statusBase + " · ✓ walidacja ZIP OK ("
+                  + res.fileCount + " plików, CRC32 zgodne).";
+              } else {
+                exportStatus.textContent = statusBase + " · ⚠ walidacja ZIP: "
+                  + res.errors.slice(0, 2).join(" ")
+                  + (res.errors.length > 2 ? " (+" + (res.errors.length - 2) + " więcej)" : "");
+                if (typeof console !== "undefined" && console.warn) {
+                  console.warn("[visual-snapshot-report] ZIP validation errors:", res.errors);
+                }
+              }
+            });
+          }
         }
       } catch (e) {
         if (exportStatus) exportStatus.textContent = "Eksport nieudany: " + e.message;
