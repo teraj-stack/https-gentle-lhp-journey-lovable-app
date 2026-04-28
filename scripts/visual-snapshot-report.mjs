@@ -1109,7 +1109,16 @@ const renderHtml = ({
         <button type="button" class="trends-filter-copy-name" data-trend-copy-name title="Skopiuj do schowka nazwę paczki eksportu (timestamp + skrót filtra), żeby łatwo nazwać/posortować pobrane pliki.">⧉ Kopiuj nazwę</button>
         <span class="trends-filter-export-status" data-trend-export-status role="status" aria-live="polite"></span>
         <span class="trends-filter-zip-hint" data-trend-zip-hint role="status" aria-live="polite" hidden></span>
-      </div>`;
+      </div>
+      <details class="trends-filter-history" data-trend-history-wrap hidden>
+        <summary class="trends-filter-history-summary">
+          <span class="trends-filter-history-icon" aria-hidden="true">🕘</span>
+          Ostatnie nazwy eksportu
+          <span class="trends-filter-history-count" data-trend-history-count></span>
+          <button type="button" class="trends-filter-history-clear" data-trend-history-clear title="Wyczyść historię nazw eksportu (lokalnie, w tej przeglądarce).">Wyczyść</button>
+        </summary>
+        <ul class="trends-filter-history-list" data-trend-history-list role="list"></ul>
+      </details>`;
 
     // Embed pełnych danych (z command/flags) jako JSON. Klient czyta ten blok
     // przez document.getElementById, NIE eval — zero ryzyka XSS (escapujemy </).
