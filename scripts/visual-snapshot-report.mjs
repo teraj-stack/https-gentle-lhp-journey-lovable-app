@@ -2534,7 +2534,30 @@ const renderHtml = ({
       outline: 2px solid rgba(180,240,200,.9);
       outline-offset: 2px;
     }
-    .export-ready-toast-close {
+    /* „Zobacz w historii" — wariant link-style (mniej intruzywny niż gold/green
+       buttony obok), text-decoration podkreśla afordancję klikalności. */
+    .export-ready-toast-history {
+      font: inherit;
+      font-size: .74rem;
+      font-weight: 500;
+      padding: 6px 8px;
+      border-radius: 6px;
+      background: transparent;
+      color: rgba(244,223,163,.95);
+      border: 1px solid rgba(201,168,76,.45);
+      cursor: pointer;
+      white-space: nowrap;
+      text-decoration: underline dotted rgba(201,168,76,.5);
+      text-underline-offset: 3px;
+    }
+    .export-ready-toast-history:hover {
+      background: rgba(201,168,76,.14);
+      text-decoration-style: solid;
+    }
+    .export-ready-toast-history:focus-visible {
+      outline: 2px solid rgba(244,223,163,.9);
+      outline-offset: 2px;
+    }
       font: inherit;
       font-size: 1rem;
       line-height: 1;
