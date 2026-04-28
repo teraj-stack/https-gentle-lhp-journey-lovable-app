@@ -2558,8 +2558,7 @@ const renderHtml = ({
       outline: 2px solid rgba(244,223,163,.9);
       outline-offset: 2px;
     }
-      font: inherit;
-      font-size: 1rem;
+    .export-ready-toast-close {
       line-height: 1;
       padding: 2px 6px;
       background: transparent;
