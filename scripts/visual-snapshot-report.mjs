@@ -2837,7 +2837,7 @@ const renderHtml = ({
       var name = null;
       try { name = computeExportBaseName(); } catch (_e) { name = null; }
       // Live update tytułu modala — nawet gdy modal jest zamknięty,
-      // zaktualizujemy <h3>, żeby przy następnym `showModal()` user od razu
+      // zaktualizujemy <h3>, żeby przy następnym showModal() user od razu
       // widział właściwy tytuł (CSV/ZIP + nazwa pliku) bez czekania na
       // renderPreview. Modal lazy-resolved, bo refreshNamePreview może
       // pobiec ZANIM previewTitle/previewDialog wejdą do DOM (init order).
