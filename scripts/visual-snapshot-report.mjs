@@ -3092,7 +3092,7 @@ const renderHtml = ({
       previewToast.textContent = message;
       previewToast.classList.remove("is-error");
       if (variant === "error") previewToast.classList.add("is-error");
-      // Wymuszamy reflow, żeby nowa transition złapała `is-visible`
+      // Wymuszamy reflow, żeby nowa transition złapała is-visible
       // nawet gdy poprzedni toast jeszcze się fade'ował.
       // eslint-disable-next-line no-unused-expressions
       previewToast.offsetWidth;
