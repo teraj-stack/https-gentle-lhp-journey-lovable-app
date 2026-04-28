@@ -2448,7 +2448,13 @@ const renderHtml = ({
     var zipThresholdInput = root.querySelector("[data-trend-zip-threshold]");
     var zipModeSelect = root.querySelector("[data-trend-zip-mode]");
     var zipHintEl = root.querySelector("[data-trend-zip-hint]");
+    var historyWrap = root.querySelector("[data-trend-history-wrap]");
+    var historyList = root.querySelector("[data-trend-history-list]");
+    var historyCountEl = root.querySelector("[data-trend-history-count]");
+    var historyClearBtn = root.querySelector("[data-trend-history-clear]");
     var ZIP_PREFS_KEY = "visual-report-zip-threshold-v1";
+    var EXPORT_HISTORY_KEY = "visual-report-export-history-v1";
+    var EXPORT_HISTORY_MAX = 10;
     // Persist progu i trybu w localStorage, żeby user nie ustawiał ich
     // przy każdym otwarciu raportu. Defensywnie: zły JSON / brak storage
     // → zostają wartości domyślne z atrybutów inputów (200 / "suggest").
