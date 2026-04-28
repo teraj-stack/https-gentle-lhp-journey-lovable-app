@@ -3426,6 +3426,66 @@ const renderHtml = ({
     var PREVIEW_LIMIT = 20;
     var pendingExport = null; // {csv, filename, count, total, mode, colCount, missingCount}
 
+    // ---- Single source of truth dla nazwy/formatu eksportu ----
+    // Wszystkie powierzchnie (pasek statusu, tytuł modala, ready toast,
+    // download row, label przycisku „Pobierz", status po pobraniu) MUSZĄ
+    // czytać format/filename z tego helpera, żeby nie było „dryftu" UI:
+    // np. modal pokazuje „Podgląd eksportu CSV" a status mówi „ZIP".
+    // - filename pochodzi z pendingExport.filename (ten sam string co
+    //   trafia do anchor.download i do schowka).
+    // - fmtTag → krótka etykieta do statusu („CSV" / „ZIP" /
+    //   „ZIP split (N plików)").
+    // - fmtTitle → krótka etykieta do tytułu modala („CSV" / „ZIP").
+    function getExportNameFormat(pe) {
+      if (!pe) return null;
+      var fmt = pe.format || "csv";
+      var isZip = fmt === "zip" || fmt === "zip-split";
+      var fmtTitle = isZip ? "ZIP" : "CSV";
+      var fmtTag = fmt === "zip" ? "ZIP"
+        : fmt === "zip-split" ? "ZIP split (" + (pe.fileCount || 0) + " plików)"
+        : "CSV";
+      return {
+        filename: pe.filename || "",
+        format: fmt,
+        isZip: isZip,
+        fmtTitle: fmtTitle,
+        fmtTag: fmtTag,
+      };
+    }
+    /**
+     * Synchronizuje wszystkie powierzchnie wyświetlające nazwę/format
+     * eksportu, żeby pasek statusu, tytuł modala i ready toast pokazywały
+     * IDENTYCZNĄ nazwę pliku i etykietę formatu. Wywoływane:
+     *  - po finalizacji ZIP/CSV (phase = "ready"),
+     *  - przy renderPreview (phase = "ready", przed showModal),
+     *  - po pobraniu (phase = "downloaded", tylko status bar/modal title).
+     * Bezpieczne przy braku elementów (no-op).
+     */
+    function syncExportNameAcrossSurfaces(pe, opts) {
+      var info = getExportNameFormat(pe);
+      if (!info) return;
+      var phase = (opts && opts.phase) || "ready";
+      var sizeLabel = opts && opts.sizeLabel;
+      // Tytuł modala — single source of truth: pendingExport.filename.
+      if (previewTitle) {
+        previewTitle.textContent = info.filename
+          ? "Podgląd eksportu " + info.fmtTitle + " · " + info.filename
+          : "Podgląd eksportu " + info.fmtTitle;
+      }
+      // Etykieta przycisku potwierdzenia — sync z tym samym formatem.
+      if (previewConfirm) {
+        previewConfirm.textContent = "⬇ Pobierz " + info.fmtTitle;
+      }
+      // Pasek statusu — różne komunikaty per faza, ale ZAWSZE używają
+      // identycznej etykiety formatu (info.fmtTag) i nazwy (info.filename).
+      if (exportStatus && phase === "ready") {
+        exportStatus.textContent = "✓ Wygenerowano " + info.fmtTag + ": "
+          + info.filename
+          + (sizeLabel ? " · ~" + sizeLabel : "")
+          + " · gotowe do pobrania";
+      }
+    }
+
     function renderPreview(built) {
       if (!previewHead || !previewBody) return;
       previewHead.innerHTML = built.headerCells
@@ -3470,23 +3530,11 @@ const renderHtml = ({
       var pe = pendingExport;
       var pendingName = pe && pe.filename ? pe.filename : null;
       var pendingFmt = pe && pe.format ? pe.format : "csv";
-      if (previewTitle) {
-        var titleFmt = pendingFmt === "zip" || pendingFmt === "zip-split"
-          ? "ZIP" : "CSV";
-        // Dynamiczny tytuł z formatem + zamrożoną nazwą pliku.
-        // To jest „freeze point" — pendingName pochodzi z pendingExport
-        // (single source of truth dla anchor.download), więc tytuł modala
-        // pokrywa się 1:1 z nazwą w download row i tym, co trafi na dysk.
-        previewTitle.textContent = pendingName
-          ? "Podgląd eksportu " + titleFmt + " · " + pendingName
-          : "Podgląd eksportu " + titleFmt;
-      }
-      if (previewConfirm) {
-        // Sync etykiety przycisku potwierdzenia z formatem (CSV/ZIP), żeby
-        // user nie kliknął „Pobierz CSV" gdy auto-ZIP przełączył format.
-        previewConfirm.textContent = "⬇ Pobierz " +
-          (pendingFmt === "zip" || pendingFmt === "zip-split" ? "ZIP" : "CSV");
-      }
+      // Single source of truth — sync tytułu modala i etykiety przycisku
+      // „Pobierz" z pendingExport. Status bar pomijamy (phase=modal-only),
+      // bo openPreviewOrDownload już go ustawił spójnie z tymi samymi
+      // danymi tuż przed renderPreview.
+      syncExportNameAcrossSurfaces(pe, { phase: "modal-only" });
       if (previewFilenameWrap && previewFilenameValue) {
         if (pendingName) {
           previewFilenameWrap.hidden = false;
@@ -3901,11 +3949,13 @@ const renderHtml = ({
             ? ("pełny schemat, " + pendingExport.colCount + " kol."
               + (pendingExport.missingCount ? ", " + pendingExport.missingCount + " pustych" : ""))
             : ("skrócony, " + pendingExport.colCount + " kol.");
-          var fmtLabel = pendingExport.format === "zip" ? " · ZIP"
-            : pendingExport.format === "zip-split" ? " · ZIP split (" + pendingExport.fileCount + " plików)"
-            : "";
+          // Etykieta formatu czytana z tego samego helpera co tytuł
+          // modala / status „Wygenerowano…" / ready toast — gwarantuje
+          // identyczny napis CSV vs ZIP we wszystkich fazach.
+          var dlInfo = getExportNameFormat(pendingExport);
+          var fmtLabel = dlInfo && dlInfo.format !== "csv" ? " · " + dlInfo.fmtTag : "";
           exportStatus.textContent = "Pobrano " + pendingExport.count + "/" + pendingExport.total
-            + " (" + ml + fmtLabel + ") → " + pendingExport.filename
+            + " (" + ml + fmtLabel + ") → " + (dlInfo ? dlInfo.filename : pendingExport.filename)
             + (pendingExport.thresholdNote || "");
           // Walidacja ZIP po pobraniu — czytamy bajty z blobu (te same,
           // które poszły do pliku użytkownika), parsujemy EOCD + central
@@ -4394,28 +4444,26 @@ const renderHtml = ({
           // zostaje dopóki user nie kliknie „Pobierz" (downloadPending
           // nadpisze go na „Pobrano …").
           var sizeLabel = "";
-          var fmtTag = "";
           if (pendingExport) {
             var sizeBytes = pendingExport.blob ? pendingExport.blob.size
               : (pendingExport.csv ? pendingExport.csv.length : 0);
             sizeLabel = sizeBytes < 1024 ? sizeBytes + " B"
               : sizeBytes < 1024 * 1024 ? Math.round(sizeBytes / 1024) + " KB"
               : (sizeBytes / (1024 * 1024)).toFixed(1) + " MB";
-            fmtTag = pendingExport.format === "zip" ? "ZIP"
-              : pendingExport.format === "zip-split"
-                ? "ZIP split (" + pendingExport.fileCount + " plików)"
-                : "CSV";
-            if (exportStatus) {
-              exportStatus.textContent = "✓ Wygenerowano " + fmtTag + ": "
-                + pendingExport.filename + " · ~" + sizeLabel
-                + " · gotowe do pobrania";
-            }
+            // Single source of truth — sync paska statusu, tytułu modala
+            // i etykiety przycisku „Pobierz" tym samym helperem, którego
+            // użyje renderPreview za moment. Gwarantuje, że nazwa pliku
+            // i format (CSV/ZIP) są identyczne we wszystkich miejscach.
+            syncExportNameAcrossSurfaces(pendingExport, {
+              phase: "ready",
+              sizeLabel: sizeLabel,
+            });
             // Page-level „Gotowe do pobrania" toast — pokazujemy ZANIM
-            // otworzy się modal podglądu, tak żeby user mógł od razu
-            // pobrać plik (przycisk „Pobierz" w toaście) bez wchodzenia
-            // w dialog. Używa tej samej nazwy/fmt/size co status bar.
-            if (typeof showReadyToast === "function") {
-              showReadyToast(pendingExport.filename, fmtTag, sizeLabel);
+            // otworzy się modal podglądu. Czyta z tego samego getExportNameFormat,
+            // co status bar i tytuł modala — zero rozjazdu UI.
+            var info = getExportNameFormat(pendingExport);
+            if (info && typeof showReadyToast === "function") {
+              showReadyToast(info.filename, info.fmtTag, sizeLabel);
             }
           }
           if (!previewDialog || typeof previewDialog.showModal !== "function") {
