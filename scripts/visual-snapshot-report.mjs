@@ -2959,6 +2959,30 @@ const renderHtml = ({
     // (skrót filtra liczy się ze świeżego stanu selectów po apply()),
     // bieżącego stempla czasowego i wybranego formatu (csv/zip/zip-split).
     // Rozszerzenie: csv→.csv, zip|zip-split→.zip. Brak wierszy ⇒ null.
+    // Sanityzacja nazwy pliku do wspólnego mianownika Windows/macOS/Linux:
+    // - normalizujemy diakrytyki (NFD) i zrzucamy znaki łączące → bez „ąćęłńóśźż".
+    // - dozwolone tylko [A-Za-z0-9._-]; reszta (spacje, /, \, :, *, ?, ", <, >, |,
+    //   znaki kontrolne, emoji) zamieniana na "-".
+    // - kolapsujemy wielokrotne myślniki i ucinamy z brzegów ("." też, bo Windows
+    //   nie lubi nazw kończących się kropką/spacją). Pusty wynik → "file".
+    function sanitizeFilenamePart(s) {
+      var str = String(s == null ? "" : s);
+      try { str = str.normalize("NFKD").replace(/[\u0300-\u036f]/g, ""); } catch (_) {}
+      // Polskie „ł/Ł" nie rozkłada się przez NFKD — mapujemy ręcznie.
+      str = str.replace(/ł/g, "l").replace(/Ł/g, "L");
+      str = str.replace(/[^A-Za-z0-9._-]+/g, "-");
+      str = str.replace(/-{2,}/g, "-").replace(/^[-._]+|[-._]+$/g, "");
+      return str || "file";
+    }
+
+    // Buduje pełną nazwę pliku z bezpiecznych segmentów + rozszerzenia.
+    // Rozszerzenie sanityzujemy osobno, żeby nie uciąć kropki separatora.
+    function buildSafeFilename(parts, ext) {
+      var safeParts = parts.map(sanitizeFilenamePart).filter(Boolean);
+      var safeExt = ext ? "." + sanitizeFilenamePart(ext.replace(/^\.+/, "")) : "";
+      return safeParts.join("-") + safeExt;
+    }
+
     function computeExportBaseName() {
       var built = buildExportRows();
       if (!built.count) return null;
@@ -2972,8 +2996,8 @@ const renderHtml = ({
       }
       var stamp = new Date().toISOString().replace(/[:.]/g, "-").replace(/Z$/, "Z");
       var filterHash = shortHash(JSON.stringify(built.state) + "|" + built.mode + "|" + format);
-      var ext = (format === "zip" || format === "zip-split") ? ".zip" : ".csv";
-      return "savings-filtered-" + built.mode + "-" + stamp + "-" + filterHash + ext;
+      var ext = (format === "zip" || format === "zip-split") ? "zip" : "csv";
+      return buildSafeFilename(["savings-filtered", built.mode, stamp, filterHash], ext);
     }
 
     // Kopiowanie do schowka z fallbackiem (Clipboard API → execCommand).
