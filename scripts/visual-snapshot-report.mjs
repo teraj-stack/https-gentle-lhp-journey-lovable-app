@@ -4461,6 +4461,7 @@ const renderHtml = ({
         readyToastTimer = null;
       }
       readyToastRemainingMs = Math.max(0, readyToastCountdownDeadline - Date.now());
+      pauseReadyToastProgress();
       persistReadyToastState();
     }
     // Wznowienie — restartuje setTimeout z pozostałym czasem i przesuwa
