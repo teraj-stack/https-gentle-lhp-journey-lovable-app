@@ -3706,6 +3706,9 @@ const renderHtml = ({
         a.click();
         document.body.removeChild(a);
         setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+        // Pasek postępu — po pobraniu znika natychmiast (status „Pobrano …"
+        // i tak nadpisuje komunikat „Gotowe do pobrania" z paska statusu).
+        if (typeof hideExportProgress === "function") hideExportProgress();
         if (exportStatus) {
           var ml = pendingExport.mode === "full"
             ? ("pełny schemat, " + pendingExport.colCount + " kol."
