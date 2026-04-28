@@ -4350,10 +4350,19 @@ const renderHtml = ({
           // Finalizator ZIPa: składa manifest (po dopisaniu opcjonalnych
           // PNG-ów ze sparkline'ów), buduje archiwum, ustawia pendingExport.
           // Wydzielony jako fn, żeby działać sync (zip) i async (zip-split).
-          function finalizeZip(extraFiles) {
-            if (extraFiles && extraFiles.length) {
-              extraFiles.forEach(function (ef) { files.push(ef); });
-            }
+           // Helper: czytelny rozmiar pliku (B/KB/MB) z liczby bajtów.
+           // Wydzielony, żeby pasek statusu, ready toast i log używały
+           // identycznego formatowania — bez rozjazdu jednostek.
+           function humanSize(bytes) {
+             if (!bytes && bytes !== 0) return "";
+             return bytes < 1024 ? bytes + " B"
+               : bytes < 1024 * 1024 ? Math.round(bytes / 1024) + " KB"
+               : (bytes / (1024 * 1024)).toFixed(1) + " MB";
+           }
+           function finalizeZip(extraFiles) {
+             if (extraFiles && extraFiles.length) {
+               extraFiles.forEach(function (ef) { files.push(ef); });
+             }
             // Lista plików (oprócz samego manifest.json) — pomaga w audycie
             // archiwum bez konieczności rozpakowywania ZIPa. Dla wpisów
             // binarnych (PNG) używamy bytes.length, dla tekstowych text.length.
@@ -4383,6 +4392,28 @@ const renderHtml = ({
             };
           }
 
+          // Po finalizeZip() — natychmiast pokaż czytelny rozmiar pliku
+          // w pasku statusu (CSV-status, „Wygenerowano … · ~340 KB · gotowe
+          // do pobrania"). Robimy to ZANIM otworzy się modal podglądu, więc
+          // user widzi rozmiar od razu — także w trybie async (zip-split),
+          // gdzie między „Pakuję archiwum…" a otwarciem dialogu mogłoby
+          // wcześniej zostać przejściowe „Gotowe do pobrania" bez rozmiaru.
+          // pendingExport.sizeLabel zapamiętujemy, żeby openPreviewOrDownload
+          // i ready toast użyły dokładnie tego samego stringa (zero rozjazdu).
+          function announceReadyWithSize() {
+            if (!pendingExport) return;
+            var sizeBytes = pendingExport.blob ? pendingExport.blob.size
+              : (pendingExport.csv ? pendingExport.csv.length : 0);
+            var sizeLabel = humanSize(sizeBytes);
+            pendingExport.sizeLabel = sizeLabel;
+            if (typeof syncExportNameAcrossSurfaces === "function") {
+              syncExportNameAcrossSurfaces(pendingExport, {
+                phase: "ready",
+                sizeLabel: sizeLabel,
+              });
+            }
+          }
+
           if (format === "zip-split") {
             // PNG-i sparkline'ów dorzucamy TYLKO w trybie split — bo to ten
             // wariant jest pomyślany pod „pełną paczkę do dalszej analizy"
@@ -4401,6 +4432,7 @@ const renderHtml = ({
               finalizeZip(pngs);
               if (pendingExport) pendingExport.thresholdNote = thresholdNote;
               setExportProgress(100, "Gotowe do pobrania", { done: true, autoHideMs: 3500 });
+              announceReadyWithSize();
               openPreviewOrDownload();
             }).catch(function () {
               // Nawet jeśli wszystkie PNG-i padną, eksport CSV-ów leci dalej.
@@ -4408,6 +4440,7 @@ const renderHtml = ({
               finalizeZip([]);
               if (pendingExport) pendingExport.thresholdNote = thresholdNote;
               setExportProgress(100, "Gotowe do pobrania", { done: true, autoHideMs: 3500 });
+              announceReadyWithSize();
               openPreviewOrDownload();
             });
             return; // dialog otworzy się w callbacku
@@ -4418,6 +4451,7 @@ const renderHtml = ({
           setExportProgress(40, "Pakuję archiwum…");
           finalizeZip([]);
           setExportProgress(100, "Gotowe do pobrania", { done: true, autoHideMs: 3500 });
+          announceReadyWithSize();
         } else {
           format = "csv";
           pendingExport = {
@@ -4430,6 +4464,10 @@ const renderHtml = ({
             missingCount: built.missingCount,
             format: "csv",
           };
+          // Także dla CSV — pasek statusu pokazuje rozmiar od razu po
+          // wygenerowaniu, zanim user otworzy modal. Identyczny helper i
+          // formatowanie jak w branchu ZIP/zip-split.
+          announceReadyWithSize();
         }
 
         // Otwarcie dialogu podglądu lub fallback do natychmiastowego download
@@ -4445,11 +4483,23 @@ const renderHtml = ({
           // nadpisze go na „Pobrano …").
           var sizeLabel = "";
           if (pendingExport) {
-            var sizeBytes = pendingExport.blob ? pendingExport.blob.size
-              : (pendingExport.csv ? pendingExport.csv.length : 0);
-            sizeLabel = sizeBytes < 1024 ? sizeBytes + " B"
-              : sizeBytes < 1024 * 1024 ? Math.round(sizeBytes / 1024) + " KB"
-              : (sizeBytes / (1024 * 1024)).toFixed(1) + " MB";
+            // Preferuj zapamiętany sizeLabel z announceReadyWithSize()
+            // (ustawiony zaraz po finalizeZip / utworzeniu pendingExport CSV).
+            // Gwarantuje bit-identyczność stringa rozmiaru w pasku statusu,
+            // ready toast i nagłówku modala — bez ryzyka rozjazdu jednostek
+            // (np. "340 KB" vs "0.3 MB" przy granicy zaokrąglenia).
+            if (pendingExport.sizeLabel) {
+              sizeLabel = pendingExport.sizeLabel;
+            } else {
+              var sizeBytes = pendingExport.blob ? pendingExport.blob.size
+                : (pendingExport.csv ? pendingExport.csv.length : 0);
+              sizeLabel = typeof humanSize === "function"
+                ? humanSize(sizeBytes)
+                : (sizeBytes < 1024 ? sizeBytes + " B"
+                  : sizeBytes < 1024 * 1024 ? Math.round(sizeBytes / 1024) + " KB"
+                  : (sizeBytes / (1024 * 1024)).toFixed(1) + " MB");
+              pendingExport.sizeLabel = sizeLabel;
+            }
             // Single source of truth — sync paska statusu, tytułu modala
             // i etykiety przycisku „Pobierz" tym samym helperem, którego
             // użyje renderPreview za moment. Gwarantuje, że nazwa pliku
