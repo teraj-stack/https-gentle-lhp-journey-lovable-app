@@ -5619,6 +5619,10 @@ const renderHtml = ({
         // (Safari < 15.4 bez <dialog>). Wydzielone, żeby async branch
         // (zip-split z PNG-ami) mógł zawołać dokładnie ten sam flow.
         function openPreviewOrDownload() {
+          // Eksponuj referencję na zewnątrz — handler „📦 Otwórz ostatnią
+          // paczkę" (poza tym scope) używa tej samej funkcji do otwarcia
+          // modala po rehydracji z IndexedDB.
+          openPreviewOrDownloadRef = openPreviewOrDownload;
           // Natychmiastowy komunikat o gotowej paczce — pojawia się w
           // pasku statusu eksportu ZANIM user otworzy dialog lub przewinie.
           // Cel: jeśli generowanie ZIPa trwało (PNG snapshoty), user od
