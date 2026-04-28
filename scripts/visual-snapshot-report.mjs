@@ -2322,6 +2322,77 @@ const renderHtml = ({
     var exportStatus = root.querySelector("[data-trend-export-status]");
     var exportModeSelect = root.querySelector("[data-trend-export-mode]");
     var exportFormatSelect = root.querySelector("[data-trend-export-format]");
+    var zipThresholdInput = root.querySelector("[data-trend-zip-threshold]");
+    var zipModeSelect = root.querySelector("[data-trend-zip-mode]");
+    var zipHintEl = root.querySelector("[data-trend-zip-hint]");
+    var ZIP_PREFS_KEY = "visual-report-zip-threshold-v1";
+    // Persist progu i trybu w localStorage, żeby user nie ustawiał ich
+    // przy każdym otwarciu raportu. Defensywnie: zły JSON / brak storage
+    // → zostają wartości domyślne z atrybutów inputów (200 / "suggest").
+    (function restoreZipPrefs() {
+      try {
+        var raw = localStorage.getItem(ZIP_PREFS_KEY);
+        if (!raw) return;
+        var saved = JSON.parse(raw);
+        if (zipThresholdInput && typeof saved.threshold === "number" && saved.threshold >= 0) {
+          zipThresholdInput.value = String(saved.threshold);
+        }
+        if (zipModeSelect && typeof saved.mode === "string"
+            && /^(suggest|switch|off)$/.test(saved.mode)) {
+          zipModeSelect.value = saved.mode;
+        }
+      } catch (_e) { /* noop */ }
+    })();
+    function persistZipPrefs() {
+      try {
+        localStorage.setItem(ZIP_PREFS_KEY, JSON.stringify({
+          threshold: getZipThreshold(),
+          mode: getZipMode(),
+        }));
+      } catch (_e) { /* noop */ }
+    }
+    function getZipThreshold() {
+      if (!zipThresholdInput) return 0;
+      var n = parseInt(zipThresholdInput.value, 10);
+      if (!isFinite(n) || n < 0) return 0;
+      return n;
+    }
+    function getZipMode() {
+      return (zipModeSelect && zipModeSelect.value) || "suggest";
+    }
+    // Live hint pod paskiem eksportu — informuje, czy aktualnie wyfiltrowane
+    // wiersze przekraczają próg i co się stanie po kliku „Pobierz".
+    function refreshZipHint() {
+      if (!zipHintEl) return;
+      var th = getZipThreshold();
+      var mode = getZipMode();
+      var fmt = (exportFormatSelect && exportFormatSelect.value) || "csv";
+      var count = filterPoints(currentState()).length;
+      if (!th || mode === "off" || fmt !== "csv" || count < th) {
+        zipHintEl.hidden = true;
+        zipHintEl.textContent = "";
+        return;
+      }
+      zipHintEl.hidden = false;
+      zipHintEl.textContent = mode === "switch"
+        ? "↪ " + count + " wierszy ≥ " + th + " — eksport automatycznie przejdzie na ZIP."
+        : "ⓘ " + count + " wierszy ≥ " + th + " — rozważ format ZIP (mniejszy plik, manifest).";
+    }
+    if (zipThresholdInput) {
+      zipThresholdInput.addEventListener("input", function () {
+        persistZipPrefs();
+        refreshZipHint();
+      });
+    }
+    if (zipModeSelect) {
+      zipModeSelect.addEventListener("change", function () {
+        persistZipPrefs();
+        refreshZipHint();
+      });
+    }
+    if (exportFormatSelect) {
+      exportFormatSelect.addEventListener("change", refreshZipHint);
+    }
     var fullSchemaCols = (data.fullSchemaColumns && data.fullSchemaColumns.length)
       ? data.fullSchemaColumns
       : null;
