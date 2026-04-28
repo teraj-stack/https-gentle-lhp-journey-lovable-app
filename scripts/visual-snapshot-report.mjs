@@ -4055,6 +4055,172 @@ const renderHtml = ({
         showReadyToast(fakeName, "ZIP (test, " + fmt + ")", "preview", "downloaded");
       });
     }
+    // ---- „🧪 Test pauzy" — automatyczna A/B weryfikacja hover/focus pause ----
+    // Sprawdza, że dla OBU formatów ZIP (zip + zip-split) zachowanie pauzy
+    // jest identyczne. Symulujemy 4 sekwencje per format:
+    //   1) pointerenter (mysz/pióro) → progress.is-paused == true
+    //   2) pointerleave              → progress.is-paused == false
+    //   3) focusin (Tab/keyboard)    → progress.is-paused == true
+    //   4) focusout                  → progress.is-paused == false
+    // Każdy krok oczekuje też, że klasa .is-paused na countdownie jest spójna.
+    // Po teście: hideReadyToast() + przywracamy oryginalny format eksportu.
+    var toastPauseTestBtn = root.querySelector("[data-trend-toast-pause-test]");
+    var toastPauseTestResult = root.querySelector("[data-trend-toast-pause-test-result]");
+    function setPauseTestResult(state, text, title) {
+      if (!toastPauseTestResult) return;
+      toastPauseTestResult.classList.remove("is-running", "is-pass", "is-fail");
+      if (state) toastPauseTestResult.classList.add(state);
+      toastPauseTestResult.textContent = text || "";
+      if (title) toastPauseTestResult.title = title; else toastPauseTestResult.removeAttribute("title");
+    }
+    function dispatchPointer(el, type, pointerType) {
+      // PointerEvent może nie istnieć w bardzo starych przeglądarkach;
+      // fallback do CustomEvent z polem pointerType (handler i tak czyta tylko je).
+      var ev;
+      try {
+        ev = new PointerEvent(type, { bubbles: true, pointerType: pointerType || "mouse" });
+      } catch (_e) {
+        ev = new CustomEvent(type, { bubbles: true });
+        ev.pointerType = pointerType || "mouse";
+      }
+      el.dispatchEvent(ev);
+    }
+    function dispatchFocus(el, type, relatedTarget) {
+      var ev;
+      try {
+        ev = new FocusEvent(type, { bubbles: true, relatedTarget: relatedTarget || null });
+      } catch (_e) {
+        ev = new CustomEvent(type, { bubbles: true });
+        ev.relatedTarget = relatedTarget || null;
+      }
+      el.dispatchEvent(ev);
+    }
+    function pausedSignals() {
+      // True iff toast jest w stanie pauzy. Czytamy z DOM (klasy .is-paused),
+      // bo są synchronizowane z readyToastIsPaused w pause/resume helpers.
+      var byProgress = readyToastProgress
+        ? readyToastProgress.classList.contains("is-paused") : null;
+      var byCountdown = readyToastCountdown
+        ? readyToastCountdown.classList.contains("is-paused") : null;
+      // readyToastIsPaused jest w domknięciu — czytamy bezpośrednio jako
+      // ground-truth; klasy DOM służą do diagnostyki rozjazdów.
+      return { state: !!readyToastIsPaused, progress: byProgress, countdown: byCountdown };
+    }
+    function runPauseScenarioForFormat(fmt) {
+      // Pokazujemy świeży toast (downloaded → honoruje auto-hide preferencji
+      // dla aktualnego formatu, więc countdown na pewno wystartuje).
+      var hideMs = getToastAutoHideMs(fmt);
+      if (hideMs <= 0) {
+        // „Bez auto-hide" → nie ma countdownu, pauza nie ma kontekstu —
+        // pomijamy ten format z notatką.
+        return Promise.resolve({ format: fmt, skipped: true, reason: "auto-hide off (0 ms)" });
+      }
+      var fakeName = "pause-test-" + fmt + ".zip";
+      showReadyToast(fakeName, "ZIP (pause-test, " + fmt + ")", "preview", "downloaded");
+      var steps = [
+        { label: "pointerenter", do: function () { dispatchPointer(readyToast, "pointerenter", "mouse"); }, expectPaused: true },
+        { label: "pointerleave", do: function () { dispatchPointer(readyToast, "pointerleave", "mouse"); }, expectPaused: false },
+        { label: "focusin",      do: function () { dispatchFocus(readyToast, "focusin"); },                expectPaused: true },
+        { label: "focusout",     do: function () { dispatchFocus(readyToast, "focusout", document.body); }, expectPaused: false },
+      ];
+      var results = [];
+      return steps.reduce(function (chain, step) {
+        return chain.then(function () {
+          step.do();
+          // Mikrokrótki yield, żeby ewentualne queued microtaski (np. update
+          // klasy w handlerze) zdążyły się wykonać przed odczytem.
+          return new Promise(function (r) { setTimeout(r, 30); }).then(function () {
+            var s = pausedSignals();
+            var ok = s.state === step.expectPaused
+              && (s.progress === null || s.progress === step.expectPaused)
+              && (s.countdown === null || s.countdown === step.expectPaused);
+            results.push({ step: step.label, expected: step.expectPaused, got: s, ok: ok });
+          });
+        });
+      }, Promise.resolve()).then(function () {
+        hideReadyToast();
+        return { format: fmt, skipped: false, results: results };
+      });
+    }
+    function runPauseTestForBothFormats() {
+      if (!readyToast || typeof showReadyToast !== "function") return Promise.resolve(null);
+      var originalFormat = exportFormatSelect ? exportFormatSelect.value : null;
+      function setFormatAndSync(f) {
+        if (!exportFormatSelect) return;
+        exportFormatSelect.value = f;
+        // Triggeruje syncToastAutoHideUi + refreshZipHint via change listener.
+        exportFormatSelect.dispatchEvent(new Event("change", { bubbles: true }));
+      }
+      setPauseTestResult("is-running", "⏳ test…", "Trwa weryfikacja pauzy dla zip i zip-split");
+      setFormatAndSync("zip");
+      return runPauseScenarioForFormat("zip").then(function (zipReport) {
+        setFormatAndSync("zip-split");
+        return runPauseScenarioForFormat("zip-split").then(function (splitReport) {
+          // Restore original format wybór usera — nie zmieniamy mu pod nogami.
+          if (originalFormat != null) setFormatAndSync(originalFormat);
+          return [zipReport, splitReport];
+        });
+      });
+    }
+    if (toastPauseTestBtn) {
+      toastPauseTestBtn.addEventListener("click", function () {
+        toastPauseTestBtn.disabled = true;
+        runPauseTestForBothFormats().then(function (reports) {
+          toastPauseTestBtn.disabled = false;
+          if (!reports) {
+            setPauseTestResult("is-fail", "✗ brak toastu", "Toast DOM nieobecny — test niemożliwy.");
+            return;
+          }
+          var totalSteps = 0, okSteps = 0, skipped = [], parityIssues = [];
+          // Parytet: dla każdego kroku porównujemy ok-flag między zip a zip-split.
+          var byStep = {};
+          reports.forEach(function (rep) {
+            if (rep.skipped) { skipped.push(rep.format + " (" + rep.reason + ")"); return; }
+            rep.results.forEach(function (r) {
+              totalSteps++;
+              if (r.ok) okSteps++;
+              if (!byStep[r.step]) byStep[r.step] = {};
+              byStep[r.step][rep.format] = r.ok;
+            });
+          });
+          Object.keys(byStep).forEach(function (stepName) {
+            var z = byStep[stepName].zip;
+            var s = byStep[stepName]["zip-split"];
+            if (z !== undefined && s !== undefined && z !== s) {
+              parityIssues.push(stepName + " (zip=" + (z ? "OK" : "FAIL") + ", zip-split=" + (s ? "OK" : "FAIL") + ")");
+            }
+          });
+          // Pełny report do konsoli — user może go zwinąć/skopiować.
+          // eslint-disable-next-line no-console
+          console.groupCollapsed("[toast-pause-test] " + okSteps + "/" + totalSteps + " OK"
+            + (parityIssues.length ? " · parity issues: " + parityIssues.join(", ") : "")
+            + (skipped.length ? " · skipped: " + skipped.join(", ") : ""));
+          // eslint-disable-next-line no-console
+          console.log("Reports:", reports);
+          // eslint-disable-next-line no-console
+          console.log("Step parity (zip vs zip-split):", byStep);
+          // eslint-disable-next-line no-console
+          console.groupEnd();
+          var allOk = okSteps === totalSteps && parityIssues.length === 0;
+          if (totalSteps === 0) {
+            setPauseTestResult("is-fail", "⚠ brak kroków",
+              "Oba formaty mają auto-hide=0 (Bez auto-hide). Ustaw 8/12/20 s i spróbuj ponownie.");
+          } else if (allOk) {
+            setPauseTestResult("is-pass", "✓ " + okSteps + "/" + totalSteps,
+              "Hover/focus pauzuje countdown identycznie dla zip i zip-split (4 kroki × 2 formaty).");
+          } else {
+            setPauseTestResult("is-fail", "✗ " + okSteps + "/" + totalSteps,
+              (parityIssues.length ? "Parity issues: " + parityIssues.join("; ") + ". " : "")
+              + "Szczegóły w konsoli (groupa „toast-pause-test").");
+          }
+        }).catch(function (e) {
+          toastPauseTestBtn.disabled = false;
+          // eslint-disable-next-line no-console
+          console.error("[toast-pause-test] error:", e);
+          setPauseTestResult("is-fail", "✗ error", String((e && e.message) || e));
+        });
+      });
+    }
     // Live hint pod paskiem eksportu — informuje, czy aktualnie wyfiltrowane
     // wiersze przekraczają próg i co się stanie po kliku „Pobierz".
     function refreshZipHint() {
