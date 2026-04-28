@@ -3204,6 +3204,58 @@ const renderHtml = ({
     }
     renderExportHistory();
 
+    // ───────────────── Skrót klawiszowy: Ctrl/Cmd+Shift+C → kopiuj nazwę ─────────────────
+    // Aktywny gdy kursor jest nad panelem `.trends-filter` LUB fokus
+    // znajduje się wewnątrz panelu (klawiatura). Używamy Shift, żeby NIE
+    // kolidować ze standardowym Ctrl/Cmd+C (kopiowanie zaznaczenia).
+    // Dodatkowy fallback: zwykły Ctrl/Cmd+C działa tylko jeśli nie ma
+    // żadnego zaznaczenia tekstu — wtedy gest „nic nie zaznaczam, chcę
+    // nazwę paczki" jest jednoznaczny i nie odbiera natywnego copy.
+    var filterBarEl = root.querySelector(".trends-filter");
+    var isHovering = false;
+    if (filterBarEl) {
+      filterBarEl.addEventListener("mouseenter", function () { isHovering = true; });
+      filterBarEl.addEventListener("mouseleave", function () { isHovering = false; });
+      // Tooltip na panelu informujący o skrócie — discoverability.
+      var existingLabel = filterBarEl.getAttribute("aria-label") || "Filtry trendów";
+      filterBarEl.setAttribute(
+        "title",
+        existingLabel + " — skrót: Ctrl/Cmd+Shift+C kopiuje nazwę paczki eksportu."
+      );
+    }
+    document.addEventListener("keydown", function (ev) {
+      if (!copyNameBtn || !filterBarEl) return;
+      var isCopyKey = (ev.key === "c" || ev.key === "C");
+      if (!isCopyKey) return;
+      var modPressed = ev.ctrlKey || ev.metaKey;
+      if (!modPressed) return;
+      // Ignoruj gdy fokus w polu edycyjnym (input/textarea/contenteditable),
+      // żeby nie zjadać natywnego copy/paste w innych miejscach raportu.
+      var ae = document.activeElement;
+      if (ae && (ae.tagName === "INPUT" || ae.tagName === "TEXTAREA" || ae.isContentEditable)) {
+        // wyjątek: gdy fokus jest w naszym panelu i userwcisnął Shift,
+        // i tak chcemy obsłużyć skrót (świadoma akcja).
+        if (!(ev.shiftKey && filterBarEl.contains(ae))) return;
+      }
+      // Wymagamy ALBO Shift (jednoznaczny gest), ALBO hover/focus w panelu
+      // bez aktywnego zaznaczenia (wtedy zwykły Ctrl/Cmd+C też działa).
+      var focusInPanel = ae && filterBarEl.contains(ae);
+      var hasSelection = (function () {
+        try {
+          var sel = window.getSelection && window.getSelection();
+          return !!(sel && String(sel.toString()).length > 0);
+        } catch (_) { return false; }
+      })();
+      var qualifies =
+        ev.shiftKey ||
+        ((isHovering || focusInPanel) && !hasSelection);
+      if (!qualifies) return;
+      // preventDefault tylko gdy faktycznie obsługujemy — żeby nie blokować
+      // natywnego copy poza naszym scope.
+      ev.preventDefault();
+      copyNameBtn.click();
+    });
+
     // Kopiowanie do schowka z fallbackiem (Clipboard API → execCommand).
     function copyTextToClipboard(text) {
       if (navigator.clipboard && navigator.clipboard.writeText) {
