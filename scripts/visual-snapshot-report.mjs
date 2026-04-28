@@ -1134,6 +1134,7 @@ const renderHtml = ({
             <option value="0">Bez auto-hide</option>
           </select>
         </label>
+        <button type="button" class="trends-filter-export" data-trend-export title="Pokaż podgląd 20 pierwszych wierszy, potem pobierz przefiltrowane runy w wybranym formacie">⬇ Podgląd i eksport…</button>
         <!--
           „Wypróbuj toast" — pokazuje testowy toast w fazie „downloaded"
           z fake'ową nazwą pliku, żeby user mógł na żywo zweryfikować
