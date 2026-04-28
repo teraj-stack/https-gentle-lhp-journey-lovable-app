@@ -3958,6 +3958,22 @@ const renderHtml = ({
     if (previewFilenameCopy) {
       previewFilenameCopy.addEventListener("click", function () { copyPreviewFilename(previewFilenameCopy); });
     }
+    // Wyróżniony download row — kliknięcie / Enter / Space kopiuje tę samą
+    // nazwę co header filename i przycisk „⧉ Kopiuj nazwę". Reuse
+    // copyPreviewFilename() (single source of truth: pendingExport.filename
+    // przez previewFilenameValue.textContent), żeby nie zduplikować logiki
+    // historii / toastów / błędów schowka.
+    if (previewDownloadRowValue) {
+      previewDownloadRowValue.addEventListener("click", function () {
+        copyPreviewFilename(previewDownloadRowValue);
+      });
+      previewDownloadRowValue.addEventListener("keydown", function (ev) {
+        if (ev.key === "Enter" || ev.key === " ") {
+          ev.preventDefault();
+          copyPreviewFilename(previewDownloadRowValue);
+        }
+      });
+    }
     if (previewDialog) {
       // Klik w backdrop (poza zawartością) → zamknij. <dialog> sam tego nie
       // robi — sprawdzamy czy target == sam dialog (nie potomek).
