@@ -2034,6 +2034,27 @@ const renderHtml = ({
       outline: 2px solid rgba(201,168,76,.85);
       outline-offset: 2px;
     }
+    /* Badge wyniku testu pauzy — zielony ✓ albo czerwony ✗ z liczbą OK/total. */
+    .trends-filter-toast-pause-test-result {
+      font-size: .68rem;
+      font-variant-numeric: tabular-nums;
+      align-self: center;
+      padding: 2px 6px;
+      border-radius: 4px;
+      min-width: 0;
+    }
+    .trends-filter-toast-pause-test-result.is-running {
+      background: rgba(201,168,76,.18);
+      color: rgba(220,200,140,1);
+    }
+    .trends-filter-toast-pause-test-result.is-pass {
+      background: rgba(120,200,140,.20);
+      color: rgba(170,235,190,1);
+    }
+    .trends-filter-toast-pause-test-result.is-fail {
+      background: rgba(220,90,90,.22);
+      color: rgba(255,180,180,1);
+    }
     .trends-filter-export {
       font-size: .75rem;
       padding: 4px 10px;
