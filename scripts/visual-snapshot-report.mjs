@@ -1615,6 +1615,21 @@ const renderHtml = ({
     }
     .trends-filter-export:hover { background: rgba(201,168,76,.28); }
     .trends-filter-export:disabled { opacity: .45; cursor: not-allowed; }
+    .trends-filter-copy-name {
+      font-size: .72rem;
+      padding: 4px 8px;
+      background: rgba(127,127,127,.12);
+      color: inherit;
+      border: 1px solid rgba(127,127,127,.4);
+      border-radius: 4px;
+      cursor: pointer;
+      align-self: end;
+    }
+    .trends-filter-copy-name:hover { background: rgba(127,127,127,.22); }
+    .trends-filter-copy-name.is-copied {
+      background: rgba(120,180,120,.22);
+      border-color: rgba(120,180,120,.55);
+    }
     .trends-filter-export-status {
       font-size: .72rem;
       opacity: .75;
