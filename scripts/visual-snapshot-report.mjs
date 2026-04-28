@@ -1110,6 +1110,11 @@ const renderHtml = ({
         <span class="trends-filter-export-status" data-trend-export-status role="status" aria-live="polite"></span>
         <span class="trends-filter-zip-hint" data-trend-zip-hint role="status" aria-live="polite" hidden></span>
       </div>
+      <div class="trends-filter-name-preview" data-trend-name-preview hidden>
+        <span class="trends-filter-name-preview-label" aria-hidden="true">📦 Nazwa paczki:</span>
+        <code class="trends-filter-name-preview-value" data-trend-name-preview-value tabindex="0" role="textbox" aria-readonly="true" aria-label="Aktualnie wyliczona nazwa paczki eksportu — kliknij, aby skopiować."></code>
+        <span class="trends-filter-name-preview-meta" data-trend-name-preview-meta></span>
+      </div>
       <details class="trends-filter-history" data-trend-history-wrap hidden>
         <summary class="trends-filter-history-summary">
           <span class="trends-filter-history-icon" aria-hidden="true">🕘</span>
@@ -1721,6 +1726,60 @@ const renderHtml = ({
       border-color: rgba(120,180,120,.55);
     }
     .trends-filter-history-meta {
+      flex: 0 0 auto;
+      opacity: .55;
+      font-variant-numeric: tabular-nums;
+      font-size: .66rem;
+    }
+    /* ---- Live preview wyliczonej nazwy paczki ---- */
+    .trends-filter-name-preview {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 6px;
+      padding: 6px 10px;
+      font-size: .72rem;
+      border: 1px solid rgba(201,168,76,.35);
+      border-radius: 6px;
+      background: rgba(201,168,76,.06);
+    }
+    .trends-filter-name-preview-label {
+      flex: 0 0 auto;
+      opacity: .85;
+      font-weight: 500;
+    }
+    .trends-filter-name-preview-value {
+      flex: 1 1 auto;
+      min-width: 0;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: .70rem;
+      padding: 3px 8px;
+      background: rgba(0,0,0,.25);
+      border: 1px solid rgba(127,127,127,.3);
+      border-radius: 4px;
+      color: rgba(201,168,76,.95);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      cursor: pointer;
+      user-select: all;
+      transition: background .15s, border-color .15s;
+    }
+    .trends-filter-name-preview-value:hover {
+      background: rgba(201,168,76,.16);
+      border-color: rgba(201,168,76,.55);
+    }
+    .trends-filter-name-preview-value:focus-visible {
+      outline: 2px solid rgba(201,168,76,.7);
+      outline-offset: 1px;
+    }
+    .trends-filter-name-preview-value.is-copied {
+      background: rgba(120,180,120,.22);
+      border-color: rgba(120,180,120,.55);
+      color: rgba(180,230,180,.95);
+    }
+    .trends-filter-name-preview-meta {
       flex: 0 0 auto;
       opacity: .55;
       font-variant-numeric: tabular-nums;
@@ -2507,6 +2566,81 @@ const renderHtml = ({
         ? "↪ " + count + " wierszy ≥ " + th + " — eksport automatycznie przejdzie na ZIP."
         : "ⓘ " + count + " wierszy ≥ " + th + " — rozważ format ZIP (mniejszy plik, manifest).";
     }
+
+    // Live preview wyliczonej nazwy paczki — okienko pod przyciskiem
+    // „⧉ Kopiuj nazwę". Aktualizuje się przy każdej zmianie filtra/trybu/
+    // formatu/progu (jest dopinane w apply() pośrednio przez refreshZipHint
+    // → refreshNamePreview, oraz przez listenery format/threshold/mode).
+    // Klik w wartość kopiuje ją do schowka (równoważnik przycisku „Kopiuj
+    // nazwę" — z animacją + wpisem do historii). Bez wierszy → schowane.
+    var namePreviewWrap = root.querySelector("[data-trend-name-preview]");
+    var namePreviewValue = root.querySelector("[data-trend-name-preview-value]");
+    var namePreviewMeta = root.querySelector("[data-trend-name-preview-meta]");
+    function refreshNamePreview() {
+      if (!namePreviewWrap || !namePreviewValue) return;
+      var name = null;
+      try { name = computeExportBaseName(); } catch (_e) { name = null; }
+      if (!name) {
+        namePreviewWrap.hidden = true;
+        namePreviewValue.textContent = "";
+        if (namePreviewMeta) namePreviewMeta.textContent = "";
+        return;
+      }
+      namePreviewWrap.hidden = false;
+      // Aktualizujemy tylko gdy się zmieniła — minimalizuje screen-reader noise
+      // i unika niepotrzebnych repaintów cursora przy długiej selekcji.
+      if (namePreviewValue.textContent !== name) {
+        namePreviewValue.textContent = name;
+        namePreviewValue.classList.remove("is-copied");
+      }
+      if (namePreviewMeta) {
+        var count = filterPoints(currentState()).length;
+        var fmt = (exportFormatSelect && exportFormatSelect.value) || "csv";
+        var th = getZipThreshold();
+        var mode = getZipMode();
+        var auto = th && mode === "switch" && fmt === "csv" && count >= th
+          ? " · auto-ZIP"
+          : "";
+        namePreviewMeta.textContent = count + " w. · " + fmt + auto;
+      }
+    }
+    if (namePreviewValue) {
+      // Klik = jeden gest, kopia do schowka + dopisanie do historii.
+      // Reuse logiki z `copyNameBtn.click()`, żeby był spójny status,
+      // animacja na przycisku i wpis source=copy w historii.
+      namePreviewValue.addEventListener("click", function () {
+        var name = namePreviewValue.textContent || "";
+        if (!name) return;
+        copyTextToClipboard(name).then(function (ok) {
+          if (ok) {
+            namePreviewValue.classList.add("is-copied");
+            if (exportStatus) exportStatus.textContent = "Skopiowano nazwę: " + name;
+            try {
+              var built = buildExportRows();
+              pushExportHistory(name, { source: "copy", count: built && built.count });
+            } catch (_e) { pushExportHistory(name, { source: "copy" }); }
+            setTimeout(function () { namePreviewValue.classList.remove("is-copied"); }, 1500);
+          } else if (exportStatus) {
+            exportStatus.textContent = "Nie udało się skopiować — nazwa: " + name;
+          }
+        });
+      });
+      // Enter / Space na fokusie też kopiuje (dostępność klawiaturowa).
+      namePreviewValue.addEventListener("keydown", function (ev) {
+        if (ev.key === "Enter" || ev.key === " ") {
+          ev.preventDefault();
+          namePreviewValue.click();
+        }
+      });
+    }
+    // Spinka do refreshZipHint: gdy ten się odświeża (zmiana progu/trybu/
+    // formatu/filtra), name preview też jest świeże. Jedno źródło prawdy
+    // dla cyklu „filter changed → UI re-sync".
+    var _origRefreshZipHint = refreshZipHint;
+    refreshZipHint = function () {
+      _origRefreshZipHint();
+      refreshNamePreview();
+    };
     if (zipThresholdInput) {
       zipThresholdInput.addEventListener("input", function () {
         persistZipPrefs();
