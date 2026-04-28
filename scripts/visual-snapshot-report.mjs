@@ -4373,12 +4373,24 @@ const renderHtml = ({
         readyToastTimer = null;
       }
       readyToastRemainingMs = Math.max(0, readyToastCountdownDeadline - Date.now());
+      persistReadyToastState();
     }
     // Wznowienie — restartuje setTimeout z pozostałym czasem i przesuwa
     // deadline countdownu, żeby tick znów odliczał normalnie. Jeśli zero
     // (lub mniej) — od razu hide; jeśli toast już został zamknięty (close
     // button), funkcja jest no-op.
     function resumeReadyToastTimer() {
+      if (!readyToastIsPaused) return;
+      readyToastIsPaused = false;
+      if (!readyToast || readyToast.hidden) return;
+      var ms = readyToastRemainingMs;
+      readyToastRemainingMs = 0;
+      if (ms <= 0) { hideReadyToast(); return; }
+      readyToastCountdownDeadline = Date.now() + ms;
+      readyToastTimer = setTimeout(hideReadyToast, ms);
+      if (readyToastCountdown) readyToastCountdown.classList.remove("is-paused");
+      persistReadyToastState();
+    }
       if (!readyToastIsPaused) return;
       readyToastIsPaused = false;
       if (!readyToast || readyToast.hidden) return;
