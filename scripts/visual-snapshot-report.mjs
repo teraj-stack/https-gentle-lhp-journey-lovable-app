@@ -4557,6 +4557,10 @@ const renderHtml = ({
       }
     }
     restoreReadyToastFromSession();
+    // Persist najświeższy stan przed unload — łapie korner case, w którym
+    // user pauzował toast hoverem i zaraz potem nastąpił reload (snapshot
+    // zachowa flagę pauzy + dokładny remainingMs).
+    window.addEventListener("beforeunload", persistReadyToastState);
     if (readyToastClose) {
       readyToastClose.addEventListener("click", hideReadyToast);
     }
