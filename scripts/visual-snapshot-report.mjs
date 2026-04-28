@@ -2552,7 +2552,10 @@ const renderHtml = ({
       return (c ^ 0xffffffff) >>> 0;
     }
     function buildZip(files) {
-      // files: [{ name: "foo.csv", text: "..." }] — ASCII-safe nazwy.
+      // files: [{ name: "foo.csv", text: "..." }] LUB
+      //       [{ name: "foo.png", bytes: Uint8Array }] — wpisy mogą być binarne
+      //       (np. PNG ze sparkline-a) lub tekstowe (CSV, JSON). Pole "bytes"
+      //       ma pierwszenstwo nad "text".
       var enc = new TextEncoder();
       var localParts = [];
       var centralParts = [];
@@ -2560,7 +2563,7 @@ const renderHtml = ({
       for (var i = 0; i < files.length; i++) {
         var f = files[i];
         var nameBytes = enc.encode(f.name);
-        var dataBytes = enc.encode(f.text);
+        var dataBytes = f.bytes ? f.bytes : enc.encode(f.text || "");
         var crc = crc32(dataBytes);
         var size = dataBytes.length;
         // Local file header (30 B + name + data)
@@ -2617,6 +2620,83 @@ const renderHtml = ({
       ev.setUint16(20, 0, true);             // comment length
       return new Blob(localParts.concat(centralParts).concat([eocd]), {
         type: "application/zip",
+      });
+    }
+
+    // ---- Snapshot sparkline'ów do PNG (zero-deps, browser-only) ----
+    // W trybie „zip-split" oprócz CSV pakujemy też obrazki PNG każdego
+    // wykresu (po jednym pliku per [data-spark]). PNG jest renderowany
+    // *po* aktualnej filtracji (apply() już przerysował SVG), więc plik
+    // dokładnie odpowiada temu, co user widzi i co siedzi w CSV.
+    //
+    // Pipeline: SVG outerHTML (z dopisanym xmlns) → Blob → <img> → <canvas>
+    // → toBlob("image/png") → arrayBuffer → Uint8Array. Natywna ścieżka
+    // wspierana we wszystkich evergreen przeglądarkach. Każdy snapshot ma
+    // hard-timeout 3s i jest opakowany try/catch — pojedyncza porażka nie
+    // blokuje eksportu CSV-ów (PNG jest „nice-to-have"). Skala 2x dla
+    // wyraźnych wykresów na ekranach HiDPI.
+    function snapshotSparkPngs() {
+      var jobs = sparks.map(function (figure) {
+        var svg = figure.querySelector("[data-trend-svg]");
+        if (!svg) return Promise.resolve(null);
+        var key = figure.getAttribute("data-spark") || "spark";
+        var W = parseFloat(svg.getAttribute("data-w")) || 320;
+        var H = parseFloat(svg.getAttribute("data-h")) || 80;
+        // Klon + xmlns — wymagane, żeby <img> zaakceptowało SVG-blob.
+        var clone = svg.cloneNode(true);
+        clone.setAttribute("xmlns", SVG_NS);
+        clone.setAttribute("width", String(W));
+        clone.setAttribute("height", String(H));
+        var svgText = new XMLSerializer().serializeToString(clone);
+        var blob = new Blob([svgText], { type: "image/svg+xml;charset=utf-8" });
+        var url = URL.createObjectURL(blob);
+        return new Promise(function (resolve) {
+          var img = new Image();
+          var done = false;
+          var timer = setTimeout(function () {
+            if (done) return; done = true;
+            URL.revokeObjectURL(url);
+            resolve(null);
+          }, 3000);
+          img.onload = function () {
+            if (done) return; done = true;
+            clearTimeout(timer);
+            try {
+              var scale = 2;
+              var canvas = document.createElement("canvas");
+              canvas.width = Math.round(W * scale);
+              canvas.height = Math.round(H * scale);
+              var ctx = canvas.getContext("2d");
+              ctx.scale(scale, scale);
+              ctx.drawImage(img, 0, 0);
+              canvas.toBlob(function (pngBlob) {
+                URL.revokeObjectURL(url);
+                if (!pngBlob) { resolve(null); return; }
+                pngBlob.arrayBuffer().then(function (ab) {
+                  resolve({
+                    name: "spark-" + key.replace(/[^a-z0-9._-]/gi, "_") + ".png",
+                    bytes: new Uint8Array(ab),
+                    width: canvas.width,
+                    height: canvas.height,
+                  });
+                }, function () { resolve(null); });
+              }, "image/png");
+            } catch (_e) {
+              URL.revokeObjectURL(url);
+              resolve(null);
+            }
+          };
+          img.onerror = function () {
+            if (done) return; done = true;
+            clearTimeout(timer);
+            URL.revokeObjectURL(url);
+            resolve(null);
+          };
+          img.src = url;
+        });
+      });
+      return Promise.all(jobs).then(function (results) {
+        return results.filter(function (r) { return r != null; });
       });
     }
 
@@ -2720,25 +2800,60 @@ const renderHtml = ({
               files.push({ name: k, text: built.splitCsvs[k] });
             });
           }
-          // Lista plików (oprócz samego manifest.json) — pomaga w audycie
-          // archiwum bez konieczności rozpakowywania ZIPa.
-          manifest.files = files.map(function (f) {
-            return { name: f.name, sizeBytes: f.text.length };
-          });
-          files.push({ name: "metadata.json", text: JSON.stringify(manifest, null, 2) + "\n" });
-          var zipBlob = buildZip(files);
-          pendingExport = {
-            blob: zipBlob,
-            mime: "application/zip",
-            filename: baseName + ".zip",
-            count: built.count,
-            total: built.total,
-            mode: built.mode,
-            colCount: built.colCount,
-            missingCount: built.missingCount,
-            format: format,
-            fileCount: files.length,
-          };
+
+          // Finalizator ZIPa: składa manifest (po dopisaniu opcjonalnych
+          // PNG-ów ze sparkline'ów), buduje archiwum, ustawia pendingExport.
+          // Wydzielony jako fn, żeby działać sync (zip) i async (zip-split).
+          function finalizeZip(extraFiles) {
+            if (extraFiles && extraFiles.length) {
+              extraFiles.forEach(function (ef) { files.push(ef); });
+            }
+            // Lista plików (oprócz samego manifest.json) — pomaga w audycie
+            // archiwum bez konieczności rozpakowywania ZIPa. Dla wpisów
+            // binarnych (PNG) używamy bytes.length, dla tekstowych text.length.
+            manifest.files = files.map(function (f) {
+              var size = f.bytes ? f.bytes.length : (f.text ? f.text.length : 0);
+              var entry = { name: f.name, sizeBytes: size };
+              if (f.bytes) entry.kind = "binary";
+              if (f.width && f.height) {
+                entry.width = f.width;
+                entry.height = f.height;
+              }
+              return entry;
+            });
+            files.push({ name: "metadata.json", text: JSON.stringify(manifest, null, 2) + "\n" });
+            var zipBlob = buildZip(files);
+            pendingExport = {
+              blob: zipBlob,
+              mime: "application/zip",
+              filename: baseName + ".zip",
+              count: built.count,
+              total: built.total,
+              mode: built.mode,
+              colCount: built.colCount,
+              missingCount: built.missingCount,
+              format: format,
+              fileCount: files.length,
+            };
+          }
+
+          if (format === "zip-split") {
+            // PNG-i sparkline'ów dorzucamy TYLKO w trybie split — bo to ten
+            // wariant jest pomyślany pod „pełną paczkę do dalszej analizy"
+            // (CSV-e per metryka + obrazki gotowe do wklejenia w raport).
+            // Zwykly "zip" celowo zostaje minimalne (tylko CSV + metadata).
+            if (exportStatus) exportStatus.textContent = "Renderuję PNG sparkline'ów…";
+            snapshotSparkPngs().then(function (pngs) {
+              finalizeZip(pngs);
+              openPreviewOrDownload();
+            }).catch(function () {
+              // Nawet jeśli wszystkie PNG-i padną, eksport CSV-ów leci dalej.
+              finalizeZip([]);
+              openPreviewOrDownload();
+            });
+            return; // dialog otworzy się w callbacku
+          }
+          finalizeZip([]);
         } else {
           format = "csv";
           pendingExport = {
@@ -2752,19 +2867,24 @@ const renderHtml = ({
             format: "csv",
           };
         }
-        // Fallback dla przeglądarek bez <dialog> (Safari < 15.4): od razu
-        // pobierz, ale poinformuj usera w statusie, że podgląd nieosiągalny.
-        if (!previewDialog || typeof previewDialog.showModal !== "function") {
-          downloadPending();
-          if (exportStatus && exportStatus.textContent) {
-            exportStatus.textContent += " (podgląd niedostępny w tej przeglądarce)";
+
+        // Otwarcie dialogu podglądu lub fallback do natychmiastowego download
+        // (Safari < 15.4 bez <dialog>). Wydzielone, żeby async branch
+        // (zip-split z PNG-ami) mógł zawołać dokładnie ten sam flow.
+        function openPreviewOrDownload() {
+          if (!previewDialog || typeof previewDialog.showModal !== "function") {
+            downloadPending();
+            if (exportStatus && exportStatus.textContent) {
+              exportStatus.textContent += " (podgląd niedostępny w tej przeglądarce)";
+            }
+            pendingExport = null;
+            return;
           }
-          pendingExport = null;
-          return;
+          renderPreview(built);
+          previewDialog.showModal();
+          if (previewConfirm) previewConfirm.focus();
         }
-        renderPreview(built);
-        previewDialog.showModal();
-        if (previewConfirm) previewConfirm.focus();
+        openPreviewOrDownload();
       });
     }
     if (previewCancel) {

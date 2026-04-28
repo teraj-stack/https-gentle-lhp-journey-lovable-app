@@ -410,7 +410,15 @@ pasujących do wszystkich aktywnych selectów (AND), bez re-runu skryptu.
     `png-saved.csv` i `discovery-saved.csv` (po dwie kolumny:
     `generatedAt,value`). Pomyślane pod narzędzia single-series (Datawrapper,
     Grafana CSV plugin, gnuplot), które nie lubią szerokich tabel z
-    `flag_*`.
+    `flag_*`. **Dodatkowo**: do archiwum trafiają **PNG-i każdego
+    sparkline'a** (po jednym pliku per metryka, nazwa
+    `spark-<key>.png`, rozdzielczość 2× viewBox SVG), zrenderowane
+    *po* aktualnej filtracji — czyli obrazek 1:1 odpowiada CSV-owi obok.
+    PNG jest „nice-to-have": jeśli rasteryzacja padnie (np. blokada CSP
+    na `blob:`-image), eksport CSV-ów leci dalej, a `metadata.json`
+    odzwierciedla rzeczywistą zawartość archiwum (PNG-i nie pojawiają
+    się w `files[]`). Tryb `zip` (bez split) celowo zostaje minimalny —
+    tylko CSV + metadata, bez obrazków.
 
   ZIP używa metody **STORE** (kompresja=0) napisanej od zera (~80 linii,
   zero deps, bez `CompressionStream` — działa we wszystkich przeglądarkach z
