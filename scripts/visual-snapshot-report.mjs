@@ -3894,6 +3894,8 @@ const renderHtml = ({
         // Pasek postępu — po pobraniu znika natychmiast (status „Pobrano …"
         // i tak nadpisuje komunikat „Gotowe do pobrania" z paska statusu).
         if (typeof hideExportProgress === "function") hideExportProgress();
+        // Page-level „Gotowe do pobrania" toast — chowamy po pobraniu.
+        if (typeof hideReadyToast === "function") hideReadyToast();
         if (exportStatus) {
           var ml = pendingExport.mode === "full"
             ? ("pełny schemat, " + pendingExport.colCount + " kol."
