@@ -1402,6 +1402,23 @@ const renderHtml = ({
         </div>
         <div class="export-ready-toast-actions">
           <button type="button" class="export-ready-toast-download" data-export-ready-toast-download title="Pobierz wygenerowany plik">⬇ Pobierz</button>
+          <!--
+            „Zobacz w historii" — pojawia się tylko w fazie „downloaded"
+            (po faktycznym zapisie pliku). Klik:
+              · upewnia się, że nazwa jest w „Ostatnie nazwy eksportu"
+                (jeśli wpis już istnieje — nic nie dodajemy, tylko podświetlamy),
+              · rozwija sekcję historii (jeśli zwinięta),
+              · smooth-scrolluje do niej i wyzwala animację .is-just-added
+                na konkretnym wpisie,
+              · zamyka toast (przeczytaliśmy CTA — nie potrzeba auto-hide).
+          -->
+          <button
+            type="button"
+            class="export-ready-toast-history"
+            data-export-ready-toast-history
+            title="Przejdź do sekcji „Ostatnie nazwy eksportu" i podświetl wpis dla tej nazwy."
+            hidden
+          >📜 Zobacz w historii</button>
           <button type="button" class="export-ready-toast-close" data-export-ready-toast-close aria-label="Zamknij powiadomienie">×</button>
         </div>
       </div>
