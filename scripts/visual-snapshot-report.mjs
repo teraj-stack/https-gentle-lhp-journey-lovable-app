@@ -3852,6 +3852,7 @@ const renderHtml = ({
         showReadyToast(fakeName, "ZIP (test)", "preview", "downloaded");
       });
     }
+    // Live hint pod paskiem eksportu — informuje, czy aktualnie wyfiltrowane
     // wiersze przekraczają próg i co się stanie po kliku „Pobierz".
     function refreshZipHint() {
       if (!zipHintEl) return;
