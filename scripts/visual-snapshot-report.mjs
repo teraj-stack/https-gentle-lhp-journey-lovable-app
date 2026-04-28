@@ -3853,9 +3853,14 @@ const renderHtml = ({
               previewDownloadRowMatch.title = "Filtry zmieniły się od kliknięcia „Podgląd".\nLive: " + live2 + "\nW eksporcie: " + pendingName;
             }
           }
+          // „Pokaż pełną nazwę" — render rozbicia + przywrócenie stanu
+          // expand z localStorage (preferencja przeżywa re-render).
+          renderFullnameBreakdown(pendingName);
+          applyFullnameExpanded(isFullnameExpanded());
         } else {
           previewDownloadRow.hidden = true;
           previewDownloadRowValue.textContent = "";
+          renderFullnameBreakdown("");
         }
       }
     }
