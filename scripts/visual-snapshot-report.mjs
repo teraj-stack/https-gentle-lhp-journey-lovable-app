@@ -3301,6 +3301,10 @@ const renderHtml = ({
         // Bez rozszerzenia — dopisywane niżej (.csv/.zip). Sanityzacja gwarantuje
         // brak spacji/diakrytyków/znaków zarezerwowanych przez Windows.
         var baseName = buildSafeFilename(["savings-filtered", built.mode, stamp, filterHash], "");
+        // Wpis do historii nazw przy faktycznym pobraniu (source=download).
+        // Pełna nazwa zawiera rozszerzenie aktualnego formatu (csv/zip).
+        var ext = (format === "zip" || format === "zip-split") ? ".zip" : ".csv";
+        pushExportHistory(baseName + ext, { source: "download", count: built.count });
 
         if (format === "zip" || format === "zip-split") {
           // Manifest z metadanymi, żeby konsument ZIPa wiedział JAK powstał
