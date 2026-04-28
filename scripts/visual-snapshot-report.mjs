@@ -1109,6 +1109,18 @@ const renderHtml = ({
         <button type="button" class="trends-filter-copy-name" data-trend-copy-name title="Skopiuj do schowka nazwę paczki eksportu (timestamp + skrót filtra), żeby łatwo nazwać/posortować pobrane pliki.">⧉ Kopiuj nazwę</button>
         <span class="trends-filter-export-status" data-trend-export-status role="status" aria-live="polite"></span>
         <!--
+          Pasek postępu generowania ZIP. Widoczny tylko podczas budowy
+          archiwum (np. snapshot PNG-ów sparkline'ów w trybie zip-split).
+          Wartość 0–100, etykieta tekstowa per faza („Renderuję PNG…",
+          „Pakuję archiwum…", „Gotowe do pobrania"). Po zakończeniu
+          zostaje na 100% z labelką „Gotowe do pobrania" i znika po
+          downloadPending() lub po ~3.5s (cokolwiek pierwsze).
+        -->
+        <div class="trends-filter-export-progress" data-trend-export-progress hidden role="group" aria-label="Postęp generowania ZIP">
+          <progress class="trends-filter-export-progress-bar" data-trend-export-progress-bar max="100" value="0"></progress>
+          <span class="trends-filter-export-progress-label" data-trend-export-progress-label aria-live="polite">0%</span>
+        </div>
+        <!--
           Badge weryfikujący, że nazwa POKAZANA W MODALU jest 1:1 z nazwą
           REALNIE UŻYTĄ przy a.download (i tym samym w schowku po wygenerowaniu).
           Liczony w downloadPending() zaraz po przypisaniu a.download,
@@ -1696,6 +1708,58 @@ const renderHtml = ({
       align-self: end;
       padding-bottom: 6px;
       min-height: 1em;
+    }
+    /* Pasek postępu generowania ZIP — wyświetlany obok statusu eksportu
+       w czasie budowy archiwum. Po zakończeniu (value=100) tło zmienia
+       się na zielonkawe i etykieta to „Gotowe do pobrania". */
+    .trends-filter-export-progress {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      align-self: end;
+      padding-bottom: 5px;
+    }
+    .trends-filter-export-progress[hidden] { display: none; }
+    .trends-filter-export-progress-bar {
+      width: 140px;
+      height: 8px;
+      appearance: none;
+      -webkit-appearance: none;
+      border: 1px solid rgba(127,127,127,.35);
+      border-radius: 4px;
+      overflow: hidden;
+      background: rgba(127,127,127,.15);
+      transition: filter .2s ease;
+    }
+    .trends-filter-export-progress-bar::-webkit-progress-bar {
+      background: rgba(127,127,127,.15);
+      border-radius: 4px;
+    }
+    .trends-filter-export-progress-bar::-webkit-progress-value {
+      background: linear-gradient(90deg, rgba(150,180,230,.85), rgba(120,160,220,.95));
+      transition: width .25s ease;
+      border-radius: 3px;
+    }
+    .trends-filter-export-progress-bar::-moz-progress-bar {
+      background: linear-gradient(90deg, rgba(150,180,230,.85), rgba(120,160,220,.95));
+      border-radius: 3px;
+    }
+    .trends-filter-export-progress.is-done .trends-filter-export-progress-bar::-webkit-progress-value {
+      background: linear-gradient(90deg, rgba(120,200,140,.9), rgba(90,180,120,1));
+    }
+    .trends-filter-export-progress.is-done .trends-filter-export-progress-bar::-moz-progress-bar {
+      background: linear-gradient(90deg, rgba(120,200,140,.9), rgba(90,180,120,1));
+    }
+    .trends-filter-export-progress-label {
+      font-size: .7rem;
+      letter-spacing: .02em;
+      opacity: .85;
+      min-width: 9ch;
+    }
+    .trends-filter-export-progress.is-done .trends-filter-export-progress-label {
+      color: rgba(150,220,170,1);
+      opacity: 1;
+      font-weight: 600;
     }
     /* Badge parity „nazwa w modalu == nazwa w pobraniu" — pokazuje się
        po downloadPending() i informuje, czy string z modala doleciał
@@ -2757,6 +2821,52 @@ const renderHtml = ({
     var exportBtn = root.querySelector("[data-trend-export]");
     var copyNameBtn = root.querySelector("[data-trend-copy-name]");
     var exportStatus = root.querySelector("[data-trend-export-status]");
+    var exportProgressWrap = root.querySelector("[data-trend-export-progress]");
+    var exportProgressBar = root.querySelector("[data-trend-export-progress-bar]");
+    var exportProgressLabel = root.querySelector("[data-trend-export-progress-label]");
+    var exportProgressHideTimer = null;
+    /**
+     * Pokaż/aktualizuj pasek postępu generowania ZIP.
+     * value: 0–100, label: tekstowy opis fazy. Gdy done=true → klasa
+     * .is-done (zielony pasek) i etykieta „Gotowe do pobrania".
+     */
+    function setExportProgress(value, label, opts) {
+      if (!exportProgressWrap) return;
+      var pct = Math.max(0, Math.min(100, Math.round(value)));
+      exportProgressWrap.hidden = false;
+      if (exportProgressBar) {
+        exportProgressBar.value = pct;
+        exportProgressBar.setAttribute("aria-valuenow", String(pct));
+      }
+      if (exportProgressLabel) {
+        exportProgressLabel.textContent = label || (pct + "%");
+      }
+      var done = opts && opts.done;
+      exportProgressWrap.classList.toggle("is-done", !!done);
+      if (exportProgressHideTimer) {
+        clearTimeout(exportProgressHideTimer);
+        exportProgressHideTimer = null;
+      }
+      if (done && opts && opts.autoHideMs) {
+        exportProgressHideTimer = setTimeout(function () {
+          if (exportProgressWrap) {
+            exportProgressWrap.hidden = true;
+            exportProgressWrap.classList.remove("is-done");
+          }
+        }, opts.autoHideMs);
+      }
+    }
+    function hideExportProgress() {
+      if (exportProgressHideTimer) {
+        clearTimeout(exportProgressHideTimer);
+        exportProgressHideTimer = null;
+      }
+      if (!exportProgressWrap) return;
+      exportProgressWrap.hidden = true;
+      exportProgressWrap.classList.remove("is-done");
+      if (exportProgressBar) exportProgressBar.value = 0;
+      if (exportProgressLabel) exportProgressLabel.textContent = "0%";
+    }
     var downloadParityBadge = root.querySelector("[data-trend-download-parity]");
     var exportModeSelect = root.querySelector("[data-trend-export-mode]");
     var exportFormatSelect = root.querySelector("[data-trend-export-format]");
@@ -3470,7 +3580,15 @@ const renderHtml = ({
     // hard-timeout 3s i jest opakowany try/catch — pojedyncza porażka nie
     // blokuje eksportu CSV-ów (PNG jest „nice-to-have"). Skala 2x dla
     // wyraźnych wykresów na ekranach HiDPI.
-    function snapshotSparkPngs() {
+    function snapshotSparkPngs(onProgress) {
+      var total = sparks.length;
+      var completed = 0;
+      function tick() {
+        completed++;
+        if (typeof onProgress === "function") {
+          onProgress(completed, total);
+        }
+      }
       var jobs = sparks.map(function (figure) {
         var svg = figure.querySelector("[data-trend-svg]");
         if (!svg) return Promise.resolve(null);
@@ -3530,7 +3648,12 @@ const renderHtml = ({
           img.src = url;
         });
       });
-      return Promise.all(jobs).then(function (results) {
+      // Każdy zakończony job (sukces/null) inkrementuje licznik postępu —
+      // używamy do aktualizacji paska podczas zip-split (PNG snapshoty).
+      var trackedJobs = jobs.map(function (p) {
+        return Promise.resolve(p).then(function (v) { tick(); return v; }, function () { tick(); return null; });
+      });
+      return Promise.all(trackedJobs).then(function (results) {
         return results.filter(function (r) { return r != null; });
       });
     }
@@ -3583,6 +3706,9 @@ const renderHtml = ({
         a.click();
         document.body.removeChild(a);
         setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+        // Pasek postępu — po pobraniu znika natychmiast (status „Pobrano …"
+        // i tak nadpisuje komunikat „Gotowe do pobrania" z paska statusu).
+        if (typeof hideExportProgress === "function") hideExportProgress();
         if (exportStatus) {
           var ml = pendingExport.mode === "full"
             ? ("pełny schemat, " + pendingExport.colCount + " kol."
@@ -4026,19 +4152,35 @@ const renderHtml = ({
             // (CSV-e per metryka + obrazki gotowe do wklejenia w raport).
             // Zwykly "zip" celowo zostaje minimalne (tylko CSV + metadata).
             if (exportStatus) exportStatus.textContent = "Renderuję PNG sparkline'ów…";
-            snapshotSparkPngs().then(function (pngs) {
+            // Pasek postępu: start 0% (pre-render), aktualizowany przez
+            // snapshotSparkPngs(onProgress) per zakończony PNG, finał
+            // 100% + „Gotowe do pobrania" po finalizeZip().
+            setExportProgress(0, "Renderuję PNG… 0/" + sparks.length);
+            snapshotSparkPngs(function (done, total) {
+              var pct = total > 0 ? Math.round((done / total) * 90) : 90;
+              setExportProgress(pct, "Renderuję PNG… " + done + "/" + total);
+            }).then(function (pngs) {
+              setExportProgress(95, "Pakuję archiwum…");
               finalizeZip(pngs);
               if (pendingExport) pendingExport.thresholdNote = thresholdNote;
+              setExportProgress(100, "Gotowe do pobrania", { done: true, autoHideMs: 3500 });
               openPreviewOrDownload();
             }).catch(function () {
               // Nawet jeśli wszystkie PNG-i padną, eksport CSV-ów leci dalej.
+              setExportProgress(95, "Pakuję archiwum…");
               finalizeZip([]);
               if (pendingExport) pendingExport.thresholdNote = thresholdNote;
+              setExportProgress(100, "Gotowe do pobrania", { done: true, autoHideMs: 3500 });
               openPreviewOrDownload();
             });
             return; // dialog otworzy się w callbacku
           }
+          // Tryb "zip" (bez PNG-ów) — generowanie jest synchroniczne i
+          // krótkie, ale i tak pokazujemy szybki przebieg paska, żeby
+          // user dostał wizualne potwierdzenie „buduję → gotowe".
+          setExportProgress(40, "Pakuję archiwum…");
           finalizeZip([]);
+          setExportProgress(100, "Gotowe do pobrania", { done: true, autoHideMs: 3500 });
         } else {
           format = "csv";
           pendingExport = {

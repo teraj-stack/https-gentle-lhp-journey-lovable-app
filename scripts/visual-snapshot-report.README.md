@@ -540,6 +540,18 @@ pasujących do wszystkich aktywnych selectów (AND), bez re-runu skryptu.
    być pod fold. Komunikat zostaje dopóki user nie kliknie „Pobierz"
    (wtedy `downloadPending()` nadpisuje go na „Pobrano …").
 
+   **Pasek postępu generowania ZIP** (`<progress>` obok statusu eksportu,
+   `data-trend-export-progress`): pojawia się tylko podczas budowy archiwum
+   i pokazuje procent ukończenia + tekstową fazę. Dla `zip-split` (z PNG
+   snapshotami sparkline'ów) `snapshotSparkPngs(onProgress)` raportuje
+   `done/total` per zakończony PNG (mapowane na 0–90% paska, z labelką
+   `Renderuję PNG… N/M`); pakowanie archiwum to 95% (`Pakuję archiwum…`),
+   a po `finalizeZip()` pasek skacze na 100% z zieloną poświatą i etykietą
+   **„Gotowe do pobrania"**. Dla zwykłego `zip` (bez PNG-ów) pasek jest
+   krótki: 40% → 100%, ale i tak daje wizualne potwierdzenie zakończenia.
+   Pasek znika natychmiast po kliknięciu „Pobierz" (`hideExportProgress()`
+   w `downloadPending()`) lub auto-hide po 3.5s, jeśli user nic nie kliknie.
+
    **Wyróżniony „download row" w stopce modala** (`⬇ Pobierany plik` tuż
    nad przyciskami Anuluj/Pobierz): duży, monospace blok z pełną nazwą
    pliku ZIP/CSV, łamaną na granicach znaków (`word-break: break-all`),
