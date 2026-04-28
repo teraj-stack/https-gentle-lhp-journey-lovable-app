@@ -1689,6 +1689,30 @@ const renderHtml = ({
       padding-bottom: 6px;
       min-height: 1em;
     }
+    /* Badge parity „nazwa w modalu == nazwa w pobraniu" — pokazuje się
+       po `downloadPending()` i informuje, czy string z modala doleciał
+       1:1 do `a.download`. Dwa stany kolorystyczne (match/mismatch),
+       semantycznie spójne z badge'ami w samym modalu. */
+    .trends-filter-download-parity {
+      font-size: .68rem;
+      align-self: end;
+      padding: 2px 8px;
+      margin-bottom: 5px;
+      border-radius: 4px;
+      letter-spacing: .03em;
+      font-weight: 600;
+      border: 1px solid transparent;
+    }
+    .trends-filter-download-parity.is-match {
+      background: rgba(120,180,120,.20);
+      color: rgba(190,235,190,.98);
+      border-color: rgba(120,180,120,.50);
+    }
+    .trends-filter-download-parity.is-mismatch {
+      background: rgba(220,120,120,.25);
+      color: rgba(245,180,180,.98);
+      border-color: rgba(220,120,120,.55);
+    }
     /* ---- Historia ostatnich nazw eksportu ---- */
     .trends-filter-history {
       margin-top: 6px;
