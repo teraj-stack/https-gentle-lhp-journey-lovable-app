@@ -3589,7 +3589,7 @@ const renderHtml = ({
     /**
      * Renderuje rozwinięty panel „Pokaż pełną nazwę".
      *  · stats: długość znaków + liczba segmentów,
-     *  · segmenty: split po `_`, `-`, `.` (zachowując separatory) — każdy
+     *  · segmenty: split po _, -, . (zachowując separatory) — każdy
      *    fragment w osobnym <li> z numerem indeksu i kolorowym separatorem,
      *  · raw: cała nazwa w bloku monospace z word-break (bez ucinania).
      * Bez nazwy → ukrywamy panel i czyścimy listę.
