@@ -2751,8 +2751,12 @@ const renderHtml = ({
       0%, 100% { opacity: .85; }
       50%      { opacity: .45; }
     }
-    @media (prefers-reduced-motion: reduce) {
-      .export-ready-toast-countdown.is-urgent { animation: none; opacity: .85; }
+    /* Pauza (hover/focus) — wyłączamy pulsację .is-urgent (bo i tak nic
+       nie odlicza), wyciszamy opacity, kursywa daje sygnał „toast czeka". */
+    .export-ready-toast-countdown.is-paused {
+      animation: none !important;
+      opacity: .55 !important;
+      font-style: italic;
     }
     .export-ready-toast-actions {
       flex: 0 0 auto;
