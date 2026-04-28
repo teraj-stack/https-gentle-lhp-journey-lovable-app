@@ -5608,7 +5608,8 @@ const renderHtml = ({
             missingCount: built.missingCount,
             format: "csv",
           };
-          // Także dla CSV — pasek statusu pokazuje rozmiar od razu po
+          // Offline cache: zapisz świeży CSV do IndexedDB.
+          try { saveExportCache(pendingExport); } catch (_e) {}
           // wygenerowaniu, zanim user otworzy modal. Identyczny helper i
           // formatowanie jak w branchu ZIP/zip-split.
           announceReadyWithSize();
