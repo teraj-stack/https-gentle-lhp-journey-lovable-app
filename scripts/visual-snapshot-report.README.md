@@ -527,6 +527,19 @@ pasujących do wszystkich aktywnych selectów (AND), bez re-runu skryptu.
    spójne z headerem). Cel: ostatnia, jednoznaczna szansa weryfikacji
    nazwy paczki przed pobraniem.
 
+   **Badge parity „modal vs pobranie"** (`✓ Zgodne` / `⚠ Różni się` obok
+   paska statusu eksportu): pojawia się po kliknięciu „Pobierz" i porównuje
+   nazwę POKAZANĄ W MODALU (odczyt z `previewDownloadRowValue.textContent`
+   — to, co user faktycznie zobaczył tuż przed klikiem) z nazwą REALNIE
+   UŻYTĄ przy pobraniu (`a.download` odczytane z DOM property po przypisaniu
+   i przed `a.click()`). Pozwala wykryć każdą rozbieżność wprowadzoną
+   między „Podgląd" a momentem pobrania (np. monkey-patch, race condition
+   przy auto-ZIP). Tooltip pokazuje obie wartości, gdy `mismatch`.
+   Wynik trafia też do `pendingExport.shownInModal` /
+   `pendingExport.actualDownloadName` / `pendingExport.parityOk` na potrzeby
+   diagnostyki. Przy fallback-flow bez modala (Safari < 15.4 bez `<dialog>`)
+   badge jest ukrywany — nie ma czego porównywać.
+
    **Live preview nazwy paczki** (okienko `📦 Nazwa paczki: …` pod paskiem
    eksportu): pokazuje DOKŁADNIE tę nazwę, którą wygeneruje aktualny stan
    filtrów + format + próg auto-ZIP — z parytetem `computeExportBaseName()`.
