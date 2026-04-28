@@ -2262,6 +2262,7 @@ const renderHtml = ({
     @media (prefers-reduced-motion: reduce) {
       .export-ready-toast { transition: none; }
     }
+    .export-preview-body {
       padding: 8px 18px 4px;
       max-height: 55vh;
       overflow: auto;
