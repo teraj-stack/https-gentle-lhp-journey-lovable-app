@@ -1180,7 +1180,57 @@ const renderHtml = ({
       </div>
       <script type="application/json" id="trends-json">${jsonPayload}</script>
       <dialog class="export-preview-dialog" data-export-preview-dialog aria-labelledby="export-preview-title">
-        <div class="export-preview-header">
+        <!--
+          Pasek postępu generowania ZIPa — pokazujemy go ZANIM paczka jest
+          gotowa do pobrania. Modal otwiera się natychmiast po kliknięciu
+          „Eksportuj ZIP" (faza „building"), a treść podglądu (header/body/
+          footer) jest tymczasowo schowana. Pasek aktualizowany przez
+          setPreviewProgress(pct, label) — to samo API co setExportProgress
+          dla paska statusu poza modalem; oba bary aktualizujemy równolegle,
+          żeby user widział te same etapy bez względu na to, gdzie patrzy.
+          Etapy:
+            · 0–90%   „Renderuję PNG sparkline'ów… N/total"  (zip-split)
+            · 95%     „Pakuję archiwum…"
+            · 100%    „Gotowe do pobrania" → ukrycie + reveal podglądu
+          aria-live=polite ogłasza zmianę etapu czytnikom ekranu bez kradzieży
+          focusa (focus zostaje na „Anuluj" — user może przerwać w trakcie).
+        -->
+        <section
+          class="export-preview-progress"
+          data-export-preview-progress
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+          hidden
+        >
+          <div class="export-preview-progress-header">
+            <span class="export-preview-progress-icon" aria-hidden="true">⚙</span>
+            <span class="export-preview-progress-title">Generuję paczkę ZIP…</span>
+            <span class="export-preview-progress-pct" data-export-preview-progress-pct>0%</span>
+          </div>
+          <progress
+            class="export-preview-progress-bar"
+            data-export-preview-progress-bar
+            max="100"
+            value="0"
+            aria-label="Postęp generowania paczki ZIP"
+          >0%</progress>
+          <p class="export-preview-progress-label" data-export-preview-progress-label>
+            Przygotowuję dane…
+          </p>
+          <p class="export-preview-progress-hint" aria-hidden="true">
+            Możesz przerwać w dowolnym momencie przyciskiem „✕ Anuluj pobieranie" — plik nie zostanie zapisany.
+          </p>
+          <div class="export-preview-progress-actions">
+            <button
+              type="button"
+              class="export-preview-progress-cancel"
+              data-export-preview-progress-cancel
+              title="Przerwij generowanie paczki — modal się zamknie i nie zostanie pobrany żaden plik."
+            >✕ Anuluj generowanie</button>
+          </div>
+        </section>
+        <div class="export-preview-header" data-export-preview-header>
           <h3 id="export-preview-title">Podgląd eksportu</h3>
           <p class="export-preview-meta" data-export-preview-meta></p>
           <div class="export-preview-filename" data-export-preview-filename hidden>
@@ -2608,6 +2658,120 @@ const renderHtml = ({
       outline: 2px solid rgba(245,180,180,.9);
       outline-offset: 2px;
     }
+    /* Pasek postępu wewnątrz modala — widoczny w fazie „building" (przed
+       finalizeZip). Kolorystyka spójna z paskiem statusu eksportu poza
+       modalem (gold/anthracite), żeby user rozpoznał, że to ten sam proces. */
+    .export-preview-progress {
+      padding: 18px 22px;
+      background: linear-gradient(180deg, rgba(201,168,76,.08), rgba(201,168,76,.03));
+      border-bottom: 1px solid rgba(201,168,76,.22);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      animation: export-preview-progress-fade-in .22s ease-out both;
+    }
+    @keyframes export-preview-progress-fade-in {
+      from { opacity: 0; transform: translateY(-4px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .export-preview-progress-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 600;
+      color: #f4dfa3;
+      font-size: .92rem;
+    }
+    .export-preview-progress-icon {
+      display: inline-block;
+      animation: export-preview-progress-spin 2.4s linear infinite;
+      transform-origin: 50% 55%;
+    }
+    @keyframes export-preview-progress-spin {
+      from { transform: rotate(0deg); }
+      to   { transform: rotate(360deg); }
+    }
+    .export-preview-progress-pct {
+      margin-left: auto;
+      font-variant-numeric: tabular-nums;
+      font-size: .82rem;
+      color: rgba(244,223,163,.85);
+      letter-spacing: .04em;
+    }
+    .export-preview-progress-bar {
+      width: 100%;
+      height: 10px;
+      appearance: none;
+      -webkit-appearance: none;
+      border: none;
+      background: rgba(255,255,255,.06);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .export-preview-progress-bar::-webkit-progress-bar {
+      background: rgba(255,255,255,.06);
+      border-radius: 999px;
+    }
+    .export-preview-progress-bar::-webkit-progress-value {
+      background: linear-gradient(90deg, #c9a84c, #f4dfa3);
+      border-radius: 999px;
+      transition: width .25s ease;
+    }
+    .export-preview-progress-bar::-moz-progress-bar {
+      background: linear-gradient(90deg, #c9a84c, #f4dfa3);
+      border-radius: 999px;
+    }
+    .export-preview-progress.is-done .export-preview-progress-bar::-webkit-progress-value {
+      background: linear-gradient(90deg, #7fbf7f, #b6e4b6);
+    }
+    .export-preview-progress.is-done .export-preview-progress-bar::-moz-progress-bar {
+      background: linear-gradient(90deg, #7fbf7f, #b6e4b6);
+    }
+    .export-preview-progress.is-done .export-preview-progress-icon {
+      animation: none;
+      color: #b6e4b6;
+    }
+    .export-preview-progress-label {
+      margin: 0;
+      font-size: .84rem;
+      color: rgba(220,220,220,.85);
+      font-variant-numeric: tabular-nums;
+    }
+    .export-preview-progress-hint {
+      margin: 0;
+      font-size: .72rem;
+      color: rgba(180,180,180,.6);
+      font-style: italic;
+    }
+    .export-preview-progress-actions {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 4px;
+    }
+    .export-preview-progress-cancel {
+      background: rgba(220,120,120,.18);
+      color: rgba(245,180,180,.98);
+      border: 1px solid rgba(220,120,120,.55);
+      font-weight: 600;
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-size: .78rem;
+      cursor: pointer;
+      transition: background .15s ease;
+    }
+    .export-preview-progress-cancel:hover { background: rgba(220,120,120,.30); }
+    .export-preview-progress-cancel:focus-visible {
+      outline: 2px solid rgba(245,180,180,.9);
+      outline-offset: 2px;
+    }
+    /* W trybie „building" header/body/footer modala są ukryte —
+       widoczny tylko pasek postępu. Klasa .is-building na <dialog>. */
+    .export-preview-dialog.is-building .export-preview-header,
+    .export-preview-dialog.is-building .export-preview-body,
+    .export-preview-dialog.is-building .export-preview-download-row,
+    .export-preview-dialog.is-building .export-preview-footer {
+      display: none !important;
+    }
     /* Badge weryfikacji „schowek vs nazwa pliku" tuż przed Pobierz.
        4 stany kolorystyczne (checking/match/mismatch/unavailable) +
        fade-in. Maksymalna szerokość ogranicza skok layoutu przy długich
@@ -3736,6 +3900,82 @@ const renderHtml = ({
     var previewTrunc = root.querySelector("[data-export-preview-truncated]");
     var previewCancel = root.querySelector("[data-export-preview-cancel]");
     var previewConfirm = root.querySelector("[data-export-preview-confirm]");
+    // Pasek postępu wewnątrz modala — widoczny w fazie „building" (przed
+    // finalizeZip), znika po przejściu w „ready". Wszystkie aktualizacje
+    // przechodzą przez setPreviewProgress(pct, label, opts) — to samo API
+    // co setExportProgress(...) dla paska poza modalem.
+    var previewProgressWrap = root.querySelector("[data-export-preview-progress]");
+    var previewProgressBar = root.querySelector("[data-export-preview-progress-bar]");
+    var previewProgressLabel = root.querySelector("[data-export-preview-progress-label]");
+    var previewProgressPct = root.querySelector("[data-export-preview-progress-pct]");
+    var previewProgressCancel = root.querySelector("[data-export-preview-progress-cancel]");
+    // Flaga ustawiana przez „✕ Anuluj generowanie" (kliknięcie w fazie
+    // building). Sprawdzana w callbackach finalizeZip/snapshotSparkPngs —
+    // jeśli true, przerywamy: nie wołamy renderPreview, nie pokazujemy
+    // przycisku Pobierz, nie zostawiamy pendingExport, zamykamy modal.
+    var previewBuildAborted = false;
+    function setPreviewProgress(value, label, opts) {
+      if (!previewProgressWrap) return;
+      var pct = Math.max(0, Math.min(100, Math.round(Number(value) || 0)));
+      var done = !!(opts && opts.done);
+      previewProgressWrap.hidden = false;
+      if (previewProgressBar) {
+        previewProgressBar.value = pct;
+        previewProgressBar.setAttribute("aria-valuenow", String(pct));
+      }
+      if (previewProgressPct) previewProgressPct.textContent = pct + "%";
+      if (previewProgressLabel) previewProgressLabel.textContent = label || (pct + "%");
+      previewProgressWrap.classList.toggle("is-done", done);
+    }
+    function hidePreviewProgress() {
+      if (!previewProgressWrap) return;
+      previewProgressWrap.hidden = true;
+      previewProgressWrap.classList.remove("is-done");
+      if (previewProgressBar) previewProgressBar.value = 0;
+      if (previewProgressPct) previewProgressPct.textContent = "0%";
+      if (previewProgressLabel) previewProgressLabel.textContent = "Przygotowuję dane…";
+    }
+    // Otwiera modal w fazie „building" — header/body/footer ukryte przez
+    // klasę .is-building na <dialog>, widoczny tylko pasek postępu.
+    // Nie wywołujemy renderPreview ani showReadyToast — paczka NIE jest
+    // jeszcze gotowa. Cel: użytkownik dostaje natychmiastowy feedback
+    // („coś się dzieje") + możliwość anulowania w trakcie.
+    function enterPreviewBuilding(initialLabel) {
+      if (!previewDialog || typeof previewDialog.showModal !== "function") return false;
+      previewBuildAborted = false;
+      previewDialog.classList.add("is-building");
+      setPreviewProgress(0, initialLabel || "Przygotowuję dane…");
+      try {
+        if (!previewDialog.open) previewDialog.showModal();
+      } catch (_e) { return false; }
+      // Focus na „Anuluj generowanie" — keyboard users mogą natychmiast
+      // przerwać Esc-em (dialog default) lub Enterem na przycisku.
+      if (previewProgressCancel) {
+        try { previewProgressCancel.focus(); } catch (_e2) {}
+      }
+      return true;
+    }
+    // Przejście „building" → „ready": ukrywamy pasek, zdejmujemy klasę,
+    // ujawniamy treść podglądu. Caller wywołuje to PO finalizeZip().
+    function enterPreviewReady() {
+      hidePreviewProgress();
+      if (previewDialog) previewDialog.classList.remove("is-building");
+    }
+    // „✕ Anuluj generowanie" — przerywa flow generowania ZIPa.
+    // Ustawia previewBuildAborted=true (sprawdzane w finalizeZip-callbacks),
+    // zamyka modal i czyści pasek statusu poza modalem.
+    if (previewProgressCancel) {
+      previewProgressCancel.addEventListener("click", function () {
+        previewBuildAborted = true;
+        hidePreviewProgress();
+        if (previewDialog) previewDialog.classList.remove("is-building");
+        if (previewDialog && previewDialog.open) previewDialog.close("build-aborted");
+        if (typeof hideExportProgress === "function") hideExportProgress();
+        if (typeof exportStatus !== "undefined" && exportStatus) {
+          exportStatus.textContent = "Anulowano generowanie paczki.";
+        }
+      });
+    }
     var previewTitle = root.querySelector("#export-preview-title");
     var previewFilenameWrap = root.querySelector("[data-export-preview-filename]");
     var previewFilenameValue = root.querySelector("[data-export-preview-filename-value]");
@@ -4918,38 +5158,61 @@ const renderHtml = ({
             // (CSV-e per metryka + obrazki gotowe do wklejenia w raport).
             // Zwykly "zip" celowo zostaje minimalne (tylko CSV + metadata).
             if (exportStatus) exportStatus.textContent = "Renderuję PNG sparkline'ów…";
+            // Otwieramy modal natychmiast w fazie „building" — user widzi
+            // pasek postępu wewnątrz modala (równolegle z paskiem statusu
+            // poza modalem). Można przerwać przyciskiem „✕ Anuluj generowanie",
+            // który ustawia previewBuildAborted=true (sprawdzane w callbacku).
+            var openedBuilding = enterPreviewBuilding("Renderuję PNG sparkline'ów… 0/" + sparks.length);
             // Pasek postępu: start 0% (pre-render), aktualizowany przez
             // snapshotSparkPngs(onProgress) per zakończony PNG, finał
-            // 100% + „Gotowe do pobrania" po finalizeZip().
-            setExportProgress(0, "Renderuję PNG… 0/" + sparks.length);
+            // 100% + „Gotowe do pobrania" po finalizeZip(). Wszystkie
+            // wywołania mirrorujemy do setPreviewProgress (modal) i
+            // setExportProgress (status bar) — single source of UI truth.
+            function dualProgress(pct, label, opts) {
+              setExportProgress(pct, label, opts);
+              if (openedBuilding) setPreviewProgress(pct, label, opts);
+            }
+            dualProgress(0, "Renderuję PNG… 0/" + sparks.length);
             snapshotSparkPngs(function (done, total) {
+              if (previewBuildAborted) return;
               var pct = total > 0 ? Math.round((done / total) * 90) : 90;
-              setExportProgress(pct, "Renderuję PNG… " + done + "/" + total);
+              dualProgress(pct, "Renderuję PNG… " + done + "/" + total);
             }).then(function (pngs) {
-              setExportProgress(95, "Pakuję archiwum…");
+              if (previewBuildAborted) return;
+              dualProgress(95, "Pakuję archiwum…");
               finalizeZip(pngs);
               if (pendingExport) pendingExport.thresholdNote = thresholdNote;
-              setExportProgress(100, "Gotowe do pobrania", { done: true, autoHideMs: 3500 });
+              dualProgress(100, "Gotowe do pobrania", { done: true, autoHideMs: 3500 });
               announceReadyWithSize();
+              // Przejście „building" → „ready" w modalu (zdejmuje klasę,
+              // ujawnia header/body/footer). Następnie standardowy flow.
+              enterPreviewReady();
               openPreviewOrDownload();
             }).catch(function () {
+              if (previewBuildAborted) return;
               // Nawet jeśli wszystkie PNG-i padną, eksport CSV-ów leci dalej.
-              setExportProgress(95, "Pakuję archiwum…");
+              dualProgress(95, "Pakuję archiwum…");
               finalizeZip([]);
               if (pendingExport) pendingExport.thresholdNote = thresholdNote;
-              setExportProgress(100, "Gotowe do pobrania", { done: true, autoHideMs: 3500 });
+              dualProgress(100, "Gotowe do pobrania", { done: true, autoHideMs: 3500 });
               announceReadyWithSize();
+              enterPreviewReady();
               openPreviewOrDownload();
             });
             return; // dialog otworzy się w callbacku
           }
           // Tryb "zip" (bez PNG-ów) — generowanie jest synchroniczne i
-          // krótkie, ale i tak pokazujemy szybki przebieg paska, żeby
-          // user dostał wizualne potwierdzenie „buduję → gotowe".
+          // krótkie, ale i tak pokazujemy szybki przebieg paska wewnątrz
+          // modala (otwartego w fazie „building"), żeby user zobaczył
+          // jednolity feedback „buduję → gotowe" niezależnie od wariantu.
+          var openedSyncBuilding = enterPreviewBuilding("Pakuję archiwum…");
           setExportProgress(40, "Pakuję archiwum…");
+          if (openedSyncBuilding) setPreviewProgress(40, "Pakuję archiwum…");
           finalizeZip([]);
           setExportProgress(100, "Gotowe do pobrania", { done: true, autoHideMs: 3500 });
+          if (openedSyncBuilding) setPreviewProgress(100, "Gotowe do pobrania", { done: true });
           announceReadyWithSize();
+          if (openedSyncBuilding) enterPreviewReady();
         } else {
           format = "csv";
           pendingExport = {
@@ -5064,7 +5327,14 @@ const renderHtml = ({
               try { anchor.scrollIntoView(); } catch (_e2) {}
             }
           })();
-          previewDialog.showModal();
+          // showModal rzuca InvalidStateError, jeśli dialog już otwarty
+          // (np. otworzyliśmy go wcześniej w fazie „building" — patrz
+          // enterPreviewBuilding). W takim wypadku tylko zdejmujemy klasę
+          // .is-building (już zrobione przez enterPreviewReady) — dialog
+          // pozostaje otwarty, ale teraz pokazuje już content podglądu.
+          if (!previewDialog.open) {
+            previewDialog.showModal();
+          }
           // Po otwarciu dialogu — krótki toast „✓ Wygenerowano: <nazwa>",
           // żeby user widział nazwę także bez scrollowania w obrębie modala
           // (dla małych viewportów download row może być pod fold).
@@ -5388,7 +5658,16 @@ const renderHtml = ({
       });
       previewDialog.addEventListener("close", function () {
         // Po zamknięciu (z dowolnego powodu) zwolnij payload, żeby kolejny
-        // klik „Podgląd" zawsze miał fresh build.
+        // klik „Podgląd" zawsze miał fresh build. Dodatkowo: jeśli zamknięto
+        // w fazie „building" (Esc / „✕ Anuluj generowanie"), oznacz abort,
+        // schowaj pasek progresu i zdejmij klasę .is-building — żeby kolejne
+        // otwarcie startowało z czystego stanu.
+        if (previewDialog.classList.contains("is-building")) {
+          previewBuildAborted = true;
+          previewDialog.classList.remove("is-building");
+          if (typeof hidePreviewProgress === "function") hidePreviewProgress();
+          if (typeof hideExportProgress === "function") hideExportProgress();
+        }
         pendingExport = null;
       });
     }
