@@ -4238,9 +4238,46 @@ const renderHtml = ({
     var readyToastDownload = root.querySelector("[data-export-ready-toast-download]");
     var readyToastClose = root.querySelector("[data-export-ready-toast-close]");
     var readyToastHistory = root.querySelector("[data-export-ready-toast-history]");
+    var readyToastCountdown = root.querySelector("[data-export-ready-toast-countdown]");
     var readyToastTimer = null;
+    // Interval do odświeżania countdownu „znika za Ns". 1 Hz wystarcza —
+    // i tak pokazujemy całe sekundy. Trzymamy referencję żeby clear w hide().
+    var readyToastCountdownInterval = null;
+    var readyToastCountdownDeadline = 0;
+    function clearReadyToastCountdown() {
+      if (readyToastCountdownInterval) {
+        clearInterval(readyToastCountdownInterval);
+        readyToastCountdownInterval = null;
+      }
+      if (readyToastCountdown) {
+        readyToastCountdown.hidden = true;
+        readyToastCountdown.textContent = "";
+        readyToastCountdown.classList.remove("is-urgent");
+      }
+    }
+    function startReadyToastCountdown(totalMs) {
+      if (!readyToastCountdown || !(totalMs > 0)) return;
+      readyToastCountdownDeadline = Date.now() + totalMs;
+      function tick() {
+        var leftMs = readyToastCountdownDeadline - Date.now();
+        var leftSec = Math.max(0, Math.ceil(leftMs / 1000));
+        readyToastCountdown.textContent = leftSec > 0
+          ? "znika za " + leftSec + " s"
+          : "znika…";
+        // Ostatnie 3 s — pulsacja, żeby user wiedział „zaraz zniknie".
+        readyToastCountdown.classList.toggle("is-urgent", leftSec > 0 && leftSec <= 3);
+        if (leftMs <= 0 && readyToastCountdownInterval) {
+          clearInterval(readyToastCountdownInterval);
+          readyToastCountdownInterval = null;
+        }
+      }
+      readyToastCountdown.hidden = false;
+      tick(); // pierwsza wartość natychmiast, bez czekania 1s
+      readyToastCountdownInterval = setInterval(tick, 1000);
+    }
     function hideReadyToast() {
       if (readyToastTimer) { clearTimeout(readyToastTimer); readyToastTimer = null; }
+      clearReadyToastCountdown();
       if (!readyToast) return;
       readyToast.classList.remove("is-visible");
       setTimeout(function () {
