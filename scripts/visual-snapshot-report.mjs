@@ -4354,9 +4354,10 @@ const renderHtml = ({
         // przeglądarka (1:1 z pendingExport.filename / schowkiem).
         try {
           var dlNameInfo = getExportNameFormat(pendingExport);
-          var dlSizeLabel = (typeof formatBytes === "function" && pendingExport.byteSize)
-            ? formatBytes(pendingExport.byteSize)
-            : (pendingExport.sizeLabel || "");
+          // sizeLabel zapamiętujemy w pendingExport.sizeLabel przez
+          // announceReadyWithSize() — używamy go 1:1, żeby toast „downloaded"
+          // pokazał identyczny rozmiar co toast „ready" pokazany wcześniej.
+          var dlSizeLabel = pendingExport.sizeLabel || "";
           if (dlNameInfo && typeof showReadyToast === "function") {
             showReadyToast(dlNameInfo.filename, dlNameInfo.fmtTag, dlSizeLabel, "downloaded");
           }
