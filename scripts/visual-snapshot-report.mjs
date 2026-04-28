@@ -4483,11 +4483,23 @@ const renderHtml = ({
           // nadpisze go na „Pobrano …").
           var sizeLabel = "";
           if (pendingExport) {
-            var sizeBytes = pendingExport.blob ? pendingExport.blob.size
-              : (pendingExport.csv ? pendingExport.csv.length : 0);
-            sizeLabel = sizeBytes < 1024 ? sizeBytes + " B"
-              : sizeBytes < 1024 * 1024 ? Math.round(sizeBytes / 1024) + " KB"
-              : (sizeBytes / (1024 * 1024)).toFixed(1) + " MB";
+            // Preferuj zapamiętany sizeLabel z announceReadyWithSize()
+            // (ustawiony zaraz po finalizeZip / utworzeniu pendingExport CSV).
+            // Gwarantuje bit-identyczność stringa rozmiaru w pasku statusu,
+            // ready toast i nagłówku modala — bez ryzyka rozjazdu jednostek
+            // (np. "340 KB" vs "0.3 MB" przy granicy zaokrąglenia).
+            if (pendingExport.sizeLabel) {
+              sizeLabel = pendingExport.sizeLabel;
+            } else {
+              var sizeBytes = pendingExport.blob ? pendingExport.blob.size
+                : (pendingExport.csv ? pendingExport.csv.length : 0);
+              sizeLabel = typeof humanSize === "function"
+                ? humanSize(sizeBytes)
+                : (sizeBytes < 1024 ? sizeBytes + " B"
+                  : sizeBytes < 1024 * 1024 ? Math.round(sizeBytes / 1024) + " KB"
+                  : (sizeBytes / (1024 * 1024)).toFixed(1) + " MB");
+              pendingExport.sizeLabel = sizeLabel;
+            }
             // Single source of truth — sync paska statusu, tytułu modala
             // i etykiety przycisku „Pobierz" tym samym helperem, którego
             // użyje renderPreview za moment. Gwarantuje, że nazwa pliku
