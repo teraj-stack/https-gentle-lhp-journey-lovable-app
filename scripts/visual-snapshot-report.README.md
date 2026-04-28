@@ -538,7 +538,12 @@ pasujących do wszystkich aktywnych selectów (AND), bez re-runu skryptu.
    rzucamy floating toast `✓ Wygenerowano: <nazwa>` (~2.4s) wewnątrz
    dialogu — przydatne na małych viewportach, gdzie download row może
    być pod fold. Komunikat zostaje dopóki user nie kliknie „Pobierz"
-   (wtedy `downloadPending()` nadpisuje go na „Pobrano …").
+   (wtedy `downloadPending()` nadpisuje go na „Pobrano …"). Rozmiar pliku
+   jest liczony **raz** przez `humanSize(bytes)` w `announceReadyWithSize()`
+   tuż po `finalizeZip()` (sync `zip` + async `zip-split`, also CSV branch),
+   a wynik trzymany w `pendingExport.sizeLabel` — pasek statusu, ready toast
+   i nagłówek modala odczytują tę samą wartość, bez ryzyka rozjazdu jednostek
+   (np. `340 KB` vs `0.3 MB` na granicy zaokrąglenia).
 
    **Pasek postępu generowania ZIP** (`<progress>` obok statusu eksportu,
    `data-trend-export-progress`): pojawia się tylko podczas budowy archiwum
