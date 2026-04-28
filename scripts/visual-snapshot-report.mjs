@@ -2658,6 +2658,120 @@ const renderHtml = ({
       outline: 2px solid rgba(245,180,180,.9);
       outline-offset: 2px;
     }
+    /* Pasek postępu wewnątrz modala — widoczny w fazie „building" (przed
+       finalizeZip). Kolorystyka spójna z paskiem statusu eksportu poza
+       modalem (gold/anthracite), żeby user rozpoznał, że to ten sam proces. */
+    .export-preview-progress {
+      padding: 18px 22px;
+      background: linear-gradient(180deg, rgba(201,168,76,.08), rgba(201,168,76,.03));
+      border-bottom: 1px solid rgba(201,168,76,.22);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      animation: export-preview-progress-fade-in .22s ease-out both;
+    }
+    @keyframes export-preview-progress-fade-in {
+      from { opacity: 0; transform: translateY(-4px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .export-preview-progress-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 600;
+      color: #f4dfa3;
+      font-size: .92rem;
+    }
+    .export-preview-progress-icon {
+      display: inline-block;
+      animation: export-preview-progress-spin 2.4s linear infinite;
+      transform-origin: 50% 55%;
+    }
+    @keyframes export-preview-progress-spin {
+      from { transform: rotate(0deg); }
+      to   { transform: rotate(360deg); }
+    }
+    .export-preview-progress-pct {
+      margin-left: auto;
+      font-variant-numeric: tabular-nums;
+      font-size: .82rem;
+      color: rgba(244,223,163,.85);
+      letter-spacing: .04em;
+    }
+    .export-preview-progress-bar {
+      width: 100%;
+      height: 10px;
+      appearance: none;
+      -webkit-appearance: none;
+      border: none;
+      background: rgba(255,255,255,.06);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .export-preview-progress-bar::-webkit-progress-bar {
+      background: rgba(255,255,255,.06);
+      border-radius: 999px;
+    }
+    .export-preview-progress-bar::-webkit-progress-value {
+      background: linear-gradient(90deg, #c9a84c, #f4dfa3);
+      border-radius: 999px;
+      transition: width .25s ease;
+    }
+    .export-preview-progress-bar::-moz-progress-bar {
+      background: linear-gradient(90deg, #c9a84c, #f4dfa3);
+      border-radius: 999px;
+    }
+    .export-preview-progress.is-done .export-preview-progress-bar::-webkit-progress-value {
+      background: linear-gradient(90deg, #7fbf7f, #b6e4b6);
+    }
+    .export-preview-progress.is-done .export-preview-progress-bar::-moz-progress-bar {
+      background: linear-gradient(90deg, #7fbf7f, #b6e4b6);
+    }
+    .export-preview-progress.is-done .export-preview-progress-icon {
+      animation: none;
+      color: #b6e4b6;
+    }
+    .export-preview-progress-label {
+      margin: 0;
+      font-size: .84rem;
+      color: rgba(220,220,220,.85);
+      font-variant-numeric: tabular-nums;
+    }
+    .export-preview-progress-hint {
+      margin: 0;
+      font-size: .72rem;
+      color: rgba(180,180,180,.6);
+      font-style: italic;
+    }
+    .export-preview-progress-actions {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 4px;
+    }
+    .export-preview-progress-cancel {
+      background: rgba(220,120,120,.18);
+      color: rgba(245,180,180,.98);
+      border: 1px solid rgba(220,120,120,.55);
+      font-weight: 600;
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-size: .78rem;
+      cursor: pointer;
+      transition: background .15s ease;
+    }
+    .export-preview-progress-cancel:hover { background: rgba(220,120,120,.30); }
+    .export-preview-progress-cancel:focus-visible {
+      outline: 2px solid rgba(245,180,180,.9);
+      outline-offset: 2px;
+    }
+    /* W trybie „building" header/body/footer modala są ukryte —
+       widoczny tylko pasek postępu. Klasa .is-building na <dialog>. */
+    .export-preview-dialog.is-building .export-preview-header,
+    .export-preview-dialog.is-building .export-preview-body,
+    .export-preview-dialog.is-building .export-preview-download-row,
+    .export-preview-dialog.is-building .export-preview-footer {
+      display: none !important;
+    }
     /* Badge weryfikacji „schowek vs nazwa pliku" tuż przed Pobierz.
        4 stany kolorystyczne (checking/match/mismatch/unavailable) +
        fade-in. Maksymalna szerokość ogranicza skok layoutu przy długich
