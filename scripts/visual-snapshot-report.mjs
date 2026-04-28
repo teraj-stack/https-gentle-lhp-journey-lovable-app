@@ -1402,6 +1402,23 @@ const renderHtml = ({
         </div>
         <div class="export-ready-toast-actions">
           <button type="button" class="export-ready-toast-download" data-export-ready-toast-download title="Pobierz wygenerowany plik">⬇ Pobierz</button>
+          <!--
+            „Zobacz w historii" — pojawia się tylko w fazie „downloaded"
+            (po faktycznym zapisie pliku). Klik:
+              · upewnia się, że nazwa jest w „Ostatnie nazwy eksportu"
+                (jeśli wpis już istnieje — nic nie dodajemy, tylko podświetlamy),
+              · rozwija sekcję historii (jeśli zwinięta),
+              · smooth-scrolluje do niej i wyzwala animację .is-just-added
+                na konkretnym wpisie,
+              · zamyka toast (przeczytaliśmy CTA — nie potrzeba auto-hide).
+          -->
+          <button
+            type="button"
+            class="export-ready-toast-history"
+            data-export-ready-toast-history
+            title="Przejdź do sekcji „Ostatnie nazwy eksportu" i podświetl wpis dla tej nazwy."
+            hidden
+          >📜 Zobacz w historii</button>
           <button type="button" class="export-ready-toast-close" data-export-ready-toast-close aria-label="Zamknij powiadomienie">×</button>
         </div>
       </div>
@@ -2517,9 +2534,31 @@ const renderHtml = ({
       outline: 2px solid rgba(180,240,200,.9);
       outline-offset: 2px;
     }
-    .export-ready-toast-close {
+    /* „Zobacz w historii" — wariant link-style (mniej intruzywny niż gold/green
+       buttony obok), text-decoration podkreśla afordancję klikalności. */
+    .export-ready-toast-history {
       font: inherit;
-      font-size: 1rem;
+      font-size: .74rem;
+      font-weight: 500;
+      padding: 6px 8px;
+      border-radius: 6px;
+      background: transparent;
+      color: rgba(244,223,163,.95);
+      border: 1px solid rgba(201,168,76,.45);
+      cursor: pointer;
+      white-space: nowrap;
+      text-decoration: underline dotted rgba(201,168,76,.5);
+      text-underline-offset: 3px;
+    }
+    .export-ready-toast-history:hover {
+      background: rgba(201,168,76,.14);
+      text-decoration-style: solid;
+    }
+    .export-ready-toast-history:focus-visible {
+      outline: 2px solid rgba(244,223,163,.9);
+      outline-offset: 2px;
+    }
+    .export-ready-toast-close {
       line-height: 1;
       padding: 2px 6px;
       background: transparent;
@@ -3813,6 +3852,7 @@ const renderHtml = ({
     var readyToastTitle = root.querySelector("[data-export-ready-toast-title]");
     var readyToastDownload = root.querySelector("[data-export-ready-toast-download]");
     var readyToastClose = root.querySelector("[data-export-ready-toast-close]");
+    var readyToastHistory = root.querySelector("[data-export-ready-toast-history]");
     var readyToastTimer = null;
     function hideReadyToast() {
       if (readyToastTimer) { clearTimeout(readyToastTimer); readyToastTimer = null; }
@@ -3854,6 +3894,20 @@ const renderHtml = ({
       if (readyToastDownload) {
         readyToastDownload.hidden = ph === "downloaded";
       }
+      // „📜 Zobacz w historii" — pokazujemy tylko po fakcie pobrania.
+      // W fazie „ready" nazwa jeszcze nie trafiła do historii (history jest
+      // updatowana w downloadPending → pushExportHistory source:"download"),
+      // więc link byłby mylący.
+      if (readyToastHistory) {
+        readyToastHistory.hidden = ph !== "downloaded";
+        // Cache nazwy na elemencie — handler odczytuje stąd, żeby działać
+        // niezależnie od późniejszych zmian pendingExport.
+        if (ph === "downloaded") {
+          readyToastHistory.setAttribute("data-target-filename", filename || "");
+        } else {
+          readyToastHistory.removeAttribute("data-target-filename");
+        }
+      }
       // Klasa is-downloaded otwiera CSS hooka na zielony border / ikonę,
       // gdyby ktoś chciał zróżnicować wizualnie (na razie tylko semantyczne).
       readyToast.classList.toggle("is-downloaded", ph === "downloaded");
@@ -3877,6 +3931,53 @@ const renderHtml = ({
         // nazwa w toaście == nazwa w a.download == nazwa w schowku.
         if (typeof downloadPending === "function" && pendingExport) {
           downloadPending();
+        }
+        hideReadyToast();
+      });
+    }
+    // „📜 Zobacz w historii" — przenosi do sekcji „Ostatnie nazwy eksportu"
+    // i podświetla wpis dla nazwy pliku zapamiętanej w data-target-filename
+    // (ustawione przez showReadyToast w fazie „downloaded"). Jeśli z jakiegoś
+    // powodu wpis jeszcze nie jest w historii (np. user wyłączył history
+    // tracking), dorzucamy go z source:"download" zanim wywołamy
+    // renderExportHistory(name) — gwarantujemy, że highlight zawsze coś trafi.
+    if (readyToastHistory) {
+      readyToastHistory.addEventListener("click", function () {
+        var name = readyToastHistory.getAttribute("data-target-filename") || "";
+        if (!name) { hideReadyToast(); return; }
+        // Ensure-in-history: jeśli pushExportHistory dedupuje po nazwie
+        // (a tak właśnie robi — patrz „Ostatnie nazwy eksportu"), drugie
+        // wywołanie tylko podbije timestamp/przeniesie wpis na górę.
+        try {
+          if (typeof pushExportHistory === "function") {
+            pushExportHistory(name, { source: "download" });
+          }
+        } catch (_e) { /* noop — fallback do renderExportHistory(name) bez dorzucania */ }
+        try {
+          if (typeof renderExportHistory === "function") renderExportHistory(name);
+        } catch (_e2) { /* noop */ }
+        // Rozwijamy <details> historii (jeśli zwinięte) i smooth-scroll.
+        if (historyWrap) {
+          try { historyWrap.open = true; } catch (_e3) { /* not <details> → noop */ }
+          try {
+            var reduced = window.matchMedia
+              && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+            historyWrap.scrollIntoView({
+              behavior: reduced ? "auto" : "smooth",
+              block: "center",
+            });
+          } catch (_e4) {
+            try { historyWrap.scrollIntoView(); } catch (_e5) {}
+          }
+          // Przenosimy focus na konkretny wpis, jeśli renderExportHistory
+          // ustawił mu klasę .is-just-added — keyboard users wiedzą, dokąd
+          // ich „przerzuciliśmy".
+          setTimeout(function () {
+            try {
+              var freshly = historyWrap.querySelector(".trends-filter-history-list li.is-just-added button, .trends-filter-history-list li.is-just-added a");
+              if (freshly && typeof freshly.focus === "function") freshly.focus({ preventScroll: true });
+            } catch (_e6) {}
+          }, 350);
         }
         hideReadyToast();
       });
