@@ -2940,6 +2940,54 @@ const renderHtml = ({
           : ("tryb skrócony, " + built.colCount + " kolumn");
         previewMeta.textContent = built.count + "/" + built.total + " runów · " + modeLabel;
       }
+      // Filename row + dynamic title — pokazuje nazwę paczki, którą za chwilę
+      // pobierzemy. Sczytujemy z pendingExport.filename (single source of truth
+      // — ta sama wartość trafia do anchor.download). Dodatkowo porównujemy
+      // z computeExportBaseName() i wyświetlamy badge ✓ zgodne / ⚠ różni się
+      // (sanity check, że flow Kopiuj-nazwę i Pobierz dają identyczny string).
+      var pe = pendingExport;
+      var pendingName = pe && pe.filename ? pe.filename : null;
+      var pendingFmt = pe && pe.format ? pe.format : "csv";
+      if (previewTitle) {
+        var titleFmt = pendingFmt === "zip" || pendingFmt === "zip-split"
+          ? "ZIP" : "CSV";
+        previewTitle.textContent = "Podgląd eksportu " + titleFmt;
+      }
+      if (previewFilenameWrap && previewFilenameValue) {
+        if (pendingName) {
+          previewFilenameWrap.hidden = false;
+          previewFilenameValue.textContent = pendingName;
+          previewFilenameValue.classList.remove("is-copied");
+          if (previewFilenameCopy) {
+            previewFilenameCopy.classList.remove("is-copied");
+            previewFilenameCopy.textContent = "⧉";
+          }
+          // Match check vs live preview / „⧉ Kopiuj nazwę" — jeśli user
+          // zmienił filtry między „Podgląd" a renderem, mismatch ostrzega.
+          if (previewFilenameMatch) {
+            var live = null;
+            try { live = computeExportBaseName(); } catch (_e) { live = null; }
+            previewFilenameMatch.classList.remove("is-match", "is-mismatch");
+            if (!live) {
+              previewFilenameMatch.hidden = true;
+              previewFilenameMatch.textContent = "";
+            } else if (live === pendingName) {
+              previewFilenameMatch.hidden = false;
+              previewFilenameMatch.classList.add("is-match");
+              previewFilenameMatch.textContent = "✓ zgodne ze schowkiem";
+              previewFilenameMatch.title = "Identyczna nazwa jak ta z przycisku „⧉ Kopiuj nazwę" / live preview.";
+            } else {
+              previewFilenameMatch.hidden = false;
+              previewFilenameMatch.classList.add("is-mismatch");
+              previewFilenameMatch.textContent = "⚠ różni się od live";
+              previewFilenameMatch.title = "Filtry zmieniły się między klikiem „Podgląd" a teraz.\nLive: " + live + "\nW eksporcie: " + pendingName;
+            }
+          }
+        } else {
+          previewFilenameWrap.hidden = true;
+          previewFilenameValue.textContent = "";
+        }
+      }
     }
     function escapeText(s) {
       return String(s == null ? "" : s)
