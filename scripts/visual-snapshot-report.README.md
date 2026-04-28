@@ -457,6 +457,16 @@ pasujących do wszystkich aktywnych selectów (AND), bez re-runu skryptu.
     lista w `console.warn` (`[visual-snapshot-report] ZIP validation
     errors: […]`). Typowe przypadki: brak EOCD (uszkodzony blob),
     mismatch liczby wpisów, mismatch CRC (corruption pamięci/transferu).
+
+  **Przycisk „⧉ Kopiuj nazwę"** (obok „Podgląd i eksport…") kopiuje do
+  schowka pełną nazwę paczki, którą wygeneruje aktualny stan filtrów —
+  format `savings-filtered-<mode>-<timestamp>-<filterHash>.<csv|zip>`.
+  Nazwa jest liczona z DOKŁADNIE tej samej formuły co eksport (ten sam
+  `buildExportRows()` + `shortHash` + parytet auto-ZIP), więc skopiowana
+  wartość zawsze zgadza się z plikiem, który zaraz pobierzesz. Status
+  pokazuje skopiowaną nazwę; przycisk na 2 s zmienia się na „✓ Skopiowano".
+  Przydatne do: nazywania zewnętrznych folderów audytu, klejenia do
+  ticketu/PR-a przed pobraniem, sortowania pobranych ZIP-ów.
 - Pod selectami znajduje się rozwijana sekcja **„Unikalne kombinacje
   `command` + `flag_*`"** — tabela wszystkich krotek wartości, które
   rzeczywiście wystąpiły w `history.csv`, posortowana malejąco po liczbie
