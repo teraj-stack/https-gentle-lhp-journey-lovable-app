@@ -2896,6 +2896,11 @@ const renderHtml = ({
     var previewTrunc = root.querySelector("[data-export-preview-truncated]");
     var previewCancel = root.querySelector("[data-export-preview-cancel]");
     var previewConfirm = root.querySelector("[data-export-preview-confirm]");
+    var previewTitle = root.querySelector("#export-preview-title");
+    var previewFilenameWrap = root.querySelector("[data-export-preview-filename]");
+    var previewFilenameValue = root.querySelector("[data-export-preview-filename-value]");
+    var previewFilenameCopy = root.querySelector("[data-export-preview-filename-copy]");
+    var previewFilenameMatch = root.querySelector("[data-export-preview-filename-match]");
     var PREVIEW_LIMIT = 20;
     var pendingExport = null; // {csv, filename, count, total, mode, colCount, missingCount}
 
