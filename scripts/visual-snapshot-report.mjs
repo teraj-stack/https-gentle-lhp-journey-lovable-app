@@ -2590,6 +2590,24 @@ const renderHtml = ({
       opacity: .7;
       cursor: wait;
     }
+    /* „✕ Anuluj pobieranie" — wariant ostrzegawczy (czerwonawy), pojawia się
+       wyłącznie w stanie CHECKING/re-confirm. Pozycjonowany obok „Pobierz". */
+    .export-preview-confirm-abort {
+      background: rgba(220,120,120,.18);
+      color: rgba(245,180,180,.98);
+      border: 1px solid rgba(220,120,120,.55);
+      font-weight: 600;
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-size: .78rem;
+      cursor: pointer;
+      transition: background .15s ease;
+    }
+    .export-preview-confirm-abort:hover { background: rgba(220,120,120,.30); }
+    .export-preview-confirm-abort:focus-visible {
+      outline: 2px solid rgba(245,180,180,.9);
+      outline-offset: 2px;
+    }
     /* Badge weryfikacji „schowek vs nazwa pliku" tuż przed Pobierz.
        4 stany kolorystyczne (checking/match/mismatch/unavailable) +
        fade-in. Maksymalna szerokość ogranicza skok layoutu przy długich
