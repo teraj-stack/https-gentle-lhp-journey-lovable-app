@@ -4478,6 +4478,7 @@ const renderHtml = ({
       readyToastCountdownDeadline = Date.now() + ms;
       readyToastTimer = setTimeout(hideReadyToast, ms);
       if (readyToastCountdown) readyToastCountdown.classList.remove("is-paused");
+      resumeReadyToastProgress();
       persistReadyToastState();
     }
     function hideReadyToast() {
