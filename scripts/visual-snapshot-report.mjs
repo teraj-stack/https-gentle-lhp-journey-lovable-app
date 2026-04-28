@@ -1108,6 +1108,15 @@ const renderHtml = ({
         <button type="button" class="trends-filter-export" data-trend-export title="Pokaż podgląd 20 pierwszych wierszy, potem pobierz przefiltrowane runy w wybranym formacie">⬇ Podgląd i eksport…</button>
         <button type="button" class="trends-filter-copy-name" data-trend-copy-name title="Skopiuj do schowka nazwę paczki eksportu (timestamp + skrót filtra), żeby łatwo nazwać/posortować pobrane pliki.">⧉ Kopiuj nazwę</button>
         <span class="trends-filter-export-status" data-trend-export-status role="status" aria-live="polite"></span>
+        <!--
+          Badge weryfikujący, że nazwa POKAZANA W MODALU jest 1:1 z nazwą
+          REALNIE UŻYTĄ przy `a.download` (i tym samym w schowku po wygenerowaniu).
+          Liczony w `downloadPending()` zaraz po przypisaniu `a.download`,
+          przed `a.click()`. Pozwala wykryć każdą rozbieżność wprowadzoną
+          między „Podgląd" a „Pobierz" (np. monkey-patch, race condition).
+          Domyślnie hidden — pokazuje się tylko po faktycznym pobraniu.
+        -->
+        <span class="trends-filter-download-parity" data-trend-download-parity role="status" aria-live="polite" hidden></span>
         <span class="trends-filter-zip-hint" data-trend-zip-hint role="status" aria-live="polite" hidden></span>
       </div>
       <div class="trends-filter-name-preview" data-trend-name-preview hidden>
