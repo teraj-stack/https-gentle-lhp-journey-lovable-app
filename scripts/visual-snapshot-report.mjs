@@ -2225,7 +2225,22 @@ const renderHtml = ({
       opacity: .8;
       font-family: ui-monospace, monospace;
     }
-    .export-preview-filename {
+    .export-preview-cache-badge {
+      margin: 4px 0 0;
+      font-size: .72rem;
+      padding: 4px 10px;
+      background: rgba(140,160,200,.14);
+      color: rgba(200,215,240,.95);
+      border: 1px solid rgba(140,160,200,.45);
+      border-radius: 4px;
+      display: inline-block;
+      letter-spacing: .03em;
+    }
+    .export-preview-cache-badge.is-offline {
+      background: rgba(220,140,80,.18);
+      color: rgba(250,210,170,1);
+      border-color: rgba(220,140,80,.55);
+    }
       display: flex;
       align-items: center;
       gap: 6px;
