@@ -3949,11 +3949,13 @@ const renderHtml = ({
             ? ("pełny schemat, " + pendingExport.colCount + " kol."
               + (pendingExport.missingCount ? ", " + pendingExport.missingCount + " pustych" : ""))
             : ("skrócony, " + pendingExport.colCount + " kol.");
-          var fmtLabel = pendingExport.format === "zip" ? " · ZIP"
-            : pendingExport.format === "zip-split" ? " · ZIP split (" + pendingExport.fileCount + " plików)"
-            : "";
+          // Etykieta formatu czytana z tego samego helpera co tytuł
+          // modala / status „Wygenerowano…" / ready toast — gwarantuje
+          // identyczny napis CSV vs ZIP we wszystkich fazach.
+          var dlInfo = getExportNameFormat(pendingExport);
+          var fmtLabel = dlInfo && dlInfo.format !== "csv" ? " · " + dlInfo.fmtTag : "";
           exportStatus.textContent = "Pobrano " + pendingExport.count + "/" + pendingExport.total
-            + " (" + ml + fmtLabel + ") → " + pendingExport.filename
+            + " (" + ml + fmtLabel + ") → " + (dlInfo ? dlInfo.filename : pendingExport.filename)
             + (pendingExport.thresholdNote || "");
           // Walidacja ZIP po pobraniu — czytamy bajty z blobu (te same,
           // które poszły do pliku użytkownika), parsujemy EOCD + central
