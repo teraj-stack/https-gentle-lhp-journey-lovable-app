@@ -3091,6 +3091,40 @@ const renderHtml = ({
           previewFilenameValue.textContent = "";
         }
       }
+      // Mirror do wyróżnionego download row pod tabelą — ten sam pendingName,
+      // ten sam wynik live-compare. Świadomie dublujemy renderowanie zamiast
+      // współdzielić node — header pokazuje kompaktową formę dla scan-ability,
+      // download row pokazuje pełną nazwę z word-break dla weryfikacji „znak
+      // po znaku" tuż przed klikiem „Pobierz".
+      if (previewDownloadRow && previewDownloadRowValue) {
+        if (pendingName) {
+          previewDownloadRow.hidden = false;
+          previewDownloadRowValue.textContent = pendingName;
+          previewDownloadRowValue.classList.remove("is-copied");
+          if (previewDownloadRowMatch) {
+            var live2 = null;
+            try { live2 = computeExportBaseName(); } catch (_e2) { live2 = null; }
+            previewDownloadRowMatch.classList.remove("is-match", "is-mismatch");
+            if (!live2) {
+              previewDownloadRowMatch.hidden = true;
+              previewDownloadRowMatch.textContent = "";
+            } else if (live2 === pendingName) {
+              previewDownloadRowMatch.hidden = false;
+              previewDownloadRowMatch.classList.add("is-match");
+              previewDownloadRowMatch.textContent = "✓ identyczna ze schowkiem";
+              previewDownloadRowMatch.title = "Ta nazwa trafi 1:1 do pliku oraz do schowka po wygenerowaniu.";
+            } else {
+              previewDownloadRowMatch.hidden = false;
+              previewDownloadRowMatch.classList.add("is-mismatch");
+              previewDownloadRowMatch.textContent = "⚠ różni się od live";
+              previewDownloadRowMatch.title = "Filtry zmieniły się od kliknięcia „Podgląd".\nLive: " + live2 + "\nW eksporcie: " + pendingName;
+            }
+          }
+        } else {
+          previewDownloadRow.hidden = true;
+          previewDownloadRowValue.textContent = "";
+        }
+      }
     }
     function escapeText(s) {
       return String(s == null ? "" : s)
