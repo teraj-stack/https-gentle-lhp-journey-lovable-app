@@ -2440,6 +2440,7 @@ const renderHtml = ({
         headerCells: cols,
         rowsCells: rowsCells,
         splitCsvs: splitCsvs,
+        points: pts, // potrzebne do manifest.rowRange (first/last generatedAt)
       };
     }
     function shortHash(s) {
