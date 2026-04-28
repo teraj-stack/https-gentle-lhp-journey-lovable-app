@@ -2150,7 +2150,118 @@ const renderHtml = ({
       color: rgba(250,200,200,1);
       border-color: rgba(220,120,120,.6);
     }
-    .export-preview-body {
+    /* Page-level „Gotowe do pobrania" toast — fixed top-right, pojawia
+       się PRZED otwarciem modala podglądu. Zawiera filename + przycisk
+       „Pobierz" (skrót do downloadPending bez wchodzenia w modal). */
+    .export-ready-toast {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      z-index: 9999;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      max-width: min(420px, calc(100vw - 32px));
+      padding: 12px 14px;
+      border-radius: 10px;
+      background: rgba(28,38,28,.97);
+      color: rgba(225,245,225,1);
+      border: 1px solid rgba(120,180,120,.55);
+      box-shadow: 0 10px 32px rgba(0,0,0,.5);
+      font-size: .82rem;
+      line-height: 1.4;
+      transform: translateY(-12px);
+      opacity: 0;
+      transition: opacity .22s ease, transform .22s ease;
+      pointer-events: none;
+    }
+    .export-ready-toast[hidden] { display: none; }
+    .export-ready-toast.is-visible {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+    .export-ready-toast-icon {
+      flex: 0 0 auto;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: rgba(120,200,140,.25);
+      color: rgba(180,240,200,1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: .9rem;
+    }
+    .export-ready-toast-body {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+    .export-ready-toast-title {
+      font-weight: 700;
+      letter-spacing: .02em;
+      margin-bottom: 2px;
+    }
+    .export-ready-toast-filename {
+      display: block;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: .74rem;
+      word-break: break-all;
+      white-space: normal;
+      color: rgba(210,235,215,.95);
+      background: rgba(127,127,127,.12);
+      padding: 3px 6px;
+      border-radius: 4px;
+      margin-top: 2px;
+    }
+    .export-ready-toast-meta {
+      font-size: .68rem;
+      opacity: .75;
+      margin-top: 4px;
+    }
+    .export-ready-toast-actions {
+      flex: 0 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      align-items: stretch;
+    }
+    .export-ready-toast-download {
+      font: inherit;
+      font-size: .76rem;
+      font-weight: 600;
+      padding: 6px 10px;
+      border-radius: 6px;
+      background: rgba(120,200,140,.22);
+      color: rgba(220,250,225,1);
+      border: 1px solid rgba(120,200,140,.6);
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .export-ready-toast-download:hover { background: rgba(120,200,140,.35); }
+    .export-ready-toast-download:focus-visible {
+      outline: 2px solid rgba(180,240,200,.9);
+      outline-offset: 2px;
+    }
+    .export-ready-toast-close {
+      font: inherit;
+      font-size: 1rem;
+      line-height: 1;
+      padding: 2px 6px;
+      background: transparent;
+      color: rgba(210,235,215,.85);
+      border: 1px solid transparent;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .export-ready-toast-close:hover {
+      background: rgba(127,127,127,.18);
+      border-color: rgba(127,127,127,.35);
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .export-ready-toast { transition: none; }
+    }
       padding: 8px 18px 4px;
       max-height: 55vh;
       overflow: auto;
