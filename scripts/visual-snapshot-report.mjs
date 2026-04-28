@@ -3172,7 +3172,13 @@ const renderHtml = ({
       if (previewTitle) {
         var titleFmt = pendingFmt === "zip" || pendingFmt === "zip-split"
           ? "ZIP" : "CSV";
-        previewTitle.textContent = "Podgląd eksportu " + titleFmt;
+        // Dynamiczny tytuł z formatem + zamrożoną nazwą pliku.
+        // To jest „freeze point" — pendingName pochodzi z pendingExport
+        // (single source of truth dla anchor.download), więc tytuł modala
+        // pokrywa się 1:1 z nazwą w download row i tym, co trafi na dysk.
+        previewTitle.textContent = pendingName
+          ? "Podgląd eksportu " + titleFmt + " · " + pendingName
+          : "Podgląd eksportu " + titleFmt;
       }
       if (previewConfirm) {
         // Sync etykiety przycisku potwierdzenia z formatem (CSV/ZIP), żeby
