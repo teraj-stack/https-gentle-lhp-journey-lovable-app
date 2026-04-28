@@ -2867,19 +2867,24 @@ const renderHtml = ({
             format: "csv",
           };
         }
-        // Fallback dla przeglądarek bez <dialog> (Safari < 15.4): od razu
-        // pobierz, ale poinformuj usera w statusie, że podgląd nieosiągalny.
-        if (!previewDialog || typeof previewDialog.showModal !== "function") {
-          downloadPending();
-          if (exportStatus && exportStatus.textContent) {
-            exportStatus.textContent += " (podgląd niedostępny w tej przeglądarce)";
+
+        // Otwarcie dialogu podglądu lub fallback do natychmiastowego download
+        // (Safari < 15.4 bez <dialog>). Wydzielone, żeby async branch
+        // (zip-split z PNG-ami) mógł zawołać dokładnie ten sam flow.
+        function openPreviewOrDownload() {
+          if (!previewDialog || typeof previewDialog.showModal !== "function") {
+            downloadPending();
+            if (exportStatus && exportStatus.textContent) {
+              exportStatus.textContent += " (podgląd niedostępny w tej przeglądarce)";
+            }
+            pendingExport = null;
+            return;
           }
-          pendingExport = null;
-          return;
+          renderPreview(built);
+          previewDialog.showModal();
+          if (previewConfirm) previewConfirm.focus();
         }
-        renderPreview(built);
-        previewDialog.showModal();
-        if (previewConfirm) previewConfirm.focus();
+        openPreviewOrDownload();
       });
     }
     if (previewCancel) {
