@@ -2567,6 +2567,50 @@ const renderHtml = ({
       font-weight: 600;
     }
     .export-preview-confirm:hover { background: rgba(201,168,76,.36); }
+    .export-preview-confirm.is-pending-verify {
+      opacity: .7;
+      cursor: wait;
+    }
+    /* Badge weryfikacji „schowek vs nazwa pliku" tuż przed Pobierz.
+       4 stany kolorystyczne (checking/match/mismatch/unavailable) +
+       fade-in. Maksymalna szerokość ogranicza skok layoutu przy długich
+       komunikatach. */
+    .export-preview-confirm-verify {
+      flex: 0 0 auto;
+      font-size: .68rem;
+      padding: 4px 8px;
+      border-radius: 4px;
+      letter-spacing: .03em;
+      font-weight: 500;
+      border: 1px solid transparent;
+      max-width: 240px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      transition: opacity .2s ease;
+    }
+    .export-preview-confirm-verify.is-checking {
+      background: rgba(127,127,127,.18);
+      color: rgba(220,220,220,.85);
+      border-color: rgba(127,127,127,.40);
+    }
+    .export-preview-confirm-verify.is-match {
+      background: rgba(120,180,120,.22);
+      color: rgba(190,235,190,.98);
+      border-color: rgba(120,180,120,.55);
+    }
+    .export-preview-confirm-verify.is-mismatch {
+      background: rgba(220,120,120,.25);
+      color: rgba(245,180,180,.98);
+      border-color: rgba(220,120,120,.60);
+      cursor: help;
+    }
+    .export-preview-confirm-verify.is-unavailable {
+      background: rgba(201,168,76,.12);
+      color: rgba(220,200,160,.95);
+      border-color: rgba(201,168,76,.35);
+      cursor: help;
+    }
     .trends-empty {
       margin: .25rem 0 .75rem;
       font-size: .85rem;
