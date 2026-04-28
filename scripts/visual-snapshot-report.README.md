@@ -473,11 +473,24 @@ pasujących do wszystkich aktywnych selectów (AND), bez re-runu skryptu.
    → a/c/e/o/s/z/z), ręczne mapowanie `ł→l`, `Ł→L` (NFKD ich nie rozkłada),
    whitelist `[A-Za-z0-9._-]` (wszystko inne — spacje, `/`, `\`, `:`, `*`,
    `?`, `"`, `<`, `>`, `|`, znaki kontrolne, emoji — zamieniane na `-`),
-   kolaps `-{2,}` → `-`, trim brzegowych `._-` (Windows nie akceptuje nazw
-   kończących się kropką lub spacją). Pusty segment → `file`. Dzięki temu
-   nazwa działa identycznie na Windows (zarezerwowane znaki + limity NTFS),
-   macOS (HFS+/APFS, normalizacja Unicode) i Linuksie, a także jest
-   bezpieczna w URL-ach, S3 keys i argumentach CLI bez escapowania.
+   kolaps `-{2,}` → `-`, trim brzegowych `._-`. Dodatkowo:
+   - **Windows reserved names** (`CON`, `PRN`, `AUX`, `NUL`, `COM1–9`,
+     `LPT1–9`, case-insensitive, także z rozszerzeniem) sufiksowane `_`
+     (np. `con.csv` → `con_.csv`) zamiast tłumić do `file`.
+   - **Cap 80 znaków per segment** — bezpieczna rezerwa na Windows MAX_PATH
+     260 i 255-znakowy basename limit NTFS/HFS+/ext4.
+   - **Rozszerzenie zawsze lowercase** (`.zip`/`.csv`) — case-insensitive
+     systemy plików (NTFS, HFS+ default, exFAT) inaczej traktują
+     `FOO.ZIP` i `foo.zip` niespójnie po sync między hostami.
+   - **Finalny guard `buildSafeFilename`**: nigdy `.`/spacja na końcu
+     basename (Windows je niemo obcina → rozjazd UI vs dysk), nigdy
+     leading `.` (ukryty plik na *nix + część cloud sync klientów go pomija).
+
+   Wewnętrzne wpisy w archiwum ZIP (`spark-<key>.png`, `png-saved.csv`,
+   `discovery-saved.csv`, `metadata.json`, `<baseName>.csv`) przechodzą
+   przez ten sam `buildSafeFilename`, więc unzip działa spójnie wszędzie.
+   Pusty segment → `file`. Nazwa jest też bezpieczna w URL-ach, S3 keys
+   i argumentach CLI bez escapowania.
 
    **Historia ostatnich 10 nazw eksportu** (`<details>` „🕘 Ostatnie nazwy
    eksportu" pod paskiem filtrów): każde użycie „⧉ Kopiuj nazwę" oraz każde

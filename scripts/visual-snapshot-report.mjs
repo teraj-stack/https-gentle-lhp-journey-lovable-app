@@ -3866,7 +3866,11 @@ const renderHtml = ({
                 if (!pngBlob) { resolve(null); return; }
                 pngBlob.arrayBuffer().then(function (ab) {
                   resolve({
-                    name: "spark-" + key.replace(/[^a-z0-9._-]/gi, "_") + ".png",
+                    // Wewnętrzna nazwa wpisu w ZIP — przepuszczona przez
+                    // ten sam buildSafeFilename co główny plik archiwum,
+                    // żeby unzip działał spójnie na Windows/macOS/Linux
+                    // (m.in. zero spacji, polskich znaków i Win-reserved).
+                    name: buildSafeFilename(["spark", key], "png"),
                     bytes: new Uint8Array(ab),
                     width: canvas.width,
                     height: canvas.height,
@@ -4004,22 +4008,53 @@ const renderHtml = ({
     //   znaki kontrolne, emoji) zamieniana na "-".
     // - kolapsujemy wielokrotne myślniki i ucinamy z brzegów ("." też, bo Windows
     //   nie lubi nazw kończących się kropką/spacją). Pusty wynik → "file".
+    // Cross-platform safe filename: Windows + macOS + Linux.
+    // Reguły (najostrzejszy wspólny mianownik = Windows):
+    //  • whitelist: [A-Za-z0-9._-] (zero spacji, zero polskich znaków)
+    //  • polskie diakrytyki via NFKD + ręczne ł/Ł → l/L (NFKD ich nie rozkłada)
+    //  • zakaz znaków zarezerwowanych Windows: <>:"/\|?* + 0x00–0x1F
+    //  • zakaz nazw zarezerwowanych Windows (CON, PRN, AUX, NUL, COM1–9, LPT1–9)
+    //    — case-insensitive, także gdy występują z rozszerzeniem
+    //  • zakaz trailing dot/space (Windows je obcina → rozjazd nazwy
+    //    pokazanej w UI vs faktycznie zapisanej na dysku)
+    //  • cap 80 znaków per segment (bezpieczna rezerwa na Windows MAX_PATH 260
+    //    i typowe limity 255 na NTFS/HFS+/ext4 dla całego basename)
+    //  • rozszerzenie zawsze lowercase (case-insensitive systemy plików
+    //    inaczej myślą, że "ARCHIVE.ZIP" i "archive.zip" to dwa pliki)
+    var WIN_RESERVED_NAMES = /^(con|prn|aux|nul|com[1-9]|lpt[1-9])$/i;
     function sanitizeFilenamePart(s) {
       var str = String(s == null ? "" : s);
       try { str = str.normalize("NFKD").replace(/[\u0300-\u036f]/g, ""); } catch (_) {}
       // Polskie „ł/Ł" nie rozkłada się przez NFKD — mapujemy ręcznie.
       str = str.replace(/ł/g, "l").replace(/Ł/g, "L");
+      // Whitelist [A-Za-z0-9._-] — od razu wymiata też spacje, znaki
+      // zarezerwowane Windows (<>:"/\|?*) i znaki kontrolne (0x00–0x1F).
       str = str.replace(/[^A-Za-z0-9._-]+/g, "-");
       str = str.replace(/-{2,}/g, "-").replace(/^[-._]+|[-._]+$/g, "");
+      // Reserved names Windows — z lub bez rozszerzenia. Sufiksujemy "_",
+      // żeby zachować informacyjność nazwy zamiast tłumić ją do "file".
+      var nameOnly = str.split(".")[0] || "";
+      if (WIN_RESERVED_NAMES.test(nameOnly)) str = str.replace(nameOnly, nameOnly + "_");
+      // Cap długości (per segment) — chroni przed MAX_PATH na Windows.
+      if (str.length > 80) str = str.slice(0, 80).replace(/[-._]+$/g, "");
       return str || "file";
     }
 
     // Buduje pełną nazwę pliku z bezpiecznych segmentów + rozszerzenia.
-    // Rozszerzenie sanityzujemy osobno, żeby nie uciąć kropki separatora.
+    // Rozszerzenie sanityzujemy osobno (żeby nie uciąć kropki separatora)
+    // i wymuszamy lowercase — case-insensitive systemy plików (NTFS, HFS+
+    // default, exFAT) inaczej traktują "FOO.ZIP" i "foo.zip" niespójnie.
     function buildSafeFilename(parts, ext) {
       var safeParts = parts.map(sanitizeFilenamePart).filter(Boolean);
-      var safeExt = ext ? "." + sanitizeFilenamePart(ext.replace(/^\.+/, "")) : "";
-      return safeParts.join("-") + safeExt;
+      var safeExt = ext
+        ? "." + sanitizeFilenamePart(ext.replace(/^\.+/, "")).toLowerCase()
+        : "";
+      var base = safeParts.join("-") + safeExt;
+      // Cross-platform finalny guard: nigdy nie kończ basename kropką ani
+      // spacją (Windows je niemo obcina), nigdy nie zaczynaj kropką
+      // (ukryty plik na *nix + niektóre cloud sync klienty go pomijają).
+      base = base.replace(/[. ]+$/g, "").replace(/^\.+/, "");
+      return base || "file";
     }
 
     function computeExportBaseName() {
