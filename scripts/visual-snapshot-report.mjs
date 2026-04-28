@@ -2821,6 +2821,52 @@ const renderHtml = ({
     var exportBtn = root.querySelector("[data-trend-export]");
     var copyNameBtn = root.querySelector("[data-trend-copy-name]");
     var exportStatus = root.querySelector("[data-trend-export-status]");
+    var exportProgressWrap = root.querySelector("[data-trend-export-progress]");
+    var exportProgressBar = root.querySelector("[data-trend-export-progress-bar]");
+    var exportProgressLabel = root.querySelector("[data-trend-export-progress-label]");
+    var exportProgressHideTimer = null;
+    /**
+     * Pokaż/aktualizuj pasek postępu generowania ZIP.
+     * value: 0–100, label: tekstowy opis fazy. Gdy done=true → klasa
+     * .is-done (zielony pasek) i etykieta „Gotowe do pobrania".
+     */
+    function setExportProgress(value, label, opts) {
+      if (!exportProgressWrap) return;
+      var pct = Math.max(0, Math.min(100, Math.round(value)));
+      exportProgressWrap.hidden = false;
+      if (exportProgressBar) {
+        exportProgressBar.value = pct;
+        exportProgressBar.setAttribute("aria-valuenow", String(pct));
+      }
+      if (exportProgressLabel) {
+        exportProgressLabel.textContent = label || (pct + "%");
+      }
+      var done = opts && opts.done;
+      exportProgressWrap.classList.toggle("is-done", !!done);
+      if (exportProgressHideTimer) {
+        clearTimeout(exportProgressHideTimer);
+        exportProgressHideTimer = null;
+      }
+      if (done && opts && opts.autoHideMs) {
+        exportProgressHideTimer = setTimeout(function () {
+          if (exportProgressWrap) {
+            exportProgressWrap.hidden = true;
+            exportProgressWrap.classList.remove("is-done");
+          }
+        }, opts.autoHideMs);
+      }
+    }
+    function hideExportProgress() {
+      if (exportProgressHideTimer) {
+        clearTimeout(exportProgressHideTimer);
+        exportProgressHideTimer = null;
+      }
+      if (!exportProgressWrap) return;
+      exportProgressWrap.hidden = true;
+      exportProgressWrap.classList.remove("is-done");
+      if (exportProgressBar) exportProgressBar.value = 0;
+      if (exportProgressLabel) exportProgressLabel.textContent = "0%";
+    }
     var downloadParityBadge = root.querySelector("[data-trend-download-parity]");
     var exportModeSelect = root.querySelector("[data-trend-export-mode]");
     var exportFormatSelect = root.querySelector("[data-trend-export-format]");
