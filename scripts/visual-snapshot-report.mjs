@@ -1105,6 +1105,21 @@ const renderHtml = ({
             <option value="off">Ignoruj próg</option>
           </select>
         </label>
+        <!--
+          Auto-hide toastu po pobraniu ZIP. Wartość w MS, 0 = bez auto-hide
+          (toast zostaje aż do kliku ×). Persistowane w ZIP_PREFS_KEY razem
+          z innymi preferencjami eksportu, używane w showReadyToast() w fazie
+          „downloaded". Faza „ready" (przed downloadem) nadal trzyma stałe 8s.
+        -->
+        <label class="trends-filter-label trends-filter-toast-hide" title="Po jakim czasie automatycznie schować toast „Pobrano ZIP”. „Bez auto-hide” = toast zostaje aż do ręcznego zamknięcia (×).">
+          auto-hide toastu
+          <select class="trends-filter-select" data-trend-toast-autohide>
+            <option value="8000">8 s</option>
+            <option value="12000" selected>12 s</option>
+            <option value="20000">20 s</option>
+            <option value="0">Bez auto-hide</option>
+          </select>
+        </label>
         <button type="button" class="trends-filter-export" data-trend-export title="Pokaż podgląd 20 pierwszych wierszy, potem pobierz przefiltrowane runy w wybranym formacie">⬇ Podgląd i eksport…</button>
         <!--
           „📦 Otwórz ostatnią paczkę" — rehydratuje OSTATNIO wygenerowaną
