@@ -1472,6 +1472,7 @@ const renderHtml = ({
         source of truth dla a.download. Przycisk × i auto-hide po 8s.
       -->
       <div class="export-ready-toast" data-export-ready-toast role="status" aria-live="polite" aria-atomic="true" hidden>
+        <div class="export-ready-toast-progress" data-export-ready-toast-progress aria-hidden="true" hidden><div class="export-ready-toast-progress-bar" data-export-ready-toast-progress-bar></div></div>
         <div class="export-ready-toast-icon" aria-hidden="true">✓</div>
         <div class="export-ready-toast-body">
           <div class="export-ready-toast-title" data-export-ready-toast-title>Gotowe do pobrania</div>
@@ -2684,6 +2685,50 @@ const renderHtml = ({
       opacity: 0;
       transition: opacity .22s ease, transform .22s ease;
       pointer-events: none;
+      overflow: hidden;
+    }
+    /* Subtelny pasek odliczania na dole toastu — pokazuje wizualnie ile
+       czasu zostało do auto-hide. Skaluje X od 1 → 0 (transform = GPU,
+       nie wywołuje reflow). Pause = paused animation-play-state przez
+       .is-paused na progressie. */
+    .export-ready-toast-progress {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 3px;
+      background: rgba(120,180,120,.12);
+      pointer-events: none;
+    }
+    .export-ready-toast-progress[hidden] { display: none; }
+    .export-ready-toast-progress-bar {
+      height: 100%;
+      width: 100%;
+      background: linear-gradient(90deg, rgba(140,210,160,.85), rgba(180,240,200,.95));
+      transform-origin: left center;
+      transform: scaleX(1);
+      will-change: transform;
+    }
+    .export-ready-toast-progress.is-running .export-ready-toast-progress-bar {
+      animation: export-ready-toast-progress-shrink linear forwards;
+      animation-duration: var(--toast-progress-duration, 8s);
+      animation-delay: var(--toast-progress-delay, 0s);
+    }
+    .export-ready-toast-progress.is-paused .export-ready-toast-progress-bar {
+      animation-play-state: paused;
+    }
+    @keyframes export-ready-toast-progress-shrink {
+      from { transform: scaleX(1); }
+      to   { transform: scaleX(0); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      /* Skip animacji — zostaje stała 30% jako delikatny statyczny wskaźnik
+         „auto-hide aktywny", bez ruchu który mógłby drażnić wrażliwych userów. */
+      .export-ready-toast-progress.is-running .export-ready-toast-progress-bar {
+        animation: none;
+        transform: scaleX(.3);
+        opacity: .5;
+      }
     }
     .export-ready-toast[hidden] { display: none; }
     .export-ready-toast.is-visible {
@@ -4264,6 +4309,44 @@ const renderHtml = ({
     var readyToastClose = root.querySelector("[data-export-ready-toast-close]");
     var readyToastHistory = root.querySelector("[data-export-ready-toast-history]");
     var readyToastCountdown = root.querySelector("[data-export-ready-toast-countdown]");
+    var readyToastProgress = root.querySelector("[data-export-ready-toast-progress]");
+    var readyToastProgressBar = root.querySelector("[data-export-ready-toast-progress-bar]");
+    // Helpery progress bar — animacja CSS (transform scaleX 1→0) z duration
+    // równym remaining time. Pause = .is-paused na progressie (animation-play-state).
+    // Reset wymaga remove+reflow+add żeby keyframes wystartowały od nowa.
+    function clearReadyToastProgress() {
+      if (!readyToastProgress) return;
+      readyToastProgress.classList.remove("is-running");
+      readyToastProgress.classList.remove("is-paused");
+      readyToastProgress.hidden = true;
+      if (readyToastProgressBar) {
+        readyToastProgressBar.style.animation = "none";
+      }
+      readyToastProgress.style.removeProperty("--toast-progress-duration");
+      readyToastProgress.style.removeProperty("--toast-progress-delay");
+    }
+    function startReadyToastProgress(durationMs) {
+      if (!readyToastProgress || !readyToastProgressBar || !(durationMs > 0)) return;
+      readyToastProgress.hidden = false;
+      // Reset poprzedniej animacji (gdyby toast był ponownie pokazany).
+      readyToastProgress.classList.remove("is-running");
+      readyToastProgressBar.style.animation = "";
+      // eslint-disable-next-line no-unused-expressions
+      readyToastProgressBar.offsetWidth; // reflow → restart keyframes
+      readyToastProgress.style.setProperty("--toast-progress-duration", (durationMs / 1000) + "s");
+      readyToastProgress.style.setProperty("--toast-progress-delay", "0s");
+      readyToastProgress.classList.add("is-running");
+      // Jeśli toast był wstawiony już w stanie pauzy (restore z sessionStorage),
+      // od razu pauzujemy animację — caller wywoła pauseReadyToastProgress().
+    }
+    function pauseReadyToastProgress() {
+      if (!readyToastProgress) return;
+      readyToastProgress.classList.add("is-paused");
+    }
+    function resumeReadyToastProgress() {
+      if (!readyToastProgress) return;
+      readyToastProgress.classList.remove("is-paused");
+    }
     var readyToastTimer = null;
     // Interval do odświeżania countdownu „znika za Ns". 1 Hz wystarcza —
     // i tak pokazujemy całe sekundy. Trzymamy referencję żeby clear w hide().
@@ -4329,6 +4412,7 @@ const renderHtml = ({
         readyToastCountdown.classList.remove("is-urgent");
         readyToastCountdown.classList.remove("is-paused");
       }
+      clearReadyToastProgress();
     }
     function startReadyToastCountdown(totalMs) {
       if (!readyToastCountdown || !(totalMs > 0)) return;
@@ -4360,6 +4444,10 @@ const renderHtml = ({
       readyToastCountdown.hidden = false;
       tick(); // pierwsza wartość natychmiast, bez czekania 1s
       readyToastCountdownInterval = setInterval(tick, 1000);
+      // Pasek progress — wystartuj z REMAINING (totalMs to tutaj remaining
+      // dla restoru z pauzy/sessionStorage), zsynchronizowany z tekstem.
+      startReadyToastProgress(totalMs);
+      if (readyToastIsPaused) pauseReadyToastProgress();
     }
     // Pauza — zatrzymuje setTimeout auto-hide i zapamiętuje ile MS zostało
     // do końca. Interval countdownu zostawiamy aktywny — dzięki temu napis
@@ -4373,6 +4461,7 @@ const renderHtml = ({
         readyToastTimer = null;
       }
       readyToastRemainingMs = Math.max(0, readyToastCountdownDeadline - Date.now());
+      pauseReadyToastProgress();
       persistReadyToastState();
     }
     // Wznowienie — restartuje setTimeout z pozostałym czasem i przesuwa
@@ -4389,6 +4478,7 @@ const renderHtml = ({
       readyToastCountdownDeadline = Date.now() + ms;
       readyToastTimer = setTimeout(hideReadyToast, ms);
       if (readyToastCountdown) readyToastCountdown.classList.remove("is-paused");
+      resumeReadyToastProgress();
       persistReadyToastState();
     }
     function hideReadyToast() {
