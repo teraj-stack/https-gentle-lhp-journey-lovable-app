@@ -3426,6 +3426,66 @@ const renderHtml = ({
     var PREVIEW_LIMIT = 20;
     var pendingExport = null; // {csv, filename, count, total, mode, colCount, missingCount}
 
+    // ---- Single source of truth dla nazwy/formatu eksportu ----
+    // Wszystkie powierzchnie (pasek statusu, tytuł modala, ready toast,
+    // download row, label przycisku „Pobierz", status po pobraniu) MUSZĄ
+    // czytać format/filename z tego helpera, żeby nie było „dryftu" UI:
+    // np. modal pokazuje „Podgląd eksportu CSV" a status mówi „ZIP".
+    // - filename pochodzi z pendingExport.filename (ten sam string co
+    //   trafia do anchor.download i do schowka).
+    // - fmtTag → krótka etykieta do statusu („CSV" / „ZIP" /
+    //   „ZIP split (N plików)").
+    // - fmtTitle → krótka etykieta do tytułu modala („CSV" / „ZIP").
+    function getExportNameFormat(pe) {
+      if (!pe) return null;
+      var fmt = pe.format || "csv";
+      var isZip = fmt === "zip" || fmt === "zip-split";
+      var fmtTitle = isZip ? "ZIP" : "CSV";
+      var fmtTag = fmt === "zip" ? "ZIP"
+        : fmt === "zip-split" ? "ZIP split (" + (pe.fileCount || 0) + " plików)"
+        : "CSV";
+      return {
+        filename: pe.filename || "",
+        format: fmt,
+        isZip: isZip,
+        fmtTitle: fmtTitle,
+        fmtTag: fmtTag,
+      };
+    }
+    /**
+     * Synchronizuje wszystkie powierzchnie wyświetlające nazwę/format
+     * eksportu, żeby pasek statusu, tytuł modala i ready toast pokazywały
+     * IDENTYCZNĄ nazwę pliku i etykietę formatu. Wywoływane:
+     *  - po finalizacji ZIP/CSV (phase = "ready"),
+     *  - przy renderPreview (phase = "ready", przed showModal),
+     *  - po pobraniu (phase = "downloaded", tylko status bar/modal title).
+     * Bezpieczne przy braku elementów (no-op).
+     */
+    function syncExportNameAcrossSurfaces(pe, opts) {
+      var info = getExportNameFormat(pe);
+      if (!info) return;
+      var phase = (opts && opts.phase) || "ready";
+      var sizeLabel = opts && opts.sizeLabel;
+      // Tytuł modala — single source of truth: pendingExport.filename.
+      if (previewTitle) {
+        previewTitle.textContent = info.filename
+          ? "Podgląd eksportu " + info.fmtTitle + " · " + info.filename
+          : "Podgląd eksportu " + info.fmtTitle;
+      }
+      // Etykieta przycisku potwierdzenia — sync z tym samym formatem.
+      if (previewConfirm) {
+        previewConfirm.textContent = "⬇ Pobierz " + info.fmtTitle;
+      }
+      // Pasek statusu — różne komunikaty per faza, ale ZAWSZE używają
+      // identycznej etykiety formatu (info.fmtTag) i nazwy (info.filename).
+      if (exportStatus && phase === "ready") {
+        exportStatus.textContent = "✓ Wygenerowano " + info.fmtTag + ": "
+          + info.filename
+          + (sizeLabel ? " · ~" + sizeLabel : "")
+          + " · gotowe do pobrania";
+      }
+    }
+
     function renderPreview(built) {
       if (!previewHead || !previewBody) return;
       previewHead.innerHTML = built.headerCells
