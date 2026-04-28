@@ -3982,6 +3982,8 @@ const renderHtml = ({
         hideReadyToast();
       });
     }
+
+    // ---- Dialog podglądu przed pobraniem (max 20 wierszy) ----
     // Workflow:
     //  1. Klik „⬇ Podgląd i eksport…" → buildExportRows() z aktualnego filtra,
     //     renderujemy nagłówki + 20 pierwszych wierszy w <table>, otwieramy <dialog>.
