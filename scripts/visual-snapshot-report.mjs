@@ -1212,7 +1212,7 @@ const renderHtml = ({
             <span class="spacer" aria-hidden="true" style="flex:1"></span>
             <!--
               Toggle „Pokaż pełną nazwę" — rozwija dodatkowy panel pod kodem
-              z nazwą rozbitą na segmenty (split po `_`, `-`, `.`) — jeden
+              z nazwą rozbitą na segmenty (split po _, -, .) — jeden
               segment per linia. Cel: dla bardzo długich nazw (np. ZIP
               z 6+ filtrami) user widzi każdy fragment osobno bez ucinania,
               z licznikiem znaków/segmentów. aria-expanded + aria-controls
