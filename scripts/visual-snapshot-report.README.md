@@ -528,6 +528,18 @@ pasujących do wszystkich aktywnych selectów (AND), bez re-runu skryptu.
      „Pobierz CSV", gdy faktycznie pobiera ZIP. Long filenames łamią się
      w nagłówku (`overflow-wrap: anywhere`), bez rozpychania modala.
 
+   **Natychmiastowy komunikat „Wygenerowano"** w pasku statusu eksportu
+   pojawia się TUŻ po `finalizeZip()` / wygenerowaniu CSV-a, ZANIM otworzy
+   się dialog podglądu — `✓ Wygenerowano ZIP: <nazwa>.zip · ~340 KB ·
+   gotowe do pobrania`. Działa zarówno w sync flow (`csv` / `zip`), jak i
+   w async (`zip-split` po `snapshotSparkPngs` callbacku). Dzięki temu user
+   ma feedback nawet bez przewinięcia do sekcji podglądu (pasek statusu
+   leży obok przycisku „⬇ Podgląd i eksport…"). Dodatkowo po `showModal()`
+   rzucamy floating toast `✓ Wygenerowano: <nazwa>` (~2.4s) wewnątrz
+   dialogu — przydatne na małych viewportach, gdzie download row może
+   być pod fold. Komunikat zostaje dopóki user nie kliknie „Pobierz"
+   (wtedy `downloadPending()` nadpisuje go na „Pobrano …").
+
    **Wyróżniony „download row" w stopce modala** (`⬇ Pobierany plik` tuż
    nad przyciskami Anuluj/Pobierz): duży, monospace blok z pełną nazwą
    pliku ZIP/CSV, łamaną na granicach znaków (`word-break: break-all`),
