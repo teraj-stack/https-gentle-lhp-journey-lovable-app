@@ -1477,6 +1477,14 @@ const renderHtml = ({
           <div class="export-ready-toast-title" data-export-ready-toast-title>Gotowe do pobrania</div>
           <code class="export-ready-toast-filename" data-export-ready-toast-filename></code>
           <div class="export-ready-toast-meta" data-export-ready-toast-meta></div>
+          <!--
+            Subtelny countdown do auto-hide. Format „znika za 7s". Pokazujemy
+            tylko w fazie „downloaded" i tylko gdy auto-hide > 0 (dla „bez
+            auto-hide" element zostaje hidden, bo nic nie odlicza).
+            aria-live="off": NIE chcemy ogłaszać każdej sekundy SR-om — nazwa
+            pliku już została odczytana przez aria-live="polite" wrappera.
+          -->
+          <div class="export-ready-toast-countdown" data-export-ready-toast-countdown aria-live="off" aria-hidden="true" hidden></div>
         </div>
         <div class="export-ready-toast-actions">
           <button type="button" class="export-ready-toast-download" data-export-ready-toast-download title="Pobierz wygenerowany plik">⬇ Pobierz</button>
