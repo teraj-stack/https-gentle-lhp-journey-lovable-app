@@ -1505,7 +1505,7 @@ const renderHtml = ({
             title="Przejdź do sekcji „Ostatnie nazwy eksportu" i podświetl wpis dla tej nazwy."
             hidden
           >📜 Zobacz w historii</button>
-          <button type="button" class="export-ready-toast-close" data-export-ready-toast-close aria-label="Zamknij powiadomienie">×</button>
+          <button type="button" class="export-ready-toast-close" data-export-ready-toast-close aria-label="Zamknij powiadomienie" title="Zamknij toast (Esc) — działa też podczas pauzy/odliczania"><span class="export-ready-toast-close-icon" aria-hidden="true">×</span><span class="export-ready-toast-close-label">Zamknij</span></button>
         </div>
       </div>
     </section>`;
@@ -2810,17 +2810,35 @@ const renderHtml = ({
       outline-offset: 2px;
     }
     .export-ready-toast-close {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
       line-height: 1;
-      padding: 2px 6px;
-      background: transparent;
-      color: rgba(210,235,215,.85);
-      border: 1px solid transparent;
+      padding: 4px 10px;
+      background: rgba(127,127,127,.12);
+      color: rgba(220,240,225,.95);
+      border: 1px solid rgba(127,127,127,.35);
       border-radius: 4px;
       cursor: pointer;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    .export-ready-toast-close-icon {
+      font-size: 16px;
+      line-height: 1;
+      opacity: .85;
+    }
+    .export-ready-toast-close-label {
+      letter-spacing: .02em;
     }
     .export-ready-toast-close:hover {
-      background: rgba(127,127,127,.18);
-      border-color: rgba(127,127,127,.35);
+      background: rgba(127,127,127,.28);
+      border-color: rgba(127,127,127,.55);
+      color: rgba(235,250,240,1);
+    }
+    .export-ready-toast-close:focus-visible {
+      outline: 2px solid rgba(140,200,160,.7);
+      outline-offset: 2px;
     }
     @media (prefers-reduced-motion: reduce) {
       .export-ready-toast { transition: none; }
