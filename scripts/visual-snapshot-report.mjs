@@ -1176,6 +1176,29 @@ const renderHtml = ({
           </table>
           <p class="export-preview-truncated" data-export-preview-truncated hidden></p>
         </div>
+        <!--
+          Wyróżniony „download row" — duplikuje kompaktowy filename z headera,
+          ale w mocnej, jednoznacznej formie tuż nad przyciskiem „Pobierz".
+          Cel: ostatnia szansa weryfikacji „to dokładnie ta nazwa, która
+          trafi do pliku ORAZ do schowka po wygenerowaniu". Etykieta
+          „⬇ Pobierany plik" + monospace nazwa + ✓ badge zgodności.
+        -->
+        <div class="export-preview-download-row" data-export-preview-download-row hidden>
+          <div class="export-preview-download-row-label">
+            <span aria-hidden="true">⬇</span>
+            <span>Pobierany plik</span>
+            <span class="export-preview-download-row-match" data-export-preview-download-row-match hidden></span>
+          </div>
+          <code
+            class="export-preview-download-row-value"
+            data-export-preview-download-row-value
+            tabindex="0"
+            role="textbox"
+            aria-readonly="true"
+            aria-label="Pełna nazwa pliku, który zostanie pobrany. Identyczna z nazwą skopiowaną do schowka po wygenerowaniu. Kliknij, aby skopiować."
+            title="Kliknij, aby skopiować pełną nazwę pliku do schowka."
+          ></code>
+        </div>
         <div class="export-preview-footer">
           <span class="spacer" aria-hidden="true"></span>
           <button type="button" class="export-preview-cancel" data-export-preview-cancel>Anuluj</button>
@@ -1890,6 +1913,73 @@ const renderHtml = ({
     .export-preview-filename-match.is-mismatch {
       background: rgba(220,120,120,.22);
       color: rgba(245,180,180,.95);
+    }
+    /* Wyróżniony download row pod tabelą — mocniejszy wizualnie niż
+       kompaktowy filename w nagłówku. Ma być pierwszą rzeczą, którą user
+       widzi tuż przed kliknięciem „Pobierz". */
+    .export-preview-download-row {
+      margin: 4px 18px 10px;
+      padding: 10px 14px;
+      border: 1px solid rgba(201,168,76,.55);
+      border-radius: 8px;
+      background: linear-gradient(180deg, rgba(201,168,76,.10), rgba(201,168,76,.04));
+      box-shadow: 0 0 0 1px rgba(201,168,76,.10) inset;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .export-preview-download-row-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: .68rem;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: rgba(201,168,76,.95);
+      font-weight: 600;
+    }
+    .export-preview-download-row-match {
+      font-size: .62rem;
+      padding: 1px 6px;
+      border-radius: 3px;
+      letter-spacing: .04em;
+      text-transform: none;
+      font-weight: 500;
+    }
+    .export-preview-download-row-match.is-match {
+      background: rgba(120,180,120,.22);
+      color: rgba(190,235,190,.95);
+    }
+    .export-preview-download-row-match.is-mismatch {
+      background: rgba(220,120,120,.25);
+      color: rgba(245,180,180,.98);
+    }
+    .export-preview-download-row-value {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: .85rem;
+      padding: 8px 12px;
+      background: rgba(0,0,0,.40);
+      border: 1px solid rgba(127,127,127,.40);
+      border-radius: 6px;
+      color: rgba(240,220,160,1);
+      word-break: break-all;
+      white-space: normal;
+      cursor: pointer;
+      user-select: all;
+      line-height: 1.35;
+      transition: background .15s ease, border-color .15s ease;
+    }
+    .export-preview-download-row-value:hover {
+      background: rgba(201,168,76,.16);
+      border-color: rgba(201,168,76,.60);
+    }
+    .export-preview-download-row-value:focus-visible {
+      outline: 2px solid rgba(201,168,76,.75);
+      outline-offset: 2px;
+    }
+    .export-preview-download-row-value.is-copied {
+      background: rgba(120,180,120,.22);
+      border-color: rgba(120,180,120,.60);
     }
     .export-preview-body {
       padding: 8px 18px 4px;
