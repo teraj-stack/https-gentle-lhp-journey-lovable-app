@@ -4464,6 +4464,10 @@ const renderHtml = ({
             missingCount: built.missingCount,
             format: "csv",
           };
+          // Także dla CSV — pasek statusu pokazuje rozmiar od razu po
+          // wygenerowaniu, zanim user otworzy modal. Identyczny helper i
+          // formatowanie jak w branchu ZIP/zip-split.
+          announceReadyWithSize();
         }
 
         // Otwarcie dialogu podglądu lub fallback do natychmiastowego download
