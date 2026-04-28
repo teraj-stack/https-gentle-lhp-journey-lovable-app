@@ -3311,6 +3311,59 @@ const renderHtml = ({
       for (var i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0;
       return ("00000000" + (h >>> 0).toString(16)).slice(-6);
     }
+    // ---- Page-level „Gotowe do pobrania" toast ----
+    // Pokazywany ZARAZ po finalizacji eksportu (ZIP/CSV), ZANIM otworzy
+    // się dialog podglądu. Cel: nawet jeśli user nie skupia się na pasku
+    // statusu i nie patrzy w sekcję trendów, dostaje wyraźną notyfikację
+    // top-right z nazwą pliku i przyciskiem „Pobierz" (skrót do
+    // downloadPending — pomija krok otwarcia modala).
+    var readyToast = root.querySelector("[data-export-ready-toast]");
+    var readyToastFilename = root.querySelector("[data-export-ready-toast-filename]");
+    var readyToastMeta = root.querySelector("[data-export-ready-toast-meta]");
+    var readyToastTitle = root.querySelector("[data-export-ready-toast-title]");
+    var readyToastDownload = root.querySelector("[data-export-ready-toast-download]");
+    var readyToastClose = root.querySelector("[data-export-ready-toast-close]");
+    var readyToastTimer = null;
+    function hideReadyToast() {
+      if (readyToastTimer) { clearTimeout(readyToastTimer); readyToastTimer = null; }
+      if (!readyToast) return;
+      readyToast.classList.remove("is-visible");
+      setTimeout(function () {
+        if (readyToast && !readyToast.classList.contains("is-visible")) readyToast.hidden = true;
+      }, 250);
+    }
+    function showReadyToast(filename, fmtTag, sizeLabel) {
+      if (!readyToast) return;
+      if (readyToastFilename) readyToastFilename.textContent = filename || "";
+      if (readyToastMeta) {
+        var parts = [];
+        if (fmtTag) parts.push(fmtTag);
+        if (sizeLabel) parts.push("~" + sizeLabel);
+        readyToastMeta.textContent = parts.join(" · ");
+      }
+      if (readyToastTitle) readyToastTitle.textContent = "✓ Gotowe do pobrania";
+      readyToast.hidden = false;
+      // Reflow → nowy fade-in
+      // eslint-disable-next-line no-unused-expressions
+      readyToast.offsetWidth;
+      readyToast.classList.add("is-visible");
+      if (readyToastTimer) clearTimeout(readyToastTimer);
+      readyToastTimer = setTimeout(hideReadyToast, 8000);
+    }
+    if (readyToastClose) {
+      readyToastClose.addEventListener("click", hideReadyToast);
+    }
+    if (readyToastDownload) {
+      readyToastDownload.addEventListener("click", function () {
+        // Skrót: pobierz natychmiast bez otwierania modala. downloadPending
+        // używa pendingExport.filename (single source of truth), więc
+        // nazwa w toaście == nazwa w a.download == nazwa w schowku.
+        if (typeof downloadPending === "function" && pendingExport) {
+          downloadPending();
+        }
+        hideReadyToast();
+      });
+    }
 
     // ---- Dialog podglądu przed pobraniem (max 20 wierszy) ----
     // Workflow:
