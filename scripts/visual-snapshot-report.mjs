@@ -4949,6 +4949,66 @@ const renderHtml = ({
         if (previewDialog && previewDialog.open) previewDialog.close("confirm");
       });
     }
+    // „📌 Zapisz w historii" — odkłada bieżącą nazwę pendingExport do
+    // listy „Ostatnie nazwy eksportu" (source: "saved"), zamyka modal,
+    // przewija stronę do sekcji historii w pasku filtra, rozwija ją
+    // (jeśli była zwinięta) i podświetla świeży wpis (CSS pulse).
+    // Świadomie NIE kopiuje do schowka i NIE pobiera pliku — to wyłącznie
+    // „bookmark" nazwy do późniejszego użycia (np. user chce porównać 3
+    // warianty filtrów bez generowania ZIP-ów dla każdego).
+    var previewSaveHistoryBtn = root.querySelector("[data-export-preview-save-history]");
+    if (previewSaveHistoryBtn) {
+      previewSaveHistoryBtn.addEventListener("click", function () {
+        var name = pendingExport && pendingExport.filename;
+        if (!name) {
+          showPreviewToast("⚠ Brak nazwy do zapisania", "error", 2200);
+          return;
+        }
+        // Push do historii ze źródłem „saved" (różni się od copy/download
+        // w tooltipie wpisu — user widzi, że to zapisany bookmark).
+        try {
+          pushExportHistory(name, {
+            source: "saved",
+            count: pendingExport && typeof pendingExport.count === "number"
+              ? pendingExport.count
+              : null,
+          });
+        } catch (_e) { pushExportHistory(name, { source: "saved" }); }
+        // Re-render z highlightem na świeżo dodanym wpisie (pulse CSS).
+        try { renderExportHistory(name); } catch (_e2) { /* noop */ }
+        // Visual feedback na przycisku — zielone tło + check, potem reset.
+        previewSaveHistoryBtn.classList.add("is-saved");
+        var prevLabel = previewSaveHistoryBtn.textContent;
+        previewSaveHistoryBtn.textContent = "✓ Zapisano";
+        // Toast wewnątrz modala — potwierdzenie, zanim zamkniemy.
+        showPreviewToast("✓ Zapisano w historii: " + name);
+        // Zamknij modal po krótkim opóźnieniu (300 ms) — użytkownik widzi
+        // green-state przycisku, a potem płynnie przeskakujemy do listy.
+        setTimeout(function () {
+          if (previewDialog && previewDialog.open) previewDialog.close("saved");
+          previewSaveHistoryBtn.classList.remove("is-saved");
+          previewSaveHistoryBtn.textContent = prevLabel;
+          // Scroll do sekcji „Ostatnie nazwy eksportu" + force-open
+          // <details>, żeby user zobaczył wpis nawet jeśli zwinięty.
+          // requestAnimationFrame, żeby Radix/native dialog zdążył oddać
+          // layout po close (top-layer → flow).
+          requestAnimationFrame(function () {
+            if (!historyWrap) return;
+            try { historyWrap.open = true; } catch (_e3) { /* not <details> → noop */ }
+            historyWrap.scrollIntoView({ behavior: "smooth", block: "center" });
+            // Focus na świeżo dodany przycisk historii (pierwszy item =
+            // zawsze najnowszy push), żeby keyboard userzy nie zgubili
+            // miejsca po zamknięciu modala.
+            setTimeout(function () {
+              var firstBtn = historyList && historyList.querySelector(".trends-filter-history-btn");
+              if (firstBtn && typeof firstBtn.focus === "function") {
+                firstBtn.focus({ preventScroll: true });
+              }
+            }, 350);
+          });
+        }, 320);
+      });
+    }
     // Kopia nazwy pliku z modala — równoważnik „⧉ Kopiuj nazwę" z paska
     // filtra, ale działa na nazwie zamrożonej w pendingExport (gwarancja
     // parytetu z faktycznym anchor.download). Dwa entry pointy: klik w
