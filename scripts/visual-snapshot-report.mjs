@@ -4430,7 +4430,7 @@ const renderHtml = ({
       if (abs < 86400 * 30) return rtf.format(Math.round(diffSec / 86400), "day");
       return new Date(ts).toLocaleDateString();
     }
-    function renderExportHistory() {
+    function renderExportHistory(highlightName) {
       if (!historyWrap || !historyList) return;
       var list = loadExportHistory();
       if (!list.length) {
@@ -4447,11 +4447,23 @@ const renderHtml = ({
       list.forEach(function (entry) {
         var li = document.createElement("li");
         li.className = "trends-filter-history-item";
+        // Highlight świeżo dodanego wpisu (np. po „📌 Zapisz w historii"
+        // z modala) — animacja CSS .is-just-added pulsuje 1.6s i wraca do
+        // tła. Klasa zdejmowana po zakończeniu animacji, żeby nie zostawiać
+        // śmieci w DOM-ie i żeby kolejny push znów triggerował fresh pulse.
+        if (highlightName && entry.name === highlightName) {
+          li.classList.add("is-just-added");
+          setTimeout(function () { li.classList.remove("is-just-added"); }, 1700);
+        }
         var btn = document.createElement("button");
         btn.type = "button";
         btn.className = "trends-filter-history-btn";
         btn.textContent = entry.name;
-        var srcLabel = entry.source === "download" ? "pobrane" : "skopiowane";
+        var srcLabel = entry.source === "download"
+          ? "pobrane"
+          : entry.source === "saved"
+            ? "zapisane z modala"
+            : "skopiowane";
         var countLabel = entry.count != null ? ", " + entry.count + " w." : "";
         btn.title = "Kliknij, żeby ponownie skopiować nazwę.\nŹródło: " + srcLabel + countLabel + "\nCzas: " + new Date(entry.ts).toLocaleString();
         btn.addEventListener("click", function () {
