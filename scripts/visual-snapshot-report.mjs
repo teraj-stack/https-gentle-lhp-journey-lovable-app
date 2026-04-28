@@ -1477,6 +1477,14 @@ const renderHtml = ({
           <div class="export-ready-toast-title" data-export-ready-toast-title>Gotowe do pobrania</div>
           <code class="export-ready-toast-filename" data-export-ready-toast-filename></code>
           <div class="export-ready-toast-meta" data-export-ready-toast-meta></div>
+          <!--
+            Subtelny countdown do auto-hide. Format „znika za 7s". Pokazujemy
+            tylko w fazie „downloaded" i tylko gdy auto-hide > 0 (dla „bez
+            auto-hide" element zostaje hidden, bo nic nie odlicza).
+            aria-live="off": NIE chcemy ogłaszać każdej sekundy SR-om — nazwa
+            pliku już została odczytana przez aria-live="polite" wrappera.
+          -->
+          <div class="export-ready-toast-countdown" data-export-ready-toast-countdown aria-live="off" aria-hidden="true" hidden></div>
         </div>
         <div class="export-ready-toast-actions">
           <button type="button" class="export-ready-toast-download" data-export-ready-toast-download title="Pobierz wygenerowany plik">⬇ Pobierz</button>
@@ -2721,6 +2729,30 @@ const renderHtml = ({
       font-size: .68rem;
       opacity: .75;
       margin-top: 4px;
+    }
+    /* Subtelny countdown „znika za 6s" — taki sam vibe co .meta, lekko
+       monospace dla stabilności szerokości (cyfra nie skacze przy 10→9→8).
+       Ostatnie 3s: lekka pulsacja opacity, żeby zwrócić uwagę bez bycia
+       agresywnym. Respektuje prefers-reduced-motion. */
+    .export-ready-toast-countdown {
+      font-size: .65rem;
+      opacity: .55;
+      margin-top: 3px;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: .02em;
+      transition: opacity .2s ease;
+    }
+    .export-ready-toast-countdown[hidden] { display: none; }
+    .export-ready-toast-countdown.is-urgent {
+      opacity: .85;
+      animation: export-ready-toast-countdown-pulse 1s ease-in-out infinite;
+    }
+    @keyframes export-ready-toast-countdown-pulse {
+      0%, 100% { opacity: .85; }
+      50%      { opacity: .45; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .export-ready-toast-countdown.is-urgent { animation: none; opacity: .85; }
     }
     .export-ready-toast-actions {
       flex: 0 0 auto;
@@ -4206,9 +4238,46 @@ const renderHtml = ({
     var readyToastDownload = root.querySelector("[data-export-ready-toast-download]");
     var readyToastClose = root.querySelector("[data-export-ready-toast-close]");
     var readyToastHistory = root.querySelector("[data-export-ready-toast-history]");
+    var readyToastCountdown = root.querySelector("[data-export-ready-toast-countdown]");
     var readyToastTimer = null;
+    // Interval do odświeżania countdownu „znika za Ns". 1 Hz wystarcza —
+    // i tak pokazujemy całe sekundy. Trzymamy referencję żeby clear w hide().
+    var readyToastCountdownInterval = null;
+    var readyToastCountdownDeadline = 0;
+    function clearReadyToastCountdown() {
+      if (readyToastCountdownInterval) {
+        clearInterval(readyToastCountdownInterval);
+        readyToastCountdownInterval = null;
+      }
+      if (readyToastCountdown) {
+        readyToastCountdown.hidden = true;
+        readyToastCountdown.textContent = "";
+        readyToastCountdown.classList.remove("is-urgent");
+      }
+    }
+    function startReadyToastCountdown(totalMs) {
+      if (!readyToastCountdown || !(totalMs > 0)) return;
+      readyToastCountdownDeadline = Date.now() + totalMs;
+      function tick() {
+        var leftMs = readyToastCountdownDeadline - Date.now();
+        var leftSec = Math.max(0, Math.ceil(leftMs / 1000));
+        readyToastCountdown.textContent = leftSec > 0
+          ? "znika za " + leftSec + " s"
+          : "znika…";
+        // Ostatnie 3 s — pulsacja, żeby user wiedział „zaraz zniknie".
+        readyToastCountdown.classList.toggle("is-urgent", leftSec > 0 && leftSec <= 3);
+        if (leftMs <= 0 && readyToastCountdownInterval) {
+          clearInterval(readyToastCountdownInterval);
+          readyToastCountdownInterval = null;
+        }
+      }
+      readyToastCountdown.hidden = false;
+      tick(); // pierwsza wartość natychmiast, bez czekania 1s
+      readyToastCountdownInterval = setInterval(tick, 1000);
+    }
     function hideReadyToast() {
       if (readyToastTimer) { clearTimeout(readyToastTimer); readyToastTimer = null; }
+      clearReadyToastCountdown();
       if (!readyToast) return;
       readyToast.classList.remove("is-visible");
       setTimeout(function () {
@@ -4276,13 +4345,21 @@ const renderHtml = ({
       // Faza „ready" (przed klikiem Pobierz) zostaje na stałych 8s — to krótka
       // notyfikacja statusu, nie końcowe potwierdzenie. 0 ms = brak auto-hide
       // (toast czeka na kliknięcie ×).
+      // Reset countdownu przed nową fazą (poprzedni interval mógł jeszcze
+      // tickać, jeśli toast był ponownie pokazany podczas swojej widoczności).
+      clearReadyToastCountdown();
       if (ph === "downloaded") {
         var hideMs = getToastAutoHideMs();
         if (hideMs > 0) {
           readyToastTimer = setTimeout(hideReadyToast, hideMs);
+          // Countdown pokazujemy TYLKO gdy auto-hide jest aktywny —
+          // dla „bez auto-hide" (0 ms) element zostaje hidden.
+          startReadyToastCountdown(hideMs);
         }
       } else {
+        // Faza „ready" — stałe 8 s, też pokazujemy countdown dla spójności UX.
         readyToastTimer = setTimeout(hideReadyToast, 8000);
+        startReadyToastCountdown(8000);
       }
     }
     if (readyToastClose) {
