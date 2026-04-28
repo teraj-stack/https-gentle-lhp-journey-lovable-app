@@ -1984,7 +1984,24 @@ const renderHtml = ({
       .trends-filter-settings-shortcut:hover { transform: none; }
       .trends-filter-settings-target.is-settings-pulse { animation: none; }
     }
-    .trends-filter-export {
+    /* „Wypróbuj toast" — drugorzędna akcja diagnostyczna obok auto-hide
+       selectu. Stonowany neutralny styl (bez gold), żeby NIE konkurował
+       wizualnie z głównym „⬇ Podgląd i eksport…". */
+    .trends-filter-toast-test {
+      font-size: .72rem;
+      padding: 4px 10px;
+      background: rgba(127,127,127,.10);
+      color: inherit;
+      border: 1px solid rgba(127,127,127,.35);
+      border-radius: 4px;
+      cursor: pointer;
+      align-self: end;
+    }
+    .trends-filter-toast-test:hover { background: rgba(127,127,127,.22); }
+    .trends-filter-toast-test:focus-visible {
+      outline: 2px solid rgba(201,168,76,.85);
+      outline-offset: 2px;
+    }
       font-size: .75rem;
       padding: 4px 10px;
       background: rgba(201,168,76,.14);
