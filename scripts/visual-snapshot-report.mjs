@@ -3648,7 +3648,12 @@ const renderHtml = ({
           img.src = url;
         });
       });
-      return Promise.all(jobs).then(function (results) {
+      // Każdy zakończony job (sukces/null) inkrementuje licznik postępu —
+      // używamy do aktualizacji paska podczas zip-split (PNG snapshoty).
+      var trackedJobs = jobs.map(function (p) {
+        return Promise.resolve(p).then(function (v) { tick(); return v; }, function () { tick(); return null; });
+      });
+      return Promise.all(trackedJobs).then(function (results) {
         return results.filter(function (r) { return r != null; });
       });
     }
