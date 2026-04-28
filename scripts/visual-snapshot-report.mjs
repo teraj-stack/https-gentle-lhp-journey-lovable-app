@@ -3087,7 +3087,9 @@ const renderHtml = ({
         }
         var stamp = new Date().toISOString().replace(/[:.]/g, "-").replace(/Z$/, "Z");
         var filterHash = shortHash(JSON.stringify(built.state) + "|" + built.mode + "|" + format);
-        var baseName = "savings-filtered-" + built.mode + "-" + stamp + "-" + filterHash;
+        // Bez rozszerzenia — dopisywane niżej (.csv/.zip). Sanityzacja gwarantuje
+        // brak spacji/diakrytyków/znaków zarezerwowanych przez Windows.
+        var baseName = buildSafeFilename(["savings-filtered", built.mode, stamp, filterHash], "");
 
         if (format === "zip" || format === "zip-split") {
           // Manifest z metadanymi, żeby konsument ZIPa wiedział JAK powstał
