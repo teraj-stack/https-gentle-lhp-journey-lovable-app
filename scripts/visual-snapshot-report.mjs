@@ -4412,6 +4412,7 @@ const renderHtml = ({
         readyToastCountdown.classList.remove("is-urgent");
         readyToastCountdown.classList.remove("is-paused");
       }
+      clearReadyToastProgress();
     }
     function startReadyToastCountdown(totalMs) {
       if (!readyToastCountdown || !(totalMs > 0)) return;
