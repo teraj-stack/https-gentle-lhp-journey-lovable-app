@@ -4244,6 +4244,14 @@ const renderHtml = ({
     // i tak pokazujemy całe sekundy. Trzymamy referencję żeby clear w hide().
     var readyToastCountdownInterval = null;
     var readyToastCountdownDeadline = 0;
+    // Hover-pauza: gdy user najedzie kursorem / sfocusuje toast, ZATRZYMUJEMY
+    // auto-hide i countdown — wznawiamy je dopiero po opuszczeniu (mouseleave
+    // / focusout). Dzięki temu można spokojnie skopiować nazwę pliku, kliknąć
+    // historię itd. bez stresu, że toast zniknie w trakcie. Trzymamy:
+    //   · readyToastIsPaused — czy aktualnie hover/focus,
+    //   · readyToastRemainingMs — ile MS zostało w momencie pauzy (do wznowienia).
+    var readyToastIsPaused = false;
+    var readyToastRemainingMs = 0;
     function clearReadyToastCountdown() {
       if (readyToastCountdownInterval) {
         clearInterval(readyToastCountdownInterval);
@@ -4253,12 +4261,24 @@ const renderHtml = ({
         readyToastCountdown.hidden = true;
         readyToastCountdown.textContent = "";
         readyToastCountdown.classList.remove("is-urgent");
+        readyToastCountdown.classList.remove("is-paused");
       }
     }
     function startReadyToastCountdown(totalMs) {
       if (!readyToastCountdown || !(totalMs > 0)) return;
       readyToastCountdownDeadline = Date.now() + totalMs;
       function tick() {
+        // Jeśli pauza — nie aktualizujemy deadlinu (bo go nie przesuwamy
+        // w pause/resume jednorazowo, patrz pauseReadyToastTimer), tylko
+        // pokazujemy stałe „znika za Ns · (pauza)" wyliczone z remaining.
+        if (readyToastIsPaused) {
+          var leftSecP = Math.max(0, Math.ceil(readyToastRemainingMs / 1000));
+          readyToastCountdown.textContent = "znika za " + leftSecP + " s · (pauza)";
+          readyToastCountdown.classList.add("is-paused");
+          readyToastCountdown.classList.toggle("is-urgent", leftSecP > 0 && leftSecP <= 3);
+          return;
+        }
+        readyToastCountdown.classList.remove("is-paused");
         var leftMs = readyToastCountdownDeadline - Date.now();
         var leftSec = Math.max(0, Math.ceil(leftMs / 1000));
         readyToastCountdown.textContent = leftSec > 0
@@ -4275,8 +4295,39 @@ const renderHtml = ({
       tick(); // pierwsza wartość natychmiast, bez czekania 1s
       readyToastCountdownInterval = setInterval(tick, 1000);
     }
+    // Pauza — zatrzymuje setTimeout auto-hide i zapamiętuje ile MS zostało
+    // do końca. Interval countdownu zostawiamy aktywny — dzięki temu napis
+    // „(pauza)" sam się odświeża (i zostaje w sync, gdy user zaraz odjeżdża).
+    function pauseReadyToastTimer() {
+      if (readyToastIsPaused) return;
+      if (!readyToastTimer && !readyToastCountdownDeadline) return;
+      readyToastIsPaused = true;
+      if (readyToastTimer) {
+        clearTimeout(readyToastTimer);
+        readyToastTimer = null;
+      }
+      readyToastRemainingMs = Math.max(0, readyToastCountdownDeadline - Date.now());
+    }
+    // Wznowienie — restartuje setTimeout z pozostałym czasem i przesuwa
+    // deadline countdownu, żeby tick znów odliczał normalnie. Jeśli zero
+    // (lub mniej) — od razu hide; jeśli toast już został zamknięty (close
+    // button), funkcja jest no-op.
+    function resumeReadyToastTimer() {
+      if (!readyToastIsPaused) return;
+      readyToastIsPaused = false;
+      if (!readyToast || readyToast.hidden) return;
+      var ms = readyToastRemainingMs;
+      readyToastRemainingMs = 0;
+      if (ms <= 0) { hideReadyToast(); return; }
+      readyToastCountdownDeadline = Date.now() + ms;
+      readyToastTimer = setTimeout(hideReadyToast, ms);
+      if (readyToastCountdown) readyToastCountdown.classList.remove("is-paused");
+    }
     function hideReadyToast() {
       if (readyToastTimer) { clearTimeout(readyToastTimer); readyToastTimer = null; }
+      readyToastIsPaused = false;
+      readyToastRemainingMs = 0;
+      readyToastCountdownDeadline = 0;
       clearReadyToastCountdown();
       if (!readyToast) return;
       readyToast.classList.remove("is-visible");
