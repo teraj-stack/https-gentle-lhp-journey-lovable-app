@@ -2623,6 +2623,83 @@ const renderHtml = ({
       });
     }
 
+    // ---- Snapshot sparkline'ów do PNG (zero-deps, browser-only) ----
+    // W trybie „zip-split" oprócz CSV pakujemy też obrazki PNG każdego
+    // wykresu (po jednym pliku per [data-spark]). PNG jest renderowany
+    // *po* aktualnej filtracji (apply() już przerysował SVG), więc plik
+    // dokładnie odpowiada temu, co user widzi i co siedzi w CSV.
+    //
+    // Pipeline: SVG outerHTML (z dopisanym xmlns) → Blob → <img> → <canvas>
+    // → toBlob("image/png") → arrayBuffer → Uint8Array. Natywna ścieżka
+    // wspierana we wszystkich evergreen przeglądarkach. Każdy snapshot ma
+    // hard-timeout 3s i jest opakowany try/catch — pojedyncza porażka nie
+    // blokuje eksportu CSV-ów (PNG jest „nice-to-have"). Skala 2x dla
+    // wyraźnych wykresów na ekranach HiDPI.
+    function snapshotSparkPngs() {
+      var jobs = sparks.map(function (figure) {
+        var svg = figure.querySelector("[data-trend-svg]");
+        if (!svg) return Promise.resolve(null);
+        var key = figure.getAttribute("data-spark") || "spark";
+        var W = parseFloat(svg.getAttribute("data-w")) || 320;
+        var H = parseFloat(svg.getAttribute("data-h")) || 80;
+        // Klon + xmlns — wymagane, żeby <img> zaakceptowało SVG-blob.
+        var clone = svg.cloneNode(true);
+        clone.setAttribute("xmlns", SVG_NS);
+        clone.setAttribute("width", String(W));
+        clone.setAttribute("height", String(H));
+        var svgText = new XMLSerializer().serializeToString(clone);
+        var blob = new Blob([svgText], { type: "image/svg+xml;charset=utf-8" });
+        var url = URL.createObjectURL(blob);
+        return new Promise(function (resolve) {
+          var img = new Image();
+          var done = false;
+          var timer = setTimeout(function () {
+            if (done) return; done = true;
+            URL.revokeObjectURL(url);
+            resolve(null);
+          }, 3000);
+          img.onload = function () {
+            if (done) return; done = true;
+            clearTimeout(timer);
+            try {
+              var scale = 2;
+              var canvas = document.createElement("canvas");
+              canvas.width = Math.round(W * scale);
+              canvas.height = Math.round(H * scale);
+              var ctx = canvas.getContext("2d");
+              ctx.scale(scale, scale);
+              ctx.drawImage(img, 0, 0);
+              canvas.toBlob(function (pngBlob) {
+                URL.revokeObjectURL(url);
+                if (!pngBlob) { resolve(null); return; }
+                pngBlob.arrayBuffer().then(function (ab) {
+                  resolve({
+                    name: "spark-" + key.replace(/[^a-z0-9._-]/gi, "_") + ".png",
+                    bytes: new Uint8Array(ab),
+                    width: canvas.width,
+                    height: canvas.height,
+                  });
+                }, function () { resolve(null); });
+              }, "image/png");
+            } catch (_e) {
+              URL.revokeObjectURL(url);
+              resolve(null);
+            }
+          };
+          img.onerror = function () {
+            if (done) return; done = true;
+            clearTimeout(timer);
+            URL.revokeObjectURL(url);
+            resolve(null);
+          };
+          img.src = url;
+        });
+      });
+      return Promise.all(jobs).then(function (results) {
+        return results.filter(function (r) { return r != null; });
+      });
+    }
+
     function downloadPending() {
       if (!pendingExport) return;
       try {
