@@ -2800,25 +2800,60 @@ const renderHtml = ({
               files.push({ name: k, text: built.splitCsvs[k] });
             });
           }
-          // Lista plików (oprócz samego manifest.json) — pomaga w audycie
-          // archiwum bez konieczności rozpakowywania ZIPa.
-          manifest.files = files.map(function (f) {
-            return { name: f.name, sizeBytes: f.text.length };
-          });
-          files.push({ name: "metadata.json", text: JSON.stringify(manifest, null, 2) + "\n" });
-          var zipBlob = buildZip(files);
-          pendingExport = {
-            blob: zipBlob,
-            mime: "application/zip",
-            filename: baseName + ".zip",
-            count: built.count,
-            total: built.total,
-            mode: built.mode,
-            colCount: built.colCount,
-            missingCount: built.missingCount,
-            format: format,
-            fileCount: files.length,
-          };
+
+          // Finalizator ZIPa: składa manifest (po dopisaniu opcjonalnych
+          // PNG-ów ze sparkline'ów), buduje archiwum, ustawia pendingExport.
+          // Wydzielony jako fn, żeby działać sync (zip) i async (zip-split).
+          function finalizeZip(extraFiles) {
+            if (extraFiles && extraFiles.length) {
+              extraFiles.forEach(function (ef) { files.push(ef); });
+            }
+            // Lista plików (oprócz samego manifest.json) — pomaga w audycie
+            // archiwum bez konieczności rozpakowywania ZIPa. Dla wpisów
+            // binarnych (PNG) używamy bytes.length, dla tekstowych text.length.
+            manifest.files = files.map(function (f) {
+              var size = f.bytes ? f.bytes.length : (f.text ? f.text.length : 0);
+              var entry = { name: f.name, sizeBytes: size };
+              if (f.bytes) entry.kind = "binary";
+              if (f.width && f.height) {
+                entry.width = f.width;
+                entry.height = f.height;
+              }
+              return entry;
+            });
+            files.push({ name: "metadata.json", text: JSON.stringify(manifest, null, 2) + "\n" });
+            var zipBlob = buildZip(files);
+            pendingExport = {
+              blob: zipBlob,
+              mime: "application/zip",
+              filename: baseName + ".zip",
+              count: built.count,
+              total: built.total,
+              mode: built.mode,
+              colCount: built.colCount,
+              missingCount: built.missingCount,
+              format: format,
+              fileCount: files.length,
+            };
+          }
+
+          if (format === "zip-split") {
+            // PNG-i sparkline'ów dorzucamy TYLKO w trybie split — bo to ten
+            // wariant jest pomyślany pod „pełną paczkę do dalszej analizy"
+            // (CSV-e per metryka + obrazki gotowe do wklejenia w raport).
+            // Zwykłe `zip` celowo zostaje minimalne (tylko CSV + metadata).
+            if (exportStatus) exportStatus.textContent = "Renderuję PNG sparkline'ów…";
+            snapshotSparkPngs().then(function (pngs) {
+              finalizeZip(pngs);
+              openPreviewOrDownload();
+            }).catch(function () {
+              // Nawet jeśli wszystkie PNG-i padną, eksport CSV-ów leci dalej.
+              finalizeZip([]);
+              openPreviewOrDownload();
+            });
+            return; // dialog otworzy się w callbacku
+          }
+          finalizeZip([]);
         } else {
           format = "csv";
           pendingExport = {
