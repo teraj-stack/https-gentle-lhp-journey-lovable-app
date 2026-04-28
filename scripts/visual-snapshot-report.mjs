@@ -5379,6 +5379,13 @@ const renderHtml = ({
         }
       }
       exportBtn.addEventListener("click", function () {
+        // Świeży build — wygaś badge „📦 Z cache" z ewentualnego poprzedniego
+        // recall'a, żeby nowy modal nie sugerował, że treść jest „z cache".
+        if (previewCacheBadge) {
+          previewCacheBadge.hidden = true;
+          previewCacheBadge.classList.remove("is-offline");
+          previewCacheBadge.textContent = "";
+        }
         var built = buildExportRows();
         if (!built.count) {
           if (exportStatus) exportStatus.textContent = "Brak wierszy do eksportu (zmień filtr).";
