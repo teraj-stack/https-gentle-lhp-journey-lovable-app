@@ -2354,6 +2354,7 @@ const renderHtml = ({
     // Nazwa pliku zawiera tryb + timestamp + skrócony hash filtrów, żeby kolejne
     // eksporty się nie nadpisywały. Zero deps — Blob + a[download].
     var exportBtn = root.querySelector("[data-trend-export]");
+    var copyNameBtn = root.querySelector("[data-trend-copy-name]");
     var exportStatus = root.querySelector("[data-trend-export-status]");
     var exportModeSelect = root.querySelector("[data-trend-export-mode]");
     var exportFormatSelect = root.querySelector("[data-trend-export-format]");
