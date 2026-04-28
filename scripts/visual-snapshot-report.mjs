@@ -2022,6 +2022,44 @@ const renderHtml = ({
       background: rgba(120,180,120,.22);
       border-color: rgba(120,180,120,.60);
     }
+    /* Floating toast w modalu — bottom-center, fade-in/out. Pokazuje
+       się po skopiowaniu nazwy pliku (każdy z 3 entry pointów: code,
+       przycisk ⧉, download row). Pozycja absolute względem dialogu
+       (relative parent), żeby nie skakał z tabelą scrolla.
+       Wariant `is-error` na czerwono dla nieudanego copy. */
+    .export-preview-dialog { position: relative; }
+    .export-preview-toast {
+      position: absolute;
+      bottom: 70px;
+      left: 50%;
+      transform: translate(-50%, 8px);
+      max-width: 90%;
+      padding: 8px 14px;
+      border-radius: 8px;
+      background: rgba(40,55,40,.95);
+      color: rgba(210,240,210,1);
+      border: 1px solid rgba(120,180,120,.55);
+      font-size: .78rem;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      box-shadow: 0 6px 22px rgba(0,0,0,.45);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .18s ease, transform .18s ease;
+      z-index: 10;
+      text-align: center;
+      word-break: break-all;
+      white-space: normal;
+      line-height: 1.35;
+    }
+    .export-preview-toast.is-visible {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+    .export-preview-toast.is-error {
+      background: rgba(60,30,30,.95);
+      color: rgba(250,200,200,1);
+      border-color: rgba(220,120,120,.6);
+    }
     .export-preview-body {
       padding: 8px 18px 4px;
       max-height: 55vh;
