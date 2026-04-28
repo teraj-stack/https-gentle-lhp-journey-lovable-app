@@ -1209,6 +1209,24 @@ const renderHtml = ({
             <span aria-hidden="true">⬇</span>
             <span>Pobierany plik</span>
             <span class="export-preview-download-row-match" data-export-preview-download-row-match hidden></span>
+            <span class="spacer" aria-hidden="true" style="flex:1"></span>
+            <!--
+              Toggle „Pokaż pełną nazwę" — rozwija dodatkowy panel pod kodem
+              z nazwą rozbitą na segmenty (split po `_`, `-`, `.`) — jeden
+              segment per linia. Cel: dla bardzo długich nazw (np. ZIP
+              z 6+ filtrami) user widzi każdy fragment osobno bez ucinania,
+              z licznikiem znaków/segmentów. aria-expanded + aria-controls
+              dla SR. Stan trzymany lokalnie + persist w localStorage,
+              żeby preferencja przeżyła re-render modala.
+            -->
+            <button
+              type="button"
+              class="export-preview-download-row-expand"
+              data-export-preview-download-row-expand
+              aria-expanded="false"
+              aria-controls="export-preview-fullname-panel"
+              title="Pokaż pełną nazwę paczki w czytelnym układzie (każdy segment w osobnej linii, bez ucinania)."
+            >▾ Pokaż pełną nazwę</button>
           </div>
           <code
             class="export-preview-download-row-value"
@@ -1219,6 +1237,35 @@ const renderHtml = ({
             aria-label="Pełna nazwa pliku, który zostanie pobrany. Identyczna z nazwą skopiowaną do schowka po wygenerowaniu. Kliknij, aby skopiować."
             title="Kliknij, aby skopiować pełną nazwę pliku do schowka."
           ></code>
+          <!--
+            Rozwijany panel z nazwą w pełnym, czytelnym układzie. Pokazuje:
+              · długość w znakach + liczbę segmentów,
+              · kolejne segmenty rozdzielone separatorem (_/-/.) — każdy
+                w osobnym wierszu z numerkiem indeksu, żeby łatwo policzyć
+                które pole filtra dało który fragment,
+              · separator między segmentami (kolor wyróżniony),
+              · pełną nazwę w wariancie monospace z word-break (bez ellipsis).
+            Schowany domyślnie (hidden), ujawniany przez toggle wyżej.
+          -->
+          <div
+            class="export-preview-fullname-panel"
+            id="export-preview-fullname-panel"
+            data-export-preview-fullname-panel
+            hidden
+          >
+            <div class="export-preview-fullname-stats" data-export-preview-fullname-stats></div>
+            <ol class="export-preview-fullname-segments" data-export-preview-fullname-segments></ol>
+            <div class="export-preview-fullname-raw-label" aria-hidden="true">Pełna nazwa (bez ucinania):</div>
+            <code
+              class="export-preview-fullname-raw"
+              data-export-preview-fullname-raw
+              tabindex="0"
+              role="textbox"
+              aria-readonly="true"
+              aria-label="Pełna nazwa pliku w pełnym, niezwiniętym układzie. Kliknij, aby skopiować."
+              title="Kliknij, aby skopiować pełną nazwę do schowka."
+            ></code>
+          </div>
         </div>
         <div class="export-preview-footer">
           <span class="spacer" aria-hidden="true"></span>
