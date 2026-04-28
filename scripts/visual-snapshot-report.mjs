@@ -2909,6 +2909,30 @@ const renderHtml = ({
           exportStatus.textContent = "Pobrano " + pendingExport.count + "/" + pendingExport.total
             + " (" + ml + fmtLabel + ") → " + pendingExport.filename
             + (pendingExport.thresholdNote || "");
+          // Walidacja ZIP po pobraniu — czytamy bajty z blobu (te same,
+          // które poszły do pliku użytkownika), parsujemy EOCD + central
+          // directory + lokalne nagłówki i przeliczamy CRC32 każdego
+          // entry. Wynik dopinamy do statusu po krótkim opóźnieniu, żeby
+          // nie nadpisać komunikatu „Pobrano …" przed jego przeczytaniem.
+          if ((pendingExport.format === "zip" || pendingExport.format === "zip-split")
+              && pendingExport.blob && typeof pendingExport.blob.arrayBuffer === "function") {
+            var expected = pendingExport.fileCount;
+            var statusBase = exportStatus.textContent;
+            verifyZip(pendingExport.blob, expected).then(function (res) {
+              if (!exportStatus) return;
+              if (res.ok) {
+                exportStatus.textContent = statusBase + " · ✓ walidacja ZIP OK ("
+                  + res.fileCount + " plików, CRC32 zgodne).";
+              } else {
+                exportStatus.textContent = statusBase + " · ⚠ walidacja ZIP: "
+                  + res.errors.slice(0, 2).join(" ")
+                  + (res.errors.length > 2 ? " (+" + (res.errors.length - 2) + " więcej)" : "");
+                if (typeof console !== "undefined" && console.warn) {
+                  console.warn("[visual-snapshot-report] ZIP validation errors:", res.errors);
+                }
+              }
+            });
+          }
         }
       } catch (e) {
         if (exportStatus) exportStatus.textContent = "Eksport nieudany: " + e.message;
