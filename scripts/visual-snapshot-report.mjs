@@ -3170,6 +3170,12 @@ const renderHtml = ({
     if (exportFormatSelect) {
       exportFormatSelect.addEventListener("change", refreshZipHint);
     }
+    // Initial paint name-preview okienka — żeby pod przyciskiem „⧉ Kopiuj
+    // nazwę" od razu po załadowaniu raportu była widoczna aktualnie wyliczona
+    // nazwa paczki (timestamp + skrót filtra), zanim user dotknie filtrów.
+    // Po każdej zmianie filtra/formatu/progu/trybu i tak refreshZipHint()
+    // → refreshNamePreview() trigeruje update.
+    try { refreshNamePreview(); } catch (_e) { /* tolerujemy init order */ }
     var fullSchemaCols = (data.fullSchemaColumns && data.fullSchemaColumns.length)
       ? data.fullSchemaColumns
       : null;
