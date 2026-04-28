@@ -2686,7 +2686,7 @@ const renderHtml = ({
     }
     if (namePreviewValue) {
       // Klik = jeden gest, kopia do schowka + dopisanie do historii.
-      // Reuse logiki z `copyNameBtn.click()`, żeby był spójny status,
+      // Reuse logiki z copyNameBtn.click(), żeby był spójny status,
       // animacja na przycisku i wpis source=copy w historii.
       namePreviewValue.addEventListener("click", function () {
         var name = namePreviewValue.textContent || "";
@@ -3371,7 +3371,7 @@ const renderHtml = ({
     // ───────────────── Historia ostatnich nazw eksportu (LRU, top 10) ─────────────────
     // Cel: jeden klik = ponowne skopiowanie nazwy bez konieczności
     // ustawiania tych samych filtrów ponownie. Persist w localStorage,
-    // żeby przeżyła reload. Dedup po `name` (re-eksport z tym samym
+    // żeby przeżyła reload. Dedup po nazwie (re-eksport z tym samym
     // hashem przesuwa wpis na top, nie duplikuje). Defensywnie: brak
     // storage / zły JSON ⇒ pusta historia, brak crasha.
     function loadExportHistory() {
@@ -3478,7 +3478,7 @@ const renderHtml = ({
     renderExportHistory();
 
     // ───────────────── Skrót klawiszowy: Ctrl/Cmd+Shift+C → kopiuj nazwę ─────────────────
-    // Aktywny gdy kursor jest nad panelem `.trends-filter` LUB fokus
+    // Aktywny gdy kursor jest nad panelem .trends-filter LUB fokus
     // znajduje się wewnątrz panelu (klawiatura). Używamy Shift, żeby NIE
     // kolidować ze standardowym Ctrl/Cmd+C (kopiowanie zaznaczenia).
     // Dodatkowy fallback: zwykły Ctrl/Cmd+C działa tylko jeśli nie ma
