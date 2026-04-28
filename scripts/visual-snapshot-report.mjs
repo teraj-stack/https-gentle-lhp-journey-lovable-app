@@ -1106,7 +1106,35 @@ const renderHtml = ({
           </select>
         </label>
         <button type="button" class="trends-filter-export" data-trend-export title="Pokaż podgląd 20 pierwszych wierszy, potem pobierz przefiltrowane runy w wybranym formacie">⬇ Podgląd i eksport…</button>
+        <!--
+          „📦 Otwórz ostatnią paczkę" — rehydratuje OSTATNIO wygenerowaną
+          paczkę z cache (IndexedDB: cml-trends-export-cache/last). Działa
+          OFFLINE — całość operacji jest lokalna, nie wymaga sieci. Disabled
+          dopóki cache jest pusty (start aplikacji bez wcześniejszego
+          eksportu). Klik otwiera modal podglądu z badge'em „z cache" i
+          aktywnym przyciskiem „⬇ Pobierz ZIP" — bez ponownego buildu.
+        -->
+        <button
+          type="button"
+          class="trends-filter-export-cached"
+          data-trend-export-cached
+          disabled
+          title="Otwórz modal podglądu z ostatnio wygenerowaną paczką (z lokalnego cache). Działa offline — nie wymaga połączenia z siecią."
+        >📦 Otwórz ostatnią paczkę</button>
         <button type="button" class="trends-filter-copy-name" data-trend-copy-name title="Skopiuj do schowka nazwę paczki eksportu (timestamp + skrót filtra), żeby łatwo nazwać/posortować pobrane pliki.">⧉ Kopiuj nazwę</button>
+        <!--
+          Wskaźnik statusu sieci. Klasy: .is-online / .is-offline.
+          aria-live=polite ogłasza zmianę stanu czytnikom ekranu.
+          Tooltip pokazuje czas ostatniego cache'u — żeby user wiedział,
+          jak świeża jest paczka, którą może otworzyć offline.
+        -->
+        <span
+          class="trends-filter-network-status is-online"
+          data-trend-network-status
+          role="status"
+          aria-live="polite"
+          title="Status połączenia sieciowego."
+        >🟢 online</span>
         <span class="trends-filter-export-status" data-trend-export-status role="status" aria-live="polite"></span>
         <!--
           Pasek postępu generowania ZIP. Widoczny tylko podczas budowy
@@ -1233,6 +1261,14 @@ const renderHtml = ({
         <div class="export-preview-header" data-export-preview-header>
           <h3 id="export-preview-title">Podgląd eksportu</h3>
           <p class="export-preview-meta" data-export-preview-meta></p>
+          <!--
+            Badge „📦 Z cache (offline)" — pojawia się tylko gdy modal został
+            otwarty przez „📦 Otwórz ostatnią paczkę" (rehydracja z IndexedDB).
+            Pokazuje znacznik czasu wygenerowania paczki, żeby user wiedział,
+            jak świeża jest zawartość. Domyślnie hidden — w trybie offline
+            pokazujemy też wzmiankę o braku sieci.
+          -->
+          <p class="export-preview-cache-badge" data-export-preview-cache-badge hidden></p>
           <div class="export-preview-filename" data-export-preview-filename hidden>
             <span class="export-preview-filename-label" aria-hidden="true">📦 Plik:</span>
             <code class="export-preview-filename-value" data-export-preview-filename-value tabindex="0" role="textbox" aria-readonly="true" aria-label="Nazwa pliku, który zostanie pobrany — kliknij, aby skopiować."></code>
@@ -1875,6 +1911,56 @@ const renderHtml = ({
     }
     .trends-filter-export:hover { background: rgba(201,168,76,.28); }
     .trends-filter-export:disabled { opacity: .45; cursor: not-allowed; }
+    /* „Otwórz ostatnią paczkę" — disabled gdy cache pusty. Aktywny stan
+       w stonowanym fiolecie/srebrze, żeby wizualnie odróżnić od głównego
+       gold „Eksportuj" — to akcja drugorzędna („recall", nie „buduj"). */
+    .trends-filter-export-cached {
+      font-size: .72rem;
+      padding: 4px 10px;
+      background: rgba(140,160,200,.10);
+      color: inherit;
+      border: 1px solid rgba(140,160,200,.40);
+      border-radius: 4px;
+      cursor: pointer;
+      align-self: end;
+    }
+    .trends-filter-export-cached:hover:not(:disabled) {
+      background: rgba(140,160,200,.22);
+    }
+    .trends-filter-export-cached:disabled {
+      opacity: .35;
+      cursor: not-allowed;
+    }
+    /* Wskaźnik statusu sieci. Online — zielony stonowany; offline —
+       pomarańczowo/czerwony, lekko mocniejszy żeby user szybko zauważył
+       zmianę. Tooltip uzupełnia kontekst (czas ostatniego cache). */
+    .trends-filter-network-status {
+      font-size: .68rem;
+      padding: 3px 8px;
+      border-radius: 999px;
+      align-self: end;
+      margin-bottom: 4px;
+      letter-spacing: .03em;
+      font-variant-numeric: tabular-nums;
+      border: 1px solid transparent;
+      cursor: help;
+      transition: background .2s ease, border-color .2s ease, color .2s ease;
+    }
+    .trends-filter-network-status.is-online {
+      background: rgba(120,180,120,.14);
+      color: rgba(190,235,190,.95);
+      border-color: rgba(120,180,120,.40);
+    }
+    .trends-filter-network-status.is-offline {
+      background: rgba(220,140,80,.20);
+      color: rgba(250,210,170,1);
+      border-color: rgba(220,140,80,.55);
+      animation: trends-network-offline-pulse 2.4s ease-in-out infinite;
+    }
+    @keyframes trends-network-offline-pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(220,140,80,0); }
+      50%      { box-shadow: 0 0 0 4px rgba(220,140,80,.15); }
+    }
     .trends-filter-copy-name {
       font-size: .72rem;
       padding: 4px 8px;
@@ -2139,6 +2225,21 @@ const renderHtml = ({
       opacity: .8;
       font-family: ui-monospace, monospace;
     }
+    .export-preview-cache-badge {
+      margin: 4px 0 0;
+      font-size: .72rem;
+      padding: 4px 10px;
+      background: rgba(140,160,200,.14);
+      color: rgba(200,215,240,.95);
+      border: 1px solid rgba(140,160,200,.45);
+      border-radius: 4px;
+      display: inline-block;
+      letter-spacing: .03em;
+    }
+    .export-preview-cache-badge.is-offline {
+      background: rgba(220,140,80,.18);
+      color: rgba(250,210,170,1);
+      border-color: rgba(220,140,80,.55);
     .export-preview-filename {
       display: flex;
       align-items: center;
@@ -4199,6 +4300,184 @@ const renderHtml = ({
     var PREVIEW_LIMIT = 20;
     var pendingExport = null; // {csv, filename, count, total, mode, colCount, missingCount}
 
+    // ============================================================
+    // ---- Offline mode: cache ostatniej wygenerowanej paczki ----
+    // ============================================================
+    // Magazyn: IndexedDB (DB: "cml-trends-export-cache", store: "last",
+    // key: "current"). Trzymamy całą paczkę (Blob lub CSV string) +
+    // metadane wystarczające do otwarcia modala podglądu. Cel: po utracie
+    // sieci (lub odświeżeniu strony) user może otworzyć modal i pobrać
+    // ZIP/CSV bez ponownego buildu — wszystko jest lokalne, sieci nigdy
+    // nie używaliśmy do generowania (raport to statyczny HTML), więc
+    // offline-first działa „za darmo", o ile zachowamy blob w IndexedDB.
+    var IDB_DB_NAME = "cml-trends-export-cache";
+    var IDB_STORE = "last";
+    var IDB_KEY = "current";
+    var cachedExportBtn = root.querySelector("[data-trend-export-cached]");
+    var networkStatusEl = root.querySelector("[data-trend-network-status]");
+    var previewCacheBadge = root.querySelector("[data-export-preview-cache-badge]");
+    var cachedExportMeta = null;
+    // Referencja do openPreviewOrDownload — przypisywana wewnątrz handlera
+    // exportBtn.click (gdzie funkcja jest definiowana). Pozwala handlerowi
+    // „📦 Otwórz ostatnią paczkę" wywołać ten sam flow bez ponownego buildu.
+    var openPreviewOrDownloadRef = null;
+
+    function openIdb() {
+      return new Promise(function (resolve, reject) {
+        if (typeof indexedDB === "undefined") {
+          reject(new Error("IndexedDB unavailable"));
+          return;
+        }
+        var req = indexedDB.open(IDB_DB_NAME, 1);
+        req.onupgradeneeded = function () {
+          var db = req.result;
+          if (!db.objectStoreNames.contains(IDB_STORE)) {
+            db.createObjectStore(IDB_STORE);
+          }
+        };
+        req.onsuccess = function () { resolve(req.result); };
+        req.onerror = function () { reject(req.error || new Error("idb open failed")); };
+      });
+    }
+    function idbPut(value) {
+      return openIdb().then(function (db) {
+        return new Promise(function (resolve, reject) {
+          var tx = db.transaction(IDB_STORE, "readwrite");
+          tx.objectStore(IDB_STORE).put(value, IDB_KEY);
+          tx.oncomplete = function () { db.close(); resolve(); };
+          tx.onerror = function () { db.close(); reject(tx.error); };
+        });
+      });
+    }
+    function idbGet() {
+      return openIdb().then(function (db) {
+        return new Promise(function (resolve, reject) {
+          var tx = db.transaction(IDB_STORE, "readonly");
+          var req = tx.objectStore(IDB_STORE).get(IDB_KEY);
+          req.onsuccess = function () { db.close(); resolve(req.result || null); };
+          req.onerror = function () { db.close(); reject(req.error); };
+        });
+      });
+    }
+    // Zapis aktualnego pendingExport do cache. Wołane PO każdym ustawieniu
+    // pendingExport (zip/zip-split/csv) — przez helper saveCurrentExport().
+    function saveExportCache(pe) {
+      if (!pe || !pe.filename) return Promise.resolve();
+      var snapshot = {
+        savedAt: Date.now(),
+        blob: pe.blob || null,
+        csv: pe.csv || null,
+        mime: pe.mime || (pe.csv ? "text/csv;charset=utf-8" : "application/zip"),
+        filename: pe.filename,
+        count: pe.count, total: pe.total, mode: pe.mode,
+        colCount: pe.colCount, missingCount: pe.missingCount,
+        format: pe.format, fileCount: pe.fileCount || 0,
+        sizeLabel: pe.sizeLabel || "",
+        thresholdNote: pe.thresholdNote || "",
+      };
+      return idbPut(snapshot).then(function () {
+        cachedExportMeta = { savedAt: snapshot.savedAt, filename: snapshot.filename, format: snapshot.format };
+        updateCachedExportButton();
+        applyNetworkStatus();
+      }).catch(function (err) {
+        try { console.warn("[trends] export cache save failed:", err); } catch (_) {}
+      });
+    }
+    function relTime(ts) {
+      if (!ts) return "";
+      var diff = Math.max(0, Math.floor((Date.now() - ts) / 1000));
+      if (diff < 60) return diff + " s temu";
+      if (diff < 3600) return Math.floor(diff / 60) + " min temu";
+      if (diff < 86400) return Math.floor(diff / 3600) + " godz. temu";
+      return Math.floor(diff / 86400) + " dni temu";
+    }
+    function fmtCacheTimestamp(ts) {
+      if (!ts) return "";
+      try { return new Date(ts).toLocaleString("pl-PL", { hour12: false }); }
+      catch (_e) { return new Date(ts).toISOString(); }
+    }
+    function updateCachedExportButton() {
+      if (!cachedExportBtn) return;
+      if (cachedExportMeta) {
+        cachedExportBtn.disabled = false;
+        cachedExportBtn.title = "Otwórz ostatnią paczkę z cache (offline).\n"
+          + "Plik: " + cachedExportMeta.filename + "\n"
+          + "Wygenerowano: " + fmtCacheTimestamp(cachedExportMeta.savedAt)
+          + " (" + relTime(cachedExportMeta.savedAt) + ")";
+      } else {
+        cachedExportBtn.disabled = true;
+        cachedExportBtn.title = "Brak zapisanej paczki — wygeneruj eksport, żeby aktywować ten przycisk.";
+      }
+    }
+    function applyNetworkStatus() {
+      if (!networkStatusEl) return;
+      var online = typeof navigator === "undefined" || navigator.onLine !== false;
+      networkStatusEl.classList.toggle("is-online", online);
+      networkStatusEl.classList.toggle("is-offline", !online);
+      networkStatusEl.textContent = online ? "🟢 online" : "🔴 offline";
+      var cacheNote = cachedExportMeta
+        ? "\nOstatnia paczka w cache: " + cachedExportMeta.filename
+          + " (" + relTime(cachedExportMeta.savedAt) + ")"
+        : "\nBrak zapisanej paczki w cache.";
+      networkStatusEl.title = (online
+        ? "Połączenie aktywne. Cache działa w tle — w razie utraty sieci możesz otworzyć ostatnią paczkę."
+        : "Brak połączenia. Możesz otworzyć ostatnią paczkę z cache („📦 Otwórz ostatnią paczkę") i pobrać ZIP bez sieci.")
+        + cacheNote;
+    }
+    if (typeof window !== "undefined") {
+      window.addEventListener("online", applyNetworkStatus);
+      window.addEventListener("offline", applyNetworkStatus);
+    }
+    idbGet().then(function (snap) {
+      if (snap && snap.filename) {
+        cachedExportMeta = { savedAt: snap.savedAt, filename: snap.filename, format: snap.format };
+      }
+      updateCachedExportButton();
+      applyNetworkStatus();
+    }).catch(function () { applyNetworkStatus(); });
+    // Klik „📦 Otwórz ostatnią paczkę" — rehydracja z IDB + open modal.
+    if (cachedExportBtn) {
+      cachedExportBtn.addEventListener("click", function () {
+        if (cachedExportBtn.disabled) return;
+        idbGet().then(function (snap) {
+          if (!snap || !snap.filename) {
+            if (exportStatus) exportStatus.textContent = "Brak zapisanej paczki w cache.";
+            return;
+          }
+          pendingExport = {
+            blob: snap.blob || null, csv: snap.csv || null,
+            mime: snap.mime, filename: snap.filename,
+            count: snap.count, total: snap.total, mode: snap.mode,
+            colCount: snap.colCount, missingCount: snap.missingCount,
+            format: snap.format, fileCount: snap.fileCount || 0,
+            sizeLabel: snap.sizeLabel || "",
+            thresholdNote: snap.thresholdNote || "",
+            fromCache: true, cachedAt: snap.savedAt,
+          };
+          if (previewCacheBadge) {
+            var online = typeof navigator === "undefined" || navigator.onLine !== false;
+            previewCacheBadge.hidden = false;
+            previewCacheBadge.classList.toggle("is-offline", !online);
+            previewCacheBadge.textContent = (online ? "📦 Z cache" : "📦 Z cache (offline)")
+              + " · wygenerowano " + relTime(snap.savedAt)
+              + " (" + fmtCacheTimestamp(snap.savedAt) + ")";
+          }
+          if (typeof openPreviewOrDownloadRef === "function") {
+            openPreviewOrDownloadRef();
+          } else if (exportStatus) {
+            exportStatus.textContent = "Modal podglądu niedostępny — wygeneruj najpierw eksport.";
+          }
+        }).catch(function (err) {
+          try { console.warn("[trends] cache load failed:", err); } catch (_) {}
+          if (exportStatus) exportStatus.textContent = "Nie udało się odczytać cache (sprawdź konsolę).";
+        });
+      });
+    }
+    // ============================================================
+    // ---- /Offline mode ----
+    // ============================================================
+
+
     // ---- Single source of truth dla nazwy/formatu eksportu ----
     // Wszystkie powierzchnie (pasek statusu, tytuł modala, ready toast,
     // download row, label przycisku „Pobierz", status po pobraniu) MUSZĄ
@@ -5100,6 +5379,13 @@ const renderHtml = ({
         }
       }
       exportBtn.addEventListener("click", function () {
+        // Świeży build — wygaś badge „📦 Z cache" z ewentualnego poprzedniego
+        // recall'a, żeby nowy modal nie sugerował, że treść jest „z cache".
+        if (previewCacheBadge) {
+          previewCacheBadge.hidden = true;
+          previewCacheBadge.classList.remove("is-offline");
+          previewCacheBadge.textContent = "";
+        }
         var built = buildExportRows();
         if (!built.count) {
           if (exportStatus) exportStatus.textContent = "Brak wierszy do eksportu (zmień filtr).";
@@ -5229,6 +5515,9 @@ const renderHtml = ({
               format: format,
               fileCount: files.length,
             };
+            // Offline cache: zapisz świeżą paczkę do IndexedDB. Async — nie
+            // blokujemy modala; saveExportCache loguje błędy w konsoli.
+            try { saveExportCache(pendingExport); } catch (_e) {}
           }
 
           // Po finalizeZip() — natychmiast pokaż czytelny rozmiar pliku
@@ -5326,7 +5615,8 @@ const renderHtml = ({
             missingCount: built.missingCount,
             format: "csv",
           };
-          // Także dla CSV — pasek statusu pokazuje rozmiar od razu po
+          // Offline cache: zapisz świeży CSV do IndexedDB.
+          try { saveExportCache(pendingExport); } catch (_e) {}
           // wygenerowaniu, zanim user otworzy modal. Identyczny helper i
           // formatowanie jak w branchu ZIP/zip-split.
           announceReadyWithSize();
@@ -5336,6 +5626,10 @@ const renderHtml = ({
         // (Safari < 15.4 bez <dialog>). Wydzielone, żeby async branch
         // (zip-split z PNG-ami) mógł zawołać dokładnie ten sam flow.
         function openPreviewOrDownload() {
+          // Eksponuj referencję na zewnątrz — handler „📦 Otwórz ostatnią
+          // paczkę" (poza tym scope) używa tej samej funkcji do otwarcia
+          // modala po rehydracji z IndexedDB.
+          openPreviewOrDownloadRef = openPreviewOrDownload;
           // Natychmiastowy komunikat o gotowej paczce — pojawia się w
           // pasku statusu eksportu ZANIM user otworzy dialog lub przewinie.
           // Cel: jeśli generowanie ZIPa trwało (PNG snapshoty), user od
