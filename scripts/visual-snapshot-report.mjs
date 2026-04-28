@@ -1136,6 +1136,19 @@ const renderHtml = ({
         </label>
         <button type="button" class="trends-filter-export" data-trend-export title="Pokaż podgląd 20 pierwszych wierszy, potem pobierz przefiltrowane runy w wybranym formacie">⬇ Podgląd i eksport…</button>
         <!--
+          „Wypróbuj toast" — pokazuje testowy toast w fazie „downloaded"
+          z fake'ową nazwą pliku, żeby user mógł na żywo zweryfikować
+          jak długo zostaje na ekranie po wybranym auto-hide. Zero side-effects
+          (nic nie pobiera, nie zapisuje cache, nie zmienia historii). Disabled
+          jest niepotrzebne — działa zawsze.
+        -->
+        <button
+          type="button"
+          class="trends-filter-toast-test"
+          data-trend-toast-test
+          title="Pokaż testowy toast „Pobrano” z aktualnie wybranym czasem auto-hide — bez pobierania pliku."
+        >▶ Wypróbuj toast</button>
+        <!--
           „📦 Otwórz ostatnią paczkę" — rehydratuje OSTATNIO wygenerowaną
           paczkę z cache (IndexedDB: cml-trends-export-cache/last). Działa
           OFFLINE — całość operacji jest lokalna, nie wymaga sieci. Disabled
@@ -1970,6 +1983,24 @@ const renderHtml = ({
     @media (prefers-reduced-motion: reduce) {
       .trends-filter-settings-shortcut:hover { transform: none; }
       .trends-filter-settings-target.is-settings-pulse { animation: none; }
+    }
+    /* „Wypróbuj toast" — drugorzędna akcja diagnostyczna obok auto-hide
+       selectu. Stonowany neutralny styl (bez gold), żeby NIE konkurował
+       wizualnie z głównym „⬇ Podgląd i eksport…". */
+    .trends-filter-toast-test {
+      font-size: .72rem;
+      padding: 4px 10px;
+      background: rgba(127,127,127,.10);
+      color: inherit;
+      border: 1px solid rgba(127,127,127,.35);
+      border-radius: 4px;
+      cursor: pointer;
+      align-self: end;
+    }
+    .trends-filter-toast-test:hover { background: rgba(127,127,127,.22); }
+    .trends-filter-toast-test:focus-visible {
+      outline: 2px solid rgba(201,168,76,.85);
+      outline-offset: 2px;
     }
     .trends-filter-export {
       font-size: .75rem;
@@ -3803,6 +3834,22 @@ const renderHtml = ({
             toastAutoHideSelect.focus({ preventScroll: true });
           }
         }, reduced ? 0 : 250);
+      });
+    }
+    // „Wypróbuj toast" — pokazuje testowy toast w fazie „downloaded" z fake'ową
+    // nazwą pliku, żeby user na żywo zobaczył jak długo zostaje przy aktualnym
+    // ustawieniu auto-hide. Zero side-effects: nie pobiera pliku, nie dotyka
+    // historii ani cache. Każdy klik resetuje timer (showReadyToast robi
+    // clearTimeout(readyToastTimer) na wejściu) — można zmieniać select i
+    // klikać ponownie, żeby porównać czasy.
+    var toastTestBtn = root.querySelector("[data-trend-toast-test]");
+    if (toastTestBtn) {
+      toastTestBtn.addEventListener("click", function () {
+        if (typeof showReadyToast !== "function") return;
+        var hideMs = getToastAutoHideMs();
+        var label = hideMs === 0 ? "bez auto-hide" : (hideMs / 1000) + " s";
+        var fakeName = "test-toast-" + label.replace(/\s+/g, "") + ".zip";
+        showReadyToast(fakeName, "ZIP (test)", "preview", "downloaded");
       });
     }
     // Live hint pod paskiem eksportu — informuje, czy aktualnie wyfiltrowane
