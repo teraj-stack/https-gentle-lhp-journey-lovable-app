@@ -4078,7 +4078,7 @@ const renderHtml = ({
               + pendingExport.filename + " · ~" + sizeLabel
               + " · gotowe do pobrania";
             // Toast w dialogu (jeśli zaraz się otworzy) — pokażemy go
-            // PO showModal(), bo wcześniej `previewToast` jest poza
+            // PO showModal(), bo wcześniej previewToast jest poza
             // top-layer i nie byłby widoczny. Reuse showPreviewToast.
           }
           if (!previewDialog || typeof previewDialog.showModal !== "function") {
