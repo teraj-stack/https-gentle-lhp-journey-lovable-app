@@ -2552,7 +2552,10 @@ const renderHtml = ({
       return (c ^ 0xffffffff) >>> 0;
     }
     function buildZip(files) {
-      // files: [{ name: "foo.csv", text: "..." }] — ASCII-safe nazwy.
+      // files: [{ name: "foo.csv", text: "..." }] LUB
+      //       [{ name: "foo.png", bytes: Uint8Array }] — wpisy mogą być binarne
+      //       (np. PNG ze sparkline'a) lub tekstowe (CSV, JSON). Pole `bytes`
+      //       ma pierwszeństwo nad `text`.
       var enc = new TextEncoder();
       var localParts = [];
       var centralParts = [];
@@ -2560,7 +2563,7 @@ const renderHtml = ({
       for (var i = 0; i < files.length; i++) {
         var f = files[i];
         var nameBytes = enc.encode(f.name);
-        var dataBytes = enc.encode(f.text);
+        var dataBytes = f.bytes ? f.bytes : enc.encode(f.text || "");
         var crc = crc32(dataBytes);
         var size = dataBytes.length;
         // Local file header (30 B + name + data)
