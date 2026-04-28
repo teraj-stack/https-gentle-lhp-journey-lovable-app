@@ -3621,8 +3621,20 @@ const renderHtml = ({
         if (readyToast && !readyToast.classList.contains("is-visible")) readyToast.hidden = true;
       }, 250);
     }
-    function showReadyToast(filename, fmtTag, sizeLabel) {
+    /**
+     * Pokazuje page-level toast „Gotowe do pobrania" / „✓ Pobrano".
+     * Parametry:
+     *  · filename, fmtTag, sizeLabel — meta do wyświetlenia,
+     *  · phase: "ready" (domyślnie) | "downloaded" — zmienia tytuł,
+     *    ikonę-state oraz czas auto-hide. Dla „downloaded" zostawiamy
+     *    toast widoczny dłużej (12 s), żeby user miał chwilę na
+     *    weryfikację nazwy pliku PO automatycznym zamknięciu modala.
+     *    Przycisk „⬇ Pobierz" w toascie po fazie downloaded chowamy —
+     *    nie ma już co pobierać (pendingExport == null po close()).
+     */
+    function showReadyToast(filename, fmtTag, sizeLabel, phase) {
       if (!readyToast) return;
+      var ph = phase || "ready";
       if (readyToastFilename) readyToastFilename.textContent = filename || "";
       if (readyToastMeta) {
         var parts = [];
@@ -3630,14 +3642,29 @@ const renderHtml = ({
         if (sizeLabel) parts.push("~" + sizeLabel);
         readyToastMeta.textContent = parts.join(" · ");
       }
-      if (readyToastTitle) readyToastTitle.textContent = "✓ Gotowe do pobrania";
+      if (readyToastTitle) {
+        readyToastTitle.textContent = ph === "downloaded"
+          ? "✓ Pobrano — sprawdź nazwę pliku"
+          : "✓ Gotowe do pobrania";
+      }
+      // Po pobraniu nie ma sensu pokazywać przycisku „Pobierz" — pendingExport
+      // jest już zwolniony przez previewDialog "close" handler. Zostawiamy
+      // tylko × do ręcznego zamknięcia. W fazie ready przywracamy widoczność.
+      if (readyToastDownload) {
+        readyToastDownload.hidden = ph === "downloaded";
+      }
+      // Klasa is-downloaded otwiera CSS hooka na zielony border / ikonę,
+      // gdyby ktoś chciał zróżnicować wizualnie (na razie tylko semantyczne).
+      readyToast.classList.toggle("is-downloaded", ph === "downloaded");
       readyToast.hidden = false;
       // Reflow → nowy fade-in
       // eslint-disable-next-line no-unused-expressions
       readyToast.offsetWidth;
       readyToast.classList.add("is-visible");
       if (readyToastTimer) clearTimeout(readyToastTimer);
-      readyToastTimer = setTimeout(hideReadyToast, 8000);
+      // Dłuższy czas widoczności po pobraniu (12 s) — daje user'owi okno
+      // weryfikacji „czy to faktycznie ta nazwa, którą widziałem w modalu".
+      readyToastTimer = setTimeout(hideReadyToast, ph === "downloaded" ? 12000 : 8000);
     }
     if (readyToastClose) {
       readyToastClose.addEventListener("click", hideReadyToast);
