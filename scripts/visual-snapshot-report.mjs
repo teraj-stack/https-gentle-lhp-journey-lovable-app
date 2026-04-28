@@ -1709,6 +1709,58 @@ const renderHtml = ({
       padding-bottom: 6px;
       min-height: 1em;
     }
+    /* Pasek postępu generowania ZIP — wyświetlany obok statusu eksportu
+       w czasie budowy archiwum. Po zakończeniu (value=100) tło zmienia
+       się na zielonkawe i etykieta to „Gotowe do pobrania". */
+    .trends-filter-export-progress {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      align-self: end;
+      padding-bottom: 5px;
+    }
+    .trends-filter-export-progress[hidden] { display: none; }
+    .trends-filter-export-progress-bar {
+      width: 140px;
+      height: 8px;
+      appearance: none;
+      -webkit-appearance: none;
+      border: 1px solid rgba(127,127,127,.35);
+      border-radius: 4px;
+      overflow: hidden;
+      background: rgba(127,127,127,.15);
+      transition: filter .2s ease;
+    }
+    .trends-filter-export-progress-bar::-webkit-progress-bar {
+      background: rgba(127,127,127,.15);
+      border-radius: 4px;
+    }
+    .trends-filter-export-progress-bar::-webkit-progress-value {
+      background: linear-gradient(90deg, rgba(150,180,230,.85), rgba(120,160,220,.95));
+      transition: width .25s ease;
+      border-radius: 3px;
+    }
+    .trends-filter-export-progress-bar::-moz-progress-bar {
+      background: linear-gradient(90deg, rgba(150,180,230,.85), rgba(120,160,220,.95));
+      border-radius: 3px;
+    }
+    .trends-filter-export-progress.is-done .trends-filter-export-progress-bar::-webkit-progress-value {
+      background: linear-gradient(90deg, rgba(120,200,140,.9), rgba(90,180,120,1));
+    }
+    .trends-filter-export-progress.is-done .trends-filter-export-progress-bar::-moz-progress-bar {
+      background: linear-gradient(90deg, rgba(120,200,140,.9), rgba(90,180,120,1));
+    }
+    .trends-filter-export-progress-label {
+      font-size: .7rem;
+      letter-spacing: .02em;
+      opacity: .85;
+      min-width: 9ch;
+    }
+    .trends-filter-export-progress.is-done .trends-filter-export-progress-label {
+      color: rgba(150,220,170,1);
+      opacity: 1;
+      font-weight: 600;
+    }
     /* Badge parity „nazwa w modalu == nazwa w pobraniu" — pokazuje się
        po downloadPending() i informuje, czy string z modala doleciał
        1:1 do a.download. Dwa stany kolorystyczne (match/mismatch),
