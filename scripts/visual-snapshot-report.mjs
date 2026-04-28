@@ -1125,8 +1125,8 @@ const renderHtml = ({
           z innymi preferencjami eksportu, używane w showReadyToast() w fazie
           „downloaded". Faza „ready" (przed downloadem) nadal trzyma stałe 8s.
         -->
-        <label class="trends-filter-label trends-filter-toast-hide trends-filter-settings-target" title="Po jakim czasie automatycznie schować toast „Pobrano ZIP”. „Bez auto-hide” = toast zostaje aż do ręcznego zamknięcia (×).">
-          auto-hide toastu
+        <label class="trends-filter-label trends-filter-toast-hide trends-filter-settings-target" title="Po jakim czasie automatycznie schować toast „Pobrano ZIP”. „Bez auto-hide” = toast zostaje aż do ręcznego zamknięcia (×). Wartość pamiętana ODDZIELNIE per format ZIP (zip vs zip-split) — przełączenie formatu wczytuje swoje ustawienie.">
+          auto-hide toastu <span class="trends-filter-toast-hide-scope" data-trend-toast-autohide-scope title="Format ZIP, dla którego obowiązuje to ustawienie. Każdy format ma własną wartość (CSV pomijamy — toast pokazujemy tylko po pobraniu ZIP).">(dla zip)</span>
           <select class="trends-filter-select" data-trend-toast-autohide>
             <option value="8000">8 s</option>
             <option value="12000" selected>12 s</option>
