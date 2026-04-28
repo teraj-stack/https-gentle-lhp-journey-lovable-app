@@ -3095,6 +3095,115 @@ const renderHtml = ({
       return buildSafeFilename(["savings-filtered", built.mode, stamp, filterHash], ext);
     }
 
+    // ───────────────── Historia ostatnich nazw eksportu (LRU, top 10) ─────────────────
+    // Cel: jeden klik = ponowne skopiowanie nazwy bez konieczności
+    // ustawiania tych samych filtrów ponownie. Persist w localStorage,
+    // żeby przeżyła reload. Dedup po `name` (re-eksport z tym samym
+    // hashem przesuwa wpis na top, nie duplikuje). Defensywnie: brak
+    // storage / zły JSON ⇒ pusta historia, brak crasha.
+    function loadExportHistory() {
+      try {
+        var raw = localStorage.getItem(EXPORT_HISTORY_KEY);
+        if (!raw) return [];
+        var arr = JSON.parse(raw);
+        if (!Array.isArray(arr)) return [];
+        return arr.filter(function (e) {
+          return e && typeof e.name === "string" && e.name.length > 0;
+        }).slice(0, EXPORT_HISTORY_MAX);
+      } catch (_e) { return []; }
+    }
+    function saveExportHistory(list) {
+      try { localStorage.setItem(EXPORT_HISTORY_KEY, JSON.stringify(list)); }
+      catch (_e) { /* quota / disabled storage → ignorujemy */ }
+    }
+    function pushExportHistory(name, meta) {
+      if (!name) return;
+      var list = loadExportHistory();
+      // Dedup po nazwie → LRU (re-kopia tej samej wskakuje na top).
+      list = list.filter(function (e) { return e.name !== name; });
+      list.unshift({
+        name: name,
+        ts: Date.now(),
+        source: (meta && meta.source) || "copy",
+        count: meta && typeof meta.count === "number" ? meta.count : null,
+      });
+      if (list.length > EXPORT_HISTORY_MAX) list.length = EXPORT_HISTORY_MAX;
+      saveExportHistory(list);
+      renderExportHistory();
+    }
+    function clearExportHistory() {
+      saveExportHistory([]);
+      renderExportHistory();
+    }
+    var rtf = (function () {
+      try { return new Intl.RelativeTimeFormat("pl", { numeric: "auto" }); }
+      catch (_) { return null; }
+    })();
+    function formatHistoryTime(ts) {
+      if (!ts) return "";
+      var diffSec = Math.round((ts - Date.now()) / 1000);
+      var abs = Math.abs(diffSec);
+      if (!rtf) return new Date(ts).toLocaleString();
+      if (abs < 60) return rtf.format(diffSec, "second");
+      if (abs < 3600) return rtf.format(Math.round(diffSec / 60), "minute");
+      if (abs < 86400) return rtf.format(Math.round(diffSec / 3600), "hour");
+      if (abs < 86400 * 30) return rtf.format(Math.round(diffSec / 86400), "day");
+      return new Date(ts).toLocaleDateString();
+    }
+    function renderExportHistory() {
+      if (!historyWrap || !historyList) return;
+      var list = loadExportHistory();
+      if (!list.length) {
+        historyWrap.hidden = true;
+        if (historyCountEl) historyCountEl.textContent = "";
+        historyList.innerHTML = "";
+        return;
+      }
+      historyWrap.hidden = false;
+      if (historyCountEl) historyCountEl.textContent = "(" + list.length + "/" + EXPORT_HISTORY_MAX + ")";
+      // Budowa DOM zamiast innerHTML — defensywa XSS, niezależnie od
+      // tego, że sanitizeFilenamePart whitelistuje [A-Za-z0-9._-].
+      historyList.innerHTML = "";
+      list.forEach(function (entry) {
+        var li = document.createElement("li");
+        li.className = "trends-filter-history-item";
+        var btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "trends-filter-history-btn";
+        btn.textContent = entry.name;
+        var srcLabel = entry.source === "download" ? "pobrane" : "skopiowane";
+        var countLabel = entry.count != null ? ", " + entry.count + " w." : "";
+        btn.title = "Kliknij, żeby ponownie skopiować nazwę.\nŹródło: " + srcLabel + countLabel + "\nCzas: " + new Date(entry.ts).toLocaleString();
+        btn.addEventListener("click", function () {
+          copyTextToClipboard(entry.name).then(function (ok) {
+            if (ok) {
+              btn.classList.add("is-copied");
+              if (exportStatus) exportStatus.textContent = "Skopiowano nazwę z historii: " + entry.name;
+              setTimeout(function () { btn.classList.remove("is-copied"); }, 1500);
+            } else if (exportStatus) {
+              exportStatus.textContent = "Nie udało się skopiować — nazwa: " + entry.name;
+            }
+          });
+        });
+        var meta = document.createElement("span");
+        meta.className = "trends-filter-history-meta";
+        meta.textContent = formatHistoryTime(entry.ts);
+        li.appendChild(btn);
+        li.appendChild(meta);
+        historyList.appendChild(li);
+      });
+    }
+    if (historyClearBtn) {
+      historyClearBtn.addEventListener("click", function (ev) {
+        // stopPropagation → klik „Wyczyść" nie togglje <details>.
+        ev.preventDefault();
+        ev.stopPropagation();
+        clearExportHistory();
+        if (exportStatus) exportStatus.textContent = "Historia nazw eksportu wyczyszczona.";
+      });
+    }
+    renderExportHistory();
+
     // Kopiowanie do schowka z fallbackiem (Clipboard API → execCommand).
     function copyTextToClipboard(text) {
       if (navigator.clipboard && navigator.clipboard.writeText) {
