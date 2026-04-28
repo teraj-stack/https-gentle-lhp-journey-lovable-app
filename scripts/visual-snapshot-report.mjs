@@ -4442,28 +4442,26 @@ const renderHtml = ({
           // zostaje dopóki user nie kliknie „Pobierz" (downloadPending
           // nadpisze go na „Pobrano …").
           var sizeLabel = "";
-          var fmtTag = "";
           if (pendingExport) {
             var sizeBytes = pendingExport.blob ? pendingExport.blob.size
               : (pendingExport.csv ? pendingExport.csv.length : 0);
             sizeLabel = sizeBytes < 1024 ? sizeBytes + " B"
               : sizeBytes < 1024 * 1024 ? Math.round(sizeBytes / 1024) + " KB"
               : (sizeBytes / (1024 * 1024)).toFixed(1) + " MB";
-            fmtTag = pendingExport.format === "zip" ? "ZIP"
-              : pendingExport.format === "zip-split"
-                ? "ZIP split (" + pendingExport.fileCount + " plików)"
-                : "CSV";
-            if (exportStatus) {
-              exportStatus.textContent = "✓ Wygenerowano " + fmtTag + ": "
-                + pendingExport.filename + " · ~" + sizeLabel
-                + " · gotowe do pobrania";
-            }
+            // Single source of truth — sync paska statusu, tytułu modala
+            // i etykiety przycisku „Pobierz" tym samym helperem, którego
+            // użyje renderPreview za moment. Gwarantuje, że nazwa pliku
+            // i format (CSV/ZIP) są identyczne we wszystkich miejscach.
+            syncExportNameAcrossSurfaces(pendingExport, {
+              phase: "ready",
+              sizeLabel: sizeLabel,
+            });
             // Page-level „Gotowe do pobrania" toast — pokazujemy ZANIM
-            // otworzy się modal podglądu, tak żeby user mógł od razu
-            // pobrać plik (przycisk „Pobierz" w toaście) bez wchodzenia
-            // w dialog. Używa tej samej nazwy/fmt/size co status bar.
-            if (typeof showReadyToast === "function") {
-              showReadyToast(pendingExport.filename, fmtTag, sizeLabel);
+            // otworzy się modal podglądu. Czyta z tego samego getExportNameFormat,
+            // co status bar i tytuł modala — zero rozjazdu UI.
+            var info = getExportNameFormat(pendingExport);
+            if (info && typeof showReadyToast === "function") {
+              showReadyToast(info.filename, info.fmtTag, sizeLabel);
             }
           }
           if (!previewDialog || typeof previewDialog.showModal !== "function") {
