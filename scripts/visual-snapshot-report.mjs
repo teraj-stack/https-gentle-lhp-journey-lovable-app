@@ -4469,6 +4469,7 @@ const renderHtml = ({
       // Reset countdownu przed nową fazą (poprzedni interval mógł jeszcze
       // tickać, jeśli toast był ponownie pokazany podczas swojej widoczności).
       clearReadyToastCountdown();
+      var resolvedTotalMs = 0;
       if (ph === "downloaded") {
         var hideMs = getToastAutoHideMs();
         if (hideMs > 0) {
@@ -4476,13 +4477,86 @@ const renderHtml = ({
           // Countdown pokazujemy TYLKO gdy auto-hide jest aktywny —
           // dla „bez auto-hide" (0 ms) element zostaje hidden.
           startReadyToastCountdown(hideMs);
+          resolvedTotalMs = hideMs;
         }
       } else {
         // Faza „ready" — stałe 8 s, też pokazujemy countdown dla spójności UX.
         readyToastTimer = setTimeout(hideReadyToast, 8000);
         startReadyToastCountdown(8000);
+        resolvedTotalMs = 8000;
+      }
+      // Snapshot do persystencji — pozwala odtworzyć toast po re-renderze
+      // skryptu / zmianie formatu eksportu (która może wyzerować countdown UI).
+      readyToastLastSnapshot = {
+        filename: filename || "",
+        fmtTag: fmtTag || "",
+        sizeLabel: sizeLabel || "",
+        phase: ph,
+        totalMs: resolvedTotalMs,
+      };
+      persistReadyToastState();
+    }
+    // Restore — wywoływane raz po init. Jeśli w sessionStorage jest świeży
+    // snapshot toastu (TTL 2 min, żeby nie odgrzewać starych notyfikacji),
+    // odtwarzamy go z aktualnym remainingMs i stanem pauzy. Pauza zostaje
+    // zachowana — dopiero pointerleave/focusout wznowi countdown, identycznie
+    // jak gdyby user nie ruszył myszką podczas re-renderu.
+    function restoreReadyToastFromSession() {
+      if (!readyToast) return;
+      var st = readPersistedReadyToastState();
+      if (!st) return;
+      // TTL 2 minuty — stare snapshoty (np. po reload przeglądarki za godzinę)
+      // ignorujemy, żeby nie wskrzeszać dawno nieaktualnej notyfikacji.
+      if (Date.now() - (st.savedAt || 0) > 120000) {
+        clearPersistedReadyToastState();
+        return;
+      }
+      // Jeśli auto-hide był aktywny i już upłynął — pomijamy restore.
+      if (st.totalMs > 0 && st.remainingMs <= 0 && !st.isPaused) {
+        clearPersistedReadyToastState();
+        return;
+      }
+      // Odtwórz UI bez wywoływania showReadyToast (które zresetowałoby timer
+      // do pełnej wartości totalMs zamiast remainingMs).
+      if (readyToastFilename) readyToastFilename.textContent = st.filename || "";
+      if (readyToastMeta) readyToastMeta.textContent = ""; // metadane (fmt/size) są ulotne
+      if (readyToastTitle) {
+        readyToastTitle.textContent = st.phase === "downloaded"
+          ? "✓ Pobrano — sprawdź nazwę pliku"
+          : "✓ Gotowe do pobrania";
+      }
+      if (readyToastDownload) readyToastDownload.hidden = st.phase === "downloaded";
+      if (readyToastHistory) {
+        readyToastHistory.hidden = st.phase !== "downloaded";
+        if (st.phase === "downloaded") {
+          readyToastHistory.setAttribute("data-target-filename", st.filename || "");
+        }
+      }
+      readyToast.classList.toggle("is-downloaded", st.phase === "downloaded");
+      readyToast.hidden = false;
+      // eslint-disable-next-line no-unused-expressions
+      readyToast.offsetWidth;
+      readyToast.classList.add("is-visible");
+      readyToastLastSnapshot = {
+        filename: st.filename, fmtTag: st.fmtTag, sizeLabel: st.sizeLabel,
+        phase: st.phase, totalMs: st.totalMs,
+      };
+      // Restore countdown z REMAINING czasu, nie totalMs.
+      if (st.totalMs > 0 && st.remainingMs > 0) {
+        if (st.isPaused) {
+          // Pauza — nie startujemy setTimeout, tylko ustawiamy flagę i UI pauzy.
+          readyToastIsPaused = true;
+          readyToastRemainingMs = st.remainingMs;
+          readyToastCountdownDeadline = Date.now() + st.remainingMs;
+          startReadyToastCountdown(st.remainingMs);
+          // pauza-flag już ustawiona, więc tick wyrysuje „znika za N s · (pauza)"
+        } else {
+          readyToastTimer = setTimeout(hideReadyToast, st.remainingMs);
+          startReadyToastCountdown(st.remainingMs);
+        }
       }
     }
+    restoreReadyToastFromSession();
     if (readyToastClose) {
       readyToastClose.addEventListener("click", hideReadyToast);
     }
