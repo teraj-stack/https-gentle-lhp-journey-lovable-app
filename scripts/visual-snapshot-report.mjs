@@ -2002,6 +2002,7 @@ const renderHtml = ({
       outline: 2px solid rgba(201,168,76,.85);
       outline-offset: 2px;
     }
+    .trends-filter-export {
       font-size: .75rem;
       padding: 4px 10px;
       background: rgba(201,168,76,.14);
