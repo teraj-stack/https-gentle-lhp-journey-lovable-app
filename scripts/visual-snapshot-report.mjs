@@ -1125,7 +1125,7 @@ const renderHtml = ({
           z innymi preferencjami eksportu, używane w showReadyToast() w fazie
           „downloaded". Faza „ready" (przed downloadem) nadal trzyma stałe 8s.
         -->
-        <label class="trends-filter-label trends-filter-toast-hide" title="Po jakim czasie automatycznie schować toast „Pobrano ZIP”. „Bez auto-hide” = toast zostaje aż do ręcznego zamknięcia (×).">
+        <label class="trends-filter-label trends-filter-toast-hide trends-filter-settings-target" title="Po jakim czasie automatycznie schować toast „Pobrano ZIP”. „Bez auto-hide” = toast zostaje aż do ręcznego zamknięcia (×).">
           auto-hide toastu
           <select class="trends-filter-select" data-trend-toast-autohide>
             <option value="8000">8 s</option>
