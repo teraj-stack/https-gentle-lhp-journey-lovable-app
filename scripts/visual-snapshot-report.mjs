@@ -1110,6 +1110,11 @@ const renderHtml = ({
         <span class="trends-filter-export-status" data-trend-export-status role="status" aria-live="polite"></span>
         <span class="trends-filter-zip-hint" data-trend-zip-hint role="status" aria-live="polite" hidden></span>
       </div>
+      <div class="trends-filter-name-preview" data-trend-name-preview hidden>
+        <span class="trends-filter-name-preview-label" aria-hidden="true">📦 Nazwa paczki:</span>
+        <code class="trends-filter-name-preview-value" data-trend-name-preview-value tabindex="0" role="textbox" aria-readonly="true" aria-label="Aktualnie wyliczona nazwa paczki eksportu — kliknij, aby skopiować."></code>
+        <span class="trends-filter-name-preview-meta" data-trend-name-preview-meta></span>
+      </div>
       <details class="trends-filter-history" data-trend-history-wrap hidden>
         <summary class="trends-filter-history-summary">
           <span class="trends-filter-history-icon" aria-hidden="true">🕘</span>
