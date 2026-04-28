@@ -2950,10 +2950,12 @@ const renderHtml = ({
             if (exportStatus) exportStatus.textContent = "Renderuję PNG sparkline'ów…";
             snapshotSparkPngs().then(function (pngs) {
               finalizeZip(pngs);
+              if (pendingExport) pendingExport.thresholdNote = thresholdNote;
               openPreviewOrDownload();
             }).catch(function () {
               // Nawet jeśli wszystkie PNG-i padną, eksport CSV-ów leci dalej.
               finalizeZip([]);
+              if (pendingExport) pendingExport.thresholdNote = thresholdNote;
               openPreviewOrDownload();
             });
             return; // dialog otworzy się w callbacku
