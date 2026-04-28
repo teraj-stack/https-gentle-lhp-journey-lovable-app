@@ -3530,23 +3530,11 @@ const renderHtml = ({
       var pe = pendingExport;
       var pendingName = pe && pe.filename ? pe.filename : null;
       var pendingFmt = pe && pe.format ? pe.format : "csv";
-      if (previewTitle) {
-        var titleFmt = pendingFmt === "zip" || pendingFmt === "zip-split"
-          ? "ZIP" : "CSV";
-        // Dynamiczny tytuł z formatem + zamrożoną nazwą pliku.
-        // To jest „freeze point" — pendingName pochodzi z pendingExport
-        // (single source of truth dla anchor.download), więc tytuł modala
-        // pokrywa się 1:1 z nazwą w download row i tym, co trafi na dysk.
-        previewTitle.textContent = pendingName
-          ? "Podgląd eksportu " + titleFmt + " · " + pendingName
-          : "Podgląd eksportu " + titleFmt;
-      }
-      if (previewConfirm) {
-        // Sync etykiety przycisku potwierdzenia z formatem (CSV/ZIP), żeby
-        // user nie kliknął „Pobierz CSV" gdy auto-ZIP przełączył format.
-        previewConfirm.textContent = "⬇ Pobierz " +
-          (pendingFmt === "zip" || pendingFmt === "zip-split" ? "ZIP" : "CSV");
-      }
+      // Single source of truth — sync tytułu modala i etykiety przycisku
+      // „Pobierz" z pendingExport. Status bar pomijamy (phase=modal-only),
+      // bo openPreviewOrDownload już go ustawił spójnie z tymi samymi
+      // danymi tuż przed renderPreview.
+      syncExportNameAcrossSurfaces(pe, { phase: "modal-only" });
       if (previewFilenameWrap && previewFilenameValue) {
         if (pendingName) {
           previewFilenameWrap.hidden = false;
