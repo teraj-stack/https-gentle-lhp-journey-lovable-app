@@ -1646,7 +1646,86 @@ const renderHtml = ({
       padding-bottom: 6px;
       min-height: 1em;
     }
-    /* ---- Dialog podglądu eksportu ---- */
+    /* ---- Historia ostatnich nazw eksportu ---- */
+    .trends-filter-history {
+      margin-top: 6px;
+      font-size: .72rem;
+      border: 1px dashed rgba(127,127,127,.35);
+      border-radius: 6px;
+      padding: 4px 10px;
+      background: rgba(127,127,127,.05);
+    }
+    .trends-filter-history[open] { background: rgba(127,127,127,.10); }
+    .trends-filter-history-summary {
+      cursor: pointer;
+      list-style: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 0;
+      user-select: none;
+    }
+    .trends-filter-history-summary::-webkit-details-marker { display: none; }
+    .trends-filter-history-icon { opacity: .8; }
+    .trends-filter-history-count {
+      opacity: .65;
+      font-variant-numeric: tabular-nums;
+    }
+    .trends-filter-history-clear {
+      margin-left: auto;
+      font-size: .68rem;
+      padding: 2px 8px;
+      background: transparent;
+      color: inherit;
+      border: 1px solid rgba(127,127,127,.4);
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .trends-filter-history-clear:hover { background: rgba(127,127,127,.18); }
+    .trends-filter-history-list {
+      list-style: none;
+      margin: 6px 0 4px;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      max-height: 220px;
+      overflow-y: auto;
+    }
+    .trends-filter-history-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .trends-filter-history-btn {
+      flex: 1 1 auto;
+      text-align: left;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: .70rem;
+      padding: 3px 8px;
+      background: rgba(0,0,0,.18);
+      color: inherit;
+      border: 1px solid rgba(127,127,127,.3);
+      border-radius: 4px;
+      cursor: pointer;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .trends-filter-history-btn:hover {
+      background: rgba(201,168,76,.18);
+      border-color: rgba(201,168,76,.45);
+    }
+    .trends-filter-history-btn.is-copied {
+      background: rgba(120,180,120,.22);
+      border-color: rgba(120,180,120,.55);
+    }
+    .trends-filter-history-meta {
+      flex: 0 0 auto;
+      opacity: .55;
+      font-variant-numeric: tabular-nums;
+      font-size: .66rem;
+    }
     .export-preview-dialog {
       max-width: min(960px, 95vw);
       width: 95vw;
