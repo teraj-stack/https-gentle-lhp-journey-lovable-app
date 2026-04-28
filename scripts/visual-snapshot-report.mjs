@@ -4317,6 +4317,10 @@ const renderHtml = ({
     var networkStatusEl = root.querySelector("[data-trend-network-status]");
     var previewCacheBadge = root.querySelector("[data-export-preview-cache-badge]");
     var cachedExportMeta = null;
+    // Referencja do openPreviewOrDownload — przypisywana wewnątrz handlera
+    // exportBtn.click (gdzie funkcja jest definiowana). Pozwala handlerowi
+    // „📦 Otwórz ostatnią paczkę" wywołać ten sam flow bez ponownego buildu.
+    var openPreviewOrDownloadRef = null;
 
     function openIdb() {
       return new Promise(function (resolve, reject) {
