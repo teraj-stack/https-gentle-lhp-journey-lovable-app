@@ -3852,6 +3852,7 @@ const renderHtml = ({
     var readyToastTitle = root.querySelector("[data-export-ready-toast-title]");
     var readyToastDownload = root.querySelector("[data-export-ready-toast-download]");
     var readyToastClose = root.querySelector("[data-export-ready-toast-close]");
+    var readyToastHistory = root.querySelector("[data-export-ready-toast-history]");
     var readyToastTimer = null;
     function hideReadyToast() {
       if (readyToastTimer) { clearTimeout(readyToastTimer); readyToastTimer = null; }
