@@ -4057,7 +4057,18 @@ const renderHtml = ({
       if (readyToastTimer) clearTimeout(readyToastTimer);
       // Dłuższy czas widoczności po pobraniu (12 s) — daje user'owi okno
       // weryfikacji „czy to faktycznie ta nazwa, którą widziałem w modalu".
-      readyToastTimer = setTimeout(hideReadyToast, ph === "downloaded" ? 12000 : 8000);
+      // Faza „downloaded" honoruje preferencję usera (8s/12s/20s/bez auto-hide).
+      // Faza „ready" (przed klikiem Pobierz) zostaje na stałych 8s — to krótka
+      // notyfikacja statusu, nie końcowe potwierdzenie. 0 ms = brak auto-hide
+      // (toast czeka na kliknięcie ×).
+      if (ph === "downloaded") {
+        var hideMs = getToastAutoHideMs();
+        if (hideMs > 0) {
+          readyToastTimer = setTimeout(hideReadyToast, hideMs);
+        }
+      } else {
+        readyToastTimer = setTimeout(hideReadyToast, 8000);
+      }
     }
     if (readyToastClose) {
       readyToastClose.addEventListener("click", hideReadyToast);
