@@ -1234,6 +1234,26 @@ const renderHtml = ({
         -->
         <div class="export-preview-toast" data-export-preview-toast role="status" aria-live="polite" hidden></div>
       </dialog>
+      <!--
+        Page-level toast „Gotowe do pobrania" — pokazywany ZANIM otworzy
+        się dialog podglądu (lub zamiast, jeśli user zamknął modal i ma
+        nadal pendingExport). Fixed top-right, zawiera ikonę, nazwę pliku
+        (mono, łamana po znaku) i przycisk „Pobierz". Klik „Pobierz"
+        wywołuje to samo downloadPending() co stopka modala — single
+        source of truth dla a.download. Przycisk × i auto-hide po 8s.
+      -->
+      <div class="export-ready-toast" data-export-ready-toast role="status" aria-live="polite" aria-atomic="true" hidden>
+        <div class="export-ready-toast-icon" aria-hidden="true">✓</div>
+        <div class="export-ready-toast-body">
+          <div class="export-ready-toast-title" data-export-ready-toast-title>Gotowe do pobrania</div>
+          <code class="export-ready-toast-filename" data-export-ready-toast-filename></code>
+          <div class="export-ready-toast-meta" data-export-ready-toast-meta></div>
+        </div>
+        <div class="export-ready-toast-actions">
+          <button type="button" class="export-ready-toast-download" data-export-ready-toast-download title="Pobierz wygenerowany plik">⬇ Pobierz</button>
+          <button type="button" class="export-ready-toast-close" data-export-ready-toast-close aria-label="Zamknij powiadomienie">×</button>
+        </div>
+      </div>
     </section>`;
   })();
 
