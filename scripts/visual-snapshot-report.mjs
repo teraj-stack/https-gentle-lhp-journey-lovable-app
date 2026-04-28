@@ -1261,6 +1261,14 @@ const renderHtml = ({
         <div class="export-preview-header" data-export-preview-header>
           <h3 id="export-preview-title">Podgląd eksportu</h3>
           <p class="export-preview-meta" data-export-preview-meta></p>
+          <!--
+            Badge „📦 Z cache (offline)" — pojawia się tylko gdy modal został
+            otwarty przez „📦 Otwórz ostatnią paczkę" (rehydracja z IndexedDB).
+            Pokazuje znacznik czasu wygenerowania paczki, żeby user wiedział,
+            jak świeża jest zawartość. Domyślnie hidden — w trybie offline
+            pokazujemy też wzmiankę o braku sieci.
+          -->
+          <p class="export-preview-cache-badge" data-export-preview-cache-badge hidden></p>
           <div class="export-preview-filename" data-export-preview-filename hidden>
             <span class="export-preview-filename-label" aria-hidden="true">📦 Plik:</span>
             <code class="export-preview-filename-value" data-export-preview-filename-value tabindex="0" role="textbox" aria-readonly="true" aria-label="Nazwa pliku, który zostanie pobrany — kliknij, aby skopiować."></code>
