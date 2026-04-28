@@ -1875,6 +1875,12 @@ const renderHtml = ({
       margin: 0 0 4px;
       font-size: 1rem;
       color: #c9a84c;
+      /* Long filenames mogą wydłużyć tytuł — łamiemy z zachowaniem
+         word-break, a dla bardzo długich segmentów (timestamp+hash)
+         pozwalamy zerwać w dowolnym miejscu, żeby nie rozpychało modala. */
+      word-break: break-word;
+      overflow-wrap: anywhere;
+      line-height: 1.35;
     }
     .export-preview-meta {
       font-size: .75rem;
