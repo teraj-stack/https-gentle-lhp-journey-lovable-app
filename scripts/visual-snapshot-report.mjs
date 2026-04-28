@@ -1099,7 +1099,7 @@ const renderHtml = ({
             <option value="full">Pełny schemat</option>
           </select>
         </label>
-        <label class="trends-filter-label trends-filter-export-format" title="CSV: jeden plik. ZIP: spakowane CSV + metadata.json (deterministyczny). ZIP (split): osobne pliki png-saved.csv i discovery-saved.csv obok pełnego CSV — wygodne do narzędzi single-series.">
+        <label class="trends-filter-label trends-filter-export-format trends-filter-settings-target" title="CSV: jeden plik. ZIP: spakowane CSV + metadata.json (deterministyczny). ZIP (split): osobne pliki png-saved.csv i discovery-saved.csv obok pełnego CSV — wygodne do narzędzi single-series.">
           format
           <select class="trends-filter-select" data-trend-export-format>
             <option value="csv" selected>CSV</option>
