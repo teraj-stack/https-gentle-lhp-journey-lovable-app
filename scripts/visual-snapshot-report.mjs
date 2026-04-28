@@ -3866,7 +3866,11 @@ const renderHtml = ({
                 if (!pngBlob) { resolve(null); return; }
                 pngBlob.arrayBuffer().then(function (ab) {
                   resolve({
-                    name: "spark-" + key.replace(/[^a-z0-9._-]/gi, "_") + ".png",
+                    // Wewnętrzna nazwa wpisu w ZIP — przepuszczona przez
+                    // ten sam buildSafeFilename co główny plik archiwum,
+                    // żeby unzip działał spójnie na Windows/macOS/Linux
+                    // (m.in. zero spacji, polskich znaków i Win-reserved).
+                    name: buildSafeFilename(["spark", key], "png"),
                     bytes: new Uint8Array(ab),
                     width: canvas.width,
                     height: canvas.height,
