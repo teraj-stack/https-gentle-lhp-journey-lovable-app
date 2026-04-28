@@ -5103,8 +5103,14 @@ const renderHtml = ({
       //                   opacity .7), żeby user nie klikał wielokrotnie.
       // Stan flag confirmVerifyPassed resetowany przy każdym otwarciu modala.
       var previewConfirmVerify = root.querySelector("[data-export-preview-confirm-verify]");
+      var previewConfirmAbort = root.querySelector("[data-export-preview-confirm-abort]");
       var confirmVerifyPassed = false; // staje true po MATCH lub po świadomym 2nd-clicku przy MISMATCH
       var confirmMismatchToken = null; // timeout id dla okna „re-confirm po mismatch"
+      var confirmAborted = false; // ustawiane przez „Anuluj pobieranie" — ignorujemy w-locie wynik clipboard.readText
+      function setAbortVisible(visible) {
+        if (!previewConfirmAbort) return;
+        previewConfirmAbort.hidden = !visible;
+      }
       function setVerifyBadge(state, text, title) {
         if (!previewConfirmVerify) return;
         previewConfirmVerify.classList.remove("is-checking", "is-match", "is-mismatch", "is-unavailable");
@@ -5116,8 +5122,11 @@ const renderHtml = ({
       }
       function resetVerifyState() {
         confirmVerifyPassed = false;
+        confirmAborted = false;
         if (confirmMismatchToken) { clearTimeout(confirmMismatchToken); confirmMismatchToken = null; }
         setVerifyBadge(null);
+        setAbortVisible(false);
+        if (previewConfirm) previewConfirm.classList.remove("is-pending-verify");
       }
       // Reset badge'a/flagi przy każdym kolejnym otwarciu modala — żeby
       // poprzednia weryfikacja nie wpływała na nowy ZIP/CSV. Robimy to przez
@@ -5125,6 +5134,22 @@ const renderHtml = ({
       // — ale rejestrujemy też dodatkowy listener tylko do reset verify.
       if (previewDialog) {
         previewDialog.addEventListener("close", resetVerifyState);
+      }
+      // „✕ Anuluj pobieranie" — ustawia flagę confirmAborted, którą sprawdzamy
+      // w then/catch clipPromise. Czyści UI weryfikacji i NIE zamyka modala.
+      if (previewConfirmAbort) {
+        previewConfirmAbort.addEventListener("click", function () {
+          confirmAborted = true;
+          confirmVerifyPassed = false;
+          if (confirmMismatchToken) { clearTimeout(confirmMismatchToken); confirmMismatchToken = null; }
+          if (previewConfirm) previewConfirm.classList.remove("is-pending-verify");
+          setVerifyBadge(null);
+          setAbortVisible(false);
+          if (typeof showPreviewToast === "function") {
+            showPreviewToast("✕ Anulowano pobieranie — modal pozostaje otwarty.", "info", 2400);
+          }
+          if (previewConfirm) previewConfirm.focus();
+        });
       }
       previewConfirm.addEventListener("click", function () {
         // Jeśli user już raz przeszedł przez weryfikację (MATCH lub świadome
