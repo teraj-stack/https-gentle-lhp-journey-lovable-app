@@ -4392,6 +4392,28 @@ const renderHtml = ({
             };
           }
 
+          // Po finalizeZip() — natychmiast pokaż czytelny rozmiar pliku
+          // w pasku statusu (CSV-status, „Wygenerowano … · ~340 KB · gotowe
+          // do pobrania"). Robimy to ZANIM otworzy się modal podglądu, więc
+          // user widzi rozmiar od razu — także w trybie async (zip-split),
+          // gdzie między „Pakuję archiwum…" a otwarciem dialogu mogłoby
+          // wcześniej zostać przejściowe „Gotowe do pobrania" bez rozmiaru.
+          // pendingExport.sizeLabel zapamiętujemy, żeby openPreviewOrDownload
+          // i ready toast użyły dokładnie tego samego stringa (zero rozjazdu).
+          function announceReadyWithSize() {
+            if (!pendingExport) return;
+            var sizeBytes = pendingExport.blob ? pendingExport.blob.size
+              : (pendingExport.csv ? pendingExport.csv.length : 0);
+            var sizeLabel = humanSize(sizeBytes);
+            pendingExport.sizeLabel = sizeLabel;
+            if (typeof syncExportNameAcrossSurfaces === "function") {
+              syncExportNameAcrossSurfaces(pendingExport, {
+                phase: "ready",
+                sizeLabel: sizeLabel,
+              });
+            }
+          }
+
           if (format === "zip-split") {
             // PNG-i sparkline'ów dorzucamy TYLKO w trybie split — bo to ten
             // wariant jest pomyślany pod „pełną paczkę do dalszej analizy"
@@ -4410,6 +4432,7 @@ const renderHtml = ({
               finalizeZip(pngs);
               if (pendingExport) pendingExport.thresholdNote = thresholdNote;
               setExportProgress(100, "Gotowe do pobrania", { done: true, autoHideMs: 3500 });
+              announceReadyWithSize();
               openPreviewOrDownload();
             }).catch(function () {
               // Nawet jeśli wszystkie PNG-i padną, eksport CSV-ów leci dalej.
@@ -4417,6 +4440,7 @@ const renderHtml = ({
               finalizeZip([]);
               if (pendingExport) pendingExport.thresholdNote = thresholdNote;
               setExportProgress(100, "Gotowe do pobrania", { done: true, autoHideMs: 3500 });
+              announceReadyWithSize();
               openPreviewOrDownload();
             });
             return; // dialog otworzy się w callbacku
@@ -4427,6 +4451,7 @@ const renderHtml = ({
           setExportProgress(40, "Pakuję archiwum…");
           finalizeZip([]);
           setExportProgress(100, "Gotowe do pobrania", { done: true, autoHideMs: 3500 });
+          announceReadyWithSize();
         } else {
           format = "csv";
           pendingExport = {
