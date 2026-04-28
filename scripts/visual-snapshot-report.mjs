@@ -1572,6 +1572,24 @@ const renderHtml = ({
       border: 1px solid rgba(127,127,127,.35);
       border-radius: 4px;
     }
+    .trends-filter-input {
+      font: inherit;
+      font-size: .8rem;
+      padding: 2px 4px;
+      background: inherit;
+      color: inherit;
+      border: 1px solid rgba(127,127,127,.35);
+      border-radius: 4px;
+    }
+    .trends-filter-zip-hint {
+      font-size: .75rem;
+      opacity: .85;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: rgba(201,168,76,.14);
+      color: inherit;
+      align-self: center;
+    }
     .trends-filter-command { max-width: 320px; }
     .trends-filter-reset {
       font-size: .75rem;
