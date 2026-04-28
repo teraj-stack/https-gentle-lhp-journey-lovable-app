@@ -3970,7 +3970,7 @@ const renderHtml = ({
         hidePreviewProgress();
         if (previewDialog) previewDialog.classList.remove("is-building");
         if (previewDialog && previewDialog.open) previewDialog.close("build-aborted");
-        if (typeof clearExportProgress === "function") clearExportProgress();
+        if (typeof hideExportProgress === "function") hideExportProgress();
         if (typeof exportStatus !== "undefined" && exportStatus) {
           exportStatus.textContent = "Anulowano generowanie paczki.";
         }
