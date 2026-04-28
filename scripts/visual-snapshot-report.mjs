@@ -4346,8 +4346,21 @@ const renderHtml = ({
         // Pasek postępu — po pobraniu znika natychmiast (status „Pobrano …"
         // i tak nadpisuje komunikat „Gotowe do pobrania" z paska statusu).
         if (typeof hideExportProgress === "function") hideExportProgress();
-        // Page-level „Gotowe do pobrania" toast — chowamy po pobraniu.
-        if (typeof hideReadyToast === "function") hideReadyToast();
+        // Page-level toast — NIE chowamy go po pobraniu, tylko przełączamy
+        // w fazę „downloaded" (zielony tytuł „✓ Pobrano — sprawdź nazwę
+        // pliku", ukryty przycisk „Pobierz", auto-hide wydłużony do 12 s).
+        // Cel: modal podglądu zamyka się automatycznie tuż po `a.click()`,
+        // ale user nadal widzi w toascie dokładnie tę nazwę, którą zapisała
+        // przeglądarka (1:1 z pendingExport.filename / schowkiem).
+        try {
+          var dlNameInfo = getExportNameFormat(pendingExport);
+          var dlSizeLabel = (typeof formatBytes === "function" && pendingExport.byteSize)
+            ? formatBytes(pendingExport.byteSize)
+            : (pendingExport.sizeLabel || "");
+          if (dlNameInfo && typeof showReadyToast === "function") {
+            showReadyToast(dlNameInfo.filename, dlNameInfo.fmtTag, dlSizeLabel, "downloaded");
+          }
+        } catch (_e) { /* fallback: zostaw toast w stanie „ready" */ }
         if (exportStatus) {
           var ml = pendingExport.mode === "full"
             ? ("pełny schemat, " + pendingExport.colCount + " kol."
