@@ -3894,6 +3894,20 @@ const renderHtml = ({
       if (readyToastDownload) {
         readyToastDownload.hidden = ph === "downloaded";
       }
+      // „📜 Zobacz w historii" — pokazujemy tylko po fakcie pobrania.
+      // W fazie „ready" nazwa jeszcze nie trafiła do historii (history jest
+      // updatowana w downloadPending → pushExportHistory source:"download"),
+      // więc link byłby mylący.
+      if (readyToastHistory) {
+        readyToastHistory.hidden = ph !== "downloaded";
+        // Cache nazwy na elemencie — handler odczytuje stąd, żeby działać
+        // niezależnie od późniejszych zmian pendingExport.
+        if (ph === "downloaded") {
+          readyToastHistory.setAttribute("data-target-filename", filename || "");
+        } else {
+          readyToastHistory.removeAttribute("data-target-filename");
+        }
+      }
       // Klasa is-downloaded otwiera CSS hooka na zielony border / ikonę,
       // gdyby ktoś chciał zróżnicować wizualnie (na razie tylko semantyczne).
       readyToast.classList.toggle("is-downloaded", ph === "downloaded");
