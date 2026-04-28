@@ -3241,6 +3241,13 @@ const renderHtml = ({
             copyNameBtn.classList.add("is-copied");
             copyNameBtn.textContent = "✓ Skopiowano";
             if (exportStatus) exportStatus.textContent = "Skopiowano nazwę: " + name;
+            // Wpis do historii: source=copy, count z aktualnego buildExportRows
+            // (drugie wywołanie — tanio, bez parsowania CSV; computeExportBaseName
+            // i tak już raz to zrobił, ale brak globalnego cache nie boli przy ~ms).
+            try {
+              var built = buildExportRows();
+              pushExportHistory(name, { source: "copy", count: built && built.count });
+            } catch (_e) { pushExportHistory(name, { source: "copy" }); }
             if (copyResetTimer) clearTimeout(copyResetTimer);
             copyResetTimer = setTimeout(function () {
               copyNameBtn.classList.remove("is-copied");
