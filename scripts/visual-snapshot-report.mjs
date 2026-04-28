@@ -1300,6 +1300,25 @@ const renderHtml = ({
             hidden
           ></span>
           <button type="button" class="export-preview-cancel" data-export-preview-cancel>Anuluj</button>
+          <!--
+            „✕ Anuluj pobieranie" — pojawia się TYLKO podczas trwającej
+            weryfikacji schowka (CHECKING) lub w 8-sekundowym oknie
+            re-confirm po MISMATCH. Klik:
+              · przerywa flow weryfikacji (ignoruje wynik czytania schowka),
+              · resetuje confirmVerifyPassed/confirmMismatchToken,
+              · czyści badge i klasę is-pending-verify z „Pobierz",
+              · NIE wywołuje downloadPending() — plik się nie pobiera,
+              · NIE zamyka modala — user wraca do podglądu i może
+                zmienić zdanie / skopiować nazwę / kliknąć „Pobierz" jeszcze raz.
+            Domyślnie hidden — pokazujemy go imperatywnie z handlera „Pobierz".
+          -->
+          <button
+            type="button"
+            class="export-preview-confirm-abort"
+            data-export-preview-confirm-abort
+            title="Przerwij rozpoczęte pobieranie ZIP zanim plik trafi na dysk. Modal zostanie otwarty — możesz kliknąć „Pobierz" ponownie albo zamknąć podgląd."
+            hidden
+          >✕ Anuluj pobieranie</button>
           <button
             type="button"
             class="export-preview-confirm"
