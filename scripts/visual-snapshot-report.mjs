@@ -2026,7 +2026,7 @@ const renderHtml = ({
        się po skopiowaniu nazwy pliku (każdy z 3 entry pointów: code,
        przycisk ⧉, download row). Pozycja absolute względem dialogu
        (relative parent), żeby nie skakał z tabelą scrolla.
-       Wariant `is-error` na czerwono dla nieudanego copy. */
+       Wariant is-error na czerwono dla nieudanego copy. */
     .export-preview-dialog { position: relative; }
     .export-preview-toast {
       position: absolute;
