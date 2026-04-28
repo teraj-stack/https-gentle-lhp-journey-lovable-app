@@ -1928,6 +1928,49 @@ const renderHtml = ({
       align-self: end;
     }
     .trends-filter-reset:hover { background: rgba(127,127,127,.22); }
+    /* ⚙ Skrót ustawień — okrągły, dyskretny, gold tinted, żeby pasował do
+       palety eksportu, ale nie konkurował z głównym przyciskiem „Eksportuj".
+       Visual hover/focus state daje wyraźny feedback klikalności. */
+    .trends-filter-settings-shortcut {
+      font-size: .95rem;
+      line-height: 1;
+      width: 28px;
+      height: 28px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(201,168,76,.10);
+      color: inherit;
+      border: 1px solid rgba(201,168,76,.40);
+      border-radius: 50%;
+      cursor: pointer;
+      align-self: end;
+      padding: 0;
+      transition: background .15s ease, transform .15s ease, border-color .15s ease;
+    }
+    .trends-filter-settings-shortcut:hover {
+      background: rgba(201,168,76,.24);
+      transform: rotate(35deg);
+    }
+    .trends-filter-settings-shortcut:focus-visible {
+      outline: 2px solid rgba(201,168,76,.85);
+      outline-offset: 2px;
+    }
+    /* Krótki pulse na każdym labelu ustawień po kliknięciu ⚙ — pokazuje
+       userowi gdzie znajdują się kontrolki, do których właśnie przewinięto. */
+    @keyframes trends-settings-pulse {
+      0%   { box-shadow: 0 0 0 0 rgba(201,168,76,.55); }
+      60%  { box-shadow: 0 0 0 8px rgba(201,168,76,0); }
+      100% { box-shadow: 0 0 0 0 rgba(201,168,76,0); }
+    }
+    .trends-filter-settings-target.is-settings-pulse {
+      border-radius: 6px;
+      animation: trends-settings-pulse 1.6s ease-out 1;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .trends-filter-settings-shortcut:hover { transform: none; }
+      .trends-filter-settings-target.is-settings-pulse { animation: none; }
+    }
     .trends-filter-export {
       font-size: .75rem;
       padding: 4px 10px;
