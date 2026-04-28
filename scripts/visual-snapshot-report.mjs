@@ -4149,19 +4149,35 @@ const renderHtml = ({
             // (CSV-e per metryka + obrazki gotowe do wklejenia w raport).
             // Zwykly "zip" celowo zostaje minimalne (tylko CSV + metadata).
             if (exportStatus) exportStatus.textContent = "Renderuję PNG sparkline'ów…";
-            snapshotSparkPngs().then(function (pngs) {
+            // Pasek postępu: start 0% (pre-render), aktualizowany przez
+            // snapshotSparkPngs(onProgress) per zakończony PNG, finał
+            // 100% + „Gotowe do pobrania" po finalizeZip().
+            setExportProgress(0, "Renderuję PNG… 0/" + sparks.length);
+            snapshotSparkPngs(function (done, total) {
+              var pct = total > 0 ? Math.round((done / total) * 90) : 90;
+              setExportProgress(pct, "Renderuję PNG… " + done + "/" + total);
+            }).then(function (pngs) {
+              setExportProgress(95, "Pakuję archiwum…");
               finalizeZip(pngs);
               if (pendingExport) pendingExport.thresholdNote = thresholdNote;
+              setExportProgress(100, "Gotowe do pobrania", { done: true, autoHideMs: 3500 });
               openPreviewOrDownload();
             }).catch(function () {
               // Nawet jeśli wszystkie PNG-i padną, eksport CSV-ów leci dalej.
+              setExportProgress(95, "Pakuję archiwum…");
               finalizeZip([]);
               if (pendingExport) pendingExport.thresholdNote = thresholdNote;
+              setExportProgress(100, "Gotowe do pobrania", { done: true, autoHideMs: 3500 });
               openPreviewOrDownload();
             });
             return; // dialog otworzy się w callbacku
           }
+          // Tryb "zip" (bez PNG-ów) — generowanie jest synchroniczne i
+          // krótkie, ale i tak pokazujemy szybki przebieg paska, żeby
+          // user dostał wizualne potwierdzenie „buduję → gotowe".
+          setExportProgress(40, "Pakuję archiwum…");
           finalizeZip([]);
+          setExportProgress(100, "Gotowe do pobrania", { done: true, autoHideMs: 3500 });
         } else {
           format = "csv";
           pendingExport = {
