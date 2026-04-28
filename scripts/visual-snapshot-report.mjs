@@ -2958,6 +2958,7 @@ const renderHtml = ({
         // user nie kliknął „Pobierz CSV" gdy auto-ZIP przełączył format.
         previewConfirm.textContent = "⬇ Pobierz " +
           (pendingFmt === "zip" || pendingFmt === "zip-split" ? "ZIP" : "CSV");
+      }
       if (previewFilenameWrap && previewFilenameValue) {
         if (pendingName) {
           previewFilenameWrap.hidden = false;
