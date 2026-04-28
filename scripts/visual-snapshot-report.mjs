@@ -4391,22 +4391,30 @@ const renderHtml = ({
           // bez konieczności scrollowania do sekcji podglądu. Komunikat
           // zostaje dopóki user nie kliknie „Pobierz" (downloadPending
           // nadpisze go na „Pobrano …").
-          if (pendingExport && exportStatus) {
+          var sizeLabel = "";
+          var fmtTag = "";
+          if (pendingExport) {
             var sizeBytes = pendingExport.blob ? pendingExport.blob.size
               : (pendingExport.csv ? pendingExport.csv.length : 0);
-            var sizeLabel = sizeBytes < 1024 ? sizeBytes + " B"
+            sizeLabel = sizeBytes < 1024 ? sizeBytes + " B"
               : sizeBytes < 1024 * 1024 ? Math.round(sizeBytes / 1024) + " KB"
               : (sizeBytes / (1024 * 1024)).toFixed(1) + " MB";
-            var fmtTag = pendingExport.format === "zip" ? "ZIP"
+            fmtTag = pendingExport.format === "zip" ? "ZIP"
               : pendingExport.format === "zip-split"
                 ? "ZIP split (" + pendingExport.fileCount + " plików)"
                 : "CSV";
-            exportStatus.textContent = "✓ Wygenerowano " + fmtTag + ": "
-              + pendingExport.filename + " · ~" + sizeLabel
-              + " · gotowe do pobrania";
-            // Toast w dialogu (jeśli zaraz się otworzy) — pokażemy go
-            // PO showModal(), bo wcześniej previewToast jest poza
-            // top-layer i nie byłby widoczny. Reuse showPreviewToast.
+            if (exportStatus) {
+              exportStatus.textContent = "✓ Wygenerowano " + fmtTag + ": "
+                + pendingExport.filename + " · ~" + sizeLabel
+                + " · gotowe do pobrania";
+            }
+            // Page-level „Gotowe do pobrania" toast — pokazujemy ZANIM
+            // otworzy się modal podglądu, tak żeby user mógł od razu
+            // pobrać plik (przycisk „Pobierz" w toaście) bez wchodzenia
+            // w dialog. Używa tej samej nazwy/fmt/size co status bar.
+            if (typeof showReadyToast === "function") {
+              showReadyToast(pendingExport.filename, fmtTag, sizeLabel);
+            }
           }
           if (!previewDialog || typeof previewDialog.showModal !== "function") {
             downloadPending();
