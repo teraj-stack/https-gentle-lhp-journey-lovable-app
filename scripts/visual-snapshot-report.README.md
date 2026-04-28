@@ -389,10 +389,23 @@ pasujących do wszystkich aktywnych selectów (AND), bez re-runu skryptu.
   **Format eksportu** (select „format" obok trybu):
   - **CSV** (domyślny) — pojedynczy plik `savings-filtered-<mode>-<ts>-<hash>.csv`.
   - **ZIP (CSV + metadata)** — `…<hash>.zip` zawierający spakowany CSV oraz
-    `metadata.json` z manifestem (timestamp, filtr, tryb, lista kolumn,
-    `missingColumnsAsEmpty`, `sortContract`). Wygodne, gdy filtr zwraca
-    setki/tysiące wierszy lub gdy chcesz zachować razem dane + kontekst, w
-    jakim powstały (do code review, do bug-reportu, do archiwum).
+    `metadata.json` z manifestem. Manifest opisuje **dokładnie jak powstał
+    eksport** i zawiera m.in.:
+    - `generatedAt` — timestamp utworzenia archiwum (ISO),
+    - `schemaMode` — `subset` lub `full`,
+    - `format` + `formatVariant` — wybrany wariant (`zip` vs
+      `zip-split (full CSV + per-metric single-series CSVs)`),
+    - `filter` — pełny snapshot wartości selectów filtra trendów,
+    - `rowRange` — `firstGeneratedAt` / `lastGeneratedAt`,
+      `firstIndex` / `lastIndex` (0-based, w kolejności sparkline),
+      `lastIsCurrent`, `includesCurrentRun`,
+    - `rowsExported` / `rowsTotal`, `columns` + `columnCount`,
+      `missingColumnsAsEmpty`, `sortContract`,
+    - `files` — lista plików w archiwum (poza `metadata.json`) z
+      `name` + `sizeBytes`, do audytu zawartości bez rozpakowywania.
+    Wygodne, gdy filtr zwraca setki/tysiące wierszy lub gdy chcesz
+    zachować razem dane + kontekst, w jakim powstały (do code review,
+    do bug-reportu, do archiwum).
   - **ZIP split (PNG/discovery)** — to samo co wyżej + dodatkowe pliki
     `png-saved.csv` i `discovery-saved.csv` (po dwie kolumny:
     `generatedAt,value`). Pomyślane pod narzędzia single-series (Datawrapper,
