@@ -3621,8 +3621,20 @@ const renderHtml = ({
         if (readyToast && !readyToast.classList.contains("is-visible")) readyToast.hidden = true;
       }, 250);
     }
-    function showReadyToast(filename, fmtTag, sizeLabel) {
+    /**
+     * Pokazuje page-level toast „Gotowe do pobrania" / „✓ Pobrano".
+     * Parametry:
+     *  · filename, fmtTag, sizeLabel — meta do wyświetlenia,
+     *  · phase: "ready" (domyślnie) | "downloaded" — zmienia tytuł,
+     *    ikonę-state oraz czas auto-hide. Dla „downloaded" zostawiamy
+     *    toast widoczny dłużej (12 s), żeby user miał chwilę na
+     *    weryfikację nazwy pliku PO automatycznym zamknięciu modala.
+     *    Przycisk „⬇ Pobierz" w toascie po fazie downloaded chowamy —
+     *    nie ma już co pobierać (pendingExport == null po close()).
+     */
+    function showReadyToast(filename, fmtTag, sizeLabel, phase) {
       if (!readyToast) return;
+      var ph = phase || "ready";
       if (readyToastFilename) readyToastFilename.textContent = filename || "";
       if (readyToastMeta) {
         var parts = [];
@@ -3630,14 +3642,29 @@ const renderHtml = ({
         if (sizeLabel) parts.push("~" + sizeLabel);
         readyToastMeta.textContent = parts.join(" · ");
       }
-      if (readyToastTitle) readyToastTitle.textContent = "✓ Gotowe do pobrania";
+      if (readyToastTitle) {
+        readyToastTitle.textContent = ph === "downloaded"
+          ? "✓ Pobrano — sprawdź nazwę pliku"
+          : "✓ Gotowe do pobrania";
+      }
+      // Po pobraniu nie ma sensu pokazywać przycisku „Pobierz" — pendingExport
+      // jest już zwolniony przez previewDialog "close" handler. Zostawiamy
+      // tylko × do ręcznego zamknięcia. W fazie ready przywracamy widoczność.
+      if (readyToastDownload) {
+        readyToastDownload.hidden = ph === "downloaded";
+      }
+      // Klasa is-downloaded otwiera CSS hooka na zielony border / ikonę,
+      // gdyby ktoś chciał zróżnicować wizualnie (na razie tylko semantyczne).
+      readyToast.classList.toggle("is-downloaded", ph === "downloaded");
       readyToast.hidden = false;
       // Reflow → nowy fade-in
       // eslint-disable-next-line no-unused-expressions
       readyToast.offsetWidth;
       readyToast.classList.add("is-visible");
       if (readyToastTimer) clearTimeout(readyToastTimer);
-      readyToastTimer = setTimeout(hideReadyToast, 8000);
+      // Dłuższy czas widoczności po pobraniu (12 s) — daje user'owi okno
+      // weryfikacji „czy to faktycznie ta nazwa, którą widziałem w modalu".
+      readyToastTimer = setTimeout(hideReadyToast, ph === "downloaded" ? 12000 : 8000);
     }
     if (readyToastClose) {
       readyToastClose.addEventListener("click", hideReadyToast);
@@ -4319,8 +4346,22 @@ const renderHtml = ({
         // Pasek postępu — po pobraniu znika natychmiast (status „Pobrano …"
         // i tak nadpisuje komunikat „Gotowe do pobrania" z paska statusu).
         if (typeof hideExportProgress === "function") hideExportProgress();
-        // Page-level „Gotowe do pobrania" toast — chowamy po pobraniu.
-        if (typeof hideReadyToast === "function") hideReadyToast();
+        // Page-level toast — NIE chowamy go po pobraniu, tylko przełączamy
+        // w fazę „downloaded" (zielony tytuł „✓ Pobrano — sprawdź nazwę
+        // pliku", ukryty przycisk „Pobierz", auto-hide wydłużony do 12 s).
+        // Cel: modal podglądu zamyka się automatycznie tuż po a.click(),
+        // ale user nadal widzi w toascie dokładnie tę nazwę, którą zapisała
+        // przeglądarka (1:1 z pendingExport.filename / schowkiem).
+        try {
+          var dlNameInfo = getExportNameFormat(pendingExport);
+          // sizeLabel zapamiętujemy w pendingExport.sizeLabel przez
+          // announceReadyWithSize() — używamy go 1:1, żeby toast „downloaded"
+          // pokazał identyczny rozmiar co toast „ready" pokazany wcześniej.
+          var dlSizeLabel = pendingExport.sizeLabel || "";
+          if (dlNameInfo && typeof showReadyToast === "function") {
+            showReadyToast(dlNameInfo.filename, dlNameInfo.fmtTag, dlSizeLabel, "downloaded");
+          }
+        } catch (_e) { /* fallback: zostaw toast w stanie „ready" */ }
         if (exportStatus) {
           var ml = pendingExport.mode === "full"
             ? ("pełny schemat, " + pendingExport.colCount + " kol."
