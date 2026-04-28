@@ -1300,6 +1300,25 @@ const renderHtml = ({
             hidden
           ></span>
           <button type="button" class="export-preview-cancel" data-export-preview-cancel>Anuluj</button>
+          <!--
+            „✕ Anuluj pobieranie" — pojawia się TYLKO podczas trwającej
+            weryfikacji schowka (CHECKING) lub w 8-sekundowym oknie
+            re-confirm po MISMATCH. Klik:
+              · przerywa flow weryfikacji (ignoruje wynik czytania schowka),
+              · resetuje confirmVerifyPassed/confirmMismatchToken,
+              · czyści badge i klasę is-pending-verify z „Pobierz",
+              · NIE wywołuje downloadPending() — plik się nie pobiera,
+              · NIE zamyka modala — user wraca do podglądu i może
+                zmienić zdanie / skopiować nazwę / kliknąć „Pobierz" jeszcze raz.
+            Domyślnie hidden — pokazujemy go imperatywnie z handlera „Pobierz".
+          -->
+          <button
+            type="button"
+            class="export-preview-confirm-abort"
+            data-export-preview-confirm-abort
+            title="Przerwij rozpoczęte pobieranie ZIP zanim plik trafi na dysk. Modal zostanie otwarty — możesz kliknąć „Pobierz" ponownie albo zamknąć podgląd."
+            hidden
+          >✕ Anuluj pobieranie</button>
           <button
             type="button"
             class="export-preview-confirm"
@@ -2570,6 +2589,24 @@ const renderHtml = ({
     .export-preview-confirm.is-pending-verify {
       opacity: .7;
       cursor: wait;
+    }
+    /* „✕ Anuluj pobieranie" — wariant ostrzegawczy (czerwonawy), pojawia się
+       wyłącznie w stanie CHECKING/re-confirm. Pozycjonowany obok „Pobierz". */
+    .export-preview-confirm-abort {
+      background: rgba(220,120,120,.18);
+      color: rgba(245,180,180,.98);
+      border: 1px solid rgba(220,120,120,.55);
+      font-weight: 600;
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-size: .78rem;
+      cursor: pointer;
+      transition: background .15s ease;
+    }
+    .export-preview-confirm-abort:hover { background: rgba(220,120,120,.30); }
+    .export-preview-confirm-abort:focus-visible {
+      outline: 2px solid rgba(245,180,180,.9);
+      outline-offset: 2px;
     }
     /* Badge weryfikacji „schowek vs nazwa pliku" tuż przed Pobierz.
        4 stany kolorystyczne (checking/match/mismatch/unavailable) +
@@ -5066,8 +5103,14 @@ const renderHtml = ({
       //                   opacity .7), żeby user nie klikał wielokrotnie.
       // Stan flag confirmVerifyPassed resetowany przy każdym otwarciu modala.
       var previewConfirmVerify = root.querySelector("[data-export-preview-confirm-verify]");
+      var previewConfirmAbort = root.querySelector("[data-export-preview-confirm-abort]");
       var confirmVerifyPassed = false; // staje true po MATCH lub po świadomym 2nd-clicku przy MISMATCH
       var confirmMismatchToken = null; // timeout id dla okna „re-confirm po mismatch"
+      var confirmAborted = false; // ustawiane przez „Anuluj pobieranie" — ignorujemy w-locie wynik clipboard.readText
+      function setAbortVisible(visible) {
+        if (!previewConfirmAbort) return;
+        previewConfirmAbort.hidden = !visible;
+      }
       function setVerifyBadge(state, text, title) {
         if (!previewConfirmVerify) return;
         previewConfirmVerify.classList.remove("is-checking", "is-match", "is-mismatch", "is-unavailable");
@@ -5079,8 +5122,11 @@ const renderHtml = ({
       }
       function resetVerifyState() {
         confirmVerifyPassed = false;
+        confirmAborted = false;
         if (confirmMismatchToken) { clearTimeout(confirmMismatchToken); confirmMismatchToken = null; }
         setVerifyBadge(null);
+        setAbortVisible(false);
+        if (previewConfirm) previewConfirm.classList.remove("is-pending-verify");
       }
       // Reset badge'a/flagi przy każdym kolejnym otwarciu modala — żeby
       // poprzednia weryfikacja nie wpływała na nowy ZIP/CSV. Robimy to przez
@@ -5089,7 +5135,25 @@ const renderHtml = ({
       if (previewDialog) {
         previewDialog.addEventListener("close", resetVerifyState);
       }
+      // „✕ Anuluj pobieranie" — ustawia flagę confirmAborted, którą sprawdzamy
+      // w then/catch clipPromise. Czyści UI weryfikacji i NIE zamyka modala.
+      if (previewConfirmAbort) {
+        previewConfirmAbort.addEventListener("click", function () {
+          confirmAborted = true;
+          confirmVerifyPassed = false;
+          if (confirmMismatchToken) { clearTimeout(confirmMismatchToken); confirmMismatchToken = null; }
+          if (previewConfirm) previewConfirm.classList.remove("is-pending-verify");
+          setVerifyBadge(null);
+          setAbortVisible(false);
+          if (typeof showPreviewToast === "function") {
+            showPreviewToast("✕ Anulowano pobieranie — modal pozostaje otwarty.", "info", 2400);
+          }
+          if (previewConfirm) previewConfirm.focus();
+        });
+      }
       previewConfirm.addEventListener("click", function () {
+        // Każdy nowy klik resetuje flagę abort z poprzedniej iteracji.
+        confirmAborted = false;
         // Jeśli user już raz przeszedł przez weryfikację (MATCH lub świadome
         // potwierdzenie po MISMATCH) — pobieramy bez powtórnego check'a.
         if (confirmVerifyPassed) {
@@ -5105,8 +5169,11 @@ const renderHtml = ({
           return;
         }
         // CHECKING state — disable wizualnie, czytamy schowek async.
+        // Pokazujemy „✕ Anuluj pobieranie" — user może przerwać zanim
+        // clipPromise rozwiąże się i zanim downloadPending() zostanie wywołane.
         previewConfirm.classList.add("is-pending-verify");
         setVerifyBadge("checking", "⏳ sprawdzam schowek…", "Czytam zawartość schowka, żeby porównać ze stringiem trafiającym do pliku.");
+        setAbortVisible(true);
         var clipPromise;
         try {
           clipPromise = (navigator.clipboard && typeof navigator.clipboard.readText === "function")
@@ -5117,24 +5184,29 @@ const renderHtml = ({
         }
         clipPromise.then(function (clip) {
           previewConfirm.classList.remove("is-pending-verify");
+          // Jeśli user kliknął „Anuluj pobieranie" zanim odpowiedź wróciła —
+          // ignorujemy wynik, NIE pobieramy, NIE zamykamy modala.
+          if (confirmAborted) return;
           var clipStr = String(clip == null ? "" : clip);
           if (clipStr === expected) {
             // MATCH — startujemy pobieranie natychmiast, badge na ~1s widoczny.
             setVerifyBadge("match", "✓ schowek = nazwa pliku", "Wartość w schowku jest bit-identyczna z nazwą pliku, który zaraz pobierzesz.");
+            setAbortVisible(false);
             confirmVerifyPassed = true;
             downloadPending();
             if (previewDialog && previewDialog.open) previewDialog.close("confirm");
             return;
           }
           // MISMATCH — NIE zamykamy modala, czekamy na 2nd click w ciągu 8s.
-          // Truncate clipboard string w tooltipie (max 200 znaków), żeby
-          // gigantyczne wklejone payloady nie rozsadzały tytułu HTML.
+          // „Anuluj pobieranie" zostaje widoczny przez całe okno re-confirm,
+          // żeby user mógł świadomie wycofać się zamiast klikać Pobierz po raz drugi.
           var clipShort = clipStr.length > 200 ? clipStr.slice(0, 200) + "…" : clipStr;
           var tip = "Schowek różni się od nazwy pliku.\n"
             + "W pliku: " + expected + "\n"
             + "W schowku: " + (clipStr.length === 0 ? "(pusty)" : clipShort) + "\n\n"
-            + "Kliknij „Pobierz" jeszcze raz, żeby świadomie potwierdzić — albo użyj „⧉ Kopiuj nazwę", żeby najpierw zsynchronizować schowek.";
+            + "Kliknij „Pobierz" jeszcze raz, żeby świadomie potwierdzić — albo „✕ Anuluj pobieranie", żeby wycofać się bez zapisu pliku.";
           setVerifyBadge("mismatch", "⚠ schowek ≠ nazwa pliku — kliknij Pobierz ponownie", tip);
+          setAbortVisible(true);
           showPreviewToast("⚠ Schowek różni się od nazwy pliku — kliknij Pobierz ponownie, żeby potwierdzić.", "error", 4500);
           confirmVerifyPassed = true; // następny click pominie check
           // Re-confirm window: 8s. Po upływie wracamy do stanu „świeżego",
@@ -5143,15 +5215,18 @@ const renderHtml = ({
           confirmMismatchToken = setTimeout(function () {
             confirmVerifyPassed = false;
             setVerifyBadge(null);
+            setAbortVisible(false);
           }, 8000);
         }).catch(function (err) {
           // UNAVAILABLE — Permissions denied / Safari / brak API. Nie blokujemy
           // pobrania (brak schowka != niezgodność), tylko sygnalizujemy.
           previewConfirm.classList.remove("is-pending-verify");
+          if (confirmAborted) return;
           var reason = err && err.name === "NotAllowedError"
             ? "brak uprawnień do schowka"
             : (err && err.message) || "schowek niedostępny";
           setVerifyBadge("unavailable", "ℹ schowek niedostępny — pobieram", "Nie udało się odczytać schowka (" + reason + "). Pobieram plik bez weryfikacji — nazwa w pliku jest pewna (1:1 z pendingExport.filename).");
+          setAbortVisible(false);
           confirmVerifyPassed = true;
           downloadPending();
           if (previewDialog && previewDialog.open) previewDialog.close("confirm");
