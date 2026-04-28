@@ -2807,7 +2807,8 @@ const renderHtml = ({
             : pendingExport.format === "zip-split" ? " · ZIP split (" + pendingExport.fileCount + " plików)"
             : "";
           exportStatus.textContent = "Pobrano " + pendingExport.count + "/" + pendingExport.total
-            + " (" + ml + fmtLabel + ") → " + pendingExport.filename;
+            + " (" + ml + fmtLabel + ") → " + pendingExport.filename
+            + (pendingExport.thresholdNote || "");
         }
       } catch (e) {
         if (exportStatus) exportStatus.textContent = "Eksport nieudany: " + e.message;
