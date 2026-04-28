@@ -4952,6 +4952,30 @@ const renderHtml = ({
         }
       });
     }
+    // Toggle „Pokaż / Ukryj pełną nazwę" — przełącza widoczność rozwijanego
+    // panelu z rozbiciem na segmenty. Stan jest zapisywany w localStorage,
+    // żeby preferencja była przywracana przy każdym kolejnym otwarciu modala.
+    if (previewFullnameExpand) {
+      previewFullnameExpand.addEventListener("click", function () {
+        var next = !isFullnameExpanded();
+        setFullnameExpanded(next);
+        applyFullnameExpanded(next);
+      });
+    }
+    // Klik / Enter / Space na pełnej nazwie kopiuje ją do schowka — reuse
+    // copyPreviewFilename(), bo wartość jest 1:1 z pendingExport.filename
+    // (renderFullnameBreakdown wpisuje to samo co previewFilenameValue).
+    if (previewFullnameRaw) {
+      previewFullnameRaw.addEventListener("click", function () {
+        copyPreviewFilename(previewFullnameRaw);
+      });
+      previewFullnameRaw.addEventListener("keydown", function (ev) {
+        if (ev.key === "Enter" || ev.key === " ") {
+          ev.preventDefault();
+          copyPreviewFilename(previewFullnameRaw);
+        }
+      });
+    }
     if (previewDialog) {
       // Klik w backdrop (poza zawartością) → zamknij. <dialog> sam tego nie
       // robi — sprawdzamy czy target == sam dialog (nie potomek).
