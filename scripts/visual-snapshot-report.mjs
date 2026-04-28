@@ -5152,6 +5152,8 @@ const renderHtml = ({
         });
       }
       previewConfirm.addEventListener("click", function () {
+        // Każdy nowy klik resetuje flagę abort z poprzedniej iteracji.
+        confirmAborted = false;
         // Jeśli user już raz przeszedł przez weryfikację (MATCH lub świadome
         // potwierdzenie po MISMATCH) — pobieramy bez powtórnego check'a.
         if (confirmVerifyPassed) {
@@ -5167,8 +5169,11 @@ const renderHtml = ({
           return;
         }
         // CHECKING state — disable wizualnie, czytamy schowek async.
+        // Pokazujemy „✕ Anuluj pobieranie" — user może przerwać zanim
+        // clipPromise rozwiąże się i zanim downloadPending() zostanie wywołane.
         previewConfirm.classList.add("is-pending-verify");
         setVerifyBadge("checking", "⏳ sprawdzam schowek…", "Czytam zawartość schowka, żeby porównać ze stringiem trafiającym do pliku.");
+        setAbortVisible(true);
         var clipPromise;
         try {
           clipPromise = (navigator.clipboard && typeof navigator.clipboard.readText === "function")
@@ -5179,24 +5184,29 @@ const renderHtml = ({
         }
         clipPromise.then(function (clip) {
           previewConfirm.classList.remove("is-pending-verify");
+          // Jeśli user kliknął „Anuluj pobieranie" zanim odpowiedź wróciła —
+          // ignorujemy wynik, NIE pobieramy, NIE zamykamy modala.
+          if (confirmAborted) return;
           var clipStr = String(clip == null ? "" : clip);
           if (clipStr === expected) {
             // MATCH — startujemy pobieranie natychmiast, badge na ~1s widoczny.
             setVerifyBadge("match", "✓ schowek = nazwa pliku", "Wartość w schowku jest bit-identyczna z nazwą pliku, który zaraz pobierzesz.");
+            setAbortVisible(false);
             confirmVerifyPassed = true;
             downloadPending();
             if (previewDialog && previewDialog.open) previewDialog.close("confirm");
             return;
           }
           // MISMATCH — NIE zamykamy modala, czekamy na 2nd click w ciągu 8s.
-          // Truncate clipboard string w tooltipie (max 200 znaków), żeby
-          // gigantyczne wklejone payloady nie rozsadzały tytułu HTML.
+          // „Anuluj pobieranie" zostaje widoczny przez całe okno re-confirm,
+          // żeby user mógł świadomie wycofać się zamiast klikać Pobierz po raz drugi.
           var clipShort = clipStr.length > 200 ? clipStr.slice(0, 200) + "…" : clipStr;
           var tip = "Schowek różni się od nazwy pliku.\n"
             + "W pliku: " + expected + "\n"
             + "W schowku: " + (clipStr.length === 0 ? "(pusty)" : clipShort) + "\n\n"
-            + "Kliknij „Pobierz" jeszcze raz, żeby świadomie potwierdzić — albo użyj „⧉ Kopiuj nazwę", żeby najpierw zsynchronizować schowek.";
+            + "Kliknij „Pobierz" jeszcze raz, żeby świadomie potwierdzić — albo „✕ Anuluj pobieranie", żeby wycofać się bez zapisu pliku.";
           setVerifyBadge("mismatch", "⚠ schowek ≠ nazwa pliku — kliknij Pobierz ponownie", tip);
+          setAbortVisible(true);
           showPreviewToast("⚠ Schowek różni się od nazwy pliku — kliknij Pobierz ponownie, żeby potwierdzić.", "error", 4500);
           confirmVerifyPassed = true; // następny click pominie check
           // Re-confirm window: 8s. Po upływie wracamy do stanu „świeżego",
@@ -5205,15 +5215,18 @@ const renderHtml = ({
           confirmMismatchToken = setTimeout(function () {
             confirmVerifyPassed = false;
             setVerifyBadge(null);
+            setAbortVisible(false);
           }, 8000);
         }).catch(function (err) {
           // UNAVAILABLE — Permissions denied / Safari / brak API. Nie blokujemy
           // pobrania (brak schowka != niezgodność), tylko sygnalizujemy.
           previewConfirm.classList.remove("is-pending-verify");
+          if (confirmAborted) return;
           var reason = err && err.name === "NotAllowedError"
             ? "brak uprawnień do schowka"
             : (err && err.message) || "schowek niedostępny";
           setVerifyBadge("unavailable", "ℹ schowek niedostępny — pobieram", "Nie udało się odczytać schowka (" + reason + "). Pobieram plik bez weryfikacji — nazwa w pliku jest pewna (1:1 z pendingExport.filename).");
+          setAbortVisible(false);
           confirmVerifyPassed = true;
           downloadPending();
           if (previewDialog && previewDialog.open) previewDialog.close("confirm");
