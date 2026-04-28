@@ -1817,6 +1817,80 @@ const renderHtml = ({
       opacity: .8;
       font-family: ui-monospace, monospace;
     }
+    .export-preview-filename {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+      padding: 6px 10px;
+      font-size: .72rem;
+      border: 1px solid rgba(201,168,76,.45);
+      border-radius: 6px;
+      background: rgba(201,168,76,.08);
+    }
+    .export-preview-filename-label {
+      flex: 0 0 auto;
+      opacity: .85;
+      font-weight: 500;
+    }
+    .export-preview-filename-value {
+      flex: 1 1 auto;
+      min-width: 0;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: .70rem;
+      padding: 3px 8px;
+      background: rgba(0,0,0,.30);
+      border: 1px solid rgba(127,127,127,.35);
+      border-radius: 4px;
+      color: rgba(201,168,76,.95);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      cursor: pointer;
+      user-select: all;
+    }
+    .export-preview-filename-value:hover {
+      background: rgba(201,168,76,.18);
+      border-color: rgba(201,168,76,.55);
+    }
+    .export-preview-filename-value:focus-visible {
+      outline: 2px solid rgba(201,168,76,.7);
+      outline-offset: 1px;
+    }
+    .export-preview-filename-value.is-copied {
+      background: rgba(120,180,120,.22);
+      border-color: rgba(120,180,120,.55);
+    }
+    .export-preview-filename-copy {
+      flex: 0 0 auto;
+      font-size: .70rem;
+      padding: 3px 8px;
+      background: rgba(127,127,127,.15);
+      color: inherit;
+      border: 1px solid rgba(127,127,127,.4);
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .export-preview-filename-copy:hover { background: rgba(201,168,76,.22); border-color: rgba(201,168,76,.55); }
+    .export-preview-filename-copy.is-copied {
+      background: rgba(120,180,120,.25);
+      border-color: rgba(120,180,120,.55);
+    }
+    .export-preview-filename-match {
+      flex: 0 0 auto;
+      font-size: .66rem;
+      padding: 2px 6px;
+      border-radius: 3px;
+    }
+    .export-preview-filename-match.is-match {
+      background: rgba(120,180,120,.20);
+      color: rgba(180,230,180,.95);
+    }
+    .export-preview-filename-match.is-mismatch {
+      background: rgba(220,120,120,.22);
+      color: rgba(245,180,180,.95);
+    }
     .export-preview-body {
       padding: 8px 18px 4px;
       max-height: 55vh;
