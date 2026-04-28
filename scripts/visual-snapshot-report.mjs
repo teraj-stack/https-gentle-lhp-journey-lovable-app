@@ -3935,8 +3935,53 @@ const renderHtml = ({
         hideReadyToast();
       });
     }
-
-    // ---- Dialog podglądu przed pobraniem (max 20 wierszy) ----
+    // „📜 Zobacz w historii" — przenosi do sekcji „Ostatnie nazwy eksportu"
+    // i podświetla wpis dla nazwy pliku zapamiętanej w data-target-filename
+    // (ustawione przez showReadyToast w fazie „downloaded"). Jeśli z jakiegoś
+    // powodu wpis jeszcze nie jest w historii (np. user wyłączył history
+    // tracking), dorzucamy go z source:"download" zanim wywołamy
+    // renderExportHistory(name) — gwarantujemy, że highlight zawsze coś trafi.
+    if (readyToastHistory) {
+      readyToastHistory.addEventListener("click", function () {
+        var name = readyToastHistory.getAttribute("data-target-filename") || "";
+        if (!name) { hideReadyToast(); return; }
+        // Ensure-in-history: jeśli pushExportHistory dedupuje po nazwie
+        // (a tak właśnie robi — patrz „Ostatnie nazwy eksportu"), drugie
+        // wywołanie tylko podbije timestamp/przeniesie wpis na górę.
+        try {
+          if (typeof pushExportHistory === "function") {
+            pushExportHistory(name, { source: "download" });
+          }
+        } catch (_e) { /* noop — fallback do renderExportHistory(name) bez dorzucania */ }
+        try {
+          if (typeof renderExportHistory === "function") renderExportHistory(name);
+        } catch (_e2) { /* noop */ }
+        // Rozwijamy <details> historii (jeśli zwinięte) i smooth-scroll.
+        if (historyWrap) {
+          try { historyWrap.open = true; } catch (_e3) { /* not <details> → noop */ }
+          try {
+            var reduced = window.matchMedia
+              && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+            historyWrap.scrollIntoView({
+              behavior: reduced ? "auto" : "smooth",
+              block: "center",
+            });
+          } catch (_e4) {
+            try { historyWrap.scrollIntoView(); } catch (_e5) {}
+          }
+          // Przenosimy focus na konkretny wpis, jeśli renderExportHistory
+          // ustawił mu klasę .is-just-added — keyboard users wiedzą, dokąd
+          // ich „przerzuciliśmy".
+          setTimeout(function () {
+            try {
+              var freshly = historyWrap.querySelector(".trends-filter-history-list li.is-just-added button, .trends-filter-history-list li.is-just-added a");
+              if (freshly && typeof freshly.focus === "function") freshly.focus({ preventScroll: true });
+            } catch (_e6) {}
+          }, 350);
+        }
+        hideReadyToast();
+      });
+    }
     // Workflow:
     //  1. Klik „⬇ Podgląd i eksport…" → buildExportRows() z aktualnego filtra,
     //     renderujemy nagłówki + 20 pierwszych wierszy w <table>, otwieramy <dialog>.
