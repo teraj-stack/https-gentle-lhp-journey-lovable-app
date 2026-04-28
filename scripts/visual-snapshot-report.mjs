@@ -1234,6 +1234,26 @@ const renderHtml = ({
         -->
         <div class="export-preview-toast" data-export-preview-toast role="status" aria-live="polite" hidden></div>
       </dialog>
+      <!--
+        Page-level toast „Gotowe do pobrania" — pokazywany ZANIM otworzy
+        się dialog podglądu (lub zamiast, jeśli user zamknął modal i ma
+        nadal pendingExport). Fixed top-right, zawiera ikonę, nazwę pliku
+        (mono, łamana po znaku) i przycisk „Pobierz". Klik „Pobierz"
+        wywołuje to samo downloadPending() co stopka modala — single
+        source of truth dla a.download. Przycisk × i auto-hide po 8s.
+      -->
+      <div class="export-ready-toast" data-export-ready-toast role="status" aria-live="polite" aria-atomic="true" hidden>
+        <div class="export-ready-toast-icon" aria-hidden="true">✓</div>
+        <div class="export-ready-toast-body">
+          <div class="export-ready-toast-title" data-export-ready-toast-title>Gotowe do pobrania</div>
+          <code class="export-ready-toast-filename" data-export-ready-toast-filename></code>
+          <div class="export-ready-toast-meta" data-export-ready-toast-meta></div>
+        </div>
+        <div class="export-ready-toast-actions">
+          <button type="button" class="export-ready-toast-download" data-export-ready-toast-download title="Pobierz wygenerowany plik">⬇ Pobierz</button>
+          <button type="button" class="export-ready-toast-close" data-export-ready-toast-close aria-label="Zamknij powiadomienie">×</button>
+        </div>
+      </div>
     </section>`;
   })();
 
@@ -2129,6 +2149,118 @@ const renderHtml = ({
       background: rgba(60,30,30,.95);
       color: rgba(250,200,200,1);
       border-color: rgba(220,120,120,.6);
+    }
+    /* Page-level „Gotowe do pobrania" toast — fixed top-right, pojawia
+       się PRZED otwarciem modala podglądu. Zawiera filename + przycisk
+       „Pobierz" (skrót do downloadPending bez wchodzenia w modal). */
+    .export-ready-toast {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      z-index: 9999;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      max-width: min(420px, calc(100vw - 32px));
+      padding: 12px 14px;
+      border-radius: 10px;
+      background: rgba(28,38,28,.97);
+      color: rgba(225,245,225,1);
+      border: 1px solid rgba(120,180,120,.55);
+      box-shadow: 0 10px 32px rgba(0,0,0,.5);
+      font-size: .82rem;
+      line-height: 1.4;
+      transform: translateY(-12px);
+      opacity: 0;
+      transition: opacity .22s ease, transform .22s ease;
+      pointer-events: none;
+    }
+    .export-ready-toast[hidden] { display: none; }
+    .export-ready-toast.is-visible {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+    .export-ready-toast-icon {
+      flex: 0 0 auto;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: rgba(120,200,140,.25);
+      color: rgba(180,240,200,1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: .9rem;
+    }
+    .export-ready-toast-body {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+    .export-ready-toast-title {
+      font-weight: 700;
+      letter-spacing: .02em;
+      margin-bottom: 2px;
+    }
+    .export-ready-toast-filename {
+      display: block;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: .74rem;
+      word-break: break-all;
+      white-space: normal;
+      color: rgba(210,235,215,.95);
+      background: rgba(127,127,127,.12);
+      padding: 3px 6px;
+      border-radius: 4px;
+      margin-top: 2px;
+    }
+    .export-ready-toast-meta {
+      font-size: .68rem;
+      opacity: .75;
+      margin-top: 4px;
+    }
+    .export-ready-toast-actions {
+      flex: 0 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      align-items: stretch;
+    }
+    .export-ready-toast-download {
+      font: inherit;
+      font-size: .76rem;
+      font-weight: 600;
+      padding: 6px 10px;
+      border-radius: 6px;
+      background: rgba(120,200,140,.22);
+      color: rgba(220,250,225,1);
+      border: 1px solid rgba(120,200,140,.6);
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .export-ready-toast-download:hover { background: rgba(120,200,140,.35); }
+    .export-ready-toast-download:focus-visible {
+      outline: 2px solid rgba(180,240,200,.9);
+      outline-offset: 2px;
+    }
+    .export-ready-toast-close {
+      font: inherit;
+      font-size: 1rem;
+      line-height: 1;
+      padding: 2px 6px;
+      background: transparent;
+      color: rgba(210,235,215,.85);
+      border: 1px solid transparent;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .export-ready-toast-close:hover {
+      background: rgba(127,127,127,.18);
+      border-color: rgba(127,127,127,.35);
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .export-ready-toast { transition: none; }
     }
     .export-preview-body {
       padding: 8px 18px 4px;
@@ -3179,6 +3311,59 @@ const renderHtml = ({
       for (var i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0;
       return ("00000000" + (h >>> 0).toString(16)).slice(-6);
     }
+    // ---- Page-level „Gotowe do pobrania" toast ----
+    // Pokazywany ZARAZ po finalizacji eksportu (ZIP/CSV), ZANIM otworzy
+    // się dialog podglądu. Cel: nawet jeśli user nie skupia się na pasku
+    // statusu i nie patrzy w sekcję trendów, dostaje wyraźną notyfikację
+    // top-right z nazwą pliku i przyciskiem „Pobierz" (skrót do
+    // downloadPending — pomija krok otwarcia modala).
+    var readyToast = root.querySelector("[data-export-ready-toast]");
+    var readyToastFilename = root.querySelector("[data-export-ready-toast-filename]");
+    var readyToastMeta = root.querySelector("[data-export-ready-toast-meta]");
+    var readyToastTitle = root.querySelector("[data-export-ready-toast-title]");
+    var readyToastDownload = root.querySelector("[data-export-ready-toast-download]");
+    var readyToastClose = root.querySelector("[data-export-ready-toast-close]");
+    var readyToastTimer = null;
+    function hideReadyToast() {
+      if (readyToastTimer) { clearTimeout(readyToastTimer); readyToastTimer = null; }
+      if (!readyToast) return;
+      readyToast.classList.remove("is-visible");
+      setTimeout(function () {
+        if (readyToast && !readyToast.classList.contains("is-visible")) readyToast.hidden = true;
+      }, 250);
+    }
+    function showReadyToast(filename, fmtTag, sizeLabel) {
+      if (!readyToast) return;
+      if (readyToastFilename) readyToastFilename.textContent = filename || "";
+      if (readyToastMeta) {
+        var parts = [];
+        if (fmtTag) parts.push(fmtTag);
+        if (sizeLabel) parts.push("~" + sizeLabel);
+        readyToastMeta.textContent = parts.join(" · ");
+      }
+      if (readyToastTitle) readyToastTitle.textContent = "✓ Gotowe do pobrania";
+      readyToast.hidden = false;
+      // Reflow → nowy fade-in
+      // eslint-disable-next-line no-unused-expressions
+      readyToast.offsetWidth;
+      readyToast.classList.add("is-visible");
+      if (readyToastTimer) clearTimeout(readyToastTimer);
+      readyToastTimer = setTimeout(hideReadyToast, 8000);
+    }
+    if (readyToastClose) {
+      readyToastClose.addEventListener("click", hideReadyToast);
+    }
+    if (readyToastDownload) {
+      readyToastDownload.addEventListener("click", function () {
+        // Skrót: pobierz natychmiast bez otwierania modala. downloadPending
+        // używa pendingExport.filename (single source of truth), więc
+        // nazwa w toaście == nazwa w a.download == nazwa w schowku.
+        if (typeof downloadPending === "function" && pendingExport) {
+          downloadPending();
+        }
+        hideReadyToast();
+      });
+    }
 
     // ---- Dialog podglądu przed pobraniem (max 20 wierszy) ----
     // Workflow:
@@ -3709,6 +3894,8 @@ const renderHtml = ({
         // Pasek postępu — po pobraniu znika natychmiast (status „Pobrano …"
         // i tak nadpisuje komunikat „Gotowe do pobrania" z paska statusu).
         if (typeof hideExportProgress === "function") hideExportProgress();
+        // Page-level „Gotowe do pobrania" toast — chowamy po pobraniu.
+        if (typeof hideReadyToast === "function") hideReadyToast();
         if (exportStatus) {
           var ml = pendingExport.mode === "full"
             ? ("pełny schemat, " + pendingExport.colCount + " kol."
@@ -4206,22 +4393,30 @@ const renderHtml = ({
           // bez konieczności scrollowania do sekcji podglądu. Komunikat
           // zostaje dopóki user nie kliknie „Pobierz" (downloadPending
           // nadpisze go na „Pobrano …").
-          if (pendingExport && exportStatus) {
+          var sizeLabel = "";
+          var fmtTag = "";
+          if (pendingExport) {
             var sizeBytes = pendingExport.blob ? pendingExport.blob.size
               : (pendingExport.csv ? pendingExport.csv.length : 0);
-            var sizeLabel = sizeBytes < 1024 ? sizeBytes + " B"
+            sizeLabel = sizeBytes < 1024 ? sizeBytes + " B"
               : sizeBytes < 1024 * 1024 ? Math.round(sizeBytes / 1024) + " KB"
               : (sizeBytes / (1024 * 1024)).toFixed(1) + " MB";
-            var fmtTag = pendingExport.format === "zip" ? "ZIP"
+            fmtTag = pendingExport.format === "zip" ? "ZIP"
               : pendingExport.format === "zip-split"
                 ? "ZIP split (" + pendingExport.fileCount + " plików)"
                 : "CSV";
-            exportStatus.textContent = "✓ Wygenerowano " + fmtTag + ": "
-              + pendingExport.filename + " · ~" + sizeLabel
-              + " · gotowe do pobrania";
-            // Toast w dialogu (jeśli zaraz się otworzy) — pokażemy go
-            // PO showModal(), bo wcześniej previewToast jest poza
-            // top-layer i nie byłby widoczny. Reuse showPreviewToast.
+            if (exportStatus) {
+              exportStatus.textContent = "✓ Wygenerowano " + fmtTag + ": "
+                + pendingExport.filename + " · ~" + sizeLabel
+                + " · gotowe do pobrania";
+            }
+            // Page-level „Gotowe do pobrania" toast — pokazujemy ZANIM
+            // otworzy się modal podglądu, tak żeby user mógł od razu
+            // pobrać plik (przycisk „Pobierz" w toaście) bez wchodzenia
+            // w dialog. Używa tej samej nazwy/fmt/size co status bar.
+            if (typeof showReadyToast === "function") {
+              showReadyToast(pendingExport.filename, fmtTag, sizeLabel);
+            }
           }
           if (!previewDialog || typeof previewDialog.showModal !== "function") {
             downloadPending();

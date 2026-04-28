@@ -564,6 +564,20 @@ pasujących do wszystkich aktywnych selectów (AND), bez re-runu skryptu.
    (skok bez animacji) i obsługujemy fallback dla przeglądarek bez
    `ScrollIntoViewOptions`.
 
+   **Page-level „Gotowe do pobrania" toast** (`data-export-ready-toast`,
+   fixed top-right): pojawia się **ZANIM** otworzy się modal podglądu —
+   tuż po tym, jak `pendingExport` jest złożony (sync dla CSV/zip, async
+   po `snapshotSparkPngs` dla zip-split). Zawiera ikonę ✓, tytuł,
+   monospace **nazwę pliku** (łamaną po znaku), meta-linijkę `<FMT> · ~<size>`
+   i dwa przyciski: **„⬇ Pobierz"** (skrót do `downloadPending()` —
+   pomija krok otwarcia modala, używa tej samej `pendingExport.filename`,
+   więc nazwa w toaście == `a.download` == schowek) oraz **„×"**
+   (zamknij). Auto-hide po 8s. Toast znika natychmiast po pobraniu
+   (`hideReadyToast()` w `downloadPending`). Cel: jeśli user nie patrzy
+   na pasek statusu w sekcji trendów (np. czyta inne miejsce raportu),
+   dostaje wyraźną notyfikację z możliwością pobrania jednym klikiem
+   bez wchodzenia w modal.
+
    **Wyróżniony „download row" w stopce modala** (`⬇ Pobierany plik` tuż
    nad przyciskami Anuluj/Pobierz): duży, monospace blok z pełną nazwą
    pliku ZIP/CSV, łamaną na granicach znaków (`word-break: break-all`),
