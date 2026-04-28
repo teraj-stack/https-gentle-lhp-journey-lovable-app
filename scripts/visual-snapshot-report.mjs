@@ -5304,7 +5304,14 @@ const renderHtml = ({
               try { anchor.scrollIntoView(); } catch (_e2) {}
             }
           })();
-          previewDialog.showModal();
+          // showModal rzuca InvalidStateError, jeśli dialog już otwarty
+          // (np. otworzyliśmy go wcześniej w fazie „building" — patrz
+          // enterPreviewBuilding). W takim wypadku tylko zdejmujemy klasę
+          // .is-building (już zrobione przez enterPreviewReady) — dialog
+          // pozostaje otwarty, ale teraz pokazuje już content podglądu.
+          if (!previewDialog.open) {
+            previewDialog.showModal();
+          }
           // Po otwarciu dialogu — krótki toast „✓ Wygenerowano: <nazwa>",
           // żeby user widział nazwę także bez scrollowania w obrębie modala
           // (dla małych viewportów download row może być pod fold).
