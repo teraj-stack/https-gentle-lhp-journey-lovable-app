@@ -1110,9 +1110,9 @@ const renderHtml = ({
         <span class="trends-filter-export-status" data-trend-export-status role="status" aria-live="polite"></span>
         <!--
           Badge weryfikujący, że nazwa POKAZANA W MODALU jest 1:1 z nazwą
-          REALNIE UŻYTĄ przy `a.download` (i tym samym w schowku po wygenerowaniu).
-          Liczony w `downloadPending()` zaraz po przypisaniu `a.download`,
-          przed `a.click()`. Pozwala wykryć każdą rozbieżność wprowadzoną
+          REALNIE UŻYTĄ przy a.download (i tym samym w schowku po wygenerowaniu).
+          Liczony w downloadPending() zaraz po przypisaniu a.download,
+          przed a.click(). Pozwala wykryć każdą rozbieżność wprowadzoną
           między „Podgląd" a „Pobierz" (np. monkey-patch, race condition).
           Domyślnie hidden — pokazuje się tylko po faktycznym pobraniu.
         -->
