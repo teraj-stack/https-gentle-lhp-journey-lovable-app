@@ -1726,6 +1726,7 @@ const renderHtml = ({
       font-variant-numeric: tabular-nums;
       font-size: .66rem;
     }
+    /* ---- Dialog podglądu eksportu ---- */
     .export-preview-dialog {
       max-width: min(960px, 95vw);
       width: 95vw;
