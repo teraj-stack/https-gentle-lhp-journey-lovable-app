@@ -1180,7 +1180,57 @@ const renderHtml = ({
       </div>
       <script type="application/json" id="trends-json">${jsonPayload}</script>
       <dialog class="export-preview-dialog" data-export-preview-dialog aria-labelledby="export-preview-title">
-        <div class="export-preview-header">
+        <!--
+          Pasek postępu generowania ZIPa — pokazujemy go ZANIM paczka jest
+          gotowa do pobrania. Modal otwiera się natychmiast po kliknięciu
+          „Eksportuj ZIP" (faza „building"), a treść podglądu (header/body/
+          footer) jest tymczasowo schowana. Pasek aktualizowany przez
+          setPreviewProgress(pct, label) — to samo API co setExportProgress
+          dla paska statusu poza modalem; oba bary aktualizujemy równolegle,
+          żeby user widział te same etapy bez względu na to, gdzie patrzy.
+          Etapy:
+            · 0–90%   „Renderuję PNG sparkline'ów… N/total"  (zip-split)
+            · 95%     „Pakuję archiwum…"
+            · 100%    „Gotowe do pobrania" → ukrycie + reveal podglądu
+          aria-live=polite ogłasza zmianę etapu czytnikom ekranu bez kradzieży
+          focusa (focus zostaje na „Anuluj" — user może przerwać w trakcie).
+        -->
+        <section
+          class="export-preview-progress"
+          data-export-preview-progress
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+          hidden
+        >
+          <div class="export-preview-progress-header">
+            <span class="export-preview-progress-icon" aria-hidden="true">⚙</span>
+            <span class="export-preview-progress-title">Generuję paczkę ZIP…</span>
+            <span class="export-preview-progress-pct" data-export-preview-progress-pct>0%</span>
+          </div>
+          <progress
+            class="export-preview-progress-bar"
+            data-export-preview-progress-bar
+            max="100"
+            value="0"
+            aria-label="Postęp generowania paczki ZIP"
+          >0%</progress>
+          <p class="export-preview-progress-label" data-export-preview-progress-label>
+            Przygotowuję dane…
+          </p>
+          <p class="export-preview-progress-hint" aria-hidden="true">
+            Możesz przerwać w dowolnym momencie przyciskiem „✕ Anuluj pobieranie" — plik nie zostanie zapisany.
+          </p>
+          <div class="export-preview-progress-actions">
+            <button
+              type="button"
+              class="export-preview-progress-cancel"
+              data-export-preview-progress-cancel
+              title="Przerwij generowanie paczki — modal się zamknie i nie zostanie pobrany żaden plik."
+            >✕ Anuluj generowanie</button>
+          </div>
+        </section>
+        <div class="export-preview-header" data-export-preview-header>
           <h3 id="export-preview-title">Podgląd eksportu</h3>
           <p class="export-preview-meta" data-export-preview-meta></p>
           <div class="export-preview-filename" data-export-preview-filename hidden>
