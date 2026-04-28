@@ -2159,6 +2159,128 @@ const renderHtml = ({
       background: rgba(120,180,120,.22);
       border-color: rgba(120,180,120,.60);
     }
+    /* Toggle „Pokaż pełną nazwę" — kompaktowy przycisk w label-row.
+       Wzorowany na export-preview-filename-copy, ale z chevronem
+       obracanym 180° po expand (klasa .is-expanded). */
+    .export-preview-download-row-expand {
+      flex: 0 0 auto;
+      font-size: .65rem;
+      letter-spacing: .04em;
+      padding: 3px 8px;
+      background: rgba(127,127,127,.15);
+      color: rgba(240,220,160,.95);
+      border: 1px solid rgba(201,168,76,.40);
+      border-radius: 4px;
+      cursor: pointer;
+      text-transform: none;
+      font-weight: 500;
+      transition: background .15s ease, border-color .15s ease;
+    }
+    .export-preview-download-row-expand:hover {
+      background: rgba(201,168,76,.20);
+      border-color: rgba(201,168,76,.60);
+    }
+    .export-preview-download-row-expand:focus-visible {
+      outline: 2px solid rgba(201,168,76,.7);
+      outline-offset: 1px;
+    }
+    .export-preview-download-row-expand.is-expanded {
+      background: rgba(201,168,76,.22);
+      border-color: rgba(201,168,76,.60);
+    }
+    /* Rozwijany panel z pełną nazwą — pokazuje statystyki, listę
+       segmentów (split po _/-/.) i pełną nazwę w bloku monospace. */
+    .export-preview-fullname-panel {
+      margin-top: 6px;
+      padding: 10px 12px;
+      border: 1px dashed rgba(201,168,76,.40);
+      border-radius: 6px;
+      background: rgba(0,0,0,.25);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .export-preview-fullname-stats {
+      font-size: .68rem;
+      color: rgba(220,200,160,.85);
+      letter-spacing: .04em;
+    }
+    .export-preview-fullname-stats strong {
+      color: rgba(240,220,160,1);
+      font-weight: 600;
+    }
+    .export-preview-fullname-segments {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: .78rem;
+      line-height: 1.5;
+    }
+    .export-preview-fullname-segments li {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      padding: 2px 6px;
+      border-radius: 3px;
+      background: rgba(0,0,0,.20);
+    }
+    .export-preview-fullname-segments li:nth-child(even) {
+      background: rgba(127,127,127,.08);
+    }
+    .export-preview-fullname-segments .seg-idx {
+      flex: 0 0 auto;
+      width: 1.8em;
+      text-align: right;
+      color: rgba(180,180,180,.55);
+      font-size: .68rem;
+    }
+    .export-preview-fullname-segments .seg-sep {
+      flex: 0 0 auto;
+      color: rgba(201,168,76,.95);
+      font-weight: 600;
+    }
+    .export-preview-fullname-segments .seg-val {
+      flex: 1 1 auto;
+      color: rgba(240,220,160,1);
+      word-break: break-all;
+    }
+    .export-preview-fullname-raw-label {
+      font-size: .62rem;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: rgba(180,180,180,.65);
+      margin-top: 2px;
+    }
+    .export-preview-fullname-raw {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: .80rem;
+      padding: 8px 10px;
+      background: rgba(0,0,0,.40);
+      border: 1px solid rgba(127,127,127,.35);
+      border-radius: 5px;
+      color: rgba(240,220,160,1);
+      word-break: break-all;
+      white-space: normal;
+      cursor: pointer;
+      user-select: all;
+      line-height: 1.4;
+    }
+    .export-preview-fullname-raw:hover {
+      background: rgba(201,168,76,.14);
+      border-color: rgba(201,168,76,.55);
+    }
+    .export-preview-fullname-raw:focus-visible {
+      outline: 2px solid rgba(201,168,76,.7);
+      outline-offset: 1px;
+    }
+    .export-preview-fullname-raw.is-copied {
+      background: rgba(120,180,120,.22);
+      border-color: rgba(120,180,120,.55);
+    }
     /* Floating toast w modalu — bottom-center, fade-in/out. Pokazuje
        się po skopiowaniu nazwy pliku (każdy z 3 entry pointów: code,
        przycisk ⧉, download row). Pozycja absolute względem dialogu
