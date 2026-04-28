@@ -1209,6 +1209,24 @@ const renderHtml = ({
             <span aria-hidden="true">⬇</span>
             <span>Pobierany plik</span>
             <span class="export-preview-download-row-match" data-export-preview-download-row-match hidden></span>
+            <span class="spacer" aria-hidden="true" style="flex:1"></span>
+            <!--
+              Toggle „Pokaż pełną nazwę" — rozwija dodatkowy panel pod kodem
+              z nazwą rozbitą na segmenty (split po _, -, .) — jeden
+              segment per linia. Cel: dla bardzo długich nazw (np. ZIP
+              z 6+ filtrami) user widzi każdy fragment osobno bez ucinania,
+              z licznikiem znaków/segmentów. aria-expanded + aria-controls
+              dla SR. Stan trzymany lokalnie + persist w localStorage,
+              żeby preferencja przeżyła re-render modala.
+            -->
+            <button
+              type="button"
+              class="export-preview-download-row-expand"
+              data-export-preview-download-row-expand
+              aria-expanded="false"
+              aria-controls="export-preview-fullname-panel"
+              title="Pokaż pełną nazwę paczki w czytelnym układzie (każdy segment w osobnej linii, bez ucinania)."
+            >▾ Pokaż pełną nazwę</button>
           </div>
           <code
             class="export-preview-download-row-value"
@@ -1219,6 +1237,35 @@ const renderHtml = ({
             aria-label="Pełna nazwa pliku, który zostanie pobrany. Identyczna z nazwą skopiowaną do schowka po wygenerowaniu. Kliknij, aby skopiować."
             title="Kliknij, aby skopiować pełną nazwę pliku do schowka."
           ></code>
+          <!--
+            Rozwijany panel z nazwą w pełnym, czytelnym układzie. Pokazuje:
+              · długość w znakach + liczbę segmentów,
+              · kolejne segmenty rozdzielone separatorem (_/-/.) — każdy
+                w osobnym wierszu z numerkiem indeksu, żeby łatwo policzyć
+                które pole filtra dało który fragment,
+              · separator między segmentami (kolor wyróżniony),
+              · pełną nazwę w wariancie monospace z word-break (bez ellipsis).
+            Schowany domyślnie (hidden), ujawniany przez toggle wyżej.
+          -->
+          <div
+            class="export-preview-fullname-panel"
+            id="export-preview-fullname-panel"
+            data-export-preview-fullname-panel
+            hidden
+          >
+            <div class="export-preview-fullname-stats" data-export-preview-fullname-stats></div>
+            <ol class="export-preview-fullname-segments" data-export-preview-fullname-segments></ol>
+            <div class="export-preview-fullname-raw-label" aria-hidden="true">Pełna nazwa (bez ucinania):</div>
+            <code
+              class="export-preview-fullname-raw"
+              data-export-preview-fullname-raw
+              tabindex="0"
+              role="textbox"
+              aria-readonly="true"
+              aria-label="Pełna nazwa pliku w pełnym, niezwiniętym układzie. Kliknij, aby skopiować."
+              title="Kliknij, aby skopiować pełną nazwę do schowka."
+            ></code>
+          </div>
         </div>
         <div class="export-preview-footer">
           <span class="spacer" aria-hidden="true"></span>
@@ -2111,6 +2158,128 @@ const renderHtml = ({
     .export-preview-download-row-value.is-copied {
       background: rgba(120,180,120,.22);
       border-color: rgba(120,180,120,.60);
+    }
+    /* Toggle „Pokaż pełną nazwę" — kompaktowy przycisk w label-row.
+       Wzorowany na export-preview-filename-copy, ale z chevronem
+       obracanym 180° po expand (klasa .is-expanded). */
+    .export-preview-download-row-expand {
+      flex: 0 0 auto;
+      font-size: .65rem;
+      letter-spacing: .04em;
+      padding: 3px 8px;
+      background: rgba(127,127,127,.15);
+      color: rgba(240,220,160,.95);
+      border: 1px solid rgba(201,168,76,.40);
+      border-radius: 4px;
+      cursor: pointer;
+      text-transform: none;
+      font-weight: 500;
+      transition: background .15s ease, border-color .15s ease;
+    }
+    .export-preview-download-row-expand:hover {
+      background: rgba(201,168,76,.20);
+      border-color: rgba(201,168,76,.60);
+    }
+    .export-preview-download-row-expand:focus-visible {
+      outline: 2px solid rgba(201,168,76,.7);
+      outline-offset: 1px;
+    }
+    .export-preview-download-row-expand.is-expanded {
+      background: rgba(201,168,76,.22);
+      border-color: rgba(201,168,76,.60);
+    }
+    /* Rozwijany panel z pełną nazwą — pokazuje statystyki, listę
+       segmentów (split po _/-/.) i pełną nazwę w bloku monospace. */
+    .export-preview-fullname-panel {
+      margin-top: 6px;
+      padding: 10px 12px;
+      border: 1px dashed rgba(201,168,76,.40);
+      border-radius: 6px;
+      background: rgba(0,0,0,.25);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .export-preview-fullname-stats {
+      font-size: .68rem;
+      color: rgba(220,200,160,.85);
+      letter-spacing: .04em;
+    }
+    .export-preview-fullname-stats strong {
+      color: rgba(240,220,160,1);
+      font-weight: 600;
+    }
+    .export-preview-fullname-segments {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: .78rem;
+      line-height: 1.5;
+    }
+    .export-preview-fullname-segments li {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      padding: 2px 6px;
+      border-radius: 3px;
+      background: rgba(0,0,0,.20);
+    }
+    .export-preview-fullname-segments li:nth-child(even) {
+      background: rgba(127,127,127,.08);
+    }
+    .export-preview-fullname-segments .seg-idx {
+      flex: 0 0 auto;
+      width: 1.8em;
+      text-align: right;
+      color: rgba(180,180,180,.55);
+      font-size: .68rem;
+    }
+    .export-preview-fullname-segments .seg-sep {
+      flex: 0 0 auto;
+      color: rgba(201,168,76,.95);
+      font-weight: 600;
+    }
+    .export-preview-fullname-segments .seg-val {
+      flex: 1 1 auto;
+      color: rgba(240,220,160,1);
+      word-break: break-all;
+    }
+    .export-preview-fullname-raw-label {
+      font-size: .62rem;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: rgba(180,180,180,.65);
+      margin-top: 2px;
+    }
+    .export-preview-fullname-raw {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: .80rem;
+      padding: 8px 10px;
+      background: rgba(0,0,0,.40);
+      border: 1px solid rgba(127,127,127,.35);
+      border-radius: 5px;
+      color: rgba(240,220,160,1);
+      word-break: break-all;
+      white-space: normal;
+      cursor: pointer;
+      user-select: all;
+      line-height: 1.4;
+    }
+    .export-preview-fullname-raw:hover {
+      background: rgba(201,168,76,.14);
+      border-color: rgba(201,168,76,.55);
+    }
+    .export-preview-fullname-raw:focus-visible {
+      outline: 2px solid rgba(201,168,76,.7);
+      outline-offset: 1px;
+    }
+    .export-preview-fullname-raw.is-copied {
+      background: rgba(120,180,120,.22);
+      border-color: rgba(120,180,120,.55);
     }
     /* Floating toast w modalu — bottom-center, fade-in/out. Pokazuje
        się po skopiowaniu nazwy pliku (każdy z 3 entry pointów: code,
@@ -3401,6 +3570,85 @@ const renderHtml = ({
     var previewDownloadRow = root.querySelector("[data-export-preview-download-row]");
     var previewDownloadRowValue = root.querySelector("[data-export-preview-download-row-value]");
     var previewDownloadRowMatch = root.querySelector("[data-export-preview-download-row-match]");
+    // „Pokaż pełną nazwę" — toggle + panel z rozbiciem na segmenty.
+    // Stan rozwinięcia perystowany w localStorage, żeby preferencja
+    // przeżyła kolejne otwarcia modala / pełne re-rendery.
+    var previewFullnameExpand = root.querySelector("[data-export-preview-download-row-expand]");
+    var previewFullnamePanel = root.querySelector("[data-export-preview-fullname-panel]");
+    var previewFullnameStats = root.querySelector("[data-export-preview-fullname-stats]");
+    var previewFullnameSegments = root.querySelector("[data-export-preview-fullname-segments]");
+    var previewFullnameRaw = root.querySelector("[data-export-preview-fullname-raw]");
+    var FULLNAME_EXPAND_KEY = "visual-report-export-fullname-expanded-v1";
+    function isFullnameExpanded() {
+      try { return localStorage.getItem(FULLNAME_EXPAND_KEY) === "1"; }
+      catch (_e) { return false; }
+    }
+    function setFullnameExpanded(expanded) {
+      try { localStorage.setItem(FULLNAME_EXPAND_KEY, expanded ? "1" : "0"); } catch (_e) { /* noop */ }
+    }
+    /**
+     * Renderuje rozwinięty panel „Pokaż pełną nazwę".
+     *  · stats: długość znaków + liczba segmentów,
+     *  · segmenty: split po _, -, . (zachowując separatory) — każdy
+     *    fragment w osobnym <li> z numerem indeksu i kolorowym separatorem,
+     *  · raw: cała nazwa w bloku monospace z word-break (bez ucinania).
+     * Bez nazwy → ukrywamy panel i czyścimy listę.
+     */
+    function renderFullnameBreakdown(name) {
+      if (!previewFullnamePanel) return;
+      if (!name) {
+        if (previewFullnameStats) previewFullnameStats.textContent = "";
+        if (previewFullnameSegments) previewFullnameSegments.innerHTML = "";
+        if (previewFullnameRaw) previewFullnameRaw.textContent = "";
+        return;
+      }
+      // Split po separatorach „_", „-", „." — zachowujemy separator jako
+      // osobny token, żeby pokazać go w UI (kolor wyróżniony).
+      var tokens = name.split(/([_\-.])/).filter(function (t) { return t.length > 0; });
+      var segments = [];
+      var currentSep = "";
+      for (var i = 0; i < tokens.length; i++) {
+        var tok = tokens[i];
+        if (tok === "_" || tok === "-" || tok === ".") {
+          currentSep = tok;
+        } else {
+          segments.push({ sep: currentSep, val: tok });
+          currentSep = "";
+        }
+      }
+      if (previewFullnameStats) {
+        previewFullnameStats.innerHTML = "Długość: <strong>" + name.length + "</strong> znaków · "
+          + "Segmentów: <strong>" + segments.length + "</strong> "
+          + "(split po <code>_ - .</code>)";
+      }
+      if (previewFullnameSegments) {
+        previewFullnameSegments.innerHTML = segments.map(function (s, idx) {
+          var sepHtml = s.sep
+            ? '<span class="seg-sep" aria-hidden="true">' + escapeText(s.sep) + '</span>'
+            : '<span class="seg-sep" aria-hidden="true" style="opacity:.3">·</span>';
+          return '<li>'
+            + '<span class="seg-idx" aria-hidden="true">' + (idx + 1) + '.</span>'
+            + sepHtml
+            + '<span class="seg-val">' + escapeText(s.val) + '</span>'
+            + '</li>';
+        }).join("");
+      }
+      if (previewFullnameRaw) {
+        previewFullnameRaw.textContent = name;
+        previewFullnameRaw.classList.remove("is-copied");
+      }
+    }
+    /** Sync UI toggle (label, aria, panel hidden) z aktualnym stanem. */
+    function applyFullnameExpanded(expanded) {
+      if (previewFullnameExpand) {
+        previewFullnameExpand.setAttribute("aria-expanded", expanded ? "true" : "false");
+        previewFullnameExpand.classList.toggle("is-expanded", expanded);
+        previewFullnameExpand.textContent = expanded ? "▴ Ukryj pełną nazwę" : "▾ Pokaż pełną nazwę";
+      }
+      if (previewFullnamePanel) {
+        previewFullnamePanel.hidden = !expanded;
+      }
+    }
     var previewToast = root.querySelector("[data-export-preview-toast]");
     var previewToastTimer = null;
     /**
@@ -3605,9 +3853,14 @@ const renderHtml = ({
               previewDownloadRowMatch.title = "Filtry zmieniły się od kliknięcia „Podgląd".\nLive: " + live2 + "\nW eksporcie: " + pendingName;
             }
           }
+          // „Pokaż pełną nazwę" — render rozbicia + przywrócenie stanu
+          // expand z localStorage (preferencja przeżywa re-render).
+          renderFullnameBreakdown(pendingName);
+          applyFullnameExpanded(isFullnameExpanded());
         } else {
           previewDownloadRow.hidden = true;
           previewDownloadRowValue.textContent = "";
+          renderFullnameBreakdown("");
         }
       }
     }
@@ -4696,6 +4949,30 @@ const renderHtml = ({
         if (ev.key === "Enter" || ev.key === " ") {
           ev.preventDefault();
           copyPreviewFilename(previewDownloadRowValue);
+        }
+      });
+    }
+    // Toggle „Pokaż / Ukryj pełną nazwę" — przełącza widoczność rozwijanego
+    // panelu z rozbiciem na segmenty. Stan jest zapisywany w localStorage,
+    // żeby preferencja była przywracana przy każdym kolejnym otwarciu modala.
+    if (previewFullnameExpand) {
+      previewFullnameExpand.addEventListener("click", function () {
+        var next = !isFullnameExpanded();
+        setFullnameExpanded(next);
+        applyFullnameExpanded(next);
+      });
+    }
+    // Klik / Enter / Space na pełnej nazwie kopiuje ją do schowka — reuse
+    // copyPreviewFilename(), bo wartość jest 1:1 z pendingExport.filename
+    // (renderFullnameBreakdown wpisuje to samo co previewFilenameValue).
+    if (previewFullnameRaw) {
+      previewFullnameRaw.addEventListener("click", function () {
+        copyPreviewFilename(previewFullnameRaw);
+      });
+      previewFullnameRaw.addEventListener("keydown", function (ev) {
+        if (ev.key === "Enter" || ev.key === " ") {
+          ev.preventDefault();
+          copyPreviewFilename(previewFullnameRaw);
         }
       });
     }
