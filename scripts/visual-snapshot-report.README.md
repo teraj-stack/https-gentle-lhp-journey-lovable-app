@@ -513,10 +513,20 @@ pasujących do wszystkich aktywnych selectów (AND), bez re-runu skryptu.
    wariant `is-error` przy nieudanym copy) oraz wpisem do historii
    (source=`copy`). Toast pokazuje się dla każdego z entry pointów: code w
    nagłówku, przycisk `⧉`, oraz monospace nazwa w download row stopki.
-   Tytuł modala oraz
-   etykieta przycisku potwierdzenia (`⬇ Pobierz CSV/ZIP`) synchronizują
-   się z aktualnym formatem — także po auto-ZIP, więc user nie kliknie
-   „Pobierz CSV", gdy faktycznie pobiera ZIP.
+   **Tytuł modala** (`Podgląd eksportu CSV/ZIP · <nazwa-pliku>`) jest w
+   pełni dynamiczny i aktualizuje się **na żywo** razem z nazwą pliku:
+   - Przy każdej zmianie filtra / formatu / progu auto-ZIP / trybu —
+     przez `refreshNamePreview()` (monkey-patched do `refreshZipHint`),
+     który modyfikuje `<h3 id="export-preview-title">` nawet gdy modal
+     jest jeszcze zamknięty. Przy `csv` z liczbą wierszy ≥ próg `switch`
+     tytuł pokazuje `ZIP  (auto-ZIP)`.
+   - Przy otwieraniu modala — `renderPreview()` zamraża tytuł na
+     `pendingExport.filename` (single source of truth dla `anchor.download`),
+     więc tytuł, download row i schowek są bit-identyczne.
+   - Etykieta przycisku potwierdzenia (`⬇ Pobierz CSV/ZIP`) synchronizuje
+     się z tym samym formatem — także po auto-ZIP, więc user nie kliknie
+     „Pobierz CSV", gdy faktycznie pobiera ZIP. Long filenames łamią się
+     w nagłówku (`overflow-wrap: anywhere`), bez rozpychania modala.
 
    **Wyróżniony „download row" w stopce modala** (`⬇ Pobierany plik` tuż
    nad przyciskami Anuluj/Pobierz): duży, monospace blok z pełną nazwą
