@@ -3908,10 +3908,13 @@ const renderHtml = ({
     if (toastTestBtn) {
       toastTestBtn.addEventListener("click", function () {
         if (typeof showReadyToast !== "function") return;
-        var hideMs = getToastAutoHideMs();
+        // Test używa wartości dla AKTUALNEGO formatu — getToastAutoHideMs()
+        // bez argumentu wybiera klucz z getCurrentAutoHideFormatKey().
+        var fmt = getCurrentAutoHideFormatKey();
+        var hideMs = getToastAutoHideMs(fmt);
         var label = hideMs === 0 ? "bez auto-hide" : (hideMs / 1000) + " s";
-        var fakeName = "test-toast-" + label.replace(/\s+/g, "") + ".zip";
-        showReadyToast(fakeName, "ZIP (test)", "preview", "downloaded");
+        var fakeName = "test-toast-" + fmt + "-" + label.replace(/\s+/g, "") + ".zip";
+        showReadyToast(fakeName, "ZIP (test, " + fmt + ")", "preview", "downloaded");
       });
     }
     // Live hint pod paskiem eksportu — informuje, czy aktualnie wyfiltrowane
