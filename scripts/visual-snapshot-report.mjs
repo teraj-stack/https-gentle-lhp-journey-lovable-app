@@ -1149,6 +1149,21 @@ const renderHtml = ({
           title="Pokaż testowy toast „Pobrano” z aktualnie wybranym czasem auto-hide — bez pobierania pliku."
         >▶ Wypróbuj toast</button>
         <!--
+          „Test pauzy hover/focus" — uruchamia automatyczną weryfikację A/B
+          dla obu trybów ZIP (zip + zip-split). Symuluje pointerenter/leave
+          oraz focusin/out na toaście, sprawdza czy readyToastIsPaused i klasa
+          .is-paused na pasku progress reagują identycznie. Wyniki pokazuje
+          obok jako badge ✓/✗ — pełny raport w konsoli (per krok). Zero side-
+          effects: po teście stan toastu jest wyczyszczony (hideReadyToast).
+        -->
+        <button
+          type="button"
+          class="trends-filter-toast-test trends-filter-toast-pause-test"
+          data-trend-toast-pause-test
+          title="Automatyczna weryfikacja: czy hover/focus pauzuje countdown identycznie dla zip i zip-split. Trwa ~1.5 s, wyniki w konsoli + badge."
+        >🧪 Test pauzy</button>
+        <span class="trends-filter-toast-pause-test-result" data-trend-toast-pause-test-result aria-live="polite"></span>
+        <!--
           „📦 Otwórz ostatnią paczkę" — rehydratuje OSTATNIO wygenerowaną
           paczkę z cache (IndexedDB: cml-trends-export-cache/last). Działa
           OFFLINE — całość operacji jest lokalna, nie wymaga sieci. Disabled
