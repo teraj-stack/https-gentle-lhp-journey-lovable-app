@@ -1106,7 +1106,35 @@ const renderHtml = ({
           </select>
         </label>
         <button type="button" class="trends-filter-export" data-trend-export title="Pokaż podgląd 20 pierwszych wierszy, potem pobierz przefiltrowane runy w wybranym formacie">⬇ Podgląd i eksport…</button>
+        <!--
+          „📦 Otwórz ostatnią paczkę" — rehydratuje OSTATNIO wygenerowaną
+          paczkę z cache (IndexedDB: cml-trends-export-cache/last). Działa
+          OFFLINE — całość operacji jest lokalna, nie wymaga sieci. Disabled
+          dopóki cache jest pusty (start aplikacji bez wcześniejszego
+          eksportu). Klik otwiera modal podglądu z badge'em „z cache" i
+          aktywnym przyciskiem „⬇ Pobierz ZIP" — bez ponownego buildu.
+        -->
+        <button
+          type="button"
+          class="trends-filter-export-cached"
+          data-trend-export-cached
+          disabled
+          title="Otwórz modal podglądu z ostatnio wygenerowaną paczką (z lokalnego cache). Działa offline — nie wymaga połączenia z siecią."
+        >📦 Otwórz ostatnią paczkę</button>
         <button type="button" class="trends-filter-copy-name" data-trend-copy-name title="Skopiuj do schowka nazwę paczki eksportu (timestamp + skrót filtra), żeby łatwo nazwać/posortować pobrane pliki.">⧉ Kopiuj nazwę</button>
+        <!--
+          Wskaźnik statusu sieci. Klasy: .is-online / .is-offline.
+          aria-live=polite ogłasza zmianę stanu czytnikom ekranu.
+          Tooltip pokazuje czas ostatniego cache'u — żeby user wiedział,
+          jak świeża jest paczka, którą może otworzyć offline.
+        -->
+        <span
+          class="trends-filter-network-status is-online"
+          data-trend-network-status
+          role="status"
+          aria-live="polite"
+          title="Status połączenia sieciowego."
+        >🟢 online</span>
         <span class="trends-filter-export-status" data-trend-export-status role="status" aria-live="polite"></span>
         <!--
           Pasek postępu generowania ZIP. Widoczny tylko podczas budowy
