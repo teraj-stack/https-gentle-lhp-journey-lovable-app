@@ -1106,6 +1106,7 @@ const renderHtml = ({
           </select>
         </label>
         <button type="button" class="trends-filter-export" data-trend-export title="Pokaż podgląd 20 pierwszych wierszy, potem pobierz przefiltrowane runy w wybranym formacie">⬇ Podgląd i eksport…</button>
+        <button type="button" class="trends-filter-copy-name" data-trend-copy-name title="Skopiuj do schowka nazwę paczki eksportu (timestamp + skrót filtra), żeby łatwo nazwać/posortować pobrane pliki.">⧉ Kopiuj nazwę</button>
         <span class="trends-filter-export-status" data-trend-export-status role="status" aria-live="polite"></span>
         <span class="trends-filter-zip-hint" data-trend-zip-hint role="status" aria-live="polite" hidden></span>
       </div>`;
@@ -1614,6 +1615,21 @@ const renderHtml = ({
     }
     .trends-filter-export:hover { background: rgba(201,168,76,.28); }
     .trends-filter-export:disabled { opacity: .45; cursor: not-allowed; }
+    .trends-filter-copy-name {
+      font-size: .72rem;
+      padding: 4px 8px;
+      background: rgba(127,127,127,.12);
+      color: inherit;
+      border: 1px solid rgba(127,127,127,.4);
+      border-radius: 4px;
+      cursor: pointer;
+      align-self: end;
+    }
+    .trends-filter-copy-name:hover { background: rgba(127,127,127,.22); }
+    .trends-filter-copy-name.is-copied {
+      background: rgba(120,180,120,.22);
+      border-color: rgba(120,180,120,.55);
+    }
     .trends-filter-export-status {
       font-size: .72rem;
       opacity: .75;
@@ -2142,8 +2158,6 @@ const renderHtml = ({
         applyCombo(combosRows[parseInt(tr.getAttribute("data-combo-idx"), 10)]);
       });
     }
-
-
     function readUrl() {
       var p = new URLSearchParams(window.location.search);
       var s = {};
@@ -2338,6 +2352,7 @@ const renderHtml = ({
     // Nazwa pliku zawiera tryb + timestamp + skrócony hash filtrów, żeby kolejne
     // eksporty się nie nadpisywały. Zero deps — Blob + a[download].
     var exportBtn = root.querySelector("[data-trend-export]");
+    var copyNameBtn = root.querySelector("[data-trend-copy-name]");
     var exportStatus = root.querySelector("[data-trend-export-status]");
     var exportModeSelect = root.querySelector("[data-trend-export-mode]");
     var exportFormatSelect = root.querySelector("[data-trend-export-format]");
@@ -2937,6 +2952,77 @@ const renderHtml = ({
       } catch (e) {
         if (exportStatus) exportStatus.textContent = "Eksport nieudany: " + e.message;
       }
+    }
+
+    // ---- Nazwa paczki eksportu (single source of truth) ----
+    // Generuje DOKŁADNIE tę samą nazwę co eksport — używa buildExportRows()
+    // (skrót filtra liczy się ze świeżego stanu selectów po apply()),
+    // bieżącego stempla czasowego i wybranego formatu (csv/zip/zip-split).
+    // Rozszerzenie: csv→.csv, zip|zip-split→.zip. Brak wierszy ⇒ null.
+    function computeExportBaseName() {
+      var built = buildExportRows();
+      if (!built.count) return null;
+      var format = (exportFormatSelect && exportFormatSelect.value) || "csv";
+      var th = getZipThreshold();
+      var zMode = getZipMode();
+      // Parytet z handlerem eksportu: gdy próg „switch" przekroczony i
+      // format = csv, podgląd nazwy pokazuje już .zip (to jest, co poleci).
+      if (th && zMode === "switch" && format === "csv" && built.count >= th) {
+        format = "zip";
+      }
+      var stamp = new Date().toISOString().replace(/[:.]/g, "-").replace(/Z$/, "Z");
+      var filterHash = shortHash(JSON.stringify(built.state) + "|" + built.mode + "|" + format);
+      var ext = (format === "zip" || format === "zip-split") ? ".zip" : ".csv";
+      return "savings-filtered-" + built.mode + "-" + stamp + "-" + filterHash + ext;
+    }
+
+    // Kopiowanie do schowka z fallbackiem (Clipboard API → execCommand).
+    function copyTextToClipboard(text) {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        return navigator.clipboard.writeText(text).then(function () { return true; })
+          .catch(function () { return legacyCopy(text); });
+      }
+      return Promise.resolve(legacyCopy(text));
+    }
+    function legacyCopy(text) {
+      try {
+        var ta = document.createElement("textarea");
+        ta.value = text;
+        ta.setAttribute("readonly", "");
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        var ok = document.execCommand && document.execCommand("copy");
+        document.body.removeChild(ta);
+        return !!ok;
+      } catch (e) { return false; }
+    }
+
+    if (copyNameBtn) {
+      var copyResetTimer = null;
+      var copyOriginalLabel = copyNameBtn.textContent;
+      copyNameBtn.addEventListener("click", function () {
+        var name = computeExportBaseName();
+        if (!name) {
+          if (exportStatus) exportStatus.textContent = "Brak wierszy — zmień filtr, żeby wygenerować nazwę.";
+          return;
+        }
+        copyTextToClipboard(name).then(function (ok) {
+          if (ok) {
+            copyNameBtn.classList.add("is-copied");
+            copyNameBtn.textContent = "✓ Skopiowano";
+            if (exportStatus) exportStatus.textContent = "Skopiowano nazwę: " + name;
+            if (copyResetTimer) clearTimeout(copyResetTimer);
+            copyResetTimer = setTimeout(function () {
+              copyNameBtn.classList.remove("is-copied");
+              copyNameBtn.textContent = copyOriginalLabel;
+            }, 2000);
+          } else if (exportStatus) {
+            exportStatus.textContent = "Nie udało się skopiować — nazwa: " + name;
+          }
+        });
+      });
     }
 
     if (exportBtn) {
