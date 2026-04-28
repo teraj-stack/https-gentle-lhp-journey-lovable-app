@@ -4444,6 +4444,10 @@ const renderHtml = ({
       readyToastCountdown.hidden = false;
       tick(); // pierwsza wartość natychmiast, bez czekania 1s
       readyToastCountdownInterval = setInterval(tick, 1000);
+      // Pasek progress — wystartuj z REMAINING (totalMs to tutaj remaining
+      // dla restoru z pauzy/sessionStorage), zsynchronizowany z tekstem.
+      startReadyToastProgress(totalMs);
+      if (readyToastIsPaused) pauseReadyToastProgress();
     }
     // Pauza — zatrzymuje setTimeout auto-hide i zapamiętuje ile MS zostało
     // do końca. Interval countdownu zostawiamy aktywny — dzięki temu napis
