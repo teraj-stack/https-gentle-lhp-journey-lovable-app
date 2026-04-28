@@ -3900,6 +3900,82 @@ const renderHtml = ({
     var previewTrunc = root.querySelector("[data-export-preview-truncated]");
     var previewCancel = root.querySelector("[data-export-preview-cancel]");
     var previewConfirm = root.querySelector("[data-export-preview-confirm]");
+    // Pasek postępu wewnątrz modala — widoczny w fazie „building" (przed
+    // finalizeZip), znika po przejściu w „ready". Wszystkie aktualizacje
+    // przechodzą przez setPreviewProgress(pct, label, opts) — to samo API
+    // co setExportProgress(...) dla paska poza modalem.
+    var previewProgressWrap = root.querySelector("[data-export-preview-progress]");
+    var previewProgressBar = root.querySelector("[data-export-preview-progress-bar]");
+    var previewProgressLabel = root.querySelector("[data-export-preview-progress-label]");
+    var previewProgressPct = root.querySelector("[data-export-preview-progress-pct]");
+    var previewProgressCancel = root.querySelector("[data-export-preview-progress-cancel]");
+    // Flaga ustawiana przez „✕ Anuluj generowanie" (kliknięcie w fazie
+    // building). Sprawdzana w callbackach finalizeZip/snapshotSparkPngs —
+    // jeśli true, przerywamy: nie wołamy renderPreview, nie pokazujemy
+    // przycisku Pobierz, nie zostawiamy pendingExport, zamykamy modal.
+    var previewBuildAborted = false;
+    function setPreviewProgress(value, label, opts) {
+      if (!previewProgressWrap) return;
+      var pct = Math.max(0, Math.min(100, Math.round(Number(value) || 0)));
+      var done = !!(opts && opts.done);
+      previewProgressWrap.hidden = false;
+      if (previewProgressBar) {
+        previewProgressBar.value = pct;
+        previewProgressBar.setAttribute("aria-valuenow", String(pct));
+      }
+      if (previewProgressPct) previewProgressPct.textContent = pct + "%";
+      if (previewProgressLabel) previewProgressLabel.textContent = label || (pct + "%");
+      previewProgressWrap.classList.toggle("is-done", done);
+    }
+    function hidePreviewProgress() {
+      if (!previewProgressWrap) return;
+      previewProgressWrap.hidden = true;
+      previewProgressWrap.classList.remove("is-done");
+      if (previewProgressBar) previewProgressBar.value = 0;
+      if (previewProgressPct) previewProgressPct.textContent = "0%";
+      if (previewProgressLabel) previewProgressLabel.textContent = "Przygotowuję dane…";
+    }
+    // Otwiera modal w fazie „building" — header/body/footer ukryte przez
+    // klasę .is-building na <dialog>, widoczny tylko pasek postępu.
+    // Nie wywołujemy renderPreview ani showReadyToast — paczka NIE jest
+    // jeszcze gotowa. Cel: użytkownik dostaje natychmiastowy feedback
+    // („coś się dzieje") + możliwość anulowania w trakcie.
+    function enterPreviewBuilding(initialLabel) {
+      if (!previewDialog || typeof previewDialog.showModal !== "function") return false;
+      previewBuildAborted = false;
+      previewDialog.classList.add("is-building");
+      setPreviewProgress(0, initialLabel || "Przygotowuję dane…");
+      try {
+        if (!previewDialog.open) previewDialog.showModal();
+      } catch (_e) { return false; }
+      // Focus na „Anuluj generowanie" — keyboard users mogą natychmiast
+      // przerwać Esc-em (dialog default) lub Enterem na przycisku.
+      if (previewProgressCancel) {
+        try { previewProgressCancel.focus(); } catch (_e2) {}
+      }
+      return true;
+    }
+    // Przejście „building" → „ready": ukrywamy pasek, zdejmujemy klasę,
+    // ujawniamy treść podglądu. Caller wywołuje to PO finalizeZip().
+    function enterPreviewReady() {
+      hidePreviewProgress();
+      if (previewDialog) previewDialog.classList.remove("is-building");
+    }
+    // „✕ Anuluj generowanie" — przerywa flow generowania ZIPa.
+    // Ustawia previewBuildAborted=true (sprawdzane w finalizeZip-callbacks),
+    // zamyka modal i czyści pasek statusu poza modalem.
+    if (previewProgressCancel) {
+      previewProgressCancel.addEventListener("click", function () {
+        previewBuildAborted = true;
+        hidePreviewProgress();
+        if (previewDialog) previewDialog.classList.remove("is-building");
+        if (previewDialog && previewDialog.open) previewDialog.close("build-aborted");
+        if (typeof clearExportProgress === "function") clearExportProgress();
+        if (typeof exportStatus !== "undefined" && exportStatus) {
+          exportStatus.textContent = "Anulowano generowanie paczki.";
+        }
+      });
+    }
     var previewTitle = root.querySelector("#export-preview-title");
     var previewFilenameWrap = root.querySelector("[data-export-preview-filename]");
     var previewFilenameValue = root.querySelector("[data-export-preview-filename-value]");
