@@ -4349,7 +4349,7 @@ const renderHtml = ({
         // Page-level toast — NIE chowamy go po pobraniu, tylko przełączamy
         // w fazę „downloaded" (zielony tytuł „✓ Pobrano — sprawdź nazwę
         // pliku", ukryty przycisk „Pobierz", auto-hide wydłużony do 12 s).
-        // Cel: modal podglądu zamyka się automatycznie tuż po `a.click()`,
+        // Cel: modal podglądu zamyka się automatycznie tuż po a.click(),
         // ale user nadal widzi w toascie dokładnie tę nazwę, którą zapisała
         // przeglądarka (1:1 z pendingExport.filename / schowkiem).
         try {
