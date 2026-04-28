@@ -2991,6 +2991,13 @@ const renderHtml = ({
     var previewFilenameValue = root.querySelector("[data-export-preview-filename-value]");
     var previewFilenameCopy = root.querySelector("[data-export-preview-filename-copy]");
     var previewFilenameMatch = root.querySelector("[data-export-preview-filename-match]");
+    // Wyróżniony download row tuż nad przyciskami footer'a — duży, monospace,
+    // pełna nazwa pliku ZIP/CSV. Czytamy z TEGO SAMEGO źródła co kompaktowy
+    // header filename (pendingExport.filename), żeby gwarantować bit-identyczność
+    // ze stringiem trafiającym do anchor.download i do schowka po wygenerowaniu.
+    var previewDownloadRow = root.querySelector("[data-export-preview-download-row]");
+    var previewDownloadRowValue = root.querySelector("[data-export-preview-download-row-value]");
+    var previewDownloadRowMatch = root.querySelector("[data-export-preview-download-row-match]");
     var PREVIEW_LIMIT = 20;
     var pendingExport = null; // {csv, filename, count, total, mode, colCount, missingCount}
 
