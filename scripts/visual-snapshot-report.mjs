@@ -3082,8 +3082,8 @@ const renderHtml = ({
     var previewToastTimer = null;
     /**
      * Pokazuje floating toast wewnątrz <dialog> (top-layer powyżej backdropa).
-     * Auto-hide po `ms` (default 1800ms). Ponowny call resetuje timer i tekst.
-     * `variant`: "success" (domyślnie, zielony) | "error" (czerwony).
+     * Auto-hide po ms (default 1800ms). Ponowny call resetuje timer i tekst.
+     * variant: "success" (domyślnie, zielony) | "error" (czerwony).
      * Bezpieczne przy braku elementu (Safari fallback bez dialogu).
      */
     function showPreviewToast(message, variant, ms) {
