@@ -4462,10 +4462,10 @@ const renderHtml = ({
               + " · wygenerowano " + relTime(snap.savedAt)
               + " (" + fmtCacheTimestamp(snap.savedAt) + ")";
           }
-          if (typeof openPreviewOrDownload === "function") {
-            openPreviewOrDownload();
+          if (typeof openPreviewOrDownloadRef === "function") {
+            openPreviewOrDownloadRef();
           } else if (exportStatus) {
-            exportStatus.textContent = "Modal podglądu niedostępny — odśwież stronę.";
+            exportStatus.textContent = "Modal podglądu niedostępny — wygeneruj najpierw eksport.";
           }
         }).catch(function (err) {
           try { console.warn("[trends] cache load failed:", err); } catch (_) {}
