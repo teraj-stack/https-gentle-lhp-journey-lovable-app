@@ -1472,6 +1472,7 @@ const renderHtml = ({
         source of truth dla a.download. Przycisk × i auto-hide po 8s.
       -->
       <div class="export-ready-toast" data-export-ready-toast role="status" aria-live="polite" aria-atomic="true" hidden>
+        <div class="export-ready-toast-progress" data-export-ready-toast-progress aria-hidden="true" hidden><div class="export-ready-toast-progress-bar" data-export-ready-toast-progress-bar></div></div>
         <div class="export-ready-toast-icon" aria-hidden="true">✓</div>
         <div class="export-ready-toast-body">
           <div class="export-ready-toast-title" data-export-ready-toast-title>Gotowe do pobrania</div>
