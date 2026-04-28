@@ -2673,27 +2673,58 @@ const renderHtml = ({
           // Manifest z metadanymi, żeby konsument ZIPa wiedział JAK powstał
           // plik bez czytania nazwy: filtr, tryb, kontrakt sortowania,
           // liczba runów, kolumny. Pretty-printed dla diff-friendly.
+          // Zakres wierszy: pierwszy/ostatni generatedAt z wyeksportowanego
+          // zbioru (po stabilnym sortowaniu jak na wykresie). Pozwala
+          // konsumentowi manifest.json zweryfikować bez parsowania CSV,
+          // jaki przedział czasu pokrywa eksport oraz czy bieżący run
+          // jest zawarty (lastIsCurrent).
+          var firstRow = built.points && built.points[0];
+          var lastRow = built.points && built.points[built.points.length - 1];
+          var rowRange = built.count
+            ? {
+                firstGeneratedAt: (firstRow && firstRow.generatedAt) || null,
+                lastGeneratedAt: (lastRow && lastRow.generatedAt) || null,
+                firstIndex: 0,
+                lastIndex: built.count - 1,
+                lastIsCurrent: !!(lastRow && lastRow.isCurrent),
+                includesCurrentRun: built.points.some(function (p) { return p.isCurrent; }),
+              }
+            : null;
+          // Etykieta wariantu pliku w archiwum — wprost wyjaśnia, co siedzi
+          // w środku (single CSV vs CSV+split single-series).
+          var formatVariantLabel = format === "zip-split"
+            ? "zip-split (full CSV + per-metric single-series CSVs)"
+            : "zip (full CSV only)";
           var manifest = {
             generatedAt: new Date().toISOString(),
             source: "visual-snapshot-report (savings trends)",
-            mode: built.mode,
-            format: format,
-            filter: built.state,
+            schemaMode: built.mode, // "subset" | "full"
+            format: format,         // "zip" | "zip-split"
+            formatVariant: formatVariantLabel,
+            filter: built.state,    // dokładny snapshot wartości selectów
+            rowRange: rowRange,
             rowsExported: built.count,
             rowsTotal: built.total,
             columns: built.headerCells,
+            columnCount: built.colCount,
             missingColumnsAsEmpty: built.missingCount,
             sortContract: "generatedAt ASC, isCurrent last (matches sparkline order)",
+            files: null, // wypełniamy poniżej, gdy znamy listę
           };
           var files = [
             { name: baseName + ".csv", text: built.csv },
-            { name: "metadata.json", text: JSON.stringify(manifest, null, 2) + "\n" },
           ];
           if (format === "zip-split" && built.splitCsvs) {
             Object.keys(built.splitCsvs).forEach(function (k) {
               files.push({ name: k, text: built.splitCsvs[k] });
             });
           }
+          // Lista plików (oprócz samego manifest.json) — pomaga w audycie
+          // archiwum bez konieczności rozpakowywania ZIPa.
+          manifest.files = files.map(function (f) {
+            return { name: f.name, sizeBytes: f.text.length };
+          });
+          files.push({ name: "metadata.json", text: JSON.stringify(manifest, null, 2) + "\n" });
           var zipBlob = buildZip(files);
           pendingExport = {
             blob: zipBlob,
