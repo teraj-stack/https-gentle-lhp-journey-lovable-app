@@ -1125,8 +1125,8 @@ const renderHtml = ({
           z innymi preferencjami eksportu, używane w showReadyToast() w fazie
           „downloaded". Faza „ready" (przed downloadem) nadal trzyma stałe 8s.
         -->
-        <label class="trends-filter-label trends-filter-toast-hide trends-filter-settings-target" title="Po jakim czasie automatycznie schować toast „Pobrano ZIP”. „Bez auto-hide” = toast zostaje aż do ręcznego zamknięcia (×).">
-          auto-hide toastu
+        <label class="trends-filter-label trends-filter-toast-hide trends-filter-settings-target" title="Po jakim czasie automatycznie schować toast „Pobrano ZIP”. „Bez auto-hide” = toast zostaje aż do ręcznego zamknięcia (×). Wartość pamiętana ODDZIELNIE per format ZIP (zip vs zip-split) — przełączenie formatu wczytuje swoje ustawienie.">
+          auto-hide toastu <span class="trends-filter-toast-hide-scope" data-trend-toast-autohide-scope title="Format ZIP, dla którego obowiązuje to ustawienie. Każdy format ma własną wartość (CSV pomijamy — toast pokazujemy tylko po pobraniu ZIP).">(dla zip)</span>
           <select class="trends-filter-select" data-trend-toast-autohide>
             <option value="8000">8 s</option>
             <option value="12000" selected>12 s</option>
@@ -1998,6 +1998,14 @@ const renderHtml = ({
       align-self: end;
     }
     .trends-filter-toast-test:hover { background: rgba(127,127,127,.22); }
+    /* Badge informujący, że auto-hide jest pamiętany per format ZIP.
+       Tekst dynamiczny — JS update'uje go gdy user zmienia format eksportu. */
+    .trends-filter-toast-hide-scope {
+      font-size: .65rem;
+      opacity: .7;
+      font-style: italic;
+      margin-left: 2px;
+    }
     .trends-filter-toast-test:focus-visible {
       outline: 2px solid rgba(201,168,76,.85);
       outline-offset: 2px;
@@ -3744,6 +3752,25 @@ const renderHtml = ({
     // Trzymamy zamknięty zbiór, żeby zły JSON / ręczna edycja localStorage
     // nie ustawiły np. 50 ms (niedostępne dla użytkownika).
     var TOAST_AUTOHIDE_ALLOWED = [0, 8000, 12000, 20000];
+    // Formaty ZIP, dla których pamiętamy auto-hide ODDZIELNIE. CSV pomijamy
+    // — toast „Pobrano" pokazujemy realnie tylko po pobraniu paczki ZIP,
+    // a dla CSV nie ma długiego buildu/weryfikacji.
+    var TOAST_AUTOHIDE_FORMATS = ["zip", "zip-split"];
+    var TOAST_AUTOHIDE_DEFAULT = 12000;
+    function makeDefaultAutoHideMap() {
+      var m = {};
+      TOAST_AUTOHIDE_FORMATS.forEach(function (f) { m[f] = TOAST_AUTOHIDE_DEFAULT; });
+      return m;
+    }
+    var toastAutoHideByFormat = makeDefaultAutoHideMap();
+    // Aktualnie wybrany format eksportu — używany przez select auto-hide
+    // jako klucz read/write. Jeśli format to CSV (poza whitelist), select
+    // mapujemy na pierwszy ZIP-format („zip"), żeby user mógł podejrzeć
+    // i edytować ustawienie zanim przełączy format.
+    function getCurrentAutoHideFormatKey() {
+      var fmt = (exportFormatSelect && exportFormatSelect.value) || "csv";
+      return TOAST_AUTOHIDE_FORMATS.indexOf(fmt) === -1 ? TOAST_AUTOHIDE_FORMATS[0] : fmt;
+    }
     // Persist progu i trybu w localStorage, żeby user nie ustawiał ich
     // przy każdym otwarciu raportu. Defensywnie: zły JSON / brak storage
     // → zostają wartości domyślne z atrybutów inputów (200 / "suggest").
@@ -3759,9 +3786,22 @@ const renderHtml = ({
             && /^(suggest|switch|off)$/.test(saved.mode)) {
           zipModeSelect.value = saved.mode;
         }
-        if (toastAutoHideSelect && typeof saved.toastAutoHideMs === "number"
+        // Nowy schema: per-format mapa pod kluczem 'toastAutoHideByFormat'.
+        // Każdy format walidujemy osobno — niezaufane wartości pomijamy.
+        if (saved.toastAutoHideByFormat && typeof saved.toastAutoHideByFormat === "object") {
+          TOAST_AUTOHIDE_FORMATS.forEach(function (f) {
+            var v = saved.toastAutoHideByFormat[f];
+            if (typeof v === "number" && TOAST_AUTOHIDE_ALLOWED.indexOf(v) !== -1) {
+              toastAutoHideByFormat[f] = v;
+            }
+          });
+        } else if (typeof saved.toastAutoHideMs === "number"
             && TOAST_AUTOHIDE_ALLOWED.indexOf(saved.toastAutoHideMs) !== -1) {
-          toastAutoHideSelect.value = String(saved.toastAutoHideMs);
+          // Back-compat: poprzednia wersja trzymała JEDNĄ wartość globalną.
+          // Migracja: tę samą wartość kopiujemy dla wszystkich formatów ZIP.
+          TOAST_AUTOHIDE_FORMATS.forEach(function (f) {
+            toastAutoHideByFormat[f] = saved.toastAutoHideMs;
+          });
         }
       } catch (_e) { /* noop */ }
     })();
@@ -3770,7 +3810,7 @@ const renderHtml = ({
         localStorage.setItem(ZIP_PREFS_KEY, JSON.stringify({
           threshold: getZipThreshold(),
           mode: getZipMode(),
-          toastAutoHideMs: getToastAutoHideMs(),
+          toastAutoHideByFormat: toastAutoHideByFormat,
         }));
       } catch (_e) { /* noop */ }
     }
@@ -3783,17 +3823,39 @@ const renderHtml = ({
     function getZipMode() {
       return (zipModeSelect && zipModeSelect.value) || "suggest";
     }
-    // Czas auto-hide toastu „Pobrano ZIP" (ms). 0 = bez auto-hide.
-    // Default 12000 zgodny z poprzednim hardcoded zachowaniem (faza
-    // „downloaded"), żeby istniejący użytkownicy nie odczuli regresji.
-    function getToastAutoHideMs() {
-      if (!toastAutoHideSelect) return 12000;
-      var n = parseInt(toastAutoHideSelect.value, 10);
-      if (!isFinite(n) || TOAST_AUTOHIDE_ALLOWED.indexOf(n) === -1) return 12000;
-      return n;
+    // Czas auto-hide toastu „Pobrano ZIP" (ms) dla podanego (lub aktualnego)
+    // formatu. 0 = bez auto-hide. Default 12000 zgodny z poprzednim
+    // hardcoded zachowaniem (faza „downloaded").
+    function getToastAutoHideMs(formatOverride) {
+      var fmt = formatOverride || getCurrentAutoHideFormatKey();
+      var v = toastAutoHideByFormat[fmt];
+      if (typeof v === "number" && TOAST_AUTOHIDE_ALLOWED.indexOf(v) !== -1) return v;
+      return TOAST_AUTOHIDE_DEFAULT;
     }
+    // Synchronizuje select i scope-badge z aktualnie wybranym formatem.
+    // Wywoływane przy: starcie + zmianie formatu eksportu (zip↔zip-split↔csv).
+    var toastAutoHideScopeEl = root.querySelector("[data-trend-toast-autohide-scope]");
+    function syncToastAutoHideUi() {
+      var fmt = getCurrentAutoHideFormatKey();
+      if (toastAutoHideSelect) {
+        toastAutoHideSelect.value = String(getToastAutoHideMs(fmt));
+      }
+      if (toastAutoHideScopeEl) {
+        toastAutoHideScopeEl.textContent = "(dla " + fmt + ")";
+      }
+    }
+    syncToastAutoHideUi();
     if (toastAutoHideSelect) {
-      toastAutoHideSelect.addEventListener("change", persistZipPrefs);
+      // Zmiana selectu zapisuje wartość pod kluczem AKTUALNEGO formatu —
+      // dzięki temu zip i zip-split mają niezależne ustawienia.
+      toastAutoHideSelect.addEventListener("change", function () {
+        var fmt = getCurrentAutoHideFormatKey();
+        var n = parseInt(toastAutoHideSelect.value, 10);
+        if (isFinite(n) && TOAST_AUTOHIDE_ALLOWED.indexOf(n) !== -1) {
+          toastAutoHideByFormat[fmt] = n;
+        }
+        persistZipPrefs();
+      });
     }
     // ⚙ Skrót do ustawień eksportu — przewija pasek filtrów do widoku,
     // pulsuje labelami ustawień (.trends-filter-settings-target) i ustawia
@@ -3846,10 +3908,13 @@ const renderHtml = ({
     if (toastTestBtn) {
       toastTestBtn.addEventListener("click", function () {
         if (typeof showReadyToast !== "function") return;
-        var hideMs = getToastAutoHideMs();
+        // Test używa wartości dla AKTUALNEGO formatu — getToastAutoHideMs()
+        // bez argumentu wybiera klucz z getCurrentAutoHideFormatKey().
+        var fmt = getCurrentAutoHideFormatKey();
+        var hideMs = getToastAutoHideMs(fmt);
         var label = hideMs === 0 ? "bez auto-hide" : (hideMs / 1000) + " s";
-        var fakeName = "test-toast-" + label.replace(/\s+/g, "") + ".zip";
-        showReadyToast(fakeName, "ZIP (test)", "preview", "downloaded");
+        var fakeName = "test-toast-" + fmt + "-" + label.replace(/\s+/g, "") + ".zip";
+        showReadyToast(fakeName, "ZIP (test, " + fmt + ")", "preview", "downloaded");
       });
     }
     // Live hint pod paskiem eksportu — informuje, czy aktualnie wyfiltrowane
@@ -3974,7 +4039,12 @@ const renderHtml = ({
       });
     }
     if (exportFormatSelect) {
-      exportFormatSelect.addEventListener("change", refreshZipHint);
+      exportFormatSelect.addEventListener("change", function () {
+        // Zsynchronizuj select auto-hide + scope-badge z nowo wybranym formatem,
+        // żeby user widział wartość ZAPISANĄ DLA TEGO formatu (zip vs zip-split).
+        syncToastAutoHideUi();
+        refreshZipHint();
+      });
     }
     // Initial paint name-preview okienka — żeby pod przyciskiem „⧉ Kopiuj
     // nazwę" od razu po załadowaniu raportu była widoczna aktualnie wyliczona
