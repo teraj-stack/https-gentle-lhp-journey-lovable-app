@@ -1107,7 +1107,7 @@ const renderHtml = ({
             <option value="zip-split">ZIP split (PNG/discovery)</option>
           </select>
         </label>
-        <label class="trends-filter-label trends-filter-zip-threshold" title="Powyżej tego progu (liczba przefiltrowanych wierszy) eksport zachowa się zgodnie z wybranym trybem poniżej. 0 = wyłącz.">
+        <label class="trends-filter-label trends-filter-zip-threshold trends-filter-settings-target" title="Powyżej tego progu (liczba przefiltrowanych wierszy) eksport zachowa się zgodnie z wybranym trybem poniżej. 0 = wyłącz.">
           próg ZIP (wiersze)
           <input type="number" class="trends-filter-input" data-trend-zip-threshold min="0" step="50" value="200" inputmode="numeric" style="max-width:88px" />
         </label>
