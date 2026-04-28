@@ -3836,7 +3836,22 @@ const renderHtml = ({
         }, reduced ? 0 : 250);
       });
     }
-    // Live hint pod paskiem eksportu — informuje, czy aktualnie wyfiltrowane
+    // „Wypróbuj toast" — pokazuje testowy toast w fazie „downloaded" z fake'ową
+    // nazwą pliku, żeby user na żywo zobaczył jak długo zostaje przy aktualnym
+    // ustawieniu auto-hide. Zero side-effects: nie pobiera pliku, nie dotyka
+    // historii ani cache. Każdy klik resetuje timer (showReadyToast robi
+    // clearTimeout(readyToastTimer) na wejściu) — można zmieniać select i
+    // klikać ponownie, żeby porównać czasy.
+    var toastTestBtn = root.querySelector("[data-trend-toast-test]");
+    if (toastTestBtn) {
+      toastTestBtn.addEventListener("click", function () {
+        if (typeof showReadyToast !== "function") return;
+        var hideMs = getToastAutoHideMs();
+        var label = hideMs === 0 ? "bez auto-hide" : (hideMs / 1000) + " s";
+        var fakeName = "test-toast-" + label.replace(/\s+/g, "") + ".zip";
+        showReadyToast(fakeName, "ZIP (test)", "preview", "downloaded");
+      });
+    }
     // wiersze przekraczają próg i co się stanie po kliku „Pobierz".
     function refreshZipHint() {
       if (!zipHintEl) return;
