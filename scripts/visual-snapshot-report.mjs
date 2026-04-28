@@ -2240,7 +2240,7 @@ const renderHtml = ({
       background: rgba(220,140,80,.18);
       color: rgba(250,210,170,1);
       border-color: rgba(220,140,80,.55);
-    }
+    .export-preview-filename {
       display: flex;
       align-items: center;
       gap: 6px;
