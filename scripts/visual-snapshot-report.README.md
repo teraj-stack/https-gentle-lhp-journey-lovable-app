@@ -494,6 +494,19 @@ pasujących do wszystkich aktywnych selectów (AND), bez re-runu skryptu.
    przez `createElement`/`textContent` — zero ryzyka XSS, niezależnie od
    sanityzacji nazw.
 
+   **Live preview nazwy paczki** (okienko `📦 Nazwa paczki: …` pod paskiem
+   eksportu): pokazuje DOKŁADNIE tę nazwę, którą wygeneruje aktualny stan
+   filtrów + format + próg auto-ZIP — z parytetem `computeExportBaseName()`.
+   Aktualizuje się automatycznie przy każdej zmianie filtra (przez
+   `apply()` → `refreshZipHint()` → `refreshNamePreview()`, monkey-patch
+   na refreshZipHint, żeby cykl „filter changed → UI re-sync" miał jedno
+   źródło prawdy) oraz przy zmianie formatu / progu / trybu auto-ZIP.
+   Po prawej stronie meta: liczba wierszy, format i znacznik `auto-ZIP`
+   gdy próg `switch` przekroczony. Klik w wartość kopiuje ją do schowka
+   (równoważnik przycisku, z animacją + wpisem do historii); Enter / Space
+   na fokusie też kopiuje (`role="textbox"`, `aria-readonly`). Bez wierszy
+   → ukryte (`hidden`).
+
    **Skrót klawiszowy „kopiuj nazwę paczki":**
    - **Ctrl/Cmd + Shift + C** — działa zawsze, niezależnie od fokusu
      (jednoznaczny gest, bez kolizji z natywnym copy zaznaczenia).
