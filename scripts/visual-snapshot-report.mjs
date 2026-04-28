@@ -4434,6 +4434,7 @@ const renderHtml = ({
         resumeReadyToastTimer();
       });
     }
+    if (readyToastDownload) {
       readyToastDownload.addEventListener("click", function () {
         // Skrót: pobierz natychmiast bez otwierania modala. downloadPending
         // używa pendingExport.filename (single source of truth), więc
