@@ -2989,7 +2989,13 @@ const renderHtml = ({
           previewDialog.showModal();
           if (previewConfirm) previewConfirm.focus();
         }
-        openPreviewOrDownload();
+        // Doklej notkę progową (suggest/switch) do pendingExport — pojawi się
+        // w finalnym statusie „Pobrano …" obok nazwy pliku.
+        if (pendingExport) pendingExport.thresholdNote = thresholdNote;
+        if (typeof refreshZipHint === "function") refreshZipHint();
+        // Async (zip-split z PNG-ami) sam zawoła openPreviewOrDownload —
+        // wtedy pendingExport.thresholdNote jest podpinane w finalizeZip-callback.
+        if (pendingExport) openPreviewOrDownload();
       });
     }
     if (previewCancel) {
