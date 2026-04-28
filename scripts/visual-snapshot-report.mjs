@@ -4036,7 +4036,12 @@ const renderHtml = ({
       });
     }
     if (exportFormatSelect) {
-      exportFormatSelect.addEventListener("change", refreshZipHint);
+      exportFormatSelect.addEventListener("change", function () {
+        // Zsynchronizuj select auto-hide + scope-badge z nowo wybranym formatem,
+        // żeby user widział wartość ZAPISANĄ DLA TEGO formatu (zip vs zip-split).
+        syncToastAutoHideUi();
+        refreshZipHint();
+      });
     }
     // Initial paint name-preview okienka — żeby pod przyciskiem „⧉ Kopiuj
     // nazwę" od razu po załadowaniu raportu była widoczna aktualnie wyliczona
