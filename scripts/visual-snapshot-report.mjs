@@ -1111,7 +1111,7 @@ const renderHtml = ({
           próg ZIP (wiersze)
           <input type="number" class="trends-filter-input" data-trend-zip-threshold min="0" step="50" value="200" inputmode="numeric" style="max-width:88px" />
         </label>
-        <label class="trends-filter-label trends-filter-zip-mode" title="Sugeruj: tylko podpowiedź w pasku statusu (CSV zostaje). Przełącz: jeśli format to CSV, automatycznie zmień na ZIP przed pobraniem (zapisuje wybór). Ignoruj: nic nie rób.">
+        <label class="trends-filter-label trends-filter-zip-mode trends-filter-settings-target" title="Sugeruj: tylko podpowiedź w pasku statusu (CSV zostaje). Przełącz: jeśli format to CSV, automatycznie zmień na ZIP przed pobraniem (zapisuje wybór). Ignoruj: nic nie rób.">
           po przekroczeniu
           <select class="trends-filter-select" data-trend-zip-mode>
             <option value="suggest" selected>Sugeruj ZIP</option>
