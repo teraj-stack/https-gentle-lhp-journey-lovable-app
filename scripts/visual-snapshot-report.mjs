@@ -3781,6 +3781,46 @@ const renderHtml = ({
         if (previewDialog && previewDialog.open) previewDialog.close("confirm");
       });
     }
+    // Kopia nazwy pliku z modala — równoważnik „⧉ Kopiuj nazwę" z paska
+    // filtra, ale działa na nazwie zamrożonej w pendingExport (gwarancja
+    // parytetu z faktycznym anchor.download). Dwa entry pointy: klik w
+    // <code> i klik w przycisk obok — oba kopiują tę samą wartość i
+    // dopisują wpis do historii (source=copy).
+    function copyPreviewFilename(targetEl) {
+      var name = previewFilenameValue && previewFilenameValue.textContent;
+      if (!name) return;
+      copyTextToClipboard(name).then(function (ok) {
+        if (!ok) {
+          if (exportStatus) exportStatus.textContent = "Nie udało się skopiować — nazwa: " + name;
+          return;
+        }
+        if (targetEl) {
+          targetEl.classList.add("is-copied");
+          if (targetEl === previewFilenameCopy) targetEl.textContent = "✓";
+          setTimeout(function () {
+            targetEl.classList.remove("is-copied");
+            if (targetEl === previewFilenameCopy) targetEl.textContent = "⧉";
+          }, 1500);
+        }
+        if (exportStatus) exportStatus.textContent = "Skopiowano nazwę: " + name;
+        try {
+          var built = buildExportRows();
+          pushExportHistory(name, { source: "copy", count: built && built.count });
+        } catch (_e) { pushExportHistory(name, { source: "copy" }); }
+      });
+    }
+    if (previewFilenameValue) {
+      previewFilenameValue.addEventListener("click", function () { copyPreviewFilename(previewFilenameValue); });
+      previewFilenameValue.addEventListener("keydown", function (ev) {
+        if (ev.key === "Enter" || ev.key === " ") {
+          ev.preventDefault();
+          copyPreviewFilename(previewFilenameValue);
+        }
+      });
+    }
+    if (previewFilenameCopy) {
+      previewFilenameCopy.addEventListener("click", function () { copyPreviewFilename(previewFilenameCopy); });
+    }
     if (previewDialog) {
       // Klik w backdrop (poza zawartością) → zamknij. <dialog> sam tego nie
       // robi — sprawdzamy czy target == sam dialog (nie potomek).
