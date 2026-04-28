@@ -4350,10 +4350,19 @@ const renderHtml = ({
           // Finalizator ZIPa: składa manifest (po dopisaniu opcjonalnych
           // PNG-ów ze sparkline'ów), buduje archiwum, ustawia pendingExport.
           // Wydzielony jako fn, żeby działać sync (zip) i async (zip-split).
-          function finalizeZip(extraFiles) {
-            if (extraFiles && extraFiles.length) {
-              extraFiles.forEach(function (ef) { files.push(ef); });
-            }
+           // Helper: czytelny rozmiar pliku (B/KB/MB) z liczby bajtów.
+           // Wydzielony, żeby pasek statusu, ready toast i log używały
+           // identycznego formatowania — bez rozjazdu jednostek.
+           function humanSize(bytes) {
+             if (!bytes && bytes !== 0) return "";
+             return bytes < 1024 ? bytes + " B"
+               : bytes < 1024 * 1024 ? Math.round(bytes / 1024) + " KB"
+               : (bytes / (1024 * 1024)).toFixed(1) + " MB";
+           }
+           function finalizeZip(extraFiles) {
+             if (extraFiles && extraFiles.length) {
+               extraFiles.forEach(function (ef) { files.push(ef); });
+             }
             // Lista plików (oprócz samego manifest.json) — pomaga w audycie
             // archiwum bez konieczności rozpakowywania ZIPa. Dla wpisów
             // binarnych (PNG) używamy bytes.length, dla tekstowych text.length.
