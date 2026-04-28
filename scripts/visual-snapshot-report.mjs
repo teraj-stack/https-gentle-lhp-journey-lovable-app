@@ -4277,6 +4277,47 @@ const renderHtml = ({
     //   · readyToastRemainingMs — ile MS zostało w momencie pauzy (do wznowienia).
     var readyToastIsPaused = false;
     var readyToastRemainingMs = 0;
+    // Snapshot ostatnio pokazanego toastu — persystowany do sessionStorage,
+    // żeby przeżyć re-render skryptu / programatyczną podmianę DOM / zmianę
+    // formatu eksportu (która resetuje countdown UI). Klucz session-scoped,
+    // bo to ulotny stan UI, nie preferencja usera.
+    var READY_TOAST_STATE_KEY = "vsr.readyToast.state.v1";
+    var readyToastLastSnapshot = null; // { filename, fmtTag, sizeLabel, phase, totalMs }
+    function persistReadyToastState() {
+      try {
+        if (!readyToast || readyToast.hidden || !readyToastLastSnapshot) {
+          sessionStorage.removeItem(READY_TOAST_STATE_KEY);
+          return;
+        }
+        var remaining = readyToastIsPaused
+          ? readyToastRemainingMs
+          : Math.max(0, readyToastCountdownDeadline - Date.now());
+        var payload = {
+          v: 1,
+          filename: readyToastLastSnapshot.filename,
+          fmtTag: readyToastLastSnapshot.fmtTag,
+          sizeLabel: readyToastLastSnapshot.sizeLabel,
+          phase: readyToastLastSnapshot.phase,
+          totalMs: readyToastLastSnapshot.totalMs,
+          remainingMs: remaining,
+          isPaused: !!readyToastIsPaused,
+          savedAt: Date.now(),
+        };
+        sessionStorage.setItem(READY_TOAST_STATE_KEY, JSON.stringify(payload));
+      } catch (_e) { /* sessionStorage może być zablokowany — ignorujemy */ }
+    }
+    function readPersistedReadyToastState() {
+      try {
+        var raw = sessionStorage.getItem(READY_TOAST_STATE_KEY);
+        if (!raw) return null;
+        var obj = JSON.parse(raw);
+        if (!obj || obj.v !== 1) return null;
+        return obj;
+      } catch (_e) { return null; }
+    }
+    function clearPersistedReadyToastState() {
+      try { sessionStorage.removeItem(READY_TOAST_STATE_KEY); } catch (_e) {}
+    }
     function clearReadyToastCountdown() {
       if (readyToastCountdownInterval) {
         clearInterval(readyToastCountdownInterval);
@@ -4332,6 +4373,7 @@ const renderHtml = ({
         readyToastTimer = null;
       }
       readyToastRemainingMs = Math.max(0, readyToastCountdownDeadline - Date.now());
+      persistReadyToastState();
     }
     // Wznowienie — restartuje setTimeout z pozostałym czasem i przesuwa
     // deadline countdownu, żeby tick znów odliczał normalnie. Jeśli zero
@@ -4347,6 +4389,7 @@ const renderHtml = ({
       readyToastCountdownDeadline = Date.now() + ms;
       readyToastTimer = setTimeout(hideReadyToast, ms);
       if (readyToastCountdown) readyToastCountdown.classList.remove("is-paused");
+      persistReadyToastState();
     }
     function hideReadyToast() {
       if (readyToastTimer) { clearTimeout(readyToastTimer); readyToastTimer = null; }
@@ -4354,6 +4397,8 @@ const renderHtml = ({
       readyToastRemainingMs = 0;
       readyToastCountdownDeadline = 0;
       clearReadyToastCountdown();
+      readyToastLastSnapshot = null;
+      clearPersistedReadyToastState();
       if (!readyToast) return;
       readyToast.classList.remove("is-visible");
       setTimeout(function () {
@@ -4424,6 +4469,7 @@ const renderHtml = ({
       // Reset countdownu przed nową fazą (poprzedni interval mógł jeszcze
       // tickać, jeśli toast był ponownie pokazany podczas swojej widoczności).
       clearReadyToastCountdown();
+      var resolvedTotalMs = 0;
       if (ph === "downloaded") {
         var hideMs = getToastAutoHideMs();
         if (hideMs > 0) {
@@ -4431,13 +4477,90 @@ const renderHtml = ({
           // Countdown pokazujemy TYLKO gdy auto-hide jest aktywny —
           // dla „bez auto-hide" (0 ms) element zostaje hidden.
           startReadyToastCountdown(hideMs);
+          resolvedTotalMs = hideMs;
         }
       } else {
         // Faza „ready" — stałe 8 s, też pokazujemy countdown dla spójności UX.
         readyToastTimer = setTimeout(hideReadyToast, 8000);
         startReadyToastCountdown(8000);
+        resolvedTotalMs = 8000;
+      }
+      // Snapshot do persystencji — pozwala odtworzyć toast po re-renderze
+      // skryptu / zmianie formatu eksportu (która może wyzerować countdown UI).
+      readyToastLastSnapshot = {
+        filename: filename || "",
+        fmtTag: fmtTag || "",
+        sizeLabel: sizeLabel || "",
+        phase: ph,
+        totalMs: resolvedTotalMs,
+      };
+      persistReadyToastState();
+    }
+    // Restore — wywoływane raz po init. Jeśli w sessionStorage jest świeży
+    // snapshot toastu (TTL 2 min, żeby nie odgrzewać starych notyfikacji),
+    // odtwarzamy go z aktualnym remainingMs i stanem pauzy. Pauza zostaje
+    // zachowana — dopiero pointerleave/focusout wznowi countdown, identycznie
+    // jak gdyby user nie ruszył myszką podczas re-renderu.
+    function restoreReadyToastFromSession() {
+      if (!readyToast) return;
+      var st = readPersistedReadyToastState();
+      if (!st) return;
+      // TTL 2 minuty — stare snapshoty (np. po reload przeglądarki za godzinę)
+      // ignorujemy, żeby nie wskrzeszać dawno nieaktualnej notyfikacji.
+      if (Date.now() - (st.savedAt || 0) > 120000) {
+        clearPersistedReadyToastState();
+        return;
+      }
+      // Jeśli auto-hide był aktywny i już upłynął — pomijamy restore.
+      if (st.totalMs > 0 && st.remainingMs <= 0 && !st.isPaused) {
+        clearPersistedReadyToastState();
+        return;
+      }
+      // Odtwórz UI bez wywoływania showReadyToast (które zresetowałoby timer
+      // do pełnej wartości totalMs zamiast remainingMs).
+      if (readyToastFilename) readyToastFilename.textContent = st.filename || "";
+      if (readyToastMeta) readyToastMeta.textContent = ""; // metadane (fmt/size) są ulotne
+      if (readyToastTitle) {
+        readyToastTitle.textContent = st.phase === "downloaded"
+          ? "✓ Pobrano — sprawdź nazwę pliku"
+          : "✓ Gotowe do pobrania";
+      }
+      if (readyToastDownload) readyToastDownload.hidden = st.phase === "downloaded";
+      if (readyToastHistory) {
+        readyToastHistory.hidden = st.phase !== "downloaded";
+        if (st.phase === "downloaded") {
+          readyToastHistory.setAttribute("data-target-filename", st.filename || "");
+        }
+      }
+      readyToast.classList.toggle("is-downloaded", st.phase === "downloaded");
+      readyToast.hidden = false;
+      // eslint-disable-next-line no-unused-expressions
+      readyToast.offsetWidth;
+      readyToast.classList.add("is-visible");
+      readyToastLastSnapshot = {
+        filename: st.filename, fmtTag: st.fmtTag, sizeLabel: st.sizeLabel,
+        phase: st.phase, totalMs: st.totalMs,
+      };
+      // Restore countdown z REMAINING czasu, nie totalMs.
+      if (st.totalMs > 0 && st.remainingMs > 0) {
+        if (st.isPaused) {
+          // Pauza — nie startujemy setTimeout, tylko ustawiamy flagę i UI pauzy.
+          readyToastIsPaused = true;
+          readyToastRemainingMs = st.remainingMs;
+          readyToastCountdownDeadline = Date.now() + st.remainingMs;
+          startReadyToastCountdown(st.remainingMs);
+          // pauza-flag już ustawiona, więc tick wyrysuje „znika za N s · (pauza)"
+        } else {
+          readyToastTimer = setTimeout(hideReadyToast, st.remainingMs);
+          startReadyToastCountdown(st.remainingMs);
+        }
       }
     }
+    restoreReadyToastFromSession();
+    // Persist najświeższy stan przed unload — łapie korner case, w którym
+    // user pauzował toast hoverem i zaraz potem nastąpił reload (snapshot
+    // zachowa flagę pauzy + dokładny remainingMs).
+    window.addEventListener("beforeunload", persistReadyToastState);
     if (readyToastClose) {
       readyToastClose.addEventListener("click", hideReadyToast);
     }
