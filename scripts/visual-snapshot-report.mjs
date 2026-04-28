@@ -5158,38 +5158,61 @@ const renderHtml = ({
             // (CSV-e per metryka + obrazki gotowe do wklejenia w raport).
             // Zwykly "zip" celowo zostaje minimalne (tylko CSV + metadata).
             if (exportStatus) exportStatus.textContent = "Renderuję PNG sparkline'ów…";
+            // Otwieramy modal natychmiast w fazie „building" — user widzi
+            // pasek postępu wewnątrz modala (równolegle z paskiem statusu
+            // poza modalem). Można przerwać przyciskiem „✕ Anuluj generowanie",
+            // który ustawia previewBuildAborted=true (sprawdzane w callbacku).
+            var openedBuilding = enterPreviewBuilding("Renderuję PNG sparkline'ów… 0/" + sparks.length);
             // Pasek postępu: start 0% (pre-render), aktualizowany przez
             // snapshotSparkPngs(onProgress) per zakończony PNG, finał
-            // 100% + „Gotowe do pobrania" po finalizeZip().
-            setExportProgress(0, "Renderuję PNG… 0/" + sparks.length);
+            // 100% + „Gotowe do pobrania" po finalizeZip(). Wszystkie
+            // wywołania mirrorujemy do setPreviewProgress (modal) i
+            // setExportProgress (status bar) — single source of UI truth.
+            function dualProgress(pct, label, opts) {
+              setExportProgress(pct, label, opts);
+              if (openedBuilding) setPreviewProgress(pct, label, opts);
+            }
+            dualProgress(0, "Renderuję PNG… 0/" + sparks.length);
             snapshotSparkPngs(function (done, total) {
+              if (previewBuildAborted) return;
               var pct = total > 0 ? Math.round((done / total) * 90) : 90;
-              setExportProgress(pct, "Renderuję PNG… " + done + "/" + total);
+              dualProgress(pct, "Renderuję PNG… " + done + "/" + total);
             }).then(function (pngs) {
-              setExportProgress(95, "Pakuję archiwum…");
+              if (previewBuildAborted) return;
+              dualProgress(95, "Pakuję archiwum…");
               finalizeZip(pngs);
               if (pendingExport) pendingExport.thresholdNote = thresholdNote;
-              setExportProgress(100, "Gotowe do pobrania", { done: true, autoHideMs: 3500 });
+              dualProgress(100, "Gotowe do pobrania", { done: true, autoHideMs: 3500 });
               announceReadyWithSize();
+              // Przejście „building" → „ready" w modalu (zdejmuje klasę,
+              // ujawnia header/body/footer). Następnie standardowy flow.
+              enterPreviewReady();
               openPreviewOrDownload();
             }).catch(function () {
+              if (previewBuildAborted) return;
               // Nawet jeśli wszystkie PNG-i padną, eksport CSV-ów leci dalej.
-              setExportProgress(95, "Pakuję archiwum…");
+              dualProgress(95, "Pakuję archiwum…");
               finalizeZip([]);
               if (pendingExport) pendingExport.thresholdNote = thresholdNote;
-              setExportProgress(100, "Gotowe do pobrania", { done: true, autoHideMs: 3500 });
+              dualProgress(100, "Gotowe do pobrania", { done: true, autoHideMs: 3500 });
               announceReadyWithSize();
+              enterPreviewReady();
               openPreviewOrDownload();
             });
             return; // dialog otworzy się w callbacku
           }
           // Tryb "zip" (bez PNG-ów) — generowanie jest synchroniczne i
-          // krótkie, ale i tak pokazujemy szybki przebieg paska, żeby
-          // user dostał wizualne potwierdzenie „buduję → gotowe".
+          // krótkie, ale i tak pokazujemy szybki przebieg paska wewnątrz
+          // modala (otwartego w fazie „building"), żeby user zobaczył
+          // jednolity feedback „buduję → gotowe" niezależnie od wariantu.
+          var openedSyncBuilding = enterPreviewBuilding("Pakuję archiwum…");
           setExportProgress(40, "Pakuję archiwum…");
+          if (openedSyncBuilding) setPreviewProgress(40, "Pakuję archiwum…");
           finalizeZip([]);
           setExportProgress(100, "Gotowe do pobrania", { done: true, autoHideMs: 3500 });
+          if (openedSyncBuilding) setPreviewProgress(100, "Gotowe do pobrania", { done: true });
           announceReadyWithSize();
+          if (openedSyncBuilding) enterPreviewReady();
         } else {
           format = "csv";
           pendingExport = {
