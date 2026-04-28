@@ -2953,6 +2953,11 @@ const renderHtml = ({
           ? "ZIP" : "CSV";
         previewTitle.textContent = "Podgląd eksportu " + titleFmt;
       }
+      if (previewConfirm) {
+        // Sync etykiety przycisku potwierdzenia z formatem (CSV/ZIP), żeby
+        // user nie kliknął „Pobierz CSV" gdy auto-ZIP przełączył format.
+        previewConfirm.textContent = "⬇ Pobierz " +
+          (pendingFmt === "zip" || pendingFmt === "zip-split" ? "ZIP" : "CSV");
       if (previewFilenameWrap && previewFilenameValue) {
         if (pendingName) {
           previewFilenameWrap.hidden = false;
