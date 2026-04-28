@@ -1213,6 +1213,14 @@ const renderHtml = ({
           <button type="button" class="export-preview-cancel" data-export-preview-cancel>Anuluj</button>
           <button type="button" class="export-preview-confirm" data-export-preview-confirm>⬇ Pobierz CSV</button>
         </div>
+        <!--
+          Floating toast wewnątrz <dialog> — pokazuje potwierdzenie po
+          kliku „kopiuj nazwę" (header filename / download row / przycisk ⧉).
+          Renderowany w dialogu (a nie w body), żeby był ponad backdropem
+          modala (top-layer). aria-live=polite, role=status — SR ogłaszają
+          tekst bez przerywania interakcji. Auto-hide po ~1.8s.
+        -->
+        <div class="export-preview-toast" data-export-preview-toast role="status" aria-live="polite" hidden></div>
       </dialog>
     </section>`;
   })();
