@@ -5658,7 +5658,16 @@ const renderHtml = ({
       });
       previewDialog.addEventListener("close", function () {
         // Po zamknięciu (z dowolnego powodu) zwolnij payload, żeby kolejny
-        // klik „Podgląd" zawsze miał fresh build.
+        // klik „Podgląd" zawsze miał fresh build. Dodatkowo: jeśli zamknięto
+        // w fazie „building" (Esc / „✕ Anuluj generowanie"), oznacz abort,
+        // schowaj pasek progresu i zdejmij klasę .is-building — żeby kolejne
+        // otwarcie startowało z czystego stanu.
+        if (previewDialog.classList.contains("is-building")) {
+          previewBuildAborted = true;
+          previewDialog.classList.remove("is-building");
+          if (typeof hidePreviewProgress === "function") hidePreviewProgress();
+          if (typeof hideExportProgress === "function") hideExportProgress();
+        }
         pendingExport = null;
       });
     }
