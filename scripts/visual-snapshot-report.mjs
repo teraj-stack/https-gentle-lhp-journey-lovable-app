@@ -1160,8 +1160,14 @@ const renderHtml = ({
       <script type="application/json" id="trends-json">${jsonPayload}</script>
       <dialog class="export-preview-dialog" data-export-preview-dialog aria-labelledby="export-preview-title">
         <div class="export-preview-header">
-          <h3 id="export-preview-title">Podgląd eksportu CSV</h3>
+          <h3 id="export-preview-title">Podgląd eksportu</h3>
           <p class="export-preview-meta" data-export-preview-meta></p>
+          <div class="export-preview-filename" data-export-preview-filename hidden>
+            <span class="export-preview-filename-label" aria-hidden="true">📦 Plik:</span>
+            <code class="export-preview-filename-value" data-export-preview-filename-value tabindex="0" role="textbox" aria-readonly="true" aria-label="Nazwa pliku, który zostanie pobrany — kliknij, aby skopiować."></code>
+            <button type="button" class="export-preview-filename-copy" data-export-preview-filename-copy title="Skopiuj nazwę pliku do schowka. Identyczna z wynikiem przycisku „⧉ Kopiuj nazwę".">⧉</button>
+            <span class="export-preview-filename-match" data-export-preview-filename-match hidden></span>
+          </div>
         </div>
         <div class="export-preview-body">
           <table class="export-preview-table" data-export-preview-table>
