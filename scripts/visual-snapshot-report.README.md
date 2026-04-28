@@ -478,6 +478,21 @@ pasujących do wszystkich aktywnych selectów (AND), bez re-runu skryptu.
    nazwa działa identycznie na Windows (zarezerwowane znaki + limity NTFS),
    macOS (HFS+/APFS, normalizacja Unicode) i Linuksie, a także jest
    bezpieczna w URL-ach, S3 keys i argumentach CLI bez escapowania.
+
+   **Historia ostatnich 10 nazw eksportu** (`<details>` „🕘 Ostatnie nazwy
+   eksportu" pod paskiem filtrów): każde użycie „⧉ Kopiuj nazwę" oraz każde
+   faktyczne pobranie ZIP/CSV dopisuje wpis na top listy (LRU, dedup po
+   pełnej nazwie — re-kopia tej samej wskakuje na górę zamiast duplikować).
+   Klik w wiersz historii kopiuje nazwę ponownie do schowka **bez
+   ponownego liczenia filtrów ani `buildExportRows()`** — przydatne, gdy
+   filtry zostały już zmienione, a chcesz nazwać/sortować plik z poprzedniego
+   eksportu. Każdy wpis pokazuje czas względny („2 min temu", „wczoraj" via
+   `Intl.RelativeTimeFormat("pl")`), a tooltip ujawnia źródło (`pobrane`
+   vs `skopiowane`) i liczbę wierszy. Persist w localStorage
+   (`visual-report-export-history-v1`), max 10 wpisów, przycisk „Wyczyść"
+   na summary (`stopPropagation`, żeby nie togglować `<details>`). Render
+   przez `createElement`/`textContent` — zero ryzyka XSS, niezależnie od
+   sanityzacji nazw.
 - Pod selectami znajduje się rozwijana sekcja **„Unikalne kombinacje
   `command` + `flag_*`"** — tabela wszystkich krotek wartości, które
   rzeczywiście wystąpiły w `history.csv`, posortowana malejąco po liczbie
