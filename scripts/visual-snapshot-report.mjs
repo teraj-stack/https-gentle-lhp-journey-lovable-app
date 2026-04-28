@@ -1731,6 +1731,60 @@ const renderHtml = ({
       font-variant-numeric: tabular-nums;
       font-size: .66rem;
     }
+    /* ---- Live preview wyliczonej nazwy paczki ---- */
+    .trends-filter-name-preview {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 6px;
+      padding: 6px 10px;
+      font-size: .72rem;
+      border: 1px solid rgba(201,168,76,.35);
+      border-radius: 6px;
+      background: rgba(201,168,76,.06);
+    }
+    .trends-filter-name-preview-label {
+      flex: 0 0 auto;
+      opacity: .85;
+      font-weight: 500;
+    }
+    .trends-filter-name-preview-value {
+      flex: 1 1 auto;
+      min-width: 0;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: .70rem;
+      padding: 3px 8px;
+      background: rgba(0,0,0,.25);
+      border: 1px solid rgba(127,127,127,.3);
+      border-radius: 4px;
+      color: rgba(201,168,76,.95);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      cursor: pointer;
+      user-select: all;
+      transition: background .15s, border-color .15s;
+    }
+    .trends-filter-name-preview-value:hover {
+      background: rgba(201,168,76,.16);
+      border-color: rgba(201,168,76,.55);
+    }
+    .trends-filter-name-preview-value:focus-visible {
+      outline: 2px solid rgba(201,168,76,.7);
+      outline-offset: 1px;
+    }
+    .trends-filter-name-preview-value.is-copied {
+      background: rgba(120,180,120,.22);
+      border-color: rgba(120,180,120,.55);
+      color: rgba(180,230,180,.95);
+    }
+    .trends-filter-name-preview-meta {
+      flex: 0 0 auto;
+      opacity: .55;
+      font-variant-numeric: tabular-nums;
+      font-size: .66rem;
+    }
     /* ---- Dialog podglądu eksportu ---- */
     .export-preview-dialog {
       max-width: min(960px, 95vw);
