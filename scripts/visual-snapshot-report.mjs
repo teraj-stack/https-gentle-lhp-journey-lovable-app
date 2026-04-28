@@ -2730,7 +2730,30 @@ const renderHtml = ({
       opacity: .75;
       margin-top: 4px;
     }
-    .export-ready-toast-actions {
+    /* Subtelny countdown „znika za 6s" — taki sam vibe co .meta, lekko
+       monospace dla stabilności szerokości (cyfra nie skacze przy 10→9→8).
+       Ostatnie 3s: lekka pulsacja opacity, żeby zwrócić uwagę bez bycia
+       agresywnym. Respektuje prefers-reduced-motion. */
+    .export-ready-toast-countdown {
+      font-size: .65rem;
+      opacity: .55;
+      margin-top: 3px;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: .02em;
+      transition: opacity .2s ease;
+    }
+    .export-ready-toast-countdown[hidden] { display: none; }
+    .export-ready-toast-countdown.is-urgent {
+      opacity: .85;
+      animation: export-ready-toast-countdown-pulse 1s ease-in-out infinite;
+    }
+    @keyframes export-ready-toast-countdown-pulse {
+      0%, 100% { opacity: .85; }
+      50%      { opacity: .45; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .export-ready-toast-countdown.is-urgent { animation: none; opacity: .85; }
+    }
       flex: 0 0 auto;
       display: flex;
       flex-direction: column;
