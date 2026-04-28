@@ -1134,7 +1134,19 @@ const renderHtml = ({
             <option value="0">Bez auto-hide</option>
           </select>
         </label>
-        <button type="button" class="trends-filter-export" data-trend-export title="Pokaż podgląd 20 pierwszych wierszy, potem pobierz przefiltrowane runy w wybranym formacie">⬇ Podgląd i eksport…</button>
+        <!--
+          „Wypróbuj toast" — pokazuje testowy toast w fazie „downloaded"
+          z fake'ową nazwą pliku, żeby user mógł na żywo zweryfikować
+          jak długo zostaje na ekranie po wybranym auto-hide. Zero side-effects
+          (nic nie pobiera, nie zapisuje cache, nie zmienia historii). Disabled
+          jest niepotrzebne — działa zawsze.
+        -->
+        <button
+          type="button"
+          class="trends-filter-toast-test"
+          data-trend-toast-test
+          title="Pokaż testowy toast „Pobrano” z aktualnie wybranym czasem auto-hide — bez pobierania pliku."
+        >▶ Wypróbuj toast</button>
         <!--
           „📦 Otwórz ostatnią paczkę" — rehydratuje OSTATNIO wygenerowaną
           paczkę z cache (IndexedDB: cml-trends-export-cache/last). Działa
