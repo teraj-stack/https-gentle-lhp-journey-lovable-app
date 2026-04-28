@@ -4309,6 +4309,44 @@ const renderHtml = ({
     var readyToastClose = root.querySelector("[data-export-ready-toast-close]");
     var readyToastHistory = root.querySelector("[data-export-ready-toast-history]");
     var readyToastCountdown = root.querySelector("[data-export-ready-toast-countdown]");
+    var readyToastProgress = root.querySelector("[data-export-ready-toast-progress]");
+    var readyToastProgressBar = root.querySelector("[data-export-ready-toast-progress-bar]");
+    // Helpery progress bar — animacja CSS (transform scaleX 1→0) z duration
+    // równym remaining time. Pause = .is-paused na progressie (animation-play-state).
+    // Reset wymaga remove+reflow+add żeby keyframes wystartowały od nowa.
+    function clearReadyToastProgress() {
+      if (!readyToastProgress) return;
+      readyToastProgress.classList.remove("is-running");
+      readyToastProgress.classList.remove("is-paused");
+      readyToastProgress.hidden = true;
+      if (readyToastProgressBar) {
+        readyToastProgressBar.style.animation = "none";
+      }
+      readyToastProgress.style.removeProperty("--toast-progress-duration");
+      readyToastProgress.style.removeProperty("--toast-progress-delay");
+    }
+    function startReadyToastProgress(durationMs) {
+      if (!readyToastProgress || !readyToastProgressBar || !(durationMs > 0)) return;
+      readyToastProgress.hidden = false;
+      // Reset poprzedniej animacji (gdyby toast był ponownie pokazany).
+      readyToastProgress.classList.remove("is-running");
+      readyToastProgressBar.style.animation = "";
+      // eslint-disable-next-line no-unused-expressions
+      readyToastProgressBar.offsetWidth; // reflow → restart keyframes
+      readyToastProgress.style.setProperty("--toast-progress-duration", (durationMs / 1000) + "s");
+      readyToastProgress.style.setProperty("--toast-progress-delay", "0s");
+      readyToastProgress.classList.add("is-running");
+      // Jeśli toast był wstawiony już w stanie pauzy (restore z sessionStorage),
+      // od razu pauzujemy animację — caller wywoła pauseReadyToastProgress().
+    }
+    function pauseReadyToastProgress() {
+      if (!readyToastProgress) return;
+      readyToastProgress.classList.add("is-paused");
+    }
+    function resumeReadyToastProgress() {
+      if (!readyToastProgress) return;
+      readyToastProgress.classList.remove("is-paused");
+    }
     var readyToastTimer = null;
     // Interval do odświeżania countdownu „znika za Ns". 1 Hz wystarcza —
     // i tak pokazujemy całe sekundy. Trzymamy referencję żeby clear w hide().
