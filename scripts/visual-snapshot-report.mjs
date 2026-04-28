@@ -2554,8 +2554,8 @@ const renderHtml = ({
     function buildZip(files) {
       // files: [{ name: "foo.csv", text: "..." }] LUB
       //       [{ name: "foo.png", bytes: Uint8Array }] — wpisy mogą być binarne
-      //       (np. PNG ze sparkline'a) lub tekstowe (CSV, JSON). Pole `bytes`
-      //       ma pierwszeństwo nad `text`.
+      //       (np. PNG ze sparkline-a) lub tekstowe (CSV, JSON). Pole "bytes"
+      //       ma pierwszenstwo nad "text".
       var enc = new TextEncoder();
       var localParts = [];
       var centralParts = [];
