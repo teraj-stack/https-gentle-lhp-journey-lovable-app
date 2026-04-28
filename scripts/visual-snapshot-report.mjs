@@ -1213,6 +1213,14 @@ const renderHtml = ({
           <button type="button" class="export-preview-cancel" data-export-preview-cancel>Anuluj</button>
           <button type="button" class="export-preview-confirm" data-export-preview-confirm>⬇ Pobierz CSV</button>
         </div>
+        <!--
+          Floating toast wewnątrz <dialog> — pokazuje potwierdzenie po
+          kliku „kopiuj nazwę" (header filename / download row / przycisk ⧉).
+          Renderowany w dialogu (a nie w body), żeby był ponad backdropem
+          modala (top-layer). aria-live=polite, role=status — SR ogłaszają
+          tekst bez przerywania interakcji. Auto-hide po ~1.8s.
+        -->
+        <div class="export-preview-toast" data-export-preview-toast role="status" aria-live="polite" hidden></div>
       </dialog>
     </section>`;
   })();
@@ -2013,6 +2021,44 @@ const renderHtml = ({
     .export-preview-download-row-value.is-copied {
       background: rgba(120,180,120,.22);
       border-color: rgba(120,180,120,.60);
+    }
+    /* Floating toast w modalu — bottom-center, fade-in/out. Pokazuje
+       się po skopiowaniu nazwy pliku (każdy z 3 entry pointów: code,
+       przycisk ⧉, download row). Pozycja absolute względem dialogu
+       (relative parent), żeby nie skakał z tabelą scrolla.
+       Wariant is-error na czerwono dla nieudanego copy. */
+    .export-preview-dialog { position: relative; }
+    .export-preview-toast {
+      position: absolute;
+      bottom: 70px;
+      left: 50%;
+      transform: translate(-50%, 8px);
+      max-width: 90%;
+      padding: 8px 14px;
+      border-radius: 8px;
+      background: rgba(40,55,40,.95);
+      color: rgba(210,240,210,1);
+      border: 1px solid rgba(120,180,120,.55);
+      font-size: .78rem;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      box-shadow: 0 6px 22px rgba(0,0,0,.45);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .18s ease, transform .18s ease;
+      z-index: 10;
+      text-align: center;
+      word-break: break-all;
+      white-space: normal;
+      line-height: 1.35;
+    }
+    .export-preview-toast.is-visible {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+    .export-preview-toast.is-error {
+      background: rgba(60,30,30,.95);
+      color: rgba(250,200,200,1);
+      border-color: rgba(220,120,120,.6);
     }
     .export-preview-body {
       padding: 8px 18px 4px;
@@ -3032,6 +3078,34 @@ const renderHtml = ({
     var previewDownloadRow = root.querySelector("[data-export-preview-download-row]");
     var previewDownloadRowValue = root.querySelector("[data-export-preview-download-row-value]");
     var previewDownloadRowMatch = root.querySelector("[data-export-preview-download-row-match]");
+    var previewToast = root.querySelector("[data-export-preview-toast]");
+    var previewToastTimer = null;
+    /**
+     * Pokazuje floating toast wewnątrz <dialog> (top-layer powyżej backdropa).
+     * Auto-hide po ms (default 1800ms). Ponowny call resetuje timer i tekst.
+     * variant: "success" (domyślnie, zielony) | "error" (czerwony).
+     * Bezpieczne przy braku elementu (Safari fallback bez dialogu).
+     */
+    function showPreviewToast(message, variant, ms) {
+      if (!previewToast) return;
+      previewToast.hidden = false;
+      previewToast.textContent = message;
+      previewToast.classList.remove("is-error");
+      if (variant === "error") previewToast.classList.add("is-error");
+      // Wymuszamy reflow, żeby nowa transition złapała is-visible
+      // nawet gdy poprzedni toast jeszcze się fade'ował.
+      // eslint-disable-next-line no-unused-expressions
+      previewToast.offsetWidth;
+      previewToast.classList.add("is-visible");
+      if (previewToastTimer) clearTimeout(previewToastTimer);
+      previewToastTimer = setTimeout(function () {
+        previewToast.classList.remove("is-visible");
+        // Po fade-out chowamy z DOM-flow (a11y SR nie czyta dwa razy).
+        setTimeout(function () {
+          if (!previewToast.classList.contains("is-visible")) previewToast.hidden = true;
+        }, 250);
+      }, ms || 1800);
+    }
     var PREVIEW_LIMIT = 20;
     var pendingExport = null; // {csv, filename, count, total, mode, colCount, missingCount}
 
@@ -3998,6 +4072,8 @@ const renderHtml = ({
       copyTextToClipboard(name).then(function (ok) {
         if (!ok) {
           if (exportStatus) exportStatus.textContent = "Nie udało się skopiować — nazwa: " + name;
+          // Toast błędu — krótki, bez nazwy (i tak jest w pasku statusu).
+          showPreviewToast("⚠ Nie udało się skopiować nazwy", "error", 2400);
           return;
         }
         if (targetEl) {
@@ -4009,6 +4085,11 @@ const renderHtml = ({
           }, 1500);
         }
         if (exportStatus) exportStatus.textContent = "Skopiowano nazwę: " + name;
+        // Toast potwierdzający — niezależnie od tego, który entry point
+        // wywołał kopiowanie (code w nagłówku, przycisk ⧉, download row).
+        // Pokazuje pełną nazwę, żeby user miał wizualną pewność, że to
+        // dokładnie to, co teraz jest w schowku.
+        showPreviewToast("✓ Skopiowano: " + name);
         try {
           var built = buildExportRows();
           pushExportHistory(name, { source: "copy", count: built && built.count });

@@ -508,7 +508,12 @@ pasujących do wszystkich aktywnych selectów (AND), bez re-runu skryptu.
 
    Klik w `<code>` lub w przycisk `⧉` obok kopiuje nazwę do schowka
    (Enter / Space na fokusie też — `role="textbox"`, `aria-readonly`),
-   z animacją i wpisem do historii (source=`copy`). Tytuł modala oraz
+   z animacją, **floating toastem `✓ Skopiowano: <nazwa>`** wewnątrz
+   modala (bottom-center, auto-hide ~1.8s, `role=status` `aria-live=polite`,
+   wariant `is-error` przy nieudanym copy) oraz wpisem do historii
+   (source=`copy`). Toast pokazuje się dla każdego z entry pointów: code w
+   nagłówku, przycisk `⧉`, oraz monospace nazwa w download row stopki.
+   Tytuł modala oraz
    etykieta przycisku potwierdzenia (`⬇ Pobierz CSV/ZIP`) synchronizują
    się z aktualnym formatem — także po auto-ZIP, więc user nie kliknie
    „Pobierz CSV", gdy faktycznie pobiera ZIP.
