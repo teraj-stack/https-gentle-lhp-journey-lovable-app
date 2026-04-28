@@ -4571,8 +4571,17 @@ const renderHtml = ({
     // focusin/focusout pokrywa keyboard-only userów (Tab → focus na ⬇/× /
     // 📜 link wewnątrz toastu).
     if (readyToast) {
-      readyToast.addEventListener("pointerenter", pauseReadyToastTimer);
-      readyToast.addEventListener("pointerleave", resumeReadyToastTimer);
+      // Hover-pause TYLKO dla myszy/pióra. Touch obsługujemy osobno przez
+      // tap-toggle niżej — inaczej palec by jednocześnie odpalał pointerenter
+      // (pauza) i nasz tap-toggle (zaraz wznowienie), kasując efekt.
+      readyToast.addEventListener("pointerenter", function (e) {
+        if (e.pointerType === "touch") return;
+        pauseReadyToastTimer();
+      });
+      readyToast.addEventListener("pointerleave", function (e) {
+        if (e.pointerType === "touch") return;
+        resumeReadyToastTimer();
+      });
       readyToast.addEventListener("focusin", pauseReadyToastTimer);
       readyToast.addEventListener("focusout", function (e) {
         // focusout odpala się też przy przejściu focusu MIĘDZY elementami
@@ -4580,6 +4589,27 @@ const renderHtml = ({
         // timera, gdy focus nadal jest w toascie.
         if (e.relatedTarget && readyToast.contains(e.relatedTarget)) return;
         resumeReadyToastTimer();
+      });
+      // Tap-to-pause (mobile): tap w pustą część toastu = toggle pauzy.
+      // Tap w przyciski wewnętrzne (⬇ Pobierz / 📜 Historia / × Zamknij)
+      // ma własną akcję — nie chcemy ich blokować ani zmieniać pauzy
+      // (closest() po data-* atrybutach łapie też kliki w child <span>).
+      // Używamy pointerup zamiast click, bo nie potrzebujemy double-tap-zoom
+      // delay i mamy bezpośredni dostęp do pointerType.
+      readyToast.addEventListener("pointerup", function (e) {
+        if (e.pointerType !== "touch") return;
+        var t = e.target;
+        if (t && t.closest && (
+          t.closest("[data-export-ready-toast-download]") ||
+          t.closest("[data-export-ready-toast-history]") ||
+          t.closest("[data-export-ready-toast-close]")
+        )) return;
+        // Toggle: pauza → wznowienie, aktywny timer → pauza.
+        if (readyToastIsPaused) {
+          resumeReadyToastTimer();
+        } else if (readyToastTimer || readyToastCountdownDeadline) {
+          pauseReadyToastTimer();
+        }
       });
     }
     if (readyToastDownload) {
