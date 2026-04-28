@@ -1160,8 +1160,14 @@ const renderHtml = ({
       <script type="application/json" id="trends-json">${jsonPayload}</script>
       <dialog class="export-preview-dialog" data-export-preview-dialog aria-labelledby="export-preview-title">
         <div class="export-preview-header">
-          <h3 id="export-preview-title">Podgląd eksportu CSV</h3>
+          <h3 id="export-preview-title">Podgląd eksportu</h3>
           <p class="export-preview-meta" data-export-preview-meta></p>
+          <div class="export-preview-filename" data-export-preview-filename hidden>
+            <span class="export-preview-filename-label" aria-hidden="true">📦 Plik:</span>
+            <code class="export-preview-filename-value" data-export-preview-filename-value tabindex="0" role="textbox" aria-readonly="true" aria-label="Nazwa pliku, który zostanie pobrany — kliknij, aby skopiować."></code>
+            <button type="button" class="export-preview-filename-copy" data-export-preview-filename-copy title="Skopiuj nazwę pliku do schowka. Identyczna z wynikiem przycisku „⧉ Kopiuj nazwę".">⧉</button>
+            <span class="export-preview-filename-match" data-export-preview-filename-match hidden></span>
+          </div>
         </div>
         <div class="export-preview-body">
           <table class="export-preview-table" data-export-preview-table>
@@ -1810,6 +1816,80 @@ const renderHtml = ({
       font-size: .75rem;
       opacity: .8;
       font-family: ui-monospace, monospace;
+    }
+    .export-preview-filename {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+      padding: 6px 10px;
+      font-size: .72rem;
+      border: 1px solid rgba(201,168,76,.45);
+      border-radius: 6px;
+      background: rgba(201,168,76,.08);
+    }
+    .export-preview-filename-label {
+      flex: 0 0 auto;
+      opacity: .85;
+      font-weight: 500;
+    }
+    .export-preview-filename-value {
+      flex: 1 1 auto;
+      min-width: 0;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: .70rem;
+      padding: 3px 8px;
+      background: rgba(0,0,0,.30);
+      border: 1px solid rgba(127,127,127,.35);
+      border-radius: 4px;
+      color: rgba(201,168,76,.95);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      cursor: pointer;
+      user-select: all;
+    }
+    .export-preview-filename-value:hover {
+      background: rgba(201,168,76,.18);
+      border-color: rgba(201,168,76,.55);
+    }
+    .export-preview-filename-value:focus-visible {
+      outline: 2px solid rgba(201,168,76,.7);
+      outline-offset: 1px;
+    }
+    .export-preview-filename-value.is-copied {
+      background: rgba(120,180,120,.22);
+      border-color: rgba(120,180,120,.55);
+    }
+    .export-preview-filename-copy {
+      flex: 0 0 auto;
+      font-size: .70rem;
+      padding: 3px 8px;
+      background: rgba(127,127,127,.15);
+      color: inherit;
+      border: 1px solid rgba(127,127,127,.4);
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .export-preview-filename-copy:hover { background: rgba(201,168,76,.22); border-color: rgba(201,168,76,.55); }
+    .export-preview-filename-copy.is-copied {
+      background: rgba(120,180,120,.25);
+      border-color: rgba(120,180,120,.55);
+    }
+    .export-preview-filename-match {
+      flex: 0 0 auto;
+      font-size: .66rem;
+      padding: 2px 6px;
+      border-radius: 3px;
+    }
+    .export-preview-filename-match.is-match {
+      background: rgba(120,180,120,.20);
+      color: rgba(180,230,180,.95);
+    }
+    .export-preview-filename-match.is-mismatch {
+      background: rgba(220,120,120,.22);
+      color: rgba(245,180,180,.95);
     }
     .export-preview-body {
       padding: 8px 18px 4px;
@@ -2606,7 +2686,7 @@ const renderHtml = ({
     }
     if (namePreviewValue) {
       // Klik = jeden gest, kopia do schowka + dopisanie do historii.
-      // Reuse logiki z `copyNameBtn.click()`, żeby był spójny status,
+      // Reuse logiki z copyNameBtn.click(), żeby był spójny status,
       // animacja na przycisku i wpis source=copy w historii.
       namePreviewValue.addEventListener("click", function () {
         var name = namePreviewValue.textContent || "";
@@ -2816,6 +2896,11 @@ const renderHtml = ({
     var previewTrunc = root.querySelector("[data-export-preview-truncated]");
     var previewCancel = root.querySelector("[data-export-preview-cancel]");
     var previewConfirm = root.querySelector("[data-export-preview-confirm]");
+    var previewTitle = root.querySelector("#export-preview-title");
+    var previewFilenameWrap = root.querySelector("[data-export-preview-filename]");
+    var previewFilenameValue = root.querySelector("[data-export-preview-filename-value]");
+    var previewFilenameCopy = root.querySelector("[data-export-preview-filename-copy]");
+    var previewFilenameMatch = root.querySelector("[data-export-preview-filename-match]");
     var PREVIEW_LIMIT = 20;
     var pendingExport = null; // {csv, filename, count, total, mode, colCount, missingCount}
 
@@ -2854,6 +2939,60 @@ const renderHtml = ({
             + (built.missingCount ? " (" + built.missingCount + " pustych)" : ""))
           : ("tryb skrócony, " + built.colCount + " kolumn");
         previewMeta.textContent = built.count + "/" + built.total + " runów · " + modeLabel;
+      }
+      // Filename row + dynamic title — pokazuje nazwę paczki, którą za chwilę
+      // pobierzemy. Sczytujemy z pendingExport.filename (single source of truth
+      // — ta sama wartość trafia do anchor.download). Dodatkowo porównujemy
+      // z computeExportBaseName() i wyświetlamy badge ✓ zgodne / ⚠ różni się
+      // (sanity check, że flow Kopiuj-nazwę i Pobierz dają identyczny string).
+      var pe = pendingExport;
+      var pendingName = pe && pe.filename ? pe.filename : null;
+      var pendingFmt = pe && pe.format ? pe.format : "csv";
+      if (previewTitle) {
+        var titleFmt = pendingFmt === "zip" || pendingFmt === "zip-split"
+          ? "ZIP" : "CSV";
+        previewTitle.textContent = "Podgląd eksportu " + titleFmt;
+      }
+      if (previewConfirm) {
+        // Sync etykiety przycisku potwierdzenia z formatem (CSV/ZIP), żeby
+        // user nie kliknął „Pobierz CSV" gdy auto-ZIP przełączył format.
+        previewConfirm.textContent = "⬇ Pobierz " +
+          (pendingFmt === "zip" || pendingFmt === "zip-split" ? "ZIP" : "CSV");
+      }
+      if (previewFilenameWrap && previewFilenameValue) {
+        if (pendingName) {
+          previewFilenameWrap.hidden = false;
+          previewFilenameValue.textContent = pendingName;
+          previewFilenameValue.classList.remove("is-copied");
+          if (previewFilenameCopy) {
+            previewFilenameCopy.classList.remove("is-copied");
+            previewFilenameCopy.textContent = "⧉";
+          }
+          // Match check vs live preview / „⧉ Kopiuj nazwę" — jeśli user
+          // zmienił filtry między „Podgląd" a renderem, mismatch ostrzega.
+          if (previewFilenameMatch) {
+            var live = null;
+            try { live = computeExportBaseName(); } catch (_e) { live = null; }
+            previewFilenameMatch.classList.remove("is-match", "is-mismatch");
+            if (!live) {
+              previewFilenameMatch.hidden = true;
+              previewFilenameMatch.textContent = "";
+            } else if (live === pendingName) {
+              previewFilenameMatch.hidden = false;
+              previewFilenameMatch.classList.add("is-match");
+              previewFilenameMatch.textContent = "✓ zgodne ze schowkiem";
+              previewFilenameMatch.title = "Identyczna nazwa jak ta z przycisku „⧉ Kopiuj nazwę" / live preview.";
+            } else {
+              previewFilenameMatch.hidden = false;
+              previewFilenameMatch.classList.add("is-mismatch");
+              previewFilenameMatch.textContent = "⚠ różni się od live";
+              previewFilenameMatch.title = "Filtry zmieniły się między klikiem „Podgląd" a teraz.\nLive: " + live + "\nW eksporcie: " + pendingName;
+            }
+          }
+        } else {
+          previewFilenameWrap.hidden = true;
+          previewFilenameValue.textContent = "";
+        }
       }
     }
     function escapeText(s) {
@@ -3232,7 +3371,7 @@ const renderHtml = ({
     // ───────────────── Historia ostatnich nazw eksportu (LRU, top 10) ─────────────────
     // Cel: jeden klik = ponowne skopiowanie nazwy bez konieczności
     // ustawiania tych samych filtrów ponownie. Persist w localStorage,
-    // żeby przeżyła reload. Dedup po `name` (re-eksport z tym samym
+    // żeby przeżyła reload. Dedup po nazwie (re-eksport z tym samym
     // hashem przesuwa wpis na top, nie duplikuje). Defensywnie: brak
     // storage / zły JSON ⇒ pusta historia, brak crasha.
     function loadExportHistory() {
@@ -3339,7 +3478,7 @@ const renderHtml = ({
     renderExportHistory();
 
     // ───────────────── Skrót klawiszowy: Ctrl/Cmd+Shift+C → kopiuj nazwę ─────────────────
-    // Aktywny gdy kursor jest nad panelem `.trends-filter` LUB fokus
+    // Aktywny gdy kursor jest nad panelem .trends-filter LUB fokus
     // znajduje się wewnątrz panelu (klawiatura). Używamy Shift, żeby NIE
     // kolidować ze standardowym Ctrl/Cmd+C (kopiowanie zaznaczenia).
     // Dodatkowy fallback: zwykły Ctrl/Cmd+C działa tylko jeśli nie ma
@@ -3647,6 +3786,46 @@ const renderHtml = ({
         downloadPending();
         if (previewDialog && previewDialog.open) previewDialog.close("confirm");
       });
+    }
+    // Kopia nazwy pliku z modala — równoważnik „⧉ Kopiuj nazwę" z paska
+    // filtra, ale działa na nazwie zamrożonej w pendingExport (gwarancja
+    // parytetu z faktycznym anchor.download). Dwa entry pointy: klik w
+    // <code> i klik w przycisk obok — oba kopiują tę samą wartość i
+    // dopisują wpis do historii (source=copy).
+    function copyPreviewFilename(targetEl) {
+      var name = previewFilenameValue && previewFilenameValue.textContent;
+      if (!name) return;
+      copyTextToClipboard(name).then(function (ok) {
+        if (!ok) {
+          if (exportStatus) exportStatus.textContent = "Nie udało się skopiować — nazwa: " + name;
+          return;
+        }
+        if (targetEl) {
+          targetEl.classList.add("is-copied");
+          if (targetEl === previewFilenameCopy) targetEl.textContent = "✓";
+          setTimeout(function () {
+            targetEl.classList.remove("is-copied");
+            if (targetEl === previewFilenameCopy) targetEl.textContent = "⧉";
+          }, 1500);
+        }
+        if (exportStatus) exportStatus.textContent = "Skopiowano nazwę: " + name;
+        try {
+          var built = buildExportRows();
+          pushExportHistory(name, { source: "copy", count: built && built.count });
+        } catch (_e) { pushExportHistory(name, { source: "copy" }); }
+      });
+    }
+    if (previewFilenameValue) {
+      previewFilenameValue.addEventListener("click", function () { copyPreviewFilename(previewFilenameValue); });
+      previewFilenameValue.addEventListener("keydown", function (ev) {
+        if (ev.key === "Enter" || ev.key === " ") {
+          ev.preventDefault();
+          copyPreviewFilename(previewFilenameValue);
+        }
+      });
+    }
+    if (previewFilenameCopy) {
+      previewFilenameCopy.addEventListener("click", function () { copyPreviewFilename(previewFilenameCopy); });
     }
     if (previewDialog) {
       // Klik w backdrop (poza zawartością) → zamknij. <dialog> sam tego nie

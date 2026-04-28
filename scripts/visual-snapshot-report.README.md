@@ -494,6 +494,25 @@ pasujących do wszystkich aktywnych selectów (AND), bez re-runu skryptu.
    przez `createElement`/`textContent` — zero ryzyka XSS, niezależnie od
    sanityzacji nazw.
 
+   **Nazwa paczki w modalu podglądu eksportu** (`📦 Plik: …` w nagłówku
+   `<dialog>` po kliknięciu „⬇ Podgląd i eksport…"): pokazuje DOKŁADNIE
+   tę nazwę, która zostanie ustawiona w `anchor.download` przy potwierdzeniu
+   pobrania (czytane z `pendingExport.filename`, single source of truth z
+   handlerem eksportu — gwarancja parytetu z faktycznym plikiem). Po prawej
+   stronie badge porównawczy:
+   - **✓ zgodne ze schowkiem** (zielony) — nazwa identyczna z aktualnym
+     `computeExportBaseName()` (czyli z „⧉ Kopiuj nazwę" / live preview).
+   - **⚠ różni się od live** (czerwony) — filtry zostały zmienione między
+     klikiem „Podgląd" a renderem; tooltip pokazuje obie wartości obok
+     siebie, żeby user wiedział, którą wybrać.
+
+   Klik w `<code>` lub w przycisk `⧉` obok kopiuje nazwę do schowka
+   (Enter / Space na fokusie też — `role="textbox"`, `aria-readonly`),
+   z animacją i wpisem do historii (source=`copy`). Tytuł modala oraz
+   etykieta przycisku potwierdzenia (`⬇ Pobierz CSV/ZIP`) synchronizują
+   się z aktualnym formatem — także po auto-ZIP, więc user nie kliknie
+   „Pobierz CSV", gdy faktycznie pobiera ZIP.
+
    **Live preview nazwy paczki** (okienko `📦 Nazwa paczki: …` pod paskiem
    eksportu): pokazuje DOKŁADNIE tę nazwę, którą wygeneruje aktualny stan
    filtrów + format + próg auto-ZIP — z parytetem `computeExportBaseName()`.
