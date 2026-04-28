@@ -2566,6 +2566,81 @@ const renderHtml = ({
         ? "↪ " + count + " wierszy ≥ " + th + " — eksport automatycznie przejdzie na ZIP."
         : "ⓘ " + count + " wierszy ≥ " + th + " — rozważ format ZIP (mniejszy plik, manifest).";
     }
+
+    // Live preview wyliczonej nazwy paczki — okienko pod przyciskiem
+    // „⧉ Kopiuj nazwę". Aktualizuje się przy każdej zmianie filtra/trybu/
+    // formatu/progu (jest dopinane w apply() pośrednio przez refreshZipHint
+    // → refreshNamePreview, oraz przez listenery format/threshold/mode).
+    // Klik w wartość kopiuje ją do schowka (równoważnik przycisku „Kopiuj
+    // nazwę" — z animacją + wpisem do historii). Bez wierszy → schowane.
+    var namePreviewWrap = root.querySelector("[data-trend-name-preview]");
+    var namePreviewValue = root.querySelector("[data-trend-name-preview-value]");
+    var namePreviewMeta = root.querySelector("[data-trend-name-preview-meta]");
+    function refreshNamePreview() {
+      if (!namePreviewWrap || !namePreviewValue) return;
+      var name = null;
+      try { name = computeExportBaseName(); } catch (_e) { name = null; }
+      if (!name) {
+        namePreviewWrap.hidden = true;
+        namePreviewValue.textContent = "";
+        if (namePreviewMeta) namePreviewMeta.textContent = "";
+        return;
+      }
+      namePreviewWrap.hidden = false;
+      // Aktualizujemy tylko gdy się zmieniła — minimalizuje screen-reader noise
+      // i unika niepotrzebnych repaintów cursora przy długiej selekcji.
+      if (namePreviewValue.textContent !== name) {
+        namePreviewValue.textContent = name;
+        namePreviewValue.classList.remove("is-copied");
+      }
+      if (namePreviewMeta) {
+        var count = filterPoints(currentState()).length;
+        var fmt = (exportFormatSelect && exportFormatSelect.value) || "csv";
+        var th = getZipThreshold();
+        var mode = getZipMode();
+        var auto = th && mode === "switch" && fmt === "csv" && count >= th
+          ? " · auto-ZIP"
+          : "";
+        namePreviewMeta.textContent = count + " w. · " + fmt + auto;
+      }
+    }
+    if (namePreviewValue) {
+      // Klik = jeden gest, kopia do schowka + dopisanie do historii.
+      // Reuse logiki z `copyNameBtn.click()`, żeby był spójny status,
+      // animacja na przycisku i wpis source=copy w historii.
+      namePreviewValue.addEventListener("click", function () {
+        var name = namePreviewValue.textContent || "";
+        if (!name) return;
+        copyTextToClipboard(name).then(function (ok) {
+          if (ok) {
+            namePreviewValue.classList.add("is-copied");
+            if (exportStatus) exportStatus.textContent = "Skopiowano nazwę: " + name;
+            try {
+              var built = buildExportRows();
+              pushExportHistory(name, { source: "copy", count: built && built.count });
+            } catch (_e) { pushExportHistory(name, { source: "copy" }); }
+            setTimeout(function () { namePreviewValue.classList.remove("is-copied"); }, 1500);
+          } else if (exportStatus) {
+            exportStatus.textContent = "Nie udało się skopiować — nazwa: " + name;
+          }
+        });
+      });
+      // Enter / Space na fokusie też kopiuje (dostępność klawiaturowa).
+      namePreviewValue.addEventListener("keydown", function (ev) {
+        if (ev.key === "Enter" || ev.key === " ") {
+          ev.preventDefault();
+          namePreviewValue.click();
+        }
+      });
+    }
+    // Spinka do refreshZipHint: gdy ten się odświeża (zmiana progu/trybu/
+    // formatu/filtra), name preview też jest świeże. Jedno źródło prawdy
+    // dla cyklu „filter changed → UI re-sync".
+    var _origRefreshZipHint = refreshZipHint;
+    refreshZipHint = function () {
+      _origRefreshZipHint();
+      refreshNamePreview();
+    };
     if (zipThresholdInput) {
       zipThresholdInput.addEventListener("input", function () {
         persistZipPrefs();
