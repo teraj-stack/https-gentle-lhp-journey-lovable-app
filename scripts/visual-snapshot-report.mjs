@@ -2831,6 +2831,25 @@ const renderHtml = ({
           return;
         }
         var format = (exportFormatSelect && exportFormatSelect.value) || "csv";
+        // Auto-przełącznik na ZIP po przekroczeniu progu (tylko gdy user
+        // nadal jest na CSV — szanujemy świadomy wybór ZIP/ZIP-split).
+        // Tryb „switch" nadpisuje select w UI (visible feedback), tryb
+        // „suggest" tylko dopisuje notkę do statusu — plik leci jako CSV.
+        var th = getZipThreshold();
+        var zMode = getZipMode();
+        var thresholdNote = "";
+        if (th && zMode !== "off" && format === "csv" && built.count >= th) {
+          if (zMode === "switch") {
+            format = "zip";
+            if (exportFormatSelect) {
+              exportFormatSelect.value = "zip";
+              persistZipPrefs(); // nie zmienia, ale aktualizuje hint
+            }
+            thresholdNote = " (auto-ZIP: " + built.count + " ≥ " + th + ")";
+          } else {
+            thresholdNote = " (powyżej progu " + th + " — rozważ ZIP)";
+          }
+        }
         var stamp = new Date().toISOString().replace(/[:.]/g, "-").replace(/Z$/, "Z");
         var filterHash = shortHash(JSON.stringify(built.state) + "|" + built.mode + "|" + format);
         var baseName = "savings-filtered-" + built.mode + "-" + stamp + "-" + filterHash;
