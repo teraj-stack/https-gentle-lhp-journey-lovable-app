@@ -2841,7 +2841,7 @@ const renderHtml = ({
             // PNG-i sparkline'ów dorzucamy TYLKO w trybie split — bo to ten
             // wariant jest pomyślany pod „pełną paczkę do dalszej analizy"
             // (CSV-e per metryka + obrazki gotowe do wklejenia w raport).
-            // Zwykłe `zip` celowo zostaje minimalne (tylko CSV + metadata).
+            // Zwykly "zip" celowo zostaje minimalne (tylko CSV + metadata).
             if (exportStatus) exportStatus.textContent = "Renderuję PNG sparkline'ów…";
             snapshotSparkPngs().then(function (pngs) {
               finalizeZip(pngs);
