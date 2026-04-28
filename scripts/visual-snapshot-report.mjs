@@ -3580,7 +3580,15 @@ const renderHtml = ({
     // hard-timeout 3s i jest opakowany try/catch — pojedyncza porażka nie
     // blokuje eksportu CSV-ów (PNG jest „nice-to-have"). Skala 2x dla
     // wyraźnych wykresów na ekranach HiDPI.
-    function snapshotSparkPngs() {
+    function snapshotSparkPngs(onProgress) {
+      var total = sparks.length;
+      var completed = 0;
+      function tick() {
+        completed++;
+        if (typeof onProgress === "function") {
+          onProgress(completed, total);
+        }
+      }
       var jobs = sparks.map(function (figure) {
         var svg = figure.querySelector("[data-trend-svg]");
         if (!svg) return Promise.resolve(null);
