@@ -4416,7 +4416,24 @@ const renderHtml = ({
     if (readyToastClose) {
       readyToastClose.addEventListener("click", hideReadyToast);
     }
-    if (readyToastDownload) {
+    // Hover-pause: najechanie myszą / focus klawiaturą zatrzymuje auto-hide.
+    // Używamy pointerenter/pointerleave (a nie mouseenter), żeby działało też
+    // dla rysika i obsługi dotykowej (na touch i tak hover jest rzadki, ale
+    // long-press na toaście też emituje pointerenter — daje czas na akcję).
+    // focusin/focusout pokrywa keyboard-only userów (Tab → focus na ⬇/× /
+    // 📜 link wewnątrz toastu).
+    if (readyToast) {
+      readyToast.addEventListener("pointerenter", pauseReadyToastTimer);
+      readyToast.addEventListener("pointerleave", resumeReadyToastTimer);
+      readyToast.addEventListener("focusin", pauseReadyToastTimer);
+      readyToast.addEventListener("focusout", function (e) {
+        // focusout odpala się też przy przejściu focusu MIĘDZY elementami
+        // wewnątrz toastu — sprawdzamy relatedTarget, żeby nie wznawiać
+        // timera, gdy focus nadal jest w toascie.
+        if (e.relatedTarget && readyToast.contains(e.relatedTarget)) return;
+        resumeReadyToastTimer();
+      });
+    }
       readyToastDownload.addEventListener("click", function () {
         // Skrót: pobierz natychmiast bez otwierania modala. downloadPending
         // używa pendingExport.filename (single source of truth), więc
