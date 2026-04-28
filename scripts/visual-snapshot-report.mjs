@@ -1078,14 +1078,28 @@ const renderHtml = ({
         </label>
         ${flagSelects}
         <button type="button" class="trends-filter-reset" data-trend-reset>Resetuj</button>
-        <label class="trends-filter-label trends-filter-export-mode" title="Skrócony: tylko kolumny obecne w wykresach. Pełny schemat: wszystkie kolumny savings.csv (puste tam, gdzie raport nie ma danych).">
+        <!--
+          ⚙ Skrót do ustawień eksportu. Klik:
+          1) scroll-into-view do klastra ustawień (mode/format/threshold/zip-mode/toast-hide),
+          2) chwilowa klasa .is-settings-pulse na każdym labelu (~1.6s) — pulsujące obramowanie gold,
+          3) focus na select „auto-hide toastu" (najczęstszy use-case po wprowadzeniu opcji).
+          aria-haspopup="false", bo NIE otwieramy popovera — przewijamy istniejące kontrolki.
+        -->
+        <button
+          type="button"
+          class="trends-filter-settings-shortcut"
+          data-trend-settings-shortcut
+          title="Otwórz ustawienia eksportu (przewija do kontrolek i ustawia focus na „auto-hide toastu”)."
+          aria-label="Otwórz ustawienia eksportu"
+        >⚙</button>
+        <label class="trends-filter-label trends-filter-export-mode trends-filter-settings-target" title="Skrócony: tylko kolumny obecne w wykresach. Pełny schemat: wszystkie kolumny savings.csv (puste tam, gdzie raport nie ma danych).">
           tryb eksportu
           <select class="trends-filter-select" data-trend-export-mode>
             <option value="subset" selected>Skrócony</option>
             <option value="full">Pełny schemat</option>
           </select>
         </label>
-        <label class="trends-filter-label trends-filter-export-format" title="CSV: jeden plik. ZIP: spakowane CSV + metadata.json (deterministyczny). ZIP (split): osobne pliki png-saved.csv i discovery-saved.csv obok pełnego CSV — wygodne do narzędzi single-series.">
+        <label class="trends-filter-label trends-filter-export-format trends-filter-settings-target" title="CSV: jeden plik. ZIP: spakowane CSV + metadata.json (deterministyczny). ZIP (split): osobne pliki png-saved.csv i discovery-saved.csv obok pełnego CSV — wygodne do narzędzi single-series.">
           format
           <select class="trends-filter-select" data-trend-export-format>
             <option value="csv" selected>CSV</option>
@@ -1093,11 +1107,11 @@ const renderHtml = ({
             <option value="zip-split">ZIP split (PNG/discovery)</option>
           </select>
         </label>
-        <label class="trends-filter-label trends-filter-zip-threshold" title="Powyżej tego progu (liczba przefiltrowanych wierszy) eksport zachowa się zgodnie z wybranym trybem poniżej. 0 = wyłącz.">
+        <label class="trends-filter-label trends-filter-zip-threshold trends-filter-settings-target" title="Powyżej tego progu (liczba przefiltrowanych wierszy) eksport zachowa się zgodnie z wybranym trybem poniżej. 0 = wyłącz.">
           próg ZIP (wiersze)
           <input type="number" class="trends-filter-input" data-trend-zip-threshold min="0" step="50" value="200" inputmode="numeric" style="max-width:88px" />
         </label>
-        <label class="trends-filter-label trends-filter-zip-mode" title="Sugeruj: tylko podpowiedź w pasku statusu (CSV zostaje). Przełącz: jeśli format to CSV, automatycznie zmień na ZIP przed pobraniem (zapisuje wybór). Ignoruj: nic nie rób.">
+        <label class="trends-filter-label trends-filter-zip-mode trends-filter-settings-target" title="Sugeruj: tylko podpowiedź w pasku statusu (CSV zostaje). Przełącz: jeśli format to CSV, automatycznie zmień na ZIP przed pobraniem (zapisuje wybór). Ignoruj: nic nie rób.">
           po przekroczeniu
           <select class="trends-filter-select" data-trend-zip-mode>
             <option value="suggest" selected>Sugeruj ZIP</option>
@@ -1111,7 +1125,7 @@ const renderHtml = ({
           z innymi preferencjami eksportu, używane w showReadyToast() w fazie
           „downloaded". Faza „ready" (przed downloadem) nadal trzyma stałe 8s.
         -->
-        <label class="trends-filter-label trends-filter-toast-hide" title="Po jakim czasie automatycznie schować toast „Pobrano ZIP”. „Bez auto-hide” = toast zostaje aż do ręcznego zamknięcia (×).">
+        <label class="trends-filter-label trends-filter-toast-hide trends-filter-settings-target" title="Po jakim czasie automatycznie schować toast „Pobrano ZIP”. „Bez auto-hide” = toast zostaje aż do ręcznego zamknięcia (×).">
           auto-hide toastu
           <select class="trends-filter-select" data-trend-toast-autohide>
             <option value="8000">8 s</option>
@@ -1914,6 +1928,49 @@ const renderHtml = ({
       align-self: end;
     }
     .trends-filter-reset:hover { background: rgba(127,127,127,.22); }
+    /* ⚙ Skrót ustawień — okrągły, dyskretny, gold tinted, żeby pasował do
+       palety eksportu, ale nie konkurował z głównym przyciskiem „Eksportuj".
+       Visual hover/focus state daje wyraźny feedback klikalności. */
+    .trends-filter-settings-shortcut {
+      font-size: .95rem;
+      line-height: 1;
+      width: 28px;
+      height: 28px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(201,168,76,.10);
+      color: inherit;
+      border: 1px solid rgba(201,168,76,.40);
+      border-radius: 50%;
+      cursor: pointer;
+      align-self: end;
+      padding: 0;
+      transition: background .15s ease, transform .15s ease, border-color .15s ease;
+    }
+    .trends-filter-settings-shortcut:hover {
+      background: rgba(201,168,76,.24);
+      transform: rotate(35deg);
+    }
+    .trends-filter-settings-shortcut:focus-visible {
+      outline: 2px solid rgba(201,168,76,.85);
+      outline-offset: 2px;
+    }
+    /* Krótki pulse na każdym labelu ustawień po kliknięciu ⚙ — pokazuje
+       userowi gdzie znajdują się kontrolki, do których właśnie przewinięto. */
+    @keyframes trends-settings-pulse {
+      0%   { box-shadow: 0 0 0 0 rgba(201,168,76,.55); }
+      60%  { box-shadow: 0 0 0 8px rgba(201,168,76,0); }
+      100% { box-shadow: 0 0 0 0 rgba(201,168,76,0); }
+    }
+    .trends-filter-settings-target.is-settings-pulse {
+      border-radius: 6px;
+      animation: trends-settings-pulse 1.6s ease-out 1;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .trends-filter-settings-shortcut:hover { transform: none; }
+      .trends-filter-settings-target.is-settings-pulse { animation: none; }
+    }
     .trends-filter-export {
       font-size: .75rem;
       padding: 4px 10px;
@@ -3706,6 +3763,47 @@ const renderHtml = ({
     }
     if (toastAutoHideSelect) {
       toastAutoHideSelect.addEventListener("change", persistZipPrefs);
+    }
+    // ⚙ Skrót do ustawień eksportu — przewija pasek filtrów do widoku,
+    // pulsuje labelami ustawień (.trends-filter-settings-target) i ustawia
+    // focus na select „auto-hide toastu" jako najnowszą / najczęściej
+    // szukaną opcję. Respektuje prefers-reduced-motion (smooth → auto).
+    var settingsShortcutBtn = root.querySelector("[data-trend-settings-shortcut]");
+    if (settingsShortcutBtn) {
+      settingsShortcutBtn.addEventListener("click", function () {
+        var reduced = false;
+        try {
+          reduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        } catch (_e) { /* noop */ }
+        var targets = Array.prototype.slice.call(
+          root.querySelectorAll(".trends-filter-settings-target")
+        );
+        var firstTarget = targets[0];
+        if (firstTarget && typeof firstTarget.scrollIntoView === "function") {
+          firstTarget.scrollIntoView({
+            behavior: reduced ? "auto" : "smooth",
+            block: "center",
+            inline: "nearest"
+          });
+        }
+        // Pulse highlight + cleanup po 1700ms (animacja trwa 1.6s).
+        // Restart animacji per klik dzięki force-reflow (offsetWidth).
+        targets.forEach(function (el) {
+          el.classList.remove("is-settings-pulse");
+          void el.offsetWidth;
+          el.classList.add("is-settings-pulse");
+        });
+        setTimeout(function () {
+          targets.forEach(function (el) { el.classList.remove("is-settings-pulse"); });
+        }, 1700);
+        // Focus na auto-hide select po lekkim opóźnieniu, żeby smooth-scroll
+        // zdążył wystartować — inaczej focus może wymusić instant-scroll.
+        setTimeout(function () {
+          if (toastAutoHideSelect && typeof toastAutoHideSelect.focus === "function") {
+            toastAutoHideSelect.focus({ preventScroll: true });
+          }
+        }, reduced ? 0 : 250);
+      });
     }
     // Live hint pod paskiem eksportu — informuje, czy aktualnie wyfiltrowane
     // wiersze przekraczają próg i co się stanie po kliku „Pobierz".
