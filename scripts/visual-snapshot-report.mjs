@@ -4072,6 +4072,8 @@ const renderHtml = ({
       copyTextToClipboard(name).then(function (ok) {
         if (!ok) {
           if (exportStatus) exportStatus.textContent = "Nie udało się skopiować — nazwa: " + name;
+          // Toast błędu — krótki, bez nazwy (i tak jest w pasku statusu).
+          showPreviewToast("⚠ Nie udało się skopiować nazwy", "error", 2400);
           return;
         }
         if (targetEl) {
@@ -4083,6 +4085,11 @@ const renderHtml = ({
           }, 1500);
         }
         if (exportStatus) exportStatus.textContent = "Skopiowano nazwę: " + name;
+        // Toast potwierdzający — niezależnie od tego, który entry point
+        // wywołał kopiowanie (code w nagłówku, przycisk ⧉, download row).
+        // Pokazuje pełną nazwę, żeby user miał wizualną pewność, że to
+        // dokładnie to, co teraz jest w schowku.
+        showPreviewToast("✓ Skopiowano: " + name);
         try {
           var built = buildExportRows();
           pushExportHistory(name, { source: "copy", count: built && built.count });
