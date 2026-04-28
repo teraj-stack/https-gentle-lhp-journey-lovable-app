@@ -1690,8 +1690,8 @@ const renderHtml = ({
       min-height: 1em;
     }
     /* Badge parity „nazwa w modalu == nazwa w pobraniu" — pokazuje się
-       po `downloadPending()` i informuje, czy string z modala doleciał
-       1:1 do `a.download`. Dwa stany kolorystyczne (match/mismatch),
+       po downloadPending() i informuje, czy string z modala doleciał
+       1:1 do a.download. Dwa stany kolorystyczne (match/mismatch),
        semantycznie spójne z badge'ami w samym modalu. */
     .trends-filter-download-parity {
       font-size: .68rem;
