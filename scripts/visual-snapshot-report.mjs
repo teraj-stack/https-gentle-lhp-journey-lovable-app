@@ -1282,8 +1282,30 @@ const renderHtml = ({
             title="Zapisz tę nazwę paczki w lokalnej historii „Ostatnie nazwy eksportu" i przejdź do tej sekcji. Nie pobiera pliku ani nie kopiuje do schowka."
           >📌 Zapisz w historii</button>
           <span class="spacer" aria-hidden="true"></span>
+          <!--
+            Badge weryfikacji schowka — pojawia się TUŻ PRZED kliknięciem
+            „Pobierz" jako wynik check'a navigator.clipboard.readText().
+            Domyślnie ukryty (hidden); pokazujemy go z jednym z 3 stanów:
+              · is-checking — „⏳ sprawdzam schowek…",
+              · is-match    — „✓ schowek = nazwa pliku",
+              · is-mismatch — „⚠ schowek ≠ nazwa pliku" (+ tooltip diff),
+              · is-unavailable — „ℹ schowek niedostępny" (Permissions/Safari).
+            aria-live=polite żeby SR ogłosili wynik bez kradzieży focusa.
+          -->
+          <span
+            class="export-preview-confirm-verify"
+            data-export-preview-confirm-verify
+            role="status"
+            aria-live="polite"
+            hidden
+          ></span>
           <button type="button" class="export-preview-cancel" data-export-preview-cancel>Anuluj</button>
-          <button type="button" class="export-preview-confirm" data-export-preview-confirm>⬇ Pobierz CSV</button>
+          <button
+            type="button"
+            class="export-preview-confirm"
+            data-export-preview-confirm
+            title="Tuż przed pobraniem zweryfikujemy, czy nazwa w schowku jest identyczna z nazwą pliku — wynik pojawi się jako badge obok przycisku."
+          >⬇ Pobierz CSV</button>
         </div>
         <!--
           Floating toast wewnątrz <dialog> — pokazuje potwierdzenie po
