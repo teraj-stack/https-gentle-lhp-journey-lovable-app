@@ -1998,6 +1998,14 @@ const renderHtml = ({
       align-self: end;
     }
     .trends-filter-toast-test:hover { background: rgba(127,127,127,.22); }
+    /* Badge informujący, że auto-hide jest pamiętany per format ZIP.
+       Tekst dynamiczny — JS update'uje go gdy user zmienia format eksportu. */
+    .trends-filter-toast-hide-scope {
+      font-size: .65rem;
+      opacity: .7;
+      font-style: italic;
+      margin-left: 2px;
+    }
     .trends-filter-toast-test:focus-visible {
       outline: 2px solid rgba(201,168,76,.85);
       outline-offset: 2px;
