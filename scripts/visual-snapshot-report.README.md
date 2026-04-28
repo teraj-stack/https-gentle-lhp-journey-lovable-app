@@ -578,6 +578,26 @@ pasujących do wszystkich aktywnych selectów (AND), bez re-runu skryptu.
    dostaje wyraźną notyfikację z możliwością pobrania jednym klikiem
    bez wchodzenia w modal.
 
+   **Synchronizacja nazwy/formatu między powierzchniami**
+   (`getExportNameFormat(pe)` + `syncExportNameAcrossSurfaces(pe, opts)`):
+   wszystkie miejsca pokazujące nazwę pliku i format CSV vs ZIP czytają
+   z **jednego helpera**, którego wejściem jest `pendingExport`. To
+   eliminuje dryft UI typu „modal mówi CSV, status mówi ZIP" po
+   auto-przełączeniu progowym albo po zmianie filtrów. Zsynchronizowane
+   powierzchnie:
+
+   - **Tytuł modala** `<h3 id="export-preview-title">` (`Podgląd eksportu CSV/ZIP · <filename>`),
+   - **Pasek statusu** (`✓ Wygenerowano CSV/ZIP/ZIP split (N plików): <filename> · ~<size> · gotowe do pobrania`, później `Pobrano N/M (...) → <filename>`),
+   - **Ready toast** top-right (`<filename>` + meta `CSV/ZIP · ~<size>`),
+   - **Etykieta przycisku potwierdzenia** w stopce modala (`⬇ Pobierz CSV` / `⬇ Pobierz ZIP`),
+   - **Download row** w stopce modala (ten sam `pendingExport.filename`).
+
+   `getExportNameFormat()` zwraca `{ filename, format, isZip, fmtTitle, fmtTag }`,
+   gdzie `fmtTitle` (krótki) idzie do tytułu modala i etykiety przycisku,
+   a `fmtTag` (z licznikiem plików dla ZIP split) — do paska statusu i
+   ready toastu. Pojedyncza zmiana w helperze propaguje się natychmiast
+   na wszystkie powierzchnie.
+
    **Wyróżniony „download row" w stopce modala** (`⬇ Pobierany plik` tuż
    nad przyciskami Anuluj/Pobierz): duży, monospace blok z pełną nazwą
    pliku ZIP/CSV, łamaną na granicach znaków (`word-break: break-all`),
