@@ -4232,6 +4232,47 @@ const renderHtml = ({
             return;
           }
           renderPreview(built);
+          // Auto-scroll do sekcji eksportu PRZED otwarciem dialogu — ale
+          // tylko jeśli sekcja jest „w pobliżu" (uchwyt = przycisk eksportu
+          // / pasek statusu). Heurystyka: bounding rect celu mieści się
+          // w ±1.5 viewport-height od bieżącego scroll-y. Cel: użytkownik,
+          // który zjechał daleko (np. czyta dół raportu), nie zostaje
+          // szarpnięty z powrotem; ale jeśli jest „obok", strona płynnie
+          // wycentruje sekcję, żeby pasek postępu / status „Gotowe do
+          // pobrania" oraz badge parity były widoczne razem z modalem.
+          // Respektujemy prefers-reduced-motion (skok bez animacji).
+          (function maybeScrollToExportSection() {
+            // Anchor priorytetowo na pasku statusu (zawiera filename +
+            // progress + parity badge); fallback na sam przycisk eksportu.
+            var anchor = exportStatus || exportBtn;
+            if (!anchor || typeof anchor.getBoundingClientRect !== "function") return;
+            var rect = anchor.getBoundingClientRect();
+            var vh = window.innerHeight || document.documentElement.clientHeight || 0;
+            if (!vh) return;
+            // „W pobliżu" = środek anchora oddalony od viewport o mniej
+            // niż 1.5 × wysokość ekranu (w obie strony). Jeśli już jest
+            // w viewport — i tak scrollujemy, ale smooth-center go ułoży.
+            var anchorMid = rect.top + rect.height / 2;
+            var distance = anchorMid < 0
+              ? -anchorMid                // anchor wyżej niż viewport
+              : anchorMid > vh
+                ? anchorMid - vh          // anchor niżej niż viewport
+                : 0;                      // już w viewport
+            var threshold = vh * 1.5;
+            if (distance > threshold) return; // za daleko — nie szarpiemy
+            try {
+              var reduced = window.matchMedia
+                && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+              anchor.scrollIntoView({
+                behavior: reduced ? "auto" : "smooth",
+                block: "center",
+                inline: "nearest",
+              });
+            } catch (_e) {
+              // Starsze przeglądarki bez ScrollIntoViewOptions — fallback
+              try { anchor.scrollIntoView(); } catch (_e2) {}
+            }
+          })();
           previewDialog.showModal();
           // Po otwarciu dialogu — krótki toast „✓ Wygenerowano: <nazwa>",
           // żeby user widział nazwę także bez scrollowania w obrębie modala

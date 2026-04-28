@@ -552,6 +552,18 @@ pasujących do wszystkich aktywnych selectów (AND), bez re-runu skryptu.
    Pasek znika natychmiast po kliknięciu „Pobierz" (`hideExportProgress()`
    w `downloadPending()`) lub auto-hide po 3.5s, jeśli user nic nie kliknie.
 
+   **Auto-scroll do sekcji eksportu po wygenerowaniu** (warunkowy):
+   bezpośrednio przed `previewDialog.showModal()` skrypt sprawdza, czy
+   anchor (pasek statusu / przycisk eksportu) jest „w pobliżu" — środek
+   anchora oddalony od viewportu o **≤ 1.5 × wysokość ekranu**. Jeśli tak,
+   wykonujemy `scrollIntoView({ behavior: 'smooth', block: 'center' })`,
+   żeby user widział równocześnie status „Gotowe do pobrania", pasek
+   postępu i badge parity razem z otwierającym się modalem. Jeśli user
+   zjechał daleko (np. czyta dół raportu pod tabelami), scroll jest
+   pomijany — nie szarpiemy strony. Respektujemy `prefers-reduced-motion`
+   (skok bez animacji) i obsługujemy fallback dla przeglądarek bez
+   `ScrollIntoViewOptions`.
+
    **Wyróżniony „download row" w stopce modala** (`⬇ Pobierany plik` tuż
    nad przyciskami Anuluj/Pobierz): duży, monospace blok z pełną nazwą
    pliku ZIP/CSV, łamaną na granicach znaków (`word-break: break-all`),
