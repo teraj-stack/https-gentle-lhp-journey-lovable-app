@@ -2286,6 +2286,7 @@ const renderHtml = ({
           rows[ri].classList.toggle("is-active", parseInt(rows[ri].getAttribute("data-combo-idx"), 10) === activeIdx);
         }
       }
+      if (typeof refreshZipHint === "function") refreshZipHint();
     }
 
     selects.forEach(function (sel) {
