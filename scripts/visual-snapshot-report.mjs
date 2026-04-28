@@ -1109,6 +1109,18 @@ const renderHtml = ({
         <button type="button" class="trends-filter-copy-name" data-trend-copy-name title="Skopiuj do schowka nazwę paczki eksportu (timestamp + skrót filtra), żeby łatwo nazwać/posortować pobrane pliki.">⧉ Kopiuj nazwę</button>
         <span class="trends-filter-export-status" data-trend-export-status role="status" aria-live="polite"></span>
         <!--
+          Pasek postępu generowania ZIP. Widoczny tylko podczas budowy
+          archiwum (np. snapshot PNG-ów sparkline'ów w trybie zip-split).
+          Wartość 0–100, etykieta tekstowa per faza („Renderuję PNG…",
+          „Pakuję archiwum…", „Gotowe do pobrania"). Po zakończeniu
+          zostaje na 100% z labelką „Gotowe do pobrania" i znika po
+          downloadPending() lub po ~3.5s (cokolwiek pierwsze).
+        -->
+        <div class="trends-filter-export-progress" data-trend-export-progress hidden role="group" aria-label="Postęp generowania ZIP">
+          <progress class="trends-filter-export-progress-bar" data-trend-export-progress-bar max="100" value="0"></progress>
+          <span class="trends-filter-export-progress-label" data-trend-export-progress-label aria-live="polite">0%</span>
+        </div>
+        <!--
           Badge weryfikujący, że nazwa POKAZANA W MODALU jest 1:1 z nazwą
           REALNIE UŻYTĄ przy a.download (i tym samym w schowku po wygenerowaniu).
           Liczony w downloadPending() zaraz po przypisaniu a.download,
