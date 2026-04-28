@@ -464,9 +464,20 @@ pasujących do wszystkich aktywnych selectów (AND), bez re-runu skryptu.
   Nazwa jest liczona z DOKŁADNIE tej samej formuły co eksport (ten sam
   `buildExportRows()` + `shortHash` + parytet auto-ZIP), więc skopiowana
   wartość zawsze zgadza się z plikiem, który zaraz pobierzesz. Status
-  pokazuje skopiowaną nazwę; przycisk na 2 s zmienia się na „✓ Skopiowano".
-  Przydatne do: nazywania zewnętrznych folderów audytu, klejenia do
-  ticketu/PR-a przed pobraniem, sortowania pobranych ZIP-ów.
+   pokazuje skopiowaną nazwę; przycisk na 2 s zmienia się na „✓ Skopiowano".
+   Przydatne do: nazywania zewnętrznych folderów audytu, klejenia do
+   ticketu/PR-a przed pobraniem, sortowania pobranych ZIP-ów.
+
+   **Sanityzacja nazwy (cross-platform safe):** każdy segment przechodzi
+   przez `sanitizeFilenamePart` → NFKD + strip diakrytyków (ą/ć/ę/ó/ś/ź/ż
+   → a/c/e/o/s/z/z), ręczne mapowanie `ł→l`, `Ł→L` (NFKD ich nie rozkłada),
+   whitelist `[A-Za-z0-9._-]` (wszystko inne — spacje, `/`, `\`, `:`, `*`,
+   `?`, `"`, `<`, `>`, `|`, znaki kontrolne, emoji — zamieniane na `-`),
+   kolaps `-{2,}` → `-`, trim brzegowych `._-` (Windows nie akceptuje nazw
+   kończących się kropką lub spacją). Pusty segment → `file`. Dzięki temu
+   nazwa działa identycznie na Windows (zarezerwowane znaki + limity NTFS),
+   macOS (HFS+/APFS, normalizacja Unicode) i Linuksie, a także jest
+   bezpieczna w URL-ach, S3 keys i argumentach CLI bez escapowania.
 - Pod selectami znajduje się rozwijana sekcja **„Unikalne kombinacje
   `command` + `flag_*`"** — tabela wszystkich krotek wartości, które
   rzeczywiście wystąpiły w `history.csv`, posortowana malejąco po liczbie
