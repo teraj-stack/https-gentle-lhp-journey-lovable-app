@@ -2761,6 +2761,7 @@ const renderHtml = ({
     @media (prefers-reduced-motion: reduce) {
       .export-ready-toast-countdown.is-urgent { animation: none; opacity: .85; }
     }
+    .export-ready-toast-actions {
       flex: 0 0 auto;
       display: flex;
       flex-direction: column;
