@@ -3570,6 +3570,85 @@ const renderHtml = ({
     var previewDownloadRow = root.querySelector("[data-export-preview-download-row]");
     var previewDownloadRowValue = root.querySelector("[data-export-preview-download-row-value]");
     var previewDownloadRowMatch = root.querySelector("[data-export-preview-download-row-match]");
+    // „Pokaż pełną nazwę" — toggle + panel z rozbiciem na segmenty.
+    // Stan rozwinięcia perystowany w localStorage, żeby preferencja
+    // przeżyła kolejne otwarcia modala / pełne re-rendery.
+    var previewFullnameExpand = root.querySelector("[data-export-preview-download-row-expand]");
+    var previewFullnamePanel = root.querySelector("[data-export-preview-fullname-panel]");
+    var previewFullnameStats = root.querySelector("[data-export-preview-fullname-stats]");
+    var previewFullnameSegments = root.querySelector("[data-export-preview-fullname-segments]");
+    var previewFullnameRaw = root.querySelector("[data-export-preview-fullname-raw]");
+    var FULLNAME_EXPAND_KEY = "visual-report-export-fullname-expanded-v1";
+    function isFullnameExpanded() {
+      try { return localStorage.getItem(FULLNAME_EXPAND_KEY) === "1"; }
+      catch (_e) { return false; }
+    }
+    function setFullnameExpanded(expanded) {
+      try { localStorage.setItem(FULLNAME_EXPAND_KEY, expanded ? "1" : "0"); } catch (_e) { /* noop */ }
+    }
+    /**
+     * Renderuje rozwinięty panel „Pokaż pełną nazwę".
+     *  · stats: długość znaków + liczba segmentów,
+     *  · segmenty: split po `_`, `-`, `.` (zachowując separatory) — każdy
+     *    fragment w osobnym <li> z numerem indeksu i kolorowym separatorem,
+     *  · raw: cała nazwa w bloku monospace z word-break (bez ucinania).
+     * Bez nazwy → ukrywamy panel i czyścimy listę.
+     */
+    function renderFullnameBreakdown(name) {
+      if (!previewFullnamePanel) return;
+      if (!name) {
+        if (previewFullnameStats) previewFullnameStats.textContent = "";
+        if (previewFullnameSegments) previewFullnameSegments.innerHTML = "";
+        if (previewFullnameRaw) previewFullnameRaw.textContent = "";
+        return;
+      }
+      // Split po separatorach „_", „-", „." — zachowujemy separator jako
+      // osobny token, żeby pokazać go w UI (kolor wyróżniony).
+      var tokens = name.split(/([_\-.])/).filter(function (t) { return t.length > 0; });
+      var segments = [];
+      var currentSep = "";
+      for (var i = 0; i < tokens.length; i++) {
+        var tok = tokens[i];
+        if (tok === "_" || tok === "-" || tok === ".") {
+          currentSep = tok;
+        } else {
+          segments.push({ sep: currentSep, val: tok });
+          currentSep = "";
+        }
+      }
+      if (previewFullnameStats) {
+        previewFullnameStats.innerHTML = "Długość: <strong>" + name.length + "</strong> znaków · "
+          + "Segmentów: <strong>" + segments.length + "</strong> "
+          + "(split po <code>_ - .</code>)";
+      }
+      if (previewFullnameSegments) {
+        previewFullnameSegments.innerHTML = segments.map(function (s, idx) {
+          var sepHtml = s.sep
+            ? '<span class="seg-sep" aria-hidden="true">' + escapeText(s.sep) + '</span>'
+            : '<span class="seg-sep" aria-hidden="true" style="opacity:.3">·</span>';
+          return '<li>'
+            + '<span class="seg-idx" aria-hidden="true">' + (idx + 1) + '.</span>'
+            + sepHtml
+            + '<span class="seg-val">' + escapeText(s.val) + '</span>'
+            + '</li>';
+        }).join("");
+      }
+      if (previewFullnameRaw) {
+        previewFullnameRaw.textContent = name;
+        previewFullnameRaw.classList.remove("is-copied");
+      }
+    }
+    /** Sync UI toggle (label, aria, panel hidden) z aktualnym stanem. */
+    function applyFullnameExpanded(expanded) {
+      if (previewFullnameExpand) {
+        previewFullnameExpand.setAttribute("aria-expanded", expanded ? "true" : "false");
+        previewFullnameExpand.classList.toggle("is-expanded", expanded);
+        previewFullnameExpand.textContent = expanded ? "▴ Ukryj pełną nazwę" : "▾ Pokaż pełną nazwę";
+      }
+      if (previewFullnamePanel) {
+        previewFullnamePanel.hidden = !expanded;
+      }
+    }
     var previewToast = root.querySelector("[data-export-preview-toast]");
     var previewToastTimer = null;
     /**
