@@ -1903,6 +1903,56 @@ const renderHtml = ({
     }
     .trends-filter-export:hover { background: rgba(201,168,76,.28); }
     .trends-filter-export:disabled { opacity: .45; cursor: not-allowed; }
+    /* „Otwórz ostatnią paczkę" — disabled gdy cache pusty. Aktywny stan
+       w stonowanym fiolecie/srebrze, żeby wizualnie odróżnić od głównego
+       gold „Eksportuj" — to akcja drugorzędna („recall", nie „buduj"). */
+    .trends-filter-export-cached {
+      font-size: .72rem;
+      padding: 4px 10px;
+      background: rgba(140,160,200,.10);
+      color: inherit;
+      border: 1px solid rgba(140,160,200,.40);
+      border-radius: 4px;
+      cursor: pointer;
+      align-self: end;
+    }
+    .trends-filter-export-cached:hover:not(:disabled) {
+      background: rgba(140,160,200,.22);
+    }
+    .trends-filter-export-cached:disabled {
+      opacity: .35;
+      cursor: not-allowed;
+    }
+    /* Wskaźnik statusu sieci. Online — zielony stonowany; offline —
+       pomarańczowo/czerwony, lekko mocniejszy żeby user szybko zauważył
+       zmianę. Tooltip uzupełnia kontekst (czas ostatniego cache). */
+    .trends-filter-network-status {
+      font-size: .68rem;
+      padding: 3px 8px;
+      border-radius: 999px;
+      align-self: end;
+      margin-bottom: 4px;
+      letter-spacing: .03em;
+      font-variant-numeric: tabular-nums;
+      border: 1px solid transparent;
+      cursor: help;
+      transition: background .2s ease, border-color .2s ease, color .2s ease;
+    }
+    .trends-filter-network-status.is-online {
+      background: rgba(120,180,120,.14);
+      color: rgba(190,235,190,.95);
+      border-color: rgba(120,180,120,.40);
+    }
+    .trends-filter-network-status.is-offline {
+      background: rgba(220,140,80,.20);
+      color: rgba(250,210,170,1);
+      border-color: rgba(220,140,80,.55);
+      animation: trends-network-offline-pulse 2.4s ease-in-out infinite;
+    }
+    @keyframes trends-network-offline-pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(220,140,80,0); }
+      50%      { box-shadow: 0 0 0 4px rgba(220,140,80,.15); }
+    }
     .trends-filter-copy-name {
       font-size: .72rem;
       padding: 4px 8px;
