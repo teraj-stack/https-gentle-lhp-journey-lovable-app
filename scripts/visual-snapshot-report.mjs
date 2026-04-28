@@ -3786,7 +3786,7 @@ const renderHtml = ({
             && /^(suggest|switch|off)$/.test(saved.mode)) {
           zipModeSelect.value = saved.mode;
         }
-        // Nowy schema: per-format mapa pod kluczem `toastAutoHideByFormat`.
+        // Nowy schema: per-format mapa pod kluczem 'toastAutoHideByFormat'.
         // Każdy format walidujemy osobno — niezaufane wartości pomijamy.
         if (saved.toastAutoHideByFormat && typeof saved.toastAutoHideByFormat === "object") {
           TOAST_AUTOHIDE_FORMATS.forEach(function (f) {
