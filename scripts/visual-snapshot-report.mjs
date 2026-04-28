@@ -4345,13 +4345,21 @@ const renderHtml = ({
       // Faza „ready" (przed klikiem Pobierz) zostaje na stałych 8s — to krótka
       // notyfikacja statusu, nie końcowe potwierdzenie. 0 ms = brak auto-hide
       // (toast czeka na kliknięcie ×).
+      // Reset countdownu przed nową fazą (poprzedni interval mógł jeszcze
+      // tickać, jeśli toast był ponownie pokazany podczas swojej widoczności).
+      clearReadyToastCountdown();
       if (ph === "downloaded") {
         var hideMs = getToastAutoHideMs();
         if (hideMs > 0) {
           readyToastTimer = setTimeout(hideReadyToast, hideMs);
+          // Countdown pokazujemy TYLKO gdy auto-hide jest aktywny —
+          // dla „bez auto-hide" (0 ms) element zostaje hidden.
+          startReadyToastCountdown(hideMs);
         }
       } else {
+        // Faza „ready" — stałe 8 s, też pokazujemy countdown dla spójności UX.
         readyToastTimer = setTimeout(hideReadyToast, 8000);
+        startReadyToastCountdown(8000);
       }
     }
     if (readyToastClose) {
