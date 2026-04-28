@@ -3764,6 +3764,47 @@ const renderHtml = ({
     if (toastAutoHideSelect) {
       toastAutoHideSelect.addEventListener("change", persistZipPrefs);
     }
+    // ⚙ Skrót do ustawień eksportu — przewija pasek filtrów do widoku,
+    // pulsuje labelami ustawień (.trends-filter-settings-target) i ustawia
+    // focus na select „auto-hide toastu" jako najnowszą / najczęściej
+    // szukaną opcję. Respektuje prefers-reduced-motion (smooth → auto).
+    var settingsShortcutBtn = root.querySelector("[data-trend-settings-shortcut]");
+    if (settingsShortcutBtn) {
+      settingsShortcutBtn.addEventListener("click", function () {
+        var reduced = false;
+        try {
+          reduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        } catch (_e) { /* noop */ }
+        var targets = Array.prototype.slice.call(
+          root.querySelectorAll(".trends-filter-settings-target")
+        );
+        var firstTarget = targets[0];
+        if (firstTarget && typeof firstTarget.scrollIntoView === "function") {
+          firstTarget.scrollIntoView({
+            behavior: reduced ? "auto" : "smooth",
+            block: "center",
+            inline: "nearest"
+          });
+        }
+        // Pulse highlight + cleanup po 1700ms (animacja trwa 1.6s).
+        // Restart animacji per klik dzięki force-reflow (offsetWidth).
+        targets.forEach(function (el) {
+          el.classList.remove("is-settings-pulse");
+          void el.offsetWidth;
+          el.classList.add("is-settings-pulse");
+        });
+        setTimeout(function () {
+          targets.forEach(function (el) { el.classList.remove("is-settings-pulse"); });
+        }, 1700);
+        // Focus na auto-hide select po lekkim opóźnieniu, żeby smooth-scroll
+        // zdążył wystartować — inaczej focus może wymusić instant-scroll.
+        setTimeout(function () {
+          if (toastAutoHideSelect && typeof toastAutoHideSelect.focus === "function") {
+            toastAutoHideSelect.focus({ preventScroll: true });
+          }
+        }, reduced ? 0 : 250);
+      });
+    }
     // Live hint pod paskiem eksportu — informuje, czy aktualnie wyfiltrowane
     // wiersze przekraczają próg i co się stanie po kliku „Pobierz".
     function refreshZipHint() {
