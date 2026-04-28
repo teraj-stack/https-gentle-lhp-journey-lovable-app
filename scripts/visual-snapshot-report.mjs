@@ -3643,6 +3643,7 @@ const renderHtml = ({
     var exportFormatSelect = root.querySelector("[data-trend-export-format]");
     var zipThresholdInput = root.querySelector("[data-trend-zip-threshold]");
     var zipModeSelect = root.querySelector("[data-trend-zip-mode]");
+    var toastAutoHideSelect = root.querySelector("[data-trend-toast-autohide]");
     var zipHintEl = root.querySelector("[data-trend-zip-hint]");
     var historyWrap = root.querySelector("[data-trend-history-wrap]");
     var historyList = root.querySelector("[data-trend-history-list]");
@@ -3651,6 +3652,10 @@ const renderHtml = ({
     var ZIP_PREFS_KEY = "visual-report-zip-threshold-v1";
     var EXPORT_HISTORY_KEY = "visual-report-export-history-v1";
     var EXPORT_HISTORY_MAX = 10;
+    // Whitelist dozwolonych wartości auto-hide (ms). 0 = bez auto-hide.
+    // Trzymamy zamknięty zbiór, żeby zły JSON / ręczna edycja localStorage
+    // nie ustawiły np. 50 ms (niedostępne dla użytkownika).
+    var TOAST_AUTOHIDE_ALLOWED = [0, 8000, 12000, 20000];
     // Persist progu i trybu w localStorage, żeby user nie ustawiał ich
     // przy każdym otwarciu raportu. Defensywnie: zły JSON / brak storage
     // → zostają wartości domyślne z atrybutów inputów (200 / "suggest").
@@ -3666,6 +3671,10 @@ const renderHtml = ({
             && /^(suggest|switch|off)$/.test(saved.mode)) {
           zipModeSelect.value = saved.mode;
         }
+        if (toastAutoHideSelect && typeof saved.toastAutoHideMs === "number"
+            && TOAST_AUTOHIDE_ALLOWED.indexOf(saved.toastAutoHideMs) !== -1) {
+          toastAutoHideSelect.value = String(saved.toastAutoHideMs);
+        }
       } catch (_e) { /* noop */ }
     })();
     function persistZipPrefs() {
@@ -3673,6 +3682,7 @@ const renderHtml = ({
         localStorage.setItem(ZIP_PREFS_KEY, JSON.stringify({
           threshold: getZipThreshold(),
           mode: getZipMode(),
+          toastAutoHideMs: getToastAutoHideMs(),
         }));
       } catch (_e) { /* noop */ }
     }
@@ -3684,6 +3694,18 @@ const renderHtml = ({
     }
     function getZipMode() {
       return (zipModeSelect && zipModeSelect.value) || "suggest";
+    }
+    // Czas auto-hide toastu „Pobrano ZIP" (ms). 0 = bez auto-hide.
+    // Default 12000 zgodny z poprzednim hardcoded zachowaniem (faza
+    // „downloaded"), żeby istniejący użytkownicy nie odczuli regresji.
+    function getToastAutoHideMs() {
+      if (!toastAutoHideSelect) return 12000;
+      var n = parseInt(toastAutoHideSelect.value, 10);
+      if (!isFinite(n) || TOAST_AUTOHIDE_ALLOWED.indexOf(n) === -1) return 12000;
+      return n;
+    }
+    if (toastAutoHideSelect) {
+      toastAutoHideSelect.addEventListener("change", persistZipPrefs);
     }
     // Live hint pod paskiem eksportu — informuje, czy aktualnie wyfiltrowane
     // wiersze przekraczają próg i co się stanie po kliku „Pobierz".
