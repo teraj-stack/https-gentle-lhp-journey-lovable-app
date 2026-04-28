@@ -2503,6 +2503,41 @@ const renderHtml = ({
       border: 1px solid rgba(127,127,127,.35);
     }
     .export-preview-cancel:hover { background: rgba(127,127,127,.25); }
+    /* „📌 Zapisz w historii" — wariant pomiędzy cancel a confirm:
+       wyróżniony złotą obwódką (sygnalizuje akcję związaną z eksportem),
+       ale neutralne tło, żeby nie konkurować wizualnie z confirm CTA. */
+    .export-preview-save-history {
+      font-size: .75rem;
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-family: inherit;
+      background: rgba(201,168,76,.10);
+      color: rgba(240,220,160,.95);
+      border: 1px solid rgba(201,168,76,.40);
+    }
+    .export-preview-save-history:hover {
+      background: rgba(201,168,76,.20);
+      border-color: rgba(201,168,76,.65);
+    }
+    .export-preview-save-history:focus-visible {
+      outline: 2px solid rgba(201,168,76,.7);
+      outline-offset: 1px;
+    }
+    .export-preview-save-history.is-saved {
+      background: rgba(120,180,120,.22);
+      border-color: rgba(120,180,120,.55);
+      color: rgba(190,235,190,.98);
+    }
+    /* Highlight świeżo dodanego wpisu w historii — krótki pulse na żółto,
+       żeby user od razu zauważył gdzie wylądował po skoku z modala. */
+    @keyframes trends-history-flash {
+      0%   { background: rgba(201,168,76,.45); }
+      100% { background: transparent; }
+    }
+    .trends-filter-history-list li.is-just-added {
+      animation: trends-history-flash 1.6s ease-out 1;
+    }
     .export-preview-confirm {
       background: rgba(201,168,76,.22);
       color: #f4dfa3;
