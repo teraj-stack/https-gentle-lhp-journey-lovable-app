@@ -1268,6 +1268,19 @@ const renderHtml = ({
           </div>
         </div>
         <div class="export-preview-footer">
+          <!--
+            „📌 Zapisz w historii" — odkłada bieżącą nazwę pendingExport
+            do listy „Ostatnie nazwy eksportu" (bez kopiowania do schowka,
+            bez pobierania pliku), zamyka modal i przewija/rozwija sekcję
+            historii w pasku filtra, podświetlając świeżo dodany wpis.
+            Działa też dla CSV — etykieta neutralna względem formatu.
+          -->
+          <button
+            type="button"
+            class="export-preview-save-history"
+            data-export-preview-save-history
+            title="Zapisz tę nazwę paczki w lokalnej historii „Ostatnie nazwy eksportu" i przejdź do tej sekcji. Nie pobiera pliku ani nie kopiuje do schowka."
+          >📌 Zapisz w historii</button>
           <span class="spacer" aria-hidden="true"></span>
           <button type="button" class="export-preview-cancel" data-export-preview-cancel>Anuluj</button>
           <button type="button" class="export-preview-confirm" data-export-preview-confirm>⬇ Pobierz CSV</button>
