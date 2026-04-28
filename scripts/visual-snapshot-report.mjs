@@ -1078,7 +1078,21 @@ const renderHtml = ({
         </label>
         ${flagSelects}
         <button type="button" class="trends-filter-reset" data-trend-reset>Resetuj</button>
-        <label class="trends-filter-label trends-filter-export-mode" title="Skrócony: tylko kolumny obecne w wykresach. Pełny schemat: wszystkie kolumny savings.csv (puste tam, gdzie raport nie ma danych).">
+        <!--
+          ⚙ Skrót do ustawień eksportu. Klik:
+          1) scroll-into-view do klastra ustawień (mode/format/threshold/zip-mode/toast-hide),
+          2) chwilowa klasa .is-settings-pulse na każdym labelu (~1.6s) — pulsujące obramowanie gold,
+          3) focus na select „auto-hide toastu" (najczęstszy use-case po wprowadzeniu opcji).
+          aria-haspopup="false", bo NIE otwieramy popovera — przewijamy istniejące kontrolki.
+        -->
+        <button
+          type="button"
+          class="trends-filter-settings-shortcut"
+          data-trend-settings-shortcut
+          title="Otwórz ustawienia eksportu (przewija do kontrolek i ustawia focus na „auto-hide toastu”)."
+          aria-label="Otwórz ustawienia eksportu"
+        >⚙</button>
+        <label class="trends-filter-label trends-filter-export-mode trends-filter-settings-target" title="Skrócony: tylko kolumny obecne w wykresach. Pełny schemat: wszystkie kolumny savings.csv (puste tam, gdzie raport nie ma danych).">
           tryb eksportu
           <select class="trends-filter-select" data-trend-export-mode>
             <option value="subset" selected>Skrócony</option>
