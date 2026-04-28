@@ -493,6 +493,21 @@ pasujących do wszystkich aktywnych selectów (AND), bez re-runu skryptu.
    na summary (`stopPropagation`, żeby nie togglować `<details>`). Render
    przez `createElement`/`textContent` — zero ryzyka XSS, niezależnie od
    sanityzacji nazw.
+
+   **Skrót klawiszowy „kopiuj nazwę paczki":**
+   - **Ctrl/Cmd + Shift + C** — działa zawsze, niezależnie od fokusu
+     (jednoznaczny gest, bez kolizji z natywnym copy zaznaczenia).
+   - **Ctrl/Cmd + C** — działa tylko gdy kursor jest nad panelem
+     `.trends-filter` (lub fokus jest w jego obrębie) **i** nie ma
+     żadnego zaznaczonego tekstu na stronie. Dzięki temu zwykłe
+     zaznacz-i-kopiuj poza panelem działa normalnie, a Ctrl+C nad
+     panelem bez zaznaczenia robi shortcut.
+   - W polach edycyjnych (input/textarea/contenteditable) skrót jest
+     ignorowany, chyba że pole należy do panelu i user wcisnął Shift.
+   - Gest jest równoważny kliknięciu „⧉ Kopiuj nazwę" — dopisuje wpis do
+     historii (source=`copy`), uruchamia animację „✓ Skopiowano" na
+     przycisku i status w pasku eksportu. Tooltip panelu (`title`)
+     informuje o skrócie dla discoverability.
 - Pod selectami znajduje się rozwijana sekcja **„Unikalne kombinacje
   `command` + `flag_*`"** — tabela wszystkich krotek wartości, które
   rzeczywiście wystąpiły w `history.csv`, posortowana malejąco po liczbie
