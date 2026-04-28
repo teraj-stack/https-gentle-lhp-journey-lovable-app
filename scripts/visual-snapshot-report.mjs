@@ -4277,6 +4277,47 @@ const renderHtml = ({
     //   · readyToastRemainingMs — ile MS zostało w momencie pauzy (do wznowienia).
     var readyToastIsPaused = false;
     var readyToastRemainingMs = 0;
+    // Snapshot ostatnio pokazanego toastu — persystowany do sessionStorage,
+    // żeby przeżyć re-render skryptu / programatyczną podmianę DOM / zmianę
+    // formatu eksportu (która resetuje countdown UI). Klucz session-scoped,
+    // bo to ulotny stan UI, nie preferencja usera.
+    var READY_TOAST_STATE_KEY = "vsr.readyToast.state.v1";
+    var readyToastLastSnapshot = null; // { filename, fmtTag, sizeLabel, phase, totalMs }
+    function persistReadyToastState() {
+      try {
+        if (!readyToast || readyToast.hidden || !readyToastLastSnapshot) {
+          sessionStorage.removeItem(READY_TOAST_STATE_KEY);
+          return;
+        }
+        var remaining = readyToastIsPaused
+          ? readyToastRemainingMs
+          : Math.max(0, readyToastCountdownDeadline - Date.now());
+        var payload = {
+          v: 1,
+          filename: readyToastLastSnapshot.filename,
+          fmtTag: readyToastLastSnapshot.fmtTag,
+          sizeLabel: readyToastLastSnapshot.sizeLabel,
+          phase: readyToastLastSnapshot.phase,
+          totalMs: readyToastLastSnapshot.totalMs,
+          remainingMs: remaining,
+          isPaused: !!readyToastIsPaused,
+          savedAt: Date.now(),
+        };
+        sessionStorage.setItem(READY_TOAST_STATE_KEY, JSON.stringify(payload));
+      } catch (_e) { /* sessionStorage może być zablokowany — ignorujemy */ }
+    }
+    function readPersistedReadyToastState() {
+      try {
+        var raw = sessionStorage.getItem(READY_TOAST_STATE_KEY);
+        if (!raw) return null;
+        var obj = JSON.parse(raw);
+        if (!obj || obj.v !== 1) return null;
+        return obj;
+      } catch (_e) { return null; }
+    }
+    function clearPersistedReadyToastState() {
+      try { sessionStorage.removeItem(READY_TOAST_STATE_KEY); } catch (_e) {}
+    }
     function clearReadyToastCountdown() {
       if (readyToastCountdownInterval) {
         clearInterval(readyToastCountdownInterval);
