@@ -1875,6 +1875,12 @@ const renderHtml = ({
       margin: 0 0 4px;
       font-size: 1rem;
       color: #c9a84c;
+      /* Long filenames mogą wydłużyć tytuł — łamiemy z zachowaniem
+         word-break, a dla bardzo długich segmentów (timestamp+hash)
+         pozwalamy zerwać w dowolnym miejscu, żeby nie rozpychało modala. */
+      word-break: break-word;
+      overflow-wrap: anywhere;
+      line-height: 1.35;
     }
     .export-preview-meta {
       font-size: .75rem;
@@ -2830,6 +2836,28 @@ const renderHtml = ({
       if (!namePreviewWrap || !namePreviewValue) return;
       var name = null;
       try { name = computeExportBaseName(); } catch (_e) { name = null; }
+      // Live update tytułu modala — nawet gdy modal jest zamknięty,
+      // zaktualizujemy <h3>, żeby przy następnym showModal() user od razu
+      // widział właściwy tytuł (CSV/ZIP + nazwa pliku) bez czekania na
+      // renderPreview. Modal lazy-resolved, bo refreshNamePreview może
+      // pobiec ZANIM previewTitle/previewDialog wejdą do DOM (init order).
+      var titleEl = document.getElementById("export-preview-title");
+      var count = filterPoints(currentState()).length;
+      var fmt = (exportFormatSelect && exportFormatSelect.value) || "csv";
+      var th = getZipThreshold();
+      var mode = getZipMode();
+      var willAutoZip = !!(th && mode === "switch" && fmt === "csv" && count >= th);
+      var effectiveFmt = willAutoZip ? "zip" : fmt;
+      var titleFmt = effectiveFmt === "zip" || effectiveFmt === "zip-split"
+        ? "ZIP" : "CSV";
+      if (titleEl) {
+        // Tytuł = format + nazwa pliku (jeśli wyliczona) + sufiks „auto".
+        // Dwa cele: a) jednolity ze schowkiem, b) widoczny już w nagłówku
+        // modala bez konieczności scrollowania do download row.
+        var titleParts = ["Podgląd eksportu " + titleFmt];
+        if (name) titleParts.push("· " + name + (willAutoZip ? "  (auto-ZIP)" : ""));
+        titleEl.textContent = titleParts.join(" ");
+      }
       if (!name) {
         namePreviewWrap.hidden = true;
         namePreviewValue.textContent = "";
@@ -2844,13 +2872,7 @@ const renderHtml = ({
         namePreviewValue.classList.remove("is-copied");
       }
       if (namePreviewMeta) {
-        var count = filterPoints(currentState()).length;
-        var fmt = (exportFormatSelect && exportFormatSelect.value) || "csv";
-        var th = getZipThreshold();
-        var mode = getZipMode();
-        var auto = th && mode === "switch" && fmt === "csv" && count >= th
-          ? " · auto-ZIP"
-          : "";
+        var auto = willAutoZip ? " · auto-ZIP" : "";
         namePreviewMeta.textContent = count + " w. · " + fmt + auto;
       }
     }
@@ -3156,7 +3178,13 @@ const renderHtml = ({
       if (previewTitle) {
         var titleFmt = pendingFmt === "zip" || pendingFmt === "zip-split"
           ? "ZIP" : "CSV";
-        previewTitle.textContent = "Podgląd eksportu " + titleFmt;
+        // Dynamiczny tytuł z formatem + zamrożoną nazwą pliku.
+        // To jest „freeze point" — pendingName pochodzi z pendingExport
+        // (single source of truth dla anchor.download), więc tytuł modala
+        // pokrywa się 1:1 z nazwą w download row i tym, co trafi na dysk.
+        previewTitle.textContent = pendingName
+          ? "Podgląd eksportu " + titleFmt + " · " + pendingName
+          : "Podgląd eksportu " + titleFmt;
       }
       if (previewConfirm) {
         // Sync etykiety przycisku potwierdzenia z formatem (CSV/ZIP), żeby
