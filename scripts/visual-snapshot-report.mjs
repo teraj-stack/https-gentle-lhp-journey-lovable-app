@@ -5508,6 +5508,9 @@ const renderHtml = ({
               format: format,
               fileCount: files.length,
             };
+            // Offline cache: zapisz świeżą paczkę do IndexedDB. Async — nie
+            // blokujemy modala; saveExportCache loguje błędy w konsoli.
+            try { saveExportCache(pendingExport); } catch (_e) {}
           }
 
           // Po finalizeZip() — natychmiast pokaż czytelny rozmiar pliku
