@@ -4877,6 +4877,7 @@ const renderHtml = ({
       var rows = [[
         "timestamp", "scope", "isRetry", "format", "skipped", "skipReason",
         "step", "expected", "got_state", "got_progress", "got_countdown", "ok",
+        "dispatchedAt", "elapsedMs",
       ]];
       var ts = st.timestamp;
       var scope = st.scope;
@@ -4887,7 +4888,7 @@ const renderHtml = ({
       }
       (st.reports || []).forEach(function (rep) {
         if (rep.skipped) {
-          rows.push([ts, scope, isRetry, rep.format, true, rep.reason || "", "", "", "", "", "", ""]);
+          rows.push([ts, scope, isRetry, rep.format, true, rep.reason || "", "", "", "", "", "", "", "", ""]);
           return;
         }
         (rep.results || []).forEach(function (r) {
@@ -4899,6 +4900,8 @@ const renderHtml = ({
             fmtBool(r.got && r.got.progress),
             fmtBool(r.got && r.got.countdown),
             r.ok ? "OK" : "FAIL",
+            r.dispatchedAt || "",
+            (r.elapsedMs === null || r.elapsedMs === undefined) ? "" : r.elapsedMs,
           ]);
         });
       });
