@@ -4438,7 +4438,7 @@ const renderHtml = ({
           table.className = "trends-filter-toast-pause-test-log-table";
           var thead = document.createElement("thead");
           var thr = document.createElement("tr");
-          ["Krok", "Expected", "state", "progress", "countdown"].forEach(function (h) {
+          ["Krok", "Expected", "state", "progress", "countdown", "Dispatched", "Δ ms"].forEach(function (h) {
             var th = document.createElement("th");
             th.textContent = h;
             thr.appendChild(th);
@@ -4449,20 +4449,37 @@ const renderHtml = ({
           rep.results.forEach(function (r) {
             var tr = document.createElement("tr");
             tr.className = "trends-filter-toast-pause-test-log-row " + (r.ok ? "is-ok" : "is-fail");
-            function cell(text) {
+            function cell(text, opts) {
               var td = document.createElement("td");
               td.textContent = text;
+              if (opts && opts.title) td.title = opts.title;
+              if (opts && opts.cls) td.className = opts.cls;
               tr.appendChild(td);
             }
             function fmtBool(v) {
               if (v === null || v === undefined) return "—";
               return v ? "paused" : "running";
             }
+            // Z ISO timestampa pokazujemy tylko HH:MM:SS.mmm — pełny ISO
+            // wisi w `title` (tooltip) dla dokładnej diagnostyki/eksportu.
+            function fmtClock(iso) {
+              if (!iso) return "—";
+              var m = /T(\d{2}:\d{2}:\d{2}\.\d{3})/.exec(iso);
+              return m ? m[1] : iso;
+            }
             cell(r.step);
             cell(r.expected ? "paused" : "running");
             cell(fmtBool(r.got && r.got.state));
             cell(fmtBool(r.got && r.got.progress));
             cell(fmtBool(r.got && r.got.countdown));
+            cell(fmtClock(r.dispatchedAt), { title: r.dispatchedAt || "" });
+            // Δ ms = elapsed między dispatch eventu a odczytem sygnałów.
+            // Tabular-nums + monospace dzięki klasie .is-num (CSS niżej).
+            var elapsed = (r.elapsedMs === null || r.elapsedMs === undefined) ? "—" : r.elapsedMs.toFixed(1);
+            cell(elapsed, {
+              cls: "is-num",
+              title: "Czas między wysłaniem eventu „" + r.step + "" a odczytem sygnałów (state/progress/countdown). Powyżej ~30 ms wskazuje wolny handler lub długi reflow.",
+            });
             tbody.appendChild(tr);
           });
           table.appendChild(tbody);
