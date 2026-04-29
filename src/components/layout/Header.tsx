@@ -22,103 +22,95 @@ interface MegaColumn {
   items: NavItem[];
 }
 
-// --- PROBLEM (po objawie) ---
-const problemItems: NavItem[] = [
-  { label: "Hemoroidy", href: "/dla-pacjenta/hemoroidy", desc: "Krwawienie, swędzenie, guzki" },
-  { label: "Żylaki nóg", href: "/leczenie/evlt", desc: "Ból, obrzęki, widoczne żyły" },
-  { label: "Pajączki naczyniowe", href: "/leczenie/clacs", desc: "Czerwone i fioletowe naczynka" },
-  { label: "Szczelina odbytu", href: "/leczenie/szczelina", desc: "Ból i krwawienie przy wypróżnieniu" },
-  { label: "Przetoka odbytu", href: "/leczenie/filac", desc: "Sączenie, ropień, nawracający ból" },
-  { label: "Torbiel pilonidalna", href: "/leczenie/silac", desc: "Guzek przy kości ogonowej" },
-  { label: "Fałdy okolicy odbytu", href: "/dla-pacjenta/faldy-odbytu", desc: "Wariant anatomiczny czy problem?" },
-  { label: "Przewlekły ból odbytu", href: "/leczenie/spazm-lonowoodbytniczy", desc: "Spazm mięśnia łonowo-odbytniczego" },
-  { label: "Ginekomastia", href: "/leczenie/ginekomastia", desc: "Powiększenie piersi u mężczyzn" },
-];
+// =============================================================================
+// Nowy podział: dziedziny medyczne (Proktologia, Flebologia, Ginekomastia)
+// + Wiedza + Klinika. Mniej popularne pozycje przeniesione do hubów
+// (/leczenie/proktologia, /leczenie/flebologia, /dla-pacjenta).
+// =============================================================================
 
-// --- ZABIEG (3-kolumnowe mega-menu po dziedzinie) ---
-const zabiegColumns: MegaColumn[] = [
+// --- PROKTOLOGIA ---
+const proktologiaColumns: MegaColumn[] = [
   {
-    title: "Proktologia",
+    title: "Mam problem",
     items: [
-      { label: "Wszystkie zabiegi", href: "/leczenie/proktologia" },
-      { label: "LHP – hemoroidy", href: "/leczenie/lhp" },
-      { label: "FiLaC – przetoka", href: "/leczenie/filac" },
-      { label: "SiLaC – torbiel", href: "/leczenie/silac" },
-      { label: "Szczelina odbytu", href: "/leczenie/szczelina" },
-      { label: "Plastyka odbytu", href: "/leczenie/plastyka" },
-      { label: "Anusitis", href: "/leczenie/anusitis" },
-      { label: "Spazm łonowo-odbytniczy", href: "/leczenie/spazm-lonowoodbytniczy" },
+      { label: "Hemoroidy", href: "/dla-pacjenta/hemoroidy", desc: "Krwawienie, swędzenie, guzki" },
+      { label: "Szczelina odbytu", href: "/leczenie/szczelina", desc: "Ból przy wypróżnieniu" },
+      { label: "Przetoka odbytu", href: "/leczenie/filac", desc: "Sączenie, nawracający ropień" },
+      { label: "Torbiel pilonidalna", href: "/leczenie/silac", desc: "Guzek przy kości ogonowej" },
     ],
   },
   {
-    title: "Flebologia",
+    title: "Zabiegi",
     items: [
-      { label: "Wszystkie zabiegi", href: "/leczenie/flebologia" },
-      { label: "EVLT – żylaki", href: "/leczenie/evlt" },
-      { label: "CLaCS – pajączki", href: "/leczenie/clacs" },
-      { label: "Skleroterapia", href: "/leczenie/skleroterapia" },
-      { label: "Mikroflebektomia", href: "/leczenie/mikroflebektomia" },
-      { label: "Fototerapia LED", href: "/leczenie/fototerapia" },
-    ],
-  },
-  {
-    title: "Ginekomastia",
-    items: [
-      { label: "Wszystkie typy", href: "/leczenie/ginekomastia" },
-      { label: "Gruczołowa", href: "/leczenie/ginekomastia-gruczolowa" },
-      { label: "Tłuszczowa", href: "/leczenie/ginekomastia-tluszczowa" },
-      { label: "Mieszana", href: "/leczenie/ginekomastia-mieszana" },
+      { label: "LHP – laser na hemoroidy", href: "/leczenie/lhp" },
+      { label: "FiLaC – laser na przetokę", href: "/leczenie/filac" },
+      { label: "SiLaC – laser na torbiel", href: "/leczenie/silac" },
+      { label: "Wszystkie zabiegi proktologii →", href: "/leczenie/proktologia" },
     ],
   },
 ];
 
-// --- WIEDZA (edukacja, przygotowania, blog) ---
+// --- FLEBOLOGIA ---
+const flebologiaColumns: MegaColumn[] = [
+  {
+    title: "Mam problem",
+    items: [
+      { label: "Żylaki nóg", href: "/leczenie/evlt", desc: "Ból, obrzęki, widoczne żyły" },
+      { label: "Pajączki naczyniowe", href: "/leczenie/clacs", desc: "Czerwone i fioletowe naczynka" },
+      { label: "Profilaktyka żylaków", href: "/dla-pacjenta/profilaktyka-zylakow", desc: "Jak zapobiegać" },
+    ],
+  },
+  {
+    title: "Zabiegi",
+    items: [
+      { label: "EVLT – laser na żylaki", href: "/leczenie/evlt" },
+      { label: "CLaCS – metoda hybrydowa", href: "/leczenie/clacs" },
+      { label: "Wszystkie zabiegi flebologii →", href: "/leczenie/flebologia" },
+    ],
+  },
+];
+
+// --- GINEKOMASTIA (single-column, krótka lista) ---
+const ginekomastiaItems: NavItem[] = [
+  { label: "O zabiegu", href: "/leczenie/ginekomastia", desc: "Powiększenie piersi u mężczyzn" },
+  { label: "Typ gruczołowy", href: "/leczenie/ginekomastia-gruczolowa" },
+  { label: "Typ tłuszczowy", href: "/leczenie/ginekomastia-tluszczowa" },
+  { label: "Typ mieszany", href: "/leczenie/ginekomastia-mieszana" },
+];
+
+// --- WIEDZA (skrócona; resztę w hubie /dla-pacjenta) ---
 const wiedzaColumns: MegaColumn[] = [
   {
     title: "Edukacja",
     items: [
-      { label: "Test ryzyka hemoroidów", href: "/dla-pacjenta/quiz-hemoroidy", desc: "Quiz · 9 pytań · 2 minuty" },
-      { label: "EBM hemoroidy", href: "/dla-pacjenta/ebm-hemoroidy", desc: "Czynniki ryzyka i profilaktyka" },
+      { label: "Test ryzyka hemoroidów", href: "/dla-pacjenta/quiz-hemoroidy", desc: "Quiz · 9 pytań · 2 min" },
       { label: "Hemoroidy A–Z", href: "/dla-pacjenta/hemoroidy" },
       { label: "Pajączki naczyniowe", href: "/dla-pacjenta/pajaczki" },
-      { label: "Profilaktyka żylaków", href: "/dla-pacjenta/profilaktyka-zylakow" },
       { label: "Pielęgnacja nóg", href: "/dla-pacjenta/pielegnacja-nog" },
-      { label: "Fałdy okolicy odbytu", href: "/dla-pacjenta/faldy-odbytu" },
-      { label: "Świadomy pacjent", href: "/dla-pacjenta/edukacja" },
-    ],
-  },
-  {
-    title: "Przed wizytą",
-    items: [
-      { label: "Przygotowanie do EVLT", href: "/dla-pacjenta/przygotowanie-evlt" },
-      { label: "Przygotowanie do LHP", href: "/dla-pacjenta/przygotowanie-lhp" },
-      { label: "FAQ proktologiczne", href: "/dla-pacjenta/proktolog-faq" },
-      { label: "Strefa pacjenta", href: "/dla-pacjenta" },
     ],
   },
   {
     title: "Materiały",
     items: [
       { label: "Blog", href: "/blog" },
-      { label: "E-book: Pajączki", href: "/dla-pacjenta/ebook-pajaczki" },
-      { label: "Hemoroidy – infografika", href: "/dla-pacjenta/hemoroidy-infografika" },
-    ],
-  },
-  {
-    title: "Tematy intymne",
-    items: [
-      {
-        label: "Seks analny a hemoroidy",
-        href: "/wiedza/seks-analny-a-hemoroidy",
-        desc: "Mit czy fakt? Pełny raport medyczny EBM",
-      },
+      { label: "Przygotowanie do EVLT", href: "/dla-pacjenta/przygotowanie-evlt" },
+      { label: "Przygotowanie do LHP", href: "/dla-pacjenta/przygotowanie-lhp" },
+      { label: "Strefa pacjenta →", href: "/dla-pacjenta" },
     ],
   },
 ];
 
+// --- KLINIKA (single dropdown, top-level housekeeping) ---
+const klinikaItems: NavItem[] = [
+  { label: "O nas", href: "/o-nas", desc: "Zespół, misja, dr Jan Bujok" },
+  { label: "Lokalizacje", href: "/kontakt", desc: "Warszawa · Siedlce · Rzeszów" },
+  { label: "Współpraca (B2B)", href: "/wspolpraca", desc: "Dla lekarzy i partnerów" },
+];
+
 // Spłaszczone listy do isSectionActive
 const flatten = (cols: MegaColumn[]): NavItem[] => cols.flatMap((c) => c.items);
-const allZabiegItems = flatten(zabiegColumns);
+const allProktologiaItems = flatten(proktologiaColumns);
+const allFlebologiaItems = flatten(flebologiaColumns);
 const allWiedzaItems = flatten(wiedzaColumns);
 
 const Header = () => {
@@ -620,33 +612,13 @@ const Header = () => {
             />
           </Link>
 
-          {/* Desktop nav — flex-1 + min-w-0 pozwala na shrinking; gap skaluje od 0 do 0.5/1 */}
+          {/* Desktop nav — podział wg dziedziny medycznej + Wiedza/Klinika */}
           <nav className="hidden lg:flex flex-1 items-center justify-center gap-0 xl:gap-0.5 2xl:gap-1 min-w-0">
-            <Link
-              to="/o-nas"
-              className={`px-2.5 xl:px-4 py-2 text-[13px] xl:text-sm font-medium transition-colors rounded-lg hover:bg-accent/50 whitespace-nowrap ${
-                isActive("/o-nas")
-                  ? "text-primary bg-accent/50"
-                  : "text-foreground/80 hover:text-primary"
-              }`}
-            >
-              O nas
-            </Link>
-
-            <SingleDropdown keyName="problem" label="Problem" items={problemItems} />
-            <MegaDropdown keyName="zabieg" label="Zabieg" columns={zabiegColumns} />
+            <MegaDropdown keyName="proktologia" label="Proktologia" columns={proktologiaColumns} />
+            <MegaDropdown keyName="flebologia" label="Flebologia" columns={flebologiaColumns} />
+            <SingleDropdown keyName="ginekomastia" label="Ginekomastia" items={ginekomastiaItems} />
             <MegaDropdown keyName="wiedza" label="Wiedza" columns={wiedzaColumns} />
-
-            <Link
-              to="/wspolpraca"
-              className={`px-2.5 xl:px-4 py-2 text-[13px] xl:text-sm font-medium transition-colors rounded-lg hover:bg-accent/50 whitespace-nowrap ${
-                isActive("/wspolpraca")
-                  ? "text-primary bg-accent/50"
-                  : "text-foreground/80 hover:text-primary"
-              }`}
-            >
-              Współpraca
-            </Link>
+            <SingleDropdown keyName="klinika" label="Klinika" items={klinikaItems} />
 
             <Link
               to="/cennik"
@@ -764,74 +736,71 @@ const Header = () => {
                       <span>Napisz</span>
                     </a>
                   </div>,
-                  <Link
-                    key="o-nas"
-                    to="/o-nas"
-                    title="O nas"
-                    className={`flex items-center min-h-[44px] px-4 py-3 rounded-lg text-[15px] font-medium hover:bg-accent/50 truncate ${
-                      isActive("/o-nas")
-                        ? "text-primary bg-accent/50"
-                        : "text-foreground"
-                    }`}
-                  >
-                    O nas
-                  </Link>,
+                  ...([
+                    { key: "proktologia", label: "Proktologia", columns: proktologiaColumns },
+                    { key: "flebologia", label: "Flebologia", columns: flebologiaColumns },
+                  ].flatMap((section) => [
+                    <div
+                      key={`${section.key}-label`}
+                      className="px-4 py-2 text-xs font-semibold text-primary uppercase tracking-wider mt-2"
+                    >
+                      {section.label}
+                    </div>,
+                    ...section.columns.flatMap((col, i) => [
+                      <div
+                        key={`${section.key}-sub-${i}`}
+                        className="px-5 pt-2 pb-1 text-[11px] font-medium text-muted-foreground uppercase tracking-wider"
+                      >
+                        {col.title}
+                      </div>,
+                      ...col.items.map((item) => (
+                        <Link
+                          key={`${section.key}-${item.href}-${item.label}`}
+                          to={item.href}
+                          title={item.label}
+                          className={`flex flex-col justify-center min-h-[44px] px-5 py-2 rounded-lg hover:bg-accent/50 ${
+                            isActive(item.href) ? "bg-accent/50" : ""
+                          }`}
+                        >
+                          <span
+                            className={`block truncate text-[14px] leading-tight ${
+                              isActive(item.href)
+                                ? "text-primary font-medium"
+                                : "text-foreground/85"
+                            }`}
+                          >
+                            {item.label}
+                          </span>
+                          {item.desc && (
+                            <span className="block truncate text-[11px] text-muted-foreground mt-0.5">
+                              {item.desc}
+                            </span>
+                          )}
+                        </Link>
+                      )),
+                    ]),
+                  ])),
+
                   <div
-                    key="problem-label"
+                    key="ginekomastia-label"
                     className="px-4 py-2 text-xs font-semibold text-primary uppercase tracking-wider mt-2"
                   >
-                    Problem
+                    Ginekomastia
                   </div>,
-                  ...problemItems.map((item) => (
+                  ...ginekomastiaItems.map((item) => (
                     <Link
-                      key={`problem-${item.href}`}
+                      key={`ginekomastia-${item.href}`}
                       to={item.href}
                       title={item.label}
-                      className={`flex flex-col justify-center min-h-[44px] px-5 py-2 rounded-lg hover:bg-accent/50 ${
+                      className={`flex items-center min-h-[44px] px-5 py-2 rounded-lg text-[14px] hover:bg-accent/50 truncate ${
                         isActive(item.href)
-                          ? "bg-accent/50"
-                          : ""
+                          ? "text-primary bg-accent/50 font-medium"
+                          : "text-foreground/85"
                       }`}
                     >
-                      <span
-                        className={`block truncate text-[14px] leading-tight ${
-                          isActive(item.href)
-                            ? "text-primary font-medium"
-                            : "text-foreground/85"
-                        }`}
-                      >
-                        {item.label}
-                      </span>
-                      {item.desc && (
-                        <span className="block truncate text-[11px] text-muted-foreground mt-0.5">
-                          {item.desc}
-                        </span>
-                      )}
+                      <span className="truncate">{item.label}</span>
                     </Link>
                   )),
-
-                  ...zabiegColumns.flatMap((col, i) => [
-                    <div
-                      key={`zabieg-label-${i}`}
-                      className="px-4 py-2 text-[11px] font-semibold text-primary uppercase tracking-wider mt-2 truncate"
-                    >
-                      Zabieg · {col.title}
-                    </div>,
-                    ...col.items.map((item) => (
-                      <Link
-                        key={`zabieg-${item.href}`}
-                        to={item.href}
-                        title={item.label}
-                        className={`flex items-center min-h-[44px] px-5 py-2 rounded-lg text-[14px] hover:bg-accent/50 truncate ${
-                          isActive(item.href)
-                            ? "text-primary bg-accent/50 font-medium"
-                            : "text-foreground/85"
-                        }`}
-                      >
-                        <span className="truncate">{item.label}</span>
-                      </Link>
-                    )),
-                  ]),
 
                   ...wiedzaColumns.flatMap((col, i) => [
                     <div
@@ -856,23 +825,43 @@ const Header = () => {
                     )),
                   ]),
 
-                  <Link
-                    key="wspolpraca"
-                    to="/wspolpraca"
-                    title="Współpraca"
-                    className={`flex items-center min-h-[44px] px-4 py-3 rounded-lg text-[15px] font-medium hover:bg-accent/50 mt-2 truncate ${
-                      isActive("/wspolpraca")
-                        ? "text-primary bg-accent/50"
-                        : "text-foreground"
-                    }`}
+                  <div
+                    key="klinika-label"
+                    className="px-4 py-2 text-xs font-semibold text-primary uppercase tracking-wider mt-2"
                   >
-                    Współpraca
-                  </Link>,
+                    Klinika
+                  </div>,
+                  ...klinikaItems.map((item) => (
+                    <Link
+                      key={`klinika-${item.href}-${item.label}`}
+                      to={item.href}
+                      title={item.label}
+                      className={`flex flex-col justify-center min-h-[44px] px-5 py-2 rounded-lg hover:bg-accent/50 ${
+                        isActive(item.href) ? "bg-accent/50" : ""
+                      }`}
+                    >
+                      <span
+                        className={`block truncate text-[14px] leading-tight ${
+                          isActive(item.href)
+                            ? "text-primary font-medium"
+                            : "text-foreground/85"
+                        }`}
+                      >
+                        {item.label}
+                      </span>
+                      {item.desc && (
+                        <span className="block truncate text-[11px] text-muted-foreground mt-0.5">
+                          {item.desc}
+                        </span>
+                      )}
+                    </Link>
+                  )),
+
                   <Link
                     key="cennik"
                     to="/cennik"
                     title="Cennik"
-                    className={`flex items-center min-h-[44px] px-4 py-3 rounded-lg text-[15px] font-medium hover:bg-accent/50 truncate ${
+                    className={`flex items-center min-h-[44px] px-4 py-3 rounded-lg text-[15px] font-medium hover:bg-accent/50 mt-2 truncate ${
                       isActive("/cennik")
                         ? "text-primary bg-accent/50"
                         : "text-foreground"
