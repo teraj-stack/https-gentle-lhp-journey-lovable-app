@@ -1166,7 +1166,7 @@ const renderHtml = ({
           Zakres testu pauzy — pozwala uruchomić weryfikację tylko dla
           jednego formatu (gdy interesuje nas regresja punktowa) lub dla
           obu (default, parity check). Wartość zapisywana w localStorage
-          pod kluczem `cml-trends-pause-test-scope`, żeby preferencja
+          pod kluczem cml-trends-pause-test-scope, żeby preferencja
           przetrwała reload (parytetnie z resztą ustawień eksportu).
         -->
         <label class="trends-filter-toast-pause-test-scope" title="Zakres automatycznego testu pauzy hover/focus">
