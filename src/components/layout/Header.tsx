@@ -128,7 +128,8 @@ const Header = () => {
   const [navKey, setNavKey] = useState(0);
   const megaLockedUntil = useRef(0);
   const megaCloseTimer = useRef<number | null>(null);
-  const headerRef = useRef<HTMLElement>(null);
+  const headerRef = useRef<HTMLDivElement>(null);
+  const headerRootRef = useRef<HTMLElement>(null);
   // Focus management: refs to each dropdown trigger button + panel container.
   // When a dropdown opens we move focus into the panel; when it closes we
   // return focus to its trigger (only if the close was caused by user action,
@@ -268,7 +269,7 @@ const Header = () => {
       if (event.pointerType !== "touch" && event.pointerType !== "pen") return;
       const target = event.target as Node | null;
       if (!target) return;
-      if (headerRef.current && headerRef.current.contains(target)) return;
+      if (headerRootRef.current && headerRootRef.current.contains(target)) return;
       clearMegaCloseTimer();
       // Tap outside is a deliberate dismiss — focus should not jump back into
       // the header.
@@ -552,20 +553,25 @@ const Header = () => {
 
   return (
     <header
-      ref={headerRef}
+      ref={headerRootRef}
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         scrolled
           ? "bg-background/95 backdrop-blur-md shadow-sm border-b border-border"
           : "bg-transparent"
       }`}
     >
-      {/* TOP CONTACT BAR (tablet+ , hidden after scroll for compactness) */}
-      <div
-        className={`hidden md:block border-b border-border/40 bg-card/60 backdrop-blur-sm transition-all duration-300 overflow-hidden ${
-          scrolled ? "max-h-0 opacity-0 border-b-0" : "max-h-12 opacity-100"
-        }`}
-        aria-hidden={scrolled}
-      >
+      {/* MAIN NAV BAR wrapper — single source of truth for --header-height (stable height). */}
+      <div ref={headerRef} className="relative max-w-7xl mx-auto px-4 md:px-8">
+        {/* TOP CONTACT BAR — absolutely positioned BELOW the main bar so collapsing it
+            does not change the measured <header> height (no content jumps on scroll). */}
+        <div
+          className={`hidden md:block absolute top-full left-0 right-0 border-b border-border/40 bg-card/80 backdrop-blur-sm transition-all duration-300 overflow-hidden ${
+            scrolled
+              ? "max-h-0 opacity-0 border-b-0 pointer-events-none"
+              : "max-h-12 opacity-100"
+          }`}
+          aria-hidden={scrolled}
+        >
         <div className="max-w-7xl mx-auto px-4 md:px-8">
           <div className="flex items-center justify-between gap-3 h-9 text-xs text-foreground/70">
             <div className="flex items-center gap-3 lg:gap-5 min-w-0">
@@ -711,8 +717,7 @@ const Header = () => {
           </div>
         </div>
       </div>
-
-      {/* MOBILE MENU */}
+      </div>
       <AnimatePresence>
         {mobileOpen && (
           <>
