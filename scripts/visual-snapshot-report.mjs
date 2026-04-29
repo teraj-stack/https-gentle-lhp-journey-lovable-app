@@ -2053,6 +2053,24 @@ const renderHtml = ({
       outline: 2px solid rgba(201,168,76,.85);
       outline-offset: 2px;
     }
+    /* Selector zakresu testu pauzy — kompaktowy, zgrupowany z labelką. */
+    .trends-filter-toast-pause-test-scope {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: .68rem;
+      align-self: center;
+      opacity: .85;
+    }
+    .trends-filter-toast-pause-test-scope-label { opacity: .7; }
+    .trends-filter-toast-pause-test-scope-select {
+      font-size: .68rem;
+      padding: 2px 4px;
+      background: rgba(127,127,127,.10);
+      color: inherit;
+      border: 1px solid rgba(127,127,127,.35);
+      border-radius: 4px;
+    }
     /* Badge wyniku testu pauzy — zielony ✓ albo czerwony ✗ z liczbą OK/total. */
     .trends-filter-toast-pause-test-result {
       font-size: .68rem;
