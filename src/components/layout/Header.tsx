@@ -738,6 +738,27 @@ const Header = () => {
             >
               <div className="px-4 py-4 space-y-1">
                 {[
+                  <div
+                    key="mobile-contact-bar"
+                    className="grid grid-cols-2 gap-2 mb-3"
+                  >
+                    <a
+                      href="tel:+48665666728"
+                      className="flex items-center justify-center gap-2 px-3 py-3 rounded-lg bg-primary/10 border border-primary/20 text-sm font-medium text-primary hover:bg-primary/15 transition-colors"
+                      aria-label="Zadzwoń: +48 665 666 728"
+                    >
+                      <Phone className="w-4 h-4 shrink-0" aria-hidden="true" />
+                      <span>Zadzwoń</span>
+                    </a>
+                    <a
+                      href="mailto:fimedica@fimedica.pl"
+                      className="flex items-center justify-center gap-2 px-3 py-3 rounded-lg bg-accent/40 border border-border text-sm font-medium text-foreground hover:bg-accent/60 transition-colors"
+                      aria-label="Wyślij e-mail: fimedica@fimedica.pl"
+                    >
+                      <Mail className="w-4 h-4 shrink-0" aria-hidden="true" />
+                      <span>Napisz</span>
+                    </a>
+                  </div>,
                   <Link
                     key="o-nas"
                     to="/o-nas"
