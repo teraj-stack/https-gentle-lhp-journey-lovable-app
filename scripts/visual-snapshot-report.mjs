@@ -4255,6 +4255,33 @@ const renderHtml = ({
     // eksportu (auto-hide per format, zip threshold, itd.). Klucz dedykowany.
     var PAUSE_TEST_SCOPE_KEY = "cml-trends-pause-test-scope";
     var PAUSE_TEST_SCOPE_VALUES = ["both", "zip", "zip-split"];
+    // Per-scope preferencja stanu rozwinięcia panelu logu. Mapa scope→bool
+    // serializowana jako JSON pod jednym kluczem (mniej śmiecia w localStorage
+    // i atomowy zapis). Brak wpisu dla danego scope = „nie ma preferencji" →
+    // wracamy do domyślnej heurystyki (auto-open przy fail/parity issue).
+    var PAUSE_TEST_LOG_OPEN_KEY = "cml-trends-pause-test-log-open";
+    function readPauseTestLogOpenMap() {
+      try {
+        var raw = localStorage.getItem(PAUSE_TEST_LOG_OPEN_KEY);
+        if (!raw) return {};
+        var parsed = JSON.parse(raw);
+        return (parsed && typeof parsed === "object") ? parsed : {};
+      } catch (_e) { return {}; }
+    }
+    function getPauseTestLogOpen(scope) {
+      var map = readPauseTestLogOpenMap();
+      // Zwracamy tri-state: true/false/null. null → brak preferencji.
+      if (Object.prototype.hasOwnProperty.call(map, scope)) return !!map[scope];
+      return null;
+    }
+    function setPauseTestLogOpen(scope, open) {
+      if (PAUSE_TEST_SCOPE_VALUES.indexOf(scope) === -1) return;
+      try {
+        var map = readPauseTestLogOpenMap();
+        map[scope] = !!open;
+        localStorage.setItem(PAUSE_TEST_LOG_OPEN_KEY, JSON.stringify(map));
+      } catch (_e) {}
+    }
     function getPauseTestScope() {
       try {
         var v = localStorage.getItem(PAUSE_TEST_SCOPE_KEY);
@@ -4268,6 +4295,13 @@ const renderHtml = ({
         var v = toastPauseTestScopeSelect.value;
         if (PAUSE_TEST_SCOPE_VALUES.indexOf(v) === -1) v = "both";
         try { localStorage.setItem(PAUSE_TEST_SCOPE_KEY, v); } catch (_e) {}
+        // Przy zmianie scope — od razu odświeżamy stan rozwinięcia panelu,
+        // żeby trafiał z preferencją dla nowego scope (jeśli panel jest na
+        // ekranie). Brak preferencji → zostawiamy bieżący stan, nie szarpiemy.
+        if (toastPauseTestLog && !toastPauseTestLog.hidden) {
+          var pref = getPauseTestLogOpen(v);
+          if (pref !== null) toastPauseTestLog.open = pref;
+        }
       });
     }
     var toastPauseTestLog = root.querySelector("[data-trend-toast-pause-test-log]");
