@@ -4547,7 +4547,7 @@ const renderHtml = ({
       //   2) Inaczej (brak preferencji) → fallback do heurystyki: auto-open
       //      przy faili lub parity issue, zamknięty przy pass.
       // ignorePauseTestLogToggleOnce blokuje ten programowy zapis przed
-      // nadpisaniem prefa przez listener `toggle` (set-from-render ≠ user).
+      // nadpisaniem prefa przez listener 'toggle' (set-from-render ≠ user).
       var savedOpen = getPauseTestLogOpen(summary.scope);
       var nextOpen;
       if (savedOpen !== null) {
