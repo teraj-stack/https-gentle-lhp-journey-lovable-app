@@ -4645,7 +4645,7 @@ const renderHtml = ({
     }
     // ---- „⬇ Download test report" — eksport summary + per-step logu ----
     // Bierze ostatni snapshot (lastPauseTestState) i serializuje:
-    //   • JSON: pełny dump (summary + reports z `got` jako obiekt) — najlepszy
+    //   • JSON: pełny dump (summary + reports z polem "got" jako obiekt) — najlepszy
     //     do dalszej analizy / dołączenia do bug-reportu (zachowuje strukturę).
     //   • CSV: spłaszczony per-step (timestamp, scope, format, step, expected,
     //     state/progress/countdown, ok, skipped, retry) — dobrze otwiera się
