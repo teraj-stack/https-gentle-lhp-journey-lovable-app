@@ -397,7 +397,7 @@ const Header = () => {
           aria-haspopup="menu"
           aria-controls={panelId}
           aria-label={`Menu sekcji ${label}`}
-          className={`flex items-center gap-1 px-4 py-2 text-sm font-medium transition-colors rounded-lg hover:bg-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
+          className={`flex items-center gap-0.5 xl:gap-1 px-2.5 xl:px-4 py-2 text-[13px] xl:text-sm font-medium transition-colors rounded-lg hover:bg-accent/50 whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
             isSectionActive(items)
               ? "text-primary bg-accent/50"
               : "text-foreground/80 hover:text-primary"
@@ -488,7 +488,7 @@ const Header = () => {
           aria-haspopup="menu"
           aria-controls={panelId}
           aria-label={`Menu sekcji ${label}`}
-          className={`flex items-center gap-1 px-4 py-2 text-sm font-medium transition-colors rounded-lg hover:bg-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
+          className={`flex items-center gap-0.5 xl:gap-1 px-2.5 xl:px-4 py-2 text-[13px] xl:text-sm font-medium transition-colors rounded-lg hover:bg-accent/50 whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
             isSectionActive(allItems)
               ? "text-primary bg-accent/50"
               : "text-foreground/80 hover:text-primary"
@@ -611,8 +611,8 @@ const Header = () => {
         </div>
 
         <div className="max-w-7xl mx-auto px-4 md:px-8">
-        <div className="flex items-center justify-between gap-2 h-16 md:h-20">
-          <Link to="/" className="flex items-center gap-3 shrink-0">
+        <div className="flex items-center justify-between gap-2 lg:gap-3 xl:gap-4 h-16 md:h-20">
+          <Link to="/" className="flex items-center gap-3 shrink-0 min-w-0">
             <img
               src={logoCml}
               alt="CML – Centrum Medycyny Laserowej"
@@ -620,7 +620,8 @@ const Header = () => {
             />
           </Link>
 
-          <nav className="hidden lg:flex items-center gap-0.5 xl:gap-1 min-w-0">
+          {/* Desktop nav — flex-1 + min-w-0 pozwala na shrinking; gap skaluje od 0 do 0.5/1 */}
+          <nav className="hidden lg:flex flex-1 items-center justify-center gap-0 xl:gap-0.5 2xl:gap-1 min-w-0">
             <Link
               to="/o-nas"
               className={`px-2.5 xl:px-4 py-2 text-[13px] xl:text-sm font-medium transition-colors rounded-lg hover:bg-accent/50 whitespace-nowrap ${
@@ -670,11 +671,11 @@ const Header = () => {
             </Link>
           </nav>
 
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0 min-w-0">
             <Button
               variant="hero"
               size="sm"
-              className="hidden sm:inline-flex xl:h-10 xl:px-6 xl:text-sm whitespace-nowrap"
+              className="hidden sm:inline-flex lg:h-9 lg:px-3 lg:text-[13px] xl:h-10 xl:px-6 xl:text-sm whitespace-nowrap"
               asChild
             >
               <a
@@ -682,6 +683,7 @@ const Header = () => {
                 target="_blank"
                 rel="noopener noreferrer"
               >
+                {/* Krótka etykieta poniżej xl, pełna od xl w górę */}
                 <span className="xl:hidden">Konsultacja</span>
                 <span className="hidden xl:inline">Umów Konsultację</span>
               </a>
