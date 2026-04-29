@@ -181,6 +181,7 @@ const App = () => (
             <Route path="/dev/tooltip-preview" element={<DevTooltipPreview />} />
             <Route path="/dev/i18n-contract" element={<DevI18nContract />} />
             <Route path="/dev/vein-images-preview" element={<DevVeinImagesPreview />} />
+            <Route path="/dev/header-preview" element={<DevHeaderPreview />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
