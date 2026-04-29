@@ -269,7 +269,7 @@ const Header = () => {
       if (event.pointerType !== "touch" && event.pointerType !== "pen") return;
       const target = event.target as Node | null;
       if (!target) return;
-      if (headerRef.current && headerRef.current.contains(target)) return;
+      if (headerRootRef.current && headerRootRef.current.contains(target)) return;
       clearMegaCloseTimer();
       // Tap outside is a deliberate dismiss — focus should not jump back into
       // the header.
