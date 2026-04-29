@@ -781,13 +781,27 @@ const Header = () => {
                     <Link
                       key={`problem-${item.href}`}
                       to={item.href}
-                      className={`block px-6 py-2.5 rounded-lg text-sm hover:bg-accent/50 ${
+                      title={item.label}
+                      className={`flex flex-col justify-center min-h-[44px] px-5 py-2 rounded-lg hover:bg-accent/50 ${
                         isActive(item.href)
-                          ? "text-primary bg-accent/50 font-medium"
-                          : "text-foreground/80"
+                          ? "bg-accent/50"
+                          : ""
                       }`}
                     >
-                      {item.label}
+                      <span
+                        className={`block truncate text-[14px] leading-tight ${
+                          isActive(item.href)
+                            ? "text-primary font-medium"
+                            : "text-foreground/85"
+                        }`}
+                      >
+                        {item.label}
+                      </span>
+                      {item.desc && (
+                        <span className="block truncate text-[11px] text-muted-foreground mt-0.5">
+                          {item.desc}
+                        </span>
+                      )}
                     </Link>
                   )),
 
