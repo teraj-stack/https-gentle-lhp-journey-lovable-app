@@ -4426,10 +4426,14 @@ const renderHtml = ({
     if (toastPauseTestBtn) {
       toastPauseTestBtn.addEventListener("click", function () {
         toastPauseTestBtn.disabled = true;
+        // Czyść poprzedni log od razu — żeby user nie widział staldych wyników
+        // podczas trwania nowego biegu.
+        clearPauseTestLog();
         runPauseTestForBothFormats().then(function (reports) {
           toastPauseTestBtn.disabled = false;
           if (!reports) {
             setPauseTestResult("is-fail", "✗ brak toastu", "Toast DOM nieobecny — test niemożliwy.");
+            renderPauseTestLog([], { scope: "?", okSteps: 0, totalSteps: 0, parityIssues: [], skipped: ["toast DOM nieobecny"] });
             return;
           }
           var totalSteps = 0, okSteps = 0, skipped = [], parityIssues = [];
@@ -4455,7 +4459,8 @@ const renderHtml = ({
               }
             });
           }
-          // Pełny report do konsoli — user może go zwinąć/skopiować.
+          // Pełny report do konsoli — fallback dla power-userów (raw object dump).
+          // Główny UX to teraz inline panel renderPauseTestLog poniżej.
           // eslint-disable-next-line no-console
           console.groupCollapsed("[toast-pause-test] scope=" + scope + " · " + okSteps + "/" + totalSteps + " OK"
             + (parityIssues.length ? " · parity issues: " + parityIssues.join(", ") : "")
@@ -4480,13 +4485,31 @@ const renderHtml = ({
           } else {
             setPauseTestResult("is-fail", "✗ " + okSteps + "/" + totalSteps,
               (parityIssues.length ? "Parity issues: " + parityIssues.join("; ") + ". " : "")
-              + "Szczegóły w konsoli (groupa „toast-pause-test").");
+              + "Rozwiń panel poniżej (lub konsola: grupa „toast-pause-test").");
           }
+          // Render inline log panel z per-step rozbiciem.
+          renderPauseTestLog(reports, {
+            scope: scope,
+            okSteps: okSteps,
+            totalSteps: totalSteps,
+            parityIssues: parityIssues,
+            skipped: skipped,
+          });
         }).catch(function (e) {
           toastPauseTestBtn.disabled = false;
           // eslint-disable-next-line no-console
           console.error("[toast-pause-test] error:", e);
           setPauseTestResult("is-fail", "✗ error", String((e && e.message) || e));
+          // Pokaż błąd również inline — user nie musi otwierać DevTools.
+          if (toastPauseTestLog && toastPauseTestLogBody) {
+            while (toastPauseTestLogBody.firstChild) toastPauseTestLogBody.removeChild(toastPauseTestLogBody.firstChild);
+            var errEl = document.createElement("div");
+            errEl.className = "trends-filter-toast-pause-test-log-empty";
+            errEl.textContent = "Błąd testu: " + String((e && e.message) || e);
+            toastPauseTestLogBody.appendChild(errEl);
+            toastPauseTestLog.hidden = false;
+            toastPauseTestLog.open = true;
+          }
         });
       });
     }
