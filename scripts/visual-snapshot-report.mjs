@@ -4466,7 +4466,7 @@ const renderHtml = ({
               return v ? "paused" : "running";
             }
             // Z ISO timestampa pokazujemy tylko HH:MM:SS.mmm — pełny ISO
-            // wisi w `title` (tooltip) dla dokładnej diagnostyki/eksportu.
+            // wisi w 'title' (tooltip) dla dokładnej diagnostyki/eksportu.
             function fmtClock(iso) {
               if (!iso) return "—";
               var m = /T(\d{2}:\d{2}:\d{2}\.\d{3})/.exec(iso);
