@@ -6,6 +6,7 @@ import SeoHead from "@/components/shared/SeoHead";
 import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 import VenousInsufficiencyImage from "@/components/shared/VenousInsufficiencyImage";
 import VeinImageDevOverlay from "@/components/dev/VeinImageDevOverlay";
+import ProcedureSearch, { type ProcedureItem } from "@/components/shared/ProcedureSearch";
 import { ArrowRight, Zap, Droplets, Scissors, Sparkles, Sun } from "lucide-react";
 
 const sectionAnim = {
@@ -15,19 +16,23 @@ const sectionAnim = {
   transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1] as const },
 };
 
-const procedures = [
+const procedures: ProcedureItem[] = [
   {
     title: "Żylaki – EVLT",
     description: "Endowenozna ablacja laserowa żylaków. Zamknięcie niewydolnej żyły od wewnątrz — bez strippingu, bez blizn.",
     href: "/leczenie/evlt",
     icon: Zap,
     tag: "Złoty standard",
+    categories: ["Żylaki", "Laser", "Bez blizn"],
+    keywords: ["niewydolność żylna", "ablacja", "endowaskularnie", "stripping", "VSM", "VSP"],
   },
   {
     title: "Skleroterapia żylaków",
     description: "Zamknięcie żylaków i pajączków żylnych za pomocą precyzyjnych iniekcji środka sklerotyzującego.",
     href: "/leczenie/skleroterapia",
     icon: Droplets,
+    categories: ["Żylaki", "Pajączki", "Iniekcje", "Bez blizn"],
+    keywords: ["pianka", "polidokanol", "ECHO-skleroterapia", "siateczki"],
   },
   {
     title: "Pajączki – CLaCS",
@@ -35,18 +40,24 @@ const procedures = [
     href: "/leczenie/clacs",
     icon: Sparkles,
     tag: "Metoda hybrydowa",
+    categories: ["Pajączki", "Laser", "Hybrydowo", "Estetyka"],
+    keywords: ["telangiektazje", "krioskleroterapia", "Vasculyse", "naczynka", "siateczki"],
   },
   {
     title: "Mikroflebektomia piankowa",
     description: "Ambulatoryjne usunięcie żylaków powierzchownych przez mikroskopijne nakłucia. Bez szwów, natychmiastowy efekt.",
     href: "/leczenie/mikroflebektomia",
     icon: Scissors,
+    categories: ["Żylaki", "Ambulatoryjnie", "Bez szwów"],
+    keywords: ["Mullera", "haczyk", "perforator", "bocznice"],
   },
   {
     title: "Fototerapia LED (PBM)",
     description: "Fotobiomodulacja przyspieszająca gojenie i regenerację tkanek po zabiegach flebologicznych.",
     href: "/leczenie/fototerapia",
     icon: Sun,
+    categories: ["Regeneracja", "Wsparcie pozabiegowe"],
+    keywords: ["LED", "PBM", "photobiomodulation", "gojenie", "siniaki"],
   },
 ];
 
