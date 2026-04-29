@@ -4544,18 +4544,39 @@ const renderHtml = ({
         ? stepFilter.slice()
         : allSteps.map(function (s) { return s.label; });
       var results = [];
+      // Wysokorozdzielczy zegar — `performance.now()` ma ~µs precyzję i jest
+      // monotoniczny (nie skacze przy zmianie zegara systemowego), więc lepiej
+      // mierzy elapsed niż `Date.now()`. ISO timestamp trzymamy obok dla logu.
+      var nowHi = function () {
+        return (typeof performance !== "undefined" && performance.now)
+          ? performance.now() : Date.now();
+      };
       return stepsToRun.reduce(function (chain, step) {
         return chain.then(function () {
+          var dispatchedAtHi = nowHi();
+          var dispatchedAtIso = new Date().toISOString();
           step.do();
           // Mikrokrótki yield, żeby ewentualne queued microtaski (np. update
           // klasy w handlerze) zdążyły się wykonać przed odczytem.
           return new Promise(function (r) { setTimeout(r, 30); }).then(function () {
+            var observedAtHi = nowHi();
             var s = pausedSignals();
             var ok = s.state === step.expectPaused
               && (s.progress === null || s.progress === step.expectPaused)
               && (s.countdown === null || s.countdown === step.expectPaused);
             if (stepsToReport.indexOf(step.label) !== -1) {
-              results.push({ step: step.label, expected: step.expectPaused, got: s, ok: ok });
+              results.push({
+                step: step.label,
+                expected: step.expectPaused,
+                got: s,
+                ok: ok,
+                // dispatchedAt = moment wysłania eventu (expected change),
+                // observedAt = moment odczytu sygnałów (observed state).
+                // elapsedMs = czas między nimi. Powyżej ~30 ms (nasz yield)
+                // sugeruje wolny handler / długi reflow, poniżej = sync update.
+                dispatchedAt: dispatchedAtIso,
+                elapsedMs: Math.round((observedAtHi - dispatchedAtHi) * 100) / 100,
+              });
             }
           });
         });
