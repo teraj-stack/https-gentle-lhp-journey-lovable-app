@@ -5076,6 +5076,8 @@ const renderHtml = ({
             errEl.textContent = "Błąd testu: " + String((e && e.message) || e);
             toastPauseTestLogBody.appendChild(errEl);
             toastPauseTestLog.hidden = false;
+            // Force-open przy błędzie — programowy zapis, nie nadpisuj prefa.
+            if (!toastPauseTestLog.open) ignorePauseTestLogToggleOnce = true;
             toastPauseTestLog.open = true;
           }
         });
