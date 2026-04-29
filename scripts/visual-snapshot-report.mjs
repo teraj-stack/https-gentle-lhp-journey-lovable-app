@@ -4241,7 +4241,9 @@ const renderHtml = ({
             return;
           }
           var totalSteps = 0, okSteps = 0, skipped = [], parityIssues = [];
-          // Parytet: dla każdego kroku porównujemy ok-flag między zip a zip-split.
+          var scope = (reports && reports.scope) || "both";
+          // Parytet liczymy TYLKO gdy testowano oba formaty — przy single-format
+          // scope nie ma czego porównywać (nie traktujemy braku jako issue).
           var byStep = {};
           reports.forEach(function (rep) {
             if (rep.skipped) { skipped.push(rep.format + " (" + rep.reason + ")"); return; }
@@ -4252,16 +4254,18 @@ const renderHtml = ({
               byStep[r.step][rep.format] = r.ok;
             });
           });
-          Object.keys(byStep).forEach(function (stepName) {
-            var z = byStep[stepName].zip;
-            var s = byStep[stepName]["zip-split"];
-            if (z !== undefined && s !== undefined && z !== s) {
-              parityIssues.push(stepName + " (zip=" + (z ? "OK" : "FAIL") + ", zip-split=" + (s ? "OK" : "FAIL") + ")");
-            }
-          });
+          if (scope === "both") {
+            Object.keys(byStep).forEach(function (stepName) {
+              var z = byStep[stepName].zip;
+              var s = byStep[stepName]["zip-split"];
+              if (z !== undefined && s !== undefined && z !== s) {
+                parityIssues.push(stepName + " (zip=" + (z ? "OK" : "FAIL") + ", zip-split=" + (s ? "OK" : "FAIL") + ")");
+              }
+            });
+          }
           // Pełny report do konsoli — user może go zwinąć/skopiować.
           // eslint-disable-next-line no-console
-          console.groupCollapsed("[toast-pause-test] " + okSteps + "/" + totalSteps + " OK"
+          console.groupCollapsed("[toast-pause-test] scope=" + scope + " · " + okSteps + "/" + totalSteps + " OK"
             + (parityIssues.length ? " · parity issues: " + parityIssues.join(", ") : "")
             + (skipped.length ? " · skipped: " + skipped.join(", ") : ""));
           // eslint-disable-next-line no-console
@@ -4271,12 +4275,16 @@ const renderHtml = ({
           // eslint-disable-next-line no-console
           console.groupEnd();
           var allOk = okSteps === totalSteps && parityIssues.length === 0;
+          var formatsLabel = scope === "both" ? "zip i zip-split" : scope;
+          var formatsCount = scope === "both" ? 2 : 1;
           if (totalSteps === 0) {
             setPauseTestResult("is-fail", "⚠ brak kroków",
-              "Oba formaty mają auto-hide=0 (Bez auto-hide). Ustaw 8/12/20 s i spróbuj ponownie.");
+              (scope === "both" ? "Oba formaty mają" : "Format " + scope + " ma")
+              + " auto-hide=0 (Bez auto-hide). Ustaw 8/12/20 s i spróbuj ponownie.");
           } else if (allOk) {
             setPauseTestResult("is-pass", "✓ " + okSteps + "/" + totalSteps,
-              "Hover/focus pauzuje countdown identycznie dla zip i zip-split (4 kroki × 2 formaty).");
+              "Hover/focus pauzuje countdown identycznie dla " + formatsLabel
+              + " (4 kroki × " + formatsCount + " " + (formatsCount === 1 ? "format" : "formaty") + ").");
           } else {
             setPauseTestResult("is-fail", "✗ " + okSteps + "/" + totalSteps,
               (parityIssues.length ? "Parity issues: " + parityIssues.join("; ") + ". " : "")
