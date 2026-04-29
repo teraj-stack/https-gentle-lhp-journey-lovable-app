@@ -2169,6 +2169,11 @@ const renderHtml = ({
       font-weight: 500;
       opacity: .65;
     }
+    .trends-filter-toast-pause-test-log-table td.is-num {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      font-feature-settings: "tnum" 1;
+    }
     .trends-filter-toast-pause-test-log-row.is-ok td:first-child::before {
       content: "✓ ";
       color: rgba(120,200,140,1);
@@ -4438,7 +4443,7 @@ const renderHtml = ({
           table.className = "trends-filter-toast-pause-test-log-table";
           var thead = document.createElement("thead");
           var thr = document.createElement("tr");
-          ["Krok", "Expected", "state", "progress", "countdown"].forEach(function (h) {
+          ["Krok", "Expected", "state", "progress", "countdown", "Dispatched", "Δ ms"].forEach(function (h) {
             var th = document.createElement("th");
             th.textContent = h;
             thr.appendChild(th);
@@ -4449,20 +4454,37 @@ const renderHtml = ({
           rep.results.forEach(function (r) {
             var tr = document.createElement("tr");
             tr.className = "trends-filter-toast-pause-test-log-row " + (r.ok ? "is-ok" : "is-fail");
-            function cell(text) {
+            function cell(text, opts) {
               var td = document.createElement("td");
               td.textContent = text;
+              if (opts && opts.title) td.title = opts.title;
+              if (opts && opts.cls) td.className = opts.cls;
               tr.appendChild(td);
             }
             function fmtBool(v) {
               if (v === null || v === undefined) return "—";
               return v ? "paused" : "running";
             }
+            // Z ISO timestampa pokazujemy tylko HH:MM:SS.mmm — pełny ISO
+            // wisi w 'title' (tooltip) dla dokładnej diagnostyki/eksportu.
+            function fmtClock(iso) {
+              if (!iso) return "—";
+              var m = /T(\d{2}:\d{2}:\d{2}\.\d{3})/.exec(iso);
+              return m ? m[1] : iso;
+            }
             cell(r.step);
             cell(r.expected ? "paused" : "running");
             cell(fmtBool(r.got && r.got.state));
             cell(fmtBool(r.got && r.got.progress));
             cell(fmtBool(r.got && r.got.countdown));
+            cell(fmtClock(r.dispatchedAt), { title: r.dispatchedAt || "" });
+            // Δ ms = elapsed między dispatch eventu a odczytem sygnałów.
+            // Tabular-nums + monospace dzięki klasie .is-num (CSS niżej).
+            var elapsed = (r.elapsedMs === null || r.elapsedMs === undefined) ? "—" : r.elapsedMs.toFixed(1);
+            cell(elapsed, {
+              cls: "is-num",
+              title: "Czas między wysłaniem eventu „" + r.step + "" a odczytem sygnałów (state/progress/countdown). Powyżej ~30 ms wskazuje wolny handler lub długi reflow.",
+            });
             tbody.appendChild(tr);
           });
           table.appendChild(tbody);
@@ -4544,18 +4566,39 @@ const renderHtml = ({
         ? stepFilter.slice()
         : allSteps.map(function (s) { return s.label; });
       var results = [];
+      // Wysokorozdzielczy zegar — 'performance.now()' ma ~µs precyzję i jest
+      // monotoniczny (nie skacze przy zmianie zegara systemowego), więc lepiej
+      // mierzy elapsed niż 'Date.now()'. ISO timestamp trzymamy obok dla logu.
+      var nowHi = function () {
+        return (typeof performance !== "undefined" && performance.now)
+          ? performance.now() : Date.now();
+      };
       return stepsToRun.reduce(function (chain, step) {
         return chain.then(function () {
+          var dispatchedAtHi = nowHi();
+          var dispatchedAtIso = new Date().toISOString();
           step.do();
           // Mikrokrótki yield, żeby ewentualne queued microtaski (np. update
           // klasy w handlerze) zdążyły się wykonać przed odczytem.
           return new Promise(function (r) { setTimeout(r, 30); }).then(function () {
+            var observedAtHi = nowHi();
             var s = pausedSignals();
             var ok = s.state === step.expectPaused
               && (s.progress === null || s.progress === step.expectPaused)
               && (s.countdown === null || s.countdown === step.expectPaused);
             if (stepsToReport.indexOf(step.label) !== -1) {
-              results.push({ step: step.label, expected: step.expectPaused, got: s, ok: ok });
+              results.push({
+                step: step.label,
+                expected: step.expectPaused,
+                got: s,
+                ok: ok,
+                // dispatchedAt = moment wysłania eventu (expected change),
+                // observedAt = moment odczytu sygnałów (observed state).
+                // elapsedMs = czas między nimi. Powyżej ~30 ms (nasz yield)
+                // sugeruje wolny handler / długi reflow, poniżej = sync update.
+                dispatchedAt: dispatchedAtIso,
+                elapsedMs: Math.round((observedAtHi - dispatchedAtHi) * 100) / 100,
+              });
             }
           });
         });
@@ -4809,6 +4852,8 @@ const renderHtml = ({
                 countdown: r.got ? r.got.countdown : null,
               },
               ok: !!r.ok,
+              dispatchedAt: r.dispatchedAt || null,
+              elapsedMs: (r.elapsedMs === null || r.elapsedMs === undefined) ? null : r.elapsedMs,
             };
           }),
         };
@@ -4837,6 +4882,7 @@ const renderHtml = ({
       var rows = [[
         "timestamp", "scope", "isRetry", "format", "skipped", "skipReason",
         "step", "expected", "got_state", "got_progress", "got_countdown", "ok",
+        "dispatchedAt", "elapsedMs",
       ]];
       var ts = st.timestamp;
       var scope = st.scope;
@@ -4847,7 +4893,7 @@ const renderHtml = ({
       }
       (st.reports || []).forEach(function (rep) {
         if (rep.skipped) {
-          rows.push([ts, scope, isRetry, rep.format, true, rep.reason || "", "", "", "", "", "", ""]);
+          rows.push([ts, scope, isRetry, rep.format, true, rep.reason || "", "", "", "", "", "", "", "", ""]);
           return;
         }
         (rep.results || []).forEach(function (r) {
@@ -4859,6 +4905,8 @@ const renderHtml = ({
             fmtBool(r.got && r.got.progress),
             fmtBool(r.got && r.got.countdown),
             r.ok ? "OK" : "FAIL",
+            r.dispatchedAt || "",
+            (r.elapsedMs === null || r.elapsedMs === undefined) ? "" : r.elapsedMs,
           ]);
         });
       });
