@@ -715,8 +715,7 @@ const Header = () => {
           </div>
         </div>
       </div>
-
-      {/* MOBILE MENU */}
+      </div>
       <AnimatePresence>
         {mobileOpen && (
           <>
