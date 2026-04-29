@@ -567,33 +567,43 @@ const Header = () => {
         <div className="hidden md:block border-b border-border/40 bg-card/80 backdrop-blur-sm">
           <div className="max-w-7xl mx-auto px-4 md:px-8">
             <div className="flex items-center justify-between gap-3 h-9 text-xs text-foreground/70">
-              <div className="flex items-center gap-3 lg:gap-5 min-w-0">
+              {/* LEFT: Priority order — Phone (always md+) → Email (lg+) → Locations text (xl+) */}
+              <div className="flex items-center gap-3 lg:gap-5 min-w-0 flex-1">
+                {/* P1: Telefon — najwyższy priorytet, zawsze widoczny od md */}
                 <a
                   href="tel:+48665666728"
-                  className="flex items-center gap-1.5 hover:text-primary transition-colors whitespace-nowrap"
+                  className="flex items-center gap-1.5 hover:text-primary transition-colors whitespace-nowrap shrink-0"
+                  aria-label="Zadzwoń: +48 665 666 728"
                 >
                   <Phone className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
                   <span>+48 665 666 728</span>
                 </a>
+                {/* P2: E-mail — od lg w górę */}
                 <a
                   href="mailto:fimedica@fimedica.pl"
                   className="hidden lg:flex items-center gap-1.5 hover:text-primary transition-colors min-w-0"
+                  aria-label="Napisz: fimedica@fimedica.pl"
                 >
                   <Mail className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
                   <span className="truncate">fimedica@fimedica.pl</span>
                 </a>
-                <span className="hidden xl:flex items-center gap-1.5 text-foreground/60 whitespace-nowrap">
+                {/* P3: Lokalizacje (tekst miast) — od xl w górę */}
+                <span className="hidden xl:flex items-center gap-1.5 text-foreground/60 whitespace-nowrap min-w-0">
                   <MapPin className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
-                  <span>Warszawa · Siedlce · Rzeszów</span>
+                  <span className="truncate">Warszawa · Siedlce · Rzeszów</span>
                 </span>
               </div>
+              {/* RIGHT: Hours (2xl only) + Locations link (always md+) */}
               <div className="flex items-center gap-3 lg:gap-4 shrink-0">
-                <span className="hidden xl:inline text-foreground/60 whitespace-nowrap">Pon–Pt: 8:00–20:00</span>
+                <span className="hidden 2xl:inline text-foreground/60 whitespace-nowrap">Pon–Pt: 8:00–20:00</span>
                 <Link
                   to="/kontakt"
-                  className="hover:text-primary transition-colors font-medium whitespace-nowrap"
+                  className="flex items-center gap-1.5 hover:text-primary transition-colors font-medium whitespace-nowrap"
+                  aria-label="Zobacz lokalizacje klinik"
                 >
-                  Lokalizacje
+                  {/* Ikona MapPin pojawia się od md jako wizualny skrót, gdy tekst miast jest schowany */}
+                  <MapPin className="w-3.5 h-3.5 shrink-0 xl:hidden" aria-hidden="true" />
+                  <span>Lokalizacje</span>
                 </Link>
               </div>
             </div>
