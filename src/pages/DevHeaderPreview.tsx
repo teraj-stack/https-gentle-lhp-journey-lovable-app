@@ -31,7 +31,12 @@ type OverflowFinding = {
   scrollWidth: number;
   clientWidth: number;
   overflowPx: number;
-  reason: "text-clipped" | "horizontal-scroll";
+  reason:
+    | "text-clipped"
+    | "horizontal-scroll"
+    | "section-missing"
+    | "section-empty"
+    | "panel-not-open";
 };
 
 type ReportState = {
@@ -40,7 +45,28 @@ type ReportState = {
   documentScrollWidth?: number;
   viewportWidth?: number;
   error?: string;
+  /** Tryb skanu — desktop (header inline) lub mobile (po otwarciu burgera). */
+  mode?: "desktop" | "mobile";
+  /** Sekcje wymagane w mobilnym menu — true = znaleziono nagłówek + niepuste linki. */
+  mobileSections?: Record<string, boolean>;
 };
+
+/**
+ * Wymagane sekcje w mobilnym menu po kliknięciu burgera.
+ * Każda musi mieć widoczny nagłówek (po polsku, case-insensitive substring)
+ * ORAZ co najmniej 1 link <a>/<Link> w panelu.
+ *
+ * Synchronizacja = wszystkie 5 sekcji + Cennik + Kontakt obecne po jednym
+ * kliknięciu burgera (bez dodatkowych interakcji — mobile nav jest płaskim
+ * akordeonem, a nie zagnieżdżonymi dropdownami).
+ */
+const REQUIRED_MOBILE_SECTIONS = [
+  "Proktologia",
+  "Flebologia",
+  "Ginekomastia",
+  "Wiedza",
+  "Klinika",
+] as const;
 
 /** Działa wewnątrz dokumentu iframe — szuka elementów z ucinającym się tekstem. */
 function detectOverflowsInDoc(doc: Document, vw: number): OverflowFinding[] {
