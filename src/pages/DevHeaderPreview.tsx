@@ -241,47 +241,97 @@ function detectMobilePanelIssues(
   return { findings, sections };
 }
 
-function ViewportFrame({ vp }: { vp: Viewport }) {
+function ViewportFrame({
+  vp,
+  mode,
+}: {
+  vp: Viewport;
+  mode: "desktop" | "mobile";
+}) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [report, setReport] = useState<ReportState>({
     status: "idle",
     findings: [],
+    mode,
   });
 
-  const runScan = () => {
+  const runScan = async () => {
     const iframe = iframeRef.current;
     if (!iframe) return;
-    setReport({ status: "loading", findings: [] });
+    setReport({ status: "loading", findings: [], mode });
     try {
       const doc = iframe.contentDocument;
       if (!doc) {
         setReport({
           status: "error",
           findings: [],
+          mode,
           error: "Brak dostępu do contentDocument (cross-origin?)",
         });
         return;
       }
-      const findings = detectOverflowsInDoc(doc, vp.width);
+
+      if (mode === "desktop") {
+        const findings = detectOverflowsInDoc(doc, vp.width);
+        setReport({
+          status: findings.length === 0 ? "ok" : "warn",
+          findings,
+          documentScrollWidth: doc.documentElement.scrollWidth,
+          viewportWidth: vp.width,
+          mode,
+        });
+        return;
+      }
+
+      // mode === "mobile" — kliknij burgera, sprawdź rozwinięty panel
+      const panel = await openMobilePanel(doc);
+      if (!panel) {
+        setReport({
+          status: "warn",
+          findings: [
+            {
+              selector: 'button[aria-label="Menu"]',
+              text: "Panel mobilny nie otworzył się po kliknięciu burgera",
+              scrollWidth: 0,
+              clientWidth: 0,
+              overflowPx: 0,
+              reason: "panel-not-open",
+            },
+          ],
+          mode,
+          mobileSections: Object.fromEntries(
+            REQUIRED_MOBILE_SECTIONS.map((s) => [s, false])
+          ),
+        });
+        return;
+      }
+      const { findings, sections } = detectMobilePanelIssues(panel, vp.width);
       setReport({
         status: findings.length === 0 ? "ok" : "warn",
         findings,
         documentScrollWidth: doc.documentElement.scrollWidth,
         viewportWidth: vp.width,
+        mode,
+        mobileSections: sections,
       });
     } catch (e) {
       setReport({
         status: "error",
         findings: [],
+        mode,
         error: e instanceof Error ? e.message : String(e),
       });
     }
   };
 
-  // Auto-run skanowania ~800ms po załadowaniu iframe (czas na fonty/layout)
+  // Auto-run skanowania ~800ms po załadowaniu iframe (czas na fonty/layout).
+  // Mobile: dodatkowe ~700ms na animację rozwinięcia panelu obsługuje openMobilePanel.
   const handleLoad = () => {
-    window.setTimeout(runScan, 800);
+    window.setTimeout(runScan, mode === "mobile" ? 1000 : 800);
   };
+
+  // Mobile potrzebuje wyższego iframe — rozwinięty panel zajmuje ~600px.
+  const iframeHeight = mode === "mobile" ? 720 : 240;
 
   return (
     <div className="flex flex-col gap-3 rounded-xl border border-border bg-card/30 p-4">
@@ -289,6 +339,9 @@ function ViewportFrame({ vp }: { vp: Viewport }) {
         <div className="min-w-0">
           <div className="text-sm font-semibold text-foreground">
             {vp.label} — {vp.width}×{vp.height}
+            <span className="ml-2 text-[10px] uppercase tracking-wider text-primary">
+              {mode}
+            </span>
           </div>
           <div className="text-xs text-muted-foreground">{vp.device}</div>
         </div>
@@ -311,16 +364,38 @@ function ViewportFrame({ vp }: { vp: Viewport }) {
         <iframe
           ref={iframeRef}
           src="/"
-          title={`Header preview ${vp.label}`}
+          title={`Header preview ${vp.label} (${mode})`}
           onLoad={handleLoad}
           style={{
             width: vp.width,
-            height: 240, // Pokazujemy tylko górę strony — header
+            height: iframeHeight,
             border: "none",
             display: "block",
           }}
         />
       </div>
+
+      {/* Mobile sync status — pokazuje która z 5 wymaganych sekcji jest obecna */}
+      {mode === "mobile" && report.mobileSections && (
+        <div className="flex flex-wrap gap-1.5 text-[11px]">
+          {REQUIRED_MOBILE_SECTIONS.map((s) => {
+            const ok = report.mobileSections?.[s];
+            return (
+              <span
+                key={s}
+                className={`px-2 py-0.5 rounded border ${
+                  ok
+                    ? "bg-green-500/10 border-green-500/30 text-green-500"
+                    : "bg-destructive/10 border-destructive/30 text-destructive"
+                }`}
+                title={ok ? "Sekcja obecna w panelu" : "Brak sekcji w panelu"}
+              >
+                {ok ? "✓" : "✗"} {s}
+              </span>
+            );
+          })}
+        </div>
+      )}
 
       {report.status === "error" && (
         <div className="text-xs text-destructive">⚠ {report.error}</div>
@@ -342,11 +417,14 @@ function ViewportFrame({ vp }: { vp: Viewport }) {
                     {f.selector}
                   </code>
                   <span className="text-[10px] uppercase tracking-wider text-destructive shrink-0">
-                    +{f.overflowPx}px {f.reason}
+                    {f.overflowPx > 0 ? `+${f.overflowPx}px ` : ""}
+                    {f.reason}
                   </span>
                 </div>
                 <div className="mt-1 text-[11px] text-muted-foreground truncate">
-                  „{f.text}" — scroll {f.scrollWidth} / client {f.clientWidth}
+                  „{f.text}"
+                  {f.scrollWidth > 0 &&
+                    ` — scroll ${f.scrollWidth} / client ${f.clientWidth}`}
                 </div>
               </li>
             ))}
@@ -356,7 +434,9 @@ function ViewportFrame({ vp }: { vp: Viewport }) {
 
       {report.status === "ok" && (
         <div className="text-xs text-green-500">
-          ✓ Brak przepełnień w nagłówku
+          ✓ {mode === "mobile"
+            ? "Panel mobilny: wszystkie sekcje OK, brak przepełnień"
+            : "Brak przepełnień w nagłówku"}
         </div>
       )}
     </div>
