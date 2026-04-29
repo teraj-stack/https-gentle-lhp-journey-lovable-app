@@ -683,10 +683,9 @@ const Header = () => {
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                {/* Skracamy etykietę na lg, gdzie miejsce jest najciaśniejsze */}
-                <span className="lg:inline xl:hidden">Konsultacja</span>
+                {/* Krótka etykieta poniżej xl, pełna od xl w górę */}
+                <span className="xl:hidden">Konsultacja</span>
                 <span className="hidden xl:inline">Umów Konsultację</span>
-                <span className="sm:inline lg:hidden">Konsultacja</span>
               </a>
             </Button>
             <button
