@@ -495,11 +495,35 @@ export default function DevHeaderPreview() {
           </p>
         </header>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {VIEWPORTS.map((vp) => (
-            <ViewportFrame key={vp.width} vp={vp} />
-          ))}
-        </div>
+        <section className="space-y-3">
+          <h2 className="text-lg font-semibold text-foreground">
+            Desktop / Tablet — header inline
+          </h2>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {VIEWPORTS.map((vp) => (
+              <ViewportFrame key={`d-${vp.width}`} vp={vp} mode="desktop" />
+            ))}
+          </div>
+        </section>
+
+        <section className="space-y-3">
+          <h2 className="text-lg font-semibold text-foreground">
+            Mobile menu — auto-klik burgera + sync sekcji
+          </h2>
+          <p className="text-xs text-muted-foreground max-w-2xl">
+            Test automatycznie klika burger w iframe, czeka na animację panelu
+            (~700ms) i waliduje obecność wszystkich 5 sekcji (Proktologia,
+            Flebologia, Ginekomastia, Wiedza, Klinika) oraz przepełnienia
+            tekstu w linkach. Zielone chipy = sekcja zsynchronizowana.
+            Wykonywany tylko na szerokościach &lt; 1024px (powyżej menu mobilne
+            jest ukryte: <code>lg:hidden</code>).
+          </p>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {VIEWPORTS.filter((vp) => vp.width < 1024).map((vp) => (
+              <ViewportFrame key={`m-${vp.width}`} vp={vp} mode="mobile" />
+            ))}
+          </div>
+        </section>
 
         <footer className="pt-4 text-xs text-muted-foreground">
           Tip: jeśli zmieniasz <code>Header.tsx</code>, hot-reload przeładuje
