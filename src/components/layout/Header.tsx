@@ -128,7 +128,7 @@ const Header = () => {
   const [navKey, setNavKey] = useState(0);
   const megaLockedUntil = useRef(0);
   const megaCloseTimer = useRef<number | null>(null);
-  const headerRef = useRef<HTMLElement>(null);
+  const headerRef = useRef<HTMLDivElement>(null);
   // Focus management: refs to each dropdown trigger button + panel container.
   // When a dropdown opens we move focus into the panel; when it closes we
   // return focus to its trigger (only if the close was caused by user action,
