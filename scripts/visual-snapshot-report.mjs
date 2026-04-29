@@ -4199,8 +4199,11 @@ const renderHtml = ({
         return { format: fmt, skipped: false, results: results };
       });
     }
-    function runPauseTestForBothFormats() {
+    function runPauseTestForBothFormats(scopeOverride) {
       if (!readyToast || typeof showReadyToast !== "function") return Promise.resolve(null);
+      var scope = scopeOverride || getPauseTestScope();
+      // scope: "both" | "zip" | "zip-split" — wybiera listę formatów do testu.
+      var formatsToRun = scope === "both" ? ["zip", "zip-split"] : [scope];
       var originalFormat = exportFormatSelect ? exportFormatSelect.value : null;
       function setFormatAndSync(f) {
         if (!exportFormatSelect) return;
@@ -4208,15 +4211,24 @@ const renderHtml = ({
         // Triggeruje syncToastAutoHideUi + refreshZipHint via change listener.
         exportFormatSelect.dispatchEvent(new Event("change", { bubbles: true }));
       }
-      setPauseTestResult("is-running", "⏳ test…", "Trwa weryfikacja pauzy dla zip i zip-split");
-      setFormatAndSync("zip");
-      return runPauseScenarioForFormat("zip").then(function (zipReport) {
-        setFormatAndSync("zip-split");
-        return runPauseScenarioForFormat("zip-split").then(function (splitReport) {
-          // Restore original format wybór usera — nie zmieniamy mu pod nogami.
-          if (originalFormat != null) setFormatAndSync(originalFormat);
-          return [zipReport, splitReport];
+      var label = scope === "both"
+        ? "Trwa weryfikacja pauzy dla zip i zip-split"
+        : "Trwa weryfikacja pauzy tylko dla " + scope;
+      setPauseTestResult("is-running", "⏳ test…", label);
+      // Sekwencyjnie po formatach z listy — zachowujemy oryginalny format usera.
+      return formatsToRun.reduce(function (chain, fmt) {
+        return chain.then(function (acc) {
+          setFormatAndSync(fmt);
+          return runPauseScenarioForFormat(fmt).then(function (rep) {
+            acc.push(rep);
+            return acc;
+          });
         });
+      }, Promise.resolve([])).then(function (reports) {
+        if (originalFormat != null) setFormatAndSync(originalFormat);
+        // Tag scope na reports — pomocne w konsoli/parity logic.
+        reports.scope = scope;
+        return reports;
       });
     }
     if (toastPauseTestBtn) {
