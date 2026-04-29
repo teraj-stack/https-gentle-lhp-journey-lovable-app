@@ -2207,7 +2207,19 @@ const renderHtml = ({
       font-size: 11px;
       opacity: 0.7;
     }
-    .trends-filter-toast-pause-test-log-download {
+    .trends-filter-toast-pause-test-log-hint {
+      margin-top: 6px;
+      padding: 6px 8px;
+      font-size: 11px;
+      line-height: 1.4;
+      border-left: 2px solid hsl(var(--primary, 45 60% 55%) / 0.7);
+      background: hsl(var(--primary, 45 60% 55%) / 0.08);
+      border-radius: 0 4px 4px 0;
+    }
+    .trends-filter-toast-pause-test-log-hint strong {
+      font-weight: 600;
+      opacity: 0.85;
+    }
       margin-top: 8px;
       display: flex;
       flex-wrap: wrap;
