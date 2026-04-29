@@ -612,33 +612,13 @@ const Header = () => {
             />
           </Link>
 
-          {/* Desktop nav — flex-1 + min-w-0 pozwala na shrinking; gap skaluje od 0 do 0.5/1 */}
+          {/* Desktop nav — podział wg dziedziny medycznej + Wiedza/Klinika */}
           <nav className="hidden lg:flex flex-1 items-center justify-center gap-0 xl:gap-0.5 2xl:gap-1 min-w-0">
-            <Link
-              to="/o-nas"
-              className={`px-2.5 xl:px-4 py-2 text-[13px] xl:text-sm font-medium transition-colors rounded-lg hover:bg-accent/50 whitespace-nowrap ${
-                isActive("/o-nas")
-                  ? "text-primary bg-accent/50"
-                  : "text-foreground/80 hover:text-primary"
-              }`}
-            >
-              O nas
-            </Link>
-
-            <SingleDropdown keyName="problem" label="Problem" items={problemItems} />
-            <MegaDropdown keyName="zabieg" label="Zabieg" columns={zabiegColumns} />
+            <MegaDropdown keyName="proktologia" label="Proktologia" columns={proktologiaColumns} />
+            <MegaDropdown keyName="flebologia" label="Flebologia" columns={flebologiaColumns} />
+            <SingleDropdown keyName="ginekomastia" label="Ginekomastia" items={ginekomastiaItems} />
             <MegaDropdown keyName="wiedza" label="Wiedza" columns={wiedzaColumns} />
-
-            <Link
-              to="/wspolpraca"
-              className={`px-2.5 xl:px-4 py-2 text-[13px] xl:text-sm font-medium transition-colors rounded-lg hover:bg-accent/50 whitespace-nowrap ${
-                isActive("/wspolpraca")
-                  ? "text-primary bg-accent/50"
-                  : "text-foreground/80 hover:text-primary"
-              }`}
-            >
-              Współpraca
-            </Link>
+            <SingleDropdown keyName="klinika" label="Klinika" items={klinikaItems} />
 
             <Link
               to="/cennik"
