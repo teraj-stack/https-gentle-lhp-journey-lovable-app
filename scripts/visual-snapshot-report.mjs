@@ -2207,7 +2207,17 @@ const renderHtml = ({
       font-size: 11px;
       opacity: 0.7;
     }
-    .trends-filter-toast-pause-test-log-empty {
+    .trends-filter-toast-pause-test-log-download {
+      margin-top: 8px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px;
+    }
+    .trends-filter-toast-pause-test-log-download .trends-filter-toast-pause-test-log-retry-hint {
+      flex-basis: 100%;
+      margin-left: 0;
+    }
       opacity: .7;
       font-style: italic;
     }
