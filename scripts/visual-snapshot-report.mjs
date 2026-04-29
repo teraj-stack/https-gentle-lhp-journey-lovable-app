@@ -4382,7 +4382,7 @@ const renderHtml = ({
       // ground-truth; klasy DOM służą do diagnostyki rozjazdów.
       return { state: !!readyToastIsPaused, progress: byProgress, countdown: byCountdown };
     }
-    function runPauseScenarioForFormat(fmt) {
+    function runPauseScenarioForFormat(fmt, stepFilter) {
       // Pokazujemy świeży toast (downloaded → honoruje auto-hide preferencji
       // dla aktualnego formatu, więc countdown na pewno wystartuje).
       var hideMs = getToastAutoHideMs(fmt);
@@ -4393,14 +4393,22 @@ const renderHtml = ({
       }
       var fakeName = "pause-test-" + fmt + ".zip";
       showReadyToast(fakeName, "ZIP (pause-test, " + fmt + ")", "preview", "downloaded");
-      var steps = [
+      var allSteps = [
         { label: "pointerenter", do: function () { dispatchPointer(readyToast, "pointerenter", "mouse"); }, expectPaused: true },
         { label: "pointerleave", do: function () { dispatchPointer(readyToast, "pointerleave", "mouse"); }, expectPaused: false },
         { label: "focusin",      do: function () { dispatchFocus(readyToast, "focusin"); },                expectPaused: true },
         { label: "focusout",     do: function () { dispatchFocus(readyToast, "focusout", document.body); }, expectPaused: false },
       ];
+      // stepFilter (opcjonalny) → tablica labeli kroków do wykonania (retry only failed).
+      // WAŻNE: zawsze wykonujemy POPRZEDZAJĄCE kroki, żeby stan toastu był
+      // realistyczny (np. żeby przed focusout najpierw był focusin). Z kroków
+      // wynikowych zwracamy jednak tylko te z filtra — to jest „retry failed".
+      var stepsToRun = allSteps;
+      var stepsToReport = stepFilter && stepFilter.length
+        ? stepFilter.slice()
+        : allSteps.map(function (s) { return s.label; });
       var results = [];
-      return steps.reduce(function (chain, step) {
+      return stepsToRun.reduce(function (chain, step) {
         return chain.then(function () {
           step.do();
           // Mikrokrótki yield, żeby ewentualne queued microtaski (np. update
@@ -4410,7 +4418,9 @@ const renderHtml = ({
             var ok = s.state === step.expectPaused
               && (s.progress === null || s.progress === step.expectPaused)
               && (s.countdown === null || s.countdown === step.expectPaused);
-            results.push({ step: step.label, expected: step.expectPaused, got: s, ok: ok });
+            if (stepsToReport.indexOf(step.label) !== -1) {
+              results.push({ step: step.label, expected: step.expectPaused, got: s, ok: ok });
+            }
           });
         });
       }, Promise.resolve()).then(function () {
