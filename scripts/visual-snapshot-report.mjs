@@ -2180,6 +2180,33 @@ const renderHtml = ({
     .trends-filter-toast-pause-test-log-row.is-fail {
       background: rgba(220,90,90,.08);
     }
+    .trends-filter-toast-pause-test-log-retry {
+      margin-top: 8px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      font-size: 11px;
+      font-weight: 600;
+      border-radius: 6px;
+      border: 1px solid hsl(var(--border));
+      background: hsl(var(--secondary) / 0.6);
+      color: hsl(var(--foreground));
+      cursor: pointer;
+      line-height: 1.2;
+    }
+    .trends-filter-toast-pause-test-log-retry:hover:not([disabled]) {
+      background: hsl(var(--secondary));
+    }
+    .trends-filter-toast-pause-test-log-retry[disabled] {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .trends-filter-toast-pause-test-log-retry-hint {
+      margin-left: 8px;
+      font-size: 11px;
+      opacity: 0.7;
+    }
     .trends-filter-toast-pause-test-log-empty {
       opacity: .7;
       font-style: italic;
