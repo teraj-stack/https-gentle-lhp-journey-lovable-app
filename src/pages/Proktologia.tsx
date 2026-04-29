@@ -4,6 +4,7 @@ import Breadcrumbs from "@/components/layout/Breadcrumbs";
 import { BREADCRUMBS_MAP } from "@/lib/breadcrumbsMap";
 import SeoHead from "@/components/shared/SeoHead";
 import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
+import ProcedureSearch, { type ProcedureItem } from "@/components/shared/ProcedureSearch";
 import { ArrowRight, Zap, Shield, Scissors, Flame, Bug, Activity, CircleDot } from "lucide-react";
 
 const sectionAnim = {
@@ -13,49 +14,63 @@ const sectionAnim = {
   transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1] as const },
 };
 
-const procedures = [
+const procedures: ProcedureItem[] = [
   {
     title: "Hemoroidy – LHP",
     description: "Laserowa dearterialization hemoroidów. Bez wycinania, bez szwów — powrót do aktywności w kilka dni.",
     href: "/leczenie/lhp",
     icon: Zap,
     tag: "Najpopularniejszy",
+    categories: ["Hemoroidy", "Laser", "Bez szwów"],
+    keywords: ["guzki krwawnicze", "krwawienie z odbytu", "świąd", "ból przy wypróżnianiu", "dearterializacja"],
   },
   {
     title: "Przetoki – FiLaC",
     description: "Zamknięcie przetoki laserem 1470 nm. Oszczędzenie zwieracza, minimalna inwazyjność.",
     href: "/leczenie/filac",
     icon: Shield,
+    categories: ["Przetoki", "Laser", "Oszczędzający zwieracz"],
+    keywords: ["fistula", "ropień okołoodbytniczy", "wyciek ropy", "1470 nm"],
   },
   {
     title: "Torbiel pilonidalna – SiLaC",
     description: "Laserowe zamknięcie torbieli włosowej w 30 minut. Małe nacięcie, szybki powrót do pracy.",
     href: "/leczenie/silac",
     icon: CircleDot,
+    categories: ["Torbiel pilonidalna", "Laser", "Ambulatoryjnie"],
+    keywords: ["zatoka włosowa", "kość ogonowa", "ropień", "pilonidal"],
   },
   {
     title: "Szczelina odbytu",
     description: "Leczenie przewlekłej szczeliny odbytu. Botoks, laserterapia, indywidualny plan leczenia.",
     href: "/leczenie/szczelina",
     icon: Flame,
+    categories: ["Szczelina", "Laser", "Botoks"],
+    keywords: ["fissura", "ostry ból", "krwawienie", "skurcz zwieracza", "anal fissure"],
   },
   {
     title: "Plastyka odbytu",
     description: "Estetyczna korekta okolicy odbytu techniką laserową. Bez szwów, dyskretnie i bezpiecznie.",
     href: "/leczenie/plastyka",
     icon: Scissors,
+    categories: ["Estetyka", "Laser", "Bez szwów"],
+    keywords: ["korekta", "fałdy skórne", "marisca", "estetyka intymna"],
   },
   {
     title: "Zapalenie odbytu (Anusitis)",
     description: "Diagnostyka i leczenie stanów zapalnych odbytu. Terapia celowana i łagodzenie objawów.",
     href: "/leczenie/anusitis",
     icon: Bug,
+    categories: ["Stany zapalne", "Diagnostyka"],
+    keywords: ["świąd odbytu", "pieczenie", "zapalenie", "kryptyt"],
   },
   {
     title: "Przewlekły ból odbytu",
     description: "Spazm mięśnia łonowo-odbytniczego — identyfikacja triggerów i nowoczesne metody leczenia.",
     href: "/leczenie/spazm-lonowoodbytniczy",
     icon: Activity,
+    categories: ["Ból przewlekły", "Diagnostyka"],
+    keywords: ["proctalgia", "spazm", "puborectalis", "ból miednicy", "tężec mięśniowy"],
   },
 ];
 
