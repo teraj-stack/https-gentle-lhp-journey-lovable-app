@@ -113,59 +113,12 @@ const Proktologia = () => {
         </div>
       </section>
 
-      {/* Procedures Grid */}
-      <section className="py-16 md:py-24">
-        <div className="container mx-auto px-4">
-          <motion.div {...sectionAnim}>
-            <h2 className="font-heading text-3xl md:text-4xl text-foreground mb-4 text-center">
-              Zabiegi proktologiczne
-            </h2>
-            <p className="text-muted-foreground text-center max-w-2xl mx-auto mb-12">
-              Każdy zabieg dobieramy indywidualnie — po dokładnej diagnostyce i rozmowie z pacjentem.
-            </p>
-          </motion.div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
-            {procedures.map((proc, i) => {
-              const Icon = proc.icon;
-              return (
-                <motion.div
-                  key={proc.href}
-                  initial={{ opacity: 0, y: 24 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, amount: 0.15 }}
-                  transition={{ duration: 0.6, delay: i * 0.08, ease: [0.16, 1, 0.3, 1] }}
-                >
-                  <Link
-                    to={proc.href}
-                    className="group block h-full rounded-2xl border border-border/50 bg-card/50 backdrop-blur-sm p-6 hover:border-primary/30 hover:bg-card/80 transition-all duration-300"
-                  >
-                    <div className="flex items-start gap-4 mb-4">
-                      <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary/20 transition-colors">
-                        <Icon className="w-5 h-5 text-primary" />
-                      </div>
-                      {proc.tag && (
-                        <span className="text-[10px] uppercase tracking-widest text-primary bg-primary/10 px-2 py-0.5 rounded-full font-medium">
-                          {proc.tag}
-                        </span>
-                      )}
-                    </div>
-                    <h3 className="font-heading text-xl text-foreground mb-2 group-hover:text-primary transition-colors">
-                      {proc.title}
-                    </h3>
-                    <p className="text-sm text-muted-foreground leading-relaxed mb-4">
-                      {proc.description}
-                    </p>
-                    <span className="inline-flex items-center gap-1.5 text-sm text-primary font-medium opacity-0 group-hover:opacity-100 transition-opacity">
-                      Dowiedz się więcej <ArrowRight className="w-4 h-4" />
-                    </span>
-                  </Link>
-                </motion.div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
+      <ProcedureSearch
+        procedures={procedures}
+        heading="Zabiegi proktologiczne"
+        subtitle="Każdy zabieg dobieramy indywidualnie — po dokładnej diagnostyce i rozmowie z pacjentem."
+        searchPlaceholder="Szukaj zabiegu (np. hemoroidy, szczelina, przetoka)…"
+      />
 
       {/* CTA */}
       <motion.section {...sectionAnim} className="py-16 md:py-24 bg-card/30">
