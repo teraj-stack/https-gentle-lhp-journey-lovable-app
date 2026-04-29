@@ -4307,6 +4307,21 @@ const renderHtml = ({
     var toastPauseTestLog = root.querySelector("[data-trend-toast-pause-test-log]");
     var toastPauseTestLogSummary = root.querySelector("[data-trend-toast-pause-test-log-summary]");
     var toastPauseTestLogBody = root.querySelector("[data-trend-toast-pause-test-log-body]");
+    // Persist user-driven toggle: gdy user otworzy/zwinie panel, zapamiętujemy
+    // to pod kluczem aktualnego scope. Ignorujemy zdarzenia dispatchowane przez
+    // sam render (flaga ignoreToggleOnce) — inaczej auto-open przy fail
+    // nadpisałby preferencję usera natychmiast po zapisie.
+    var ignorePauseTestLogToggleOnce = false;
+    if (toastPauseTestLog) {
+      toastPauseTestLog.addEventListener("toggle", function () {
+        if (ignorePauseTestLogToggleOnce) {
+          ignorePauseTestLogToggleOnce = false;
+          return;
+        }
+        var scope = getPauseTestScope();
+        setPauseTestLogOpen(scope, !!toastPauseTestLog.open);
+      });
+    }
     function setPauseTestResult(state, text, title) {
       if (!toastPauseTestResult) return;
       toastPauseTestResult.classList.remove("is-running", "is-pass", "is-fail");
