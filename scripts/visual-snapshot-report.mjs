@@ -1183,6 +1183,26 @@ const renderHtml = ({
         </label>
         <span class="trends-filter-toast-pause-test-result" data-trend-toast-pause-test-result aria-live="polite"></span>
         <!--
+          Inline panel z per-step logiem testu pauzy. Pokazuje się po
+          uruchomieniu testu (showResults), zwija się <details>. Zastępuje
+          główną zależność od console — user widzi summary + każdy krok
+          (format/expected/got/ok) bez DevTools. Console group dalej istnieje
+          jako szczegółowy fallback (raw reports + parity matrix).
+        -->
+        <details
+          class="trends-filter-toast-pause-test-log"
+          data-trend-toast-pause-test-log
+          hidden
+        >
+          <summary class="trends-filter-toast-pause-test-log-summary"
+            data-trend-toast-pause-test-log-summary
+          >Szczegóły kroków</summary>
+          <div
+            class="trends-filter-toast-pause-test-log-body"
+            data-trend-toast-pause-test-log-body
+          ></div>
+        </details>
+        <!--
           „📦 Otwórz ostatnią paczkę" — rehydratuje OSTATNIO wygenerowaną
           paczkę z cache (IndexedDB: cml-trends-export-cache/last). Działa
           OFFLINE — całość operacji jest lokalna, nie wymaga sieci. Disabled
@@ -2091,6 +2111,78 @@ const renderHtml = ({
     .trends-filter-toast-pause-test-result.is-fail {
       background: rgba(220,90,90,.22);
       color: rgba(255,180,180,1);
+    }
+    /* Inline log panel — pełnoszerokościowy, zwijalny <details>.
+       Trafia na nową linię (flex-basis 100%), żeby tabelka kroków miała
+       miejsce i nie ściskała innych kontrolek paska. */
+    .trends-filter-toast-pause-test-log {
+      flex-basis: 100%;
+      width: 100%;
+      font-size: .68rem;
+      margin-top: 4px;
+      border: 1px solid rgba(127,127,127,.30);
+      border-radius: 4px;
+      background: rgba(127,127,127,.06);
+    }
+    .trends-filter-toast-pause-test-log-summary {
+      cursor: pointer;
+      padding: 4px 8px;
+      list-style: none;
+      user-select: none;
+      opacity: .85;
+    }
+    .trends-filter-toast-pause-test-log-summary::-webkit-details-marker { display: none; }
+    .trends-filter-toast-pause-test-log-summary::before {
+      content: "▸ ";
+      display: inline-block;
+      transition: transform .15s ease;
+    }
+    .trends-filter-toast-pause-test-log[open] .trends-filter-toast-pause-test-log-summary::before {
+      content: "▾ ";
+    }
+    .trends-filter-toast-pause-test-log-body {
+      padding: 4px 8px 8px;
+      max-height: 240px;
+      overflow: auto;
+    }
+    .trends-filter-toast-pause-test-log-section {
+      margin-top: 4px;
+    }
+    .trends-filter-toast-pause-test-log-section:first-child { margin-top: 0; }
+    .trends-filter-toast-pause-test-log-section-title {
+      font-weight: 600;
+      opacity: .85;
+      margin-bottom: 2px;
+    }
+    .trends-filter-toast-pause-test-log-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-variant-numeric: tabular-nums;
+    }
+    .trends-filter-toast-pause-test-log-table th,
+    .trends-filter-toast-pause-test-log-table td {
+      text-align: left;
+      padding: 2px 6px;
+      border-bottom: 1px solid rgba(127,127,127,.18);
+    }
+    .trends-filter-toast-pause-test-log-table th {
+      font-weight: 500;
+      opacity: .65;
+    }
+    .trends-filter-toast-pause-test-log-row.is-ok td:first-child::before {
+      content: "✓ ";
+      color: rgba(120,200,140,1);
+    }
+    .trends-filter-toast-pause-test-log-row.is-fail td:first-child::before {
+      content: "✗ ";
+      color: rgba(255,140,140,1);
+    }
+    .trends-filter-toast-pause-test-log-row.is-fail {
+      background: rgba(220,90,90,.08);
+    }
+    .trends-filter-toast-pause-test-log-empty {
+      opacity: .7;
+      font-style: italic;
     }
     .trends-filter-export {
       font-size: .75rem;
@@ -4123,12 +4215,112 @@ const renderHtml = ({
         try { localStorage.setItem(PAUSE_TEST_SCOPE_KEY, v); } catch (_e) {}
       });
     }
+    var toastPauseTestLog = root.querySelector("[data-trend-toast-pause-test-log]");
+    var toastPauseTestLogSummary = root.querySelector("[data-trend-toast-pause-test-log-summary]");
+    var toastPauseTestLogBody = root.querySelector("[data-trend-toast-pause-test-log-body]");
     function setPauseTestResult(state, text, title) {
       if (!toastPauseTestResult) return;
       toastPauseTestResult.classList.remove("is-running", "is-pass", "is-fail");
       if (state) toastPauseTestResult.classList.add(state);
       toastPauseTestResult.textContent = text || "";
       if (title) toastPauseTestResult.title = title; else toastPauseTestResult.removeAttribute("title");
+    }
+    // Buduje czytelny per-step panel (DOM, bez innerHTML — bezpiecznie escape'owane).
+    // reports: tablica { format, skipped, reason?, results:[{step,expected,got,ok}] }
+    // summary: { scope, okSteps, totalSteps, parityIssues:[], skipped:[], headline }
+    function renderPauseTestLog(reports, summary) {
+      if (!toastPauseTestLog || !toastPauseTestLogBody) return;
+      // Wyczyść poprzedni render.
+      while (toastPauseTestLogBody.firstChild) toastPauseTestLogBody.removeChild(toastPauseTestLogBody.firstChild);
+      if (!reports || !reports.length) {
+        var empty = document.createElement("div");
+        empty.className = "trends-filter-toast-pause-test-log-empty";
+        empty.textContent = "Brak danych z testu.";
+        toastPauseTestLogBody.appendChild(empty);
+        toastPauseTestLog.hidden = false;
+        return;
+      }
+      // Header summary line w panelu (duplikuje badge, ale daje też kontekst
+      // o scope/parity/skipped — żeby panel był samowystarczalny po zwinięciu badge).
+      var hdr = document.createElement("div");
+      hdr.className = "trends-filter-toast-pause-test-log-section";
+      var hdrTitle = document.createElement("div");
+      hdrTitle.className = "trends-filter-toast-pause-test-log-section-title";
+      hdrTitle.textContent = "Podsumowanie";
+      hdr.appendChild(hdrTitle);
+      var hdrLine = document.createElement("div");
+      var parts = [
+        "scope: " + (summary.scope || "?"),
+        summary.okSteps + "/" + summary.totalSteps + " OK",
+      ];
+      if (summary.parityIssues && summary.parityIssues.length) {
+        parts.push("parity issues: " + summary.parityIssues.join(", "));
+      }
+      if (summary.skipped && summary.skipped.length) {
+        parts.push("skipped: " + summary.skipped.join(", "));
+      }
+      hdrLine.textContent = parts.join(" · ");
+      hdr.appendChild(hdrLine);
+      toastPauseTestLogBody.appendChild(hdr);
+      // Per-format sekcje.
+      reports.forEach(function (rep) {
+        var sec = document.createElement("div");
+        sec.className = "trends-filter-toast-pause-test-log-section";
+        var t = document.createElement("div");
+        t.className = "trends-filter-toast-pause-test-log-section-title";
+        t.textContent = "Format: " + rep.format + (rep.skipped ? " (pominięty: " + rep.reason + ")" : "");
+        sec.appendChild(t);
+        if (!rep.skipped && rep.results && rep.results.length) {
+          var table = document.createElement("table");
+          table.className = "trends-filter-toast-pause-test-log-table";
+          var thead = document.createElement("thead");
+          var thr = document.createElement("tr");
+          ["Krok", "Expected", "state", "progress", "countdown"].forEach(function (h) {
+            var th = document.createElement("th");
+            th.textContent = h;
+            thr.appendChild(th);
+          });
+          thead.appendChild(thr);
+          table.appendChild(thead);
+          var tbody = document.createElement("tbody");
+          rep.results.forEach(function (r) {
+            var tr = document.createElement("tr");
+            tr.className = "trends-filter-toast-pause-test-log-row " + (r.ok ? "is-ok" : "is-fail");
+            function cell(text) {
+              var td = document.createElement("td");
+              td.textContent = text;
+              tr.appendChild(td);
+            }
+            function fmtBool(v) {
+              if (v === null || v === undefined) return "—";
+              return v ? "paused" : "running";
+            }
+            cell(r.step);
+            cell(r.expected ? "paused" : "running");
+            cell(fmtBool(r.got && r.got.state));
+            cell(fmtBool(r.got && r.got.progress));
+            cell(fmtBool(r.got && r.got.countdown));
+            tbody.appendChild(tr);
+          });
+          table.appendChild(tbody);
+          sec.appendChild(table);
+        }
+        toastPauseTestLogBody.appendChild(sec);
+      });
+      toastPauseTestLog.hidden = false;
+      // Auto-otwórz przy fail, żeby user od razu widział co się sypnęło.
+      // Przy pass zostawiamy zwinięty — minimalizujemy szum.
+      if (summary.okSteps !== summary.totalSteps || (summary.parityIssues && summary.parityIssues.length)) {
+        toastPauseTestLog.open = true;
+      }
+    }
+    function clearPauseTestLog() {
+      if (!toastPauseTestLog) return;
+      toastPauseTestLog.hidden = true;
+      toastPauseTestLog.open = false;
+      if (toastPauseTestLogBody) {
+        while (toastPauseTestLogBody.firstChild) toastPauseTestLogBody.removeChild(toastPauseTestLogBody.firstChild);
+      }
     }
     function dispatchPointer(el, type, pointerType) {
       // PointerEvent może nie istnieć w bardzo starych przeglądarkach;
@@ -4234,10 +4426,14 @@ const renderHtml = ({
     if (toastPauseTestBtn) {
       toastPauseTestBtn.addEventListener("click", function () {
         toastPauseTestBtn.disabled = true;
+        // Czyść poprzedni log od razu — żeby user nie widział staldych wyników
+        // podczas trwania nowego biegu.
+        clearPauseTestLog();
         runPauseTestForBothFormats().then(function (reports) {
           toastPauseTestBtn.disabled = false;
           if (!reports) {
             setPauseTestResult("is-fail", "✗ brak toastu", "Toast DOM nieobecny — test niemożliwy.");
+            renderPauseTestLog([], { scope: "?", okSteps: 0, totalSteps: 0, parityIssues: [], skipped: ["toast DOM nieobecny"] });
             return;
           }
           var totalSteps = 0, okSteps = 0, skipped = [], parityIssues = [];
@@ -4263,7 +4459,8 @@ const renderHtml = ({
               }
             });
           }
-          // Pełny report do konsoli — user może go zwinąć/skopiować.
+          // Pełny report do konsoli — fallback dla power-userów (raw object dump).
+          // Główny UX to teraz inline panel renderPauseTestLog poniżej.
           // eslint-disable-next-line no-console
           console.groupCollapsed("[toast-pause-test] scope=" + scope + " · " + okSteps + "/" + totalSteps + " OK"
             + (parityIssues.length ? " · parity issues: " + parityIssues.join(", ") : "")
@@ -4288,13 +4485,31 @@ const renderHtml = ({
           } else {
             setPauseTestResult("is-fail", "✗ " + okSteps + "/" + totalSteps,
               (parityIssues.length ? "Parity issues: " + parityIssues.join("; ") + ". " : "")
-              + "Szczegóły w konsoli (groupa „toast-pause-test").");
+              + "Rozwiń panel poniżej (lub konsola: grupa „toast-pause-test").");
           }
+          // Render inline log panel z per-step rozbiciem.
+          renderPauseTestLog(reports, {
+            scope: scope,
+            okSteps: okSteps,
+            totalSteps: totalSteps,
+            parityIssues: parityIssues,
+            skipped: skipped,
+          });
         }).catch(function (e) {
           toastPauseTestBtn.disabled = false;
           // eslint-disable-next-line no-console
           console.error("[toast-pause-test] error:", e);
           setPauseTestResult("is-fail", "✗ error", String((e && e.message) || e));
+          // Pokaż błąd również inline — user nie musi otwierać DevTools.
+          if (toastPauseTestLog && toastPauseTestLogBody) {
+            while (toastPauseTestLogBody.firstChild) toastPauseTestLogBody.removeChild(toastPauseTestLogBody.firstChild);
+            var errEl = document.createElement("div");
+            errEl.className = "trends-filter-toast-pause-test-log-empty";
+            errEl.textContent = "Błąd testu: " + String((e && e.message) || e);
+            toastPauseTestLogBody.appendChild(errEl);
+            toastPauseTestLog.hidden = false;
+            toastPauseTestLog.open = true;
+          }
         });
       });
     }
