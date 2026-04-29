@@ -671,11 +671,11 @@ const Header = () => {
             </Link>
           </nav>
 
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0 min-w-0">
             <Button
               variant="hero"
               size="sm"
-              className="hidden sm:inline-flex xl:h-10 xl:px-6 xl:text-sm whitespace-nowrap"
+              className="hidden sm:inline-flex lg:h-9 lg:px-3 lg:text-[13px] xl:h-10 xl:px-6 xl:text-sm whitespace-nowrap"
               asChild
             >
               <a
@@ -683,8 +683,10 @@ const Header = () => {
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                <span className="xl:hidden">Konsultacja</span>
+                {/* Skracamy etykietę na lg, gdzie miejsce jest najciaśniejsze */}
+                <span className="lg:inline xl:hidden">Konsultacja</span>
                 <span className="hidden xl:inline">Umów Konsultację</span>
+                <span className="sm:inline lg:hidden">Konsultacja</span>
               </a>
             </Button>
             <button
