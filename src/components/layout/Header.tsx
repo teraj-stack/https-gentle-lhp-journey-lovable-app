@@ -486,7 +486,7 @@ const Header = () => {
           aria-controls={panelId}
           aria-label={`Menu sekcji ${label}`}
           className={`flex items-center gap-0.5 xl:gap-1 px-2.5 xl:px-4 py-2 text-[13px] xl:text-sm font-medium transition-colors rounded-lg hover:bg-accent/50 whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
-            isSectionActive(items)
+            isSectionActive(keyName, items)
               ? "text-primary bg-accent/50"
               : "text-foreground/80 hover:text-primary"
           }`}
@@ -577,7 +577,7 @@ const Header = () => {
           aria-controls={panelId}
           aria-label={`Menu sekcji ${label}`}
           className={`flex items-center gap-0.5 xl:gap-1 px-2.5 xl:px-4 py-2 text-[13px] xl:text-sm font-medium transition-colors rounded-lg hover:bg-accent/50 whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
-            isSectionActive(allItems)
+            isSectionActive(keyName, allItems)
               ? "text-primary bg-accent/50"
               : "text-foreground/80 hover:text-primary"
           }`}
