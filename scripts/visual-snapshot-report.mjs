@@ -1162,6 +1162,25 @@ const renderHtml = ({
           data-trend-toast-pause-test
           title="Automatyczna weryfikacja: czy hover/focus pauzuje countdown identycznie dla zip i zip-split. Trwa ~1.5 s, wyniki w konsoli + badge."
         >🧪 Test pauzy</button>
+        <!--
+          Zakres testu pauzy — pozwala uruchomić weryfikację tylko dla
+          jednego formatu (gdy interesuje nas regresja punktowa) lub dla
+          obu (default, parity check). Wartość zapisywana w localStorage
+          pod kluczem `cml-trends-pause-test-scope`, żeby preferencja
+          przetrwała reload (parytetnie z resztą ustawień eksportu).
+        -->
+        <label class="trends-filter-toast-pause-test-scope" title="Zakres automatycznego testu pauzy hover/focus">
+          <span class="trends-filter-toast-pause-test-scope-label">Zakres:</span>
+          <select
+            class="trends-filter-toast-pause-test-scope-select"
+            data-trend-toast-pause-test-scope
+            aria-label="Zakres testu pauzy"
+          >
+            <option value="both">zip + zip-split (parity)</option>
+            <option value="zip">tylko zip</option>
+            <option value="zip-split">tylko zip-split</option>
+          </select>
+        </label>
         <span class="trends-filter-toast-pause-test-result" data-trend-toast-pause-test-result aria-live="polite"></span>
         <!--
           „📦 Otwórz ostatnią paczkę" — rehydratuje OSTATNIO wygenerowaną
