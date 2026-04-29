@@ -4103,6 +4103,26 @@ const renderHtml = ({
     // Po teście: hideReadyToast() + przywracamy oryginalny format eksportu.
     var toastPauseTestBtn = root.querySelector("[data-trend-toast-pause-test]");
     var toastPauseTestResult = root.querySelector("[data-trend-toast-pause-test-result]");
+    var toastPauseTestScopeSelect = root.querySelector("[data-trend-toast-pause-test-scope]");
+    // Persistencja zakresu testu pauzy — zgodnie z wzorcem innych preferencji
+    // eksportu (auto-hide per format, zip threshold, itd.). Klucz dedykowany.
+    var PAUSE_TEST_SCOPE_KEY = "cml-trends-pause-test-scope";
+    var PAUSE_TEST_SCOPE_VALUES = ["both", "zip", "zip-split"];
+    function getPauseTestScope() {
+      try {
+        var v = localStorage.getItem(PAUSE_TEST_SCOPE_KEY);
+        if (v && PAUSE_TEST_SCOPE_VALUES.indexOf(v) !== -1) return v;
+      } catch (_e) {}
+      return "both";
+    }
+    if (toastPauseTestScopeSelect) {
+      toastPauseTestScopeSelect.value = getPauseTestScope();
+      toastPauseTestScopeSelect.addEventListener("change", function () {
+        var v = toastPauseTestScopeSelect.value;
+        if (PAUSE_TEST_SCOPE_VALUES.indexOf(v) === -1) v = "both";
+        try { localStorage.setItem(PAUSE_TEST_SCOPE_KEY, v); } catch (_e) {}
+      });
+    }
     function setPauseTestResult(state, text, title) {
       if (!toastPauseTestResult) return;
       toastPauseTestResult.classList.remove("is-running", "is-pass", "is-fail");
