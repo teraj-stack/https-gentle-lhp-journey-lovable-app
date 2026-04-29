@@ -1183,6 +1183,26 @@ const renderHtml = ({
         </label>
         <span class="trends-filter-toast-pause-test-result" data-trend-toast-pause-test-result aria-live="polite"></span>
         <!--
+          Inline panel z per-step logiem testu pauzy. Pokazuje się po
+          uruchomieniu testu (showResults), zwija się <details>. Zastępuje
+          główną zależność od console — user widzi summary + każdy krok
+          (format/expected/got/ok) bez DevTools. Console group dalej istnieje
+          jako szczegółowy fallback (raw reports + parity matrix).
+        -->
+        <details
+          class="trends-filter-toast-pause-test-log"
+          data-trend-toast-pause-test-log
+          hidden
+        >
+          <summary class="trends-filter-toast-pause-test-log-summary"
+            data-trend-toast-pause-test-log-summary
+          >Szczegóły kroków</summary>
+          <div
+            class="trends-filter-toast-pause-test-log-body"
+            data-trend-toast-pause-test-log-body
+          ></div>
+        </details>
+        <!--
           „📦 Otwórz ostatnią paczkę" — rehydratuje OSTATNIO wygenerowaną
           paczkę z cache (IndexedDB: cml-trends-export-cache/last). Działa
           OFFLINE — całość operacji jest lokalna, nie wymaga sieci. Disabled
