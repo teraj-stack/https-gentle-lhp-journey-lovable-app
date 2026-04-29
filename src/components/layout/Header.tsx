@@ -559,40 +559,40 @@ const Header = () => {
           : "bg-transparent"
       }`}
     >
-      {/* TOP CONTACT BAR (desktop only, hidden after scroll for compactness) */}
+      {/* TOP CONTACT BAR (tablet+ , hidden after scroll for compactness) */}
       <div
-        className={`hidden lg:block border-b border-border/40 bg-card/60 backdrop-blur-sm transition-all duration-300 overflow-hidden ${
+        className={`hidden md:block border-b border-border/40 bg-card/60 backdrop-blur-sm transition-all duration-300 overflow-hidden ${
           scrolled ? "max-h-0 opacity-0 border-b-0" : "max-h-12 opacity-100"
         }`}
         aria-hidden={scrolled}
       >
         <div className="max-w-7xl mx-auto px-4 md:px-8">
-          <div className="flex items-center justify-between h-9 text-xs text-foreground/70">
-            <div className="flex items-center gap-5">
+          <div className="flex items-center justify-between gap-3 h-9 text-xs text-foreground/70">
+            <div className="flex items-center gap-3 lg:gap-5 min-w-0">
               <a
                 href="tel:+48665666728"
-                className="flex items-center gap-1.5 hover:text-primary transition-colors"
+                className="flex items-center gap-1.5 hover:text-primary transition-colors whitespace-nowrap"
               >
-                <Phone className="w-3.5 h-3.5" aria-hidden="true" />
+                <Phone className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
                 <span>+48 665 666 728</span>
               </a>
               <a
                 href="mailto:fimedica@fimedica.pl"
-                className="flex items-center gap-1.5 hover:text-primary transition-colors"
+                className="hidden lg:flex items-center gap-1.5 hover:text-primary transition-colors min-w-0"
               >
-                <Mail className="w-3.5 h-3.5" aria-hidden="true" />
-                <span>fimedica@fimedica.pl</span>
+                <Mail className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                <span className="truncate">fimedica@fimedica.pl</span>
               </a>
-              <span className="hidden xl:flex items-center gap-1.5 text-foreground/60">
-                <MapPin className="w-3.5 h-3.5" aria-hidden="true" />
+              <span className="hidden xl:flex items-center gap-1.5 text-foreground/60 whitespace-nowrap">
+                <MapPin className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
                 <span>Warszawa · Siedlce · Rzeszów</span>
               </span>
             </div>
-            <div className="flex items-center gap-4">
-              <span className="hidden xl:inline text-foreground/60">Pon–Pt: 8:00–20:00</span>
+            <div className="flex items-center gap-3 lg:gap-4 shrink-0">
+              <span className="hidden xl:inline text-foreground/60 whitespace-nowrap">Pon–Pt: 8:00–20:00</span>
               <Link
                 to="/kontakt"
-                className="hover:text-primary transition-colors font-medium"
+                className="hover:text-primary transition-colors font-medium whitespace-nowrap"
               >
                 Lokalizacje
               </Link>
@@ -602,19 +602,19 @@ const Header = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 md:px-8">
-        <div className="flex items-center justify-between h-16 md:h-20">
-          <Link to="/" className="flex items-center gap-3">
+        <div className="flex items-center justify-between gap-2 h-16 md:h-20">
+          <Link to="/" className="flex items-center gap-3 shrink-0">
             <img
               src={logoCml}
               alt="CML – Centrum Medycyny Laserowej"
-              className="h-12 sm:h-10 md:h-12 w-auto"
+              className="h-10 sm:h-10 md:h-11 lg:h-10 xl:h-12 w-auto"
             />
           </Link>
 
-          <nav className="hidden lg:flex items-center gap-1">
+          <nav className="hidden lg:flex items-center gap-0.5 xl:gap-1 min-w-0">
             <Link
               to="/o-nas"
-              className={`px-4 py-2 text-sm font-medium transition-colors rounded-lg hover:bg-accent/50 ${
+              className={`px-2.5 xl:px-4 py-2 text-[13px] xl:text-sm font-medium transition-colors rounded-lg hover:bg-accent/50 whitespace-nowrap ${
                 isActive("/o-nas")
                   ? "text-primary bg-accent/50"
                   : "text-foreground/80 hover:text-primary"
@@ -629,7 +629,7 @@ const Header = () => {
 
             <Link
               to="/wspolpraca"
-              className={`px-4 py-2 text-sm font-medium transition-colors rounded-lg hover:bg-accent/50 ${
+              className={`px-2.5 xl:px-4 py-2 text-[13px] xl:text-sm font-medium transition-colors rounded-lg hover:bg-accent/50 whitespace-nowrap ${
                 isActive("/wspolpraca")
                   ? "text-primary bg-accent/50"
                   : "text-foreground/80 hover:text-primary"
@@ -640,7 +640,7 @@ const Header = () => {
 
             <Link
               to="/cennik"
-              className={`px-4 py-2 text-sm font-medium transition-colors rounded-lg hover:bg-accent/50 ${
+              className={`px-2.5 xl:px-4 py-2 text-[13px] xl:text-sm font-medium transition-colors rounded-lg hover:bg-accent/50 whitespace-nowrap ${
                 isActive("/cennik")
                   ? "text-primary bg-accent/50"
                   : "text-foreground/80 hover:text-primary"
@@ -651,7 +651,7 @@ const Header = () => {
 
             <Link
               to="/kontakt"
-              className={`px-4 py-2 text-sm font-medium transition-colors rounded-lg hover:bg-accent/50 ${
+              className={`px-2.5 xl:px-4 py-2 text-[13px] xl:text-sm font-medium transition-colors rounded-lg hover:bg-accent/50 whitespace-nowrap ${
                 isActive("/kontakt")
                   ? "text-primary bg-accent/50"
                   : "text-foreground/80 hover:text-primary"
@@ -661,14 +661,20 @@ const Header = () => {
             </Link>
           </nav>
 
-          <div className="flex items-center gap-3">
-            <Button variant="hero" size="default" className="hidden sm:inline-flex" asChild>
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            <Button
+              variant="hero"
+              size="sm"
+              className="hidden sm:inline-flex xl:h-10 xl:px-6 xl:text-sm whitespace-nowrap"
+              asChild
+            >
               <a
                 href="https://www.znanylekarz.pl/jan-bujok-2/chirurg-flebolog-proktolog/warszawa"
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                Umów Konsultację
+                <span className="xl:hidden">Konsultacja</span>
+                <span className="hidden xl:inline">Umów Konsultację</span>
               </a>
             </Button>
             <button
