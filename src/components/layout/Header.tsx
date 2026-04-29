@@ -558,13 +558,18 @@ const Header = () => {
           : "bg-transparent"
       }`}
     >
-      {/* TOP CONTACT BAR (tablet+ , hidden after scroll for compactness) */}
-      <div
-        className={`hidden md:block border-b border-border/40 bg-card/60 backdrop-blur-sm transition-all duration-300 overflow-hidden ${
-          scrolled ? "max-h-0 opacity-0 border-b-0" : "max-h-12 opacity-100"
-        }`}
-        aria-hidden={scrolled}
-      >
+      {/* MAIN NAV BAR wrapper — single source of truth for --header-height (stable height). */}
+      <div ref={headerRef} className="relative max-w-7xl mx-auto px-4 md:px-8">
+        {/* TOP CONTACT BAR — absolutely positioned BELOW the main bar so collapsing it
+            does not change the measured <header> height (no content jumps on scroll). */}
+        <div
+          className={`hidden md:block absolute top-full left-0 right-0 border-b border-border/40 bg-card/80 backdrop-blur-sm transition-all duration-300 overflow-hidden ${
+            scrolled
+              ? "max-h-0 opacity-0 border-b-0 pointer-events-none"
+              : "max-h-12 opacity-100"
+          }`}
+          aria-hidden={scrolled}
+        >
         <div className="max-w-7xl mx-auto px-4 md:px-8">
           <div className="flex items-center justify-between gap-3 h-9 text-xs text-foreground/70">
             <div className="flex items-center gap-3 lg:gap-5 min-w-0">
