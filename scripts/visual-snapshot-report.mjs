@@ -2218,6 +2218,7 @@ const renderHtml = ({
       flex-basis: 100%;
       margin-left: 0;
     }
+    .trends-filter-toast-pause-test-log-empty {
       opacity: .7;
       font-style: italic;
     }
