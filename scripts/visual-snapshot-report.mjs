@@ -4542,10 +4542,23 @@ const renderHtml = ({
         toastPauseTestLogBody.appendChild(sec);
       });
       toastPauseTestLog.hidden = false;
-      // Auto-otwórz przy fail, żeby user od razu widział co się sypnęło.
-      // Przy pass zostawiamy zwinięty — minimalizujemy szum.
-      if (summary.okSteps !== summary.totalSteps || (summary.parityIssues && summary.parityIssues.length)) {
-        toastPauseTestLog.open = true;
+      // Decyzja o open/closed:
+      //   1) Jeśli user MA zapisaną preferencję dla aktualnego scope — wygrywa.
+      //   2) Inaczej (brak preferencji) → fallback do heurystyki: auto-open
+      //      przy faili lub parity issue, zamknięty przy pass.
+      // ignorePauseTestLogToggleOnce blokuje ten programowy zapis przed
+      // nadpisaniem prefa przez listener `toggle` (set-from-render ≠ user).
+      var savedOpen = getPauseTestLogOpen(summary.scope);
+      var nextOpen;
+      if (savedOpen !== null) {
+        nextOpen = savedOpen;
+      } else {
+        nextOpen = (summary.okSteps !== summary.totalSteps)
+          || !!(summary.parityIssues && summary.parityIssues.length);
+      }
+      if (toastPauseTestLog.open !== nextOpen) {
+        ignorePauseTestLogToggleOnce = true;
+        toastPauseTestLog.open = nextOpen;
       }
     }
     function clearPauseTestLog() {
