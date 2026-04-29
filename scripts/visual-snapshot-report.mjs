@@ -4558,15 +4558,29 @@ const renderHtml = ({
         skipped: skipped,
         isRetry: isRetry,
       });
-      // Zapisz stan do retry. Przy retry zachowujemy oryginalny scope, ale
-      // aktualizujemy listę faili (te, które dalej się sypią).
+      // Zapisz stan do retry + downloadu. Przy retry zachowujemy oryginalny
+      // scope, ale aktualizujemy listę faili (te, które dalej się sypią).
+      // Trzymamy też pełne reports/summary, żeby „Download test report" miał
+      // komplet danych bez ponownego biegu.
       lastPauseTestState = {
         scope: scope,
         failedByFormat: failedByFormat,
         hasFailures: Object.keys(failedByFormat).length > 0,
+        reports: reports,
+        summary: {
+          scope: scope,
+          okSteps: okSteps,
+          totalSteps: totalSteps,
+          parityIssues: parityIssues,
+          skipped: skipped,
+          isRetry: isRetry,
+          allOk: okSteps === totalSteps && parityIssues.length === 0,
+        },
+        timestamp: new Date().toISOString(),
       };
-      // Dorzuć przycisk „Retry failed steps" do panelu logu, jeśli są faile.
+      // Dorzuć przycisk „Retry failed steps" (jeśli faile) + przyciski downloadu.
       attachRetryFailedStepsButton();
+      attachDownloadReportButtons();
     }
     function attachRetryFailedStepsButton() {
       if (!toastPauseTestLogBody) return;
