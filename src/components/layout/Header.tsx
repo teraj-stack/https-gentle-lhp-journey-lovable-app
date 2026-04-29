@@ -22,103 +22,95 @@ interface MegaColumn {
   items: NavItem[];
 }
 
-// --- PROBLEM (po objawie) ---
-const problemItems: NavItem[] = [
-  { label: "Hemoroidy", href: "/dla-pacjenta/hemoroidy", desc: "Krwawienie, swędzenie, guzki" },
-  { label: "Żylaki nóg", href: "/leczenie/evlt", desc: "Ból, obrzęki, widoczne żyły" },
-  { label: "Pajączki naczyniowe", href: "/leczenie/clacs", desc: "Czerwone i fioletowe naczynka" },
-  { label: "Szczelina odbytu", href: "/leczenie/szczelina", desc: "Ból i krwawienie przy wypróżnieniu" },
-  { label: "Przetoka odbytu", href: "/leczenie/filac", desc: "Sączenie, ropień, nawracający ból" },
-  { label: "Torbiel pilonidalna", href: "/leczenie/silac", desc: "Guzek przy kości ogonowej" },
-  { label: "Fałdy okolicy odbytu", href: "/dla-pacjenta/faldy-odbytu", desc: "Wariant anatomiczny czy problem?" },
-  { label: "Przewlekły ból odbytu", href: "/leczenie/spazm-lonowoodbytniczy", desc: "Spazm mięśnia łonowo-odbytniczego" },
-  { label: "Ginekomastia", href: "/leczenie/ginekomastia", desc: "Powiększenie piersi u mężczyzn" },
-];
+// =============================================================================
+// Nowy podział: dziedziny medyczne (Proktologia, Flebologia, Ginekomastia)
+// + Wiedza + Klinika. Mniej popularne pozycje przeniesione do hubów
+// (/leczenie/proktologia, /leczenie/flebologia, /dla-pacjenta).
+// =============================================================================
 
-// --- ZABIEG (3-kolumnowe mega-menu po dziedzinie) ---
-const zabiegColumns: MegaColumn[] = [
+// --- PROKTOLOGIA ---
+const proktologiaColumns: MegaColumn[] = [
   {
-    title: "Proktologia",
+    title: "Mam problem",
     items: [
-      { label: "Wszystkie zabiegi", href: "/leczenie/proktologia" },
-      { label: "LHP – hemoroidy", href: "/leczenie/lhp" },
-      { label: "FiLaC – przetoka", href: "/leczenie/filac" },
-      { label: "SiLaC – torbiel", href: "/leczenie/silac" },
-      { label: "Szczelina odbytu", href: "/leczenie/szczelina" },
-      { label: "Plastyka odbytu", href: "/leczenie/plastyka" },
-      { label: "Anusitis", href: "/leczenie/anusitis" },
-      { label: "Spazm łonowo-odbytniczy", href: "/leczenie/spazm-lonowoodbytniczy" },
+      { label: "Hemoroidy", href: "/dla-pacjenta/hemoroidy", desc: "Krwawienie, swędzenie, guzki" },
+      { label: "Szczelina odbytu", href: "/leczenie/szczelina", desc: "Ból przy wypróżnieniu" },
+      { label: "Przetoka odbytu", href: "/leczenie/filac", desc: "Sączenie, nawracający ropień" },
+      { label: "Torbiel pilonidalna", href: "/leczenie/silac", desc: "Guzek przy kości ogonowej" },
     ],
   },
   {
-    title: "Flebologia",
+    title: "Zabiegi",
     items: [
-      { label: "Wszystkie zabiegi", href: "/leczenie/flebologia" },
-      { label: "EVLT – żylaki", href: "/leczenie/evlt" },
-      { label: "CLaCS – pajączki", href: "/leczenie/clacs" },
-      { label: "Skleroterapia", href: "/leczenie/skleroterapia" },
-      { label: "Mikroflebektomia", href: "/leczenie/mikroflebektomia" },
-      { label: "Fototerapia LED", href: "/leczenie/fototerapia" },
-    ],
-  },
-  {
-    title: "Ginekomastia",
-    items: [
-      { label: "Wszystkie typy", href: "/leczenie/ginekomastia" },
-      { label: "Gruczołowa", href: "/leczenie/ginekomastia-gruczolowa" },
-      { label: "Tłuszczowa", href: "/leczenie/ginekomastia-tluszczowa" },
-      { label: "Mieszana", href: "/leczenie/ginekomastia-mieszana" },
+      { label: "LHP – laser na hemoroidy", href: "/leczenie/lhp" },
+      { label: "FiLaC – laser na przetokę", href: "/leczenie/filac" },
+      { label: "SiLaC – laser na torbiel", href: "/leczenie/silac" },
+      { label: "Wszystkie zabiegi proktologii →", href: "/leczenie/proktologia" },
     ],
   },
 ];
 
-// --- WIEDZA (edukacja, przygotowania, blog) ---
+// --- FLEBOLOGIA ---
+const flebologiaColumns: MegaColumn[] = [
+  {
+    title: "Mam problem",
+    items: [
+      { label: "Żylaki nóg", href: "/leczenie/evlt", desc: "Ból, obrzęki, widoczne żyły" },
+      { label: "Pajączki naczyniowe", href: "/leczenie/clacs", desc: "Czerwone i fioletowe naczynka" },
+      { label: "Profilaktyka żylaków", href: "/dla-pacjenta/profilaktyka-zylakow", desc: "Jak zapobiegać" },
+    ],
+  },
+  {
+    title: "Zabiegi",
+    items: [
+      { label: "EVLT – laser na żylaki", href: "/leczenie/evlt" },
+      { label: "CLaCS – metoda hybrydowa", href: "/leczenie/clacs" },
+      { label: "Wszystkie zabiegi flebologii →", href: "/leczenie/flebologia" },
+    ],
+  },
+];
+
+// --- GINEKOMASTIA (single-column, krótka lista) ---
+const ginekomastiaItems: NavItem[] = [
+  { label: "O zabiegu", href: "/leczenie/ginekomastia", desc: "Powiększenie piersi u mężczyzn" },
+  { label: "Typ gruczołowy", href: "/leczenie/ginekomastia-gruczolowa" },
+  { label: "Typ tłuszczowy", href: "/leczenie/ginekomastia-tluszczowa" },
+  { label: "Typ mieszany", href: "/leczenie/ginekomastia-mieszana" },
+];
+
+// --- WIEDZA (skrócona; resztę w hubie /dla-pacjenta) ---
 const wiedzaColumns: MegaColumn[] = [
   {
     title: "Edukacja",
     items: [
-      { label: "Test ryzyka hemoroidów", href: "/dla-pacjenta/quiz-hemoroidy", desc: "Quiz · 9 pytań · 2 minuty" },
-      { label: "EBM hemoroidy", href: "/dla-pacjenta/ebm-hemoroidy", desc: "Czynniki ryzyka i profilaktyka" },
+      { label: "Test ryzyka hemoroidów", href: "/dla-pacjenta/quiz-hemoroidy", desc: "Quiz · 9 pytań · 2 min" },
       { label: "Hemoroidy A–Z", href: "/dla-pacjenta/hemoroidy" },
       { label: "Pajączki naczyniowe", href: "/dla-pacjenta/pajaczki" },
-      { label: "Profilaktyka żylaków", href: "/dla-pacjenta/profilaktyka-zylakow" },
       { label: "Pielęgnacja nóg", href: "/dla-pacjenta/pielegnacja-nog" },
-      { label: "Fałdy okolicy odbytu", href: "/dla-pacjenta/faldy-odbytu" },
-      { label: "Świadomy pacjent", href: "/dla-pacjenta/edukacja" },
-    ],
-  },
-  {
-    title: "Przed wizytą",
-    items: [
-      { label: "Przygotowanie do EVLT", href: "/dla-pacjenta/przygotowanie-evlt" },
-      { label: "Przygotowanie do LHP", href: "/dla-pacjenta/przygotowanie-lhp" },
-      { label: "FAQ proktologiczne", href: "/dla-pacjenta/proktolog-faq" },
-      { label: "Strefa pacjenta", href: "/dla-pacjenta" },
     ],
   },
   {
     title: "Materiały",
     items: [
       { label: "Blog", href: "/blog" },
-      { label: "E-book: Pajączki", href: "/dla-pacjenta/ebook-pajaczki" },
-      { label: "Hemoroidy – infografika", href: "/dla-pacjenta/hemoroidy-infografika" },
-    ],
-  },
-  {
-    title: "Tematy intymne",
-    items: [
-      {
-        label: "Seks analny a hemoroidy",
-        href: "/wiedza/seks-analny-a-hemoroidy",
-        desc: "Mit czy fakt? Pełny raport medyczny EBM",
-      },
+      { label: "Przygotowanie do EVLT", href: "/dla-pacjenta/przygotowanie-evlt" },
+      { label: "Przygotowanie do LHP", href: "/dla-pacjenta/przygotowanie-lhp" },
+      { label: "Strefa pacjenta →", href: "/dla-pacjenta" },
     ],
   },
 ];
 
+// --- KLINIKA (single dropdown, top-level housekeeping) ---
+const klinikaItems: NavItem[] = [
+  { label: "O nas", href: "/o-nas", desc: "Zespół, misja, dr Jan Bujok" },
+  { label: "Lokalizacje", href: "/kontakt", desc: "Warszawa · Siedlce · Rzeszów" },
+  { label: "Współpraca (B2B)", href: "/wspolpraca", desc: "Dla lekarzy i partnerów" },
+];
+
 // Spłaszczone listy do isSectionActive
 const flatten = (cols: MegaColumn[]): NavItem[] => cols.flatMap((c) => c.items);
-const allZabiegItems = flatten(zabiegColumns);
+const allProktologiaItems = flatten(proktologiaColumns);
+const allFlebologiaItems = flatten(flebologiaColumns);
 const allWiedzaItems = flatten(wiedzaColumns);
 
 const Header = () => {
