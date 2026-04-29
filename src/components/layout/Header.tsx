@@ -560,54 +560,47 @@ const Header = () => {
           : "bg-transparent"
       }`}
     >
-      {/* MAIN NAV BAR wrapper — single source of truth for --header-height (stable height). */}
-      <div ref={headerRef} className="relative max-w-7xl mx-auto px-4 md:px-8">
-        {/* TOP CONTACT BAR — absolutely positioned BELOW the main bar so collapsing it
-            does not change the measured <header> height (no content jumps on scroll). */}
-        <div
-          className={`hidden md:block absolute top-full left-0 right-0 border-b border-border/40 bg-card/80 backdrop-blur-sm transition-all duration-300 overflow-hidden ${
-            scrolled
-              ? "max-h-0 opacity-0 border-b-0 pointer-events-none"
-              : "max-h-12 opacity-100"
-          }`}
-          aria-hidden={scrolled}
-        >
-        <div className="max-w-7xl mx-auto px-4 md:px-8">
-          <div className="flex items-center justify-between gap-3 h-9 text-xs text-foreground/70">
-            <div className="flex items-center gap-3 lg:gap-5 min-w-0">
-              <a
-                href="tel:+48665666728"
-                className="flex items-center gap-1.5 hover:text-primary transition-colors whitespace-nowrap"
-              >
-                <Phone className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
-                <span>+48 665 666 728</span>
-              </a>
-              <a
-                href="mailto:fimedica@fimedica.pl"
-                className="hidden lg:flex items-center gap-1.5 hover:text-primary transition-colors min-w-0"
-              >
-                <Mail className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
-                <span className="truncate">fimedica@fimedica.pl</span>
-              </a>
-              <span className="hidden xl:flex items-center gap-1.5 text-foreground/60 whitespace-nowrap">
-                <MapPin className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
-                <span>Warszawa · Siedlce · Rzeszów</span>
-              </span>
-            </div>
-            <div className="flex items-center gap-3 lg:gap-4 shrink-0">
-              <span className="hidden xl:inline text-foreground/60 whitespace-nowrap">Pon–Pt: 8:00–20:00</span>
-              <Link
-                to="/kontakt"
-                className="hover:text-primary transition-colors font-medium whitespace-nowrap"
-              >
-                Lokalizacje
-              </Link>
+      {/* HEADER wrapper — single source of truth for --header-height (stable height incl. contact bar). */}
+      <div ref={headerRef}>
+        {/* TOP CONTACT BAR — ALWAYS visible (in normal flow), nigdy się nie zwija,
+            więc całkowita wysokość nagłówka jest stała przy scrollu (no layout shift). */}
+        <div className="hidden md:block border-b border-border/40 bg-card/80 backdrop-blur-sm">
+          <div className="max-w-7xl mx-auto px-4 md:px-8">
+            <div className="flex items-center justify-between gap-3 h-9 text-xs text-foreground/70">
+              <div className="flex items-center gap-3 lg:gap-5 min-w-0">
+                <a
+                  href="tel:+48665666728"
+                  className="flex items-center gap-1.5 hover:text-primary transition-colors whitespace-nowrap"
+                >
+                  <Phone className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                  <span>+48 665 666 728</span>
+                </a>
+                <a
+                  href="mailto:fimedica@fimedica.pl"
+                  className="hidden lg:flex items-center gap-1.5 hover:text-primary transition-colors min-w-0"
+                >
+                  <Mail className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                  <span className="truncate">fimedica@fimedica.pl</span>
+                </a>
+                <span className="hidden xl:flex items-center gap-1.5 text-foreground/60 whitespace-nowrap">
+                  <MapPin className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                  <span>Warszawa · Siedlce · Rzeszów</span>
+                </span>
+              </div>
+              <div className="flex items-center gap-3 lg:gap-4 shrink-0">
+                <span className="hidden xl:inline text-foreground/60 whitespace-nowrap">Pon–Pt: 8:00–20:00</span>
+                <Link
+                  to="/kontakt"
+                  className="hover:text-primary transition-colors font-medium whitespace-nowrap"
+                >
+                  Lokalizacje
+                </Link>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <div className="max-w-7xl mx-auto px-4 md:px-8">
+        <div className="max-w-7xl mx-auto px-4 md:px-8">
         <div className="flex items-center justify-between gap-2 h-16 md:h-20">
           <Link to="/" className="flex items-center gap-3 shrink-0">
             <img
