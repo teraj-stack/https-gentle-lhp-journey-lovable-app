@@ -808,7 +808,7 @@ const Header = () => {
                   ...zabiegColumns.flatMap((col, i) => [
                     <div
                       key={`zabieg-label-${i}`}
-                      className="px-4 py-2 text-xs font-semibold text-primary uppercase tracking-wider mt-2"
+                      className="px-4 py-2 text-[11px] font-semibold text-primary uppercase tracking-wider mt-2 truncate"
                     >
                       Zabieg · {col.title}
                     </div>,
@@ -816,13 +816,14 @@ const Header = () => {
                       <Link
                         key={`zabieg-${item.href}`}
                         to={item.href}
-                        className={`block px-6 py-2.5 rounded-lg text-sm hover:bg-accent/50 ${
+                        title={item.label}
+                        className={`flex items-center min-h-[44px] px-5 py-2 rounded-lg text-[14px] hover:bg-accent/50 truncate ${
                           isActive(item.href)
                             ? "text-primary bg-accent/50 font-medium"
-                            : "text-foreground/80"
+                            : "text-foreground/85"
                         }`}
                       >
-                        {item.label}
+                        <span className="truncate">{item.label}</span>
                       </Link>
                     )),
                   ]),
@@ -830,7 +831,7 @@ const Header = () => {
                   ...wiedzaColumns.flatMap((col, i) => [
                     <div
                       key={`wiedza-label-${i}`}
-                      className="px-4 py-2 text-xs font-semibold text-primary uppercase tracking-wider mt-2"
+                      className="px-4 py-2 text-[11px] font-semibold text-primary uppercase tracking-wider mt-2 truncate"
                     >
                       Wiedza · {col.title}
                     </div>,
@@ -838,13 +839,14 @@ const Header = () => {
                       <Link
                         key={`wiedza-${item.href}`}
                         to={item.href}
-                        className={`block px-6 py-2.5 rounded-lg text-sm hover:bg-accent/50 ${
+                        title={item.label}
+                        className={`flex items-center min-h-[44px] px-5 py-2 rounded-lg text-[14px] hover:bg-accent/50 truncate ${
                           isActive(item.href)
                             ? "text-primary bg-accent/50 font-medium"
-                            : "text-foreground/80"
+                            : "text-foreground/85"
                         }`}
                       >
-                        {item.label}
+                        <span className="truncate">{item.label}</span>
                       </Link>
                     )),
                   ]),
