@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, ChevronDown } from "lucide-react";
+import { Menu, X, ChevronDown, Phone, Mail, MapPin } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import logoCml from "@/assets/logo-cml.webp";
 
@@ -559,6 +559,48 @@ const Header = () => {
           : "bg-transparent"
       }`}
     >
+      {/* TOP CONTACT BAR (desktop only, hidden after scroll for compactness) */}
+      <div
+        className={`hidden lg:block border-b border-border/40 bg-card/60 backdrop-blur-sm transition-all duration-300 overflow-hidden ${
+          scrolled ? "max-h-0 opacity-0 border-b-0" : "max-h-12 opacity-100"
+        }`}
+        aria-hidden={scrolled}
+      >
+        <div className="max-w-7xl mx-auto px-4 md:px-8">
+          <div className="flex items-center justify-between h-9 text-xs text-foreground/70">
+            <div className="flex items-center gap-5">
+              <a
+                href="tel:+48665666728"
+                className="flex items-center gap-1.5 hover:text-primary transition-colors"
+              >
+                <Phone className="w-3.5 h-3.5" aria-hidden="true" />
+                <span>+48 665 666 728</span>
+              </a>
+              <a
+                href="mailto:fimedica@fimedica.pl"
+                className="flex items-center gap-1.5 hover:text-primary transition-colors"
+              >
+                <Mail className="w-3.5 h-3.5" aria-hidden="true" />
+                <span>fimedica@fimedica.pl</span>
+              </a>
+              <span className="hidden xl:flex items-center gap-1.5 text-foreground/60">
+                <MapPin className="w-3.5 h-3.5" aria-hidden="true" />
+                <span>Warszawa · Siedlce · Rzeszów</span>
+              </span>
+            </div>
+            <div className="flex items-center gap-4">
+              <span className="hidden xl:inline text-foreground/60">Pon–Pt: 8:00–20:00</span>
+              <Link
+                to="/kontakt"
+                className="hover:text-primary transition-colors font-medium"
+              >
+                Lokalizacje
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="max-w-7xl mx-auto px-4 md:px-8">
         <div className="flex items-center justify-between h-16 md:h-20">
           <Link to="/" className="flex items-center gap-3">
