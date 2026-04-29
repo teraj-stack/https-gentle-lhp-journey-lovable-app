@@ -736,74 +736,71 @@ const Header = () => {
                       <span>Napisz</span>
                     </a>
                   </div>,
-                  <Link
-                    key="o-nas"
-                    to="/o-nas"
-                    title="O nas"
-                    className={`flex items-center min-h-[44px] px-4 py-3 rounded-lg text-[15px] font-medium hover:bg-accent/50 truncate ${
-                      isActive("/o-nas")
-                        ? "text-primary bg-accent/50"
-                        : "text-foreground"
-                    }`}
-                  >
-                    O nas
-                  </Link>,
+                  ...([
+                    { key: "proktologia", label: "Proktologia", columns: proktologiaColumns },
+                    { key: "flebologia", label: "Flebologia", columns: flebologiaColumns },
+                  ].flatMap((section) => [
+                    <div
+                      key={`${section.key}-label`}
+                      className="px-4 py-2 text-xs font-semibold text-primary uppercase tracking-wider mt-2"
+                    >
+                      {section.label}
+                    </div>,
+                    ...section.columns.flatMap((col, i) => [
+                      <div
+                        key={`${section.key}-sub-${i}`}
+                        className="px-5 pt-2 pb-1 text-[11px] font-medium text-muted-foreground uppercase tracking-wider"
+                      >
+                        {col.title}
+                      </div>,
+                      ...col.items.map((item) => (
+                        <Link
+                          key={`${section.key}-${item.href}-${item.label}`}
+                          to={item.href}
+                          title={item.label}
+                          className={`flex flex-col justify-center min-h-[44px] px-5 py-2 rounded-lg hover:bg-accent/50 ${
+                            isActive(item.href) ? "bg-accent/50" : ""
+                          }`}
+                        >
+                          <span
+                            className={`block truncate text-[14px] leading-tight ${
+                              isActive(item.href)
+                                ? "text-primary font-medium"
+                                : "text-foreground/85"
+                            }`}
+                          >
+                            {item.label}
+                          </span>
+                          {item.desc && (
+                            <span className="block truncate text-[11px] text-muted-foreground mt-0.5">
+                              {item.desc}
+                            </span>
+                          )}
+                        </Link>
+                      )),
+                    ]),
+                  ])),
+
                   <div
-                    key="problem-label"
+                    key="ginekomastia-label"
                     className="px-4 py-2 text-xs font-semibold text-primary uppercase tracking-wider mt-2"
                   >
-                    Problem
+                    Ginekomastia
                   </div>,
-                  ...problemItems.map((item) => (
+                  ...ginekomastiaItems.map((item) => (
                     <Link
-                      key={`problem-${item.href}`}
+                      key={`ginekomastia-${item.href}`}
                       to={item.href}
                       title={item.label}
-                      className={`flex flex-col justify-center min-h-[44px] px-5 py-2 rounded-lg hover:bg-accent/50 ${
+                      className={`flex items-center min-h-[44px] px-5 py-2 rounded-lg text-[14px] hover:bg-accent/50 truncate ${
                         isActive(item.href)
-                          ? "bg-accent/50"
-                          : ""
+                          ? "text-primary bg-accent/50 font-medium"
+                          : "text-foreground/85"
                       }`}
                     >
-                      <span
-                        className={`block truncate text-[14px] leading-tight ${
-                          isActive(item.href)
-                            ? "text-primary font-medium"
-                            : "text-foreground/85"
-                        }`}
-                      >
-                        {item.label}
-                      </span>
-                      {item.desc && (
-                        <span className="block truncate text-[11px] text-muted-foreground mt-0.5">
-                          {item.desc}
-                        </span>
-                      )}
+                      <span className="truncate">{item.label}</span>
                     </Link>
                   )),
-
-                  ...zabiegColumns.flatMap((col, i) => [
-                    <div
-                      key={`zabieg-label-${i}`}
-                      className="px-4 py-2 text-[11px] font-semibold text-primary uppercase tracking-wider mt-2 truncate"
-                    >
-                      Zabieg · {col.title}
-                    </div>,
-                    ...col.items.map((item) => (
-                      <Link
-                        key={`zabieg-${item.href}`}
-                        to={item.href}
-                        title={item.label}
-                        className={`flex items-center min-h-[44px] px-5 py-2 rounded-lg text-[14px] hover:bg-accent/50 truncate ${
-                          isActive(item.href)
-                            ? "text-primary bg-accent/50 font-medium"
-                            : "text-foreground/85"
-                        }`}
-                      >
-                        <span className="truncate">{item.label}</span>
-                      </Link>
-                    )),
-                  ]),
 
                   ...wiedzaColumns.flatMap((col, i) => [
                     <div
@@ -828,23 +825,43 @@ const Header = () => {
                     )),
                   ]),
 
-                  <Link
-                    key="wspolpraca"
-                    to="/wspolpraca"
-                    title="Współpraca"
-                    className={`flex items-center min-h-[44px] px-4 py-3 rounded-lg text-[15px] font-medium hover:bg-accent/50 mt-2 truncate ${
-                      isActive("/wspolpraca")
-                        ? "text-primary bg-accent/50"
-                        : "text-foreground"
-                    }`}
+                  <div
+                    key="klinika-label"
+                    className="px-4 py-2 text-xs font-semibold text-primary uppercase tracking-wider mt-2"
                   >
-                    Współpraca
-                  </Link>,
+                    Klinika
+                  </div>,
+                  ...klinikaItems.map((item) => (
+                    <Link
+                      key={`klinika-${item.href}-${item.label}`}
+                      to={item.href}
+                      title={item.label}
+                      className={`flex flex-col justify-center min-h-[44px] px-5 py-2 rounded-lg hover:bg-accent/50 ${
+                        isActive(item.href) ? "bg-accent/50" : ""
+                      }`}
+                    >
+                      <span
+                        className={`block truncate text-[14px] leading-tight ${
+                          isActive(item.href)
+                            ? "text-primary font-medium"
+                            : "text-foreground/85"
+                        }`}
+                      >
+                        {item.label}
+                      </span>
+                      {item.desc && (
+                        <span className="block truncate text-[11px] text-muted-foreground mt-0.5">
+                          {item.desc}
+                        </span>
+                      )}
+                    </Link>
+                  )),
+
                   <Link
                     key="cennik"
                     to="/cennik"
                     title="Cennik"
-                    className={`flex items-center min-h-[44px] px-4 py-3 rounded-lg text-[15px] font-medium hover:bg-accent/50 truncate ${
+                    className={`flex items-center min-h-[44px] px-4 py-3 rounded-lg text-[15px] font-medium hover:bg-accent/50 mt-2 truncate ${
                       isActive("/cennik")
                         ? "text-primary bg-accent/50"
                         : "text-foreground"
