@@ -2112,6 +2112,78 @@ const renderHtml = ({
       background: rgba(220,90,90,.22);
       color: rgba(255,180,180,1);
     }
+    /* Inline log panel — pełnoszerokościowy, zwijalny <details>.
+       Trafia na nową linię (flex-basis 100%), żeby tabelka kroków miała
+       miejsce i nie ściskała innych kontrolek paska. */
+    .trends-filter-toast-pause-test-log {
+      flex-basis: 100%;
+      width: 100%;
+      font-size: .68rem;
+      margin-top: 4px;
+      border: 1px solid rgba(127,127,127,.30);
+      border-radius: 4px;
+      background: rgba(127,127,127,.06);
+    }
+    .trends-filter-toast-pause-test-log-summary {
+      cursor: pointer;
+      padding: 4px 8px;
+      list-style: none;
+      user-select: none;
+      opacity: .85;
+    }
+    .trends-filter-toast-pause-test-log-summary::-webkit-details-marker { display: none; }
+    .trends-filter-toast-pause-test-log-summary::before {
+      content: "▸ ";
+      display: inline-block;
+      transition: transform .15s ease;
+    }
+    .trends-filter-toast-pause-test-log[open] .trends-filter-toast-pause-test-log-summary::before {
+      content: "▾ ";
+    }
+    .trends-filter-toast-pause-test-log-body {
+      padding: 4px 8px 8px;
+      max-height: 240px;
+      overflow: auto;
+    }
+    .trends-filter-toast-pause-test-log-section {
+      margin-top: 4px;
+    }
+    .trends-filter-toast-pause-test-log-section:first-child { margin-top: 0; }
+    .trends-filter-toast-pause-test-log-section-title {
+      font-weight: 600;
+      opacity: .85;
+      margin-bottom: 2px;
+    }
+    .trends-filter-toast-pause-test-log-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-variant-numeric: tabular-nums;
+    }
+    .trends-filter-toast-pause-test-log-table th,
+    .trends-filter-toast-pause-test-log-table td {
+      text-align: left;
+      padding: 2px 6px;
+      border-bottom: 1px solid rgba(127,127,127,.18);
+    }
+    .trends-filter-toast-pause-test-log-table th {
+      font-weight: 500;
+      opacity: .65;
+    }
+    .trends-filter-toast-pause-test-log-row.is-ok td:first-child::before {
+      content: "✓ ";
+      color: rgba(120,200,140,1);
+    }
+    .trends-filter-toast-pause-test-log-row.is-fail td:first-child::before {
+      content: "✗ ";
+      color: rgba(255,140,140,1);
+    }
+    .trends-filter-toast-pause-test-log-row.is-fail {
+      background: rgba(220,90,90,.08);
+    }
+    .trends-filter-toast-pause-test-log-empty {
+      opacity: .7;
+      font-style: italic;
+    }
     .trends-filter-export {
       font-size: .75rem;
       padding: 4px 10px;
