@@ -762,7 +762,8 @@ const Header = () => {
                   <Link
                     key="o-nas"
                     to="/o-nas"
-                    className={`block px-4 py-3 rounded-lg text-sm font-medium hover:bg-accent/50 ${
+                    title="O nas"
+                    className={`flex items-center min-h-[44px] px-4 py-3 rounded-lg text-[15px] font-medium hover:bg-accent/50 truncate ${
                       isActive("/o-nas")
                         ? "text-primary bg-accent/50"
                         : "text-foreground"
