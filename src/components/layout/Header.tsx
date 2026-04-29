@@ -736,7 +736,7 @@ const Header = () => {
               transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
               className="lg:hidden bg-card border-t border-border overflow-hidden max-h-[calc(100vh-4rem)] overflow-y-auto overscroll-contain"
             >
-              <div className="px-4 py-4 space-y-1">
+              <div className="px-3 sm:px-4 py-4 space-y-1">
                 {[
                   <div
                     key="mobile-contact-bar"
