@@ -4255,6 +4255,33 @@ const renderHtml = ({
     // eksportu (auto-hide per format, zip threshold, itd.). Klucz dedykowany.
     var PAUSE_TEST_SCOPE_KEY = "cml-trends-pause-test-scope";
     var PAUSE_TEST_SCOPE_VALUES = ["both", "zip", "zip-split"];
+    // Per-scope preferencja stanu rozwinięcia panelu logu. Mapa scope→bool
+    // serializowana jako JSON pod jednym kluczem (mniej śmiecia w localStorage
+    // i atomowy zapis). Brak wpisu dla danego scope = „nie ma preferencji" →
+    // wracamy do domyślnej heurystyki (auto-open przy fail/parity issue).
+    var PAUSE_TEST_LOG_OPEN_KEY = "cml-trends-pause-test-log-open";
+    function readPauseTestLogOpenMap() {
+      try {
+        var raw = localStorage.getItem(PAUSE_TEST_LOG_OPEN_KEY);
+        if (!raw) return {};
+        var parsed = JSON.parse(raw);
+        return (parsed && typeof parsed === "object") ? parsed : {};
+      } catch (_e) { return {}; }
+    }
+    function getPauseTestLogOpen(scope) {
+      var map = readPauseTestLogOpenMap();
+      // Zwracamy tri-state: true/false/null. null → brak preferencji.
+      if (Object.prototype.hasOwnProperty.call(map, scope)) return !!map[scope];
+      return null;
+    }
+    function setPauseTestLogOpen(scope, open) {
+      if (PAUSE_TEST_SCOPE_VALUES.indexOf(scope) === -1) return;
+      try {
+        var map = readPauseTestLogOpenMap();
+        map[scope] = !!open;
+        localStorage.setItem(PAUSE_TEST_LOG_OPEN_KEY, JSON.stringify(map));
+      } catch (_e) {}
+    }
     function getPauseTestScope() {
       try {
         var v = localStorage.getItem(PAUSE_TEST_SCOPE_KEY);
@@ -4268,11 +4295,33 @@ const renderHtml = ({
         var v = toastPauseTestScopeSelect.value;
         if (PAUSE_TEST_SCOPE_VALUES.indexOf(v) === -1) v = "both";
         try { localStorage.setItem(PAUSE_TEST_SCOPE_KEY, v); } catch (_e) {}
+        // Przy zmianie scope — od razu odświeżamy stan rozwinięcia panelu,
+        // żeby trafiał z preferencją dla nowego scope (jeśli panel jest na
+        // ekranie). Brak preferencji → zostawiamy bieżący stan, nie szarpiemy.
+        if (toastPauseTestLog && !toastPauseTestLog.hidden) {
+          var pref = getPauseTestLogOpen(v);
+          if (pref !== null) toastPauseTestLog.open = pref;
+        }
       });
     }
     var toastPauseTestLog = root.querySelector("[data-trend-toast-pause-test-log]");
     var toastPauseTestLogSummary = root.querySelector("[data-trend-toast-pause-test-log-summary]");
     var toastPauseTestLogBody = root.querySelector("[data-trend-toast-pause-test-log-body]");
+    // Persist user-driven toggle: gdy user otworzy/zwinie panel, zapamiętujemy
+    // to pod kluczem aktualnego scope. Ignorujemy zdarzenia dispatchowane przez
+    // sam render (flaga ignoreToggleOnce) — inaczej auto-open przy fail
+    // nadpisałby preferencję usera natychmiast po zapisie.
+    var ignorePauseTestLogToggleOnce = false;
+    if (toastPauseTestLog) {
+      toastPauseTestLog.addEventListener("toggle", function () {
+        if (ignorePauseTestLogToggleOnce) {
+          ignorePauseTestLogToggleOnce = false;
+          return;
+        }
+        var scope = getPauseTestScope();
+        setPauseTestLogOpen(scope, !!toastPauseTestLog.open);
+      });
+    }
     function setPauseTestResult(state, text, title) {
       if (!toastPauseTestResult) return;
       toastPauseTestResult.classList.remove("is-running", "is-pass", "is-fail");
@@ -4493,15 +4542,30 @@ const renderHtml = ({
         toastPauseTestLogBody.appendChild(sec);
       });
       toastPauseTestLog.hidden = false;
-      // Auto-otwórz przy fail, żeby user od razu widział co się sypnęło.
-      // Przy pass zostawiamy zwinięty — minimalizujemy szum.
-      if (summary.okSteps !== summary.totalSteps || (summary.parityIssues && summary.parityIssues.length)) {
-        toastPauseTestLog.open = true;
+      // Decyzja o open/closed:
+      //   1) Jeśli user MA zapisaną preferencję dla aktualnego scope — wygrywa.
+      //   2) Inaczej (brak preferencji) → fallback do heurystyki: auto-open
+      //      przy faili lub parity issue, zamknięty przy pass.
+      // ignorePauseTestLogToggleOnce blokuje ten programowy zapis przed
+      // nadpisaniem prefa przez listener 'toggle' (set-from-render ≠ user).
+      var savedOpen = getPauseTestLogOpen(summary.scope);
+      var nextOpen;
+      if (savedOpen !== null) {
+        nextOpen = savedOpen;
+      } else {
+        nextOpen = (summary.okSteps !== summary.totalSteps)
+          || !!(summary.parityIssues && summary.parityIssues.length);
+      }
+      if (toastPauseTestLog.open !== nextOpen) {
+        ignorePauseTestLogToggleOnce = true;
+        toastPauseTestLog.open = nextOpen;
       }
     }
     function clearPauseTestLog() {
       if (!toastPauseTestLog) return;
       toastPauseTestLog.hidden = true;
+      // Programowy reset — nie zapisujemy go jako preferencji usera.
+      if (toastPauseTestLog.open) ignorePauseTestLogToggleOnce = true;
       toastPauseTestLog.open = false;
       if (toastPauseTestLogBody) {
         while (toastPauseTestLogBody.firstChild) toastPauseTestLogBody.removeChild(toastPauseTestLogBody.firstChild);
@@ -5012,6 +5076,8 @@ const renderHtml = ({
             errEl.textContent = "Błąd testu: " + String((e && e.message) || e);
             toastPauseTestLogBody.appendChild(errEl);
             toastPauseTestLog.hidden = false;
+            // Force-open przy błędzie — programowy zapis, nie nadpisuj prefa.
+            if (!toastPauseTestLog.open) ignorePauseTestLogToggleOnce = true;
             toastPauseTestLog.open = true;
           }
         });
