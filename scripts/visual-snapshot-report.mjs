@@ -2169,6 +2169,11 @@ const renderHtml = ({
       font-weight: 500;
       opacity: .65;
     }
+    .trends-filter-toast-pause-test-log-table td.is-num {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      font-feature-settings: "tnum" 1;
+    }
     .trends-filter-toast-pause-test-log-row.is-ok td:first-child::before {
       content: "✓ ";
       color: rgba(120,200,140,1);
