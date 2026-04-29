@@ -4299,6 +4299,21 @@ const renderHtml = ({
       }
       hdrLine.textContent = parts.join(" · ");
       hdr.appendChild(hdrLine);
+      // „Likely cause" — analiza pierwszego failującego kroku + częstych
+      // wzorców rozjazdów state↔progress↔countdown. Pokazuje się TYLKO gdy
+      // są faile (lub parity issues), żeby nie szumieć przy zielonych biegach.
+      var hint = diagnoseLikelyCause(reports, summary);
+      if (hint) {
+        var hintEl = document.createElement("div");
+        hintEl.className = "trends-filter-toast-pause-test-log-hint";
+        hintEl.setAttribute("data-trend-toast-pause-test-hint", "");
+        // Prefix „Likely cause:" semantycznie oddziela heurystykę od faktów.
+        var hintPrefix = document.createElement("strong");
+        hintPrefix.textContent = "Likely cause: ";
+        hintEl.appendChild(hintPrefix);
+        hintEl.appendChild(document.createTextNode(hint));
+        hdr.appendChild(hintEl);
+      }
       toastPauseTestLogBody.appendChild(hdr);
       // Per-format sekcje.
       reports.forEach(function (rep) {
