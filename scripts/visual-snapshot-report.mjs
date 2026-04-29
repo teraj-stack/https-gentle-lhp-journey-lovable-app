@@ -1162,6 +1162,25 @@ const renderHtml = ({
           data-trend-toast-pause-test
           title="Automatyczna weryfikacja: czy hover/focus pauzuje countdown identycznie dla zip i zip-split. Trwa ~1.5 s, wyniki w konsoli + badge."
         >🧪 Test pauzy</button>
+        <!--
+          Zakres testu pauzy — pozwala uruchomić weryfikację tylko dla
+          jednego formatu (gdy interesuje nas regresja punktowa) lub dla
+          obu (default, parity check). Wartość zapisywana w localStorage
+          pod kluczem cml-trends-pause-test-scope, żeby preferencja
+          przetrwała reload (parytetnie z resztą ustawień eksportu).
+        -->
+        <label class="trends-filter-toast-pause-test-scope" title="Zakres automatycznego testu pauzy hover/focus">
+          <span class="trends-filter-toast-pause-test-scope-label">Zakres:</span>
+          <select
+            class="trends-filter-toast-pause-test-scope-select"
+            data-trend-toast-pause-test-scope
+            aria-label="Zakres testu pauzy"
+          >
+            <option value="both">zip + zip-split (parity)</option>
+            <option value="zip">tylko zip</option>
+            <option value="zip-split">tylko zip-split</option>
+          </select>
+        </label>
         <span class="trends-filter-toast-pause-test-result" data-trend-toast-pause-test-result aria-live="polite"></span>
         <!--
           „📦 Otwórz ostatnią paczkę" — rehydratuje OSTATNIO wygenerowaną
@@ -2033,6 +2052,24 @@ const renderHtml = ({
     .trends-filter-toast-test:focus-visible {
       outline: 2px solid rgba(201,168,76,.85);
       outline-offset: 2px;
+    }
+    /* Selector zakresu testu pauzy — kompaktowy, zgrupowany z labelką. */
+    .trends-filter-toast-pause-test-scope {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: .68rem;
+      align-self: center;
+      opacity: .85;
+    }
+    .trends-filter-toast-pause-test-scope-label { opacity: .7; }
+    .trends-filter-toast-pause-test-scope-select {
+      font-size: .68rem;
+      padding: 2px 4px;
+      background: rgba(127,127,127,.10);
+      color: inherit;
+      border: 1px solid rgba(127,127,127,.35);
+      border-radius: 4px;
     }
     /* Badge wyniku testu pauzy — zielony ✓ albo czerwony ✗ z liczbą OK/total. */
     .trends-filter-toast-pause-test-result {
@@ -4066,6 +4103,26 @@ const renderHtml = ({
     // Po teście: hideReadyToast() + przywracamy oryginalny format eksportu.
     var toastPauseTestBtn = root.querySelector("[data-trend-toast-pause-test]");
     var toastPauseTestResult = root.querySelector("[data-trend-toast-pause-test-result]");
+    var toastPauseTestScopeSelect = root.querySelector("[data-trend-toast-pause-test-scope]");
+    // Persistencja zakresu testu pauzy — zgodnie z wzorcem innych preferencji
+    // eksportu (auto-hide per format, zip threshold, itd.). Klucz dedykowany.
+    var PAUSE_TEST_SCOPE_KEY = "cml-trends-pause-test-scope";
+    var PAUSE_TEST_SCOPE_VALUES = ["both", "zip", "zip-split"];
+    function getPauseTestScope() {
+      try {
+        var v = localStorage.getItem(PAUSE_TEST_SCOPE_KEY);
+        if (v && PAUSE_TEST_SCOPE_VALUES.indexOf(v) !== -1) return v;
+      } catch (_e) {}
+      return "both";
+    }
+    if (toastPauseTestScopeSelect) {
+      toastPauseTestScopeSelect.value = getPauseTestScope();
+      toastPauseTestScopeSelect.addEventListener("change", function () {
+        var v = toastPauseTestScopeSelect.value;
+        if (PAUSE_TEST_SCOPE_VALUES.indexOf(v) === -1) v = "both";
+        try { localStorage.setItem(PAUSE_TEST_SCOPE_KEY, v); } catch (_e) {}
+      });
+    }
     function setPauseTestResult(state, text, title) {
       if (!toastPauseTestResult) return;
       toastPauseTestResult.classList.remove("is-running", "is-pass", "is-fail");
@@ -4142,8 +4199,11 @@ const renderHtml = ({
         return { format: fmt, skipped: false, results: results };
       });
     }
-    function runPauseTestForBothFormats() {
+    function runPauseTestForBothFormats(scopeOverride) {
       if (!readyToast || typeof showReadyToast !== "function") return Promise.resolve(null);
+      var scope = scopeOverride || getPauseTestScope();
+      // scope: "both" | "zip" | "zip-split" — wybiera listę formatów do testu.
+      var formatsToRun = scope === "both" ? ["zip", "zip-split"] : [scope];
       var originalFormat = exportFormatSelect ? exportFormatSelect.value : null;
       function setFormatAndSync(f) {
         if (!exportFormatSelect) return;
@@ -4151,15 +4211,24 @@ const renderHtml = ({
         // Triggeruje syncToastAutoHideUi + refreshZipHint via change listener.
         exportFormatSelect.dispatchEvent(new Event("change", { bubbles: true }));
       }
-      setPauseTestResult("is-running", "⏳ test…", "Trwa weryfikacja pauzy dla zip i zip-split");
-      setFormatAndSync("zip");
-      return runPauseScenarioForFormat("zip").then(function (zipReport) {
-        setFormatAndSync("zip-split");
-        return runPauseScenarioForFormat("zip-split").then(function (splitReport) {
-          // Restore original format wybór usera — nie zmieniamy mu pod nogami.
-          if (originalFormat != null) setFormatAndSync(originalFormat);
-          return [zipReport, splitReport];
+      var label = scope === "both"
+        ? "Trwa weryfikacja pauzy dla zip i zip-split"
+        : "Trwa weryfikacja pauzy tylko dla " + scope;
+      setPauseTestResult("is-running", "⏳ test…", label);
+      // Sekwencyjnie po formatach z listy — zachowujemy oryginalny format usera.
+      return formatsToRun.reduce(function (chain, fmt) {
+        return chain.then(function (acc) {
+          setFormatAndSync(fmt);
+          return runPauseScenarioForFormat(fmt).then(function (rep) {
+            acc.push(rep);
+            return acc;
+          });
         });
+      }, Promise.resolve([])).then(function (reports) {
+        if (originalFormat != null) setFormatAndSync(originalFormat);
+        // Tag scope na reports — pomocne w konsoli/parity logic.
+        reports.scope = scope;
+        return reports;
       });
     }
     if (toastPauseTestBtn) {
@@ -4172,7 +4241,9 @@ const renderHtml = ({
             return;
           }
           var totalSteps = 0, okSteps = 0, skipped = [], parityIssues = [];
-          // Parytet: dla każdego kroku porównujemy ok-flag między zip a zip-split.
+          var scope = (reports && reports.scope) || "both";
+          // Parytet liczymy TYLKO gdy testowano oba formaty — przy single-format
+          // scope nie ma czego porównywać (nie traktujemy braku jako issue).
           var byStep = {};
           reports.forEach(function (rep) {
             if (rep.skipped) { skipped.push(rep.format + " (" + rep.reason + ")"); return; }
@@ -4183,16 +4254,18 @@ const renderHtml = ({
               byStep[r.step][rep.format] = r.ok;
             });
           });
-          Object.keys(byStep).forEach(function (stepName) {
-            var z = byStep[stepName].zip;
-            var s = byStep[stepName]["zip-split"];
-            if (z !== undefined && s !== undefined && z !== s) {
-              parityIssues.push(stepName + " (zip=" + (z ? "OK" : "FAIL") + ", zip-split=" + (s ? "OK" : "FAIL") + ")");
-            }
-          });
+          if (scope === "both") {
+            Object.keys(byStep).forEach(function (stepName) {
+              var z = byStep[stepName].zip;
+              var s = byStep[stepName]["zip-split"];
+              if (z !== undefined && s !== undefined && z !== s) {
+                parityIssues.push(stepName + " (zip=" + (z ? "OK" : "FAIL") + ", zip-split=" + (s ? "OK" : "FAIL") + ")");
+              }
+            });
+          }
           // Pełny report do konsoli — user może go zwinąć/skopiować.
           // eslint-disable-next-line no-console
-          console.groupCollapsed("[toast-pause-test] " + okSteps + "/" + totalSteps + " OK"
+          console.groupCollapsed("[toast-pause-test] scope=" + scope + " · " + okSteps + "/" + totalSteps + " OK"
             + (parityIssues.length ? " · parity issues: " + parityIssues.join(", ") : "")
             + (skipped.length ? " · skipped: " + skipped.join(", ") : ""));
           // eslint-disable-next-line no-console
@@ -4202,12 +4275,16 @@ const renderHtml = ({
           // eslint-disable-next-line no-console
           console.groupEnd();
           var allOk = okSteps === totalSteps && parityIssues.length === 0;
+          var formatsLabel = scope === "both" ? "zip i zip-split" : scope;
+          var formatsCount = scope === "both" ? 2 : 1;
           if (totalSteps === 0) {
             setPauseTestResult("is-fail", "⚠ brak kroków",
-              "Oba formaty mają auto-hide=0 (Bez auto-hide). Ustaw 8/12/20 s i spróbuj ponownie.");
+              (scope === "both" ? "Oba formaty mają" : "Format " + scope + " ma")
+              + " auto-hide=0 (Bez auto-hide). Ustaw 8/12/20 s i spróbuj ponownie.");
           } else if (allOk) {
             setPauseTestResult("is-pass", "✓ " + okSteps + "/" + totalSteps,
-              "Hover/focus pauzuje countdown identycznie dla zip i zip-split (4 kroki × 2 formaty).");
+              "Hover/focus pauzuje countdown identycznie dla " + formatsLabel
+              + " (4 kroki × " + formatsCount + " " + (formatsCount === 1 ? "format" : "formaty") + ").");
           } else {
             setPauseTestResult("is-fail", "✗ " + okSteps + "/" + totalSteps,
               (parityIssues.length ? "Parity issues: " + parityIssues.join("; ") + ". " : "")
