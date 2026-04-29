@@ -342,7 +342,103 @@ const Header = () => {
   }, [megaOpen]);
 
   const isActive = (href: string) => pathname === href;
-  const isSectionActive = (items: NavItem[]) => items.some((i) => pathname === i.href);
+
+  /**
+   * Mapa prefiksów per sekcja nawigacji. Sekcja jest aktywna gdy `pathname`
+   * zaczyna się od któregokolwiek prefixu LUB jest dokładnym matchem href'a
+   * któregoś itemu (fallback dla sekcji-singletons typu Klinika gdzie itemy
+   * prowadzą do różnych top-level routes: /o-nas, /kontakt, /wspolpraca).
+   *
+   * Dlaczego prefix-based:
+   * - Hub `/leczenie/proktologia` ma podstrony `/leczenie/lhp`, `/leczenie/szczelina`,
+   *   `/leczenie/plastyka`, `/leczenie/anusitis`, `/leczenie/spazm-lonowoodbytniczy`.
+   *   Bez prefixów (strict equality) wejście na podstronę nie podświetlało
+   *   dropdownu „Proktologia" w nav.
+   * - Flebologia analogicznie: hub + dzieci `/leczenie/{evlt,filac,silac,clacs,
+   *   skleroterapia,mikroflebektomia,fototerapia}` (wspólne z proktologią pod
+   *   `/leczenie/`, ale dyskryminowane przez explicit listę zabiegów flebo).
+   * - Ginekomastia: hub `/leczenie/ginekomastia` + warianty `-gruczolowa/-tluszczowa/-mieszana`.
+   * - Wiedza: cały subtree `/dla-pacjenta/*` + edukacyjne `/wiedza/*` + `/blog`.
+   *
+   * UWAGA: kolejność dopasowania ma znaczenie tylko wizualnie (wiele dropdownów
+   * NIE może być jednocześnie zapodświetlonych) — radzimy to przez dyskryminację
+   * konkretnymi prefiksami zabiegów, nie generycznym `/leczenie/`.
+   */
+  const SECTION_PREFIXES: Record<string, string[]> = {
+    proktologia: [
+      "/leczenie/proktologia",
+      "/leczenie/lhp",
+      "/leczenie/szczelina",
+      "/leczenie/plastyka",
+      "/leczenie/anusitis",
+      "/leczenie/spazm-lonowoodbytniczy",
+      "/dla-pacjenta/hemoroidy",
+      "/dla-pacjenta/faldy-odbytu",
+      "/dla-pacjenta/proktolog-faq",
+      "/dla-pacjenta/przygotowanie-lhp",
+      "/dla-pacjenta/przygotowanie-filac",
+      "/dla-pacjenta/przygotowanie-plastyka",
+      "/dla-pacjenta/zalecenia-po-lhp",
+      "/dla-pacjenta/zalecenia-po-filac",
+      "/dla-pacjenta/zalecenia-po-plastyce",
+    ],
+    flebologia: [
+      "/leczenie/flebologia",
+      "/leczenie/evlt",
+      "/leczenie/filac",
+      "/leczenie/silac",
+      "/leczenie/clacs",
+      "/leczenie/skleroterapia",
+      "/leczenie/mikroflebektomia",
+      "/leczenie/fototerapia",
+      "/dla-pacjenta/pajaczki",
+      "/dla-pacjenta/pielegnacja-nog",
+      "/dla-pacjenta/profilaktyka-zylakow",
+      "/dla-pacjenta/ebook-pajaczki",
+      "/dla-pacjenta/przygotowanie-evlt",
+      "/dla-pacjenta/przygotowanie-clacs",
+      "/dla-pacjenta/przygotowanie-silac",
+      "/dla-pacjenta/przygotowanie-skleroterapia",
+      "/dla-pacjenta/przygotowanie-mikroflebektomia",
+      "/dla-pacjenta/zalecenia-po-evlt",
+      "/dla-pacjenta/zalecenia-po-clacs",
+      "/dla-pacjenta/zalecenia-po-silac",
+      "/dla-pacjenta/zalecenia-po-skleroterapii",
+      "/dla-pacjenta/zalecenia-po-mikroflebektomii",
+    ],
+    ginekomastia: [
+      "/leczenie/ginekomastia",
+      "/dla-pacjenta/przygotowanie-ginekomastii",
+      "/dla-pacjenta/przygotowanie-ginekomastia",
+      "/dla-pacjenta/zalecenia-po-ginekomastii",
+    ],
+    wiedza: [
+      "/dla-pacjenta",
+      "/wiedza",
+      "/blog",
+    ],
+    klinika: [
+      "/o-nas",
+      "/wspolpraca",
+      // /kontakt świadomie wykluczony — Kontakt jest osobnym top-level linkiem,
+      // nie powinien podświetlać dropdownu „Klinika".
+    ],
+  };
+
+  /**
+   * Sekcja aktywna gdy:
+   *  1) pathname === jednego z item.href (zachowanie starego API), LUB
+   *  2) pathname zaczyna się od któregoś prefixu sekcji (`startsWith` z guardem
+   *     na granicę segmentu, żeby `/leczenie/lhp` nie matchowało `/leczenie/lhp-foo`).
+   */
+  const isSectionActive = (keyName: string, items: NavItem[]): boolean => {
+    if (items.some((i) => pathname === i.href)) return true;
+    const prefixes = SECTION_PREFIXES[keyName];
+    if (!prefixes) return false;
+    return prefixes.some(
+      (p) => pathname === p || pathname.startsWith(`${p}/`)
+    );
+  };
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
