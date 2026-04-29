@@ -4847,6 +4847,8 @@ const renderHtml = ({
                 countdown: r.got ? r.got.countdown : null,
               },
               ok: !!r.ok,
+              dispatchedAt: r.dispatchedAt || null,
+              elapsedMs: (r.elapsedMs === null || r.elapsedMs === undefined) ? null : r.elapsedMs,
             };
           }),
         };
