@@ -734,9 +734,9 @@ const Header = () => {
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-              className="lg:hidden bg-card border-t border-border overflow-hidden max-h-[calc(100vh-4rem)] overflow-y-auto"
+              className="lg:hidden bg-card border-t border-border overflow-hidden max-h-[calc(100vh-4rem)] overflow-y-auto overscroll-contain"
             >
-              <div className="px-4 py-4 space-y-1">
+              <div className="px-3 sm:px-4 py-4 space-y-1">
                 {[
                   <div
                     key="mobile-contact-bar"
@@ -762,7 +762,8 @@ const Header = () => {
                   <Link
                     key="o-nas"
                     to="/o-nas"
-                    className={`block px-4 py-3 rounded-lg text-sm font-medium hover:bg-accent/50 ${
+                    title="O nas"
+                    className={`flex items-center min-h-[44px] px-4 py-3 rounded-lg text-[15px] font-medium hover:bg-accent/50 truncate ${
                       isActive("/o-nas")
                         ? "text-primary bg-accent/50"
                         : "text-foreground"
@@ -780,20 +781,34 @@ const Header = () => {
                     <Link
                       key={`problem-${item.href}`}
                       to={item.href}
-                      className={`block px-6 py-2.5 rounded-lg text-sm hover:bg-accent/50 ${
+                      title={item.label}
+                      className={`flex flex-col justify-center min-h-[44px] px-5 py-2 rounded-lg hover:bg-accent/50 ${
                         isActive(item.href)
-                          ? "text-primary bg-accent/50 font-medium"
-                          : "text-foreground/80"
+                          ? "bg-accent/50"
+                          : ""
                       }`}
                     >
-                      {item.label}
+                      <span
+                        className={`block truncate text-[14px] leading-tight ${
+                          isActive(item.href)
+                            ? "text-primary font-medium"
+                            : "text-foreground/85"
+                        }`}
+                      >
+                        {item.label}
+                      </span>
+                      {item.desc && (
+                        <span className="block truncate text-[11px] text-muted-foreground mt-0.5">
+                          {item.desc}
+                        </span>
+                      )}
                     </Link>
                   )),
 
                   ...zabiegColumns.flatMap((col, i) => [
                     <div
                       key={`zabieg-label-${i}`}
-                      className="px-4 py-2 text-xs font-semibold text-primary uppercase tracking-wider mt-2"
+                      className="px-4 py-2 text-[11px] font-semibold text-primary uppercase tracking-wider mt-2 truncate"
                     >
                       Zabieg · {col.title}
                     </div>,
@@ -801,13 +816,14 @@ const Header = () => {
                       <Link
                         key={`zabieg-${item.href}`}
                         to={item.href}
-                        className={`block px-6 py-2.5 rounded-lg text-sm hover:bg-accent/50 ${
+                        title={item.label}
+                        className={`flex items-center min-h-[44px] px-5 py-2 rounded-lg text-[14px] hover:bg-accent/50 truncate ${
                           isActive(item.href)
                             ? "text-primary bg-accent/50 font-medium"
-                            : "text-foreground/80"
+                            : "text-foreground/85"
                         }`}
                       >
-                        {item.label}
+                        <span className="truncate">{item.label}</span>
                       </Link>
                     )),
                   ]),
@@ -815,7 +831,7 @@ const Header = () => {
                   ...wiedzaColumns.flatMap((col, i) => [
                     <div
                       key={`wiedza-label-${i}`}
-                      className="px-4 py-2 text-xs font-semibold text-primary uppercase tracking-wider mt-2"
+                      className="px-4 py-2 text-[11px] font-semibold text-primary uppercase tracking-wider mt-2 truncate"
                     >
                       Wiedza · {col.title}
                     </div>,
@@ -823,13 +839,14 @@ const Header = () => {
                       <Link
                         key={`wiedza-${item.href}`}
                         to={item.href}
-                        className={`block px-6 py-2.5 rounded-lg text-sm hover:bg-accent/50 ${
+                        title={item.label}
+                        className={`flex items-center min-h-[44px] px-5 py-2 rounded-lg text-[14px] hover:bg-accent/50 truncate ${
                           isActive(item.href)
                             ? "text-primary bg-accent/50 font-medium"
-                            : "text-foreground/80"
+                            : "text-foreground/85"
                         }`}
                       >
-                        {item.label}
+                        <span className="truncate">{item.label}</span>
                       </Link>
                     )),
                   ]),
@@ -837,7 +854,8 @@ const Header = () => {
                   <Link
                     key="wspolpraca"
                     to="/wspolpraca"
-                    className={`block px-4 py-3 rounded-lg text-sm font-medium hover:bg-accent/50 mt-2 ${
+                    title="Współpraca"
+                    className={`flex items-center min-h-[44px] px-4 py-3 rounded-lg text-[15px] font-medium hover:bg-accent/50 mt-2 truncate ${
                       isActive("/wspolpraca")
                         ? "text-primary bg-accent/50"
                         : "text-foreground"
@@ -848,7 +866,8 @@ const Header = () => {
                   <Link
                     key="cennik"
                     to="/cennik"
-                    className={`block px-4 py-3 rounded-lg text-sm font-medium hover:bg-accent/50 ${
+                    title="Cennik"
+                    className={`flex items-center min-h-[44px] px-4 py-3 rounded-lg text-[15px] font-medium hover:bg-accent/50 truncate ${
                       isActive("/cennik")
                         ? "text-primary bg-accent/50"
                         : "text-foreground"
@@ -859,7 +878,8 @@ const Header = () => {
                   <Link
                     key="kontakt"
                     to="/kontakt"
-                    className={`block px-4 py-3 rounded-lg text-sm font-medium hover:bg-accent/50 ${
+                    title="Kontakt"
+                    className={`flex items-center min-h-[44px] px-4 py-3 rounded-lg text-[15px] font-medium hover:bg-accent/50 truncate ${
                       isActive("/kontakt")
                         ? "text-primary bg-accent/50"
                         : "text-foreground"
