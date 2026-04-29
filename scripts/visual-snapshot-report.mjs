@@ -4428,11 +4428,20 @@ const renderHtml = ({
         return { format: fmt, skipped: false, results: results };
       });
     }
-    function runPauseTestForBothFormats(scopeOverride) {
+    function runPauseTestForBothFormats(scopeOverride, failedByFormat) {
       if (!readyToast || typeof showReadyToast !== "function") return Promise.resolve(null);
       var scope = scopeOverride || getPauseTestScope();
       // scope: "both" | "zip" | "zip-split" — wybiera listę formatów do testu.
       var formatsToRun = scope === "both" ? ["zip", "zip-split"] : [scope];
+      // failedByFormat (opcjonalny) → { [format]: [stepLabel,…] } z poprzedniego
+      // biegu. Ograniczamy listę formatów i kroków do tych, które faktycznie
+      // się sypnęły. To napędza "Retry failed steps".
+      var isRetry = !!(failedByFormat && Object.keys(failedByFormat).length);
+      if (isRetry) {
+        formatsToRun = formatsToRun.filter(function (f) {
+          return failedByFormat[f] && failedByFormat[f].length;
+        });
+      }
       var originalFormat = exportFormatSelect ? exportFormatSelect.value : null;
       function setFormatAndSync(f) {
         if (!exportFormatSelect) return;
@@ -4440,15 +4449,22 @@ const renderHtml = ({
         // Triggeruje syncToastAutoHideUi + refreshZipHint via change listener.
         exportFormatSelect.dispatchEvent(new Event("change", { bubbles: true }));
       }
-      var label = scope === "both"
-        ? "Trwa weryfikacja pauzy dla zip i zip-split"
-        : "Trwa weryfikacja pauzy tylko dla " + scope;
-      setPauseTestResult("is-running", "⏳ test…", label);
+      var label;
+      if (isRetry) {
+        label = "Retry: ponawiam tylko kroki, które poprzednio failnęły";
+      } else {
+        label = scope === "both"
+          ? "Trwa weryfikacja pauzy dla zip i zip-split"
+          : "Trwa weryfikacja pauzy tylko dla " + scope;
+      }
+      setPauseTestResult("is-running", isRetry ? "⏳ retry…" : "⏳ test…", label);
       // Sekwencyjnie po formatach z listy — zachowujemy oryginalny format usera.
       return formatsToRun.reduce(function (chain, fmt) {
         return chain.then(function (acc) {
           setFormatAndSync(fmt);
-          return runPauseScenarioForFormat(fmt).then(function (rep) {
+          var stepFilter = isRetry ? failedByFormat[fmt] : null;
+          return runPauseScenarioForFormat(fmt, stepFilter).then(function (rep) {
+            if (isRetry) rep.retry = true;
             acc.push(rep);
             return acc;
           });
@@ -4457,15 +4473,159 @@ const renderHtml = ({
         if (originalFormat != null) setFormatAndSync(originalFormat);
         // Tag scope na reports — pomocne w konsoli/parity logic.
         reports.scope = scope;
+        reports.isRetry = isRetry;
         return reports;
       });
+    }
+    // Trzymamy wynik OSTATNIEGO biegu, żeby przycisk "Retry failed steps"
+    // wiedział, które kroki ponowić. Reset przy nowym pełnym biegu.
+    var lastPauseTestState = null;
+    // Współdzielony pipeline: agreguje reports → summary, loguje do konsoli,
+    // ustawia badge i renderuje inline log. Używany zarówno przez pełny bieg
+    // jak i przez "Retry failed steps" (żeby nie duplikować logiki).
+    function processAndRenderPauseReports(reports, opts) {
+      opts = opts || {};
+      var totalSteps = 0, okSteps = 0, skipped = [], parityIssues = [];
+      var scope = (reports && reports.scope) || "both";
+      var isRetry = !!(reports && reports.isRetry);
+      var byStep = {};
+      var failedByFormat = {};
+      reports.forEach(function (rep) {
+        if (rep.skipped) { skipped.push(rep.format + " (" + rep.reason + ")"); return; }
+        rep.results.forEach(function (r) {
+          totalSteps++;
+          if (r.ok) {
+            okSteps++;
+          } else {
+            if (!failedByFormat[rep.format]) failedByFormat[rep.format] = [];
+            failedByFormat[rep.format].push(r.step);
+          }
+          if (!byStep[r.step]) byStep[r.step] = {};
+          byStep[r.step][rep.format] = r.ok;
+        });
+      });
+      // Parytet liczymy tylko gdy testowano oba formaty i to NIE jest retry
+      // (retry często celowo ogranicza zestaw — porównanie byłoby mylące).
+      if (scope === "both" && !isRetry) {
+        Object.keys(byStep).forEach(function (stepName) {
+          var z = byStep[stepName].zip;
+          var s = byStep[stepName]["zip-split"];
+          if (z !== undefined && s !== undefined && z !== s) {
+            parityIssues.push(stepName + " (zip=" + (z ? "OK" : "FAIL") + ", zip-split=" + (s ? "OK" : "FAIL") + ")");
+          }
+        });
+      }
+      // Pełny report do konsoli — fallback dla power-userów (raw object dump).
+      // eslint-disable-next-line no-console
+      console.groupCollapsed("[toast-pause-test" + (isRetry ? ":retry" : "") + "] scope=" + scope + " · " + okSteps + "/" + totalSteps + " OK"
+        + (parityIssues.length ? " · parity issues: " + parityIssues.join(", ") : "")
+        + (skipped.length ? " · skipped: " + skipped.join(", ") : ""));
+      // eslint-disable-next-line no-console
+      console.log("Reports:", reports);
+      // eslint-disable-next-line no-console
+      console.log("Step parity (zip vs zip-split):", byStep);
+      // eslint-disable-next-line no-console
+      console.groupEnd();
+      var allOk = okSteps === totalSteps && parityIssues.length === 0;
+      var formatsLabel = scope === "both" ? "zip i zip-split" : scope;
+      var formatsCount = scope === "both" ? 2 : 1;
+      if (totalSteps === 0) {
+        if (isRetry) {
+          setPauseTestResult("is-pass", "✓ retry: brak failów",
+            "Poprzedni bieg nie miał kroków do ponowienia (lub auto-hide wyłączony).");
+        } else {
+          setPauseTestResult("is-fail", "⚠ brak kroków",
+            (scope === "both" ? "Oba formaty mają" : "Format " + scope + " ma")
+            + " auto-hide=0 (Bez auto-hide). Ustaw 8/12/20 s i spróbuj ponownie.");
+        }
+      } else if (allOk) {
+        setPauseTestResult("is-pass", (isRetry ? "✓ retry " : "✓ ") + okSteps + "/" + totalSteps,
+          isRetry
+            ? "Retry OK: wszystkie poprzednio failnięte kroki przechodzą."
+            : "Hover/focus pauzuje countdown identycznie dla " + formatsLabel
+              + " (4 kroki × " + formatsCount + " " + (formatsCount === 1 ? "format" : "formaty") + ").");
+      } else {
+        setPauseTestResult("is-fail", (isRetry ? "✗ retry " : "✗ ") + okSteps + "/" + totalSteps,
+          (parityIssues.length ? "Parity issues: " + parityIssues.join("; ") + ". " : "")
+          + "Rozwiń panel poniżej (lub konsola: grupa „toast-pause-test").");
+      }
+      // Render inline log panel z per-step rozbiciem.
+      renderPauseTestLog(reports, {
+        scope: scope,
+        okSteps: okSteps,
+        totalSteps: totalSteps,
+        parityIssues: parityIssues,
+        skipped: skipped,
+        isRetry: isRetry,
+      });
+      // Zapisz stan do retry. Przy retry zachowujemy oryginalny scope, ale
+      // aktualizujemy listę faili (te, które dalej się sypią).
+      lastPauseTestState = {
+        scope: scope,
+        failedByFormat: failedByFormat,
+        hasFailures: Object.keys(failedByFormat).length > 0,
+      };
+      // Dorzuć przycisk „Retry failed steps" do panelu logu, jeśli są faile.
+      attachRetryFailedStepsButton();
+    }
+    function attachRetryFailedStepsButton() {
+      if (!toastPauseTestLogBody) return;
+      // Usuń stary przycisk (gdyby był), żeby uniknąć duplikatów po re-renderach.
+      var prev = toastPauseTestLogBody.querySelector("[data-trend-toast-pause-test-retry]");
+      if (prev && prev.parentNode) prev.parentNode.removeChild(prev);
+      if (!lastPauseTestState || !lastPauseTestState.hasFailures) return;
+      var wrap = document.createElement("div");
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "trends-filter-toast-pause-test-log-retry";
+      btn.setAttribute("data-trend-toast-pause-test-retry", "");
+      var failCount = 0;
+      Object.keys(lastPauseTestState.failedByFormat).forEach(function (f) {
+        failCount += lastPauseTestState.failedByFormat[f].length;
+      });
+      btn.textContent = "↻ Retry failed steps (" + failCount + ")";
+      btn.title = "Ponów tylko te kroki, które ostatnio failnęły, w ramach wybranego scope (" + lastPauseTestState.scope + ").";
+      var hint = document.createElement("span");
+      hint.className = "trends-filter-toast-pause-test-log-retry-hint";
+      var parts = [];
+      Object.keys(lastPauseTestState.failedByFormat).forEach(function (f) {
+        parts.push(f + ": " + lastPauseTestState.failedByFormat[f].join(", "));
+      });
+      hint.textContent = parts.join(" · ");
+      btn.addEventListener("click", function () {
+        if (!lastPauseTestState || !lastPauseTestState.hasFailures) return;
+        btn.disabled = true;
+        if (toastPauseTestBtn) toastPauseTestBtn.disabled = true;
+        var snapshotFailed = {};
+        Object.keys(lastPauseTestState.failedByFormat).forEach(function (f) {
+          snapshotFailed[f] = lastPauseTestState.failedByFormat[f].slice();
+        });
+        runPauseTestForBothFormats(lastPauseTestState.scope, snapshotFailed).then(function (reports) {
+          if (toastPauseTestBtn) toastPauseTestBtn.disabled = false;
+          if (!reports) {
+            setPauseTestResult("is-fail", "✗ brak toastu", "Toast DOM nieobecny — retry niemożliwy.");
+            return;
+          }
+          processAndRenderPauseReports(reports);
+        }).catch(function (e) {
+          if (toastPauseTestBtn) toastPauseTestBtn.disabled = false;
+          // eslint-disable-next-line no-console
+          console.error("[toast-pause-test:retry] error:", e);
+          setPauseTestResult("is-fail", "✗ retry error", String((e && e.message) || e));
+        });
+      });
+      wrap.appendChild(btn);
+      wrap.appendChild(hint);
+      toastPauseTestLogBody.appendChild(wrap);
     }
     if (toastPauseTestBtn) {
       toastPauseTestBtn.addEventListener("click", function () {
         toastPauseTestBtn.disabled = true;
         // Czyść poprzedni log od razu — żeby user nie widział staldych wyników
-        // podczas trwania nowego biegu.
+        // podczas trwania nowego biegu. Reset również lastPauseTestState — to
+        // świeży, pełny bieg, nie kontynuacja.
         clearPauseTestLog();
+        lastPauseTestState = null;
         runPauseTestForBothFormats().then(function (reports) {
           toastPauseTestBtn.disabled = false;
           if (!reports) {
@@ -4473,65 +4633,7 @@ const renderHtml = ({
             renderPauseTestLog([], { scope: "?", okSteps: 0, totalSteps: 0, parityIssues: [], skipped: ["toast DOM nieobecny"] });
             return;
           }
-          var totalSteps = 0, okSteps = 0, skipped = [], parityIssues = [];
-          var scope = (reports && reports.scope) || "both";
-          // Parytet liczymy TYLKO gdy testowano oba formaty — przy single-format
-          // scope nie ma czego porównywać (nie traktujemy braku jako issue).
-          var byStep = {};
-          reports.forEach(function (rep) {
-            if (rep.skipped) { skipped.push(rep.format + " (" + rep.reason + ")"); return; }
-            rep.results.forEach(function (r) {
-              totalSteps++;
-              if (r.ok) okSteps++;
-              if (!byStep[r.step]) byStep[r.step] = {};
-              byStep[r.step][rep.format] = r.ok;
-            });
-          });
-          if (scope === "both") {
-            Object.keys(byStep).forEach(function (stepName) {
-              var z = byStep[stepName].zip;
-              var s = byStep[stepName]["zip-split"];
-              if (z !== undefined && s !== undefined && z !== s) {
-                parityIssues.push(stepName + " (zip=" + (z ? "OK" : "FAIL") + ", zip-split=" + (s ? "OK" : "FAIL") + ")");
-              }
-            });
-          }
-          // Pełny report do konsoli — fallback dla power-userów (raw object dump).
-          // Główny UX to teraz inline panel renderPauseTestLog poniżej.
-          // eslint-disable-next-line no-console
-          console.groupCollapsed("[toast-pause-test] scope=" + scope + " · " + okSteps + "/" + totalSteps + " OK"
-            + (parityIssues.length ? " · parity issues: " + parityIssues.join(", ") : "")
-            + (skipped.length ? " · skipped: " + skipped.join(", ") : ""));
-          // eslint-disable-next-line no-console
-          console.log("Reports:", reports);
-          // eslint-disable-next-line no-console
-          console.log("Step parity (zip vs zip-split):", byStep);
-          // eslint-disable-next-line no-console
-          console.groupEnd();
-          var allOk = okSteps === totalSteps && parityIssues.length === 0;
-          var formatsLabel = scope === "both" ? "zip i zip-split" : scope;
-          var formatsCount = scope === "both" ? 2 : 1;
-          if (totalSteps === 0) {
-            setPauseTestResult("is-fail", "⚠ brak kroków",
-              (scope === "both" ? "Oba formaty mają" : "Format " + scope + " ma")
-              + " auto-hide=0 (Bez auto-hide). Ustaw 8/12/20 s i spróbuj ponownie.");
-          } else if (allOk) {
-            setPauseTestResult("is-pass", "✓ " + okSteps + "/" + totalSteps,
-              "Hover/focus pauzuje countdown identycznie dla " + formatsLabel
-              + " (4 kroki × " + formatsCount + " " + (formatsCount === 1 ? "format" : "formaty") + ").");
-          } else {
-            setPauseTestResult("is-fail", "✗ " + okSteps + "/" + totalSteps,
-              (parityIssues.length ? "Parity issues: " + parityIssues.join("; ") + ". " : "")
-              + "Rozwiń panel poniżej (lub konsola: grupa „toast-pause-test").");
-          }
-          // Render inline log panel z per-step rozbiciem.
-          renderPauseTestLog(reports, {
-            scope: scope,
-            okSteps: okSteps,
-            totalSteps: totalSteps,
-            parityIssues: parityIssues,
-            skipped: skipped,
-          });
+          processAndRenderPauseReports(reports);
         }).catch(function (e) {
           toastPauseTestBtn.disabled = false;
           // eslint-disable-next-line no-console
