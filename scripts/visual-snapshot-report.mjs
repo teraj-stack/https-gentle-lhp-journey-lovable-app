@@ -2207,6 +2207,17 @@ const renderHtml = ({
       font-size: 11px;
       opacity: 0.7;
     }
+    .trends-filter-toast-pause-test-log-download {
+      margin-top: 8px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px;
+    }
+    .trends-filter-toast-pause-test-log-download .trends-filter-toast-pause-test-log-retry-hint {
+      flex-basis: 100%;
+      margin-left: 0;
+    }
     .trends-filter-toast-pause-test-log-empty {
       opacity: .7;
       font-style: italic;
@@ -4558,15 +4569,29 @@ const renderHtml = ({
         skipped: skipped,
         isRetry: isRetry,
       });
-      // Zapisz stan do retry. Przy retry zachowujemy oryginalny scope, ale
-      // aktualizujemy listę faili (te, które dalej się sypią).
+      // Zapisz stan do retry + downloadu. Przy retry zachowujemy oryginalny
+      // scope, ale aktualizujemy listę faili (te, które dalej się sypią).
+      // Trzymamy też pełne reports/summary, żeby „Download test report" miał
+      // komplet danych bez ponownego biegu.
       lastPauseTestState = {
         scope: scope,
         failedByFormat: failedByFormat,
         hasFailures: Object.keys(failedByFormat).length > 0,
+        reports: reports,
+        summary: {
+          scope: scope,
+          okSteps: okSteps,
+          totalSteps: totalSteps,
+          parityIssues: parityIssues,
+          skipped: skipped,
+          isRetry: isRetry,
+          allOk: okSteps === totalSteps && parityIssues.length === 0,
+        },
+        timestamp: new Date().toISOString(),
       };
-      // Dorzuć przycisk „Retry failed steps" do panelu logu, jeśli są faile.
+      // Dorzuć przycisk „Retry failed steps" (jeśli faile) + przyciski downloadu.
       attachRetryFailedStepsButton();
+      attachDownloadReportButtons();
     }
     function attachRetryFailedStepsButton() {
       if (!toastPauseTestLogBody) return;
@@ -4615,6 +4640,173 @@ const renderHtml = ({
         });
       });
       wrap.appendChild(btn);
+      wrap.appendChild(hint);
+      toastPauseTestLogBody.appendChild(wrap);
+    }
+    // ---- „⬇ Download test report" — eksport summary + per-step logu ----
+    // Bierze ostatni snapshot (lastPauseTestState) i serializuje:
+    //   • JSON: pełny dump (summary + reports z polem "got" jako obiekt) — najlepszy
+    //     do dalszej analizy / dołączenia do bug-reportu (zachowuje strukturę).
+    //   • CSV: spłaszczony per-step (timestamp, scope, format, step, expected,
+    //     state/progress/countdown, ok, skipped, retry) — dobrze otwiera się
+    //     w Excelu/LibreOffice/Sheets. Header w pierwszym wierszu.
+    // Filename ze znacznikiem czasu + scope, żeby kolejne pobrania nie nadpisywały.
+    function pauseReportFileSlug() {
+      var st = lastPauseTestState;
+      var ts = (st && st.timestamp) ? st.timestamp : new Date().toISOString();
+      // Zamiana ":" → "-" i usunięcie ułamków sekund — bezpieczne dla FS.
+      var safeTs = ts.replace(/[:.]/g, "-").replace(/Z$/, "Z");
+      var scope = (st && st.scope) ? st.scope : "unknown";
+      var retryTag = (st && st.summary && st.summary.isRetry) ? "-retry" : "";
+      return "toast-pause-test-" + scope + retryTag + "-" + safeTs;
+    }
+    function buildPauseReportJson() {
+      var st = lastPauseTestState;
+      if (!st) return null;
+      // Klonujemy minimalnie — usuwamy ewentualne ne-serializowalne klucze
+      // (scope/isRetry doczepione do tablicy reports). Zostawiamy plain JSON.
+      var reportsClean = (st.reports || []).map(function (rep) {
+        if (rep.skipped) {
+          return { format: rep.format, skipped: true, reason: rep.reason || null, retry: !!rep.retry };
+        }
+        return {
+          format: rep.format,
+          skipped: false,
+          retry: !!rep.retry,
+          results: (rep.results || []).map(function (r) {
+            return {
+              step: r.step,
+              expected: r.expected ? "paused" : "running",
+              expectedRaw: !!r.expected,
+              got: {
+                state: r.got ? !!r.got.state : null,
+                progress: r.got ? r.got.progress : null,
+                countdown: r.got ? r.got.countdown : null,
+              },
+              ok: !!r.ok,
+            };
+          }),
+        };
+      });
+      return {
+        meta: {
+          tool: "visual-snapshot-report toast-pause-test",
+          generatedAt: st.timestamp,
+          userAgent: (typeof navigator !== "undefined" && navigator.userAgent) ? navigator.userAgent : null,
+        },
+        summary: st.summary,
+        failedByFormat: st.failedByFormat,
+        reports: reportsClean,
+      };
+    }
+    function csvEscape(v) {
+      if (v === null || v === undefined) return "";
+      var s = String(v);
+      // RFC 4180: pole zawierające , " lub newline → cudzysłowy, " → "".
+      if (/[",\n\r]/.test(s)) return "\"" + s.replace(/"/g, "\"\"") + "\"";
+      return s;
+    }
+    function buildPauseReportCsv() {
+      var st = lastPauseTestState;
+      if (!st) return null;
+      var rows = [[
+        "timestamp", "scope", "isRetry", "format", "skipped", "skipReason",
+        "step", "expected", "got_state", "got_progress", "got_countdown", "ok",
+      ]];
+      var ts = st.timestamp;
+      var scope = st.scope;
+      var isRetry = !!(st.summary && st.summary.isRetry);
+      function fmtBool(v) {
+        if (v === null || v === undefined) return "";
+        return v ? "paused" : "running";
+      }
+      (st.reports || []).forEach(function (rep) {
+        if (rep.skipped) {
+          rows.push([ts, scope, isRetry, rep.format, true, rep.reason || "", "", "", "", "", "", ""]);
+          return;
+        }
+        (rep.results || []).forEach(function (r) {
+          rows.push([
+            ts, scope, isRetry, rep.format, false, "",
+            r.step,
+            r.expected ? "paused" : "running",
+            fmtBool(r.got && r.got.state),
+            fmtBool(r.got && r.got.progress),
+            fmtBool(r.got && r.got.countdown),
+            r.ok ? "OK" : "FAIL",
+          ]);
+        });
+      });
+      // Dorzuć sekcję podsumowania jako osobny blok pod tabelą — komentarzowy
+      // wiersz (wszystko w jednej kolumnie, żeby nie psuło parsera kolumn).
+      rows.push([]);
+      rows.push(["# summary"]);
+      rows.push(["# scope=" + scope
+        + " · " + st.summary.okSteps + "/" + st.summary.totalSteps + " OK"
+        + (st.summary.parityIssues && st.summary.parityIssues.length ? " · parity issues: " + st.summary.parityIssues.join("; ") : "")
+        + (st.summary.skipped && st.summary.skipped.length ? " · skipped: " + st.summary.skipped.join("; ") : "")]);
+      return rows.map(function (row) {
+        return row.map(csvEscape).join(",");
+      }).join("\r\n");
+    }
+    function triggerDownload(filename, mime, content) {
+      try {
+        var blob = new Blob([content], { type: mime + ";charset=utf-8" });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        a.style.display = "none";
+        document.body.appendChild(a);
+        a.click();
+        // Drobny delay zanim zwolnimy URL — niektóre przeglądarki potrzebują
+        // tick'a, żeby zarejestrować click przed revoke.
+        setTimeout(function () {
+          if (a.parentNode) a.parentNode.removeChild(a);
+          URL.revokeObjectURL(url);
+        }, 0);
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.error("[toast-pause-test] download failed:", e);
+      }
+    }
+    function attachDownloadReportButtons() {
+      if (!toastPauseTestLogBody) return;
+      // Usuń stary kontener (gdyby był), żeby uniknąć duplikatów po re-renderach.
+      var prev = toastPauseTestLogBody.querySelector("[data-trend-toast-pause-test-download]");
+      if (prev && prev.parentNode) prev.parentNode.removeChild(prev);
+      if (!lastPauseTestState || !lastPauseTestState.reports || !lastPauseTestState.reports.length) return;
+      var wrap = document.createElement("div");
+      wrap.setAttribute("data-trend-toast-pause-test-download", "");
+      wrap.className = "trends-filter-toast-pause-test-log-download";
+      var jsonBtn = document.createElement("button");
+      jsonBtn.type = "button";
+      jsonBtn.className = "trends-filter-toast-pause-test-log-retry";
+      jsonBtn.textContent = "⬇ Download report (JSON)";
+      jsonBtn.title = "Pełny dump: summary + per-step results + meta (UA, timestamp). Najlepsze do bug-reportu.";
+      jsonBtn.addEventListener("click", function () {
+        var data = buildPauseReportJson();
+        if (!data) return;
+        triggerDownload(pauseReportFileSlug() + ".json", "application/json",
+          JSON.stringify(data, null, 2));
+      });
+      var csvBtn = document.createElement("button");
+      csvBtn.type = "button";
+      csvBtn.className = "trends-filter-toast-pause-test-log-retry";
+      csvBtn.textContent = "⬇ Download report (CSV)";
+      csvBtn.title = "Spłaszczony per-step (timestamp, scope, format, step, expected, got_*, ok). Otwiera się w Excelu/Sheets.";
+      csvBtn.addEventListener("click", function () {
+        var csv = buildPauseReportCsv();
+        if (!csv) return;
+        triggerDownload(pauseReportFileSlug() + ".csv", "text/csv", csv);
+      });
+      var hint = document.createElement("span");
+      hint.className = "trends-filter-toast-pause-test-log-retry-hint";
+      var s = lastPauseTestState.summary || {};
+      hint.textContent = "snapshot: " + (s.okSteps || 0) + "/" + (s.totalSteps || 0) + " OK"
+        + (lastPauseTestState.timestamp ? " · " + lastPauseTestState.timestamp : "");
+      wrap.appendChild(jsonBtn);
+      wrap.appendChild(csvBtn);
       wrap.appendChild(hint);
       toastPauseTestLogBody.appendChild(wrap);
     }
