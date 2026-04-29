@@ -4566,9 +4566,9 @@ const renderHtml = ({
         ? stepFilter.slice()
         : allSteps.map(function (s) { return s.label; });
       var results = [];
-      // Wysokorozdzielczy zegar — `performance.now()` ma ~µs precyzję i jest
+      // Wysokorozdzielczy zegar — 'performance.now()' ma ~µs precyzję i jest
       // monotoniczny (nie skacze przy zmianie zegara systemowego), więc lepiej
-      // mierzy elapsed niż `Date.now()`. ISO timestamp trzymamy obok dla logu.
+      // mierzy elapsed niż 'Date.now()'. ISO timestamp trzymamy obok dla logu.
       var nowHi = function () {
         return (typeof performance !== "undefined" && performance.now)
           ? performance.now() : Date.now();
