@@ -4564,6 +4564,8 @@ const renderHtml = ({
     function clearPauseTestLog() {
       if (!toastPauseTestLog) return;
       toastPauseTestLog.hidden = true;
+      // Programowy reset — nie zapisujemy go jako preferencji usera.
+      if (toastPauseTestLog.open) ignorePauseTestLogToggleOnce = true;
       toastPauseTestLog.open = false;
       if (toastPauseTestLogBody) {
         while (toastPauseTestLogBody.firstChild) toastPauseTestLogBody.removeChild(toastPauseTestLogBody.firstChild);
