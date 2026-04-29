@@ -4265,12 +4265,12 @@ const renderHtml = ({
     }
     // Heurystyka „Likely cause": patrzy na PIERWSZY failujący krok (najbardziej
     // diagnostyczny — kolejne często są kaskadą) i mapuje wzorzec rozjazdu
-    // pomiędzy ground-truth `state` a klasami DOM `progress`/`countdown` na
+    // pomiędzy ground-truth 'state' a klasami DOM 'progress'/'countdown' na
     // konkretną najbardziej prawdopodobną przyczynę. Zwraca string lub null.
     //
     // Wzorce, które rozróżniamy:
     //   • state OK, progress/countdown nie podążają → handler zmienia flagę,
-    //     ale nie aktualizuje klasy `.is-paused` (rozsync DOM).
+    //     ale nie aktualizuje klasy '.is-paused' (rozsync DOM).
     //   • state nie zmienia się w ogóle → event listener (pointerenter/focusin
     //     itd.) nie został podpięty albo jest blokowany (np. pointer-events:none
     //     na overlay'u).
@@ -4326,13 +4326,13 @@ const renderHtml = ({
           // Klasy też pokazują „running" (nie pauzę) → spójne z brakiem reakcji.
         }
         if (firstFail.step === "pointerenter" || firstFail.step === "pointerleave") {
-          return stepCtx + " Flaga `readyToastIsPaused` nie zmienia się przy "
+          return stepCtx + " Flaga 'readyToastIsPaused' nie zmienia się przy "
             + firstFail.step + " — handler pointer eventu prawdopodobnie nie "
             + "jest podpięty na elemencie toastu lub pointer-events są "
             + "zablokowane przez nakładkę (sprawdź z-index / pointer-events).";
         }
         if (firstFail.step === "focusin" || firstFail.step === "focusout") {
-          return stepCtx + " Flaga `readyToastIsPaused` nie reaguje na "
+          return stepCtx + " Flaga 'readyToastIsPaused' nie reaguje na "
             + firstFail.step + " — toast prawdopodobnie nie ma tabIndex / "
             + "focusable wrappera, więc focus listener nie odpala (dodaj "
             + "tabIndex=-1 lub focusowalny child).";
@@ -4343,17 +4343,17 @@ const renderHtml = ({
       // 2) State OK, ale klasy DOM nie podążają — rozsync renderera.
       if (progressMismatch && countdownMismatch) {
         return stepCtx + " Flaga pauzy działa, ale ANI progress bar ANI "
-          + "countdown nie dostają klasy `.is-paused` — pause/resume helper "
+          + "countdown nie dostają klasy '.is-paused' — pause/resume helper "
           + "ustawia stan, ale zapomina sync'nąć klasy obu elementów.";
       }
       if (progressMismatch && !countdownMismatch) {
         return stepCtx + " Countdown reaguje poprawnie, ale progress bar nie "
-          + "dostaje `.is-paused` — różne ścieżki toggle'owania klasy "
+          + "dostaje '.is-paused' — różne ścieżki toggle'owania klasy "
           + "(prawdopodobnie progress-bar zapomniany w jednym z helperów).";
       }
       if (countdownMismatch && !progressMismatch) {
         return stepCtx + " Progress bar reaguje poprawnie, ale countdown text "
-          + "nie dostaje `.is-paused` — sprawdź czy oba elementy są w tym "
+          + "nie dostaje '.is-paused' — sprawdź czy oba elementy są w tym "
           + "samym pause/resume code-path.";
       }
       // 3) Fallback — coś nie pasuje, ale nie pasuje do znanych wzorców.
