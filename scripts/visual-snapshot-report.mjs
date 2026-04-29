@@ -4215,12 +4215,112 @@ const renderHtml = ({
         try { localStorage.setItem(PAUSE_TEST_SCOPE_KEY, v); } catch (_e) {}
       });
     }
+    var toastPauseTestLog = root.querySelector("[data-trend-toast-pause-test-log]");
+    var toastPauseTestLogSummary = root.querySelector("[data-trend-toast-pause-test-log-summary]");
+    var toastPauseTestLogBody = root.querySelector("[data-trend-toast-pause-test-log-body]");
     function setPauseTestResult(state, text, title) {
       if (!toastPauseTestResult) return;
       toastPauseTestResult.classList.remove("is-running", "is-pass", "is-fail");
       if (state) toastPauseTestResult.classList.add(state);
       toastPauseTestResult.textContent = text || "";
       if (title) toastPauseTestResult.title = title; else toastPauseTestResult.removeAttribute("title");
+    }
+    // Buduje czytelny per-step panel (DOM, bez innerHTML — bezpiecznie escape'owane).
+    // reports: tablica { format, skipped, reason?, results:[{step,expected,got,ok}] }
+    // summary: { scope, okSteps, totalSteps, parityIssues:[], skipped:[], headline }
+    function renderPauseTestLog(reports, summary) {
+      if (!toastPauseTestLog || !toastPauseTestLogBody) return;
+      // Wyczyść poprzedni render.
+      while (toastPauseTestLogBody.firstChild) toastPauseTestLogBody.removeChild(toastPauseTestLogBody.firstChild);
+      if (!reports || !reports.length) {
+        var empty = document.createElement("div");
+        empty.className = "trends-filter-toast-pause-test-log-empty";
+        empty.textContent = "Brak danych z testu.";
+        toastPauseTestLogBody.appendChild(empty);
+        toastPauseTestLog.hidden = false;
+        return;
+      }
+      // Header summary line w panelu (duplikuje badge, ale daje też kontekst
+      // o scope/parity/skipped — żeby panel był samowystarczalny po zwinięciu badge).
+      var hdr = document.createElement("div");
+      hdr.className = "trends-filter-toast-pause-test-log-section";
+      var hdrTitle = document.createElement("div");
+      hdrTitle.className = "trends-filter-toast-pause-test-log-section-title";
+      hdrTitle.textContent = "Podsumowanie";
+      hdr.appendChild(hdrTitle);
+      var hdrLine = document.createElement("div");
+      var parts = [
+        "scope: " + (summary.scope || "?"),
+        summary.okSteps + "/" + summary.totalSteps + " OK",
+      ];
+      if (summary.parityIssues && summary.parityIssues.length) {
+        parts.push("parity issues: " + summary.parityIssues.join(", "));
+      }
+      if (summary.skipped && summary.skipped.length) {
+        parts.push("skipped: " + summary.skipped.join(", "));
+      }
+      hdrLine.textContent = parts.join(" · ");
+      hdr.appendChild(hdrLine);
+      toastPauseTestLogBody.appendChild(hdr);
+      // Per-format sekcje.
+      reports.forEach(function (rep) {
+        var sec = document.createElement("div");
+        sec.className = "trends-filter-toast-pause-test-log-section";
+        var t = document.createElement("div");
+        t.className = "trends-filter-toast-pause-test-log-section-title";
+        t.textContent = "Format: " + rep.format + (rep.skipped ? " (pominięty: " + rep.reason + ")" : "");
+        sec.appendChild(t);
+        if (!rep.skipped && rep.results && rep.results.length) {
+          var table = document.createElement("table");
+          table.className = "trends-filter-toast-pause-test-log-table";
+          var thead = document.createElement("thead");
+          var thr = document.createElement("tr");
+          ["Krok", "Expected", "state", "progress", "countdown"].forEach(function (h) {
+            var th = document.createElement("th");
+            th.textContent = h;
+            thr.appendChild(th);
+          });
+          thead.appendChild(thr);
+          table.appendChild(thead);
+          var tbody = document.createElement("tbody");
+          rep.results.forEach(function (r) {
+            var tr = document.createElement("tr");
+            tr.className = "trends-filter-toast-pause-test-log-row " + (r.ok ? "is-ok" : "is-fail");
+            function cell(text) {
+              var td = document.createElement("td");
+              td.textContent = text;
+              tr.appendChild(td);
+            }
+            function fmtBool(v) {
+              if (v === null || v === undefined) return "—";
+              return v ? "paused" : "running";
+            }
+            cell(r.step);
+            cell(r.expected ? "paused" : "running");
+            cell(fmtBool(r.got && r.got.state));
+            cell(fmtBool(r.got && r.got.progress));
+            cell(fmtBool(r.got && r.got.countdown));
+            tbody.appendChild(tr);
+          });
+          table.appendChild(tbody);
+          sec.appendChild(table);
+        }
+        toastPauseTestLogBody.appendChild(sec);
+      });
+      toastPauseTestLog.hidden = false;
+      // Auto-otwórz przy fail, żeby user od razu widział co się sypnęło.
+      // Przy pass zostawiamy zwinięty — minimalizujemy szum.
+      if (summary.okSteps !== summary.totalSteps || (summary.parityIssues && summary.parityIssues.length)) {
+        toastPauseTestLog.open = true;
+      }
+    }
+    function clearPauseTestLog() {
+      if (!toastPauseTestLog) return;
+      toastPauseTestLog.hidden = true;
+      toastPauseTestLog.open = false;
+      if (toastPauseTestLogBody) {
+        while (toastPauseTestLogBody.firstChild) toastPauseTestLogBody.removeChild(toastPauseTestLogBody.firstChild);
+      }
     }
     function dispatchPointer(el, type, pointerType) {
       // PointerEvent może nie istnieć w bardzo starych przeglądarkach;
