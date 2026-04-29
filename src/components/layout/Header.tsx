@@ -854,7 +854,8 @@ const Header = () => {
                   <Link
                     key="wspolpraca"
                     to="/wspolpraca"
-                    className={`block px-4 py-3 rounded-lg text-sm font-medium hover:bg-accent/50 mt-2 ${
+                    title="Współpraca"
+                    className={`flex items-center min-h-[44px] px-4 py-3 rounded-lg text-[15px] font-medium hover:bg-accent/50 mt-2 truncate ${
                       isActive("/wspolpraca")
                         ? "text-primary bg-accent/50"
                         : "text-foreground"
@@ -865,7 +866,8 @@ const Header = () => {
                   <Link
                     key="cennik"
                     to="/cennik"
-                    className={`block px-4 py-3 rounded-lg text-sm font-medium hover:bg-accent/50 ${
+                    title="Cennik"
+                    className={`flex items-center min-h-[44px] px-4 py-3 rounded-lg text-[15px] font-medium hover:bg-accent/50 truncate ${
                       isActive("/cennik")
                         ? "text-primary bg-accent/50"
                         : "text-foreground"
@@ -876,7 +878,8 @@ const Header = () => {
                   <Link
                     key="kontakt"
                     to="/kontakt"
-                    className={`block px-4 py-3 rounded-lg text-sm font-medium hover:bg-accent/50 ${
+                    title="Kontakt"
+                    className={`flex items-center min-h-[44px] px-4 py-3 rounded-lg text-[15px] font-medium hover:bg-accent/50 truncate ${
                       isActive("/kontakt")
                         ? "text-primary bg-accent/50"
                         : "text-foreground"
