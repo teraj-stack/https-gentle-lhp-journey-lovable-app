@@ -131,6 +131,116 @@ function describeEl(el: HTMLElement): string {
   return `${tag}${id}${cls}`.slice(0, 80);
 }
 
+/**
+ * Otwiera mobilne menu w iframe poprzez kliknięcie burgera
+ * (`button[aria-label="Menu"]` w Header.tsx). Czeka do ~700ms na animację
+ * framer-motion (height: auto). Idempotentne — gdy już otwarte, nie klika.
+ */
+async function openMobilePanel(doc: Document): Promise<HTMLElement | null> {
+  const burger = doc.querySelector<HTMLButtonElement>(
+    'button[aria-label="Menu"]'
+  );
+  if (!burger) return null;
+  if (!findMobilePanel(doc)) burger.click();
+  const start = performance.now();
+  while (performance.now() - start < 700) {
+    const panel = findMobilePanel(doc);
+    if (panel && panel.getBoundingClientRect().height > 40) return panel;
+    await new Promise((r) => setTimeout(r, 50));
+  }
+  return findMobilePanel(doc);
+}
+
+function findMobilePanel(doc: Document): HTMLElement | null {
+  // Header renderuje mobilny panel jako motion.div z `lg:hidden bg-card ...`.
+  // Sentinel: tekst „Proktologia" — pierwszy nagłówek sekcji.
+  const candidates = doc.querySelectorAll<HTMLElement>(
+    "div.lg\\:hidden.bg-card"
+  );
+  for (const c of candidates) {
+    if (/Proktologia/i.test(c.textContent ?? "")) return c;
+  }
+  return null;
+}
+
+/**
+ * Skanuje mobilny panel: wymagane sekcje (sync check) + przepełnienia
+ * tekstu w linkach + horyzontalny scroll panelu.
+ */
+function detectMobilePanelIssues(
+  panel: HTMLElement,
+  vw: number
+): { findings: OverflowFinding[]; sections: Record<string, boolean> } {
+  const findings: OverflowFinding[] = [];
+  const sections: Record<string, boolean> = {};
+
+  const labels = Array.from(
+    panel.querySelectorAll<HTMLElement>(".uppercase")
+  ).map((el) => (el.textContent ?? "").trim());
+
+  for (const required of REQUIRED_MOBILE_SECTIONS) {
+    const found = labels.some((t) =>
+      new RegExp(`(^|·\\s*)${required}\\b`, "i").test(t)
+    );
+    sections[required] = found;
+    if (!found) {
+      findings.push({
+        selector: `[mobile-section="${required}"]`,
+        text: `Brak nagłówka sekcji „${required}" w mobilnym menu`,
+        scrollWidth: 0,
+        clientWidth: 0,
+        overflowPx: 0,
+        reason: "section-missing",
+      });
+    }
+  }
+
+  const links = panel.querySelectorAll<HTMLAnchorElement>("a[href]");
+  if (links.length < REQUIRED_MOBILE_SECTIONS.length) {
+    findings.push({
+      selector: "a[href]",
+      text: `Tylko ${links.length} linków w panelu (oczekiwano ≥ ${REQUIRED_MOBILE_SECTIONS.length})`,
+      scrollWidth: 0,
+      clientWidth: 0,
+      overflowPx: 0,
+      reason: "section-empty",
+    });
+  }
+
+  panel.querySelectorAll<HTMLElement>("a, span").forEach((el) => {
+    const rect = el.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) return;
+    const sw = el.scrollWidth;
+    const cw = el.clientWidth;
+    if (cw === 0) return;
+    if (sw - cw > 1) {
+      const txt = (el.textContent ?? "").trim().slice(0, 80);
+      if (!txt) return;
+      findings.push({
+        selector: describeEl(el),
+        text: txt,
+        scrollWidth: sw,
+        clientWidth: cw,
+        overflowPx: sw - cw,
+        reason: "text-clipped",
+      });
+    }
+  });
+
+  if (panel.scrollWidth - vw > 1) {
+    findings.push({
+      selector: "div.lg\\:hidden.bg-card",
+      text: `Panel mobilny szerszy niż viewport (${panel.scrollWidth}px > ${vw}px)`,
+      scrollWidth: panel.scrollWidth,
+      clientWidth: vw,
+      overflowPx: panel.scrollWidth - vw,
+      reason: "horizontal-scroll",
+    });
+  }
+
+  return { findings, sections };
+}
+
 function ViewportFrame({ vp }: { vp: Viewport }) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [report, setReport] = useState<ReportState>({
