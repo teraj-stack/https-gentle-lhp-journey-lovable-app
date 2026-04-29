@@ -2207,7 +2207,19 @@ const renderHtml = ({
       font-size: 11px;
       opacity: 0.7;
     }
-    .trends-filter-toast-pause-test-log-download {
+    .trends-filter-toast-pause-test-log-hint {
+      margin-top: 6px;
+      padding: 6px 8px;
+      font-size: 11px;
+      line-height: 1.4;
+      border-left: 2px solid hsl(var(--primary, 45 60% 55%) / 0.7);
+      background: hsl(var(--primary, 45 60% 55%) / 0.08);
+      border-radius: 0 4px 4px 0;
+    }
+    .trends-filter-toast-pause-test-log-hint strong {
+      font-weight: 600;
+      opacity: 0.85;
+    }
       margin-top: 8px;
       display: flex;
       flex-wrap: wrap;
@@ -4263,6 +4275,104 @@ const renderHtml = ({
       toastPauseTestResult.textContent = text || "";
       if (title) toastPauseTestResult.title = title; else toastPauseTestResult.removeAttribute("title");
     }
+    // Heurystyka „Likely cause": patrzy na PIERWSZY failujący krok (najbardziej
+    // diagnostyczny — kolejne często są kaskadą) i mapuje wzorzec rozjazdu
+    // pomiędzy ground-truth 'state' a klasami DOM 'progress'/'countdown' na
+    // konkretną najbardziej prawdopodobną przyczynę. Zwraca string lub null.
+    //
+    // Wzorce, które rozróżniamy:
+    //   • state OK, progress/countdown nie podążają → handler zmienia flagę,
+    //     ale nie aktualizuje klasy '.is-paused' (rozsync DOM).
+    //   • state nie zmienia się w ogóle → event listener (pointerenter/focusin
+    //     itd.) nie został podpięty albo jest blokowany (np. pointer-events:none
+    //     na overlay'u).
+    //   • progress vs countdown rozjeżdżają się między sobą → różne ścieżki
+    //     toggle'owania klasy w pause/resume helpers.
+    //   • parity issue (zip vs zip-split) bez per-step state failu → różnica
+    //     w renderze toastu per format (np. inny markup dla zip-split).
+    //   • totalSteps == 0 → auto-hide=0 we wszystkich formatach (off-topic
+    //     dla pauzy, ale user dostaje konkret co zmienić).
+    function diagnoseLikelyCause(reports, summary) {
+      if (!summary) return null;
+      // Brak kroków → osobny wzorzec konfiguracyjny.
+      if (summary.totalSteps === 0) {
+        return "Wszystkie testowane formaty mają auto-hide = 0 ms ("
+          + "„Bez auto-hide"). Bez countdownu pauza nie ma czego zatrzymać — "
+          + "ustaw 8/12/20 s w „Auto-hide toastu" i ponów test.";
+      }
+      // Parity issue bez fail per krok → różnice TYLKO między formatami.
+      var hasStepFails = (summary.okSteps < summary.totalSteps);
+      if (!hasStepFails && summary.parityIssues && summary.parityIssues.length) {
+        return "Per-step wszystko OK, ale wynik różni się między zip a "
+          + "zip-split — sprawdź czy markup toastu (data-* / klasy "
+          + ".is-paused) jest renderowany identycznie dla obu formatów.";
+      }
+      // Znajdź pierwszy faktyczny fail w kolejności reports → results.
+      var firstFail = null;
+      var firstFailFormat = null;
+      for (var i = 0; i < reports.length && !firstFail; i++) {
+        var rep = reports[i];
+        if (rep.skipped || !rep.results) continue;
+        for (var j = 0; j < rep.results.length; j++) {
+          if (!rep.results[j].ok) {
+            firstFail = rep.results[j];
+            firstFailFormat = rep.format;
+            break;
+          }
+        }
+      }
+      if (!firstFail) return null;
+      var expected = !!firstFail.expected; // true = paused, false = running
+      var got = firstFail.got || {};
+      var stateOk = got.state === expected;
+      // null → klasa nie była mierzona (brak elementu) → traktujemy jako „nie wiadomo",
+      // nie jako mismatch (żeby nie generować false-positive hintów).
+      var progressMismatch = got.progress !== null && got.progress !== undefined && got.progress !== expected;
+      var countdownMismatch = got.countdown !== null && got.countdown !== undefined && got.countdown !== expected;
+      var stepCtx = "Pierwszy fail: „" + firstFail.step + "" (format: " + firstFailFormat
+        + ", expected: " + (expected ? "paused" : "running") + ").";
+      // 1) State się NIE zmienił w ogóle — handler eventu nie zadziałał.
+      if (!stateOk) {
+        // Jeśli też klasy DOM się nie zmieniły — to prawie na pewno listener.
+        if (!progressMismatch && !countdownMismatch && got.progress !== null && got.countdown !== null) {
+          // Klasy też pokazują „running" (nie pauzę) → spójne z brakiem reakcji.
+        }
+        if (firstFail.step === "pointerenter" || firstFail.step === "pointerleave") {
+          return stepCtx + " Flaga 'readyToastIsPaused' nie zmienia się przy "
+            + firstFail.step + " — handler pointer eventu prawdopodobnie nie "
+            + "jest podpięty na elemencie toastu lub pointer-events są "
+            + "zablokowane przez nakładkę (sprawdź z-index / pointer-events).";
+        }
+        if (firstFail.step === "focusin" || firstFail.step === "focusout") {
+          return stepCtx + " Flaga 'readyToastIsPaused' nie reaguje na "
+            + firstFail.step + " — toast prawdopodobnie nie ma tabIndex / "
+            + "focusable wrappera, więc focus listener nie odpala (dodaj "
+            + "tabIndex=-1 lub focusowalny child).";
+        }
+        return stepCtx + " Stan pauzy nie zmienia się — najprawdopodobniej "
+          + "handler eventu „" + firstFail.step + "" nie został wywołany.";
+      }
+      // 2) State OK, ale klasy DOM nie podążają — rozsync renderera.
+      if (progressMismatch && countdownMismatch) {
+        return stepCtx + " Flaga pauzy działa, ale ANI progress bar ANI "
+          + "countdown nie dostają klasy '.is-paused' — pause/resume helper "
+          + "ustawia stan, ale zapomina sync'nąć klasy obu elementów.";
+      }
+      if (progressMismatch && !countdownMismatch) {
+        return stepCtx + " Countdown reaguje poprawnie, ale progress bar nie "
+          + "dostaje '.is-paused' — różne ścieżki toggle'owania klasy "
+          + "(prawdopodobnie progress-bar zapomniany w jednym z helperów).";
+      }
+      if (countdownMismatch && !progressMismatch) {
+        return stepCtx + " Progress bar reaguje poprawnie, ale countdown text "
+          + "nie dostaje '.is-paused' — sprawdź czy oba elementy są w tym "
+          + "samym pause/resume code-path.";
+      }
+      // 3) Fallback — coś nie pasuje, ale nie pasuje do znanych wzorców.
+      return stepCtx + " Stan i klasy są spójne wewnętrznie — sprawdź czy "
+        + "expected dla tego kroku jest poprawne (np. pointerleave przy "
+        + "kursorze nadal nad toastem nie powinien resume'ować).";
+    }
     // Buduje czytelny per-step panel (DOM, bez innerHTML — bezpiecznie escape'owane).
     // reports: tablica { format, skipped, reason?, results:[{step,expected,got,ok}] }
     // summary: { scope, okSteps, totalSteps, parityIssues:[], skipped:[], headline }
@@ -4299,6 +4409,21 @@ const renderHtml = ({
       }
       hdrLine.textContent = parts.join(" · ");
       hdr.appendChild(hdrLine);
+      // „Likely cause" — analiza pierwszego failującego kroku + częstych
+      // wzorców rozjazdów state↔progress↔countdown. Pokazuje się TYLKO gdy
+      // są faile (lub parity issues), żeby nie szumieć przy zielonych biegach.
+      var hint = diagnoseLikelyCause(reports, summary);
+      if (hint) {
+        var hintEl = document.createElement("div");
+        hintEl.className = "trends-filter-toast-pause-test-log-hint";
+        hintEl.setAttribute("data-trend-toast-pause-test-hint", "");
+        // Prefix „Likely cause:" semantycznie oddziela heurystykę od faktów.
+        var hintPrefix = document.createElement("strong");
+        hintPrefix.textContent = "Likely cause: ";
+        hintEl.appendChild(hintPrefix);
+        hintEl.appendChild(document.createTextNode(hint));
+        hdr.appendChild(hintEl);
+      }
       toastPauseTestLogBody.appendChild(hdr);
       // Per-format sekcje.
       reports.forEach(function (rep) {
