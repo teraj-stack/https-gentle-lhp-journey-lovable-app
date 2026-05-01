@@ -52,11 +52,15 @@ const DOMAIN = "https://cml.pl";
 // --strict        : exit 1 przy ostrzeżeniach (przydatne w CI).
 // --upload        : po wygenerowaniu plików zrób PUT na Cloudflare API.
 // --confirm       : pomiń interaktywne pytanie przed PUT (CI / scripted runs).
+// --clear         : przed PUT-em z apiItems wyczyść listę (PUT z pustą tablicą).
+//                    Razem z --upload daje "świeży reset". Sam (bez --upload)
+//                    tylko czyści listę i kończy — przydatne np. przy migracji.
 const ARGS = new Set(process.argv.slice(2));
 const DRY_RUN = ARGS.has("--dry-run") || ARGS.has("-n");
 const STRICT = ARGS.has("--strict");
 const UPLOAD = ARGS.has("--upload");
 const CONFIRM = ARGS.has("--confirm");
+const CLEAR = ARGS.has("--clear");
 
 // ── Parser: wyciąga tylko aktywne (niezakomentowane) wpisy { from, to, reason } ──
 const source = readFileSync(SRC, "utf8");
