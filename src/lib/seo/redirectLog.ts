@@ -148,12 +148,31 @@ function append(entry: Omit<RedirectLogEntry, "timestamp" | "referrer" | "search
 
   // Konsola — ułatwia debug w devtools nawet bez ekranu /dev.
   if (isBrowser()) {
-    const tag = entry.kind === "redirect" ? "[SeoRedirect]" : "[404]";
-    if (entry.kind === "redirect") {
+    const tag =
+      entry.kind === "redirect" ? "[SeoRedirect]"
+      : entry.kind === "suggested" ? "[NotFound→suggested]"
+      : "[404]";
+    if (entry.kind === "redirect" || entry.kind === "suggested") {
       console.info(`${tag} ${entry.from} → ${entry.to}`);
     } else {
       console.warn(`${tag} ${entry.from} (referrer=${enriched.referrer})`);
     }
+  }
+
+  // ── Zdalne logowanie do analityki (Supabase) ────────────────────────────
+  // Deduplikacja per sesja: jeden wpis na (kind, from), żeby nie spamować przy
+  // wielokrotnych mountach SeoRedirect (np. React StrictMode w dev).
+  if (isBrowser() && !isRemoteAlreadySent(entry.kind, entry.from)) {
+    markRemoteSent(entry.kind, entry.from);
+    void sendRemote({
+      kind: entry.kind,
+      from_path: entry.from,
+      to_path: entry.to ?? null,
+      referrer: enriched.referrer,
+      search: enriched.search || null,
+      user_agent: typeof navigator !== "undefined" ? navigator.userAgent.slice(0, 500) : null,
+      session_id: getSessionId(),
+    });
   }
 }
 
@@ -165,6 +184,11 @@ export function logRedirectHit(from: string, to: string): void {
 /** Zaloguj trafienie w NotFound. */
 export function logNotFoundHit(from: string): void {
   append({ kind: "not_found", from });
+}
+
+/** Zaloguj fuzzy-match z NotFound (wykryta literówka skierowana do najbliższego aliasu). */
+export function logSuggestedRedirectHit(from: string, to: string): void {
+  append({ kind: "suggested", from, to });
 }
 
 /** Zwróć wszystkie zalogowane wpisy (kopia). */
@@ -183,7 +207,21 @@ export function subscribeRedirectLog(listener: Listener): () => void {
   return () => listeners.delete(listener);
 }
 
-/** Test-only: reset stanu modułu (jeśli kiedyś dodamy memoizację). */
+/** Test-only: reset stanu modułu i dedup-cache zdalnego logowania. */
 export function __resetRedirectLogForTesting(): void {
   writeAll([]);
+  if (isBrowser()) {
+    try {
+      sessionStorage.removeItem(REMOTE_DEDUP_KEY);
+      sessionStorage.removeItem(SESSION_ID_KEY);
+    } catch {
+      // ignore
+    }
+  }
+  remoteSinkOverride = null;
+}
+
+/** Test-only: podstaw mock zamiast prawdziwego Supabase insert. */
+export function __setRemoteSinkForTesting(sink: ((p: RemotePayload) => void) | null): void {
+  remoteSinkOverride = sink;
 }
