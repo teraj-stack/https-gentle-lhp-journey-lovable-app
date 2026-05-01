@@ -21,7 +21,7 @@
  * Uruchom:
  *   node scripts/export-cloudflare-redirects.mjs
  */
-import { writeFileSync, mkdirSync } from "node:fs";
+import { writeFileSync, mkdirSync, readFileSync, existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
 
@@ -30,12 +30,18 @@ const SRC = resolve(__dirname, "../src/lib/seo/redirectsMap.ts");
 const OUT_DIR = "/mnt/documents";
 const DOMAIN = "https://cml.pl";
 
+// ── CLI flags ───────────────────────────────────────────────────────────────
+// --dry-run / -n  : nie zapisuj plików; pokaż diff vs poprzedni eksport + walidację.
+// --strict        : exit 1 przy ostrzeżeniach (przydatne w CI).
+const ARGS = new Set(process.argv.slice(2));
+const DRY_RUN = ARGS.has("--dry-run") || ARGS.has("-n");
+const STRICT = ARGS.has("--strict");
+
 // ── Parser: wyciąga tylko aktywne (niezakomentowane) wpisy { from, to, reason } ──
-import { readFileSync } from "node:fs";
 const source = readFileSync(SRC, "utf8");
 
 const entries = [];
-const lineRe = /^\s*\{\s*from:\s*"([^"]+)"\s*,\s*to:\s*"([^"]+)"(?:\s*,\s*reason:\s*"([^"]*)")?\s*\}\s*,?\s*$/;
+const lineRe = /^\s*\{\s*from:\s*"([^"]*)"\s*,\s*to:\s*"([^"]*)"(?:\s*,\s*reason:\s*"([^"]*)")?\s*\}\s*,?\s*$/;
 for (const raw of source.split("\n")) {
   // Pomiń linie zakomentowane (// ... { from: ...).
   if (/^\s*\/\//.test(raw)) continue;
@@ -46,6 +52,137 @@ for (const raw of source.split("\n")) {
 if (entries.length === 0) {
   console.error("Nie znaleziono żadnych aktywnych wpisów w SEO_REDIRECTS — przerywam.");
   process.exit(1);
+}
+
+// ── Walidacja: konflikty, cykle, puste, łańcuchy ────────────────────────────
+const warnings = [];
+const errors = [];
+
+// 1) Puste / białe znaki / brak slasha.
+for (const e of entries) {
+  if (!e.from.trim() || !e.to.trim()) {
+    errors.push(`PUSTA ŚCIEŻKA: from="${e.from}" to="${e.to}"`);
+    continue;
+  }
+  if (!e.from.startsWith("/")) errors.push(`'from' bez slasha: ${e.from}`);
+  if (!e.to.startsWith("/") && !/^https?:\/\//.test(e.to))
+    errors.push(`'to' bez slasha/protokołu: ${e.to}`);
+  if (/\s/.test(e.from) || /\s/.test(e.to))
+    errors.push(`Spacja w ścieżce: ${e.from} → ${e.to}`);
+  if (!e.reason || !e.reason.trim())
+    warnings.push(`Brak 'reason' dla: ${e.from}`);
+}
+
+// 2) Duplikaty `from`.
+const fromCount = new Map();
+for (const e of entries) fromCount.set(e.from, (fromCount.get(e.from) ?? 0) + 1);
+for (const [from, n] of fromCount) {
+  if (n > 1) errors.push(`DUPLIKAT 'from' (${n}x): ${from}`);
+}
+
+// 3) Self-redirects.
+for (const e of entries) {
+  if (e.from === e.to) errors.push(`SELF-REDIRECT: ${e.from} → ${e.to}`);
+}
+
+// 4) Cykle A→B + B→A.
+const map = new Map(entries.map((e) => [e.from, e.to]));
+const seenCycles = new Set();
+for (const [from, to] of map) {
+  if (map.get(to) === from) {
+    const key = [from, to].sort().join("↔");
+    if (!seenCycles.has(key)) {
+      errors.push(`CYKL: ${from} ↔ ${to}`);
+      seenCycles.add(key);
+    }
+  }
+}
+
+// 5) Łańcuchy A→B→C (Cloudflare i tak nie podąża rekursywnie).
+const fromsSet = new Set(entries.map((e) => e.from));
+for (const e of entries) {
+  if (fromsSet.has(e.to))
+    warnings.push(`ŁAŃCUCH: ${e.from} → ${e.to} (a ${e.to} też przekierowuje dalej)`);
+}
+
+// ── Diff vs poprzedni eksport (jeśli istnieje cloudflare-redirects-simple.csv) ─
+const PREV_FILE = `${OUT_DIR}/cloudflare-redirects-simple.csv`;
+const prevMap = new Map();
+if (existsSync(PREV_FILE)) {
+  const prev = readFileSync(PREV_FILE, "utf8").split("\n").slice(1); // skip header
+  for (const line of prev) {
+    const [src, tgt] = line.split(",");
+    if (!src) continue;
+    const fromPath = src.replace(DOMAIN, "");
+    const toPath = (tgt ?? "").replace(DOMAIN, "");
+    prevMap.set(fromPath, toPath);
+  }
+}
+
+const currMap = new Map(entries.map((e) => [e.from, e.to]));
+const toAdd = [];
+const toChange = [];
+const toRemove = [];
+for (const [from, to] of currMap) {
+  if (!prevMap.has(from)) toAdd.push({ from, to });
+  else if (prevMap.get(from) !== to)
+    toChange.push({ from, oldTo: prevMap.get(from), newTo: to });
+}
+for (const [from, to] of prevMap) {
+  if (!currMap.has(from)) toRemove.push({ from, to });
+}
+
+// ── Raport (zawsze drukowany; w dry-run kończy działanie) ──────────────────
+const hr = "─".repeat(72);
+console.log(`\n${hr}`);
+console.log(`SEO_REDIRECTS — ${DRY_RUN ? "DRY RUN" : "EKSPORT"} (${entries.length} reguł, ${DOMAIN})`);
+console.log(hr);
+
+if (existsSync(PREV_FILE)) {
+  console.log(`\n📋 Diff vs poprzedni eksport (${PREV_FILE}):`);
+  console.log(`   + ${toAdd.length} nowych   ~ ${toChange.length} zmienionych   - ${toRemove.length} usuniętych`);
+  if (toAdd.length) {
+    console.log(`\n  ➕ DO DODANIA:`);
+    for (const { from, to } of toAdd) console.log(`     + ${from}  →  ${to}`);
+  }
+  if (toChange.length) {
+    console.log(`\n  🔄 DO ZMIANY:`);
+    for (const { from, oldTo, newTo } of toChange)
+      console.log(`     ~ ${from}:  ${oldTo}  →  ${newTo}`);
+  }
+  if (toRemove.length) {
+    console.log(`\n  ➖ DO USUNIĘCIA (były w poprzednim eksporcie, brak w mapie):`);
+    for (const { from, to } of toRemove) console.log(`     - ${from}  →  ${to}`);
+  }
+  if (!toAdd.length && !toChange.length && !toRemove.length)
+    console.log(`   ✓ brak zmian — eksport identyczny z poprzednim.`);
+} else {
+  console.log(`\n📋 Pierwszy eksport (brak ${PREV_FILE} do porównania).`);
+  console.log(`   Wszystkie ${entries.length} reguł zostanie ${DRY_RUN ? "by dodanych" : "dodanych"}.`);
+}
+
+if (errors.length) {
+  console.log(`\n❌ BŁĘDY (${errors.length}):`);
+  for (const msg of errors) console.log(`   ✗ ${msg}`);
+}
+if (warnings.length) {
+  console.log(`\n⚠️  OSTRZEŻENIA (${warnings.length}):`);
+  for (const msg of warnings) console.log(`   ! ${msg}`);
+}
+if (!errors.length && !warnings.length) {
+  console.log(`\n✅ Walidacja OK — brak konfliktów, cykli, pustych ścieżek.`);
+}
+
+if (errors.length) {
+  console.error(`\n⛔ Przerywam ze względu na ${errors.length} błąd(ów). Popraw mapę i uruchom ponownie.`);
+  process.exit(1);
+}
+
+if (DRY_RUN) {
+  console.log(`\n🔍 DRY RUN — nie zapisano żadnych plików.`);
+  console.log(`   Aby wykonać eksport: node scripts/export-cloudflare-redirects.mjs\n`);
+  if (STRICT && warnings.length) process.exit(1);
+  process.exit(0);
 }
 
 mkdirSync(OUT_DIR, { recursive: true });
