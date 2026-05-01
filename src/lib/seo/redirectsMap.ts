@@ -93,4 +93,51 @@ export const SEO_REDIRECTS: SeoRedirectEntry[] = [
   { from: "/proktologia", to: "/leczenie/proktologia", reason: "Bez prefiksu → hub proktologii" },
   { from: "/flebolog", to: "/leczenie/flebologia", reason: "Specjalizacja → hub flebologii" },
   { from: "/flebologia", to: "/leczenie/flebologia", reason: "Bez prefiksu → hub flebologii" },
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // FAZA 3 — TEMPLATE: vanity URLs kliniki + slot na stare adresy z GSC.
+  //
+  // INSTRUKCJA:
+  //   1. Każdy wpis poniżej ODKOMENTUJ gdy realnie chcesz uruchomić.
+  //   2. Dopisuj swoje stare adresy (z Google Search Console → "Not found" → Export CSV,
+  //      starych ulotek, kampanii Ads, archiwum WordPress) w sekcji "MOJE STARE ADRESY".
+  //   3. Po każdej zmianie testy `npm test src/lib/seo/redirectsMap.test.ts` zwalidują:
+  //      brak duplikatów, cykli, kolizji z route'ami i istnienie celu w App.tsx.
+  // ─────────────────────────────────────────────────────────────────────────
+
+  // ── Vanity dla materiałów drukowanych / Google Ads / wizytówek (przykłady) ──
+  // { from: "/umow-wizyte", to: "/kontakt", reason: "CTA z wizytówki/ulotki → strona kontaktu" },
+  // { from: "/rejestracja", to: "/kontakt", reason: "Vanity z ulotki → kontakt z rejestratorką" },
+  // { from: "/wizyta", to: "/kontakt", reason: "Krótki vanity → kontakt" },
+  // { from: "/ceny", to: "/cennik", reason: "Synonim → cennik" },
+  // { from: "/cena", to: "/cennik", reason: "L.poj. → cennik" },
+  // { from: "/cennik-zabiegow", to: "/cennik", reason: "Wariant frazy → cennik" },
+  // { from: "/o-klinice", to: "/o-nas", reason: "Wariant frazy → strona O nas" },
+  // { from: "/o-cml", to: "/o-nas", reason: "Brand vanity → O nas" },
+  // { from: "/dr-bujok", to: "/o-nas", reason: "Imienne vanity → O nas (Dr Bujok)" },
+  // { from: "/jan-bujok", to: "/o-nas", reason: "Imienne vanity → O nas" },
+  // { from: "/zespol", to: "/o-nas", reason: "Sekcja zespół → O nas" },
+  // { from: "/lokalizacje", to: "/kontakt", reason: "4 lokalizacje kliniki → strona kontaktu" },
+  // { from: "/gabinet", to: "/kontakt", reason: "Vanity → kontakt z lokalizacjami" },
+  // { from: "/wspolpraca-medyczna", to: "/wspolpraca", reason: "Wariant frazy → S.C.A.L.E. współpraca" },
+  // { from: "/dla-lekarzy", to: "/wspolpraca", reason: "Target B2B → strona współpracy" },
+  // { from: "/blog-medyczny", to: "/blog", reason: "Wariant frazy → blog" },
+  // { from: "/artykuly", to: "/blog", reason: "Synonim → blog" },
+  // { from: "/poradnik", to: "/dla-pacjenta", reason: "Synonim → strefa pacjenta" },
+  // { from: "/wiedza", to: "/dla-pacjenta", reason: "Wariant frazy → strefa pacjenta" },
+  // { from: "/edukacja", to: "/dla-pacjenta/edukacja", reason: "Bez prefiksu → strona edukacyjna" },
+
+  // ── Vanity dla zabiegów (przykłady — uzupełnij własnymi) ──
+  // { from: "/zabieg-laserowy", to: "/leczenie/lhp", reason: "Generyczna nazwa → LHP (najpopularniejszy zabieg)" },
+  // { from: "/laser-proktologia", to: "/leczenie/proktologia", reason: "Vanity → hub proktologii laserowej" },
+  // { from: "/laser-flebologia", to: "/leczenie/flebologia", reason: "Vanity → hub flebologii laserowej" },
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // ⬇ MOJE STARE ADRESY — wklej tu URL-e z GSC / starej strony WordPress / ulotek.
+  //   Format: { from: "/stara-sciezka", to: "/cel", reason: "Skąd pochodzi" },
+  //   Przykład: { from: "/usugi/laser-zylakow", to: "/leczenie/evlt", reason: "Stary WordPress slug" },
+  // ─────────────────────────────────────────────────────────────────────────
+
+  // TODO: dopisz tutaj swoje stare URL-e
+
 ];
