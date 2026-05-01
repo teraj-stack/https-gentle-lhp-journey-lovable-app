@@ -295,6 +295,11 @@ async function uploadToCloudflare() {
 
   console.log(`\n${"─".repeat(72)}\n☁️  Upload do Cloudflare API\n${"─".repeat(72)}`);
 
+  // ── Pre-flight: walidacja struktury apiItems pod kątem schematu Cloudflare ─
+  // Sprawdzamy ZANIM zrobimy jakikolwiek request — błędy złapane lokalnie są
+  // dużo szybsze i czytelniejsze niż HTTP 400 z `errors[].message` z API.
+  validateApiItemsSchema(apiItems);
+
   const missing = [];
   if (!token) missing.push("CF_API_TOKEN");
   if (!accountId) missing.push("CF_ACCOUNT_ID");
