@@ -165,6 +165,9 @@ const App = () => (
               <Route path="/polityka-prywatnosci" element={<PolitykaPrywatnosci />} />
               <Route path="/regulamin" element={<Regulamin />} />
               <Route path="/cennik" element={<Cennik />} />
+              {SEO_REDIRECTS.map(({ from, to }) => (
+                <Route key={from} path={from} element={<SeoRedirect to={to} />} />
+              ))}
             </Route>
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin" element={<AdminDashboard />} />
