@@ -1,44 +1,43 @@
 ---
 name: SEO Redirects Infrastructure
-description: SEO_REDIRECTS map + SeoRedirect (Navigate replace + canonical + meta refresh + noindex), auto-routes w App.tsx; substytut 301 dla Lovable hostingu, z testami integralności
+description: SEO_REDIRECTS map + wzmocniony SeoRedirect (defense-in-depth: canonical+refresh+noindex×3+og/twitter URL), synchroniczna emisja w renderze, auto-routes w App.tsx; substytut 301 dla Lovable hostingu z testami runtime
 type: feature
 ---
 
 ## Stan
 
-Lovable hosting NIE wspiera _redirects/netlify.toml/vercel.json — prawdziwe HTTP 301 z infry niemożliwe. Substytut SEO-friendly:
+Lovable hosting NIE wspiera _redirects/netlify.toml/vercel.json — prawdziwe HTTP 301 niemożliwe. Substytut SEO-friendly w `src/components/seo/SeoRedirect.tsx`.
 
-**Trzy warstwy w `<SeoRedirect to>`** (`src/components/seo/SeoRedirect.tsx`):
-1. `<Navigate replace>` — instant client-side, nie zaśmieca history.
-2. `<link rel="canonical" href="{absolute target}">` — konsoliduje sygnał dla Google.
-3. `<meta http-equiv="refresh" content="0;url={target}">` — fallback dla botów bez JS.
-4. `<meta name="robots" content="noindex, follow">` na starej ścieżce.
+## Defense-in-depth (7 warstw)
 
-## Jak dodać redirect
+1. **Synchroniczna emisja w renderze** (NIE useEffect) — tagi w <head> ZANIM `<Navigate>` unmountuje komponent. Kluczowe: useEffect odpalał się za późno → tagi nigdy nie trafiały do DOM.
+2. **Canonical** `<link rel="canonical">` na absolute URL celu.
+3. **Meta refresh 0s** — Google traktuje jako permanent redirect, fallback dla botów bez JS.
+4. **Noindex × 3**: `robots`, `googlebot`, `bingbot` z `noindex, follow, noarchive`.
+5. **Open Graph + Twitter URL** → cel (social media pokazują kanoniczny URL).
+6. **Self-redirect guard** — jeśli `from === to`, no-op + `console.warn`.
+7. **`<Navigate replace>`** — instant, nie zaśmieca history.
 
-Edytuj `src/lib/seo/redirectsMap.ts`:
-```ts
-export const SEO_REDIRECTS: SeoRedirectEntry[] = [
-  { from: "/stary-adres", to: "/nowy-adres", reason: "Powód zmiany" },
-];
-```
-App.tsx automatycznie generuje `<Route>` per wpis (wewnątrz `<Route element={<Layout />}>`).
+**BEZ useEffect cleanup** — po Navigate cel ma własny SeoHead nadpisujący tagi przez selector. Próba cleanup zbiegała się z unmount-by-Navigate i usuwała tagi przed nadpisaniem. Tagi oznaczone `data-seo-redirect="created"` dla debug.
 
-## Aktualne wpisy
+## Mapa redirectów (`src/lib/seo/redirectsMap.ts`)
 
-- **Faza 1 (Vanity URLs)**: 6 krótkich aliasów do druku/Ads (`/hemoroidy`, `/pajaczki`, `/zylaki`, `/przetoka`, `/torbiel`, `/ginekomastia`).
-- **Faza 2 (Aliasy literówek)**: ~30 wariantów pisowni z polskimi znakami, l.poj./mn., synonimów potocznych i medycznych, oraz starych aliasów `/leczenie/{problem}` jako fallback gdyby Cloudflare Bulk Redirects nie zadziałał.
+- **Faza 1 (Vanity)**: 6 krótkich aliasów (`/hemoroidy`, `/pajaczki`, `/zylaki`, `/przetoka`, `/torbiel`, `/ginekomastia`).
+- **Faza 2 (Literówki)**: ~30 wariantów pisowni, polskich znaków, l.poj./mn., synonimów potocznych/medycznych.
+- **Faza 3 (TEMPLATE)**: ~25 zakomentowanych przykładów vanity kliniki + slot `MOJE STARE ADRESY` z TODO dla wpisów z GSC.
 
 ## Cloudflare (planowane)
 
-Domena `cml.pl` ma być przepięta za Cloudflare → Bulk Redirects dla prawdziwych HTTP 301. Mapa w kodzie zostaje jako fallback.
+Domena `cml.pl` ma być za Cloudflare → Bulk Redirects dla prawdziwych HTTP 301. Mapa w kodzie zostaje jako fallback.
 
-## Testy (`src/lib/seo/redirectsMap.test.ts`)
+## Sitemap & robots
 
-CI guard chroni przed regresją po zmianach w menu/route'ach. Parsuje `App.tsx` regexem `<Route path="...">` i sprawdza:
-1. **Higiena**: format wpisów (slash początkowy, brak spacji/trailing slash, niepusty `reason`).
-2. **Brak konfliktów**: brak duplikatów `from`, brak self-redirect (`from===to`), brak cykli A→B+B→A, brak łańcuchów A→B→C.
-3. **Integralność z routerem**: każdy `to` pasuje do realnego route w App.tsx (wspiera parametry typu `:slug`).
-4. **Kolizje from**: żaden `from` nie pokrywa się z realnym route (z wyjątkiem tych wstrzykiwanych przez samą mapę).
+- `public/sitemap.xml` — wyłącznie kanoniczne URL-e (~50 stron). Aliasy z mapy NIE w sitemap.
+- `public/robots.txt` — `Disallow:` dla `/admin/`, `/dev/`, `/booking-action`, `/unsubscribe`, `/reminder-opt-out` + jawne `Disallow:` per alias dla Googlebota (crawl budget).
 
-Uruchamianie: `bunx vitest run src/lib/seo/redirectsMap.test.ts` (93 testy, ~20ms).
+## Testy (155, ~3.5s)
+
+- `src/lib/seo/redirectsMap.test.ts` (93) — higiena, brak duplikatów/cykli/łańcuchów, integralność `to` z route'ami w App.tsx, brak kolizji `from`.
+- `src/lib/seo/redirectsRuntime.test.tsx` (45) — sparametryzowane: każde wejście z mapy renderuje SeoRedirect i `Navigate` na `to` zamiast 404.
+- `src/lib/seo/sitemapRobots.test.ts` (6) — sitemap nie wycieka aliasów ani admin/dev, robots blokuje co trzeba.
+- `src/components/seo/SeoRedirect.test.tsx` (11) — DOM: canonical, refresh, noindex×3, og/twitter URL, idempotency re-mount, self-redirect guard, absolute URL passthrough, marker `data-seo-redirect`.
