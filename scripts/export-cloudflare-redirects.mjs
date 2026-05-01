@@ -416,3 +416,63 @@ function promptYesNo(question) {
     });
   });
 }
+
+// ── fetch z exponential backoff dla błędów sieciowych i 429/5xx ────────────
+// Retryable:
+//   • Network errors (fetch throws — DNS, ECONNRESET, ETIMEDOUT, socket hangup).
+//   • HTTP 429 (rate limit) — respektujemy Retry-After (sekundy lub HTTP-date).
+//   • HTTP 5xx (transient server error).
+// Nie-retryable: 4xx ≠ 429 (auth/validation — re-try i tak nie pomoże).
+//
+// Backoff: 1s, 2s, 4s, 8s, 16s (cap 30s) + jitter ±25%. Domyślnie 5 prób.
+async function fetchWithRetry(url, init, opts = {}) {
+  const { label = "fetch", maxRetries = 5, baseDelayMs = 1000, maxDelayMs = 30_000 } = opts;
+  let lastErr;
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const res = await fetch(url, init);
+      // 429 / 5xx → retry (jeśli zostały próby).
+      if ((res.status === 429 || res.status >= 500) && attempt < maxRetries) {
+        const retryAfter = parseRetryAfter(res.headers.get("retry-after"));
+        const delay = retryAfter ?? backoffDelay(attempt, baseDelayMs, maxDelayMs);
+        console.warn(
+          `  ⟳ ${label}: HTTP ${res.status}, retry ${attempt + 1}/${maxRetries} za ${Math.round(delay)}ms`,
+        );
+        await sleep(delay);
+        continue;
+      }
+      return res;
+    } catch (err) {
+      lastErr = err;
+      if (attempt >= maxRetries) break;
+      const delay = backoffDelay(attempt, baseDelayMs, maxDelayMs);
+      console.warn(
+        `  ⟳ ${label}: network error "${err?.code ?? err?.message ?? err}", retry ${attempt + 1}/${maxRetries} za ${Math.round(delay)}ms`,
+      );
+      await sleep(delay);
+    }
+  }
+  throw lastErr ?? new Error(`${label}: wyczerpano ${maxRetries} prób`);
+}
+
+function backoffDelay(attempt, baseMs, maxMs) {
+  const exp = Math.min(baseMs * 2 ** attempt, maxMs);
+  // Jitter ±25% — rozprasza zsynchronizowane retries (thundering herd).
+  const jitter = exp * 0.25 * (Math.random() * 2 - 1);
+  return Math.max(0, exp + jitter);
+}
+
+function parseRetryAfter(header) {
+  if (!header) return null;
+  const seconds = Number(header);
+  if (Number.isFinite(seconds)) return seconds * 1000;
+  // HTTP-date format.
+  const dateMs = Date.parse(header);
+  if (Number.isFinite(dateMs)) return Math.max(0, dateMs - Date.now());
+  return null;
+}
+
+function sleep(ms) {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
