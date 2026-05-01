@@ -211,8 +211,13 @@ function scorePair(inputNorm: string, inputTokens: string[], candidateNorm: stri
   if (inputNorm === candidateNorm) return 1;
 
   // Substring obu kierunków — silny sygnał (np. /pajaczki w /pajaczki-leczenie).
+  // WAŻNE: wymaga obu stron niepustych i minimum 3 znaków po stronie krótszej,
+  // inaczej każdy input zawierałby pusty `""` lub `/` z kandydata i score=0.85
+  // dla totalnie obcych ścieżek.
+  const minLen = Math.min(inputNorm.length, candidateNorm.length);
   const isSubstring =
-    candidateNorm.includes(inputNorm) || inputNorm.includes(candidateNorm);
+    minLen >= 3 &&
+    (candidateNorm.includes(inputNorm) || inputNorm.includes(candidateNorm));
   const substringScore = isSubstring ? 0.85 : 0;
 
   const candTokens = candidateNorm.split(/[/-]/).filter(Boolean);
@@ -225,3 +230,4 @@ function scorePair(inputNorm: string, inputTokens: string[], candidateNorm: stri
 
 /** Test-only re-export progów (do walidacji w testach). */
 export const __thresholds = { AUTO: AUTO_THRESHOLD, SUGGEST: SUGGEST_THRESHOLD };
+
