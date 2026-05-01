@@ -63,6 +63,7 @@ const DevTooltipPreview = lazy(() => import("@/pages/DevTooltipPreview"));
 const DevI18nContract = lazy(() => import("@/pages/DevI18nContract"));
 const DevHeaderPreview = lazy(() => import("@/pages/DevHeaderPreview"));
 const DevSeoRedirects = lazy(() => import("@/pages/DevSeoRedirects"));
+const AdminSeoRedirects = lazy(() => import("@/pages/AdminSeoRedirects"));
 const DevVeinImagesPreview = lazy(() => import("@/pages/DevVeinImagesPreview"));
 
 const Unsubscribe = lazy(() => import("@/pages/Unsubscribe"));
@@ -180,6 +181,7 @@ const App = () => (
             <Route path="/admin/security" element={<AdminSecurityChecklist />} />
             <Route path="/admin/scroll-test" element={<AdminScrollTest />} />
             <Route path="/admin/vein-images" element={<AdminVeinImages />} />
+            <Route path="/admin/seo-redirects" element={<AdminSeoRedirects />} />
             
             <Route path="/unsubscribe" element={<Unsubscribe />} />
             <Route path="/reminder-opt-out" element={<ReminderOptOut />} />
