@@ -121,9 +121,10 @@ const byTarget = entries.reduce((acc, e) => {
   return acc;
 }, {});
 console.log(`✓ Wyeksportowano ${entries.length} reguł 301 dla ${DOMAIN}`);
-console.log(`✓ /mnt/documents/cloudflare-bulk-redirects.csv (pełny schemat CF)`);
+console.log(`✓ /mnt/documents/cloudflare-bulk-redirects.csv  (Dashboard upload)`);
+console.log(`✓ /mnt/documents/cloudflare-bulk-redirects.json (API PUT /lists/{id}/items)`);
 console.log(`✓ /mnt/documents/cloudflare-redirects-simple.csv (source,target)`);
-console.log(`✓ /mnt/documents/cloudflare-redirects.txt (z powodami)`);
+console.log(`✓ /mnt/documents/cloudflare-redirects.txt       (z powodami)`);
 console.log(`\nTop celów:`);
 for (const [to, n] of Object.entries(byTarget).sort((a, b) => b[1] - a[1]).slice(0, 8)) {
   console.log(`  ${n.toString().padStart(3)} → ${to}`);
