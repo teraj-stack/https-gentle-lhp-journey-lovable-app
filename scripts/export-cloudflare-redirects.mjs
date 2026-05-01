@@ -453,6 +453,28 @@ async function uploadOne({ accountId, list, headers }) {
     throw new Error(`Lista jest typu "${listMeta.kind}", oczekiwano "redirect"`);
   }
 
+  // Pobierz aktualną zawartość listy (potrzebne i do diff, i do --clear).
+  const remoteItems = await fetchAllListItems(baseUrl, headers);
+  const remoteMap = new Map();
+  for (const it of remoteItems) {
+    const r = it.redirect ?? {};
+    if (!r.source_url) continue;
+    remoteMap.set(r.source_url, {
+      target_url: r.target_url ?? "",
+      status_code: r.status_code ?? 301,
+      preserve_query_string: r.preserve_query_string ?? false,
+    });
+  }
+  const localMap = new Map();
+  for (const it of apiItems) {
+    const r = it.redirect;
+    localMap.set(r.source_url, {
+      target_url: r.target_url,
+      status_code: r.status_code,
+      preserve_query_string: r.preserve_query_string,
+    });
+  }
+
   // Krok B: diff vs aktualna zawartość (pomijany przy --clear bez --upload, bo
   // i tak chcemy wszystko usunąć — diff byłby tylko szumem).
   let stats = {
