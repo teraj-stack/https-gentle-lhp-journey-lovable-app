@@ -26,5 +26,12 @@ export interface SeoRedirectEntry {
 }
 
 export const SEO_REDIRECTS: SeoRedirectEntry[] = [
-  // Brak aktywnych przekierowań — patrz komentarz powyżej.
+  // Vanity URLs — krótkie, marketingowe aliasy do druku/Google Ads/social.
+  // Mapują problem pacjenta → kanoniczna podstrona (hub edukacyjny lub konkretna metoda).
+  { from: "/hemoroidy", to: "/dla-pacjenta/hemoroidy", reason: "Vanity URL → hub edukacyjny hemoroidów" },
+  { from: "/pajaczki", to: "/dla-pacjenta/pajaczki", reason: "Vanity URL → hub edukacyjny pajączków" },
+  { from: "/zylaki", to: "/leczenie/evlt", reason: "Vanity URL → metoda leczenia żylaków (EVLT)" },
+  { from: "/przetoka", to: "/leczenie/filac", reason: "Vanity URL → metoda leczenia przetoki (FiLaC)" },
+  { from: "/torbiel", to: "/leczenie/silac", reason: "Vanity URL → metoda leczenia torbieli pilonidalnej (SiLaC)" },
+  { from: "/ginekomastia", to: "/leczenie/ginekomastia", reason: "Vanity URL → strona główna ginekomastii" },
 ];
