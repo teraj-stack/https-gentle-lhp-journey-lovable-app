@@ -6,6 +6,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import Layout from "@/components/layout/Layout";
 import JsonLdValidator from "@/components/dev/JsonLdValidator";
+import SeoRedirect from "@/components/seo/SeoRedirect";
+import { SEO_REDIRECTS } from "@/lib/seo/redirectsMap";
 
 const Home = lazy(() => import("@/pages/Home"));
 const LHP = lazy(() => import("@/pages/LHP"));
