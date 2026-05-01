@@ -326,7 +326,7 @@ async function uploadToCloudflare() {
 
   // Krok A: weryfikacja tokena + dostępu do listy (GET zamiast verify, żeby od razu sprawdzić scope).
   console.log(`→ GET ${baseUrl} (sanity check tokena i listy)`);
-  const checkRes = await fetch(baseUrl, { headers });
+  const checkRes = await fetchWithRetry(baseUrl, { headers }, { label: "GET list" });
   const checkJson = await checkRes.json().catch(() => ({}));
   if (!checkRes.ok || !checkJson.success) {
     console.error(`❌ Sanity check failed: HTTP ${checkRes.status}`);
