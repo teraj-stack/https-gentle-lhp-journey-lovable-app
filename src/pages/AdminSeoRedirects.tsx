@@ -12,6 +12,7 @@
  * Bezpieczeństwo: RBAC po stronie DB (RLS) + dodatkowy gate `useIsAdmin`.
  */
 import { useEffect, useMemo, useState } from "react";
+import SeoRedirectAnalytics from "@/components/admin/SeoRedirectAnalytics";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Session } from "@supabase/supabase-js";
@@ -327,6 +328,15 @@ const AdminSeoRedirects = () => {
             Nowe wpisy DB zaczynają działać dla wszystkich użytkowników w ciągu max 60 sekund (cache).
           </p>
         </section>
+
+        {/* ── Analityka trafień (TOP literówki / aliasy) ───────────────── */}
+        <SeoRedirectAnalytics
+          onUseAsRedirect={(from, to) => {
+            setEditingId(null);
+            setForm({ from_path: from, to_path: to, reason: "Z analityki ruchu", is_active: true });
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }}
+        />
 
         {/* ── Filtr ─────────────────────────────────────────────────────── */}
         <div className="flex items-center gap-3">

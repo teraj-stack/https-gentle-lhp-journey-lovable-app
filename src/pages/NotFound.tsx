@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef } from "react";
 import { Navigate, useLocation } from "react-router-dom";
-import { logNotFoundHit, logRedirectHit } from "@/lib/seo/redirectLog";
+import { logNotFoundHit, logSuggestedRedirectHit } from "@/lib/seo/redirectLog";
 import { suggestRedirect } from "@/lib/seo/suggestRedirect";
 
 const NotFound = () => {
@@ -31,7 +31,7 @@ const NotFound = () => {
     if (suggestion.action === "auto-redirect" && suggestion.to) {
       // Zaloguj też jako redirect — dzięki temu w /dev/seo-redirects widać
       // że fuzzy-matcher uratował ruch (kandydat na nowy wpis w SEO_REDIRECTS).
-      logRedirectHit(location.pathname, suggestion.to);
+      logSuggestedRedirectHit(location.pathname, suggestion.to);
     }
   }, [location.pathname, suggestion]);
 

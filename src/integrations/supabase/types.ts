@@ -437,6 +437,42 @@ export type Database = {
         }
         Relationships: []
       }
+      seo_redirect_hits: {
+        Row: {
+          created_at: string
+          from_path: string
+          id: string
+          kind: string
+          referrer: string | null
+          search: string | null
+          session_id: string | null
+          to_path: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          created_at?: string
+          from_path: string
+          id?: string
+          kind: string
+          referrer?: string | null
+          search?: string | null
+          session_id?: string | null
+          to_path?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          created_at?: string
+          from_path?: string
+          id?: string
+          kind?: string
+          referrer?: string | null
+          search?: string | null
+          session_id?: string | null
+          to_path?: string | null
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       seo_redirects: {
         Row: {
           created_at: string
