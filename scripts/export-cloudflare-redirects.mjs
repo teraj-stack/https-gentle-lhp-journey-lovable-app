@@ -24,6 +24,8 @@
  *   node scripts/export-cloudflare-redirects.mjs --dry-run --strict   # exit 1 przy warn (CI)
  *   node scripts/export-cloudflare-redirects.mjs --upload     # eksport + PUT do Cloudflare
  *   node scripts/export-cloudflare-redirects.mjs --upload --confirm   # bez interaktywnego pytania
+ *   node scripts/export-cloudflare-redirects.mjs --clear --upload    # wyczyść listę i wgraj nowe
+ *   node scripts/export-cloudflare-redirects.mjs --clear              # tylko wyczyść (bez uploadu)
  *
  * Upload wymaga env vars:
  *   CF_API_TOKEN   — token z permission "Account / Account Filter Lists / Edit"
