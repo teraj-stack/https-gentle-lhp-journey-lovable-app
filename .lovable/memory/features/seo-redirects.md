@@ -48,3 +48,11 @@ Domena `cml.pl` ma być za Cloudflare → Bulk Redirects dla prawdziwych HTTP 30
 - **Instrumentacja**: `SeoRedirect` woła `logRedirectHit(from, to)` synchronicznie w renderze; `pages/NotFound` woła `logNotFoundHit(pathname)` w `useEffect`. Konsola: `console.info` dla redirect, `console.warn` dla 404.
 - **Ekran**: `/dev/seo-redirects` (`src/pages/DevSeoRedirects.tsx`) — 3 sekcje: mapa SEO_REDIRECTS z licznikami trafień, agregat unikalnych 404 z referrerem (przycisk „Skopiuj jako szablon SEO_REDIRECTS"), surowy log. Auto-refresh co 1s + reset. Strona nie indeksowana (meta robots noindex,nofollow).
 - **Testy**: `src/lib/seo/redirectLog.test.ts` (8) — kontrakt API, FIFO, subscribe/unsub, odporność na quota i uszkodzony JSON.
+
+## Fuzzy 404 → suggested redirect
+
+- **`src/lib/seo/suggestRedirect.ts`** — czysty helper (no React/DOM). API: `suggestRedirect(pathname) → { to, source, score, action: "auto-redirect"|"suggest"|"none", matchedFrom }`.
+- **Algorytm**: normalizacja (lowercase + NFD + strip diacritics + trim slashes) → exact match (1.0) → substring (0.85, gated minLen ≥ 3 by uniknąć kolizji `""`) → Jaccard po tokenach `/-` (×0.9) → Levenshtein znormalizowany (×0.95). Best-of.
+- **Progi**: `AUTO=0.82` (`<Navigate replace>`), `SUGGEST=0.55` (sekcja „Czy chodziło Ci o…?"), poniżej → none. Remis → preferencja `redirect-map` nad `app-route`.
+- **`pages/NotFound`** — odpala `suggestRedirect` w `useMemo`, loguje przez `logNotFoundHit` zawsze + `logRedirectHit` przy auto-redirect (widać w `/dev/seo-redirects` jako kandydat na nowy wpis SEO_REDIRECTS). Przy `auto-redirect` zwraca `<Navigate>` zamiast widoku 404. Przy `suggest` — pokazuje link `data-testid="suggested-link"`.
+- **Testy**: `src/lib/seo/suggestRedirect.test.ts` — normalizacja, exact-match, literówki znanych aliasów, brak fałszywych pozytywów dla losowych stringów, preferencja redirect-map, kontrakt zwrotny dla wszystkich SEO_REDIRECTS (każdy alias w 100% mapuje na swój `to`).
