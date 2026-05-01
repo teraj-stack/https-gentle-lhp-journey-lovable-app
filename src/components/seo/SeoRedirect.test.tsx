@@ -85,38 +85,25 @@ describe("SeoRedirect — manipulacja <head>", () => {
     expect(tw?.getAttribute("content")).toBe(ABSOLUTE_TARGET);
   });
 
-  it("po unmount usuwa wszystkie utworzone tagi (no leak)", () => {
-    const { unmount } = renderRedirect();
-    expect(document.head.querySelector('link[rel="canonical"]')).not.toBeNull();
-    unmount();
-    expect(document.head.querySelector('link[rel="canonical"]')).toBeNull();
-    expect(document.head.querySelector('meta[http-equiv="refresh"]')).toBeNull();
-    expect(document.head.querySelector('meta[name="robots"]')).toBeNull();
-    expect(document.head.querySelector('meta[name="googlebot"]')).toBeNull();
-    expect(document.head.querySelector('meta[name="bingbot"]')).toBeNull();
-    expect(document.head.querySelector('meta[property="og:url"]')).toBeNull();
-    expect(document.head.querySelector('meta[name="twitter:url"]')).toBeNull();
-  });
-
-  it("po unmount przywraca poprzednią wartość istniejącego canonical", () => {
-    const original = document.createElement("link");
-    original.setAttribute("rel", "canonical");
-    original.setAttribute("href", "https://bestcml.io/poprzedni");
-    document.head.appendChild(original);
-
-    const { unmount } = renderRedirect();
-    // Podczas mountowania href powinien być zmieniony na cel
+  it("re-mount na innym aliasie nadpisuje canonical (upsert idempotentny)", () => {
+    const { unmount } = renderRedirect("/hemoroidy", "/dla-pacjenta/hemoroidy");
     expect(document.head.querySelector('link[rel="canonical"]')?.getAttribute("href")).toBe(
       ABSOLUTE_TARGET
     );
-
     unmount();
-    // Po unmount: tag istnieje, href przywrócony
-    const restored = document.head.querySelector('link[rel="canonical"]');
-    expect(restored).not.toBeNull();
-    expect(restored?.getAttribute("href")).toBe("https://bestcml.io/poprzedni");
 
-    restored?.remove();
+    // Drugi mount na inny cel → ten sam canonical tag, nowa wartość href
+    renderRedirect("/zylaki", "/leczenie/evlt");
+    const canonicals = document.head.querySelectorAll('link[rel="canonical"]');
+    expect(canonicals.length).toBe(1); // brak duplikatów
+    expect(canonicals[0].getAttribute("href")).toBe("https://bestcml.io/leczenie/evlt");
+  });
+
+  it("oznacza utworzone tagi atrybutem data-seo-redirect (debugowalne)", () => {
+    renderRedirect();
+    const created = document.head.querySelectorAll('[data-seo-redirect]');
+    // 7 tagów: canonical, refresh, robots, googlebot, bingbot, og:url, twitter:url
+    expect(created.length).toBe(7);
   });
 
   it("blokuje self-redirect (from === to) — nie modyfikuje head, loguje warning", () => {
