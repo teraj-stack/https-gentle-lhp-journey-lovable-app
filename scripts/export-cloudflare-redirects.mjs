@@ -28,10 +28,15 @@
  * Upload wymaga env vars:
  *   CF_API_TOKEN   — token z permission "Account / Account Filter Lists / Edit"
  *   CF_ACCOUNT_ID  — ID konta Cloudflare
- *   CF_LIST_ID     — ID listy Bulk Redirects (z URL Dashboard → Lists)
+ *   CF_LIST_ID     — ID listy LUB lista wielu list rozdzielonych przecinkami:
+ *                      "abc123..."                          # 1 lista
+ *                      "abc123...,def456..."                # 2 listy (label = list1, list2)
+ *                      "prod=abc123...,stg=def456..."       # 2 listy z etykietami
  *
  * Endpoint: PUT /accounts/{account_id}/rules/lists/{list_id}/items
  *   — replace-all (zastępuje całą zawartość listy). Idempotentne.
+ *   Wiele list jest przetwarzanych sekwencyjnie z osobnym diff/confirm/poll
+ *   i końcowym raportem statusów per lista.
  */
 import { writeFileSync, mkdirSync, readFileSync, existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -291,70 +296,162 @@ if (UPLOAD) {
 async function uploadToCloudflare() {
   const token = process.env.CF_API_TOKEN;
   const accountId = process.env.CF_ACCOUNT_ID;
-  const listId = process.env.CF_LIST_ID;
+  const listIdRaw = process.env.CF_LIST_ID;
 
   console.log(`\n${"─".repeat(72)}\n☁️  Upload do Cloudflare API\n${"─".repeat(72)}`);
 
   // ── Pre-flight: walidacja struktury apiItems pod kątem schematu Cloudflare ─
-  // Sprawdzamy ZANIM zrobimy jakikolwiek request — błędy złapane lokalnie są
-  // dużo szybsze i czytelniejsze niż HTTP 400 z `errors[].message` z API.
   validateApiItemsSchema(apiItems);
 
   const missing = [];
   if (!token) missing.push("CF_API_TOKEN");
   if (!accountId) missing.push("CF_ACCOUNT_ID");
-  if (!listId) missing.push("CF_LIST_ID");
+  if (!listIdRaw) missing.push("CF_LIST_ID");
   if (missing.length) {
     console.error(`❌ Brak env vars: ${missing.join(", ")}`);
     console.error(`   Ustaw je przed uruchomieniem, np.:`);
     console.error(`     export CF_API_TOKEN="cf_xxx..."`);
     console.error(`     export CF_ACCOUNT_ID="abc123..."`);
-    console.error(`     export CF_LIST_ID="def456..."`);
+    console.error(`     export CF_LIST_ID="def456..."                # pojedyncza lista`);
+    console.error(`     export CF_LIST_ID="prod=def456...,stg=789abc..."  # wiele list (label=id)`);
     process.exit(1);
   }
 
-  // Sanity: ID Cloudflare to zawsze 32-znakowe hex.
   if (!/^[a-f0-9]{32}$/i.test(accountId)) {
     console.error(`❌ CF_ACCOUNT_ID powinien być 32-znakowym hex (otrzymano długość ${accountId.length}).`);
     process.exit(1);
   }
-  if (!/^[a-f0-9]{32}$/i.test(listId)) {
-    console.error(`❌ CF_LIST_ID powinien być 32-znakowym hex (otrzymano długość ${listId.length}).`);
+
+  // ── Parsuj CF_LIST_ID: "id1" | "id1,id2" | "label=id1,label2=id2" ────────
+  const lists = parseListIds(listIdRaw);
+  if (!lists.length) {
+    console.error(`❌ CF_LIST_ID nie zawiera żadnego prawidłowego ID (32-znakowy hex).`);
     process.exit(1);
   }
+  console.log(
+    `→ ${lists.length} ${lists.length === 1 ? "lista" : "listy/list"} do aktualizacji: ${lists
+      .map((l) => `${l.label}(${l.id.slice(0, 8)}…)`)
+      .join(", ")}`,
+  );
 
-  const baseUrl = `https://api.cloudflare.com/client/v4/accounts/${accountId}/rules/lists/${listId}`;
   const headers = {
     Authorization: `Bearer ${token}`,
     "Content-Type": "application/json",
   };
 
-  // Krok A: weryfikacja tokena + dostępu do listy (GET zamiast verify, żeby od razu sprawdzić scope).
-  console.log(`→ GET ${baseUrl} (sanity check tokena i listy)`);
-  const checkRes = await fetchWithRetry(baseUrl, { headers }, { label: "GET list" });
+  // Sekwencyjnie (nie równolegle) — żeby logi były czytelne, a konflikty
+  // limitów Cloudflare (1 bulk operation/account na raz) nie wywoływały 429.
+  const results = [];
+  for (let i = 0; i < lists.length; i++) {
+    const list = lists[i];
+    console.log(`\n${"═".repeat(72)}`);
+    console.log(`[${i + 1}/${lists.length}] Lista: ${list.label} (${list.id})`);
+    console.log("═".repeat(72));
+    try {
+      const res = await uploadOne({ accountId, list, headers });
+      results.push({ ...list, ...res });
+    } catch (err) {
+      results.push({
+        ...list,
+        status: "failed",
+        error: err?.message ?? String(err),
+        stats: null,
+      });
+      console.error(`❌ Lista "${list.label}" failed: ${err?.message ?? err}`);
+      // Kontynuuj kolejne listy mimo błędu — raport końcowy pokaże wszystkie.
+    }
+  }
+
+  // ── Raport końcowy per lista ──────────────────────────────────────────────
+  console.log(`\n${"─".repeat(72)}\n📋 RAPORT KOŃCOWY (${results.length} ${results.length === 1 ? "lista" : "list"})\n${"─".repeat(72)}`);
+  const statusIcon = {
+    completed: "✅",
+    unchanged: "✓ ",
+    skipped: "⊘ ",
+    failed: "❌",
+    timeout: "⏱ ",
+  };
+  const counts = { completed: 0, unchanged: 0, skipped: 0, failed: 0, timeout: 0 };
+  for (const r of results) {
+    counts[r.status] = (counts[r.status] ?? 0) + 1;
+    const icon = statusIcon[r.status] ?? "? ";
+    const stats = r.stats
+      ? `(+${r.stats.adds}/~${r.stats.changes}/-${r.stats.deletes}, ${r.stats.localCount} reguł)`
+      : "";
+    const extra = r.error ? `  — ${r.error}` : r.note ? `  — ${r.note}` : "";
+    console.log(`  ${icon} ${r.label.padEnd(20)} ${r.status.padEnd(10)} ${stats}${extra}`);
+  }
+  console.log(
+    `\n  Sumarycznie: ${counts.completed} completed, ${counts.unchanged} unchanged, ` +
+      `${counts.skipped} skipped, ${counts.failed} failed, ${counts.timeout} timeout`,
+  );
+
+  if (counts.failed > 0 || counts.timeout > 0) {
+    console.error(`\n⛔ Co najmniej jedna lista nie zakończyła się sukcesem.`);
+    process.exit(1);
+  }
+}
+
+// Parsuje "id" | "id1,id2" | "label=id1,other=id2" → [{ label, id }].
+// Spacje wokół przecinków i znaków `=` są tolerowane.
+function parseListIds(raw) {
+  const parts = raw
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const out = [];
+  const seen = new Set();
+  parts.forEach((part, idx) => {
+    let label, id;
+    if (part.includes("=")) {
+      const [l, v] = part.split("=").map((s) => s.trim());
+      label = l;
+      id = v;
+    } else {
+      id = part;
+      label = `list${idx + 1}`;
+    }
+    if (!/^[a-f0-9]{32}$/i.test(id)) {
+      console.warn(`⚠️  Pomijam nieprawidłowe ID listy: "${id}" (oczekiwano 32-znakowego hex).`);
+      return;
+    }
+    if (seen.has(id)) {
+      console.warn(`⚠️  Pomijam duplikat ID: ${id}.`);
+      return;
+    }
+    seen.add(id);
+    out.push({ label, id });
+  });
+  return out;
+}
+
+// Wykonuje cały pipeline (sanity → diff → confirm → PUT → poll) dla 1 listy.
+// Zwraca { status, stats?, note?, error? } — nigdy nie wywołuje process.exit.
+async function uploadOne({ accountId, list, headers }) {
+  const baseUrl = `https://api.cloudflare.com/client/v4/accounts/${accountId}/rules/lists/${list.id}`;
+
+  // Krok A: sanity check tokena + dostępu do listy.
+  console.log(`→ GET ${baseUrl} (sanity check)`);
+  const checkRes = await fetchWithRetry(baseUrl, { headers }, { label: `GET ${list.label}` });
   const checkJson = await checkRes.json().catch(() => ({}));
   if (!checkRes.ok || !checkJson.success) {
-    console.error(`❌ Sanity check failed: HTTP ${checkRes.status}`);
-    console.error(`   Cloudflare errors:`, JSON.stringify(checkJson.errors ?? checkJson, null, 2));
-    if (checkRes.status === 401 || checkRes.status === 403) {
-      console.error(`   → Sprawdź czy token ma permission "Account / Account Filter Lists / Edit".`);
-    }
-    if (checkRes.status === 404) {
-      console.error(`   → Lista o ID ${listId} nie istnieje na koncie ${accountId}.`);
-    }
-    process.exit(1);
+    const hint =
+      checkRes.status === 401 || checkRes.status === 403
+        ? ' (sprawdź permission "Account Filter Lists / Edit")'
+        : checkRes.status === 404
+          ? ` (lista ${list.id} nie istnieje na koncie ${accountId})`
+          : "";
+    throw new Error(`Sanity check HTTP ${checkRes.status}${hint}`);
   }
   const listMeta = checkJson.result ?? {};
   console.log(`✓ Lista "${listMeta.name ?? "?"}" (kind=${listMeta.kind ?? "?"}, items=${listMeta.num_items ?? "?"})`);
   if (listMeta.kind && listMeta.kind !== "redirect") {
-    console.error(`❌ Lista jest typu "${listMeta.kind}", a my wysyłamy reguły redirect. Przerywam.`);
-    process.exit(1);
+    throw new Error(`Lista jest typu "${listMeta.kind}", oczekiwano "redirect"`);
   }
 
-  // Krok B: szczegółowy diff vs aktualna zawartość listy na Cloudflare.
-  // Pobieramy wszystkie items (paginowane po 25) i porównujemy z apiItems.
+  // Krok B: diff vs aktualna zawartość.
   const remoteItems = await fetchAllListItems(baseUrl, headers);
-  const remoteMap = new Map(); // source_url → { target_url, status_code, preserve_query_string }
+  const remoteMap = new Map();
   for (const it of remoteItems) {
     const r = it.redirect ?? {};
     if (!r.source_url) continue;
@@ -374,9 +471,9 @@ async function uploadToCloudflare() {
     });
   }
 
-  const remoteAdds = []; // w local, brak w remote → dodane
-  const remoteChanges = []; // w obu, różne pola → zmienione
-  const remoteDeletes = []; // w remote, brak w local → usunięte
+  const remoteAdds = [];
+  const remoteChanges = [];
+  const remoteDeletes = [];
   for (const [src, loc] of localMap) {
     const rem = remoteMap.get(src);
     if (!rem) {
@@ -394,97 +491,87 @@ async function uploadToCloudflare() {
     if (!localMap.has(src)) remoteDeletes.push({ src, to: rem.target_url });
   }
 
-  console.log(`\n${"─".repeat(72)}`);
-  console.log(`📊 DIFF vs aktualna lista na Cloudflare ("${listMeta.name ?? "?"}")`);
-  console.log(`${"─".repeat(72)}`);
-  console.log(
-    `   Remote: ${remoteMap.size} reguł   Local: ${localMap.size} reguł\n` +
-      `   ➕ ${remoteAdds.length} do dodania   🔄 ${remoteChanges.length} do zmiany   ➖ ${remoteDeletes.length} do usunięcia`,
-  );
+  const stats = {
+    adds: remoteAdds.length,
+    changes: remoteChanges.length,
+    deletes: remoteDeletes.length,
+    localCount: localMap.size,
+    remoteCount: remoteMap.size,
+  };
+
+  console.log(`\n📊 DIFF: Remote ${remoteMap.size} → Local ${localMap.size} (+${stats.adds}/~${stats.changes}/-${stats.deletes})`);
   if (remoteAdds.length) {
-    console.log(`\n  ➕ DO DODANIA (${remoteAdds.length}):`);
+    console.log(`  ➕ DO DODANIA (${remoteAdds.length}):`);
     for (const { src, to } of remoteAdds) console.log(`     + ${src}  →  ${to}`);
   }
   if (remoteChanges.length) {
-    console.log(`\n  🔄 DO ZMIANY (${remoteChanges.length}):`);
+    console.log(`  🔄 DO ZMIANY (${remoteChanges.length}):`);
     for (const { src, diffs } of remoteChanges) {
       console.log(`     ~ ${src}`);
       for (const d of diffs) console.log(`         · ${d}`);
     }
   }
   if (remoteDeletes.length) {
-    console.log(`\n  ➖ DO USUNIĘCIA (${remoteDeletes.length}):`);
+    console.log(`  ➖ DO USUNIĘCIA (${remoteDeletes.length}):`);
     for (const { src, to } of remoteDeletes) console.log(`     - ${src}  →  ${to}`);
   }
   if (!remoteAdds.length && !remoteChanges.length && !remoteDeletes.length) {
-    console.log(`\n   ✓ Lista na Cloudflare jest już zsynchronizowana z lokalną mapą.`);
-    if (!CONFIRM) {
-      console.log(`   Pomijam PUT (nic do zrobienia).`);
-      return;
-    }
+    console.log(`  ✓ Lista już zsynchronizowana — pomijam PUT.`);
+    return { status: "unchanged", stats, note: "lista już zsynchronizowana" };
   }
 
-  // Krok B.2: interaktywne potwierdzenie (replace-all jest destrukcyjne).
+  // Krok B.2: confirm (per lista — jeśli admin chce część odrzucić).
   if (!CONFIRM) {
-    console.log(
-      `\n⚠️  PUT zastąpi całą listę: ${remoteMap.size} → ${localMap.size} reguł ` +
-        `(+${remoteAdds.length} / ~${remoteChanges.length} / -${remoteDeletes.length}).`,
-    );
-    console.log(`   Aby kontynuować bez tego pytania użyj --confirm.`);
-    const ok = await promptYesNo(`   Kontynuować? [y/N]: `);
+    console.log(`\n⚠️  PUT zastąpi całą listę "${list.label}": ${remoteMap.size} → ${localMap.size} reguł.`);
+    const ok = await promptYesNo(`   Kontynuować dla "${list.label}"? [y/N]: `);
     if (!ok) {
-      console.log(`✗ Anulowano przez użytkownika.`);
-      process.exit(0);
+      console.log(`✗ Pominięto listę "${list.label}".`);
+      return { status: "skipped", stats, note: "anulowane przez użytkownika" };
     }
   }
 
-  // Krok C: PUT — replace-all. Cloudflare zwraca operation_id; status async warto sprawdzić.
+  // Krok C: PUT replace-all.
   console.log(`→ PUT ${baseUrl}/items (${apiItems.length} reguł)`);
-  // Cloudflare API oczekuje płaskiej tablicy `[{ redirect: {...} }, ...]` jako body.
   const putRes = await fetchWithRetry(
     `${baseUrl}/items`,
     { method: "PUT", headers, body: JSON.stringify(apiItems) },
-    { label: "PUT items" },
+    { label: `PUT ${list.label}` },
   );
   const putJson = await putRes.json().catch(() => ({}));
   if (!putRes.ok || !putJson.success) {
-    console.error(`❌ Upload failed: HTTP ${putRes.status}`);
-    console.error(`   Cloudflare errors:`, JSON.stringify(putJson.errors ?? putJson, null, 2));
-    if (putJson.messages?.length) {
-      console.error(`   Messages:`, JSON.stringify(putJson.messages, null, 2));
-    }
-    process.exit(1);
+    throw new Error(
+      `PUT HTTP ${putRes.status}: ${JSON.stringify(putJson.errors ?? putJson).slice(0, 200)}`,
+    );
   }
-
   const operationId = putJson.result?.operation_id;
   console.log(`✓ PUT zaakceptowane (operation_id=${operationId ?? "n/a"})`);
 
-  // Krok D: poll status operacji (Cloudflare przetwarza listy asynchronicznie).
-  if (operationId) {
-    const opUrl = `https://api.cloudflare.com/client/v4/accounts/${accountId}/rules/lists/bulk_operations/${operationId}`;
-    const start = Date.now();
-    const TIMEOUT_MS = 60_000;
-    let lastStatus = "";
-    while (Date.now() - start < TIMEOUT_MS) {
-      await new Promise((r) => setTimeout(r, 2000));
-      const opRes = await fetchWithRetry(opUrl, { headers }, { label: "GET op status", maxRetries: 3 });
-      const opJson = await opRes.json().catch(() => ({}));
-      const status = opJson.result?.status;
-      if (status !== lastStatus) {
-        console.log(`  · status: ${status}${opJson.result?.error ? ` (${opJson.result.error})` : ""}`);
-        lastStatus = status;
-      }
-      if (status === "completed") {
-        console.log(`✅ Lista zaktualizowana pomyślnie (${apiItems.length} reguł aktywnych).`);
-        return;
-      }
-      if (status === "failed") {
-        console.error(`❌ Operacja nie powiodła się: ${opJson.result?.error ?? "unknown"}`);
-        process.exit(1);
-      }
+  // Krok D: poll statusu operacji.
+  if (!operationId) return { status: "completed", stats, note: "brak operation_id (sync)" };
+
+  const opUrl = `https://api.cloudflare.com/client/v4/accounts/${accountId}/rules/lists/bulk_operations/${operationId}`;
+  const start = Date.now();
+  const TIMEOUT_MS = 60_000;
+  let lastStatus = "";
+  while (Date.now() - start < TIMEOUT_MS) {
+    await new Promise((r) => setTimeout(r, 2000));
+    const opRes = await fetchWithRetry(opUrl, { headers }, { label: `poll ${list.label}`, maxRetries: 3 });
+    const opJson = await opRes.json().catch(() => ({}));
+    const status = opJson.result?.status;
+    if (status !== lastStatus) {
+      console.log(`  · status: ${status}${opJson.result?.error ? ` (${opJson.result.error})` : ""}`);
+      lastStatus = status;
     }
-    console.warn(`⚠️  Timeout (${TIMEOUT_MS / 1000}s) przy oczekiwaniu na completion. Sprawdź ręcznie w Dashboard.`);
+    if (status === "completed") {
+      console.log(`✅ Lista "${list.label}" zaktualizowana (${apiItems.length} reguł).`);
+      return { status: "completed", stats };
+    }
+    if (status === "failed") {
+      throw new Error(`Operacja failed: ${opJson.result?.error ?? "unknown"}`);
+    }
   }
+  console.warn(`⚠️  Timeout (${TIMEOUT_MS / 1000}s) — sprawdź ręcznie w Dashboard.`);
+  return { status: "timeout", stats, note: `timeout po ${TIMEOUT_MS / 1000}s` };
 }
 
 function promptYesNo(question) {
