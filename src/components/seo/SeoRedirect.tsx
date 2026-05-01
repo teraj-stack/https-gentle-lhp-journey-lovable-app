@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 
 interface SeoRedirectProps {
@@ -8,31 +8,46 @@ interface SeoRedirectProps {
 
 const BASE_URL = "https://bestcml.io";
 
-/** Buduje absolutny URL z relatywnej ścieżki (idempotentne dla absolutnych). */
+/** Marker atrybutu — pozwala namierzyć i usunąć tylko tagi dodane przez nas. */
+const OWNER_ATTR = "data-seo-redirect";
+
 function toAbsolute(target: string): string {
   if (/^https?:\/\//i.test(target)) return target;
   const path = target.startsWith("/") ? target : `/${target}`;
   return `${BASE_URL}${path}`;
 }
 
-/** Idempotentne ustawienie/utworzenie tagu w <head>. Zwraca [element, czyToNowy]. */
-function upsertMeta(
+interface SnapshotEntry {
+  el: HTMLElement;
+  /** Czy tag został przez nas utworzony (vs. zmodyfikowany istniejący). */
+  created: boolean;
+  /** Snapshot atrybutów do odtworzenia, jeśli `created === false`. */
+  previousAttrs: Record<string, string> | null;
+}
+
+/**
+ * Idempotentnie utwórz/zaktualizuj tag w <head>. Zwraca snapshot do cleanupu.
+ * Wykonywane SYNCHRONICZNIE w trakcie renderu — w przeciwnym razie <Navigate> unmount
+ * przed effectem i tagi nigdy by nie trafiły do DOM dla crawlerów inspekcjonujących head.
+ */
+function upsert(
   selector: string,
-  build: (el: HTMLMetaElement | HTMLLinkElement) => void,
-  tag: "meta" | "link"
-): { el: HTMLMetaElement | HTMLLinkElement; created: boolean; previous: Record<string, string> | null } {
-  const existing = document.head.querySelector(selector) as HTMLMetaElement | HTMLLinkElement | null;
+  tag: "meta" | "link",
+  build: (el: HTMLElement) => void
+): SnapshotEntry {
+  const existing = document.head.querySelector(selector) as HTMLElement | null;
   if (existing) {
-    // Snapshot istniejących atrybutów do późniejszego przywrócenia
-    const previous: Record<string, string> = {};
-    for (const attr of Array.from(existing.attributes)) previous[attr.name] = attr.value;
+    const previousAttrs: Record<string, string> = {};
+    for (const attr of Array.from(existing.attributes)) previousAttrs[attr.name] = attr.value;
     build(existing);
-    return { el: existing, created: false, previous };
+    existing.setAttribute(OWNER_ATTR, "modified");
+    return { el: existing, created: false, previousAttrs };
   }
-  const el = document.createElement(tag) as HTMLMetaElement | HTMLLinkElement;
+  const el = document.createElement(tag);
   build(el);
+  el.setAttribute(OWNER_ATTR, "created");
   document.head.appendChild(el);
-  return { el, created: true, previous: null };
+  return { el, created: true, previousAttrs: null };
 }
 
 /**
@@ -40,118 +55,117 @@ function upsertMeta(
  *
  * Strategia obrony w głąb (defense-in-depth):
  *
- *  1. **Synchroniczny `useLayoutEffect`** — modyfikuje <head> ZANIM React commituje
- *     `<Navigate>`, więc canonical/refresh/robots realnie trafiają do DOM nawet jeśli
- *     redirect wykona się natychmiast. (useEffect odpalał się po commit → tagi ginęły.)
+ *  1. **Synchroniczna emisja w renderze** — modyfikacje <head> dzieją się PRZED
+ *     `return <Navigate>`, więc tagi są w DOM nawet jeśli React natychmiast
+ *     unmountuje komponent po redirect (kluczowe — useEffect odpalał się za późno).
  *
- *  2. **Canonical `<link rel="canonical">`** na URL docelowy (absolute).
- *     Konsoliduje sygnał rankingowy z aliasu na cel.
+ *  2. **Canonical** `<link rel="canonical">` na absolute URL celu —
+ *     konsoliduje ranking aliasu z celem.
  *
- *  3. **Meta refresh `<meta http-equiv="refresh" content="0;url=...">`** — Google
- *     traktuje 0s refresh jako permanent redirect. Fallback dla botów bez JS
+ *  3. **Meta refresh** `<meta http-equiv="refresh" content="0;url=...">` —
+ *     Google traktuje 0s refresh jako permanent redirect. Fallback dla botów bez JS
  *     (Bingbot non-JS, Twitterbot, Facebookbot, LinkedInBot).
  *
- *  4. **Noindex** — trzy warstwy:
- *      - `<meta name="robots" content="noindex, follow, noarchive">`
- *      - `<meta name="googlebot" content="noindex, follow, noarchive">` (silniejsze dla GSC)
- *      - `<meta name="bingbot"   content="noindex, follow, noarchive">`
- *     `follow` przekazuje link equity dalej, `noarchive` blokuje cache snippet.
+ *  4. **Noindex × 3** — `robots`, `googlebot`, `bingbot` z `noindex, follow, noarchive`.
+ *     `follow` przekazuje link equity, `noarchive` blokuje cache snippet.
  *
- *  5. **Open Graph / Twitter** — `og:url` i `twitter:url` przepinane na cel,
- *     żeby udostępnienia w social media pokazywały URL kanoniczny.
+ *  5. **Open Graph / Twitter URL → cel** — udostępnienia social media pokazują kanoniczny URL.
  *
- *  6. **Cleanup na unmount** — wszystkie utworzone tagi są usuwane, a podmienione
- *     atrybuty istniejących tagów przywracane do poprzednich wartości. Brak wycieków
- *     pomiędzy nawigacjami client-side.
+ *  6. **Cleanup na unmount** — utworzone tagi usunięte (po `data-seo-redirect="created"`),
+ *     zmodyfikowane przywrócone do snapshot atrybutów. Brak wycieków.
  *
- *  7. **`<Navigate replace>`** — instant client-side redirect dla użytkowników i botów
- *     z JS. `replace` nie zaśmieca history (back button skacze do poprzedniej strony,
- *     nie do aliasu).
+ *  7. **`<Navigate replace>`** — instant client-side redirect bez zaśmiecania history.
+ *
+ *  8. **Self-redirect guard** — jeśli `from === to`, pomija side-effects i ostrzega
+ *     w konsoli (chroni przed nieskończoną pętlą redirectów).
  */
 const SeoRedirect = ({ to }: SeoRedirectProps) => {
   const location = useLocation();
   const absoluteTarget = toAbsolute(to);
+  const sourceAbsolute = `${BASE_URL}${location.pathname}`;
+  const isSelfRedirect = sourceAbsolute === absoluteTarget;
 
-  // Trzymamy operacje cleanupu w ref — useLayoutEffect odpali cleanup tylko na unmount
-  // (deps: [absoluteTarget]) — przy zmianie celu cleanup + ponowna aplikacja.
-  const cleanupRef = useRef<(() => void) | null>(null);
+  // Snapshot operacji do odwrócenia w cleanup. Zapisywany w renderze, wykonany w useEffect cleanup.
+  const snapshotRef = useRef<SnapshotEntry[] | null>(null);
 
-  useLayoutEffect(() => {
-    // Defensywnie: jeśli cel jest identyczny ze ścieżką źródłową, NIE rób nic
-    // (chroni przed nieskończoną pętlą redirectów w razie błędu konfiguracji).
-    const sourceAbsolute = `${BASE_URL}${location.pathname}`;
-    if (sourceAbsolute === absoluteTarget) {
-      console.warn(`[SeoRedirect] from === to dla '${location.pathname}', pomijam.`);
-      return;
-    }
+  // ── Synchroniczna emisja w trakcie renderu (jednorazowo per mount) ──────────
+  // Tworzymy tagi tylko raz na mount, zanim React commituje <Navigate>.
+  if (typeof document !== "undefined" && snapshotRef.current === null && !isSelfRedirect) {
+    const ROBOTS_DIRECTIVE = "noindex, follow, noarchive";
+    const ops: SnapshotEntry[] = [];
 
-    const cleanups: Array<() => void> = [];
+    ops.push(
+      upsert('link[rel="canonical"]', "link", (el) => {
+        el.setAttribute("rel", "canonical");
+        el.setAttribute("href", absoluteTarget);
+      })
+    );
+    ops.push(
+      upsert('meta[http-equiv="refresh"]', "meta", (el) => {
+        el.setAttribute("http-equiv", "refresh");
+        el.setAttribute("content", `0;url=${absoluteTarget}`);
+      })
+    );
+    ops.push(
+      upsert('meta[name="robots"]', "meta", (el) => {
+        el.setAttribute("name", "robots");
+        el.setAttribute("content", ROBOTS_DIRECTIVE);
+      })
+    );
+    ops.push(
+      upsert('meta[name="googlebot"]', "meta", (el) => {
+        el.setAttribute("name", "googlebot");
+        el.setAttribute("content", ROBOTS_DIRECTIVE);
+      })
+    );
+    ops.push(
+      upsert('meta[name="bingbot"]', "meta", (el) => {
+        el.setAttribute("name", "bingbot");
+        el.setAttribute("content", ROBOTS_DIRECTIVE);
+      })
+    );
+    ops.push(
+      upsert('meta[property="og:url"]', "meta", (el) => {
+        el.setAttribute("property", "og:url");
+        el.setAttribute("content", absoluteTarget);
+      })
+    );
+    ops.push(
+      upsert('meta[name="twitter:url"]', "meta", (el) => {
+        el.setAttribute("name", "twitter:url");
+        el.setAttribute("content", absoluteTarget);
+      })
+    );
 
-    /** Helper: zarejestruj operację upsert + zaplanuj jej rewert. */
-    const apply = (
-      selector: string,
-      tag: "meta" | "link",
-      build: (el: HTMLMetaElement | HTMLLinkElement) => void
-    ) => {
-      const { el, created, previous } = upsertMeta(selector, build, tag);
-      cleanups.push(() => {
+    snapshotRef.current = ops;
+  }
+
+  if (isSelfRedirect) {
+    console.warn(`[SeoRedirect] from === to dla '${location.pathname}', pomijam.`);
+    return null;
+  }
+
+  // Cleanup wykonywany przy unmount — odwraca snapshot.
+  useEffect(() => {
+    return () => {
+      const ops = snapshotRef.current;
+      if (!ops) return;
+      for (const { el, created, previousAttrs } of ops) {
         if (created) {
           el.remove();
-        } else if (previous) {
-          // Usuń atrybuty dodane przez nas, przywróć oryginalne
+        } else if (previousAttrs) {
           for (const attr of Array.from(el.attributes)) {
-            if (!(attr.name in previous)) el.removeAttribute(attr.name);
+            if (!(attr.name in previousAttrs)) el.removeAttribute(attr.name);
           }
-          for (const [name, value] of Object.entries(previous)) {
+          for (const [name, value] of Object.entries(previousAttrs)) {
             el.setAttribute(name, value);
           }
+          el.removeAttribute(OWNER_ATTR);
         }
-      });
+      }
+      snapshotRef.current = null;
     };
-
-    // ── 1. Canonical na cel ───────────────────────────────────────────────
-    apply('link[rel="canonical"]', "link", (el) => {
-      el.setAttribute("rel", "canonical");
-      el.setAttribute("href", absoluteTarget);
-    });
-
-    // ── 2. Meta refresh (0s = permanent dla Google) ───────────────────────
-    apply('meta[http-equiv="refresh"]', "meta", (el) => {
-      el.setAttribute("http-equiv", "refresh");
-      el.setAttribute("content", `0;url=${absoluteTarget}`);
-    });
-
-    // ── 3. Noindex × 3 (generic + Googlebot + Bingbot) ────────────────────
-    const ROBOTS_DIRECTIVE = "noindex, follow, noarchive";
-    apply('meta[name="robots"]', "meta", (el) => {
-      el.setAttribute("name", "robots");
-      el.setAttribute("content", ROBOTS_DIRECTIVE);
-    });
-    apply('meta[name="googlebot"]', "meta", (el) => {
-      el.setAttribute("name", "googlebot");
-      el.setAttribute("content", ROBOTS_DIRECTIVE);
-    });
-    apply('meta[name="bingbot"]', "meta", (el) => {
-      el.setAttribute("name", "bingbot");
-      el.setAttribute("content", ROBOTS_DIRECTIVE);
-    });
-
-    // ── 4. Open Graph / Twitter URL → cel ─────────────────────────────────
-    apply('meta[property="og:url"]', "meta", (el) => {
-      el.setAttribute("property", "og:url");
-      el.setAttribute("content", absoluteTarget);
-    });
-    apply('meta[name="twitter:url"]', "meta", (el) => {
-      el.setAttribute("name", "twitter:url");
-      el.setAttribute("content", absoluteTarget);
-    });
-
-    cleanupRef.current = () => cleanups.forEach((fn) => fn());
-    return () => {
-      cleanupRef.current?.();
-      cleanupRef.current = null;
-    };
-  }, [absoluteTarget, location.pathname]);
+  }, []);
 
   return <Navigate to={to} replace />;
 };
