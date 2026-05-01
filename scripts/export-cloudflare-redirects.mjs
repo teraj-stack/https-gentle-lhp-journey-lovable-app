@@ -79,7 +79,27 @@ const simpleRows = entries.map(({ from, to }) => `${DOMAIN}${from},${DOMAIN}${to
 const simpleCsv = [simpleHeader, ...simpleRows].join("\n") + "\n";
 writeFileSync(`${OUT_DIR}/cloudflare-redirects-simple.csv`, simpleCsv, "utf8");
 
-// ── 3) Czytelny TXT z powodami ──────────────────────────────────────────────
+// ── 3) JSON dla Cloudflare API (PUT /lists/{id}/items) ─────────────────────
+// Format zgodny z Cloudflare API v4 — gotowe do `curl --data @file`.
+// Doc: https://developers.cloudflare.com/api/operations/lists-update-list-items
+const apiItems = entries.map(({ from, to }) => ({
+  redirect: {
+    source_url: `${DOMAIN}${from}`,
+    target_url: `${DOMAIN}${to}`,
+    status_code: 301,
+    preserve_query_string: true,
+    include_subdomains: false,
+    subpath_matching: false,
+    preserve_path_suffix: false,
+  },
+}));
+writeFileSync(
+  `${OUT_DIR}/cloudflare-bulk-redirects.json`,
+  JSON.stringify(apiItems, null, 2) + "\n",
+  "utf8",
+);
+
+// ── 4) Czytelny TXT z powodami ──────────────────────────────────────────────
 const txtLines = [
   `# Cloudflare Bulk Redirects — eksport z SEO_REDIRECTS`,
   `# Domena: ${DOMAIN}`,
@@ -101,9 +121,10 @@ const byTarget = entries.reduce((acc, e) => {
   return acc;
 }, {});
 console.log(`✓ Wyeksportowano ${entries.length} reguł 301 dla ${DOMAIN}`);
-console.log(`✓ /mnt/documents/cloudflare-bulk-redirects.csv (pełny schemat CF)`);
+console.log(`✓ /mnt/documents/cloudflare-bulk-redirects.csv  (Dashboard upload)`);
+console.log(`✓ /mnt/documents/cloudflare-bulk-redirects.json (API PUT /lists/{id}/items)`);
 console.log(`✓ /mnt/documents/cloudflare-redirects-simple.csv (source,target)`);
-console.log(`✓ /mnt/documents/cloudflare-redirects.txt (z powodami)`);
+console.log(`✓ /mnt/documents/cloudflare-redirects.txt       (z powodami)`);
 console.log(`\nTop celów:`);
 for (const [to, n] of Object.entries(byTarget).sort((a, b) => b[1] - a[1]).slice(0, 8)) {
   console.log(`  ${n.toString().padStart(3)} → ${to}`);
