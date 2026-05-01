@@ -62,6 +62,7 @@ const AdminVeinImages = lazy(() => import("@/pages/AdminVeinImages"));
 const DevTooltipPreview = lazy(() => import("@/pages/DevTooltipPreview"));
 const DevI18nContract = lazy(() => import("@/pages/DevI18nContract"));
 const DevHeaderPreview = lazy(() => import("@/pages/DevHeaderPreview"));
+const DevSeoRedirects = lazy(() => import("@/pages/DevSeoRedirects"));
 const DevVeinImagesPreview = lazy(() => import("@/pages/DevVeinImagesPreview"));
 
 const Unsubscribe = lazy(() => import("@/pages/Unsubscribe"));
