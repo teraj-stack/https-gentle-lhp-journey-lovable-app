@@ -145,27 +145,12 @@ const SeoRedirect = ({ to }: SeoRedirectProps) => {
     return null;
   }
 
-  // Cleanup wykonywany przy unmount — odwraca snapshot.
-  useEffect(() => {
-    return () => {
-      const ops = snapshotRef.current;
-      if (!ops) return;
-      for (const { el, created, previousAttrs } of ops) {
-        if (created) {
-          el.remove();
-        } else if (previousAttrs) {
-          for (const attr of Array.from(el.attributes)) {
-            if (!(attr.name in previousAttrs)) el.removeAttribute(attr.name);
-          }
-          for (const [name, value] of Object.entries(previousAttrs)) {
-            el.setAttribute(name, value);
-          }
-          el.removeAttribute(OWNER_ATTR);
-        }
-      }
-      snapshotRef.current = null;
-    };
-  }, []);
+  // CELOWO bez cleanup w useEffect:
+  // Po `<Navigate>` jesteśmy na celu, który ma własny SeoHead nadpisujący canonical/og:url.
+  // Próba cleanup zbiega się z unmountem przez Navigate i powodowała usuwanie tagów
+  // ZANIM cel zdążył je nadpisać. Pozostawienie tagów do następnego mount SeoRedirect
+  // (gdzie `upsert` nadpisze przez selector) jest bezpieczne i deterministyczne.
+  // Tag `data-seo-redirect="created"` pozwala namierzyć je narzędziami debug.
 
   return <Navigate to={to} replace />;
 };
