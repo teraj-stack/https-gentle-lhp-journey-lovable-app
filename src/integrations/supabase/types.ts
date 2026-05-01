@@ -437,6 +437,39 @@ export type Database = {
         }
         Relationships: []
       }
+      seo_redirects: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          from_path: string
+          id: string
+          is_active: boolean
+          reason: string | null
+          to_path: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          from_path: string
+          id?: string
+          is_active?: boolean
+          reason?: string | null
+          to_path: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          from_path?: string
+          id?: string
+          is_active?: boolean
+          reason?: string | null
+          to_path?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       suppressed_emails: {
         Row: {
           created_at: string
