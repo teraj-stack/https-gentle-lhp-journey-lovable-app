@@ -6,6 +6,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import Layout from "@/components/layout/Layout";
 import JsonLdValidator from "@/components/dev/JsonLdValidator";
+import SeoRedirect from "@/components/seo/SeoRedirect";
+import { SEO_REDIRECTS } from "@/lib/seo/redirectsMap";
 
 const Home = lazy(() => import("@/pages/Home"));
 const LHP = lazy(() => import("@/pages/LHP"));
@@ -163,6 +165,9 @@ const App = () => (
               <Route path="/polityka-prywatnosci" element={<PolitykaPrywatnosci />} />
               <Route path="/regulamin" element={<Regulamin />} />
               <Route path="/cennik" element={<Cennik />} />
+              {SEO_REDIRECTS.map(({ from, to }) => (
+                <Route key={from} path={from} element={<SeoRedirect to={to} />} />
+              ))}
             </Route>
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin" element={<AdminDashboard />} />
