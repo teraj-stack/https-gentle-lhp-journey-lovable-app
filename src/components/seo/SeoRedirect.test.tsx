@@ -20,11 +20,12 @@ const SOURCE = "/hemoroidy";
 const ABSOLUTE_TARGET = `https://bestcml.io${TARGET}`;
 
 function renderRedirect(from = SOURCE, to = TARGET) {
+  // CELOWO bez Route dla `to` — chcemy żeby SeoRedirect pozostał zamontowany
+  // (Navigate nie znajdzie celu, ale tagi w head już zostały zapisane synchronicznie).
   return render(
     <MemoryRouter initialEntries={[from]}>
       <Routes>
         <Route path={from} element={<SeoRedirect to={to} />} />
-        <Route path={to} element={<div data-testid="target">target</div>} />
       </Routes>
     </MemoryRouter>
   );
