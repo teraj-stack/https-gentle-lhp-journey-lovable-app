@@ -22,7 +22,7 @@ describe("normalizePath", () => {
     ["/", ""],
     ["", ""],
     ["/leczenie/EVLT/", "/leczenie/evlt"],
-    ["/po\u0142a\u0107ki", "/poaaki"], // strip diacritics + non-letter chars (sanity)
+    ["/po\u0142a\u0107ki", "/poacki"], // ł → (stripped, brak base), ć → c
   ])("normalizePath(%j) → %j", (input, expected) => {
     expect(normalizePath(input)).toBe(expected);
   });
