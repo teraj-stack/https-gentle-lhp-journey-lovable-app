@@ -19,9 +19,19 @@
  * Domena: cml.pl (zgodnie z core memory: "Must use https://cml.pl ONLY").
  *
  * Uruchom:
- *   node scripts/export-cloudflare-redirects.mjs              # pełny eksport
+ *   node scripts/export-cloudflare-redirects.mjs              # pełny eksport (pliki)
  *   node scripts/export-cloudflare-redirects.mjs --dry-run    # tylko walidacja + diff
  *   node scripts/export-cloudflare-redirects.mjs --dry-run --strict   # exit 1 przy warn (CI)
+ *   node scripts/export-cloudflare-redirects.mjs --upload     # eksport + PUT do Cloudflare
+ *   node scripts/export-cloudflare-redirects.mjs --upload --confirm   # bez interaktywnego pytania
+ *
+ * Upload wymaga env vars:
+ *   CF_API_TOKEN   — token z permission "Account / Account Filter Lists / Edit"
+ *   CF_ACCOUNT_ID  — ID konta Cloudflare
+ *   CF_LIST_ID     — ID listy Bulk Redirects (z URL Dashboard → Lists)
+ *
+ * Endpoint: PUT /accounts/{account_id}/rules/lists/{list_id}/items
+ *   — replace-all (zastępuje całą zawartość listy). Idempotentne.
  */
 import { writeFileSync, mkdirSync, readFileSync, existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
