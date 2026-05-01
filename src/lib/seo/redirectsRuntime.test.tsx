@@ -5,39 +5,40 @@ import { SEO_REDIRECTS } from "@/lib/seo/redirectsMap";
 import SeoRedirect from "@/components/seo/SeoRedirect";
 
 /**
- * Unit testy zachowania routingu dla SEO_REDIRECTS.
+ * Unit testy zachowania runtime dla SEO_REDIRECTS.
  *
  * Każde wejście z mapy MUSI:
  *   1. Wyrenderować <SeoRedirect> (Navigate replace) zamiast 404,
- *   2. Po następnym tiku skierować router na ścieżkę `to`,
+ *   2. Po nawigacji router osiada na ścieżce `to`,
  *   3. NIE wyrenderować markera "NOT FOUND".
  *
- * Replikujemy tu strukturę <Routes> z App.tsx (te same wpisy + catch-all "*"),
- * żeby test był bliski produkcyjnemu zachowaniu, ale bez ładowania całego drzewa.
+ * Strategia: replikujemy strukturę <Routes> z App.tsx (te same wpisy +
+ * placeholder dla każdego unikalnego `to` + catch-all "*"). Jeden zbiór
+ * <Routes>, jeden match — żeby zachowanie było zgodne z prodem.
  */
 
 const NotFoundMarker = () => <div data-testid="not-found">NOT FOUND</div>;
 
-const LocationProbe = () => {
+const TargetPlaceholder = () => {
   const location = useLocation();
-  return <div data-testid="current-path">{location.pathname}</div>;
+  return <div data-testid="target-path">{location.pathname}</div>;
 };
 
-/**
- * Renderuje ten sam zestaw route'ów co App.tsx, ale z prostymi placeholderami
- * dla rzeczywistych stron (interesuje nas tylko routing, nie content).
- */
+const UNIQUE_TARGETS = Array.from(new Set(SEO_REDIRECTS.map((e) => e.to)));
+
 function renderAtPath(path: string) {
   return render(
     <MemoryRouter initialEntries={[path]}>
       <Routes>
-        {/* Wszystkie cele redirectów jako anonimowe placeholdery + sonda lokalizacji */}
-        <Route path="*" element={<LocationProbe />} />
-      </Routes>
-      <Routes>
+        {/* Cele redirectów — tu wyląduje router po Navigate replace */}
+        {UNIQUE_TARGETS.map((to) => (
+          <Route key={to} path={to} element={<TargetPlaceholder />} />
+        ))}
+        {/* Wpisy redirectów — odpowiednik bloku w App.tsx */}
         {SEO_REDIRECTS.map(({ from, to }) => (
           <Route key={from} path={from} element={<SeoRedirect to={to} />} />
         ))}
+        {/* Catch-all */}
         <Route path="*" element={<NotFoundMarker />} />
       </Routes>
     </MemoryRouter>
@@ -60,11 +61,11 @@ describe("SEO_REDIRECTS — zachowanie runtime", () => {
         `Ścieżka '${from}' wpadła w catch-all '*' zamiast w SEO_REDIRECTS.`
       ).not.toBeInTheDocument();
 
-      // Po renderze <Navigate replace> sonda powinna już pokazywać `to`.
-      const probe = screen.getByTestId("current-path");
+      // Po renderze <Navigate replace> placeholder celu powinien pokazywać `to`.
+      const target = screen.getByTestId("target-path");
       expect(
-        probe.textContent,
-        `Ścieżka '${from}' nie przekierowała na '${to}' (faktycznie: '${probe.textContent}').`
+        target.textContent,
+        `Ścieżka '${from}' nie przekierowała na '${to}' (faktycznie: '${target.textContent}').`
       ).toBe(to);
     }
   );
