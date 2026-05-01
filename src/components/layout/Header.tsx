@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, ChevronDown, Phone, Mail, MapPin } from "lucide-react";
+import { Menu, X, ChevronDown, Phone, Mail, MapPin, ArrowRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import logoCml from "@/assets/logo-cml.webp";
 
@@ -15,6 +15,13 @@ interface NavItem {
   label: string;
   href: string;
   desc?: string;
+  /**
+   * Featured = link "zobacz wszystko" do huba sekcji. Wyróżniony wizualnie
+   * (ikona ArrowRight, separator, akcent), żeby pacjent szybko trafił na
+   * pełną listę gdy w skróconym dropdownie nie znalazł swojego zabiegu.
+   * Nie używaj `→` w `label` — strzałka pochodzi z ikony, treść zostaje czysta.
+   */
+  featured?: boolean;
 }
 
 interface MegaColumn {
@@ -45,7 +52,12 @@ const proktologiaColumns: MegaColumn[] = [
       { label: "LHP – laser na hemoroidy", href: "/leczenie/lhp" },
       { label: "FiLaC – laser na przetokę", href: "/leczenie/filac" },
       { label: "SiLaC – laser na torbiel", href: "/leczenie/silac" },
-      { label: "Wszystkie zabiegi proktologii →", href: "/leczenie/proktologia" },
+      {
+        label: "Zobacz wszystkie zabiegi",
+        href: "/leczenie/proktologia",
+        desc: "Pełna lista metod i porównanie",
+        featured: true,
+      },
     ],
   },
 ];
@@ -65,7 +77,12 @@ const flebologiaColumns: MegaColumn[] = [
     items: [
       { label: "EVLT – laser na żylaki", href: "/leczenie/evlt" },
       { label: "CLaCS – metoda hybrydowa", href: "/leczenie/clacs" },
-      { label: "Wszystkie zabiegi flebologii →", href: "/leczenie/flebologia" },
+      {
+        label: "Zobacz wszystkie zabiegi",
+        href: "/leczenie/flebologia",
+        desc: "Pełna lista metod i porównanie",
+        featured: true,
+      },
     ],
   },
 ];
@@ -95,7 +112,12 @@ const wiedzaColumns: MegaColumn[] = [
       { label: "Blog", href: "/blog" },
       { label: "Przygotowanie do EVLT", href: "/dla-pacjenta/przygotowanie-evlt" },
       { label: "Przygotowanie do LHP", href: "/dla-pacjenta/przygotowanie-lhp" },
-      { label: "Strefa pacjenta →", href: "/dla-pacjenta" },
+      {
+        label: "Strefa pacjenta",
+        href: "/dla-pacjenta",
+        desc: "Quizy, e-book, FAQ i przygotowanie",
+        featured: true,
+      },
     ],
   },
 ];
@@ -512,31 +534,49 @@ const Header = () => {
               transition={{ duration: 0.2 }}
               className={`absolute top-full ${align === "right" ? "right-0" : "left-0"} mt-1 w-80 bg-card rounded-xl shadow-lg border border-border p-2`}
             >
-            {items.map((item) => (
-              <Link
-                key={item.href}
-                to={item.href}
-                role="menuitem"
-                onClick={handleMegaLinkClick}
-                onPointerUp={handleMegaLinkPointerUp}
-                className={`block px-4 py-3 rounded-lg hover:bg-accent/50 transition-colors group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:bg-accent/50 ${
-                  isActive(item.href) ? "bg-accent/50" : ""
-                }`}
-              >
-                <div
-                  className={`text-sm font-medium transition-colors ${
+            {items.map((item) => {
+              const featured = item.featured;
+              return (
+                <Link
+                  key={item.href}
+                  to={item.href}
+                  role="menuitem"
+                  onClick={handleMegaLinkClick}
+                  onPointerUp={handleMegaLinkPointerUp}
+                  aria-label={
+                    featured && item.desc ? `${item.label} — ${item.desc}` : undefined
+                  }
+                  className={`group/featured block px-4 py-3 rounded-lg hover:bg-accent/50 transition-colors group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:bg-accent/50 ${
                     isActive(item.href)
-                      ? "text-primary"
-                      : "text-foreground group-hover:text-primary"
+                      ? "bg-accent/50"
+                      : featured
+                        ? "bg-accent/25 mt-1 border-t border-border/60 rounded-t-none"
+                        : ""
                   }`}
                 >
-                  {item.label}
-                </div>
-                {item.desc && (
-                  <div className="text-xs text-muted-foreground mt-0.5">{item.desc}</div>
-                )}
-              </Link>
-            ))}
+                  <div
+                    className={`flex items-center gap-1.5 text-sm font-medium transition-colors ${
+                      isActive(item.href)
+                        ? "text-primary"
+                        : featured
+                          ? "text-primary"
+                          : "text-foreground group-hover:text-primary"
+                    }`}
+                  >
+                    <span className="truncate">{item.label}</span>
+                    {featured && (
+                      <ArrowRight
+                        className="w-3.5 h-3.5 shrink-0 transition-transform duration-200 group-hover/featured:translate-x-0.5"
+                        aria-hidden="true"
+                      />
+                    )}
+                  </div>
+                  {item.desc && (
+                    <div className="text-xs text-muted-foreground mt-0.5">{item.desc}</div>
+                  )}
+                </Link>
+              );
+            })}
           </motion.div>
         )}
       </AnimatePresence>
@@ -612,23 +652,51 @@ const Header = () => {
                     {col.title}
                   </div>
                   <ul className="space-y-0.5">
-                    {col.items.map((item) => (
-                      <li key={item.href}>
-                        <Link
-                          to={item.href}
-                          role="menuitem"
-                          onClick={handleMegaLinkClick}
-                          onPointerUp={handleMegaLinkPointerUp}
-                          className={`block px-2 py-1.5 rounded-md text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:bg-accent/50 ${
-                            isActive(item.href)
-                              ? "text-primary bg-accent/50 font-medium"
-                              : "text-foreground/80 hover:text-primary hover:bg-accent/40"
-                          }`}
+                    {col.items.map((item) => {
+                      const featured = item.featured;
+                      return (
+                        <li
+                          key={item.href}
+                          className={featured ? "mt-1.5 pt-1.5 border-t border-border/60" : undefined}
                         >
-                          {item.label}
-                        </Link>
-                      </li>
-                    ))}
+                          <Link
+                            to={item.href}
+                            role="menuitem"
+                            onClick={handleMegaLinkClick}
+                            onPointerUp={handleMegaLinkPointerUp}
+                            aria-label={
+                              featured && item.desc ? `${item.label} — ${item.desc}` : undefined
+                            }
+                            className={`group/featured block px-2 py-1.5 rounded-md text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:bg-accent/50 ${
+                              isActive(item.href)
+                                ? "text-primary bg-accent/50 font-medium"
+                                : featured
+                                  ? "text-primary/95 bg-accent/25 hover:bg-accent/50 hover:text-primary font-medium"
+                                  : "text-foreground/80 hover:text-primary hover:bg-accent/40"
+                            }`}
+                          >
+                            {featured ? (
+                              <>
+                                <span className="flex items-center gap-1.5">
+                                  <span className="truncate">{item.label}</span>
+                                  <ArrowRight
+                                    className="w-3.5 h-3.5 shrink-0 transition-transform duration-200 group-hover/featured:translate-x-0.5"
+                                    aria-hidden="true"
+                                  />
+                                </span>
+                                {item.desc && (
+                                  <span className="block text-[11px] text-muted-foreground mt-0.5 font-normal">
+                                    {item.desc}
+                                  </span>
+                                )}
+                              </>
+                            ) : (
+                              item.label
+                            )}
+                          </Link>
+                        </li>
+                      );
+                    })}
                   </ul>
                 </div>
               ))}
@@ -849,31 +917,49 @@ const Header = () => {
                       >
                         {col.title}
                       </div>,
-                      ...col.items.map((item) => (
-                        <Link
-                          key={`${section.key}-${item.href}-${item.label}`}
-                          to={item.href}
-                          title={item.label}
-                          className={`flex flex-col justify-center min-h-[44px] px-5 py-2 rounded-lg hover:bg-accent/50 ${
-                            isActive(item.href) ? "bg-accent/50" : ""
-                          }`}
-                        >
-                          <span
-                            className={`block truncate text-[14px] leading-tight ${
+                      ...col.items.map((item) => {
+                        const featured = item.featured;
+                        return (
+                          <Link
+                            key={`${section.key}-${item.href}-${item.label}`}
+                            to={item.href}
+                            title={item.label}
+                            aria-label={
+                              featured && item.desc ? `${item.label} — ${item.desc}` : undefined
+                            }
+                            className={`group/featured flex flex-col justify-center min-h-[44px] px-5 py-2 rounded-lg hover:bg-accent/50 ${
                               isActive(item.href)
-                                ? "text-primary font-medium"
-                                : "text-foreground/85"
+                                ? "bg-accent/50"
+                                : featured
+                                  ? "bg-accent/25 border-l-2 border-primary"
+                                  : ""
                             }`}
                           >
-                            {item.label}
-                          </span>
-                          {item.desc && (
-                            <span className="block truncate text-[11px] text-muted-foreground mt-0.5">
-                              {item.desc}
+                            <span
+                              className={`flex items-center gap-1.5 text-[14px] leading-tight ${
+                                isActive(item.href)
+                                  ? "text-primary font-medium"
+                                  : featured
+                                    ? "text-primary font-medium"
+                                    : "text-foreground/85"
+                              }`}
+                            >
+                              <span className="truncate">{item.label}</span>
+                              {featured && (
+                                <ArrowRight
+                                  className="w-3.5 h-3.5 shrink-0 transition-transform duration-200 group-hover/featured:translate-x-0.5"
+                                  aria-hidden="true"
+                                />
+                              )}
                             </span>
-                          )}
-                        </Link>
-                      )),
+                            {item.desc && (
+                              <span className="block truncate text-[11px] text-muted-foreground mt-0.5">
+                                {item.desc}
+                              </span>
+                            )}
+                          </Link>
+                        );
+                      }),
                     ]),
                   ])),
 
@@ -905,20 +991,49 @@ const Header = () => {
                     >
                       Wiedza · {col.title}
                     </div>,
-                    ...col.items.map((item) => (
-                      <Link
-                        key={`wiedza-${item.href}`}
-                        to={item.href}
-                        title={item.label}
-                        className={`flex items-center min-h-[44px] px-5 py-2 rounded-lg text-[14px] hover:bg-accent/50 truncate ${
-                          isActive(item.href)
-                            ? "text-primary bg-accent/50 font-medium"
-                            : "text-foreground/85"
-                        }`}
-                      >
-                        <span className="truncate">{item.label}</span>
-                      </Link>
-                    )),
+                    ...col.items.map((item) => {
+                      const featured = item.featured;
+                      return (
+                        <Link
+                          key={`wiedza-${item.href}`}
+                          to={item.href}
+                          title={item.label}
+                          aria-label={
+                            featured && item.desc ? `${item.label} — ${item.desc}` : undefined
+                          }
+                          className={`group/featured flex flex-col justify-center min-h-[44px] px-5 py-2 rounded-lg hover:bg-accent/50 ${
+                            isActive(item.href)
+                              ? "bg-accent/50"
+                              : featured
+                                ? "bg-accent/25 border-l-2 border-primary"
+                                : ""
+                          }`}
+                        >
+                          <span
+                            className={`flex items-center gap-1.5 text-[14px] leading-tight ${
+                              isActive(item.href)
+                                ? "text-primary font-medium"
+                                : featured
+                                  ? "text-primary font-medium"
+                                  : "text-foreground/85"
+                            }`}
+                          >
+                            <span className="truncate">{item.label}</span>
+                            {featured && (
+                              <ArrowRight
+                                className="w-3.5 h-3.5 shrink-0 transition-transform duration-200 group-hover/featured:translate-x-0.5"
+                                aria-hidden="true"
+                              />
+                            )}
+                          </span>
+                          {item.desc && (
+                            <span className="block truncate text-[11px] text-muted-foreground mt-0.5">
+                              {item.desc}
+                            </span>
+                          )}
+                        </Link>
+                      );
+                    }),
                   ]),
 
                   <div
