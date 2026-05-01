@@ -89,6 +89,8 @@ export const SEO_REDIRECTS: SeoRedirectEntry[] = [
   { from: "/szczelina", to: "/leczenie/szczelina", reason: "Vanity → szczelina odbytu" },
   { from: "/szczelina-odbytu", to: "/leczenie/szczelina", reason: "Pełna nazwa → szczelina odbytu" },
   { from: "/lhp", to: "/leczenie/lhp", reason: "Vanity → metoda LHP" },
-  { from: "/proktolog", to: "/proktologia", reason: "Specjalizacja → hub proktologii" },
-  { from: "/flebolog", to: "/flebologia", reason: "Specjalizacja → hub flebologii" },
+  { from: "/proktolog", to: "/leczenie/proktologia", reason: "Specjalizacja → hub proktologii" },
+  { from: "/proktologia", to: "/leczenie/proktologia", reason: "Bez prefiksu → hub proktologii" },
+  { from: "/flebolog", to: "/leczenie/flebologia", reason: "Specjalizacja → hub flebologii" },
+  { from: "/flebologia", to: "/leczenie/flebologia", reason: "Bez prefiksu → hub flebologii" },
 ];
