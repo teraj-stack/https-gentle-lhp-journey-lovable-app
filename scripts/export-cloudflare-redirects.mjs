@@ -346,9 +346,85 @@ async function uploadToCloudflare() {
     process.exit(1);
   }
 
-  // Krok B: interaktywne potwierdzenie (replace-all jest destrukcyjne).
+  // Krok B: szczegółowy diff vs aktualna zawartość listy na Cloudflare.
+  // Pobieramy wszystkie items (paginowane po 25) i porównujemy z apiItems.
+  const remoteItems = await fetchAllListItems(baseUrl, headers);
+  const remoteMap = new Map(); // source_url → { target_url, status_code, preserve_query_string }
+  for (const it of remoteItems) {
+    const r = it.redirect ?? {};
+    if (!r.source_url) continue;
+    remoteMap.set(r.source_url, {
+      target_url: r.target_url ?? "",
+      status_code: r.status_code ?? 301,
+      preserve_query_string: r.preserve_query_string ?? false,
+    });
+  }
+  const localMap = new Map();
+  for (const it of apiItems) {
+    const r = it.redirect;
+    localMap.set(r.source_url, {
+      target_url: r.target_url,
+      status_code: r.status_code,
+      preserve_query_string: r.preserve_query_string,
+    });
+  }
+
+  const remoteAdds = []; // w local, brak w remote → dodane
+  const remoteChanges = []; // w obu, różne pola → zmienione
+  const remoteDeletes = []; // w remote, brak w local → usunięte
+  for (const [src, loc] of localMap) {
+    const rem = remoteMap.get(src);
+    if (!rem) {
+      remoteAdds.push({ src, to: loc.target_url });
+      continue;
+    }
+    const diffs = [];
+    if (rem.target_url !== loc.target_url) diffs.push(`target: ${rem.target_url} → ${loc.target_url}`);
+    if (rem.status_code !== loc.status_code) diffs.push(`status: ${rem.status_code} → ${loc.status_code}`);
+    if (rem.preserve_query_string !== loc.preserve_query_string)
+      diffs.push(`preserve_qs: ${rem.preserve_query_string} → ${loc.preserve_query_string}`);
+    if (diffs.length) remoteChanges.push({ src, diffs });
+  }
+  for (const [src, rem] of remoteMap) {
+    if (!localMap.has(src)) remoteDeletes.push({ src, to: rem.target_url });
+  }
+
+  console.log(`\n${"─".repeat(72)}`);
+  console.log(`📊 DIFF vs aktualna lista na Cloudflare ("${listMeta.name ?? "?"}")`);
+  console.log(`${"─".repeat(72)}`);
+  console.log(
+    `   Remote: ${remoteMap.size} reguł   Local: ${localMap.size} reguł\n` +
+      `   ➕ ${remoteAdds.length} do dodania   🔄 ${remoteChanges.length} do zmiany   ➖ ${remoteDeletes.length} do usunięcia`,
+  );
+  if (remoteAdds.length) {
+    console.log(`\n  ➕ DO DODANIA (${remoteAdds.length}):`);
+    for (const { src, to } of remoteAdds) console.log(`     + ${src}  →  ${to}`);
+  }
+  if (remoteChanges.length) {
+    console.log(`\n  🔄 DO ZMIANY (${remoteChanges.length}):`);
+    for (const { src, diffs } of remoteChanges) {
+      console.log(`     ~ ${src}`);
+      for (const d of diffs) console.log(`         · ${d}`);
+    }
+  }
+  if (remoteDeletes.length) {
+    console.log(`\n  ➖ DO USUNIĘCIA (${remoteDeletes.length}):`);
+    for (const { src, to } of remoteDeletes) console.log(`     - ${src}  →  ${to}`);
+  }
+  if (!remoteAdds.length && !remoteChanges.length && !remoteDeletes.length) {
+    console.log(`\n   ✓ Lista na Cloudflare jest już zsynchronizowana z lokalną mapą.`);
+    if (!CONFIRM) {
+      console.log(`   Pomijam PUT (nic do zrobienia).`);
+      return;
+    }
+  }
+
+  // Krok B.2: interaktywne potwierdzenie (replace-all jest destrukcyjne).
   if (!CONFIRM) {
-    console.log(`\n⚠️  PUT zastąpi ${listMeta.num_items ?? "?"} obecnych reguł na ${apiItems.length} nowych.`);
+    console.log(
+      `\n⚠️  PUT zastąpi całą listę: ${remoteMap.size} → ${localMap.size} reguł ` +
+        `(+${remoteAdds.length} / ~${remoteChanges.length} / -${remoteDeletes.length}).`,
+    );
     console.log(`   Aby kontynuować bez tego pytania użyj --confirm.`);
     const ok = await promptYesNo(`   Kontynuować? [y/N]: `);
     if (!ok) {
