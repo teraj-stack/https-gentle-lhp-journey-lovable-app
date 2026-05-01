@@ -329,6 +329,15 @@ const AdminSeoRedirects = () => {
           </p>
         </section>
 
+        {/* ── Analityka trafień (TOP literówki / aliasy) ───────────────── */}
+        <SeoRedirectAnalytics
+          onUseAsRedirect={(from, to) => {
+            setEditingId(null);
+            setForm({ from_path: from, to_path: to, reason: "Z analityki ruchu", is_active: true });
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }}
+        />
+
         {/* ── Filtr ─────────────────────────────────────────────────────── */}
         <div className="flex items-center gap-3">
           <Input
