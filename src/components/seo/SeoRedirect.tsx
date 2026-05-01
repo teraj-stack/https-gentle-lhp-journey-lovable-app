@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 
 interface SeoRedirectProps {
