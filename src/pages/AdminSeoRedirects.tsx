@@ -243,7 +243,7 @@ const AdminSeoRedirects = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <SeoHead title="SEO Redirects · Admin" description="Zarządzanie mapą przekierowań SEO" path="/admin/seo-redirects" noindex />
+      <SeoHead title="SEO Redirects · Admin" description="Zarządzanie mapą przekierowań SEO" path="/admin/seo-redirects" />
 
       <header className="border-b border-border bg-card sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
