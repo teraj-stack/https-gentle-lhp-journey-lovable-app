@@ -19,7 +19,9 @@
  * Domena: cml.pl (zgodnie z core memory: "Must use https://cml.pl ONLY").
  *
  * Uruchom:
- *   node scripts/export-cloudflare-redirects.mjs
+ *   node scripts/export-cloudflare-redirects.mjs              # pełny eksport
+ *   node scripts/export-cloudflare-redirects.mjs --dry-run    # tylko walidacja + diff
+ *   node scripts/export-cloudflare-redirects.mjs --dry-run --strict   # exit 1 przy warn (CI)
  */
 import { writeFileSync, mkdirSync, readFileSync, existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
