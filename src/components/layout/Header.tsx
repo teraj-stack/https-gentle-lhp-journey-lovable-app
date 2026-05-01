@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, ChevronDown, Phone, Mail, MapPin } from "lucide-react";
+import { Menu, X, ChevronDown, Phone, Mail, MapPin, ArrowRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import logoCml from "@/assets/logo-cml.webp";
 
@@ -15,6 +15,13 @@ interface NavItem {
   label: string;
   href: string;
   desc?: string;
+  /**
+   * Featured = link "zobacz wszystko" do huba sekcji. Wyróżniony wizualnie
+   * (ikona ArrowRight, separator, akcent), żeby pacjent szybko trafił na
+   * pełną listę gdy w skróconym dropdownie nie znalazł swojego zabiegu.
+   * Nie używaj `→` w `label` — strzałka pochodzi z ikony, treść zostaje czysta.
+   */
+  featured?: boolean;
 }
 
 interface MegaColumn {
@@ -45,7 +52,12 @@ const proktologiaColumns: MegaColumn[] = [
       { label: "LHP – laser na hemoroidy", href: "/leczenie/lhp" },
       { label: "FiLaC – laser na przetokę", href: "/leczenie/filac" },
       { label: "SiLaC – laser na torbiel", href: "/leczenie/silac" },
-      { label: "Wszystkie zabiegi proktologii →", href: "/leczenie/proktologia" },
+      {
+        label: "Zobacz wszystkie zabiegi",
+        href: "/leczenie/proktologia",
+        desc: "Pełna lista metod i porównanie",
+        featured: true,
+      },
     ],
   },
 ];
@@ -65,7 +77,12 @@ const flebologiaColumns: MegaColumn[] = [
     items: [
       { label: "EVLT – laser na żylaki", href: "/leczenie/evlt" },
       { label: "CLaCS – metoda hybrydowa", href: "/leczenie/clacs" },
-      { label: "Wszystkie zabiegi flebologii →", href: "/leczenie/flebologia" },
+      {
+        label: "Zobacz wszystkie zabiegi",
+        href: "/leczenie/flebologia",
+        desc: "Pełna lista metod i porównanie",
+        featured: true,
+      },
     ],
   },
 ];
@@ -95,7 +112,12 @@ const wiedzaColumns: MegaColumn[] = [
       { label: "Blog", href: "/blog" },
       { label: "Przygotowanie do EVLT", href: "/dla-pacjenta/przygotowanie-evlt" },
       { label: "Przygotowanie do LHP", href: "/dla-pacjenta/przygotowanie-lhp" },
-      { label: "Strefa pacjenta →", href: "/dla-pacjenta" },
+      {
+        label: "Strefa pacjenta",
+        href: "/dla-pacjenta",
+        desc: "Quizy, e-book, FAQ i przygotowanie",
+        featured: true,
+      },
     ],
   },
 ];
