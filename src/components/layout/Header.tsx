@@ -899,31 +899,49 @@ const Header = () => {
                       >
                         {col.title}
                       </div>,
-                      ...col.items.map((item) => (
-                        <Link
-                          key={`${section.key}-${item.href}-${item.label}`}
-                          to={item.href}
-                          title={item.label}
-                          className={`flex flex-col justify-center min-h-[44px] px-5 py-2 rounded-lg hover:bg-accent/50 ${
-                            isActive(item.href) ? "bg-accent/50" : ""
-                          }`}
-                        >
-                          <span
-                            className={`block truncate text-[14px] leading-tight ${
+                      ...col.items.map((item) => {
+                        const featured = item.featured;
+                        return (
+                          <Link
+                            key={`${section.key}-${item.href}-${item.label}`}
+                            to={item.href}
+                            title={item.label}
+                            aria-label={
+                              featured && item.desc ? `${item.label} — ${item.desc}` : undefined
+                            }
+                            className={`group/featured flex flex-col justify-center min-h-[44px] px-5 py-2 rounded-lg hover:bg-accent/50 ${
                               isActive(item.href)
-                                ? "text-primary font-medium"
-                                : "text-foreground/85"
+                                ? "bg-accent/50"
+                                : featured
+                                  ? "bg-accent/25 border-l-2 border-primary"
+                                  : ""
                             }`}
                           >
-                            {item.label}
-                          </span>
-                          {item.desc && (
-                            <span className="block truncate text-[11px] text-muted-foreground mt-0.5">
-                              {item.desc}
+                            <span
+                              className={`flex items-center gap-1.5 text-[14px] leading-tight ${
+                                isActive(item.href)
+                                  ? "text-primary font-medium"
+                                  : featured
+                                    ? "text-primary font-medium"
+                                    : "text-foreground/85"
+                              }`}
+                            >
+                              <span className="truncate">{item.label}</span>
+                              {featured && (
+                                <ArrowRight
+                                  className="w-3.5 h-3.5 shrink-0 transition-transform duration-200 group-hover/featured:translate-x-0.5"
+                                  aria-hidden="true"
+                                />
+                              )}
                             </span>
-                          )}
-                        </Link>
-                      )),
+                            {item.desc && (
+                              <span className="block truncate text-[11px] text-muted-foreground mt-0.5">
+                                {item.desc}
+                              </span>
+                            )}
+                          </Link>
+                        );
+                      }),
                     ]),
                   ])),
 
