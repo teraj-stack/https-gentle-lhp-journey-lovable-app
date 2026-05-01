@@ -28,11 +28,15 @@
  * Upload wymaga env vars:
  *   CF_API_TOKEN   — token z permission "Account / Account Filter Lists / Edit"
  *   CF_ACCOUNT_ID  — ID konta Cloudflare
- *   CF_LIST_ID     — ID listy Bulk Redirects (z URL Dashboard → Lists)
+ *   CF_LIST_ID     — ID listy LUB lista wielu list rozdzielonych przecinkami:
+ *                      "abc123..."                          # 1 lista
+ *                      "abc123...,def456..."                # 2 listy (label = list1, list2)
+ *                      "prod=abc123...,stg=def456..."       # 2 listy z etykietami
  *
  * Endpoint: PUT /accounts/{account_id}/rules/lists/{list_id}/items
  *   — replace-all (zastępuje całą zawartość listy). Idempotentne.
- */
+ *   Wiele list jest przetwarzanych sekwencyjnie z osobnym diff/confirm/poll
+ *   i końcowym raportem statusów per lista.
 import { writeFileSync, mkdirSync, readFileSync, existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
