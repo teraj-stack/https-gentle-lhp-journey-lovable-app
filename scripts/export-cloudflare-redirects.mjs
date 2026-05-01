@@ -293,7 +293,7 @@ for (const [to, n] of Object.entries(byTarget).sort((a, b) => b[1] - a[1]).slice
 }
 
 // ── 5) Opcjonalny upload do Cloudflare API ─────────────────────────────────
-if (UPLOAD) {
+if (UPLOAD || CLEAR) {
   await uploadToCloudflare();
 }
 
