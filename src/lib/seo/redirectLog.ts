@@ -30,14 +30,87 @@ export interface RedirectLogEntry {
 }
 
 const STORAGE_KEY = "cml:seo-redirect-log:v1";
+const SESSION_ID_KEY = "cml:seo-redirect-session:v1";
+const REMOTE_DEDUP_KEY = "cml:seo-redirect-remote-sent:v1";
 const MAX_ENTRIES = 500;
 
 /** Listenery do reaktywnego UI (ekran debug). */
 type Listener = (entries: RedirectLogEntry[]) => void;
 const listeners = new Set<Listener>();
 
+/** Override sinka zdalnego — wykorzystywane w testach jednostkowych. */
+let remoteSinkOverride: ((payload: RemotePayload) => void) | null = null;
+
+interface RemotePayload {
+  kind: RedirectLogKind;
+  from_path: string;
+  to_path: string | null;
+  referrer: string | null;
+  search: string | null;
+  user_agent: string | null;
+  session_id: string;
+}
+
 function isBrowser(): boolean {
   return typeof window !== "undefined" && typeof sessionStorage !== "undefined";
+}
+
+/** Pseudo-anonimowy ID sesji per karta przeglądarki — pozwala dedupować po stronie agregacji. */
+function getSessionId(): string {
+  if (!isBrowser()) return "ssr";
+  try {
+    const existing = sessionStorage.getItem(SESSION_ID_KEY);
+    if (existing) return existing;
+    const fresh =
+      typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? crypto.randomUUID()
+        : `s_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+    sessionStorage.setItem(SESSION_ID_KEY, fresh);
+    return fresh;
+  } catch {
+    return `s_${Date.now()}`;
+  }
+}
+
+/** Czy w tej sesji już wysłaliśmy zdalnie ten (kind, from)? Chroni przed duplikatami przy remount. */
+function isRemoteAlreadySent(kind: RedirectLogKind, from: string): boolean {
+  if (!isBrowser()) return true;
+  try {
+    const raw = sessionStorage.getItem(REMOTE_DEDUP_KEY);
+    const set = new Set<string>(raw ? JSON.parse(raw) : []);
+    return set.has(`${kind}|${from}`);
+  } catch {
+    return false;
+  }
+}
+
+function markRemoteSent(kind: RedirectLogKind, from: string): void {
+  if (!isBrowser()) return;
+  try {
+    const raw = sessionStorage.getItem(REMOTE_DEDUP_KEY);
+    const arr: string[] = raw ? JSON.parse(raw) : [];
+    arr.push(`${kind}|${from}`);
+    // Cap, żeby nie rosło w nieskończoność (np. bot scanujący /xxx, /yyy…).
+    sessionStorage.setItem(REMOTE_DEDUP_KEY, JSON.stringify(arr.slice(-200)));
+  } catch {
+    // ignore
+  }
+}
+
+/** Wyślij hit do `seo_redirect_hits`. Best-effort, błędy nie blokują UX. */
+async function sendRemote(payload: RemotePayload): Promise<void> {
+  if (remoteSinkOverride) {
+    remoteSinkOverride(payload);
+    return;
+  }
+  try {
+    const { error } = await supabase.from("seo_redirect_hits").insert(payload);
+    if (error && isBrowser()) {
+      console.debug("[redirectLog] remote insert failed:", error.message);
+    }
+  } catch (err) {
+    if (isBrowser()) console.debug("[redirectLog] remote insert exception:", err);
+  }
 }
 
 function readAll(): RedirectLogEntry[] {
