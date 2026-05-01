@@ -37,6 +37,7 @@
  *   — replace-all (zastępuje całą zawartość listy). Idempotentne.
  *   Wiele list jest przetwarzanych sekwencyjnie z osobnym diff/confirm/poll
  *   i końcowym raportem statusów per lista.
+ */
 import { writeFileSync, mkdirSync, readFileSync, existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
