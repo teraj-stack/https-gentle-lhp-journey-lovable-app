@@ -360,11 +360,11 @@ async function uploadToCloudflare() {
   // Krok C: PUT — replace-all. Cloudflare zwraca operation_id; status async warto sprawdzić.
   console.log(`→ PUT ${baseUrl}/items (${apiItems.length} reguł)`);
   // Cloudflare API oczekuje płaskiej tablicy `[{ redirect: {...} }, ...]` jako body.
-  const putRes = await fetch(`${baseUrl}/items`, {
-    method: "PUT",
-    headers,
-    body: JSON.stringify(apiItems),
-  });
+  const putRes = await fetchWithRetry(
+    `${baseUrl}/items`,
+    { method: "PUT", headers, body: JSON.stringify(apiItems) },
+    { label: "PUT items" },
+  );
   const putJson = await putRes.json().catch(() => ({}));
   if (!putRes.ok || !putJson.success) {
     console.error(`❌ Upload failed: HTTP ${putRes.status}`);
@@ -386,7 +386,7 @@ async function uploadToCloudflare() {
     let lastStatus = "";
     while (Date.now() - start < TIMEOUT_MS) {
       await new Promise((r) => setTimeout(r, 2000));
-      const opRes = await fetch(opUrl, { headers });
+      const opRes = await fetchWithRetry(opUrl, { headers }, { label: "GET op status", maxRetries: 3 });
       const opJson = await opRes.json().catch(() => ({}));
       const status = opJson.result?.status;
       if (status !== lastStatus) {
