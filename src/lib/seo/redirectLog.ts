@@ -1,15 +1,19 @@
 /**
- * Lekki, in-memory + sessionStorage logger trafień w SeoRedirect i 404.
+ * Logger trafień w SeoRedirect i 404 — dwupoziomowy:
  *
- * Cele:
- *  - Wgląd kto/skąd/kiedy odwiedza stare URL-e (czy SEO_REDIRECTS są używane).
- *  - Wykrywanie 404 — kandydatów do dopisania do SEO_REDIRECTS zamiast kasować ruch.
+ *  1. **Lokalny** (sessionStorage) — szybka diagnostyka w devtools / `/dev/seo-redirects`.
+ *  2. **Zdalny** (Supabase: `seo_redirect_hits`) — analityka cross-session, pokazuje
+ *     które stare URL-e / literówki realnie generują ruch. Widoczna w `/admin/seo-redirects`.
  *
- * NIE wysyła nic na serwer. Wyłącznie lokalna diagnostyka po stronie klienta.
- * Konsumenci: komponent `SeoRedirect`, strona `/pages/NotFound`, ekran `/dev/seo-redirects`.
+ * Deduplikacja zdalna: per (session_id, kind, from_path) — jeden wpis na sesję na ścieżkę,
+ * żeby nie spamować analityki przy każdym remoutncie SeoRedirect.
+ *
+ * Wysyłka: `navigator.sendBeacon` (przeżyje unload przy redirect), fallback `fetch keepalive`.
+ * Failure-tolerant: błędy sieci / brak supabase NIE blokują UX.
  */
+import { supabase } from "@/integrations/supabase/client";
 
-export type RedirectLogKind = "redirect" | "not_found";
+export type RedirectLogKind = "redirect" | "not_found" | "suggested";
 
 export interface RedirectLogEntry {
   kind: RedirectLogKind;
