@@ -304,8 +304,9 @@ async function uploadToCloudflare() {
 
   console.log(`\n${"─".repeat(72)}\n☁️  Upload do Cloudflare API\n${"─".repeat(72)}`);
 
-  // ── Pre-flight: walidacja struktury apiItems pod kątem schematu Cloudflare ─
-  validateApiItemsSchema(apiItems);
+  // Walidacja apiItems tylko gdy faktycznie wgramy nowe reguły. --clear bez
+  // --upload czyści listę i wychodzi, więc kształt apiItems jest nieistotny.
+  if (UPLOAD) validateApiItemsSchema(apiItems);
 
   const missing = [];
   if (!token) missing.push("CF_API_TOKEN");
