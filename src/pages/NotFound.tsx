@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef } from "react";
 import { Navigate, useLocation } from "react-router-dom";
-import { logNotFoundHit, logRedirectHit } from "@/lib/seo/redirectLog";
+import { logNotFoundHit, logSuggestedRedirectHit } from "@/lib/seo/redirectLog";
 import { suggestRedirect } from "@/lib/seo/suggestRedirect";
 
 const NotFound = () => {
