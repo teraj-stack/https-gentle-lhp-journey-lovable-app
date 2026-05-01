@@ -41,3 +41,10 @@ Domena `cml.pl` ma być za Cloudflare → Bulk Redirects dla prawdziwych HTTP 30
 - `src/lib/seo/redirectsRuntime.test.tsx` (45) — sparametryzowane: każde wejście z mapy renderuje SeoRedirect i `Navigate` na `to` zamiast 404.
 - `src/lib/seo/sitemapRobots.test.ts` (6) — sitemap nie wycieka aliasów ani admin/dev, robots blokuje co trzeba.
 - `src/components/seo/SeoRedirect.test.tsx` (11) — DOM: canonical, refresh, noindex×3, og/twitter URL, idempotency re-mount, self-redirect guard, absolute URL passthrough, marker `data-seo-redirect`.
+
+## Diagnostyka runtime (logger + ekran dev)
+
+- **`src/lib/seo/redirectLog.ts`** — in-memory + sessionStorage logger (`logRedirectHit`, `logNotFoundHit`, `getRedirectLog`, `clearRedirectLog`, `subscribeRedirectLog`). Cap 500 wpisów, klucz `cml:seo-redirect-log:v1`. Toleruje quota/uszkodzony JSON.
+- **Instrumentacja**: `SeoRedirect` woła `logRedirectHit(from, to)` synchronicznie w renderze; `pages/NotFound` woła `logNotFoundHit(pathname)` w `useEffect`. Konsola: `console.info` dla redirect, `console.warn` dla 404.
+- **Ekran**: `/dev/seo-redirects` (`src/pages/DevSeoRedirects.tsx`) — 3 sekcje: mapa SEO_REDIRECTS z licznikami trafień, agregat unikalnych 404 z referrerem (przycisk „Skopiuj jako szablon SEO_REDIRECTS"), surowy log. Auto-refresh co 1s + reset. Strona nie indeksowana (meta robots noindex,nofollow).
+- **Testy**: `src/lib/seo/redirectLog.test.ts` (8) — kontrakt API, FIFO, subscribe/unsub, odporność na quota i uszkodzony JSON.
