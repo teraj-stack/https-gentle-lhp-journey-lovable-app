@@ -56,3 +56,11 @@ Domena `cml.pl` ma być za Cloudflare → Bulk Redirects dla prawdziwych HTTP 30
 - **Progi**: `AUTO=0.82` (`<Navigate replace>`), `SUGGEST=0.55` (sekcja „Czy chodziło Ci o…?"), poniżej → none. Remis → preferencja `redirect-map` nad `app-route`.
 - **`pages/NotFound`** — odpala `suggestRedirect` w `useMemo`, loguje przez `logNotFoundHit` zawsze + `logRedirectHit` przy auto-redirect (widać w `/dev/seo-redirects` jako kandydat na nowy wpis SEO_REDIRECTS). Przy `auto-redirect` zwraca `<Navigate>` zamiast widoku 404. Przy `suggest` — pokazuje link `data-testid="suggested-link"`.
 - **Testy**: `src/lib/seo/suggestRedirect.test.ts` — normalizacja, exact-match, literówki znanych aliasów, brak fałszywych pozytywów dla losowych stringów, preferencja redirect-map, kontrakt zwrotny dla wszystkich SEO_REDIRECTS (każdy alias w 100% mapuje na swój `to`).
+
+## Admin panel — `/admin/seo-redirects`
+
+- **Tabela DB**: `public.seo_redirects` (from_path UNIQUE, to_path, reason, is_active, created_by, timestamps). Trigger `validate_seo_redirect` (search_path=public) blokuje self-redirect i wymusza prefix `/`. RLS: public SELECT aktywnych + admin pełen CRUD via `has_role('admin'::app_role)`.
+- **Hook** `src/hooks/useMergedRedirects.ts` — merge `SEO_REDIRECTS` (kod) + DB (active). DB ma pierwszeństwo per `from`, oznaczenie origin: `code` / `db` / `db-override`. `placeholderData` zwraca hardcoded mapę natychmiast (zero opóźnienia hydratacji); cache 60s.
+- **Strona** `src/pages/AdminSeoRedirects.tsx` — auth gate + `useIsAdmin`. CRUD inline-form (from/to/reason/is_active), filtr substring po from/to/reason, badge origin, akcje: „Otwórz alias w nowej karcie" (test live), „Skopiuj jako kod" (gotowy template do `redirectsMap.ts`), edytuj/usuń tylko dla wpisów DB. Sekcja „Nieaktywne wpisy DB" z toggle aktywności.
+- **Nawigacja**: link „SEO Redirects" w headerze `AdminDashboard` (ikona Link2).
+- **Testy**: `src/hooks/useMergedRedirects.test.ts` (4) — czysty merge, DB nadpisuje kod, sortowanie, brak fałszywych origin.
