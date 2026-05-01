@@ -534,31 +534,49 @@ const Header = () => {
               transition={{ duration: 0.2 }}
               className={`absolute top-full ${align === "right" ? "right-0" : "left-0"} mt-1 w-80 bg-card rounded-xl shadow-lg border border-border p-2`}
             >
-            {items.map((item) => (
-              <Link
-                key={item.href}
-                to={item.href}
-                role="menuitem"
-                onClick={handleMegaLinkClick}
-                onPointerUp={handleMegaLinkPointerUp}
-                className={`block px-4 py-3 rounded-lg hover:bg-accent/50 transition-colors group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:bg-accent/50 ${
-                  isActive(item.href) ? "bg-accent/50" : ""
-                }`}
-              >
-                <div
-                  className={`text-sm font-medium transition-colors ${
+            {items.map((item) => {
+              const featured = item.featured;
+              return (
+                <Link
+                  key={item.href}
+                  to={item.href}
+                  role="menuitem"
+                  onClick={handleMegaLinkClick}
+                  onPointerUp={handleMegaLinkPointerUp}
+                  aria-label={
+                    featured && item.desc ? `${item.label} — ${item.desc}` : undefined
+                  }
+                  className={`group/featured block px-4 py-3 rounded-lg hover:bg-accent/50 transition-colors group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:bg-accent/50 ${
                     isActive(item.href)
-                      ? "text-primary"
-                      : "text-foreground group-hover:text-primary"
+                      ? "bg-accent/50"
+                      : featured
+                        ? "bg-accent/25 mt-1 border-t border-border/60 rounded-t-none"
+                        : ""
                   }`}
                 >
-                  {item.label}
-                </div>
-                {item.desc && (
-                  <div className="text-xs text-muted-foreground mt-0.5">{item.desc}</div>
-                )}
-              </Link>
-            ))}
+                  <div
+                    className={`flex items-center gap-1.5 text-sm font-medium transition-colors ${
+                      isActive(item.href)
+                        ? "text-primary"
+                        : featured
+                          ? "text-primary"
+                          : "text-foreground group-hover:text-primary"
+                    }`}
+                  >
+                    <span className="truncate">{item.label}</span>
+                    {featured && (
+                      <ArrowRight
+                        className="w-3.5 h-3.5 shrink-0 transition-transform duration-200 group-hover/featured:translate-x-0.5"
+                        aria-hidden="true"
+                      />
+                    )}
+                  </div>
+                  {item.desc && (
+                    <div className="text-xs text-muted-foreground mt-0.5">{item.desc}</div>
+                  )}
+                </Link>
+              );
+            })}
           </motion.div>
         )}
       </AnimatePresence>
