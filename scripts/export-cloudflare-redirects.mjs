@@ -295,6 +295,11 @@ async function uploadToCloudflare() {
 
   console.log(`\n${"─".repeat(72)}\n☁️  Upload do Cloudflare API\n${"─".repeat(72)}`);
 
+  // ── Pre-flight: walidacja struktury apiItems pod kątem schematu Cloudflare ─
+  // Sprawdzamy ZANIM zrobimy jakikolwiek request — błędy złapane lokalnie są
+  // dużo szybsze i czytelniejsze niż HTTP 400 z `errors[].message` z API.
+  validateApiItemsSchema(apiItems);
+
   const missing = [];
   if (!token) missing.push("CF_API_TOKEN");
   if (!accountId) missing.push("CF_ACCOUNT_ID");
@@ -573,5 +578,125 @@ async function fetchAllListItems(baseUrl, headers) {
     if (!cursor) break;
   }
   return all;
+}
+
+// ── Walidacja apiItems pod kątem schematu Cloudflare Bulk Redirects ────────
+// Doc: https://developers.cloudflare.com/api/operations/lists-update-list-items
+// Schema oczekuje tablicy `[{ redirect: { source_url, target_url, status_code, ... } }]`
+// gdzie:
+//   • source_url  — absolutny URL z protokołem (http/https), bez query/fragmentu, max 2048
+//   • target_url  — absolutny URL lub ścieżka; status_code ∈ {301,302,307,308}
+//   • flagi boolean: preserve_query_string / include_subdomains / subpath_matching / preserve_path_suffix
+// Wymuszamy też brak duplikatów source_url i unikalność po normalizacji (lowercase host).
+function validateApiItemsSchema(items) {
+  const errs = [];
+  const ALLOWED_STATUS = new Set([301, 302, 307, 308]);
+  const REQUIRED_BOOLS = [
+    "preserve_query_string",
+    "include_subdomains",
+    "subpath_matching",
+    "preserve_path_suffix",
+  ];
+  const seenSources = new Map(); // normalized → original index
+
+  if (!Array.isArray(items) || items.length === 0) {
+    errs.push("apiItems musi być niepustą tablicą.");
+  }
+
+  items.forEach((item, idx) => {
+    const where = `apiItems[${idx}]`;
+    if (!item || typeof item !== "object") {
+      errs.push(`${where}: nie jest obiektem.`);
+      return;
+    }
+    const r = item.redirect;
+    if (!r || typeof r !== "object") {
+      errs.push(`${where}.redirect: brak obiektu redirect.`);
+      return;
+    }
+
+    // source_url — wymagany, absolutny URL.
+    if (typeof r.source_url !== "string" || !r.source_url) {
+      errs.push(`${where}.redirect.source_url: brak lub nie-string.`);
+    } else {
+      const u = safeUrl(r.source_url);
+      if (!u) errs.push(`${where}.redirect.source_url: nie jest poprawnym URL ("${r.source_url}").`);
+      else if (!/^https?:$/.test(u.protocol))
+        errs.push(`${where}.redirect.source_url: protokół musi być http/https ("${u.protocol}").`);
+      else if (u.search) errs.push(`${where}.redirect.source_url: nie może zawierać query string ("${u.search}").`);
+      else if (u.hash) errs.push(`${where}.redirect.source_url: nie może zawierać fragmentu ("${u.hash}").`);
+      else if (r.source_url.length > 2048)
+        errs.push(`${where}.redirect.source_url: > 2048 znaków (${r.source_url.length}).`);
+
+      // Duplikaty po lowercased host + path.
+      if (u) {
+        const norm = `${u.protocol}//${u.host.toLowerCase()}${u.pathname}`;
+        if (seenSources.has(norm))
+          errs.push(`${where}.redirect.source_url: duplikat ${norm} (poprzednio w apiItems[${seenSources.get(norm)}]).`);
+        else seenSources.set(norm, idx);
+      }
+    }
+
+    // target_url — wymagany, absolutny URL lub ścieżka /...
+    if (typeof r.target_url !== "string" || !r.target_url) {
+      errs.push(`${where}.redirect.target_url: brak lub nie-string.`);
+    } else {
+      const looksAbsolute = /^https?:\/\//i.test(r.target_url);
+      if (looksAbsolute) {
+        const u = safeUrl(r.target_url);
+        if (!u) errs.push(`${where}.redirect.target_url: nie jest poprawnym URL ("${r.target_url}").`);
+      } else if (!r.target_url.startsWith("/")) {
+        errs.push(`${where}.redirect.target_url: musi być absolutnym URL lub ścieżką zaczynającą się od / ("${r.target_url}").`);
+      }
+      if (r.target_url.length > 2048)
+        errs.push(`${where}.redirect.target_url: > 2048 znaków (${r.target_url.length}).`);
+    }
+
+    // Self-redirect (po normalizacji).
+    if (typeof r.source_url === "string" && typeof r.target_url === "string") {
+      const su = safeUrl(r.source_url);
+      const tu = safeUrl(r.target_url);
+      if (su && tu) {
+        const sNorm = `${su.protocol}//${su.host.toLowerCase()}${su.pathname}`;
+        const tNorm = `${tu.protocol}//${tu.host.toLowerCase()}${tu.pathname}`;
+        if (sNorm === tNorm)
+          errs.push(`${where}: SELF-REDIRECT (source = target po normalizacji): ${sNorm}`);
+      }
+    }
+
+    // status_code — int z dozwolonego zbioru.
+    if (!Number.isInteger(r.status_code) || !ALLOWED_STATUS.has(r.status_code)) {
+      errs.push(
+        `${where}.redirect.status_code: musi być jedną z {${[...ALLOWED_STATUS].join(", ")}} (otrzymano ${JSON.stringify(r.status_code)}).`,
+      );
+    }
+
+    // Flagi boolean — wymagane (Cloudflare przyjmuje też brak, ale lepiej być explicit).
+    for (const key of REQUIRED_BOOLS) {
+      if (typeof r[key] !== "boolean")
+        errs.push(`${where}.redirect.${key}: musi być boolean (otrzymano ${typeof r[key]}).`);
+    }
+
+    // subpath_matching=true wymaga preserve_path_suffix=true (Cloudflare odrzuca odwrotnie).
+    if (r.subpath_matching === true && r.preserve_path_suffix !== true) {
+      errs.push(`${where}.redirect: subpath_matching=true wymaga preserve_path_suffix=true.`);
+    }
+  });
+
+  if (errs.length) {
+    console.error(`\n❌ Walidacja apiItems nie powiodła się (${errs.length} błędów):`);
+    for (const e of errs) console.error(`   ✗ ${e}`);
+    console.error(`\n⛔ Przerywam — popraw mapę i uruchom ponownie.`);
+    process.exit(1);
+  }
+  console.log(`✓ Walidacja apiItems OK (${items.length} reguł zgodnych ze schematem Cloudflare).`);
+}
+
+function safeUrl(value) {
+  try {
+    return new URL(value);
+  } catch {
+    return null;
+  }
 }
 
