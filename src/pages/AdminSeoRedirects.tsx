@@ -12,6 +12,7 @@
  * Bezpieczeństwo: RBAC po stronie DB (RLS) + dodatkowy gate `useIsAdmin`.
  */
 import { useEffect, useMemo, useState } from "react";
+import SeoRedirectAnalytics from "@/components/admin/SeoRedirectAnalytics";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Session } from "@supabase/supabase-js";
