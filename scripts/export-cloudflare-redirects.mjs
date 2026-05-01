@@ -45,9 +45,13 @@ const DOMAIN = "https://cml.pl";
 // ── CLI flags ───────────────────────────────────────────────────────────────
 // --dry-run / -n  : nie zapisuj plików; pokaż diff vs poprzedni eksport + walidację.
 // --strict        : exit 1 przy ostrzeżeniach (przydatne w CI).
+// --upload        : po wygenerowaniu plików zrób PUT na Cloudflare API.
+// --confirm       : pomiń interaktywne pytanie przed PUT (CI / scripted runs).
 const ARGS = new Set(process.argv.slice(2));
 const DRY_RUN = ARGS.has("--dry-run") || ARGS.has("-n");
 const STRICT = ARGS.has("--strict");
+const UPLOAD = ARGS.has("--upload");
+const CONFIRM = ARGS.has("--confirm");
 
 // ── Parser: wyciąga tylko aktywne (niezakomentowane) wpisy { from, to, reason } ──
 const source = readFileSync(SRC, "utf8");
