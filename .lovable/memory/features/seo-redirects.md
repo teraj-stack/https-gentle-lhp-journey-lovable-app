@@ -64,3 +64,10 @@ Domena `cml.pl` ma być za Cloudflare → Bulk Redirects dla prawdziwych HTTP 30
 - **Strona** `src/pages/AdminSeoRedirects.tsx` — auth gate + `useIsAdmin`. CRUD inline-form (from/to/reason/is_active), filtr substring po from/to/reason, badge origin, akcje: „Otwórz alias w nowej karcie" (test live), „Skopiuj jako kod" (gotowy template do `redirectsMap.ts`), edytuj/usuń tylko dla wpisów DB. Sekcja „Nieaktywne wpisy DB" z toggle aktywności.
 - **Nawigacja**: link „SEO Redirects" w headerze `AdminDashboard` (ikona Link2).
 - **Testy**: `src/hooks/useMergedRedirects.test.ts` (4) — czysty merge, DB nadpisuje kod, sortowanie, brak fałszywych origin.
+
+## Analityka trafień — `seo_redirect_hits`
+
+- **Tabela** `public.seo_redirect_hits` (kind: redirect/not_found/suggested, from_path, to_path, referrer, search, user_agent, session_id, created_at). Indeksy: `from_path`, `(kind, created_at DESC)`, `created_at DESC`. RLS: anon+auth INSERT (publiczna analityka, kontrolowane minimum pól), admin SELECT/DELETE.
+- **Klient** `src/lib/seo/redirectLog.ts` — dwupoziomowy logger: lokalny sessionStorage (`/dev/seo-redirects`) + zdalny insert do Supabase. Deduplikacja per (sessionId, kind, from) w sessionStorage `cml:seo-redirect-remote-sent:v1` → jeden wpis na sesję per ścieżka (chroni przed StrictMode remountami). API: `logRedirectHit`, `logNotFoundHit`, `logSuggestedRedirectHit`. Best-effort — błędy zdalne tylko `console.debug`.
+- **NotFound**: fuzzy-match auto-redirect loguje teraz `logSuggestedRedirectHit` (kind=suggested) zamiast `logRedirectHit` — odróżnia w analityce „literówki uratowane przez fuzzy" od „realnie zmapowanych aliasów".
+- **UI** `src/components/admin/SeoRedirectAnalytics.tsx` — wstrzyknięty w `/admin/seo-redirects` między formularzem a tabelą. Tabs: 404 / Aliasy / Auto-fuzzy. TOP 20 per kategoria z hits/sessions/last_at, akcja „Map" (prefiluje formularz `from`) i „Utwardź" (prefiluje from+to z fuzzy → stały redirect). Window 30 dni, cache 60s, manual refresh.
