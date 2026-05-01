@@ -453,80 +453,76 @@ async function uploadOne({ accountId, list, headers }) {
     throw new Error(`Lista jest typu "${listMeta.kind}", oczekiwano "redirect"`);
   }
 
-  // Krok B: diff vs aktualna zawartość.
-  const remoteItems = await fetchAllListItems(baseUrl, headers);
-  const remoteMap = new Map();
-  for (const it of remoteItems) {
-    const r = it.redirect ?? {};
-    if (!r.source_url) continue;
-    remoteMap.set(r.source_url, {
-      target_url: r.target_url ?? "",
-      status_code: r.status_code ?? 301,
-      preserve_query_string: r.preserve_query_string ?? false,
-    });
-  }
-  const localMap = new Map();
-  for (const it of apiItems) {
-    const r = it.redirect;
-    localMap.set(r.source_url, {
-      target_url: r.target_url,
-      status_code: r.status_code,
-      preserve_query_string: r.preserve_query_string,
-    });
-  }
-
-  const remoteAdds = [];
-  const remoteChanges = [];
-  const remoteDeletes = [];
-  for (const [src, loc] of localMap) {
-    const rem = remoteMap.get(src);
-    if (!rem) {
-      remoteAdds.push({ src, to: loc.target_url });
-      continue;
-    }
-    const diffs = [];
-    if (rem.target_url !== loc.target_url) diffs.push(`target: ${rem.target_url} → ${loc.target_url}`);
-    if (rem.status_code !== loc.status_code) diffs.push(`status: ${rem.status_code} → ${loc.status_code}`);
-    if (rem.preserve_query_string !== loc.preserve_query_string)
-      diffs.push(`preserve_qs: ${rem.preserve_query_string} → ${loc.preserve_query_string}`);
-    if (diffs.length) remoteChanges.push({ src, diffs });
-  }
-  for (const [src, rem] of remoteMap) {
-    if (!localMap.has(src)) remoteDeletes.push({ src, to: rem.target_url });
-  }
-
-  const stats = {
-    adds: remoteAdds.length,
-    changes: remoteChanges.length,
-    deletes: remoteDeletes.length,
-    localCount: localMap.size,
+  // Krok B: diff vs aktualna zawartość (pomijany przy --clear bez --upload, bo
+  // i tak chcemy wszystko usunąć — diff byłby tylko szumem).
+  let stats = {
+    adds: 0,
+    changes: 0,
+    deletes: remoteMap.size,
+    localCount: 0,
     remoteCount: remoteMap.size,
   };
+  let remoteAdds = [];
+  let remoteChanges = [];
+  let remoteDeletes = [];
 
-  console.log(`\n📊 DIFF: Remote ${remoteMap.size} → Local ${localMap.size} (+${stats.adds}/~${stats.changes}/-${stats.deletes})`);
-  if (remoteAdds.length) {
-    console.log(`  ➕ DO DODANIA (${remoteAdds.length}):`);
-    for (const { src, to } of remoteAdds) console.log(`     + ${src}  →  ${to}`);
-  }
-  if (remoteChanges.length) {
-    console.log(`  🔄 DO ZMIANY (${remoteChanges.length}):`);
-    for (const { src, diffs } of remoteChanges) {
-      console.log(`     ~ ${src}`);
-      for (const d of diffs) console.log(`         · ${d}`);
+  if (UPLOAD) {
+    for (const [src, loc] of localMap) {
+      const rem = remoteMap.get(src);
+      if (!rem) {
+        remoteAdds.push({ src, to: loc.target_url });
+        continue;
+      }
+      const diffs = [];
+      if (rem.target_url !== loc.target_url) diffs.push(`target: ${rem.target_url} → ${loc.target_url}`);
+      if (rem.status_code !== loc.status_code) diffs.push(`status: ${rem.status_code} → ${loc.status_code}`);
+      if (rem.preserve_query_string !== loc.preserve_query_string)
+        diffs.push(`preserve_qs: ${rem.preserve_query_string} → ${loc.preserve_query_string}`);
+      if (diffs.length) remoteChanges.push({ src, diffs });
+    }
+    for (const [src, rem] of remoteMap) {
+      if (!localMap.has(src)) remoteDeletes.push({ src, to: rem.target_url });
+    }
+    stats = {
+      adds: remoteAdds.length,
+      changes: remoteChanges.length,
+      deletes: remoteDeletes.length,
+      localCount: localMap.size,
+      remoteCount: remoteMap.size,
+    };
+
+    console.log(`\n📊 DIFF: Remote ${remoteMap.size} → Local ${localMap.size} (+${stats.adds}/~${stats.changes}/-${stats.deletes})`);
+    if (remoteAdds.length) {
+      console.log(`  ➕ DO DODANIA (${remoteAdds.length}):`);
+      for (const { src, to } of remoteAdds) console.log(`     + ${src}  →  ${to}`);
+    }
+    if (remoteChanges.length) {
+      console.log(`  🔄 DO ZMIANY (${remoteChanges.length}):`);
+      for (const { src, diffs } of remoteChanges) {
+        console.log(`     ~ ${src}`);
+        for (const d of diffs) console.log(`         · ${d}`);
+      }
+    }
+    if (remoteDeletes.length) {
+      console.log(`  ➖ DO USUNIĘCIA (${remoteDeletes.length}):`);
+      for (const { src, to } of remoteDeletes) console.log(`     - ${src}  →  ${to}`);
+    }
+    if (!CLEAR && !remoteAdds.length && !remoteChanges.length && !remoteDeletes.length) {
+      console.log(`  ✓ Lista już zsynchronizowana — pomijam PUT.`);
+      return { status: "unchanged", stats, note: "lista już zsynchronizowana" };
     }
   }
-  if (remoteDeletes.length) {
-    console.log(`  ➖ DO USUNIĘCIA (${remoteDeletes.length}):`);
-    for (const { src, to } of remoteDeletes) console.log(`     - ${src}  →  ${to}`);
-  }
-  if (!remoteAdds.length && !remoteChanges.length && !remoteDeletes.length) {
-    console.log(`  ✓ Lista już zsynchronizowana — pomijam PUT.`);
-    return { status: "unchanged", stats, note: "lista już zsynchronizowana" };
-  }
 
-  // Krok B.2: confirm (per lista — jeśli admin chce część odrzucić).
+  // Krok B.2: confirm (per lista). --clear wymaga osobnej zgody, bo to destrukcyjne.
   if (!CONFIRM) {
-    console.log(`\n⚠️  PUT zastąpi całą listę "${list.label}": ${remoteMap.size} → ${localMap.size} reguł.`);
+    if (CLEAR) {
+      console.log(
+        `\n⚠️  --clear wykasuje WSZYSTKIE ${remoteMap.size} reguł z listy "${list.label}"` +
+          (UPLOAD ? `, a następnie załaduje ${localMap.size} nowych.` : `.`),
+      );
+    } else {
+      console.log(`\n⚠️  PUT zastąpi całą listę "${list.label}": ${remoteMap.size} → ${localMap.size} reguł.`);
+    }
     const ok = await promptYesNo(`   Kontynuować dla "${list.label}"? [y/N]: `);
     if (!ok) {
       console.log(`✗ Pominięto listę "${list.label}".`);
@@ -534,24 +530,70 @@ async function uploadOne({ accountId, list, headers }) {
     }
   }
 
-  // Krok C: PUT replace-all.
+  // Krok C0: --clear → PUT z pustą tablicą (wymazuje wszystkie items).
+  // Cloudflare przyjmuje `[]` jako prawidłowy body i zwraca operation_id.
+  if (CLEAR) {
+    if (remoteMap.size === 0) {
+      console.log(`→ --clear: lista już pusta, pomijam wymazanie.`);
+    } else {
+      console.log(`→ --clear: PUT ${baseUrl}/items z pustą tablicą (wymazuję ${remoteMap.size} reguł)`);
+      await replaceListItems({
+        baseUrl,
+        accountId,
+        headers,
+        items: [],
+        label: `clear ${list.label}`,
+      });
+      console.log(`✅ Lista "${list.label}" wyczyszczona.`);
+    }
+    if (!UPLOAD) {
+      // --clear bez --upload → kończymy tutaj. stats.localCount=0.
+      return {
+        status: "completed",
+        stats: { ...stats, adds: 0, changes: 0, localCount: 0 },
+        note: `wyczyszczone (${remoteMap.size} usuniętych)`,
+      };
+    }
+  }
+
+  // Krok C: PUT replace-all z apiItems.
   console.log(`→ PUT ${baseUrl}/items (${apiItems.length} reguł)`);
+  const result = await replaceListItems({
+    baseUrl,
+    accountId,
+    headers,
+    items: apiItems,
+    label: `PUT ${list.label}`,
+  });
+  if (result.status === "completed") {
+    console.log(`✅ Lista "${list.label}" zaktualizowana (${apiItems.length} reguł).`);
+    return { status: "completed", stats };
+  }
+  if (result.status === "timeout") {
+    return { status: "timeout", stats, note: `timeout po ${result.timeoutSec}s` };
+  }
+  // Sync (brak operation_id).
+  return { status: "completed", stats, note: "brak operation_id (sync)" };
+}
+
+// Wspólny helper: PUT /items + (opcjonalny) polling statusu operacji.
+// Używany zarówno przez --clear (items=[]) jak i właściwy upload.
+// Rzuca wyjątkiem przy HTTP error / failed; zwraca { status, timeoutSec? } przy success/timeout.
+async function replaceListItems({ baseUrl, accountId, headers, items, label }) {
   const putRes = await fetchWithRetry(
     `${baseUrl}/items`,
-    { method: "PUT", headers, body: JSON.stringify(apiItems) },
-    { label: `PUT ${list.label}` },
+    { method: "PUT", headers, body: JSON.stringify(items) },
+    { label },
   );
   const putJson = await putRes.json().catch(() => ({}));
   if (!putRes.ok || !putJson.success) {
     throw new Error(
-      `PUT HTTP ${putRes.status}: ${JSON.stringify(putJson.errors ?? putJson).slice(0, 200)}`,
+      `${label} HTTP ${putRes.status}: ${JSON.stringify(putJson.errors ?? putJson).slice(0, 200)}`,
     );
   }
   const operationId = putJson.result?.operation_id;
-  console.log(`✓ PUT zaakceptowane (operation_id=${operationId ?? "n/a"})`);
-
-  // Krok D: poll statusu operacji.
-  if (!operationId) return { status: "completed", stats, note: "brak operation_id (sync)" };
+  console.log(`  ✓ ${label} zaakceptowane (operation_id=${operationId ?? "n/a"})`);
+  if (!operationId) return { status: "sync" };
 
   const opUrl = `https://api.cloudflare.com/client/v4/accounts/${accountId}/rules/lists/bulk_operations/${operationId}`;
   const start = Date.now();
@@ -559,23 +601,18 @@ async function uploadOne({ accountId, list, headers }) {
   let lastStatus = "";
   while (Date.now() - start < TIMEOUT_MS) {
     await new Promise((r) => setTimeout(r, 2000));
-    const opRes = await fetchWithRetry(opUrl, { headers }, { label: `poll ${list.label}`, maxRetries: 3 });
+    const opRes = await fetchWithRetry(opUrl, { headers }, { label: `poll ${label}`, maxRetries: 3 });
     const opJson = await opRes.json().catch(() => ({}));
     const status = opJson.result?.status;
     if (status !== lastStatus) {
-      console.log(`  · status: ${status}${opJson.result?.error ? ` (${opJson.result.error})` : ""}`);
+      console.log(`    · status: ${status}${opJson.result?.error ? ` (${opJson.result.error})` : ""}`);
       lastStatus = status;
     }
-    if (status === "completed") {
-      console.log(`✅ Lista "${list.label}" zaktualizowana (${apiItems.length} reguł).`);
-      return { status: "completed", stats };
-    }
-    if (status === "failed") {
-      throw new Error(`Operacja failed: ${opJson.result?.error ?? "unknown"}`);
-    }
+    if (status === "completed") return { status: "completed" };
+    if (status === "failed") throw new Error(`${label} failed: ${opJson.result?.error ?? "unknown"}`);
   }
-  console.warn(`⚠️  Timeout (${TIMEOUT_MS / 1000}s) — sprawdź ręcznie w Dashboard.`);
-  return { status: "timeout", stats, note: `timeout po ${TIMEOUT_MS / 1000}s` };
+  console.warn(`  ⚠️  ${label}: timeout (${TIMEOUT_MS / 1000}s) — sprawdź ręcznie w Dashboard.`);
+  return { status: "timeout", timeoutSec: TIMEOUT_MS / 1000 };
 }
 
 function promptYesNo(question) {
