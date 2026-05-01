@@ -1,5 +1,6 @@
 import { useRef } from "react";
 import { Navigate, useLocation } from "react-router-dom";
+import { logRedirectHit } from "@/lib/seo/redirectLog";
 
 interface SeoRedirectProps {
   /** Ścieżka docelowa (np. "/dla-pacjenta/hemoroidy") albo absolute URL. */
@@ -91,6 +92,9 @@ const SeoRedirect = ({ to }: SeoRedirectProps) => {
   // ── Synchroniczna emisja w trakcie renderu (jednorazowo per mount) ──────────
   // Tworzymy tagi tylko raz na mount, zanim React commituje <Navigate>.
   if (typeof document !== "undefined" && snapshotRef.current === null && !isSelfRedirect) {
+    // Dev/diagnostyka: zarejestruj trafienie w starym URL → /dev/seo-redirects.
+    logRedirectHit(location.pathname, to);
+
     const ROBOTS_DIRECTIVE = "noindex, follow, noarchive";
     const ops: SnapshotEntry[] = [];
 
