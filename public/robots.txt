@@ -1,8 +1,69 @@
+# robots.txt — CML (Centrum Medycyny Laserowej)
+# Polityka indeksowania:
+#   - Cała publiczna treść otwarta dla głównych botów (Google, Bing, Twitter, Facebook).
+#   - Panel admina, strony deweloperskie i jednorazowe akcje z e-maili — zablokowane.
+#   - Vanity/aliasy z src/lib/seo/redirectsMap.ts — Disallow, żeby Google nie tracił crawl
+#     budgetu na meta-refresh redirecty (cel i tak ma <link rel="canonical"> + noindex źródła).
+
 User-agent: Googlebot
 Allow: /
+Disallow: /admin/
+Disallow: /dev/
+Disallow: /booking-action
+Disallow: /unsubscribe
+Disallow: /reminder-opt-out
+# Aliasy / vanity URLs (przekierowywane przez SeoRedirect na cele kanoniczne)
+Disallow: /hemoroidy$
+Disallow: /hemoroidi$
+Disallow: /hemeroidy$
+Disallow: /hemoroidy-leczenie$
+Disallow: /leczenie-hemoroidow$
+Disallow: /zylaki-odbytu$
+Disallow: /leczenie/hemoroidy$
+Disallow: /pajaczki$
+Disallow: /paj%C4%85czki$
+Disallow: /pajaczek$
+Disallow: /naczynka$
+Disallow: /teleangiektazje$
+Disallow: /clacs$
+Disallow: /leczenie/pajaczki$
+Disallow: /zylaki$
+Disallow: /%C5%BCylaki$
+Disallow: /zylak$
+Disallow: /zylaki-konczyn-dolnych$
+Disallow: /evlt$
+Disallow: /laser-zylaki$
+Disallow: /przetoka$
+Disallow: /przetoki$
+Disallow: /przetoka-odbytu$
+Disallow: /filac$
+Disallow: /leczenie/przetoka$
+Disallow: /torbiel$
+Disallow: /torbiel-pilonidalna$
+Disallow: /torbiel-wlosowa$
+Disallow: /zatoka-pilonidalna$
+Disallow: /silac$
+Disallow: /ginekomastia$
+Disallow: /gynekomastia$
+Disallow: /ginekomatia$
+Disallow: /gynecomastia$
+Disallow: /piersi-meskie$
+Disallow: /redukcja-piersi-mezczyzni$
+Disallow: /szczelina$
+Disallow: /szczelina-odbytu$
+Disallow: /lhp$
+Disallow: /proktolog$
+Disallow: /proktologia$
+Disallow: /flebolog$
+Disallow: /flebologia$
 
 User-agent: Bingbot
 Allow: /
+Disallow: /admin/
+Disallow: /dev/
+Disallow: /booking-action
+Disallow: /unsubscribe
+Disallow: /reminder-opt-out
 
 User-agent: Twitterbot
 Allow: /
@@ -12,6 +73,11 @@ Allow: /
 
 User-agent: *
 Allow: /
+Disallow: /admin/
+Disallow: /dev/
+Disallow: /booking-action
+Disallow: /unsubscribe
+Disallow: /reminder-opt-out
 
 Sitemap: https://bestcml.io/sitemap-index.xml
 Sitemap: https://bestcml.io/sitemap.xml
