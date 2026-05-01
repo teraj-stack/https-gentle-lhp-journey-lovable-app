@@ -19,9 +19,19 @@
  * Domena: cml.pl (zgodnie z core memory: "Must use https://cml.pl ONLY").
  *
  * Uruchom:
- *   node scripts/export-cloudflare-redirects.mjs              # pełny eksport
+ *   node scripts/export-cloudflare-redirects.mjs              # pełny eksport (pliki)
  *   node scripts/export-cloudflare-redirects.mjs --dry-run    # tylko walidacja + diff
  *   node scripts/export-cloudflare-redirects.mjs --dry-run --strict   # exit 1 przy warn (CI)
+ *   node scripts/export-cloudflare-redirects.mjs --upload     # eksport + PUT do Cloudflare
+ *   node scripts/export-cloudflare-redirects.mjs --upload --confirm   # bez interaktywnego pytania
+ *
+ * Upload wymaga env vars:
+ *   CF_API_TOKEN   — token z permission "Account / Account Filter Lists / Edit"
+ *   CF_ACCOUNT_ID  — ID konta Cloudflare
+ *   CF_LIST_ID     — ID listy Bulk Redirects (z URL Dashboard → Lists)
+ *
+ * Endpoint: PUT /accounts/{account_id}/rules/lists/{list_id}/items
+ *   — replace-all (zastępuje całą zawartość listy). Idempotentne.
  */
 import { writeFileSync, mkdirSync, readFileSync, existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -35,9 +45,13 @@ const DOMAIN = "https://cml.pl";
 // ── CLI flags ───────────────────────────────────────────────────────────────
 // --dry-run / -n  : nie zapisuj plików; pokaż diff vs poprzedni eksport + walidację.
 // --strict        : exit 1 przy ostrzeżeniach (przydatne w CI).
+// --upload        : po wygenerowaniu plików zrób PUT na Cloudflare API.
+// --confirm       : pomiń interaktywne pytanie przed PUT (CI / scripted runs).
 const ARGS = new Set(process.argv.slice(2));
 const DRY_RUN = ARGS.has("--dry-run") || ARGS.has("-n");
 const STRICT = ARGS.has("--strict");
+const UPLOAD = ARGS.has("--upload");
+const CONFIRM = ARGS.has("--confirm");
 
 // ── Parser: wyciąga tylko aktywne (niezakomentowane) wpisy { from, to, reason } ──
 const source = readFileSync(SRC, "utf8");
@@ -267,4 +281,138 @@ console.log(`✓ /mnt/documents/cloudflare-redirects.txt       (z powodami)`);
 console.log(`\nTop celów:`);
 for (const [to, n] of Object.entries(byTarget).sort((a, b) => b[1] - a[1]).slice(0, 8)) {
   console.log(`  ${n.toString().padStart(3)} → ${to}`);
+}
+
+// ── 5) Opcjonalny upload do Cloudflare API ─────────────────────────────────
+if (UPLOAD) {
+  await uploadToCloudflare();
+}
+
+async function uploadToCloudflare() {
+  const token = process.env.CF_API_TOKEN;
+  const accountId = process.env.CF_ACCOUNT_ID;
+  const listId = process.env.CF_LIST_ID;
+
+  console.log(`\n${"─".repeat(72)}\n☁️  Upload do Cloudflare API\n${"─".repeat(72)}`);
+
+  const missing = [];
+  if (!token) missing.push("CF_API_TOKEN");
+  if (!accountId) missing.push("CF_ACCOUNT_ID");
+  if (!listId) missing.push("CF_LIST_ID");
+  if (missing.length) {
+    console.error(`❌ Brak env vars: ${missing.join(", ")}`);
+    console.error(`   Ustaw je przed uruchomieniem, np.:`);
+    console.error(`     export CF_API_TOKEN="cf_xxx..."`);
+    console.error(`     export CF_ACCOUNT_ID="abc123..."`);
+    console.error(`     export CF_LIST_ID="def456..."`);
+    process.exit(1);
+  }
+
+  // Sanity: ID Cloudflare to zawsze 32-znakowe hex.
+  if (!/^[a-f0-9]{32}$/i.test(accountId)) {
+    console.error(`❌ CF_ACCOUNT_ID powinien być 32-znakowym hex (otrzymano długość ${accountId.length}).`);
+    process.exit(1);
+  }
+  if (!/^[a-f0-9]{32}$/i.test(listId)) {
+    console.error(`❌ CF_LIST_ID powinien być 32-znakowym hex (otrzymano długość ${listId.length}).`);
+    process.exit(1);
+  }
+
+  const baseUrl = `https://api.cloudflare.com/client/v4/accounts/${accountId}/rules/lists/${listId}`;
+  const headers = {
+    Authorization: `Bearer ${token}`,
+    "Content-Type": "application/json",
+  };
+
+  // Krok A: weryfikacja tokena + dostępu do listy (GET zamiast verify, żeby od razu sprawdzić scope).
+  console.log(`→ GET ${baseUrl} (sanity check tokena i listy)`);
+  const checkRes = await fetch(baseUrl, { headers });
+  const checkJson = await checkRes.json().catch(() => ({}));
+  if (!checkRes.ok || !checkJson.success) {
+    console.error(`❌ Sanity check failed: HTTP ${checkRes.status}`);
+    console.error(`   Cloudflare errors:`, JSON.stringify(checkJson.errors ?? checkJson, null, 2));
+    if (checkRes.status === 401 || checkRes.status === 403) {
+      console.error(`   → Sprawdź czy token ma permission "Account / Account Filter Lists / Edit".`);
+    }
+    if (checkRes.status === 404) {
+      console.error(`   → Lista o ID ${listId} nie istnieje na koncie ${accountId}.`);
+    }
+    process.exit(1);
+  }
+  const listMeta = checkJson.result ?? {};
+  console.log(`✓ Lista "${listMeta.name ?? "?"}" (kind=${listMeta.kind ?? "?"}, items=${listMeta.num_items ?? "?"})`);
+  if (listMeta.kind && listMeta.kind !== "redirect") {
+    console.error(`❌ Lista jest typu "${listMeta.kind}", a my wysyłamy reguły redirect. Przerywam.`);
+    process.exit(1);
+  }
+
+  // Krok B: interaktywne potwierdzenie (replace-all jest destrukcyjne).
+  if (!CONFIRM) {
+    console.log(`\n⚠️  PUT zastąpi ${listMeta.num_items ?? "?"} obecnych reguł na ${apiItems.length} nowych.`);
+    console.log(`   Aby kontynuować bez tego pytania użyj --confirm.`);
+    const ok = await promptYesNo(`   Kontynuować? [y/N]: `);
+    if (!ok) {
+      console.log(`✗ Anulowano przez użytkownika.`);
+      process.exit(0);
+    }
+  }
+
+  // Krok C: PUT — replace-all. Cloudflare zwraca operation_id; status async warto sprawdzić.
+  console.log(`→ PUT ${baseUrl}/items (${apiItems.length} reguł)`);
+  // Cloudflare API oczekuje płaskiej tablicy `[{ redirect: {...} }, ...]` jako body.
+  const putRes = await fetch(`${baseUrl}/items`, {
+    method: "PUT",
+    headers,
+    body: JSON.stringify(apiItems),
+  });
+  const putJson = await putRes.json().catch(() => ({}));
+  if (!putRes.ok || !putJson.success) {
+    console.error(`❌ Upload failed: HTTP ${putRes.status}`);
+    console.error(`   Cloudflare errors:`, JSON.stringify(putJson.errors ?? putJson, null, 2));
+    if (putJson.messages?.length) {
+      console.error(`   Messages:`, JSON.stringify(putJson.messages, null, 2));
+    }
+    process.exit(1);
+  }
+
+  const operationId = putJson.result?.operation_id;
+  console.log(`✓ PUT zaakceptowane (operation_id=${operationId ?? "n/a"})`);
+
+  // Krok D: poll status operacji (Cloudflare przetwarza listy asynchronicznie).
+  if (operationId) {
+    const opUrl = `https://api.cloudflare.com/client/v4/accounts/${accountId}/rules/lists/bulk_operations/${operationId}`;
+    const start = Date.now();
+    const TIMEOUT_MS = 60_000;
+    let lastStatus = "";
+    while (Date.now() - start < TIMEOUT_MS) {
+      await new Promise((r) => setTimeout(r, 2000));
+      const opRes = await fetch(opUrl, { headers });
+      const opJson = await opRes.json().catch(() => ({}));
+      const status = opJson.result?.status;
+      if (status !== lastStatus) {
+        console.log(`  · status: ${status}${opJson.result?.error ? ` (${opJson.result.error})` : ""}`);
+        lastStatus = status;
+      }
+      if (status === "completed") {
+        console.log(`✅ Lista zaktualizowana pomyślnie (${apiItems.length} reguł aktywnych).`);
+        return;
+      }
+      if (status === "failed") {
+        console.error(`❌ Operacja nie powiodła się: ${opJson.result?.error ?? "unknown"}`);
+        process.exit(1);
+      }
+    }
+    console.warn(`⚠️  Timeout (${TIMEOUT_MS / 1000}s) przy oczekiwaniu na completion. Sprawdź ręcznie w Dashboard.`);
+  }
+}
+
+function promptYesNo(question) {
+  return new Promise((resolve) => {
+    process.stdout.write(question);
+    process.stdin.setEncoding("utf8");
+    process.stdin.once("data", (data) => {
+      const ans = String(data).trim().toLowerCase();
+      resolve(ans === "y" || ans === "yes");
+    });
+  });
 }
