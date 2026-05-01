@@ -634,23 +634,51 @@ const Header = () => {
                     {col.title}
                   </div>
                   <ul className="space-y-0.5">
-                    {col.items.map((item) => (
-                      <li key={item.href}>
-                        <Link
-                          to={item.href}
-                          role="menuitem"
-                          onClick={handleMegaLinkClick}
-                          onPointerUp={handleMegaLinkPointerUp}
-                          className={`block px-2 py-1.5 rounded-md text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:bg-accent/50 ${
-                            isActive(item.href)
-                              ? "text-primary bg-accent/50 font-medium"
-                              : "text-foreground/80 hover:text-primary hover:bg-accent/40"
-                          }`}
+                    {col.items.map((item) => {
+                      const featured = item.featured;
+                      return (
+                        <li
+                          key={item.href}
+                          className={featured ? "mt-1.5 pt-1.5 border-t border-border/60" : undefined}
                         >
-                          {item.label}
-                        </Link>
-                      </li>
-                    ))}
+                          <Link
+                            to={item.href}
+                            role="menuitem"
+                            onClick={handleMegaLinkClick}
+                            onPointerUp={handleMegaLinkPointerUp}
+                            aria-label={
+                              featured && item.desc ? `${item.label} — ${item.desc}` : undefined
+                            }
+                            className={`group/featured block px-2 py-1.5 rounded-md text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:bg-accent/50 ${
+                              isActive(item.href)
+                                ? "text-primary bg-accent/50 font-medium"
+                                : featured
+                                  ? "text-primary/95 bg-accent/25 hover:bg-accent/50 hover:text-primary font-medium"
+                                  : "text-foreground/80 hover:text-primary hover:bg-accent/40"
+                            }`}
+                          >
+                            {featured ? (
+                              <>
+                                <span className="flex items-center gap-1.5">
+                                  <span className="truncate">{item.label}</span>
+                                  <ArrowRight
+                                    className="w-3.5 h-3.5 shrink-0 transition-transform duration-200 group-hover/featured:translate-x-0.5"
+                                    aria-hidden="true"
+                                  />
+                                </span>
+                                {item.desc && (
+                                  <span className="block text-[11px] text-muted-foreground mt-0.5 font-normal">
+                                    {item.desc}
+                                  </span>
+                                )}
+                              </>
+                            ) : (
+                              item.label
+                            )}
+                          </Link>
+                        </li>
+                      );
+                    })}
                   </ul>
                 </div>
               ))}
