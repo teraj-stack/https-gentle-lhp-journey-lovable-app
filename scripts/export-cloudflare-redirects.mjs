@@ -552,3 +552,26 @@ function sleep(ms) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
+// ── Pobiera wszystkie items z listy Cloudflare (paginacja cursor-based) ────
+// GET /accounts/{id}/rules/lists/{id}/items?per_page=25&cursor=...
+// Zwraca tablicę surowych obiektów { redirect: {...}, ...metadata }.
+async function fetchAllListItems(baseUrl, headers) {
+  const all = [];
+  let cursor = "";
+  // Zabezpieczenie przed nieskończoną pętlą (max ~10 000 items = 400 stron).
+  for (let page = 0; page < 400; page++) {
+    const url = `${baseUrl}/items?per_page=25${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ""}`;
+    const res = await fetchWithRetry(url, { headers }, { label: `GET items page ${page + 1}`, maxRetries: 4 });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok || !json.success) {
+      console.error(`❌ Nie udało się pobrać listy items z Cloudflare: HTTP ${res.status}`);
+      console.error(`   Errors:`, JSON.stringify(json.errors ?? json, null, 2));
+      process.exit(1);
+    }
+    if (Array.isArray(json.result)) all.push(...json.result);
+    cursor = json.result_info?.cursors?.after ?? "";
+    if (!cursor) break;
+  }
+  return all;
+}
+
