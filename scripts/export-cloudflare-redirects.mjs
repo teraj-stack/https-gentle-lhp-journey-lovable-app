@@ -89,6 +89,20 @@ const JSON_REPORT_PATH = (() => {
   if (ARGS.has("--json")) return process.env.CF_REPORT_JSON || "/mnt/documents/cloudflare-report.json";
   return process.env.CF_REPORT_JSON || null;
 })();
+// --html[=path]   : zapisz dodatkowo czytelny raport HTML (te same dane co JSON,
+//                    z tabelami diff/clear/upload). Bez ścieżki: pochodna od JSON
+//                    (ta sama nazwa, rozszerzenie .html) lub /mnt/documents/cloudflare-report.html.
+//                    Alternatywnie: env CF_REPORT_HTML=/path/to/report.html.
+const HTML_REPORT_PATH = (() => {
+  const withValue = RAW_ARGS.find((a) => a.startsWith("--html="));
+  if (withValue) return withValue.slice("--html=".length).trim() || null;
+  if (ARGS.has("--html") || process.env.CF_REPORT_HTML) {
+    if (process.env.CF_REPORT_HTML) return process.env.CF_REPORT_HTML;
+    if (JSON_REPORT_PATH) return JSON_REPORT_PATH.replace(/\.json$/i, "") + ".html";
+    return "/mnt/documents/cloudflare-report.html";
+  }
+  return null;
+})();
 
 // Pisze minimalny raport "abort" (counts=0, brak operacji) i kończy proces.
 // Używane gdy skrypt nie może wystartować (--help, brak env, brak entries),
