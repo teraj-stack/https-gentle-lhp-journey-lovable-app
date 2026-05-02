@@ -82,12 +82,75 @@ const UPLOAD = ARGS.has("--upload");
 const CONFIRM = ARGS.has("--confirm");
 const CLEAR = ARGS.has("--clear");
 const YES_CLEAR = ARGS.has("--yes-clear") || process.env.CF_CLEAR_CONFIRM === "CLEAR";
+const HELP = ARGS.has("--help") || ARGS.has("-h");
 const JSON_REPORT_PATH = (() => {
   const withValue = RAW_ARGS.find((a) => a.startsWith("--json="));
   if (withValue) return withValue.slice("--json=".length).trim() || null;
   if (ARGS.has("--json")) return process.env.CF_REPORT_JSON || "/mnt/documents/cloudflare-report.json";
   return process.env.CF_REPORT_JSON || null;
 })();
+
+// Pisze minimalny raport "abort" (counts=0, brak operacji) i kończy proces.
+// Używane gdy skrypt nie może wystartować (--help, brak env, brak entries),
+// ale użytkownik podał --json — CI musi mieć artefakt do zarchiwizowania.
+// Schema kompatybilny ze standardowym raportem (te same pola top-level),
+// z dodatkowym `aborted: { reason, detail, exit_code }`.
+function writeAbortReportAndExit(reason, detail, exitCode = 1) {
+  if (JSON_REPORT_PATH) {
+    try {
+      const stub = {
+        schema_version: typeof REPORT_SCHEMA_VERSION === "string" ? REPORT_SCHEMA_VERSION : "1.1",
+        generated_at: new Date().toISOString(),
+        domain: typeof DOMAIN === "string" ? DOMAIN : null,
+        flags: {
+          dry_run: !!DRY_RUN,
+          clear: !!CLEAR,
+          upload: !!UPLOAD,
+          strict: !!STRICT,
+          confirm: !!CONFIRM,
+          yes_clear: !!YES_CLEAR,
+          help: !!HELP,
+        },
+        totals: {
+          lists: 0,
+          by_status: { completed: 0, unchanged: 0, skipped: 0, failed: 0, timeout: 0 },
+          operations: { total: 0, by_status: {} },
+        },
+        lists: [],
+        aborted: { reason, detail: detail ?? null, exit_code: exitCode },
+      };
+      if (typeof validateReport === "function") stub._validation = validateReport(stub);
+      const dir = dirname(resolve(JSON_REPORT_PATH));
+      mkdirSync(dir, { recursive: true });
+      writeFileSync(JSON_REPORT_PATH, JSON.stringify(stub, null, 2) + "\n", "utf8");
+      console.error(`📄 Raport JSON (abort: ${reason}) zapisany: ${JSON_REPORT_PATH}`);
+    } catch (err) {
+      console.error(`⚠️  Nie udało się zapisać abort-raportu JSON: ${err?.message ?? err}`);
+    }
+  }
+  process.exit(exitCode);
+}
+
+if (HELP) {
+  console.log(
+    [
+      "Użycie: node scripts/export-cloudflare-redirects.mjs [opcje]",
+      "",
+      "Opcje:",
+      "  --dry-run, -n        Pokaż diff/plan bez wykonywania PUT.",
+      "  --upload             Wgraj nowe reguły na Cloudflare (PUT /items).",
+      "  --confirm            Pomiń interaktywne potwierdzenie (nie dotyczy --clear).",
+      "  --clear              Wyczyść listę przed uploadem (wymaga 'CLEAR' lub --yes-clear).",
+      "  --yes-clear          Akceptuj --clear w trybie non-interactive (CI).",
+      "  --strict             Traktuj warningi jako błędy.",
+      "  --json[=path]        Zapisz raport JSON (domyślnie /mnt/documents/cloudflare-report.json).",
+      "  --help, -h           Pokaż tę pomoc.",
+      "",
+      "Env: CF_API_TOKEN, CF_ACCOUNT_ID, CF_LIST_ID, CF_REPORT_JSON, CF_CLEAR_CONFIRM.",
+    ].join("\n"),
+  );
+  writeAbortReportAndExit("help", "User requested --help; no operations executed.", 0);
+}
 
 // ── Parser: wyciąga tylko aktywne (niezakomentowane) wpisy { from, to, reason } ──
 const source = readFileSync(SRC, "utf8");
