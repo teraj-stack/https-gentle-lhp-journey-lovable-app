@@ -802,6 +802,25 @@ async function replaceListItems({ baseUrl, accountId, headers, items, label }) {
   return { status: "timeout", operationId, timeoutSec: TIMEOUT_MS / 1000 };
 }
 
+// Wymaga wpisania DOKŁADNIE podanej frazy (case-sensitive, trim wokoło).
+// Zwraca true gdy wpisano `expected`, w przeciwnym razie false.
+// Używane do destrukcyjnych operacji typu --clear, gdzie zwykłe y/N to za mało.
+function promptExactPhrase(question, expected) {
+  return new Promise((resolve) => {
+    process.stdout.write(question);
+    process.stdin.setEncoding("utf8");
+    process.stdin.once("data", (data) => {
+      const ans = String(data).replace(/\r?\n$/, "").trim();
+      if (ans === expected) {
+        resolve(true);
+      } else {
+        console.log(`   ✗ Wpisano "${ans}" — oczekiwano dokładnie "${expected}". Anuluję.`);
+        resolve(false);
+      }
+    });
+  });
+}
+
 function promptYesNo(question) {
   return new Promise((resolve) => {
     process.stdout.write(question);
