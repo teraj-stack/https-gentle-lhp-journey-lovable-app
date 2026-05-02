@@ -107,7 +107,7 @@ function writeAbortReportAndExit(reason, detail, exitCode = 1) {
       const stub = {
         schema_version: schemaVer,
         generated_at: new Date().toISOString(),
-        domain: typeof DOMAIN === "string" ? DOMAIN : null,
+        domain: domainVal,
         flags: {
           dry_run: !!DRY_RUN,
           clear: !!CLEAR,
