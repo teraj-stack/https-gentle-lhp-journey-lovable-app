@@ -27,6 +27,8 @@
  *   node scripts/export-cloudflare-redirects.mjs --clear --upload    # wyczyść listę i wgraj nowe
  *   node scripts/export-cloudflare-redirects.mjs --clear              # tylko wyczyść (bez uploadu)
  *   node scripts/export-cloudflare-redirects.mjs --clear --dry-run    # podgląd: ile reguł zostanie usuniętych (bez PUT)
+ *   node scripts/export-cloudflare-redirects.mjs --clear --yes-clear   # CI: pomiń pytanie "wpisz CLEAR"
+ *   CF_CLEAR_CONFIRM=CLEAR node scripts/export-cloudflare-redirects.mjs --clear  # alternatywa env var
  *
  * Upload wymaga env vars:
  *   CF_API_TOKEN   — token z permission "Account / Account Filter Lists / Edit"
@@ -54,18 +56,25 @@ const DOMAIN = "https://cml.pl";
 // --dry-run / -n  : nie zapisuj plików; pokaż diff vs poprzedni eksport + walidację.
 // --strict        : exit 1 przy ostrzeżeniach (przydatne w CI).
 // --upload        : po wygenerowaniu plików zrób PUT na Cloudflare API.
-// --confirm       : pomiń interaktywne pytanie przed PUT (CI / scripted runs).
+// --confirm       : pomiń interaktywne pytanie przed (nie-destrukcyjnym) PUT-em uploadu.
+//                    UWAGA: --confirm SAM W SOBIE NIE WYSTARCZA dla --clear.
 // --clear         : przed PUT-em z apiItems wyczyść listę (PUT z pustą tablicą).
 //                    Razem z --upload daje "świeży reset". Sam (bez --upload)
 //                    tylko czyści listę i kończy — przydatne np. przy migracji.
 //                    Razem z --dry-run pokazuje ile reguł zostanie usuniętych
 //                    (i dodanych, jeśli też --upload), ale nie wykonuje żadnego PUT.
+//                    Tryb interaktywny: skrypt ZAWSZE prosi o wpisanie dokładnie
+//                    słowa "CLEAR" (case-sensitive) per lista — `y/yes` nie wystarczy.
+//                    Tryb non-interactive (CI / scripted): wymagana jest jawna flaga
+//                    --yes-clear LUB env `CF_CLEAR_CONFIRM=CLEAR` (samo --confirm
+//                    nie wystarczy, żeby uniknąć przypadkowego wymazania w pipeline).
 const ARGS = new Set(process.argv.slice(2));
 const DRY_RUN = ARGS.has("--dry-run") || ARGS.has("-n");
 const STRICT = ARGS.has("--strict");
 const UPLOAD = ARGS.has("--upload");
 const CONFIRM = ARGS.has("--confirm");
 const CLEAR = ARGS.has("--clear");
+const YES_CLEAR = ARGS.has("--yes-clear") || process.env.CF_CLEAR_CONFIRM === "CLEAR";
 
 // ── Parser: wyciąga tylko aktywne (niezakomentowane) wpisy { from, to, reason } ──
 const source = readFileSync(SRC, "utf8");
@@ -623,16 +632,39 @@ async function uploadOne({ accountId, list, headers }) {
     };
   }
 
-  // Krok B.2: confirm (per lista). --clear wymaga osobnej zgody, bo to destrukcyjne.
-  if (!CONFIRM) {
-    if (CLEAR) {
-      console.log(
-        `\n⚠️  --clear wykasuje WSZYSTKIE ${remoteMap.size} reguł z listy "${list.label}"` +
-          (UPLOAD ? `, a następnie załaduje ${localMap.size} nowych.` : `.`),
+  // Krok B.2: confirm (per lista). --clear zawsze wymaga DODATKOWEJ, jawnej zgody —
+  // samo --confirm nie wystarcza, żeby uniknąć przypadkowego wymazania w CI/skrypcie.
+  if (CLEAR) {
+    console.log(
+      `\n⚠️  --clear wykasuje WSZYSTKIE ${remoteMap.size} reguł z listy "${list.label}" (${list.id})` +
+        (UPLOAD ? `, a następnie załaduje ${localMap.size} nowych.` : `.`),
+    );
+    console.log(`   ⛔ Operacja DESTRUKCYJNA i NIEODWRACALNA.`);
+
+    if (YES_CLEAR) {
+      console.log(`   ✓ --yes-clear / CF_CLEAR_CONFIRM=CLEAR — pomijam pytanie interaktywne.`);
+    } else if (process.stdin.isTTY) {
+      const phrase = await promptExactPhrase(
+        `   Aby potwierdzić, wpisz dokładnie słowo CLEAR (case-sensitive) dla "${list.label}": `,
+        "CLEAR",
       );
+      if (!phrase) {
+        console.log(`✗ Pominięto listę "${list.label}" — nie wpisano "CLEAR".`);
+        return { status: "skipped", stats, note: 'brak potwierdzenia "CLEAR"' };
+      }
     } else {
-      console.log(`\n⚠️  PUT zastąpi całą listę "${list.label}": ${remoteMap.size} → ${localMap.size} reguł.`);
+      console.error(
+        `   ❌ Tryb non-interactive (brak TTY) — wymagana jawna flaga --yes-clear ` +
+          `LUB env CF_CLEAR_CONFIRM=CLEAR. --confirm tu NIE wystarcza.`,
+      );
+      return {
+        status: "skipped",
+        stats,
+        note: "non-interactive bez --yes-clear/CF_CLEAR_CONFIRM",
+      };
     }
+  } else if (!CONFIRM) {
+    console.log(`\n⚠️  PUT zastąpi całą listę "${list.label}": ${remoteMap.size} → ${localMap.size} reguł.`);
     const ok = await promptYesNo(`   Kontynuować dla "${list.label}"? [y/N]: `);
     if (!ok) {
       console.log(`✗ Pominięto listę "${list.label}".`);
@@ -770,6 +802,25 @@ async function replaceListItems({ baseUrl, accountId, headers, items, label }) {
   }
   console.warn(`  ⚠️  ${label}: timeout (${TIMEOUT_MS / 1000}s) — sprawdź ręcznie w Dashboard.`);
   return { status: "timeout", operationId, timeoutSec: TIMEOUT_MS / 1000 };
+}
+
+// Wymaga wpisania DOKŁADNIE podanej frazy (case-sensitive, trim wokoło).
+// Zwraca true gdy wpisano `expected`, w przeciwnym razie false.
+// Używane do destrukcyjnych operacji typu --clear, gdzie zwykłe y/N to za mało.
+function promptExactPhrase(question, expected) {
+  return new Promise((resolve) => {
+    process.stdout.write(question);
+    process.stdin.setEncoding("utf8");
+    process.stdin.once("data", (data) => {
+      const ans = String(data).replace(/\r?\n$/, "").trim();
+      if (ans === expected) {
+        resolve(true);
+      } else {
+        console.log(`   ✗ Wpisano "${ans}" — oczekiwano dokładnie "${expected}". Anuluję.`);
+        resolve(false);
+      }
+    });
+  });
 }
 
 function promptYesNo(question) {
