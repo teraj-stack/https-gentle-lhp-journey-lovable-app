@@ -481,61 +481,149 @@ async function uploadToCloudflare() {
   }
 }
 
+// Aktualna wersja schematu raportu JSON. Bump przy każdej zmianie kontraktu.
+//   "1"   — początkowa wersja
+//   "1.1" — dodano _validation { ok, issues[] } + placeholdery dla braków
+const REPORT_SCHEMA_VERSION = "1.1";
+
+// Definicja wymaganych pól na każdym poziomie. Używana przez validateReport,
+// żeby brakujące/niewłaściwe pola trafiły do _validation.issues, ale zapis
+// pliku nadal nastąpił (best-effort dla CI).
+const REPORT_REQUIRED = {
+  top: ["schema_version", "generated_at", "domain", "flags", "totals", "lists"],
+  flags: ["dry_run", "clear", "upload", "strict"],
+  totals: ["lists", "by_status", "operations"],
+  list: ["label", "id", "status"],
+  operation: ["phase", "status"],
+};
+
+function validateReport(report) {
+  const issues = [];
+  const push = (path, msg) => issues.push({ path, message: msg });
+
+  for (const f of REPORT_REQUIRED.top) {
+    if (report[f] === undefined || report[f] === null) push(f, "missing required field");
+  }
+  if (report.schema_version && report.schema_version !== REPORT_SCHEMA_VERSION) {
+    push("schema_version", `expected "${REPORT_SCHEMA_VERSION}", got "${report.schema_version}"`);
+  }
+  if (report.generated_at && Number.isNaN(Date.parse(report.generated_at))) {
+    push("generated_at", "not a valid ISO timestamp");
+  }
+  if (report.flags && typeof report.flags === "object") {
+    for (const f of REPORT_REQUIRED.flags) {
+      if (typeof report.flags[f] !== "boolean") push(`flags.${f}`, "missing or not boolean");
+    }
+  }
+  if (report.totals && typeof report.totals === "object") {
+    for (const f of REPORT_REQUIRED.totals) {
+      if (report.totals[f] === undefined || report.totals[f] === null) {
+        push(`totals.${f}`, "missing required field");
+      }
+    }
+  }
+  if (Array.isArray(report.lists)) {
+    report.lists.forEach((l, i) => {
+      for (const f of REPORT_REQUIRED.list) {
+        if (l[f] === undefined || l[f] === null || l[f] === "") {
+          push(`lists[${i}].${f}`, "missing required field");
+        }
+      }
+      if (Array.isArray(l.operations)) {
+        l.operations.forEach((op, j) => {
+          for (const f of REPORT_REQUIRED.operation) {
+            if (op[f] === undefined || op[f] === null) {
+              push(`lists[${i}].operations[${j}].${f}`, "missing required field");
+            }
+          }
+        });
+      }
+    });
+  } else if (report.lists !== undefined) {
+    push("lists", "must be an array");
+  }
+  return { ok: issues.length === 0, issues };
+}
+
 // Zapisuje ustrukturyzowany raport JSON dla multi-list flow.
-// Schema (stabilna — bezpieczna dla parsowania w CI / dashboardach):
-//   {
-//     schema_version: "1",
-//     generated_at: ISO,
-//     domain, dry_run, clear, upload, strict, json_report_path,
-//     totals: { lists: N, completed, unchanged, skipped, failed, timeout,
-//               operations: { total, completed, failed, timeout, sync, skipped } },
-//     lists: [{
-//       label, id, status, note?, error?,
-//       stats: { adds, changes, deletes, localCount, remoteCount, details: {...} },
-//       operations: [{ phase, status, operationId, error?, timeoutSec?, note? }]
-//     }]
-//   }
+// Schema "1.1": top-level + per-list pola wymagane (patrz REPORT_REQUIRED).
+// Wynik validateReport trafia do report._validation. Plik jest zapisywany
+// ZAWSZE (nawet przy brakach), żeby CI mógł go zarchiwizować i pokazać issues.
 function writeJsonReport(targetPath, results, counts, allOps) {
-  const opCounts = allOps.reduce((acc, op) => {
-    acc[op.status] = (acc[op.status] ?? 0) + 1;
-    return acc;
-  }, {});
-  const report = {
-    schema_version: "1",
-    generated_at: new Date().toISOString(),
-    domain: DOMAIN,
-    flags: {
-      dry_run: DRY_RUN,
-      clear: CLEAR,
-      upload: UPLOAD,
-      strict: STRICT,
-      confirm: CONFIRM,
-      yes_clear: YES_CLEAR,
-    },
-    totals: {
-      lists: results.length,
-      by_status: { ...counts },
-      operations: {
-        total: allOps.length,
-        by_status: opCounts,
-      },
-    },
-    lists: results.map((r) => ({
-      label: r.label,
-      id: r.id,
-      status: r.status,
-      note: r.note ?? null,
-      error: r.error ?? null,
-      stats: r.stats ?? null,
-      operations: Array.isArray(r.operations) ? r.operations : [],
-    })),
-  };
+  let report;
   try {
-    // Best-effort utworzenie katalogu (np. /mnt/documents/sub/foo.json).
+    const opCounts = (allOps ?? []).reduce((acc, op) => {
+      const s = op?.status ?? "unknown";
+      acc[s] = (acc[s] ?? 0) + 1;
+      return acc;
+    }, {});
+    report = {
+      schema_version: REPORT_SCHEMA_VERSION,
+      generated_at: new Date().toISOString(),
+      domain: DOMAIN ?? null,
+      flags: {
+        dry_run: !!DRY_RUN,
+        clear: !!CLEAR,
+        upload: !!UPLOAD,
+        strict: !!STRICT,
+        confirm: !!CONFIRM,
+        yes_clear: !!YES_CLEAR,
+      },
+      totals: {
+        lists: Array.isArray(results) ? results.length : 0,
+        by_status: { ...(counts ?? {}) },
+        operations: {
+          total: Array.isArray(allOps) ? allOps.length : 0,
+          by_status: opCounts,
+        },
+      },
+      lists: Array.isArray(results)
+        ? results.map((r) => ({
+            label: r?.label ?? null,
+            id: r?.id ?? null,
+            status: r?.status ?? "unknown",
+            note: r?.note ?? null,
+            error: r?.error ?? null,
+            stats: r?.stats ?? null,
+            operations: Array.isArray(r?.operations) ? r.operations : [],
+          }))
+        : [],
+    };
+  } catch (err) {
+    // Awaryjny minimalny raport — nigdy nie blokujemy zapisu.
+    report = {
+      schema_version: REPORT_SCHEMA_VERSION,
+      generated_at: new Date().toISOString(),
+      domain: DOMAIN ?? null,
+      flags: {},
+      totals: { lists: 0, by_status: {}, operations: { total: 0, by_status: {} } },
+      lists: [],
+      _build_error: err?.message ?? String(err),
+    };
+  }
+
+  report._validation = validateReport(report);
+  if (!report._validation.ok) {
+    console.error(
+      `⚠️  Raport JSON ma ${report._validation.issues.length} problem(ów) walidacji ` +
+        `(schema_version=${REPORT_SCHEMA_VERSION}). Plik zostanie zapisany mimo to.`,
+    );
+    for (const issue of report._validation.issues.slice(0, 10)) {
+      console.error(`   • ${issue.path}: ${issue.message}`);
+    }
+    if (report._validation.issues.length > 10) {
+      console.error(`   … i ${report._validation.issues.length - 10} więcej (zobacz _validation w pliku).`);
+    }
+  }
+
+  try {
     const dir = dirname(resolve(targetPath));
     mkdirSync(dir, { recursive: true });
     writeFileSync(targetPath, JSON.stringify(report, null, 2) + "\n", "utf8");
-    console.log(`\n📄 Raport JSON zapisany: ${targetPath}`);
+    console.log(
+      `\n📄 Raport JSON zapisany: ${targetPath} ` +
+        `(schema=${REPORT_SCHEMA_VERSION}, validation=${report._validation.ok ? "ok" : "issues"})`,
+    );
   } catch (err) {
     console.error(`⚠️  Nie udało się zapisać raportu JSON do ${targetPath}: ${err?.message ?? err}`);
   }
