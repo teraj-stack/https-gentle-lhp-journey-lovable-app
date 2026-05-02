@@ -132,6 +132,7 @@ function writeAbortReportAndExit(reason, detail, exitCode = 1) {
       try { domainVal = typeof DOMAIN === "string" ? DOMAIN : null; } catch { /* TDZ */ }
       stub = {
         schema_version: schemaVer,
+        run_id: RUN_ID,
         generated_at: new Date().toISOString(),
         domain: domainVal,
         flags: {
