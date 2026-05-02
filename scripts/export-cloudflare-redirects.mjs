@@ -58,6 +58,8 @@ const DOMAIN = "https://cml.pl";
 // --clear         : przed PUT-em z apiItems wyczyść listę (PUT z pustą tablicą).
 //                    Razem z --upload daje "świeży reset". Sam (bez --upload)
 //                    tylko czyści listę i kończy — przydatne np. przy migracji.
+//                    Razem z --dry-run pokazuje ile reguł zostanie usuniętych
+//                    (i dodanych, jeśli też --upload), ale nie wykonuje żadnego PUT.
 const ARGS = new Set(process.argv.slice(2));
 const DRY_RUN = ARGS.has("--dry-run") || ARGS.has("-n");
 const STRICT = ARGS.has("--strict");
