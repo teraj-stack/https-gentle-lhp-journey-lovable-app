@@ -82,12 +82,83 @@ const UPLOAD = ARGS.has("--upload");
 const CONFIRM = ARGS.has("--confirm");
 const CLEAR = ARGS.has("--clear");
 const YES_CLEAR = ARGS.has("--yes-clear") || process.env.CF_CLEAR_CONFIRM === "CLEAR";
+const HELP = ARGS.has("--help") || ARGS.has("-h");
 const JSON_REPORT_PATH = (() => {
   const withValue = RAW_ARGS.find((a) => a.startsWith("--json="));
   if (withValue) return withValue.slice("--json=".length).trim() || null;
   if (ARGS.has("--json")) return process.env.CF_REPORT_JSON || "/mnt/documents/cloudflare-report.json";
   return process.env.CF_REPORT_JSON || null;
 })();
+
+// Pisze minimalny raport "abort" (counts=0, brak operacji) i kończy proces.
+// Używane gdy skrypt nie może wystartować (--help, brak env, brak entries),
+// ale użytkownik podał --json — CI musi mieć artefakt do zarchiwizowania.
+// Schema kompatybilny ze standardowym raportem (te same pola top-level),
+// z dodatkowym `aborted: { reason, detail, exit_code }`.
+function writeAbortReportAndExit(reason, detail, exitCode = 1) {
+  if (JSON_REPORT_PATH) {
+    try {
+      // Defensive: REPORT_SCHEMA_VERSION may be in TDZ if abort happens during
+      // module top-level evaluation; fall back to literal "1.1".
+      let schemaVer = "1.1";
+      try { schemaVer = REPORT_SCHEMA_VERSION; } catch { /* TDZ — keep fallback */ }
+      let domainVal = null;
+      try { domainVal = typeof DOMAIN === "string" ? DOMAIN : null; } catch { /* TDZ */ }
+      const stub = {
+        schema_version: schemaVer,
+        generated_at: new Date().toISOString(),
+        domain: domainVal,
+        flags: {
+          dry_run: !!DRY_RUN,
+          clear: !!CLEAR,
+          upload: !!UPLOAD,
+          strict: !!STRICT,
+          confirm: !!CONFIRM,
+          yes_clear: !!YES_CLEAR,
+          help: !!HELP,
+        },
+        totals: {
+          lists: 0,
+          by_status: { completed: 0, unchanged: 0, skipped: 0, failed: 0, timeout: 0 },
+          operations: { total: 0, by_status: {} },
+        },
+        lists: [],
+        aborted: { reason, detail: detail ?? null, exit_code: exitCode },
+      };
+      try {
+        if (typeof validateReport === "function") stub._validation = validateReport(stub);
+      } catch { /* TDZ — skip validation in early abort */ }
+      const dir = dirname(resolve(JSON_REPORT_PATH));
+      mkdirSync(dir, { recursive: true });
+      writeFileSync(JSON_REPORT_PATH, JSON.stringify(stub, null, 2) + "\n", "utf8");
+      console.error(`📄 Raport JSON (abort: ${reason}) zapisany: ${JSON_REPORT_PATH}`);
+    } catch (err) {
+      console.error(`⚠️  Nie udało się zapisać abort-raportu JSON: ${err?.message ?? err}`);
+    }
+  }
+  process.exit(exitCode);
+}
+
+if (HELP) {
+  console.log(
+    [
+      "Użycie: node scripts/export-cloudflare-redirects.mjs [opcje]",
+      "",
+      "Opcje:",
+      "  --dry-run, -n        Pokaż diff/plan bez wykonywania PUT.",
+      "  --upload             Wgraj nowe reguły na Cloudflare (PUT /items).",
+      "  --confirm            Pomiń interaktywne potwierdzenie (nie dotyczy --clear).",
+      "  --clear              Wyczyść listę przed uploadem (wymaga 'CLEAR' lub --yes-clear).",
+      "  --yes-clear          Akceptuj --clear w trybie non-interactive (CI).",
+      "  --strict             Traktuj warningi jako błędy.",
+      "  --json[=path]        Zapisz raport JSON (domyślnie /mnt/documents/cloudflare-report.json).",
+      "  --help, -h           Pokaż tę pomoc.",
+      "",
+      "Env: CF_API_TOKEN, CF_ACCOUNT_ID, CF_LIST_ID, CF_REPORT_JSON, CF_CLEAR_CONFIRM.",
+    ].join("\n"),
+  );
+  writeAbortReportAndExit("help", "User requested --help; no operations executed.", 0);
+}
 
 // ── Parser: wyciąga tylko aktywne (niezakomentowane) wpisy { from, to, reason } ──
 const source = readFileSync(SRC, "utf8");
@@ -103,7 +174,7 @@ for (const raw of source.split("\n")) {
 
 if (entries.length === 0) {
   console.error("Nie znaleziono żadnych aktywnych wpisów w SEO_REDIRECTS — przerywam.");
-  process.exit(1);
+  writeAbortReportAndExit("no_entries", "SEO_REDIRECTS map is empty or unparseable.", 1);
 }
 
 // ── Walidacja: konflikty, cykle, puste, łańcuchy ────────────────────────────
@@ -227,7 +298,7 @@ if (!errors.length && !warnings.length) {
 
 if (errors.length) {
   console.error(`\n⛔ Przerywam ze względu na ${errors.length} błąd(ów). Popraw mapę i uruchom ponownie.`);
-  process.exit(1);
+  writeAbortReportAndExit("validation_errors", `${errors.length} validation error(s) in redirects map.`, 1);
 }
 
 if (DRY_RUN && !CLEAR && !UPLOAD) {
@@ -358,19 +429,19 @@ async function uploadToCloudflare() {
     console.error(`     export CF_ACCOUNT_ID="abc123..."`);
     console.error(`     export CF_LIST_ID="def456..."                # pojedyncza lista`);
     console.error(`     export CF_LIST_ID="prod=def456...,stg=789abc..."  # wiele list (label=id)`);
-    process.exit(1);
+    writeAbortReportAndExit("missing_env", `Missing required env vars: ${missing.join(", ")}.`, 1);
   }
 
   if (!/^[a-f0-9]{32}$/i.test(accountId)) {
     console.error(`❌ CF_ACCOUNT_ID powinien być 32-znakowym hex (otrzymano długość ${accountId.length}).`);
-    process.exit(1);
+    writeAbortReportAndExit("invalid_account_id", `CF_ACCOUNT_ID must be 32-char hex (got length ${accountId.length}).`, 1);
   }
 
   // ── Parsuj CF_LIST_ID: "id1" | "id1,id2" | "label=id1,label2=id2" ────────
   const lists = parseListIds(listIdRaw);
   if (!lists.length) {
     console.error(`❌ CF_LIST_ID nie zawiera żadnego prawidłowego ID (32-znakowy hex).`);
-    process.exit(1);
+    writeAbortReportAndExit("invalid_list_id", "CF_LIST_ID does not contain any valid 32-char hex id.", 1);
   }
   console.log(
     `→ ${lists.length} ${lists.length === 1 ? "lista" : "listy/list"} do aktualizacji: ${lists
