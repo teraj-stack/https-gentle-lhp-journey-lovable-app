@@ -26,6 +26,7 @@
  *   node scripts/export-cloudflare-redirects.mjs --upload --confirm   # bez interaktywnego pytania
  *   node scripts/export-cloudflare-redirects.mjs --clear --upload    # wyczyść listę i wgraj nowe
  *   node scripts/export-cloudflare-redirects.mjs --clear              # tylko wyczyść (bez uploadu)
+ *   node scripts/export-cloudflare-redirects.mjs --clear --dry-run    # podgląd: ile reguł zostanie usuniętych (bez PUT)
  *
  * Upload wymaga env vars:
  *   CF_API_TOKEN   — token z permission "Account / Account Filter Lists / Edit"
