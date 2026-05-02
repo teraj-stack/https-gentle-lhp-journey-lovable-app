@@ -421,19 +421,19 @@ async function uploadToCloudflare() {
     console.error(`     export CF_ACCOUNT_ID="abc123..."`);
     console.error(`     export CF_LIST_ID="def456..."                # pojedyncza lista`);
     console.error(`     export CF_LIST_ID="prod=def456...,stg=789abc..."  # wiele list (label=id)`);
-    process.exit(1);
+    writeAbortReportAndExit("missing_env", `Missing required env vars: ${missing.join(", ")}.`, 1);
   }
 
   if (!/^[a-f0-9]{32}$/i.test(accountId)) {
     console.error(`❌ CF_ACCOUNT_ID powinien być 32-znakowym hex (otrzymano długość ${accountId.length}).`);
-    process.exit(1);
+    writeAbortReportAndExit("invalid_account_id", `CF_ACCOUNT_ID must be 32-char hex (got length ${accountId.length}).`, 1);
   }
 
   // ── Parsuj CF_LIST_ID: "id1" | "id1,id2" | "label=id1,label2=id2" ────────
   const lists = parseListIds(listIdRaw);
   if (!lists.length) {
     console.error(`❌ CF_LIST_ID nie zawiera żadnego prawidłowego ID (32-znakowy hex).`);
-    process.exit(1);
+    writeAbortReportAndExit("invalid_list_id", "CF_LIST_ID does not contain any valid 32-char hex id.", 1);
   }
   console.log(
     `→ ${lists.length} ${lists.length === 1 ? "lista" : "listy/list"} do aktualizacji: ${lists
