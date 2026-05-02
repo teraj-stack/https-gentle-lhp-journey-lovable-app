@@ -290,7 +290,7 @@ if (!errors.length && !warnings.length) {
 
 if (errors.length) {
   console.error(`\n⛔ Przerywam ze względu na ${errors.length} błąd(ów). Popraw mapę i uruchom ponownie.`);
-  process.exit(1);
+  writeAbortReportAndExit("validation_errors", `${errors.length} validation error(s) in redirects map.`, 1);
 }
 
 if (DRY_RUN && !CLEAR && !UPLOAD) {
