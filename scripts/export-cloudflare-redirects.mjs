@@ -29,6 +29,8 @@
  *   node scripts/export-cloudflare-redirects.mjs --clear --dry-run    # podgląd: ile reguł zostanie usuniętych (bez PUT)
  *   node scripts/export-cloudflare-redirects.mjs --clear --yes-clear   # CI: pomiń pytanie "wpisz CLEAR"
  *   CF_CLEAR_CONFIRM=CLEAR node scripts/export-cloudflare-redirects.mjs --clear  # alternatywa env var
+ *   node scripts/export-cloudflare-redirects.mjs --upload --json                 # raport do /mnt/documents/cloudflare-report.json
+ *   node scripts/export-cloudflare-redirects.mjs --upload --json=/tmp/cf.json    # własna ścieżka raportu
  *
  * Upload wymaga env vars:
  *   CF_API_TOKEN   — token z permission "Account / Account Filter Lists / Edit"
