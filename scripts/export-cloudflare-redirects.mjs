@@ -641,15 +641,16 @@ function validateReport(report) {
 // Schema "1.1": top-level + per-list pola wymagane (patrz REPORT_REQUIRED).
 // Wynik validateReport trafia do report._validation. Plik jest zapisywany
 // ZAWSZE (nawet przy brakach), żeby CI mógł go zarchiwizować i pokazać issues.
-function writeJsonReport(targetPath, results, counts, allOps) {
-  let report;
+// Buduje obiekt raportu (bez zapisu) — używany przez writeJsonReport
+// oraz przez --html gdy --json nie jest aktywny. Gwarantuje 1:1 zgodność.
+function buildReportInMemory(results, counts, allOps) {
   try {
     const opCounts = (allOps ?? []).reduce((acc, op) => {
       const s = op?.status ?? "unknown";
       acc[s] = (acc[s] ?? 0) + 1;
       return acc;
     }, {});
-    report = {
+    const report = {
       schema_version: REPORT_SCHEMA_VERSION,
       generated_at: new Date().toISOString(),
       domain: DOMAIN ?? null,
@@ -681,9 +682,10 @@ function writeJsonReport(targetPath, results, counts, allOps) {
           }))
         : [],
     };
+    report._validation = validateReport(report);
+    return report;
   } catch (err) {
-    // Awaryjny minimalny raport — nigdy nie blokujemy zapisu.
-    report = {
+    return {
       schema_version: REPORT_SCHEMA_VERSION,
       generated_at: new Date().toISOString(),
       domain: DOMAIN ?? null,
@@ -691,8 +693,14 @@ function writeJsonReport(targetPath, results, counts, allOps) {
       totals: { lists: 0, by_status: {}, operations: { total: 0, by_status: {} } },
       lists: [],
       _build_error: err?.message ?? String(err),
+      _validation: { ok: false, issues: [{ path: "_build_error", message: err?.message ?? String(err) }] },
     };
   }
+}
+
+// Zapisuje ustrukturyzowany raport JSON dla multi-list flow.
+function writeJsonReport(targetPath, results, counts, allOps) {
+  const report = buildReportInMemory(results, counts, allOps);
 
   report._validation = validateReport(report);
   if (!report._validation.ok) {
