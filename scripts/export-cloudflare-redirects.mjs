@@ -903,5 +903,5 @@ function safeUrl(value) {
   } catch {
     return null;
   }
-  }
 }
+
