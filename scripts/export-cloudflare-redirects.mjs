@@ -54,18 +54,25 @@ const DOMAIN = "https://cml.pl";
 // --dry-run / -n  : nie zapisuj plików; pokaż diff vs poprzedni eksport + walidację.
 // --strict        : exit 1 przy ostrzeżeniach (przydatne w CI).
 // --upload        : po wygenerowaniu plików zrób PUT na Cloudflare API.
-// --confirm       : pomiń interaktywne pytanie przed PUT (CI / scripted runs).
+// --confirm       : pomiń interaktywne pytanie przed (nie-destrukcyjnym) PUT-em uploadu.
+//                    UWAGA: --confirm SAM W SOBIE NIE WYSTARCZA dla --clear.
 // --clear         : przed PUT-em z apiItems wyczyść listę (PUT z pustą tablicą).
 //                    Razem z --upload daje "świeży reset". Sam (bez --upload)
 //                    tylko czyści listę i kończy — przydatne np. przy migracji.
 //                    Razem z --dry-run pokazuje ile reguł zostanie usuniętych
 //                    (i dodanych, jeśli też --upload), ale nie wykonuje żadnego PUT.
+//                    Tryb interaktywny: skrypt ZAWSZE prosi o wpisanie dokładnie
+//                    słowa "CLEAR" (case-sensitive) per lista — `y/yes` nie wystarczy.
+//                    Tryb non-interactive (CI / scripted): wymagana jest jawna flaga
+//                    --yes-clear LUB env `CF_CLEAR_CONFIRM=CLEAR` (samo --confirm
+//                    nie wystarczy, żeby uniknąć przypadkowego wymazania w pipeline).
 const ARGS = new Set(process.argv.slice(2));
 const DRY_RUN = ARGS.has("--dry-run") || ARGS.has("-n");
 const STRICT = ARGS.has("--strict");
 const UPLOAD = ARGS.has("--upload");
 const CONFIRM = ARGS.has("--confirm");
 const CLEAR = ARGS.has("--clear");
+const YES_CLEAR = ARGS.has("--yes-clear") || process.env.CF_CLEAR_CONFIRM === "CLEAR";
 
 // ── Parser: wyciąga tylko aktywne (niezakomentowane) wpisy { from, to, reason } ──
 const source = readFileSync(SRC, "utf8");
