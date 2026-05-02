@@ -508,6 +508,31 @@ const txtLines = [
 ];
 if (!DRY_RUN) writeFileSync(`${OUT_DIR}/cloudflare-redirects.txt`, txtLines.join("\n"), "utf8");
 
+// ── 4b) Manifest pośredni z run_id (spójność artefaktów w pipeline) ─────────
+const manifest = {
+  schema_version: 1,
+  run_id: RUN_ID,
+  generated_at: GENERATED_AT,
+  domain: DOMAIN,
+  totals: { entries: entries.length },
+  artifacts: {
+    bulk_csv: `${OUT_DIR}/cloudflare-bulk-redirects.csv`,
+    bulk_json: `${OUT_DIR}/cloudflare-bulk-redirects.json`,
+    simple_csv: `${OUT_DIR}/cloudflare-redirects-simple.csv`,
+    txt: `${OUT_DIR}/cloudflare-redirects.txt`,
+    log: LOG_PATH ?? null,
+    json_report: JSON_REPORT_PATH ?? null,
+    html_report: HTML_REPORT_PATH ?? null,
+  },
+};
+if (!DRY_RUN) {
+  writeFileSync(
+    `${OUT_DIR}/cloudflare-runs/${fileSafeRunId(RUN_ID)}/cloudflare-export-manifest.json`,
+    JSON.stringify(manifest, null, 2) + "\n",
+    "utf8",
+  );
+}
+
 // ── Podsumowanie do stdout ──────────────────────────────────────────────────
 const byTarget = entries.reduce((acc, e) => {
   acc[e.to] = (acc[e.to] || 0) + 1;
