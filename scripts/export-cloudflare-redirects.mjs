@@ -134,6 +134,13 @@ function writeAbortReportAndExit(reason, detail, exitCode = 1) {
           lists: 0,
           by_status: { completed: 0, unchanged: 0, skipped: 0, failed: 0, timeout: 0 },
           operations: { total: 0, by_status: {} },
+          diff: {
+            total: { adds: 0, changes: 0, deletes: 0 },
+            by_phase: {
+              clear: { adds: 0, changes: 0, deletes: 0 },
+              upload: { adds: 0, changes: 0, deletes: 0 },
+            },
+          },
         },
         lists: [],
         aborted: { reason, detail: detail ?? null, exit_code: exitCode },
@@ -651,6 +658,53 @@ function validateReport(report) {
 // Schema "1.1": top-level + per-list pola wymagane (patrz REPORT_REQUIRED).
 // Wynik validateReport trafia do report._validation. Plik jest zapisywany
 // ZAWSZE (nawet przy brakach), żeby CI mógł go zarchiwizować i pokazać issues.
+// Skumulowane statystyki diff (adds/changes/deletes) po wszystkich listach.
+// Zwraca strukturę: { total, by_phase: { clear, upload } }, żeby łatwo było
+// porównać przebiegi (np. „w tym wpisie clear usunął 120, a upload dodał 118").
+//
+// Heurystyka phase splitting (per lista, na bazie obecnych operations):
+//   • clear-only           → wszystkie deletes idą do `clear`, adds/changes = 0.
+//   • upload-only          → wszystko (adds/changes/deletes) idzie do `upload`.
+//   • clear + upload       → clear.deletes = remoteCount (cała lista przed wipe),
+//                            upload.adds   = localCount (pełna nowa lista),
+//                            upload.changes = upload.deletes = 0 (po clear nie ma diffa).
+//   • brak operations      → traktujemy jak "planowany diff" (upload).
+function aggregateDiffStats(results) {
+  const empty = () => ({ adds: 0, changes: 0, deletes: 0 });
+  const total = empty();
+  const byPhase = { clear: empty(), upload: empty() };
+  if (!Array.isArray(results)) return { total, by_phase: byPhase };
+
+  for (const r of results) {
+    const s = r?.stats ?? {};
+    const adds = Number(s.adds) || 0;
+    const changes = Number(s.changes) || 0;
+    const deletes = Number(s.deletes) || 0;
+    const remoteCount = Number(s.remoteCount) || 0;
+    const localCount = Number(s.localCount) || 0;
+
+    total.adds += adds;
+    total.changes += changes;
+    total.deletes += deletes;
+
+    const ops = Array.isArray(r?.operations) ? r.operations : [];
+    const hasClear = ops.some((o) => /clear/i.test(o?.phase ?? ""));
+    const hasUpload = ops.some((o) => o?.phase === "upload");
+
+    if (hasClear && hasUpload) {
+      byPhase.clear.deletes += remoteCount;
+      byPhase.upload.adds += localCount;
+    } else if (hasClear) {
+      byPhase.clear.deletes += remoteCount || deletes;
+    } else {
+      byPhase.upload.adds += adds;
+      byPhase.upload.changes += changes;
+      byPhase.upload.deletes += deletes;
+    }
+  }
+  return { total, by_phase: byPhase };
+}
+
 // Buduje obiekt raportu (bez zapisu) — używany przez writeJsonReport
 // oraz przez --html gdy --json nie jest aktywny. Gwarantuje 1:1 zgodność.
 function buildReportInMemory(results, counts, allOps) {
@@ -679,6 +733,7 @@ function buildReportInMemory(results, counts, allOps) {
           total: Array.isArray(allOps) ? allOps.length : 0,
           by_status: opCounts,
         },
+        diff: aggregateDiffStats(results),
       },
       lists: Array.isArray(results)
         ? results.map((r) => ({
@@ -923,6 +978,24 @@ function writeHtmlReport(targetPath, report) {
     <div>
       <h3>Operations (${htmlEscape(report.totals?.operations?.total ?? 0)})</h3>
       ${renderHtmlTable(["Status", "Count"], opTotals, "Brak operacji.")}
+    </div>
+    <div>
+      <h3>Diff totals (all lists)</h3>
+      ${renderHtmlTable(
+        ["Phase", "+ Adds", "~ Changes", "− Deletes"],
+        [
+          ["total",  String(report.totals?.diff?.total?.adds ?? 0),
+                     String(report.totals?.diff?.total?.changes ?? 0),
+                     String(report.totals?.diff?.total?.deletes ?? 0)],
+          ["clear",  String(report.totals?.diff?.by_phase?.clear?.adds ?? 0),
+                     String(report.totals?.diff?.by_phase?.clear?.changes ?? 0),
+                     String(report.totals?.diff?.by_phase?.clear?.deletes ?? 0)],
+          ["upload", String(report.totals?.diff?.by_phase?.upload?.adds ?? 0),
+                     String(report.totals?.diff?.by_phase?.upload?.changes ?? 0),
+                     String(report.totals?.diff?.by_phase?.upload?.deletes ?? 0)],
+        ],
+        "Brak danych diff.",
+      )}
     </div>
   </div>
 
