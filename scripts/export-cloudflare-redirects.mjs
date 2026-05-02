@@ -552,8 +552,15 @@ async function uploadToCloudflare() {
   // Zawiera: meta (timestamp, domain, flagi, totals), per-list (status, stats,
   // diff details, operations z operation_id). Zapisywany ZAWSZE jeśli włączono
   // --json (lub env), również przy failed/timeout, żeby CI mógł go zarchiwizować.
+  let jsonReport = null;
   if (JSON_REPORT_PATH) {
-    writeJsonReport(JSON_REPORT_PATH, results, counts, allOps);
+    jsonReport = writeJsonReport(JSON_REPORT_PATH, results, counts, allOps);
+  }
+  if (HTML_REPORT_PATH) {
+    // Jeśli nie wygenerowano JSON-a (tylko --html), zbuduj raport in-memory
+    // tym samym pipeline'em — gwarantuje 1:1 zgodność danych.
+    const reportForHtml = jsonReport ?? buildReportInMemory(results, counts, allOps);
+    writeHtmlReport(HTML_REPORT_PATH, reportForHtml);
   }
 
   if (counts.failed > 0 || counts.timeout > 0) {
