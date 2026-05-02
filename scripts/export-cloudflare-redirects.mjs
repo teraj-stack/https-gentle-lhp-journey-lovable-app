@@ -392,6 +392,7 @@ async function uploadToCloudflare() {
     skipped: "⊘ ",
     failed: "❌",
     timeout: "⏱ ",
+    sync: "✅",
   };
   const counts = { completed: 0, unchanged: 0, skipped: 0, failed: 0, timeout: 0 };
   for (const r of results) {
@@ -402,11 +403,43 @@ async function uploadToCloudflare() {
       : "";
     const extra = r.error ? `  — ${r.error}` : r.note ? `  — ${r.note}` : "";
     console.log(`  ${icon} ${r.label.padEnd(20)} ${r.status.padEnd(10)} ${stats}${extra}`);
+
+    // Szczegóły operacji Cloudflare (PUT-y wykonane na tej liście).
+    // Każda faza (clear / upload) ma własny operation_id i finalny status.
+    const ops = Array.isArray(r.operations) ? r.operations : [];
+    for (const op of ops) {
+      const opIcon = statusIcon[op.status] ?? "? ";
+      const opIdStr = op.operationId ?? "—";
+      const opNote = op.error
+        ? `  — ${op.error}`
+        : op.timeoutSec
+          ? `  — timeout po ${op.timeoutSec}s`
+          : op.note
+            ? `  — ${op.note}`
+            : "";
+      console.log(
+        `       ${opIcon} ${op.phase.padEnd(7)} ${op.status.padEnd(10)} op_id=${opIdStr}${opNote}`,
+      );
+    }
   }
   console.log(
     `\n  Sumarycznie: ${counts.completed} completed, ${counts.unchanged} unchanged, ` +
       `${counts.skipped} skipped, ${counts.failed} failed, ${counts.timeout} timeout`,
   );
+
+  // Agregat operacji (suma wszystkich PUT-ów na wszystkich listach).
+  const allOps = results.flatMap((r) => (Array.isArray(r.operations) ? r.operations : []));
+  if (allOps.length) {
+    const opCounts = allOps.reduce((acc, op) => {
+      acc[op.status] = (acc[op.status] ?? 0) + 1;
+      return acc;
+    }, {});
+    const summary = Object.entries(opCounts)
+      .map(([s, n]) => `${n} ${s}`)
+      .join(", ");
+    console.log(`  Operacji Cloudflare: ${allOps.length} (${summary})`);
+  }
+
 
   if (counts.failed > 0 || counts.timeout > 0) {
     console.error(`\n⛔ Co najmniej jedna lista nie zakończyła się sukcesem.`);
