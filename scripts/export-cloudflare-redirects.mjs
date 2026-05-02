@@ -252,10 +252,11 @@ if (HELP) {
       "  --strict             Traktuj warningi jako błędy.",
       "  --json[=path]        Zapisz raport JSON (domyślnie /mnt/documents/cloudflare-report.json).",
       "  --html[=path]        Zapisz raport HTML (pochodna od --json lub /mnt/documents/cloudflare-report.html).",
+      "  --log[=path]         Zapisz transcript do log (run_id wstrzyknięty w nazwę pliku).",
       "  --run-id=<id>        Identyfikator przebiegu do korelacji z logami (env CF_RUN_ID, domyślnie UUID).",
       "  --help, -h           Pokaż tę pomoc.",
       "",
-      "Env: CF_API_TOKEN, CF_ACCOUNT_ID, CF_LIST_ID, CF_REPORT_JSON, CF_CLEAR_CONFIRM.",
+      "Env: CF_API_TOKEN, CF_ACCOUNT_ID, CF_LIST_ID, CF_REPORT_JSON, CF_REPORT_HTML, CF_REPORT_LOG, CF_CLEAR_CONFIRM.",
     ].join("\n"),
   );
   writeAbortReportAndExit("help", "User requested --help; no operations executed.", 0);
