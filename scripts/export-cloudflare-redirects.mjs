@@ -134,6 +134,13 @@ function writeAbortReportAndExit(reason, detail, exitCode = 1) {
           lists: 0,
           by_status: { completed: 0, unchanged: 0, skipped: 0, failed: 0, timeout: 0 },
           operations: { total: 0, by_status: {} },
+          diff: {
+            total: { adds: 0, changes: 0, deletes: 0 },
+            by_phase: {
+              clear: { adds: 0, changes: 0, deletes: 0 },
+              upload: { adds: 0, changes: 0, deletes: 0 },
+            },
+          },
         },
         lists: [],
         aborted: { reason, detail: detail ?? null, exit_code: exitCode },
