@@ -29,6 +29,8 @@
  *   node scripts/export-cloudflare-redirects.mjs --clear --dry-run    # podgląd: ile reguł zostanie usuniętych (bez PUT)
  *   node scripts/export-cloudflare-redirects.mjs --clear --yes-clear   # CI: pomiń pytanie "wpisz CLEAR"
  *   CF_CLEAR_CONFIRM=CLEAR node scripts/export-cloudflare-redirects.mjs --clear  # alternatywa env var
+ *   node scripts/export-cloudflare-redirects.mjs --upload --json                 # raport do /mnt/documents/cloudflare-report.json
+ *   node scripts/export-cloudflare-redirects.mjs --upload --json=/tmp/cf.json    # własna ścieżka raportu
  *
  * Upload wymaga env vars:
  *   CF_API_TOKEN   — token z permission "Account / Account Filter Lists / Edit"
@@ -68,13 +70,24 @@ const DOMAIN = "https://cml.pl";
 //                    Tryb non-interactive (CI / scripted): wymagana jest jawna flaga
 //                    --yes-clear LUB env `CF_CLEAR_CONFIRM=CLEAR` (samo --confirm
 //                    nie wystarczy, żeby uniknąć przypadkowego wymazania w pipeline).
-const ARGS = new Set(process.argv.slice(2));
+// --json[=path]   : zapisz ustrukturyzowany raport (diff + clear + upload, per lista)
+//                    do pliku JSON. Bez ścieżki domyślnie /mnt/documents/cloudflare-report.json.
+//                    Działa też z --dry-run (raport "co by się stało", bez PUT).
+//                    Alternatywnie: env CF_REPORT_JSON=/path/to/report.json.
+const RAW_ARGS = process.argv.slice(2);
+const ARGS = new Set(RAW_ARGS);
 const DRY_RUN = ARGS.has("--dry-run") || ARGS.has("-n");
 const STRICT = ARGS.has("--strict");
 const UPLOAD = ARGS.has("--upload");
 const CONFIRM = ARGS.has("--confirm");
 const CLEAR = ARGS.has("--clear");
 const YES_CLEAR = ARGS.has("--yes-clear") || process.env.CF_CLEAR_CONFIRM === "CLEAR";
+const JSON_REPORT_PATH = (() => {
+  const withValue = RAW_ARGS.find((a) => a.startsWith("--json="));
+  if (withValue) return withValue.slice("--json=".length).trim() || null;
+  if (ARGS.has("--json")) return process.env.CF_REPORT_JSON || "/mnt/documents/cloudflare-report.json";
+  return process.env.CF_REPORT_JSON || null;
+})();
 
 // ── Parser: wyciąga tylko aktywne (niezakomentowane) wpisy { from, to, reason } ──
 const source = readFileSync(SRC, "utf8");
@@ -450,6 +463,14 @@ async function uploadToCloudflare() {
   }
 
 
+  // ── Opcjonalny zapis ustrukturyzowanego raportu JSON ─────────────────────
+  // Zawiera: meta (timestamp, domain, flagi, totals), per-list (status, stats,
+  // diff details, operations z operation_id). Zapisywany ZAWSZE jeśli włączono
+  // --json (lub env), również przy failed/timeout, żeby CI mógł go zarchiwizować.
+  if (JSON_REPORT_PATH) {
+    writeJsonReport(JSON_REPORT_PATH, results, counts, allOps);
+  }
+
   if (counts.failed > 0 || counts.timeout > 0) {
     console.error(`\n⛔ Co najmniej jedna lista nie zakończyła się sukcesem.`);
     process.exit(1);
@@ -457,6 +478,66 @@ async function uploadToCloudflare() {
   if (DRY_RUN) {
     console.log(`\n🔍 DRY RUN — nie wykonano żadnego PUT-u na Cloudflare.`);
     if (STRICT && warnings.length) process.exit(1);
+  }
+}
+
+// Zapisuje ustrukturyzowany raport JSON dla multi-list flow.
+// Schema (stabilna — bezpieczna dla parsowania w CI / dashboardach):
+//   {
+//     schema_version: "1",
+//     generated_at: ISO,
+//     domain, dry_run, clear, upload, strict, json_report_path,
+//     totals: { lists: N, completed, unchanged, skipped, failed, timeout,
+//               operations: { total, completed, failed, timeout, sync, skipped } },
+//     lists: [{
+//       label, id, status, note?, error?,
+//       stats: { adds, changes, deletes, localCount, remoteCount, details: {...} },
+//       operations: [{ phase, status, operationId, error?, timeoutSec?, note? }]
+//     }]
+//   }
+function writeJsonReport(targetPath, results, counts, allOps) {
+  const opCounts = allOps.reduce((acc, op) => {
+    acc[op.status] = (acc[op.status] ?? 0) + 1;
+    return acc;
+  }, {});
+  const report = {
+    schema_version: "1",
+    generated_at: new Date().toISOString(),
+    domain: DOMAIN,
+    flags: {
+      dry_run: DRY_RUN,
+      clear: CLEAR,
+      upload: UPLOAD,
+      strict: STRICT,
+      confirm: CONFIRM,
+      yes_clear: YES_CLEAR,
+    },
+    totals: {
+      lists: results.length,
+      by_status: { ...counts },
+      operations: {
+        total: allOps.length,
+        by_status: opCounts,
+      },
+    },
+    lists: results.map((r) => ({
+      label: r.label,
+      id: r.id,
+      status: r.status,
+      note: r.note ?? null,
+      error: r.error ?? null,
+      stats: r.stats ?? null,
+      operations: Array.isArray(r.operations) ? r.operations : [],
+    })),
+  };
+  try {
+    // Best-effort utworzenie katalogu (np. /mnt/documents/sub/foo.json).
+    const dir = dirname(resolve(targetPath));
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(targetPath, JSON.stringify(report, null, 2) + "\n", "utf8");
+    console.log(`\n📄 Raport JSON zapisany: ${targetPath}`);
+  } catch (err) {
+    console.error(`⚠️  Nie udało się zapisać raportu JSON do ${targetPath}: ${err?.message ?? err}`);
   }
 }
 
@@ -575,6 +656,12 @@ async function uploadOne({ accountId, list, headers }) {
       deletes: remoteDeletes.length,
       localCount: localMap.size,
       remoteCount: remoteMap.size,
+      // Pełne listy do --json reportu (puste tablice w przypadku braku zmian).
+      details: {
+        adds: remoteAdds.map(({ src, to }) => ({ source_url: src, target_url: to })),
+        changes: remoteChanges.map(({ src, diffs }) => ({ source_url: src, diffs })),
+        deletes: remoteDeletes.map(({ src, to }) => ({ source_url: src, target_url: to })),
+      },
     };
 
     console.log(`\n📊 DIFF: Remote ${remoteMap.size} → Local ${localMap.size} (+${stats.adds}/~${stats.changes}/-${stats.deletes})`);
