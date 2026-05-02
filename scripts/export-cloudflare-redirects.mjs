@@ -26,6 +26,7 @@
  *   node scripts/export-cloudflare-redirects.mjs --upload --confirm   # bez interaktywnego pytania
  *   node scripts/export-cloudflare-redirects.mjs --clear --upload    # wyczyść listę i wgraj nowe
  *   node scripts/export-cloudflare-redirects.mjs --clear              # tylko wyczyść (bez uploadu)
+ *   node scripts/export-cloudflare-redirects.mjs --clear --dry-run    # podgląd: ile reguł zostanie usuniętych (bez PUT)
  *
  * Upload wymaga env vars:
  *   CF_API_TOKEN   — token z permission "Account / Account Filter Lists / Edit"
@@ -57,6 +58,8 @@ const DOMAIN = "https://cml.pl";
 // --clear         : przed PUT-em z apiItems wyczyść listę (PUT z pustą tablicą).
 //                    Razem z --upload daje "świeży reset". Sam (bez --upload)
 //                    tylko czyści listę i kończy — przydatne np. przy migracji.
+//                    Razem z --dry-run pokazuje ile reguł zostanie usuniętych
+//                    (i dodanych, jeśli też --upload), ale nie wykonuje żadnego PUT.
 const ARGS = new Set(process.argv.slice(2));
 const DRY_RUN = ARGS.has("--dry-run") || ARGS.has("-n");
 const STRICT = ARGS.has("--strict");
@@ -205,14 +208,23 @@ if (errors.length) {
   process.exit(1);
 }
 
-if (DRY_RUN) {
+if (DRY_RUN && !CLEAR && !UPLOAD) {
   console.log(`\n🔍 DRY RUN — nie zapisano żadnych plików.`);
   console.log(`   Aby wykonać eksport: node scripts/export-cloudflare-redirects.mjs\n`);
   if (STRICT && warnings.length) process.exit(1);
   process.exit(0);
 }
 
-mkdirSync(OUT_DIR, { recursive: true });
+if (DRY_RUN && (CLEAR || UPLOAD)) {
+  console.log(
+    `\n🔍 DRY RUN aktywny razem z ${CLEAR ? "--clear" : ""}${CLEAR && UPLOAD ? " + " : ""}${UPLOAD ? "--upload" : ""} ` +
+      `— pominę zapis plików oraz wszelkie PUT-y do Cloudflare (tylko GET + raport).`,
+  );
+}
+
+// W trybie DRY_RUN nie zapisujemy plików — apiItems generujemy zawsze (w pamięci),
+// bo i tak są potrzebne do diff/walidacji w uploadToCloudflare.
+if (!DRY_RUN) mkdirSync(OUT_DIR, { recursive: true });
 
 // ── 1) Pełny CSV Cloudflare ─────────────────────────────────────────────────
 // Kolumny zgodne z dokumentacją Cloudflare Bulk Redirects:
@@ -230,22 +242,19 @@ const cfHeader = [
 const cfRows = entries.map(({ from, to }) => {
   const sourceUrl = `${DOMAIN}${from}`;
   const targetUrl = `${DOMAIN}${to}`;
-  // 301 permanent, zachowaj query (?utm_*), bez subdomen, exact match path, bez suffixu.
   return [sourceUrl, targetUrl, "301", "true", "false", "false", "false"].join(",");
 });
 
 const cfCsv = [cfHeader, ...cfRows].join("\n") + "\n";
-writeFileSync(`${OUT_DIR}/cloudflare-bulk-redirects.csv`, cfCsv, "utf8");
+if (!DRY_RUN) writeFileSync(`${OUT_DIR}/cloudflare-bulk-redirects.csv`, cfCsv, "utf8");
 
 // ── 2) Uproszczony CSV "source,target" ──────────────────────────────────────
 const simpleHeader = "source,target";
 const simpleRows = entries.map(({ from, to }) => `${DOMAIN}${from},${DOMAIN}${to}`);
 const simpleCsv = [simpleHeader, ...simpleRows].join("\n") + "\n";
-writeFileSync(`${OUT_DIR}/cloudflare-redirects-simple.csv`, simpleCsv, "utf8");
+if (!DRY_RUN) writeFileSync(`${OUT_DIR}/cloudflare-redirects-simple.csv`, simpleCsv, "utf8");
 
 // ── 3) JSON dla Cloudflare API (PUT /lists/{id}/items) ─────────────────────
-// Format zgodny z Cloudflare API v4 — gotowe do `curl --data @file`.
-// Doc: https://developers.cloudflare.com/api/operations/lists-update-list-items
 const apiItems = entries.map(({ from, to }) => ({
   redirect: {
     source_url: `${DOMAIN}${from}`,
@@ -257,11 +266,13 @@ const apiItems = entries.map(({ from, to }) => ({
     preserve_path_suffix: false,
   },
 }));
-writeFileSync(
-  `${OUT_DIR}/cloudflare-bulk-redirects.json`,
-  JSON.stringify(apiItems, null, 2) + "\n",
-  "utf8",
-);
+if (!DRY_RUN) {
+  writeFileSync(
+    `${OUT_DIR}/cloudflare-bulk-redirects.json`,
+    JSON.stringify(apiItems, null, 2) + "\n",
+    "utf8",
+  );
+}
 
 // ── 4) Czytelny TXT z powodami ──────────────────────────────────────────────
 const txtLines = [
@@ -277,18 +288,22 @@ const txtLines = [
   ),
   ``,
 ];
-writeFileSync(`${OUT_DIR}/cloudflare-redirects.txt`, txtLines.join("\n"), "utf8");
+if (!DRY_RUN) writeFileSync(`${OUT_DIR}/cloudflare-redirects.txt`, txtLines.join("\n"), "utf8");
 
 // ── Podsumowanie do stdout ──────────────────────────────────────────────────
 const byTarget = entries.reduce((acc, e) => {
   acc[e.to] = (acc[e.to] || 0) + 1;
   return acc;
 }, {});
-console.log(`✓ Wyeksportowano ${entries.length} reguł 301 dla ${DOMAIN}`);
-console.log(`✓ /mnt/documents/cloudflare-bulk-redirects.csv  (Dashboard upload)`);
-console.log(`✓ /mnt/documents/cloudflare-bulk-redirects.json (API PUT /lists/{id}/items)`);
-console.log(`✓ /mnt/documents/cloudflare-redirects-simple.csv (source,target)`);
-console.log(`✓ /mnt/documents/cloudflare-redirects.txt       (z powodami)`);
+if (DRY_RUN) {
+  console.log(`✓ [dry-run] przygotowano ${entries.length} reguł 301 dla ${DOMAIN} (bez zapisu plików)`);
+} else {
+  console.log(`✓ Wyeksportowano ${entries.length} reguł 301 dla ${DOMAIN}`);
+  console.log(`✓ /mnt/documents/cloudflare-bulk-redirects.csv  (Dashboard upload)`);
+  console.log(`✓ /mnt/documents/cloudflare-bulk-redirects.json (API PUT /lists/{id}/items)`);
+  console.log(`✓ /mnt/documents/cloudflare-redirects-simple.csv (source,target)`);
+  console.log(`✓ /mnt/documents/cloudflare-redirects.txt       (z powodami)`);
+}
 console.log(`\nTop celów:`);
 for (const [to, n] of Object.entries(byTarget).sort((a, b) => b[1] - a[1]).slice(0, 8)) {
   console.log(`  ${n.toString().padStart(3)} → ${to}`);
@@ -396,6 +411,10 @@ async function uploadToCloudflare() {
   if (counts.failed > 0 || counts.timeout > 0) {
     console.error(`\n⛔ Co najmniej jedna lista nie zakończyła się sukcesem.`);
     process.exit(1);
+  }
+  if (DRY_RUN) {
+    console.log(`\n🔍 DRY RUN — nie wykonano żadnego PUT-u na Cloudflare.`);
+    if (STRICT && warnings.length) process.exit(1);
   }
 }
 
@@ -536,6 +555,39 @@ async function uploadOne({ accountId, list, headers }) {
       console.log(`  ✓ Lista już zsynchronizowana — pomijam PUT.`);
       return { status: "unchanged", stats, note: "lista już zsynchronizowana" };
     }
+  }
+
+  // Krok B.1: DRY RUN — pokaż plan i zakończ przed jakimkolwiek PUT-em.
+  if (DRY_RUN) {
+    if (CLEAR) {
+      const willDelete = remoteMap.size;
+      const willAdd = UPLOAD ? localMap.size : 0;
+      console.log(
+        `\n🔍 [dry-run] --clear ${UPLOAD ? "+ --upload " : ""}dla "${list.label}":`,
+      );
+      console.log(`     • do usunięcia: ${willDelete} reguł (cała aktualna lista)`);
+      if (UPLOAD) console.log(`     • następnie do dodania: ${willAdd} reguł z apiItems`);
+      console.log(`     • PUT NIE zostanie wykonany (dry-run).`);
+      return {
+        status: "unchanged",
+        stats: {
+          ...stats,
+          adds: willAdd,
+          changes: 0,
+          deletes: willDelete,
+          localCount: UPLOAD ? localMap.size : 0,
+        },
+        note: `dry-run: ${willDelete} do usunięcia${UPLOAD ? `, ${willAdd} do dodania` : ""}`,
+      };
+    }
+    console.log(
+      `\n🔍 [dry-run] --upload dla "${list.label}": +${stats.adds}/~${stats.changes}/-${stats.deletes} (PUT pominięty).`,
+    );
+    return {
+      status: "unchanged",
+      stats,
+      note: `dry-run: +${stats.adds}/~${stats.changes}/-${stats.deletes}`,
+    };
   }
 
   // Krok B.2: confirm (per lista). --clear wymaga osobnej zgody, bo to destrukcyjne.
