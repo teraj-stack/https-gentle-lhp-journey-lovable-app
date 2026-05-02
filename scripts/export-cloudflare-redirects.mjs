@@ -98,8 +98,14 @@ const JSON_REPORT_PATH = (() => {
 function writeAbortReportAndExit(reason, detail, exitCode = 1) {
   if (JSON_REPORT_PATH) {
     try {
+      // Defensive: REPORT_SCHEMA_VERSION may be in TDZ if abort happens during
+      // module top-level evaluation; fall back to literal "1.1".
+      let schemaVer = "1.1";
+      try { schemaVer = REPORT_SCHEMA_VERSION; } catch { /* TDZ — keep fallback */ }
+      let domainVal = null;
+      try { domainVal = typeof DOMAIN === "string" ? DOMAIN : null; } catch { /* TDZ */ }
       const stub = {
-        schema_version: typeof REPORT_SCHEMA_VERSION === "string" ? REPORT_SCHEMA_VERSION : "1.1",
+        schema_version: schemaVer,
         generated_at: new Date().toISOString(),
         domain: typeof DOMAIN === "string" ? DOMAIN : null,
         flags: {
