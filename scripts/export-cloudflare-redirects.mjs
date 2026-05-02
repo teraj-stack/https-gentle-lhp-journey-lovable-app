@@ -980,7 +980,8 @@ function writeHtmlReport(targetPath, report) {
   <div class="meta">
     Domain: <b>${htmlEscape(report.domain ?? "—")}</b> ·
     Generated: <b>${htmlEscape(report.generated_at ?? "—")}</b> ·
-    Schema: <code>${htmlEscape(report.schema_version ?? "—")}</code>
+    Schema: <code>${htmlEscape(report.schema_version ?? "—")}</code> ·
+    Run: <code>${htmlEscape(report.run_id ?? "—")}</code>
   </div>
   <div>${flagsHtml}</div>
   ${abortedHtml}
