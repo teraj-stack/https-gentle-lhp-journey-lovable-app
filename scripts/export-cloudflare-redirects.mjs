@@ -166,7 +166,7 @@ for (const raw of source.split("\n")) {
 
 if (entries.length === 0) {
   console.error("Nie znaleziono żadnych aktywnych wpisów w SEO_REDIRECTS — przerywam.");
-  process.exit(1);
+  writeAbortReportAndExit("no_entries", "SEO_REDIRECTS map is empty or unparseable.", 1);
 }
 
 // ── Walidacja: konflikty, cykle, puste, łańcuchy ────────────────────────────
