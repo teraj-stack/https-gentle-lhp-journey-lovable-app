@@ -125,7 +125,9 @@ function writeAbortReportAndExit(reason, detail, exitCode = 1) {
         lists: [],
         aborted: { reason, detail: detail ?? null, exit_code: exitCode },
       };
-      if (typeof validateReport === "function") stub._validation = validateReport(stub);
+      try {
+        if (typeof validateReport === "function") stub._validation = validateReport(stub);
+      } catch { /* TDZ — skip validation in early abort */ }
       const dir = dirname(resolve(JSON_REPORT_PATH));
       mkdirSync(dir, { recursive: true });
       writeFileSync(JSON_REPORT_PATH, JSON.stringify(stub, null, 2) + "\n", "utf8");
