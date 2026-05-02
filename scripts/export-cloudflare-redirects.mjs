@@ -491,11 +491,13 @@ if (!DRY_RUN) {
 }
 
 // ── 4) Czytelny TXT z powodami ──────────────────────────────────────────────
+const GENERATED_AT = new Date().toISOString();
 const txtLines = [
   `# Cloudflare Bulk Redirects — eksport z SEO_REDIRECTS`,
+  `# run_id: ${RUN_ID}`,
   `# Domena: ${DOMAIN}`,
   `# Wpisów: ${entries.length}`,
-  `# Wygenerowano: ${new Date().toISOString()}`,
+  `# Wygenerowano: ${GENERATED_AT}`,
   `# Status: 301 (permanent), Preserve query string: true`,
   ``,
   ...entries.map(
