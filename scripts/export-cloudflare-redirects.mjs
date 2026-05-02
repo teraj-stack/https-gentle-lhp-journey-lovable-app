@@ -306,6 +306,7 @@ for (const [from, to] of prevMap) {
 const hr = "─".repeat(72);
 console.log(`\n${hr}`);
 console.log(`SEO_REDIRECTS — ${DRY_RUN ? "DRY RUN" : "EKSPORT"} (${entries.length} reguł, ${DOMAIN})`);
+console.log(`run_id=${RUN_ID}`);
 console.log(hr);
 
 if (existsSync(PREV_FILE)) {
