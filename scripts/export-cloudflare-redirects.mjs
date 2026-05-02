@@ -700,6 +700,40 @@ async function uploadOne({ accountId, list, headers }) {
       });
       if (clearRes.status === "completed") {
         console.log(`✅ Lista "${list.label}" wyczyszczona.`);
+
+        // Post-clear verification: GET listy i upewnij się, że jest pusta.
+        // Cloudflare bywa eventually-consistent — krótki retry z backoff.
+        console.log(`→ Weryfikacja: GET ${baseUrl}/items (oczekuję 0 items)…`);
+        const verifyResult = await verifyListIsEmpty({ baseUrl, headers, label: list.label });
+        operations.push({
+          phase: "verify-clear",
+          status: verifyResult.empty ? "completed" : "failed",
+          operationId: null,
+          error: verifyResult.empty
+            ? undefined
+            : `lista po clear ma nadal ${verifyResult.residualCount} items (oczekiwano 0)`,
+          note: verifyResult.empty
+            ? `potwierdzono: 0 items po ${verifyResult.attempts} prób(ach)`
+            : undefined,
+        });
+
+        if (!verifyResult.empty) {
+          const sample = verifyResult.sample.length
+            ? ` Przykładowe pozostałe: ${verifyResult.sample.slice(0, 3).join(", ")}${
+                verifyResult.sample.length > 3 ? "…" : ""
+              }`
+            : "";
+          console.error(
+            `❌ Verify-clear FAIL dla "${list.label}": lista nadal zawiera ${verifyResult.residualCount} items po ${verifyResult.attempts} prób(ach).${sample}`,
+          );
+          return {
+            status: "failed",
+            stats,
+            operations,
+            error: `verify-clear: lista nadal ma ${verifyResult.residualCount} items (op_id=${clearRes.operationId})`,
+          };
+        }
+        console.log(`✅ Verify-clear OK: lista "${list.label}" potwierdzona jako pusta.`);
       } else if (clearRes.status === "failed") {
         // Nie ruszamy uploadu jeśli clear failed.
         return {
