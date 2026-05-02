@@ -48,6 +48,7 @@
 import { writeFileSync, mkdirSync, readFileSync, existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
+import { randomUUID } from "node:crypto";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const SRC = resolve(__dirname, "../src/lib/seo/redirectsMap.ts");
@@ -83,6 +84,18 @@ const CONFIRM = ARGS.has("--confirm");
 const CLEAR = ARGS.has("--clear");
 const YES_CLEAR = ARGS.has("--yes-clear") || process.env.CF_CLEAR_CONFIRM === "CLEAR";
 const HELP = ARGS.has("--help") || ARGS.has("-h");
+// --run-id[=value] : identyfikator przebiegu, do korelacji logów z raportem.
+//                    Priorytet: --run-id=<v> > env CF_RUN_ID > wygenerowany UUID v4.
+//                    Zapisywany w report.run_id i logowany do stdout na starcie.
+const RUN_ID = (() => {
+  const withValue = RAW_ARGS.find((a) => a.startsWith("--run-id="));
+  if (withValue) {
+    const v = withValue.slice("--run-id=".length).trim();
+    if (v) return v;
+  }
+  if (process.env.CF_RUN_ID && process.env.CF_RUN_ID.trim()) return process.env.CF_RUN_ID.trim();
+  return randomUUID();
+})();
 const JSON_REPORT_PATH = (() => {
   const withValue = RAW_ARGS.find((a) => a.startsWith("--json="));
   if (withValue) return withValue.slice("--json=".length).trim() || null;
@@ -119,6 +132,7 @@ function writeAbortReportAndExit(reason, detail, exitCode = 1) {
       try { domainVal = typeof DOMAIN === "string" ? DOMAIN : null; } catch { /* TDZ */ }
       stub = {
         schema_version: schemaVer,
+        run_id: RUN_ID,
         generated_at: new Date().toISOString(),
         domain: domainVal,
         flags: {
@@ -183,6 +197,8 @@ if (HELP) {
       "  --yes-clear          Akceptuj --clear w trybie non-interactive (CI).",
       "  --strict             Traktuj warningi jako błędy.",
       "  --json[=path]        Zapisz raport JSON (domyślnie /mnt/documents/cloudflare-report.json).",
+      "  --html[=path]        Zapisz raport HTML (pochodna od --json lub /mnt/documents/cloudflare-report.html).",
+      "  --run-id=<id>        Identyfikator przebiegu do korelacji z logami (env CF_RUN_ID, domyślnie UUID).",
       "  --help, -h           Pokaż tę pomoc.",
       "",
       "Env: CF_API_TOKEN, CF_ACCOUNT_ID, CF_LIST_ID, CF_REPORT_JSON, CF_CLEAR_CONFIRM.",
@@ -290,6 +306,7 @@ for (const [from, to] of prevMap) {
 const hr = "─".repeat(72);
 console.log(`\n${hr}`);
 console.log(`SEO_REDIRECTS — ${DRY_RUN ? "DRY RUN" : "EKSPORT"} (${entries.length} reguł, ${DOMAIN})`);
+console.log(`run_id=${RUN_ID}`);
 console.log(hr);
 
 if (existsSync(PREV_FILE)) {
@@ -599,7 +616,7 @@ const REPORT_SCHEMA_VERSION = "1.1";
 // żeby brakujące/niewłaściwe pola trafiły do _validation.issues, ale zapis
 // pliku nadal nastąpił (best-effort dla CI).
 const REPORT_REQUIRED = {
-  top: ["schema_version", "generated_at", "domain", "flags", "totals", "lists"],
+  top: ["schema_version", "run_id", "generated_at", "domain", "flags", "totals", "lists"],
   flags: ["dry_run", "clear", "upload", "strict"],
   totals: ["lists", "by_status", "operations"],
   list: ["label", "id", "status"],
@@ -716,6 +733,7 @@ function buildReportInMemory(results, counts, allOps) {
     }, {});
     const report = {
       schema_version: REPORT_SCHEMA_VERSION,
+      run_id: RUN_ID,
       generated_at: new Date().toISOString(),
       domain: DOMAIN ?? null,
       flags: {
@@ -752,6 +770,7 @@ function buildReportInMemory(results, counts, allOps) {
   } catch (err) {
     return {
       schema_version: REPORT_SCHEMA_VERSION,
+      run_id: RUN_ID,
       generated_at: new Date().toISOString(),
       domain: DOMAIN ?? null,
       flags: {},
@@ -964,7 +983,8 @@ function writeHtmlReport(targetPath, report) {
   <div class="meta">
     Domain: <b>${htmlEscape(report.domain ?? "—")}</b> ·
     Generated: <b>${htmlEscape(report.generated_at ?? "—")}</b> ·
-    Schema: <code>${htmlEscape(report.schema_version ?? "—")}</code>
+    Schema: <code>${htmlEscape(report.schema_version ?? "—")}</code> ·
+    Run: <code>${htmlEscape(report.run_id ?? "—")}</code>
   </div>
   <div>${flagsHtml}</div>
   ${abortedHtml}
