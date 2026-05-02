@@ -461,6 +461,14 @@ async function uploadToCloudflare() {
   }
 
 
+  // ── Opcjonalny zapis ustrukturyzowanego raportu JSON ─────────────────────
+  // Zawiera: meta (timestamp, domain, flagi, totals), per-list (status, stats,
+  // diff details, operations z operation_id). Zapisywany ZAWSZE jeśli włączono
+  // --json (lub env), również przy failed/timeout, żeby CI mógł go zarchiwizować.
+  if (JSON_REPORT_PATH) {
+    writeJsonReport(JSON_REPORT_PATH, results, counts, allOps);
+  }
+
   if (counts.failed > 0 || counts.timeout > 0) {
     console.error(`\n⛔ Co najmniej jedna lista nie zakończyła się sukcesem.`);
     process.exit(1);
@@ -468,6 +476,66 @@ async function uploadToCloudflare() {
   if (DRY_RUN) {
     console.log(`\n🔍 DRY RUN — nie wykonano żadnego PUT-u na Cloudflare.`);
     if (STRICT && warnings.length) process.exit(1);
+  }
+}
+
+// Zapisuje ustrukturyzowany raport JSON dla multi-list flow.
+// Schema (stabilna — bezpieczna dla parsowania w CI / dashboardach):
+//   {
+//     schema_version: "1",
+//     generated_at: ISO,
+//     domain, dry_run, clear, upload, strict, json_report_path,
+//     totals: { lists: N, completed, unchanged, skipped, failed, timeout,
+//               operations: { total, completed, failed, timeout, sync, skipped } },
+//     lists: [{
+//       label, id, status, note?, error?,
+//       stats: { adds, changes, deletes, localCount, remoteCount, details: {...} },
+//       operations: [{ phase, status, operationId, error?, timeoutSec?, note? }]
+//     }]
+//   }
+function writeJsonReport(targetPath, results, counts, allOps) {
+  const opCounts = allOps.reduce((acc, op) => {
+    acc[op.status] = (acc[op.status] ?? 0) + 1;
+    return acc;
+  }, {});
+  const report = {
+    schema_version: "1",
+    generated_at: new Date().toISOString(),
+    domain: DOMAIN,
+    flags: {
+      dry_run: DRY_RUN,
+      clear: CLEAR,
+      upload: UPLOAD,
+      strict: STRICT,
+      confirm: CONFIRM,
+      yes_clear: YES_CLEAR,
+    },
+    totals: {
+      lists: results.length,
+      by_status: { ...counts },
+      operations: {
+        total: allOps.length,
+        by_status: opCounts,
+      },
+    },
+    lists: results.map((r) => ({
+      label: r.label,
+      id: r.id,
+      status: r.status,
+      note: r.note ?? null,
+      error: r.error ?? null,
+      stats: r.stats ?? null,
+      operations: Array.isArray(r.operations) ? r.operations : [],
+    })),
+  };
+  try {
+    // Best-effort utworzenie katalogu (np. /mnt/documents/sub/foo.json).
+    const dir = dirname(resolve(targetPath));
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(targetPath, JSON.stringify(report, null, 2) + "\n", "utf8");
+    console.log(`\n📄 Raport JSON zapisany: ${targetPath}`);
+  } catch (err) {
+    console.error(`⚠️  Nie udało się zapisać raportu JSON do ${targetPath}: ${err?.message ?? err}`);
   }
 }
 
