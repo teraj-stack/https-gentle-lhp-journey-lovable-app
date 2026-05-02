@@ -416,6 +416,7 @@ async function uploadToCloudflare() {
     console.log(`\n🔍 DRY RUN — nie wykonano żadnego PUT-u na Cloudflare.`);
     if (STRICT && warnings.length) process.exit(1);
   }
+}
 
 // Parsuje "id" | "id1,id2" | "label=id1,other=id2" → [{ label, id }].
 // Spacje wokół przecinków i znaków `=` są tolerowane.
