@@ -712,6 +712,208 @@ function writeJsonReport(targetPath, results, counts, allOps) {
   } catch (err) {
     console.error(`⚠️  Nie udało się zapisać raportu JSON do ${targetPath}: ${err?.message ?? err}`);
   }
+  return report;
+}
+
+// HTML escape (single-source helper, używany w renderze raportu HTML).
+function htmlEscape(value) {
+  if (value === null || value === undefined) return "";
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+// Renderuje pojedynczą tabelę HTML; jeśli rows puste — zwraca placeholder.
+function renderHtmlTable(headers, rows, emptyMsg) {
+  if (!rows.length) return `<p class="empty">${htmlEscape(emptyMsg)}</p>`;
+  const thead = headers.map((h) => `<th>${htmlEscape(h)}</th>`).join("");
+  const tbody = rows
+    .map((r) => `<tr>${r.map((c) => `<td>${htmlEscape(c)}</td>`).join("")}</tr>`)
+    .join("");
+  return `<table><thead><tr>${thead}</tr></thead><tbody>${tbody}</tbody></table>`;
+}
+
+// Generuje samodzielny plik HTML z raportu JSON (te same dane).
+// Sekcje per-list: meta, diff (adds/changes/deletes), clear (operacje fazy clear),
+// upload (operacje fazy upload + verify-clear). Plik zapisywany ZAWSZE — także
+// gdy raport jest "abort" lub ma błędy walidacji.
+function writeHtmlReport(targetPath, report) {
+  const statusClass = (s) => {
+    const v = String(s ?? "").toLowerCase();
+    if (["completed", "ok"].includes(v)) return "ok";
+    if (["unchanged", "skipped"].includes(v)) return "muted";
+    if (["failed", "timeout"].includes(v)) return "bad";
+    return "neutral";
+  };
+
+  const flagsHtml = Object.entries(report.flags ?? {})
+    .map(([k, v]) => `<span class="chip ${v ? "on" : "off"}">${htmlEscape(k)}: ${v ? "on" : "off"}</span>`)
+    .join(" ");
+
+  const totalsRows = Object.entries(report.totals?.by_status ?? {}).map(([k, v]) => [k, String(v)]);
+  const opTotals = Object.entries(report.totals?.operations?.by_status ?? {}).map(([k, v]) => [k, String(v)]);
+
+  const listSections = (report.lists ?? [])
+    .map((l, idx) => {
+      const stats = l.stats ?? {};
+      const details = stats.details ?? {};
+      const ops = Array.isArray(l.operations) ? l.operations : [];
+
+      const adds = (details.adds ?? []).map((u) => ["+ add", u]);
+      const changes = (details.changes ?? []).map((c) => [
+        "~ change",
+        typeof c === "string" ? c : c?.source ?? JSON.stringify(c),
+        typeof c === "object" && c?.field ? c.field : "",
+      ]);
+      const deletes = (details.deletes ?? []).map((u) => ["− delete", u]);
+
+      const diffRows = [
+        ...adds.map((r) => [r[0], r[1], ""]),
+        ...changes,
+        ...deletes.map((r) => [r[0], r[1], ""]),
+      ];
+
+      const clearOps = ops.filter((o) => /clear/i.test(o.phase ?? ""));
+      const uploadOps = ops.filter((o) => !/clear/i.test(o.phase ?? ""));
+
+      const opRow = (o) => [
+        o.phase ?? "",
+        o.status ?? "",
+        o.operationId ?? "",
+        o.timeoutSec != null ? `${o.timeoutSec}s` : "",
+        o.error ?? o.note ?? "",
+      ];
+
+      return `
+<section class="list">
+  <h2>
+    <span class="badge ${statusClass(l.status)}">${htmlEscape(l.status ?? "unknown")}</span>
+    <span class="label">${htmlEscape(l.label ?? "(no label)")}</span>
+    <code class="id">${htmlEscape(l.id ?? "")}</code>
+  </h2>
+  ${l.error ? `<p class="err">⛔ ${htmlEscape(l.error)}</p>` : ""}
+  ${l.note ? `<p class="note">ℹ️ ${htmlEscape(l.note)}</p>` : ""}
+
+  <div class="stats">
+    <span>local: <b>${htmlEscape(stats.localCount ?? "—")}</b></span>
+    <span>remote: <b>${htmlEscape(stats.remoteCount ?? "—")}</b></span>
+    <span>+adds: <b>${htmlEscape(stats.adds ?? adds.length)}</b></span>
+    <span>~changes: <b>${htmlEscape(stats.changes ?? changes.length)}</b></span>
+    <span>−deletes: <b>${htmlEscape(stats.deletes ?? deletes.length)}</b></span>
+  </div>
+
+  <h3>Diff</h3>
+  ${renderHtmlTable(["Op", "Source", "Field"], diffRows, "Brak różnic — listy zsynchronizowane.")}
+
+  <h3>Clear</h3>
+  ${renderHtmlTable(["Phase", "Status", "Operation ID", "Timeout", "Note / Error"], clearOps.map(opRow), "Brak operacji clear (nie użyto --clear lub pominięto).")}
+
+  <h3>Upload</h3>
+  ${renderHtmlTable(["Phase", "Status", "Operation ID", "Timeout", "Note / Error"], uploadOps.map(opRow), "Brak operacji upload (nie użyto --upload lub dry-run).")}
+</section>`;
+    })
+    .join("\n");
+
+  const validationHtml = report._validation && !report._validation.ok
+    ? `<div class="warn"><strong>⚠️ ${report._validation.issues.length} problem(ów) walidacji schematu:</strong>
+        <ul>${report._validation.issues
+          .slice(0, 20)
+          .map((i) => `<li><code>${htmlEscape(i.path)}</code>: ${htmlEscape(i.message)}</li>`)
+          .join("")}</ul></div>`
+    : "";
+
+  const abortedHtml = report.aborted
+    ? `<div class="warn"><strong>⛔ Aborted:</strong> ${htmlEscape(report.aborted.reason)}
+        ${report.aborted.detail ? ` — ${htmlEscape(report.aborted.detail)}` : ""}
+        (exit ${htmlEscape(report.aborted.exit_code)})</div>`
+    : "";
+
+  const html = `<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Cloudflare Redirects Report — ${htmlEscape(report.domain ?? "")}</title>
+  <style>
+    :root { color-scheme: dark; }
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 24px; font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif;
+           background: #0e0f12; color: #e6e6e6; }
+    h1 { font-size: 22px; margin: 0 0 4px; }
+    h2 { font-size: 18px; margin: 28px 0 8px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    h3 { font-size: 14px; margin: 16px 0 6px; color: #c9a84c; text-transform: uppercase; letter-spacing: .05em; }
+    code { font: 12px/1 ui-monospace, SFMono-Regular, Menlo, monospace; color: #b8b8b8; }
+    .meta { color: #9aa0a6; font-size: 12px; margin-bottom: 16px; }
+    .chip { display: inline-block; padding: 2px 8px; border-radius: 999px; background: #2a2a2e;
+            font-size: 11px; margin-right: 4px; }
+    .chip.on { background: #2d4a2d; color: #b6e8b6; }
+    .chip.off { background: #2a2a2e; color: #888; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; text-transform: uppercase;
+             font-weight: 600; letter-spacing: .04em; }
+    .badge.ok { background: #1e4a2a; color: #a6e8b6; }
+    .badge.bad { background: #5a1e1e; color: #f3a6a6; }
+    .badge.muted { background: #2a2a2e; color: #aaa; }
+    .badge.neutral { background: #2a3a4a; color: #a6c8e8; }
+    .label { font-weight: 600; }
+    .id { font-size: 11px; color: #777; }
+    .stats { display: flex; gap: 16px; flex-wrap: wrap; padding: 8px 12px; background: #17181c;
+             border-radius: 6px; margin: 8px 0 12px; font-size: 13px; }
+    .stats b { color: #c9a84c; }
+    table { width: 100%; border-collapse: collapse; background: #17181c; border-radius: 6px; overflow: hidden;
+            font-size: 13px; }
+    th, td { text-align: left; padding: 6px 10px; border-bottom: 1px solid #2a2a2e; vertical-align: top; }
+    th { background: #1e1f23; color: #c9a84c; font-weight: 600; font-size: 12px; text-transform: uppercase; }
+    tr:last-child td { border-bottom: 0; }
+    td { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; word-break: break-all; }
+    .empty { color: #777; font-style: italic; padding: 8px 0; }
+    .err { color: #f3a6a6; }
+    .note { color: #a6c8e8; }
+    .warn { background: #3a2a1a; border-left: 3px solid #c9a84c; padding: 10px 14px; margin: 12px 0; border-radius: 4px; }
+    .warn ul { margin: 6px 0 0; padding-left: 20px; }
+    .summary { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0; }
+    .summary > div { background: #17181c; padding: 12px 16px; border-radius: 6px; }
+    section.list { margin-top: 32px; padding-top: 16px; border-top: 1px solid #2a2a2e; }
+    @media (max-width: 720px) { .summary { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <h1>Cloudflare Redirects Report</h1>
+  <div class="meta">
+    Domain: <b>${htmlEscape(report.domain ?? "—")}</b> ·
+    Generated: <b>${htmlEscape(report.generated_at ?? "—")}</b> ·
+    Schema: <code>${htmlEscape(report.schema_version ?? "—")}</code>
+  </div>
+  <div>${flagsHtml}</div>
+  ${abortedHtml}
+  ${validationHtml}
+
+  <div class="summary">
+    <div>
+      <h3>Lists by status</h3>
+      ${renderHtmlTable(["Status", "Count"], totalsRows, "Brak danych.")}
+    </div>
+    <div>
+      <h3>Operations (${htmlEscape(report.totals?.operations?.total ?? 0)})</h3>
+      ${renderHtmlTable(["Status", "Count"], opTotals, "Brak operacji.")}
+    </div>
+  </div>
+
+  ${listSections || `<p class="empty">Brak list w raporcie.</p>`}
+</body>
+</html>
+`;
+
+  try {
+    const dir = dirname(resolve(targetPath));
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(targetPath, html, "utf8");
+    console.log(`📄 Raport HTML zapisany: ${targetPath}`);
+  } catch (err) {
+    console.error(`⚠️  Nie udało się zapisać raportu HTML do ${targetPath}: ${err?.message ?? err}`);
+  }
 }
 
 // Parsuje "id" | "id1,id2" | "label=id1,other=id2" → [{ label, id }].
