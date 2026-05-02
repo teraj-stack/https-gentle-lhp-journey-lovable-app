@@ -630,16 +630,39 @@ async function uploadOne({ accountId, list, headers }) {
     };
   }
 
-  // Krok B.2: confirm (per lista). --clear wymaga osobnej zgody, bo to destrukcyjne.
-  if (!CONFIRM) {
-    if (CLEAR) {
-      console.log(
-        `\n⚠️  --clear wykasuje WSZYSTKIE ${remoteMap.size} reguł z listy "${list.label}"` +
-          (UPLOAD ? `, a następnie załaduje ${localMap.size} nowych.` : `.`),
+  // Krok B.2: confirm (per lista). --clear zawsze wymaga DODATKOWEJ, jawnej zgody —
+  // samo --confirm nie wystarcza, żeby uniknąć przypadkowego wymazania w CI/skrypcie.
+  if (CLEAR) {
+    console.log(
+      `\n⚠️  --clear wykasuje WSZYSTKIE ${remoteMap.size} reguł z listy "${list.label}" (${list.id})` +
+        (UPLOAD ? `, a następnie załaduje ${localMap.size} nowych.` : `.`),
+    );
+    console.log(`   ⛔ Operacja DESTRUKCYJNA i NIEODWRACALNA.`);
+
+    if (YES_CLEAR) {
+      console.log(`   ✓ --yes-clear / CF_CLEAR_CONFIRM=CLEAR — pomijam pytanie interaktywne.`);
+    } else if (process.stdin.isTTY) {
+      const phrase = await promptExactPhrase(
+        `   Aby potwierdzić, wpisz dokładnie słowo CLEAR (case-sensitive) dla "${list.label}": `,
+        "CLEAR",
       );
+      if (!phrase) {
+        console.log(`✗ Pominięto listę "${list.label}" — nie wpisano "CLEAR".`);
+        return { status: "skipped", stats, note: 'brak potwierdzenia "CLEAR"' };
+      }
     } else {
-      console.log(`\n⚠️  PUT zastąpi całą listę "${list.label}": ${remoteMap.size} → ${localMap.size} reguł.`);
+      console.error(
+        `   ❌ Tryb non-interactive (brak TTY) — wymagana jawna flaga --yes-clear ` +
+          `LUB env CF_CLEAR_CONFIRM=CLEAR. --confirm tu NIE wystarcza.`,
+      );
+      return {
+        status: "skipped",
+        stats,
+        note: "non-interactive bez --yes-clear/CF_CLEAR_CONFIRM",
+      };
     }
+  } else if (!CONFIRM) {
+    console.log(`\n⚠️  PUT zastąpi całą listę "${list.label}": ${remoteMap.size} → ${localMap.size} reguł.`);
     const ok = await promptYesNo(`   Kontynuować dla "${list.label}"? [y/N]: `);
     if (!ok) {
       console.log(`✗ Pominięto listę "${list.label}".`);
