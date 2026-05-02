@@ -972,6 +972,24 @@ function writeHtmlReport(targetPath, report) {
       <h3>Operations (${htmlEscape(report.totals?.operations?.total ?? 0)})</h3>
       ${renderHtmlTable(["Status", "Count"], opTotals, "Brak operacji.")}
     </div>
+    <div>
+      <h3>Diff totals (all lists)</h3>
+      ${renderHtmlTable(
+        ["Phase", "+ Adds", "~ Changes", "− Deletes"],
+        [
+          ["total",  String(report.totals?.diff?.total?.adds ?? 0),
+                     String(report.totals?.diff?.total?.changes ?? 0),
+                     String(report.totals?.diff?.total?.deletes ?? 0)],
+          ["clear",  String(report.totals?.diff?.by_phase?.clear?.adds ?? 0),
+                     String(report.totals?.diff?.by_phase?.clear?.changes ?? 0),
+                     String(report.totals?.diff?.by_phase?.clear?.deletes ?? 0)],
+          ["upload", String(report.totals?.diff?.by_phase?.upload?.adds ?? 0),
+                     String(report.totals?.diff?.by_phase?.upload?.changes ?? 0),
+                     String(report.totals?.diff?.by_phase?.upload?.deletes ?? 0)],
+        ],
+        "Brak danych diff.",
+      )}
+    </div>
   </div>
 
   ${listSections || `<p class="empty">Brak list w raporcie.</p>`}
