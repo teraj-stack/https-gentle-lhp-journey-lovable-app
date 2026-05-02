@@ -205,11 +205,18 @@ if (errors.length) {
   process.exit(1);
 }
 
-if (DRY_RUN) {
+if (DRY_RUN && !CLEAR && !UPLOAD) {
   console.log(`\n🔍 DRY RUN — nie zapisano żadnych plików.`);
   console.log(`   Aby wykonać eksport: node scripts/export-cloudflare-redirects.mjs\n`);
   if (STRICT && warnings.length) process.exit(1);
   process.exit(0);
+}
+
+if (DRY_RUN && (CLEAR || UPLOAD)) {
+  console.log(
+    `\n🔍 DRY RUN aktywny razem z ${CLEAR ? "--clear" : ""}${CLEAR && UPLOAD ? " + " : ""}${UPLOAD ? "--upload" : ""} ` +
+      `— pominę zapis plików oraz wszelkie PUT-y do Cloudflare (tylko GET + raport).`,
+  );
 }
 
 mkdirSync(OUT_DIR, { recursive: true });
