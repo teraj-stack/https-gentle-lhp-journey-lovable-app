@@ -219,7 +219,9 @@ if (DRY_RUN && (CLEAR || UPLOAD)) {
   );
 }
 
-mkdirSync(OUT_DIR, { recursive: true });
+// W trybie DRY_RUN nie zapisujemy plików — apiItems generujemy zawsze (w pamięci),
+// bo i tak są potrzebne do diff/walidacji w uploadToCloudflare.
+if (!DRY_RUN) mkdirSync(OUT_DIR, { recursive: true });
 
 // ── 1) Pełny CSV Cloudflare ─────────────────────────────────────────────────
 // Kolumny zgodne z dokumentacją Cloudflare Bulk Redirects:
@@ -237,22 +239,19 @@ const cfHeader = [
 const cfRows = entries.map(({ from, to }) => {
   const sourceUrl = `${DOMAIN}${from}`;
   const targetUrl = `${DOMAIN}${to}`;
-  // 301 permanent, zachowaj query (?utm_*), bez subdomen, exact match path, bez suffixu.
   return [sourceUrl, targetUrl, "301", "true", "false", "false", "false"].join(",");
 });
 
 const cfCsv = [cfHeader, ...cfRows].join("\n") + "\n";
-writeFileSync(`${OUT_DIR}/cloudflare-bulk-redirects.csv`, cfCsv, "utf8");
+if (!DRY_RUN) writeFileSync(`${OUT_DIR}/cloudflare-bulk-redirects.csv`, cfCsv, "utf8");
 
 // ── 2) Uproszczony CSV "source,target" ──────────────────────────────────────
 const simpleHeader = "source,target";
 const simpleRows = entries.map(({ from, to }) => `${DOMAIN}${from},${DOMAIN}${to}`);
 const simpleCsv = [simpleHeader, ...simpleRows].join("\n") + "\n";
-writeFileSync(`${OUT_DIR}/cloudflare-redirects-simple.csv`, simpleCsv, "utf8");
+if (!DRY_RUN) writeFileSync(`${OUT_DIR}/cloudflare-redirects-simple.csv`, simpleCsv, "utf8");
 
 // ── 3) JSON dla Cloudflare API (PUT /lists/{id}/items) ─────────────────────
-// Format zgodny z Cloudflare API v4 — gotowe do `curl --data @file`.
-// Doc: https://developers.cloudflare.com/api/operations/lists-update-list-items
 const apiItems = entries.map(({ from, to }) => ({
   redirect: {
     source_url: `${DOMAIN}${from}`,
@@ -264,11 +263,13 @@ const apiItems = entries.map(({ from, to }) => ({
     preserve_path_suffix: false,
   },
 }));
-writeFileSync(
-  `${OUT_DIR}/cloudflare-bulk-redirects.json`,
-  JSON.stringify(apiItems, null, 2) + "\n",
-  "utf8",
-);
+if (!DRY_RUN) {
+  writeFileSync(
+    `${OUT_DIR}/cloudflare-bulk-redirects.json`,
+    JSON.stringify(apiItems, null, 2) + "\n",
+    "utf8",
+  );
+}
 
 // ── 4) Czytelny TXT z powodami ──────────────────────────────────────────────
 const txtLines = [
@@ -284,18 +285,22 @@ const txtLines = [
   ),
   ``,
 ];
-writeFileSync(`${OUT_DIR}/cloudflare-redirects.txt`, txtLines.join("\n"), "utf8");
+if (!DRY_RUN) writeFileSync(`${OUT_DIR}/cloudflare-redirects.txt`, txtLines.join("\n"), "utf8");
 
 // ── Podsumowanie do stdout ──────────────────────────────────────────────────
 const byTarget = entries.reduce((acc, e) => {
   acc[e.to] = (acc[e.to] || 0) + 1;
   return acc;
 }, {});
-console.log(`✓ Wyeksportowano ${entries.length} reguł 301 dla ${DOMAIN}`);
-console.log(`✓ /mnt/documents/cloudflare-bulk-redirects.csv  (Dashboard upload)`);
-console.log(`✓ /mnt/documents/cloudflare-bulk-redirects.json (API PUT /lists/{id}/items)`);
-console.log(`✓ /mnt/documents/cloudflare-redirects-simple.csv (source,target)`);
-console.log(`✓ /mnt/documents/cloudflare-redirects.txt       (z powodami)`);
+if (DRY_RUN) {
+  console.log(`✓ [dry-run] przygotowano ${entries.length} reguł 301 dla ${DOMAIN} (bez zapisu plików)`);
+} else {
+  console.log(`✓ Wyeksportowano ${entries.length} reguł 301 dla ${DOMAIN}`);
+  console.log(`✓ /mnt/documents/cloudflare-bulk-redirects.csv  (Dashboard upload)`);
+  console.log(`✓ /mnt/documents/cloudflare-bulk-redirects.json (API PUT /lists/{id}/items)`);
+  console.log(`✓ /mnt/documents/cloudflare-redirects-simple.csv (source,target)`);
+  console.log(`✓ /mnt/documents/cloudflare-redirects.txt       (z powodami)`);
+}
 console.log(`\nTop celów:`);
 for (const [to, n] of Object.entries(byTarget).sort((a, b) => b[1] - a[1]).slice(0, 8)) {
   console.log(`  ${n.toString().padStart(3)} → ${to}`);
