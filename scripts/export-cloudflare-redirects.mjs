@@ -679,6 +679,7 @@ function buildReportInMemory(results, counts, allOps) {
           total: Array.isArray(allOps) ? allOps.length : 0,
           by_status: opCounts,
         },
+        diff: aggregateDiffStats(results),
       },
       lists: Array.isArray(results)
         ? results.map((r) => ({
