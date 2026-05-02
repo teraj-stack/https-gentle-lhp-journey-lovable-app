@@ -47,7 +47,7 @@
  */
 import { writeFileSync, mkdirSync, readFileSync, existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { dirname, resolve } from "node:path";
+import { basename, dirname, extname, join, resolve } from "node:path";
 import { randomUUID } from "node:crypto";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -117,19 +117,39 @@ const HTML_REPORT_PATH = (() => {
   return null;
 })();
 // --log[=path]    : zapisz transcript stdout/stderr do pliku log. RUN_ID jest
-//                    wstrzykiwany do nazwy pliku tuż przed rozszerzeniem
-//                    (np. cloudflare-report-<run_id>.log), żeby łatwo
+//                    dodawany i jako segment ścieżki, i do nazwy pliku
+//                    (np. /mnt/documents/cloudflare-runs/<run_id>/
+//                    export-cloudflare-redirects.<run_id>.log), żeby łatwo
 //                    skorelować log z konkretnym raportem JSON/HTML.
-//                    Bez ścieżki: pochodna od --json/--html lub
-//                    /mnt/documents/cloudflare-report.log. Env: CF_REPORT_LOG.
-function injectRunIdIntoFilename(p, runId) {
-  if (!p) return p;
-  const dot = p.lastIndexOf(".");
-  const slash = Math.max(p.lastIndexOf("/"), p.lastIndexOf("\\"));
-  if (dot > slash && dot !== -1) {
-    return p.slice(0, dot) + `-${runId}` + p.slice(dot);
-  }
-  return `${p}-${runId}.log`;
+//                    Bez ścieżki: pochodna od --json/--html lub domyślny
+//                    katalog /mnt/documents/cloudflare-runs/<run_id>/.
+//                    Env: CF_REPORT_LOG.
+function fileSafeRunId(runId) {
+  const safe = String(runId ?? "")
+    .trim()
+    .replace(/[^a-zA-Z0-9._-]+/g, "_")
+    .replace(/^\.+$/, "")
+    .slice(0, 128);
+  return safe || "run";
+}
+
+function injectRunIdIntoLogFilename(fileName, runIdPath) {
+  const ext = extname(fileName);
+  const stem = ext ? fileName.slice(0, -ext.length) : fileName;
+  return `${stem}.${runIdPath}${ext || ".log"}`;
+}
+
+function buildRunScopedLogPath(basePath, runId) {
+  const runIdPath = fileSafeRunId(runId);
+  const defaultFile = `export-cloudflare-redirects.${runIdPath}.log`;
+  const base = String(basePath ?? "").trim();
+  if (!base) return join(OUT_DIR, "cloudflare-runs", runIdPath, defaultFile);
+  if (/[\\/]$/.test(base)) return join(base, runIdPath, defaultFile);
+
+  const dir = dirname(base);
+  const file = basename(base);
+  const fileWithRunId = injectRunIdIntoLogFilename(file, runIdPath);
+  return dir === "." ? join(runIdPath, fileWithRunId) : join(dir, runIdPath, fileWithRunId);
 }
 const LOG_PATH = (() => {
   const withValue = RAW_ARGS.find((a) => a.startsWith("--log="));
@@ -140,9 +160,9 @@ const LOG_PATH = (() => {
     if (process.env.CF_REPORT_LOG) base = process.env.CF_REPORT_LOG;
     else if (JSON_REPORT_PATH) base = JSON_REPORT_PATH.replace(/\.json$/i, "") + ".log";
     else if (HTML_REPORT_PATH) base = HTML_REPORT_PATH.replace(/\.html?$/i, "") + ".log";
-    else base = "/mnt/documents/cloudflare-report.log";
+    else base = "";
   }
-  return base ? injectRunIdIntoFilename(base, RUN_ID) : null;
+  return base !== null ? buildRunScopedLogPath(base, RUN_ID) : null;
 })();
 
 // Tee console.log/error → plik logu (po wstrzyknięciu RUN_ID do nazwy).
