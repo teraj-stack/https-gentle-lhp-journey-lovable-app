@@ -68,13 +68,24 @@ const DOMAIN = "https://cml.pl";
 //                    Tryb non-interactive (CI / scripted): wymagana jest jawna flaga
 //                    --yes-clear LUB env `CF_CLEAR_CONFIRM=CLEAR` (samo --confirm
 //                    nie wystarczy, żeby uniknąć przypadkowego wymazania w pipeline).
-const ARGS = new Set(process.argv.slice(2));
+// --json[=path]   : zapisz ustrukturyzowany raport (diff + clear + upload, per lista)
+//                    do pliku JSON. Bez ścieżki domyślnie /mnt/documents/cloudflare-report.json.
+//                    Działa też z --dry-run (raport "co by się stało", bez PUT).
+//                    Alternatywnie: env CF_REPORT_JSON=/path/to/report.json.
+const RAW_ARGS = process.argv.slice(2);
+const ARGS = new Set(RAW_ARGS);
 const DRY_RUN = ARGS.has("--dry-run") || ARGS.has("-n");
 const STRICT = ARGS.has("--strict");
 const UPLOAD = ARGS.has("--upload");
 const CONFIRM = ARGS.has("--confirm");
 const CLEAR = ARGS.has("--clear");
 const YES_CLEAR = ARGS.has("--yes-clear") || process.env.CF_CLEAR_CONFIRM === "CLEAR";
+const JSON_REPORT_PATH = (() => {
+  const withValue = RAW_ARGS.find((a) => a.startsWith("--json="));
+  if (withValue) return withValue.slice("--json=".length).trim() || null;
+  if (ARGS.has("--json")) return process.env.CF_REPORT_JSON || "/mnt/documents/cloudflare-report.json";
+  return process.env.CF_REPORT_JSON || null;
+})();
 
 // ── Parser: wyciąga tylko aktywne (niezakomentowane) wpisy { from, to, reason } ──
 const source = readFileSync(SRC, "utf8");
