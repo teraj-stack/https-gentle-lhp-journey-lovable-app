@@ -550,6 +550,39 @@ async function uploadOne({ accountId, list, headers }) {
     }
   }
 
+  // Krok B.1: DRY RUN — pokaż plan i zakończ przed jakimkolwiek PUT-em.
+  if (DRY_RUN) {
+    if (CLEAR) {
+      const willDelete = remoteMap.size;
+      const willAdd = UPLOAD ? localMap.size : 0;
+      console.log(
+        `\n🔍 [dry-run] --clear ${UPLOAD ? "+ --upload " : ""}dla "${list.label}":`,
+      );
+      console.log(`     • do usunięcia: ${willDelete} reguł (cała aktualna lista)`);
+      if (UPLOAD) console.log(`     • następnie do dodania: ${willAdd} reguł z apiItems`);
+      console.log(`     • PUT NIE zostanie wykonany (dry-run).`);
+      return {
+        status: "unchanged",
+        stats: {
+          ...stats,
+          adds: willAdd,
+          changes: 0,
+          deletes: willDelete,
+          localCount: UPLOAD ? localMap.size : 0,
+        },
+        note: `dry-run: ${willDelete} do usunięcia${UPLOAD ? `, ${willAdd} do dodania` : ""}`,
+      };
+    }
+    console.log(
+      `\n🔍 [dry-run] --upload dla "${list.label}": +${stats.adds}/~${stats.changes}/-${stats.deletes} (PUT pominięty).`,
+    );
+    return {
+      status: "unchanged",
+      stats,
+      note: `dry-run: +${stats.adds}/~${stats.changes}/-${stats.deletes}`,
+    };
+  }
+
   // Krok B.2: confirm (per lista). --clear wymaga osobnej zgody, bo to destrukcyjne.
   if (!CONFIRM) {
     if (CLEAR) {
