@@ -767,6 +767,7 @@ function buildReportInMemory(results, counts, allOps) {
   } catch (err) {
     return {
       schema_version: REPORT_SCHEMA_VERSION,
+      run_id: RUN_ID,
       generated_at: new Date().toISOString(),
       domain: DOMAIN ?? null,
       flags: {},
