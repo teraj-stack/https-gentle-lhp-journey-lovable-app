@@ -110,15 +110,14 @@ const HTML_REPORT_PATH = (() => {
 // Schema kompatybilny ze standardowym raportem (te same pola top-level),
 // z dodatkowym `aborted: { reason, detail, exit_code }`.
 function writeAbortReportAndExit(reason, detail, exitCode = 1) {
-  if (JSON_REPORT_PATH) {
+  let stub = null;
+  if (JSON_REPORT_PATH || HTML_REPORT_PATH) {
     try {
-      // Defensive: REPORT_SCHEMA_VERSION may be in TDZ if abort happens during
-      // module top-level evaluation; fall back to literal "1.1".
       let schemaVer = "1.1";
-      try { schemaVer = REPORT_SCHEMA_VERSION; } catch { /* TDZ — keep fallback */ }
+      try { schemaVer = REPORT_SCHEMA_VERSION; } catch { /* TDZ */ }
       let domainVal = null;
       try { domainVal = typeof DOMAIN === "string" ? DOMAIN : null; } catch { /* TDZ */ }
-      const stub = {
+      stub = {
         schema_version: schemaVer,
         generated_at: new Date().toISOString(),
         domain: domainVal,
@@ -141,13 +140,24 @@ function writeAbortReportAndExit(reason, detail, exitCode = 1) {
       };
       try {
         if (typeof validateReport === "function") stub._validation = validateReport(stub);
-      } catch { /* TDZ — skip validation in early abort */ }
+      } catch { /* TDZ */ }
+    } catch (err) {
+      console.error(`⚠️  Nie udało się zbudować abort-raportu: ${err?.message ?? err}`);
+    }
+  }
+  if (JSON_REPORT_PATH && stub) {
+    try {
       const dir = dirname(resolve(JSON_REPORT_PATH));
       mkdirSync(dir, { recursive: true });
       writeFileSync(JSON_REPORT_PATH, JSON.stringify(stub, null, 2) + "\n", "utf8");
       console.error(`📄 Raport JSON (abort: ${reason}) zapisany: ${JSON_REPORT_PATH}`);
     } catch (err) {
       console.error(`⚠️  Nie udało się zapisać abort-raportu JSON: ${err?.message ?? err}`);
+    }
+  }
+  if (HTML_REPORT_PATH && stub && typeof writeHtmlReport === "function") {
+    try { writeHtmlReport(HTML_REPORT_PATH, stub); } catch (err) {
+      console.error(`⚠️  Nie udało się zapisać abort-raportu HTML: ${err?.message ?? err}`);
     }
   }
   process.exit(exitCode);
