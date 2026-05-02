@@ -950,6 +950,47 @@ async function fetchAllListItems(baseUrl, headers) {
   return all;
 }
 
+// ── Post-clear verification: potwierdza, że lista jest faktycznie pusta ────
+// Cloudflare bulk_operations zwraca "completed" zanim eventual consistency
+// dogoni GET /items, więc retry-ujemy z krótkim backoff.
+// Zwraca: { empty, residualCount, sample[], attempts }.
+async function verifyListIsEmpty({ baseUrl, headers, label, maxAttempts = 4, delayMs = 1500 }) {
+  let last = { residualCount: 0, sample: [] };
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    // Wystarczy pierwsza strona (per_page=25). Jeśli nie jest pusta, lista nie jest pusta.
+    const res = await fetchWithRetry(
+      `${baseUrl}/items?per_page=25`,
+      { headers },
+      { label: `verify-clear ${label} (próba ${attempt}/${maxAttempts})`, maxRetries: 3 },
+    );
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok || !json.success) {
+      throw new Error(
+        `verify-clear: HTTP ${res.status} — ${JSON.stringify(json.errors ?? json).slice(0, 160)}`,
+      );
+    }
+    const items = Array.isArray(json.result) ? json.result : [];
+    // Preferuj `result_info.total_count` jeśli CF go podaje, fallback to per-page count.
+    const reportedTotal =
+      typeof json.result_info?.total_count === "number" ? json.result_info.total_count : null;
+    const residualCount = reportedTotal ?? items.length;
+    last = {
+      residualCount,
+      sample: items.map((it) => it.redirect?.source_url).filter(Boolean),
+    };
+    if (residualCount === 0) {
+      return { empty: true, residualCount: 0, sample: [], attempts: attempt };
+    }
+    if (attempt < maxAttempts) {
+      console.log(
+        `   · verify-clear próba ${attempt}/${maxAttempts}: ${residualCount} items pozostało, retry za ${delayMs}ms…`,
+      );
+      await new Promise((r) => setTimeout(r, delayMs));
+    }
+  }
+  return { empty: false, ...last, attempts: maxAttempts };
+}
+
 // ── Walidacja apiItems pod kątem schematu Cloudflare Bulk Redirects ────────
 // Doc: https://developers.cloudflare.com/api/operations/lists-update-list-items
 // Schema oczekuje tablicy `[{ redirect: { source_url, target_url, status_code, ... } }]`
