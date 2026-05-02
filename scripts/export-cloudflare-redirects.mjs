@@ -84,6 +84,18 @@ const CONFIRM = ARGS.has("--confirm");
 const CLEAR = ARGS.has("--clear");
 const YES_CLEAR = ARGS.has("--yes-clear") || process.env.CF_CLEAR_CONFIRM === "CLEAR";
 const HELP = ARGS.has("--help") || ARGS.has("-h");
+// --run-id[=value] : identyfikator przebiegu, do korelacji logów z raportem.
+//                    Priorytet: --run-id=<v> > env CF_RUN_ID > wygenerowany UUID v4.
+//                    Zapisywany w report.run_id i logowany do stdout na starcie.
+const RUN_ID = (() => {
+  const withValue = RAW_ARGS.find((a) => a.startsWith("--run-id="));
+  if (withValue) {
+    const v = withValue.slice("--run-id=".length).trim();
+    if (v) return v;
+  }
+  if (process.env.CF_RUN_ID && process.env.CF_RUN_ID.trim()) return process.env.CF_RUN_ID.trim();
+  return randomUUID();
+})();
 const JSON_REPORT_PATH = (() => {
   const withValue = RAW_ARGS.find((a) => a.startsWith("--json="));
   if (withValue) return withValue.slice("--json=".length).trim() || null;
