@@ -116,6 +116,60 @@ const HTML_REPORT_PATH = (() => {
   }
   return null;
 })();
+// --log[=path]    : zapisz transcript stdout/stderr do pliku log. RUN_ID jest
+//                    wstrzykiwany do nazwy pliku tuż przed rozszerzeniem
+//                    (np. cloudflare-report-<run_id>.log), żeby łatwo
+//                    skorelować log z konkretnym raportem JSON/HTML.
+//                    Bez ścieżki: pochodna od --json/--html lub
+//                    /mnt/documents/cloudflare-report.log. Env: CF_REPORT_LOG.
+function injectRunIdIntoFilename(p, runId) {
+  if (!p) return p;
+  const dot = p.lastIndexOf(".");
+  const slash = Math.max(p.lastIndexOf("/"), p.lastIndexOf("\\"));
+  if (dot > slash && dot !== -1) {
+    return p.slice(0, dot) + `-${runId}` + p.slice(dot);
+  }
+  return `${p}-${runId}.log`;
+}
+const LOG_PATH = (() => {
+  const withValue = RAW_ARGS.find((a) => a.startsWith("--log="));
+  let base = null;
+  if (withValue) {
+    base = withValue.slice("--log=".length).trim() || null;
+  } else if (ARGS.has("--log") || process.env.CF_REPORT_LOG) {
+    if (process.env.CF_REPORT_LOG) base = process.env.CF_REPORT_LOG;
+    else if (JSON_REPORT_PATH) base = JSON_REPORT_PATH.replace(/\.json$/i, "") + ".log";
+    else if (HTML_REPORT_PATH) base = HTML_REPORT_PATH.replace(/\.html?$/i, "") + ".log";
+    else base = "/mnt/documents/cloudflare-report.log";
+  }
+  return base ? injectRunIdIntoFilename(base, RUN_ID) : null;
+})();
+
+// Tee console.log/error → plik logu (po wstrzyknięciu RUN_ID do nazwy).
+if (LOG_PATH) {
+  try {
+    mkdirSync(dirname(resolve(LOG_PATH)), { recursive: true });
+    // Truncate / start fresh.
+    writeFileSync(LOG_PATH, "", "utf8");
+    const { appendFileSync } = await import("node:fs");
+    const stripAnsi = (s) => String(s).replace(/\x1B\[[0-9;]*[A-Za-z]/g, "");
+    const tee = (orig, level) => (...args) => {
+      orig(...args);
+      try {
+        const line = args
+          .map((a) => (typeof a === "string" ? a : JSON.stringify(a)))
+          .join(" ");
+        appendFileSync(LOG_PATH, `[${new Date().toISOString()}] [${level}] ${stripAnsi(line)}\n`, "utf8");
+      } catch { /* swallow */ }
+    };
+    console.log = tee(console.log.bind(console), "log");
+    console.error = tee(console.error.bind(console), "err");
+    console.warn = tee(console.warn.bind(console), "warn");
+    console.error(`📝 Log zapisywany: ${LOG_PATH}`);
+  } catch (err) {
+    console.error(`⚠️  Nie udało się otworzyć log file: ${err?.message ?? err}`);
+  }
+}
 
 // Pisze minimalny raport "abort" (counts=0, brak operacji) i kończy proces.
 // Używane gdy skrypt nie może wystartować (--help, brak env, brak entries),
