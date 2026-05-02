@@ -586,6 +586,12 @@ async function uploadOne({ accountId, list, headers }) {
       deletes: remoteDeletes.length,
       localCount: localMap.size,
       remoteCount: remoteMap.size,
+      // Pełne listy do --json reportu (puste tablice w przypadku braku zmian).
+      details: {
+        adds: remoteAdds.map(({ src, to }) => ({ source_url: src, target_url: to })),
+        changes: remoteChanges.map(({ src, diffs }) => ({ source_url: src, diffs })),
+        deletes: remoteDeletes.map(({ src, to }) => ({ source_url: src, target_url: to })),
+      },
     };
 
     console.log(`\n📊 DIFF: Remote ${remoteMap.size} → Local ${localMap.size} (+${stats.adds}/~${stats.changes}/-${stats.deletes})`);
