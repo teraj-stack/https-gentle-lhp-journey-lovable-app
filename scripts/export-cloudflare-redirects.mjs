@@ -412,7 +412,10 @@ async function uploadToCloudflare() {
     console.error(`\n⛔ Co najmniej jedna lista nie zakończyła się sukcesem.`);
     process.exit(1);
   }
-}
+  if (DRY_RUN) {
+    console.log(`\n🔍 DRY RUN — nie wykonano żadnego PUT-u na Cloudflare.`);
+    if (STRICT && warnings.length) process.exit(1);
+  }
 
 // Parsuje "id" | "id1,id2" | "label=id1,other=id2" → [{ label, id }].
 // Spacje wokół przecinków i znaków `=` są tolerowane.
