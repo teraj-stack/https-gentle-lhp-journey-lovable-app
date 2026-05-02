@@ -613,7 +613,7 @@ const REPORT_SCHEMA_VERSION = "1.1";
 // żeby brakujące/niewłaściwe pola trafiły do _validation.issues, ale zapis
 // pliku nadal nastąpił (best-effort dla CI).
 const REPORT_REQUIRED = {
-  top: ["schema_version", "generated_at", "domain", "flags", "totals", "lists"],
+  top: ["schema_version", "run_id", "generated_at", "domain", "flags", "totals", "lists"],
   flags: ["dry_run", "clear", "upload", "strict"],
   totals: ["lists", "by_status", "operations"],
   list: ["label", "id", "status"],
