@@ -655,7 +655,10 @@ async function uploadOne({ accountId, list, headers }) {
 
 // Wspólny helper: PUT /items + (opcjonalny) polling statusu operacji.
 // Używany zarówno przez --clear (items=[]) jak i właściwy upload.
-// Rzuca wyjątkiem przy HTTP error / failed; zwraca { status, timeoutSec? } przy success/timeout.
+// Rzuca wyjątkiem TYLKO przy HTTP error PUT-a (brak operation_id w ogóle).
+// Zwraca: { status: "completed"|"failed"|"timeout"|"sync", operationId, timeoutSec?, error? }.
+// Status "failed" jest zwracany (a nie throw) — dzięki temu raport końcowy
+// może pokazać operation_id zarówno dla sukcesów jak i porażek.
 async function replaceListItems({ baseUrl, accountId, headers, items, label }) {
   const putRes = await fetchWithRetry(
     `${baseUrl}/items`,
@@ -668,9 +671,9 @@ async function replaceListItems({ baseUrl, accountId, headers, items, label }) {
       `${label} HTTP ${putRes.status}: ${JSON.stringify(putJson.errors ?? putJson).slice(0, 200)}`,
     );
   }
-  const operationId = putJson.result?.operation_id;
+  const operationId = putJson.result?.operation_id ?? null;
   console.log(`  ✓ ${label} zaakceptowane (operation_id=${operationId ?? "n/a"})`);
-  if (!operationId) return { status: "sync" };
+  if (!operationId) return { status: "sync", operationId: null };
 
   const opUrl = `https://api.cloudflare.com/client/v4/accounts/${accountId}/rules/lists/bulk_operations/${operationId}`;
   const start = Date.now();
@@ -685,11 +688,15 @@ async function replaceListItems({ baseUrl, accountId, headers, items, label }) {
       console.log(`    · status: ${status}${opJson.result?.error ? ` (${opJson.result.error})` : ""}`);
       lastStatus = status;
     }
-    if (status === "completed") return { status: "completed" };
-    if (status === "failed") throw new Error(`${label} failed: ${opJson.result?.error ?? "unknown"}`);
+    if (status === "completed") return { status: "completed", operationId };
+    if (status === "failed") {
+      const error = opJson.result?.error ?? "unknown";
+      console.error(`  ❌ ${label} failed: ${error}`);
+      return { status: "failed", operationId, error };
+    }
   }
   console.warn(`  ⚠️  ${label}: timeout (${TIMEOUT_MS / 1000}s) — sprawdź ręcznie w Dashboard.`);
-  return { status: "timeout", timeoutSec: TIMEOUT_MS / 1000 };
+  return { status: "timeout", operationId, timeoutSec: TIMEOUT_MS / 1000 };
 }
 
 function promptYesNo(question) {
