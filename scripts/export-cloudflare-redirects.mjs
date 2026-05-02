@@ -730,6 +730,7 @@ function buildReportInMemory(results, counts, allOps) {
     }, {});
     const report = {
       schema_version: REPORT_SCHEMA_VERSION,
+      run_id: RUN_ID,
       generated_at: new Date().toISOString(),
       domain: DOMAIN ?? null,
       flags: {
