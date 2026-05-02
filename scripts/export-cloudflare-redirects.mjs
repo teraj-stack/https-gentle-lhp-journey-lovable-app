@@ -607,27 +607,57 @@ async function uploadOne({ accountId, list, headers }) {
     }
   }
 
+  // Operacje wykonane na tej liście — każdy PUT (clear / upload) dostaje wpis
+  // z phase, operation_id i finalnym statusem (do raportu końcowego).
+  const operations = [];
+
   // Krok C0: --clear → PUT z pustą tablicą (wymazuje wszystkie items).
   // Cloudflare przyjmuje `[]` jako prawidłowy body i zwraca operation_id.
   if (CLEAR) {
     if (remoteMap.size === 0) {
       console.log(`→ --clear: lista już pusta, pomijam wymazanie.`);
+      operations.push({ phase: "clear", status: "skipped", operationId: null, note: "lista już pusta" });
     } else {
       console.log(`→ --clear: PUT ${baseUrl}/items z pustą tablicą (wymazuję ${remoteMap.size} reguł)`);
-      await replaceListItems({
+      const clearRes = await replaceListItems({
         baseUrl,
         accountId,
         headers,
         items: [],
         label: `clear ${list.label}`,
       });
-      console.log(`✅ Lista "${list.label}" wyczyszczona.`);
+      operations.push({
+        phase: "clear",
+        status: clearRes.status,
+        operationId: clearRes.operationId,
+        error: clearRes.error,
+        timeoutSec: clearRes.timeoutSec,
+      });
+      if (clearRes.status === "completed") {
+        console.log(`✅ Lista "${list.label}" wyczyszczona.`);
+      } else if (clearRes.status === "failed") {
+        // Nie ruszamy uploadu jeśli clear failed.
+        return {
+          status: "failed",
+          stats,
+          operations,
+          error: `clear failed: ${clearRes.error}`,
+        };
+      } else if (clearRes.status === "timeout") {
+        return {
+          status: "timeout",
+          stats,
+          operations,
+          note: `clear timeout po ${clearRes.timeoutSec}s`,
+        };
+      }
     }
     if (!UPLOAD) {
       // --clear bez --upload → kończymy tutaj. stats.localCount=0.
       return {
         status: "completed",
         stats: { ...stats, adds: 0, changes: 0, localCount: 0 },
+        operations,
         note: `wyczyszczone (${remoteMap.size} usuniętych)`,
       };
     }
@@ -642,15 +672,25 @@ async function uploadOne({ accountId, list, headers }) {
     items: apiItems,
     label: `PUT ${list.label}`,
   });
+  operations.push({
+    phase: "upload",
+    status: result.status,
+    operationId: result.operationId,
+    error: result.error,
+    timeoutSec: result.timeoutSec,
+  });
   if (result.status === "completed") {
     console.log(`✅ Lista "${list.label}" zaktualizowana (${apiItems.length} reguł).`);
-    return { status: "completed", stats };
+    return { status: "completed", stats, operations };
   }
   if (result.status === "timeout") {
-    return { status: "timeout", stats, note: `timeout po ${result.timeoutSec}s` };
+    return { status: "timeout", stats, operations, note: `timeout po ${result.timeoutSec}s` };
+  }
+  if (result.status === "failed") {
+    return { status: "failed", stats, operations, error: `upload failed: ${result.error}` };
   }
   // Sync (brak operation_id).
-  return { status: "completed", stats, note: "brak operation_id (sync)" };
+  return { status: "completed", stats, operations, note: "brak operation_id (sync)" };
 }
 
 // Wspólny helper: PUT /items + (opcjonalny) polling statusu operacji.
