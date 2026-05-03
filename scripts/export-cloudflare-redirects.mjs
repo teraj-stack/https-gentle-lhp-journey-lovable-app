@@ -527,7 +527,7 @@ if (!DRY_RUN) writeFileSync(`${OUT_DIR}/cloudflare-redirects.txt`, txtLines.join
 //   inputs         : pliki źródłowe pipeline'u (do reprodukcji runu)
 //   artifacts      : ścieżki WSZYSTKICH artefaktów (pośrednich i finalnych);
 //                    `null` = artefakt nie został wygenerowany w tym runie.
-const MANIFEST_SCHEMA_VERSION = 2;
+const MANIFEST_SCHEMA_VERSION = 3;
 const SOURCE_BYTES = (() => {
   try { return readFileSync(SRC, "utf8"); } catch { return ""; }
 })();
@@ -538,6 +538,43 @@ const CONFIG_HASH = createHash("sha256")
   .slice(0, 16);
 
 const RUN_DIR = `${OUT_DIR}/cloudflare-runs/${fileSafeRunId(RUN_ID)}`;
+
+// ── Linki do artefaktów dla danego run_id ──────────────────────────────────
+// `download_url` (preferowany do otwarcia w UI) wymaga publicznego base URL,
+// pod którym serwowane jest /mnt/documents. Konfigurowalne przez env:
+//   CF_ARTIFACT_BASE_URL=https://example.com/artifacts   (bez końcowego "/")
+// Jeśli env nie jest ustawione → `download_url` = null, zostają tylko
+// `file_url` (file://) i `rel_path` (ścieżka względna do OUT_DIR), które
+// działają lokalnie i są łatwe do złożenia w dowolnym proxy.
+const ARTIFACT_BASE_URL = (process.env.CF_ARTIFACT_BASE_URL || "").replace(/\/+$/, "") || null;
+const toRelPath = (absPath) => {
+  if (!absPath) return null;
+  const abs = String(absPath);
+  return abs.startsWith(`${OUT_DIR}/`) ? abs.slice(OUT_DIR.length + 1) : abs;
+};
+const linksFor = (absPath) => {
+  if (!absPath) return null;
+  const rel = toRelPath(absPath);
+  return {
+    path: absPath,
+    rel_path: rel,
+    file_url: `file://${absPath}`,
+    download_url: ARTIFACT_BASE_URL && rel ? `${ARTIFACT_BASE_URL}/${rel}` : null,
+  };
+};
+
+const artifactPaths = {
+  bulk_csv: DRY_RUN ? null : `${OUT_DIR}/cloudflare-bulk-redirects.csv`,
+  bulk_json: DRY_RUN ? null : `${OUT_DIR}/cloudflare-bulk-redirects.json`,
+  simple_csv: DRY_RUN ? null : `${OUT_DIR}/cloudflare-redirects-simple.csv`,
+  txt: DRY_RUN ? null : `${OUT_DIR}/cloudflare-redirects.txt`,
+  log: LOG_PATH ?? null,
+  json_report: JSON_REPORT_PATH ?? null,
+  html_report: HTML_REPORT_PATH ?? null,
+  manifest: `${RUN_DIR}/cloudflare-export-manifest.json`,
+  run_dir: RUN_DIR,
+};
+
 const manifest = {
   schema_version: MANIFEST_SCHEMA_VERSION,
   run_id: RUN_ID,
@@ -550,19 +587,19 @@ const manifest = {
     source_map: SRC,
     prev_simple_csv: existsSync(PREV_FILE) ? PREV_FILE : null,
   },
-  artifacts: {
-    // Finalne wyjścia eksportu
-    bulk_csv: DRY_RUN ? null : `${OUT_DIR}/cloudflare-bulk-redirects.csv`,
-    bulk_json: DRY_RUN ? null : `${OUT_DIR}/cloudflare-bulk-redirects.json`,
-    simple_csv: DRY_RUN ? null : `${OUT_DIR}/cloudflare-redirects-simple.csv`,
-    txt: DRY_RUN ? null : `${OUT_DIR}/cloudflare-redirects.txt`,
-    // Pośrednie / diagnostyczne
-    log: LOG_PATH ?? null,
-    json_report: JSON_REPORT_PATH ?? null,
-    html_report: HTML_REPORT_PATH ?? null,
-    manifest: `${RUN_DIR}/cloudflare-export-manifest.json`,
-    run_dir: RUN_DIR,
+  // Surowe ścieżki — kompat wstecz (schema v2).
+  artifacts: artifactPaths,
+  // Skróty do najczęściej otwieranych raportów (UX).
+  links: {
+    json_report: linksFor(artifactPaths.json_report),
+    html_report: linksFor(artifactPaths.html_report),
+    manifest: linksFor(artifactPaths.manifest),
+    log: linksFor(artifactPaths.log),
   },
+  // Per-artefakt linki (download_url/file_url/rel_path) dla wszystkich plików.
+  artifact_links: Object.fromEntries(
+    Object.entries(artifactPaths).map(([k, v]) => [k, linksFor(v)]),
+  ),
 };
 if (!DRY_RUN) {
   const manifestPath = manifest.artifacts.manifest;
@@ -571,6 +608,12 @@ if (!DRY_RUN) {
   console.log(
     `✓ ${manifestPath} (manifest v${MANIFEST_SCHEMA_VERSION} run_id=${RUN_ID} config_hash=${CONFIG_HASH})`,
   );
+  if (manifest.links.html_report?.download_url) {
+    console.log(`🔗 HTML: ${manifest.links.html_report.download_url}`);
+  }
+  if (manifest.links.json_report?.download_url) {
+    console.log(`🔗 JSON: ${manifest.links.json_report.download_url}`);
+  }
 }
 
 // ── Podsumowanie do stdout ──────────────────────────────────────────────────
