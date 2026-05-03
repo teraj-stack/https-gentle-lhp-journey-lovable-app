@@ -1451,12 +1451,16 @@ async function uploadOne({ accountId, list, headers }) {
   }
 
   // Krok C: PUT replace-all z apiItems.
-  console.log(`→ PUT ${baseUrl}/items (${apiItems.length} reguł)`);
+  // Cloudflare API może odrzucić nieznane pola na poziomie itemu, więc do uploadu
+  // wysyłamy tylko `{ redirect }`. Pole `run_id` zachowujemy jedynie w lokalnych
+  // artefaktach (CSV/JSON/manifest) dla spójności pipeline'u.
+  const uploadItems = apiItems.map(({ redirect }) => ({ redirect }));
+  console.log(`→ PUT ${baseUrl}/items (${uploadItems.length} reguł)`);
   const result = await replaceListItems({
     baseUrl,
     accountId,
     headers,
-    items: apiItems,
+    items: uploadItems,
     label: `PUT ${list.label}`,
   });
   operations.push({
