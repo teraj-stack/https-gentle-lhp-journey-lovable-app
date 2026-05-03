@@ -515,28 +515,62 @@ const txtLines = [
 ];
 if (!DRY_RUN) writeFileSync(`${OUT_DIR}/cloudflare-redirects.txt`, txtLines.join("\n"), "utf8");
 
-// ── 4b) Manifest pośredni z run_id (spójność artefaktów w pipeline) ─────────
+// ── 4b) Manifest pośredni — ustandaryzowany schemat (spójność pipeline'u) ───
+// Pola obowiązkowe:
+//   schema_version : monotonicznie rosnący integer (bumpować przy breaking change)
+//   run_id         : identyfikator przebiegu (ten sam co w CSV/JSON/log)
+//   generated_at   : ISO-8601 UTC, wspólny dla całego runu
+//   config_hash    : sha256 (skrócony) źródłowej mapy SEO_REDIRECTS + DOMAIN +
+//                    schema_version → wykrywanie zmian konfiguracji między runami
+//   domain         : docelowa domena (https://cml.pl)
+//   totals         : agregaty (na razie liczba wpisów)
+//   inputs         : pliki źródłowe pipeline'u (do reprodukcji runu)
+//   artifacts      : ścieżki WSZYSTKICH artefaktów (pośrednich i finalnych);
+//                    `null` = artefakt nie został wygenerowany w tym runie.
+const MANIFEST_SCHEMA_VERSION = 2;
+const SOURCE_BYTES = (() => {
+  try { return readFileSync(SRC, "utf8"); } catch { return ""; }
+})();
+const CONFIG_HASH = createHash("sha256")
+  .update(`v${MANIFEST_SCHEMA_VERSION}|${DOMAIN}|`)
+  .update(SOURCE_BYTES)
+  .digest("hex")
+  .slice(0, 16);
+
+const RUN_DIR = `${OUT_DIR}/cloudflare-runs/${fileSafeRunId(RUN_ID)}`;
 const manifest = {
-  schema_version: 1,
+  schema_version: MANIFEST_SCHEMA_VERSION,
   run_id: RUN_ID,
   generated_at: GENERATED_AT,
+  config_hash: CONFIG_HASH,
   domain: DOMAIN,
+  dry_run: DRY_RUN,
   totals: { entries: entries.length },
+  inputs: {
+    source_map: SRC,
+    prev_simple_csv: existsSync(PREV_FILE) ? PREV_FILE : null,
+  },
   artifacts: {
-    bulk_csv: `${OUT_DIR}/cloudflare-bulk-redirects.csv`,
-    bulk_json: `${OUT_DIR}/cloudflare-bulk-redirects.json`,
-    simple_csv: `${OUT_DIR}/cloudflare-redirects-simple.csv`,
-    txt: `${OUT_DIR}/cloudflare-redirects.txt`,
+    // Finalne wyjścia eksportu
+    bulk_csv: DRY_RUN ? null : `${OUT_DIR}/cloudflare-bulk-redirects.csv`,
+    bulk_json: DRY_RUN ? null : `${OUT_DIR}/cloudflare-bulk-redirects.json`,
+    simple_csv: DRY_RUN ? null : `${OUT_DIR}/cloudflare-redirects-simple.csv`,
+    txt: DRY_RUN ? null : `${OUT_DIR}/cloudflare-redirects.txt`,
+    // Pośrednie / diagnostyczne
     log: LOG_PATH ?? null,
     json_report: JSON_REPORT_PATH ?? null,
     html_report: HTML_REPORT_PATH ?? null,
+    manifest: `${RUN_DIR}/cloudflare-export-manifest.json`,
+    run_dir: RUN_DIR,
   },
 };
 if (!DRY_RUN) {
-  const manifestPath = `${OUT_DIR}/cloudflare-runs/${fileSafeRunId(RUN_ID)}/cloudflare-export-manifest.json`;
+  const manifestPath = manifest.artifacts.manifest;
   mkdirSync(dirname(manifestPath), { recursive: true });
   writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + "\n", "utf8");
-  console.log(`✓ ${manifestPath} (manifest run_id=${RUN_ID})`);
+  console.log(
+    `✓ ${manifestPath} (manifest v${MANIFEST_SCHEMA_VERSION} run_id=${RUN_ID} config_hash=${CONFIG_HASH})`,
+  );
 }
 
 // ── Podsumowanie do stdout ──────────────────────────────────────────────────
