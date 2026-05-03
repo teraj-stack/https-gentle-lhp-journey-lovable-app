@@ -526,11 +526,10 @@ const manifest = {
   },
 };
 if (!DRY_RUN) {
-  writeFileSync(
-    `${OUT_DIR}/cloudflare-runs/${fileSafeRunId(RUN_ID)}/cloudflare-export-manifest.json`,
-    JSON.stringify(manifest, null, 2) + "\n",
-    "utf8",
-  );
+  const manifestPath = `${OUT_DIR}/cloudflare-runs/${fileSafeRunId(RUN_ID)}/cloudflare-export-manifest.json`;
+  mkdirSync(dirname(manifestPath), { recursive: true });
+  writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + "\n", "utf8");
+  console.log(`✓ ${manifestPath} (manifest run_id=${RUN_ID})`);
 }
 
 // ── Podsumowanie do stdout ──────────────────────────────────────────────────
