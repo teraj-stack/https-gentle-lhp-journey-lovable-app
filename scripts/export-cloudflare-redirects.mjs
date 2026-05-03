@@ -179,7 +179,7 @@ if (LOG_PATH) {
         const line = args
           .map((a) => (typeof a === "string" ? a : JSON.stringify(a)))
           .join(" ");
-        appendFileSync(LOG_PATH, `[${new Date().toISOString()}] [${level}] ${stripAnsi(line)}\n`, "utf8");
+        appendFileSync(LOG_PATH, `[${new Date().toISOString()}] [run_id=${RUN_ID}] [${level}] ${stripAnsi(line)}\n`, "utf8");
       } catch { /* swallow */ }
     };
     console.log = tee(console.log.bind(console), "log");
