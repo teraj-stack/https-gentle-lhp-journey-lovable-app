@@ -616,6 +616,40 @@ if (!DRY_RUN) {
   }
 }
 
+// ── 4c) Walidacja spójności run_id we wszystkich artefaktach ────────────────
+// Każdy plik produkowany przez ten run MUSI zawierać RUN_ID w treści. Dzięki
+// temu artefakty z katalogu cloudflare-runs/<run_id>/ + powiązane finalne pliki
+// (bulk_csv/json, simple_csv, txt, log, json/html report) można odfiltrować
+// czysto po `grep` bez polegania na nazwach plików.
+// W razie niezgodności: log błędu + (w trybie --strict) exit 1.
+if (!DRY_RUN) {
+  const checks = Object.entries(manifest.artifacts)
+    .filter(([key, p]) => p && key !== "run_dir" && existsSync(p));
+  const mismatches = [];
+  for (const [key, p] of checks) {
+    try {
+      const content = readFileSync(p, "utf8");
+      if (!content.includes(RUN_ID)) {
+        mismatches.push({ key, path: p });
+      }
+    } catch (err) {
+      mismatches.push({ key, path: p, error: err?.message ?? String(err) });
+    }
+  }
+  if (mismatches.length === 0) {
+    console.log(`✓ run_id consistency: ${checks.length} artefaktów zawiera run_id=${RUN_ID}`);
+  } else {
+    console.error(`❌ run_id mismatch w ${mismatches.length} artefakcie(-ach):`);
+    for (const m of mismatches) {
+      console.error(`   • ${m.key}: ${m.path}${m.error ? ` (read error: ${m.error})` : ""}`);
+    }
+    if (STRICT) {
+      console.error(`💥 --strict: kończę z exit code 1 z powodu niespójności run_id.`);
+      process.exit(1);
+    }
+  }
+}
+
 // ── Podsumowanie do stdout ──────────────────────────────────────────────────
 const byTarget = entries.reduce((acc, e) => {
   acc[e.to] = (acc[e.to] || 0) + 1;
