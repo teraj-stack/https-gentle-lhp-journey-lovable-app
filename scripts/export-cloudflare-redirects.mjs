@@ -453,25 +453,32 @@ const cfHeader = [
   "Include subdomains",
   "Subpath matching",
   "Preserve path suffix",
+  "run_id",
 ].join(",");
 
 const cfRows = entries.map(({ from, to }) => {
   const sourceUrl = `${DOMAIN}${from}`;
   const targetUrl = `${DOMAIN}${to}`;
-  return [sourceUrl, targetUrl, "301", "true", "false", "false", "false"].join(",");
+  return [sourceUrl, targetUrl, "301", "true", "false", "false", "false", RUN_ID].join(",");
 });
 
 const cfCsv = [cfHeader, ...cfRows].join("\n") + "\n";
 if (!DRY_RUN) writeFileSync(`${OUT_DIR}/cloudflare-bulk-redirects.csv`, cfCsv, "utf8");
 
 // ── 2) Uproszczony CSV "source,target" ──────────────────────────────────────
-const simpleHeader = "source,target";
-const simpleRows = entries.map(({ from, to }) => `${DOMAIN}${from},${DOMAIN}${to}`);
+const simpleHeader = "source,target,run_id";
+const simpleRows = entries.map(
+  ({ from, to }) => `${DOMAIN}${from},${DOMAIN}${to},${RUN_ID}`,
+);
 const simpleCsv = [simpleHeader, ...simpleRows].join("\n") + "\n";
 if (!DRY_RUN) writeFileSync(`${OUT_DIR}/cloudflare-redirects-simple.csv`, simpleCsv, "utf8");
 
 // ── 3) JSON dla Cloudflare API (PUT /lists/{id}/items) ─────────────────────
+// Uwaga: pole `run_id` znajduje się obok obiektu `redirect` (Cloudflare API
+// ignoruje nieznane pola na poziomie itemu), żeby zachować spójność danych
+// między CSV/JSON/manifestem przy zachowaniu zgodności ze schematem CF.
 const apiItems = entries.map(({ from, to }) => ({
+  run_id: RUN_ID,
   redirect: {
     source_url: `${DOMAIN}${from}`,
     target_url: `${DOMAIN}${to}`,
