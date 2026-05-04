@@ -347,13 +347,42 @@ if (VERIFY_RUN_ID) {
   }
 
   const mismatches = [];
+  const perFile = [];
   for (const p of collected) {
     try {
       const content = readFileSync(p, "utf8");
-      if (!content.includes(VERIFY_RUN_ID)) mismatches.push({ path: p });
+      const ok = content.includes(VERIFY_RUN_ID);
+      perFile.push({ path: p, ok, ...(ok ? {} : { reason: "run_id not found in file content" }) });
+      if (!ok) mismatches.push({ path: p });
     } catch (err) {
-      mismatches.push({ path: p, error: err?.message ?? String(err) });
+      const msg = err?.message ?? String(err);
+      perFile.push({ path: p, ok: false, reason: `read error: ${msg}` });
+      mismatches.push({ path: p, error: msg });
     }
+  }
+
+  const report = {
+    schema_version: 1,
+    kind: "run_id-verification",
+    mode: "verify-run",
+    run_id: VERIFY_RUN_ID,
+    run_dir: runDir,
+    generated_at: new Date().toISOString(),
+    stats: {
+      checked: collected.length,
+      ok: collected.length - mismatches.length,
+      mismatched: mismatches.length,
+      consistency_ratio: collected.length === 0 ? 0 : (collected.length - mismatches.length) / collected.length,
+    },
+    mismatches,
+    files: perFile,
+  };
+  const reportPath = join(runDir, "run_id-verification.json");
+  try {
+    writeFileSync(reportPath, JSON.stringify(report, null, 2), "utf8");
+    console.log(`📝 raport walidacji: ${reportPath}`);
+  } catch (err) {
+    console.error(`⚠️  nie udało się zapisać ${reportPath}: ${err?.message ?? err}`);
   }
 
   console.log(`🔎 --verify-run=${VERIFY_RUN_ID}`);
