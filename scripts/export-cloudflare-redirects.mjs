@@ -743,16 +743,46 @@ if (!DRY_RUN) {
   const checks = Object.entries(manifest.artifacts)
     .filter(([key, p]) => p && key !== "run_dir" && existsSync(p));
   const mismatches = [];
+  const perFile = [];
   for (const [key, p] of checks) {
     try {
       const content = readFileSync(p, "utf8");
-      if (!content.includes(RUN_ID)) {
-        mismatches.push({ key, path: p });
-      }
+      const ok = content.includes(RUN_ID);
+      perFile.push({ key, path: p, ok, ...(ok ? {} : { reason: "run_id not found in file content" }) });
+      if (!ok) mismatches.push({ key, path: p });
     } catch (err) {
-      mismatches.push({ key, path: p, error: err?.message ?? String(err) });
+      const msg = err?.message ?? String(err);
+      perFile.push({ key, path: p, ok: false, reason: `read error: ${msg}` });
+      mismatches.push({ key, path: p, error: msg });
     }
   }
+
+  // Raport walidacji jako osobny artefakt — łatwy do parsowania w CI/dashboards.
+  const verificationReport = {
+    schema_version: 1,
+    kind: "run_id-verification",
+    mode: "post-export",
+    run_id: RUN_ID,
+    run_dir: RUN_DIR,
+    generated_at: new Date().toISOString(),
+    stats: {
+      checked: checks.length,
+      ok: checks.length - mismatches.length,
+      mismatched: mismatches.length,
+      consistency_ratio: checks.length === 0 ? 0 : (checks.length - mismatches.length) / checks.length,
+    },
+    mismatches,
+    files: perFile,
+  };
+  const verificationPath = `${RUN_DIR}/run_id-verification.json`;
+  try {
+    mkdirSync(RUN_DIR, { recursive: true });
+    writeFileSync(verificationPath, JSON.stringify(verificationReport, null, 2), "utf8");
+    console.log(`📝 raport walidacji: ${verificationPath}`);
+  } catch (err) {
+    console.error(`⚠️  nie udało się zapisać ${verificationPath}: ${err?.message ?? err}`);
+  }
+
   if (mismatches.length === 0) {
     console.log(`✓ run_id consistency: ${checks.length} artefaktów zawiera run_id=${RUN_ID}`);
   } else {
