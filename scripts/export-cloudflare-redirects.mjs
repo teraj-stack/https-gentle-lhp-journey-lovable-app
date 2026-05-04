@@ -45,7 +45,7 @@
  *   Wiele list jest przetwarzanych sekwencyjnie z osobnym diff/confirm/poll
  *   i końcowym raportem statusów per lista.
  */
-import { writeFileSync, mkdirSync, readFileSync, existsSync } from "node:fs";
+import { writeFileSync, mkdirSync, readFileSync, existsSync, readdirSync, statSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { basename, dirname, extname, join, resolve } from "node:path";
 import { createHash, randomUUID } from "node:crypto";
@@ -274,12 +274,100 @@ if (HELP) {
       "  --html[=path]        Zapisz raport HTML (pochodna od --json lub /mnt/documents/cloudflare-report.html).",
       "  --log[=path]         Zapisz transcript do log (run_id wstrzyknięty w nazwę pliku).",
       "  --run-id=<id>        Identyfikator przebiegu do korelacji z logami (env CF_RUN_ID, domyślnie UUID).",
+      "  --verify-run=<id>    Zweryfikuj spójność run_id w istniejącym katalogu cloudflare-runs/<id>/ (bez eksportu, exit 1 przy niespójności).",
       "  --help, -h           Pokaż tę pomoc.",
       "",
       "Env: CF_API_TOKEN, CF_ACCOUNT_ID, CF_LIST_ID, CF_REPORT_JSON, CF_REPORT_HTML, CF_REPORT_LOG, CF_CLEAR_CONFIRM.",
     ].join("\n"),
   );
   writeAbortReportAndExit("help", "User requested --help; no operations executed.", 0);
+}
+
+// ── Tryb --verify-run=<id>: walidacja istniejącego katalogu bez eksportu ────
+// Sprawdza, że WSZYSTKIE pliki w cloudflare-runs/<id>/ (rekurencyjnie) zawierają
+// w treści dokładnie ten sam run_id. Dodatkowo, jeśli istnieje manifest.json w
+// katalogu, weryfikuje też wszystkie ścieżki z `manifest.artifacts` (poza
+// `run_dir`) — łapie to także "finalne" artefakty leżące poza katalogiem run
+// (np. /mnt/documents/cloudflare-bulk-redirects.csv).
+// Zawsze zwraca exit 0 przy spójności i exit 1 przy jakiejkolwiek niezgodności,
+// niezależnie od --strict (verify ma być deterministyczny w CI).
+const VERIFY_RUN_ID = (() => {
+  const withValue = RAW_ARGS.find((a) => a.startsWith("--verify-run="));
+  if (withValue) {
+    const v = withValue.slice("--verify-run=".length).trim();
+    if (v) return v;
+  }
+  if (RAW_ARGS.includes("--verify-run")) {
+    console.error("❌ --verify-run wymaga wartości: --verify-run=<run_id>");
+    process.exit(1);
+  }
+  return null;
+})();
+
+if (VERIFY_RUN_ID) {
+  const runIdPath = fileSafeRunId(VERIFY_RUN_ID);
+  const runDir = join(OUT_DIR, "cloudflare-runs", runIdPath);
+  if (!existsSync(runDir) || !statSync(runDir).isDirectory()) {
+    console.error(`❌ --verify-run: katalog nie istnieje: ${runDir}`);
+    process.exit(1);
+  }
+
+  const collected = [];
+  const walk = (dir) => {
+    for (const name of readdirSync(dir)) {
+      const full = join(dir, name);
+      const st = statSync(full);
+      if (st.isDirectory()) walk(full);
+      else if (st.isFile()) collected.push(full);
+    }
+  };
+  walk(runDir);
+
+  // Dorzuć ścieżki z manifestu (jeśli jest) — łapie artefakty poza run_dir.
+  const manifestPath = join(runDir, "manifest.json");
+  if (existsSync(manifestPath)) {
+    try {
+      const m = JSON.parse(readFileSync(manifestPath, "utf8"));
+      const arts = m?.artifacts ?? {};
+      for (const [key, p] of Object.entries(arts)) {
+        if (!p || key === "run_dir") continue;
+        if (typeof p !== "string") continue;
+        if (existsSync(p) && statSync(p).isFile() && !collected.includes(p)) {
+          collected.push(p);
+        }
+      }
+    } catch (err) {
+      console.error(`⚠️  --verify-run: nie udało się sparsować manifest.json (${err?.message ?? err})`);
+    }
+  }
+
+  if (collected.length === 0) {
+    console.error(`❌ --verify-run: brak plików do weryfikacji w ${runDir}`);
+    process.exit(1);
+  }
+
+  const mismatches = [];
+  for (const p of collected) {
+    try {
+      const content = readFileSync(p, "utf8");
+      if (!content.includes(VERIFY_RUN_ID)) mismatches.push({ path: p });
+    } catch (err) {
+      mismatches.push({ path: p, error: err?.message ?? String(err) });
+    }
+  }
+
+  console.log(`🔎 --verify-run=${VERIFY_RUN_ID}`);
+  console.log(`   katalog: ${runDir}`);
+  console.log(`   sprawdzono plików: ${collected.length}`);
+  if (mismatches.length === 0) {
+    console.log(`✓ run_id consistency OK: wszystkie ${collected.length} pliki zawierają run_id=${VERIFY_RUN_ID}`);
+    process.exit(0);
+  }
+  console.error(`❌ run_id mismatch w ${mismatches.length}/${collected.length} pliku(-ach):`);
+  for (const m of mismatches) {
+    console.error(`   • ${m.path}${m.error ? ` (read error: ${m.error})` : ""}`);
+  }
+  process.exit(1);
 }
 
 // ── Parser: wyciąga tylko aktywne (niezakomentowane) wpisy { from, to, reason } ──
