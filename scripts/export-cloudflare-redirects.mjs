@@ -370,6 +370,7 @@ if (VERIFY_RUN_ID) {
   process.exit(1);
 }
 
+// ── Parser: wyciąga tylko aktywne (niezakomentowane) wpisy { from, to, reason } ──
 const source = readFileSync(SRC, "utf8");
 
 const entries = [];
