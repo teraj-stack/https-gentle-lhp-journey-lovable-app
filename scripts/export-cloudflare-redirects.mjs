@@ -45,7 +45,7 @@
  *   Wiele list jest przetwarzanych sekwencyjnie z osobnym diff/confirm/poll
  *   i końcowym raportem statusów per lista.
  */
-import { writeFileSync, mkdirSync, readFileSync, existsSync } from "node:fs";
+import { writeFileSync, mkdirSync, readFileSync, existsSync, readdirSync, statSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { basename, dirname, extname, join, resolve } from "node:path";
 import { createHash, randomUUID } from "node:crypto";
