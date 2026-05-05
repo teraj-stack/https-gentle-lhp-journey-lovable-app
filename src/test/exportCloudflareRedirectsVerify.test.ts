@@ -432,21 +432,15 @@ describe("export-cloudflare-redirects CF_OUT_DIR override", () => {
   it("zapisuje artefakty i run_id-verification.json dokładnie pod custom CF_OUT_DIR", () => {
     const customOutDir = mkdtempSync(join(tmpdir(), "cf-redirects-custom-"));
     try {
-      const runId = `${TMP_PREFIX}custom-out-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-
-      // Override CF_OUT_DIR per-call (nadpisuje suite-owy CF_OUT_DIR ze
-      // scriptEnv → spawn dostaje customOutDir).
-      const res = spawnSync("node", [SCRIPT, "--strict"], {
-        encoding: "utf8",
-        timeout: 30_000,
-        env: { ...process.env, CF_OUT_DIR: customOutDir, CF_RUN_ID: runId },
+      const { res, runId, runDir: customRunDir, reportPath } = runExport({
+        slug: "custom-out",
+        strict: true,
+        outDir: customOutDir,
       });
       expect(res.status, res.stderr || res.stdout).toBe(0);
 
       // 1) Run dir + raport leżą pod customOutDir.
       const customRunsDir = join(customOutDir, "cloudflare-runs");
-      const customRunDir = join(customRunsDir, runId);
-      const reportPath = join(customRunDir, "run_id-verification.json");
       expect(existsSync(customRunsDir)).toBe(true);
       expect(existsSync(customRunDir)).toBe(true);
       expect(existsSync(reportPath)).toBe(true);
@@ -469,8 +463,6 @@ describe("export-cloudflare-redirects CF_OUT_DIR override", () => {
       expect(report.stats.checked).toBeGreaterThan(0);
 
       // 4) Każdy plik z `files[]` istnieje fizycznie pod customOutDir.
-      //    (część artefaktów leży bezpośrednio w CF_OUT_DIR, część w
-      //    cloudflare-runs/<id>/ — oba przypadki są pod customOutDir).
       for (const f of report.files) {
         expect(f.path.startsWith(customOutDir)).toBe(true);
         expect(f.path.startsWith(SUITE_OUT_DIR)).toBe(false);
