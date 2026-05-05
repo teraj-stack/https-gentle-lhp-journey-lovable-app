@@ -229,6 +229,16 @@ export function assertCorsHeaders(
  * trimmed. Anything that doesn't match yields token = '' and fails the
  * timing-safe equality check.
  */
+function dupAuthHeaders(...values: string[]): Headers {
+  // Build a Headers instance with multiple Authorization values appended.
+  // Per the Fetch spec, fetch() will combine these into a single header
+  // joined by ", " before transmission — which still must NOT match the
+  // exact `Bearer <SERVICE_ROLE_KEY>` shape.
+  const h = new Headers({ 'Content-Type': 'application/json' })
+  for (const v of values) h.append('Authorization', v)
+  return h
+}
+
 export const MALFORMED_AUTH_VARIANTS: Array<{
   label: string
   headers: HeadersInit
@@ -241,13 +251,24 @@ export const MALFORMED_AUTH_VARIANTS: Array<{
   { label: '"Bearer " with whitespace-only token', headers: { Authorization: 'Bearer     ' } },
   { label: 'lowercase scheme "bearer "', headers: { Authorization: `bearer ${BOGUS_TOKEN}` } },
   { label: 'uppercase scheme "BEARER "', headers: { Authorization: `BEARER ${BOGUS_TOKEN}` } },
+  { label: 'mixed-case scheme "BeArEr "', headers: { Authorization: `BeArEr ${BOGUS_TOKEN}` } },
   { label: 'Basic auth scheme', headers: { Authorization: `Basic ${BOGUS_TOKEN}` } },
   { label: 'Token scheme (GitHub-style)', headers: { Authorization: `Token ${BOGUS_TOKEN}` } },
   { label: 'NotBearer scheme prefix', headers: { Authorization: 'NotBearer something' } },
   { label: 'raw token without any scheme', headers: { Authorization: BOGUS_TOKEN } },
   { label: '"Bearer<token>" with no separator', headers: { Authorization: `Bearer${BOGUS_TOKEN}` } },
   { label: 'WRONG Bearer token (correct shape, wrong content)', headers: { Authorization: `Bearer ${BOGUS_TOKEN}` } },
+  // Real-world edge cases ------------------------------------------------
+  { label: 'leading whitespace before scheme " Bearer <token>"', headers: { Authorization: ` Bearer ${BOGUS_TOKEN}` } },
+  { label: 'leading tab before scheme "\\tBearer <token>"', headers: { Authorization: `\tBearer ${BOGUS_TOKEN}` } },
+  { label: 'trailing whitespace after scheme "Bearer  <token>" (double space)', headers: { Authorization: `Bearer  ${BOGUS_TOKEN}` } },
+  { label: 'tab between scheme and token "Bearer\\t<token>"', headers: { Authorization: `Bearer\t${BOGUS_TOKEN}` } },
+  { label: 'trailing newline after token "Bearer <token>\\n"', headers: { Authorization: `Bearer ${BOGUS_TOKEN}\n` } },
+  { label: 'two Authorization headers, both bogus', headers: dupAuthHeaders(`Bearer ${BOGUS_TOKEN}`, `Bearer ${BOGUS_TOKEN}`) },
+  { label: 'two Authorization headers, empty + bogus', headers: dupAuthHeaders('', `Bearer ${BOGUS_TOKEN}`) },
+  { label: 'two Authorization headers, Basic + Bearer bogus', headers: dupAuthHeaders(`Basic ${BOGUS_TOKEN}`, `Bearer ${BOGUS_TOKEN}`) },
 ]
+
 
 // ---------- High-level test runner ----------
 
