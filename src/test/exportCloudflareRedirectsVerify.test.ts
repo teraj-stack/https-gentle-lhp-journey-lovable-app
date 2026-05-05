@@ -302,13 +302,16 @@ describe("export-cloudflare-redirects post-export --strict", () => {
 
       const report = JSON.parse(
         readFileSync(join(RUNS_DIR, runId, "run_id-verification.json"), "utf8"),
-      );
-      expect(report.mode).toBe("post-export");
+      ) as VerificationReport;
+      assertVerificationReportShape(report, { runId, mode: "post-export" });
       expect(report.stats.mismatched).toBeGreaterThanOrEqual(1);
       expect(report.stats.consistency_ratio).toBeLessThan(1);
-      expect(
-        report.mismatches.some((m: { key: string }) => m.key === "txt"),
-      ).toBe(true);
+      // Niespójność musi pochodzić z `txt` (CF_TEST_CORRUPT_ARTIFACT=txt).
+      expect(report.mismatches.some((m) => m.key === "txt")).toBe(true);
+      const txtFile = report.files.find((f) => f.key === "txt");
+      expect(txtFile).toBeDefined();
+      expect(txtFile!.ok).toBe(false);
+      expect(txtFile!.reason).toMatch(/run_id/i);
     } finally {
       restoreSharedArtifacts(snap);
     }
