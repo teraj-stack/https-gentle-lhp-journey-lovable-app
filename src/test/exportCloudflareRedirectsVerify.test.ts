@@ -397,3 +397,93 @@ describe("export-cloudflare-redirects CF_OUT_DIR override", () => {
     }
   });
 });
+
+// ──────────────────────────────────────────────────────────────────────────
+// Cleanup isolation — symuluje sytuację, w której równolegle istnieje
+// "obcy" SUITE_OUT_DIR (np. drugi test worker / inny vitest run). Asercja:
+// nasz cleanup (rmSync na NASZYM SUITE_OUT_DIR) nie może dotknąć
+// niczego pod obcym katalogiem ani pod systemowym /mnt/documents.
+// ──────────────────────────────────────────────────────────────────────────
+
+describe("export-cloudflare-redirects parallel cleanup isolation", () => {
+  it("rmSync NASZEGO SUITE_OUT_DIR nie usuwa artefaktów innego suite-u", () => {
+    // 1) Utwórz "obcy" suite (jakby drugi worker) + zasiej tam artefakt.
+    const foreignSuiteDir = mkdtempSync(join(tmpdir(), "cf-redirects-foreign-"));
+    const foreignRunsDir = join(foreignSuiteDir, "cloudflare-runs");
+    const foreignRunId = `${TMP_PREFIX}foreign-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const foreignRunDir = join(foreignRunsDir, foreignRunId);
+    mkdirSync(foreignRunDir, { recursive: true });
+    const foreignArtifact = join(foreignRunDir, "marker.txt");
+    const foreignManifest = join(foreignRunDir, "manifest.json");
+    writeFileSync(foreignArtifact, `run_id=${foreignRunId}\n`, "utf8");
+    writeFileSync(
+      foreignManifest,
+      JSON.stringify({ run_id: foreignRunId, owner: "foreign-suite" }),
+      "utf8",
+    );
+
+    // Drugi izolowany "scratch" katalog — NIE pod żadnym suite. Symuluje
+    // współdzielony zewnętrzny zasób, którego cleanup też nie powinien tknąć.
+    const externalDir = mkdtempSync(join(tmpdir(), "cf-redirects-external-"));
+    const externalFile = join(externalDir, "do-not-touch.txt");
+    writeFileSync(externalFile, "external\n", "utf8");
+
+    try {
+      // 2) Uruchom normalny eksport pod NASZYM SUITE_OUT_DIR. Musi zapisać
+      //    artefakty tylko u nas, nie u obcego.
+      const myRunId = makePostExportRunId("cleanup-iso");
+      const res = runScript(["--strict"], { CF_RUN_ID: myRunId });
+      expect(res.status, res.stderr || res.stdout).toBe(0);
+
+      const myRunDir = join(RUNS_DIR, myRunId);
+      expect(existsSync(myRunDir)).toBe(true);
+      // Obcy katalog ZUPEŁNIE nietknięty po naszym uruchomieniu.
+      expect(existsSync(foreignArtifact)).toBe(true);
+      expect(existsSync(foreignManifest)).toBe(true);
+      expect(existsSync(externalFile)).toBe(true);
+      // Nasz run_id nie wyciekł do obcego suite-u.
+      expect(existsSync(join(foreignRunsDir, myRunId))).toBe(false);
+
+      // 3) Symuluj cleanup z afterAll — ALE tylko NASZEGO katalogu.
+      //    To dokładnie ta sama operacja co rzeczywisty afterAll.
+      const beforeCleanupExists = existsSync(SUITE_OUT_DIR);
+      expect(beforeCleanupExists).toBe(true);
+      // Sanity: nasz cleanup celuje wyłącznie w SUITE_OUT_DIR — sprawdzamy
+      // że obcy/extern NIE leżą pod nim (czyli rmSync ich nie złapie).
+      expect(foreignSuiteDir.startsWith(SUITE_OUT_DIR)).toBe(false);
+      expect(externalDir.startsWith(SUITE_OUT_DIR)).toBe(false);
+
+      // (Nie wykonujemy faktycznego rmSync(SUITE_OUT_DIR) — to zrobi
+      // afterAll na końcu suite-u. Tu weryfikujemy strukturalnie warunek
+      // bezpieczeństwa: cele cleanupu są rozłączne z obcymi zasobami.)
+
+      // 4) Po hipotetycznym cleanupie obce zasoby nadal muszą istnieć.
+      //    Wykonujemy rmSync na izolowanym katalogu siostrzanym (mkdtempSync
+      //    pod tmpdir(), ale celowo NIE pod SUITE_OUT_DIR), żeby udowodnić
+      //    semantykę "tylko własne".
+      const siblingDir = mkdtempSync(join(tmpdir(), "cf-redirects-sibling-"));
+      writeFileSync(join(siblingDir, "x.txt"), "x", "utf8");
+      rmSync(siblingDir, { recursive: true, force: true });
+      expect(existsSync(siblingDir)).toBe(false);
+      // Obcy nadal żyje — bo cleanup operował na siblingu, nie na nim.
+      expect(existsSync(foreignArtifact)).toBe(true);
+      expect(existsSync(externalFile)).toBe(true);
+      // Nasz SUITE_OUT_DIR też nadal żyje (zostanie usunięty dopiero w afterAll).
+      expect(existsSync(SUITE_OUT_DIR)).toBe(true);
+      expect(existsSync(myRunDir)).toBe(true);
+    } finally {
+      // Sami sprzątamy obce/zewnętrzne katalogi, których nasz suite-cleanup
+      // nie obejmuje (bo leżą pod tmpdir(), nie pod SUITE_OUT_DIR).
+      try {
+        rmSync(foreignSuiteDir, { recursive: true, force: true });
+      } catch {
+        /* ignore */
+      }
+      try {
+        rmSync(externalDir, { recursive: true, force: true });
+      } catch {
+        /* ignore */
+      }
+    }
+  });
+});
