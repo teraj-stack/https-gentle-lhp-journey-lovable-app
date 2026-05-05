@@ -1,0 +1,131 @@
+// Integration tests: verify that protected Edge Functions reject requests
+// without the correct `Authorization: Bearer <SUPABASE_SERVICE_ROLE_KEY>`
+// header.
+//
+// Functions under test (all return 401 for missing / wrong service-role token):
+//   - on-booking-created            (DB webhook — service-role only)
+//   - send-booking-reminders        (pg_cron — service-role only)
+//   - send-booking-no-show-followup (pg_cron — service-role only)
+//   - retry-dlq-emails              (cron + admin — anything else 401)
+//
+// `send-transactional-email` is intentionally NOT in this list: it accepts
+// unauthenticated callers (with stricter rate-limits) so a missing token is
+// not an auth failure there. Its service-role bypass is covered by its own
+// dedicated tests.
+//
+// Each function is exercised three times:
+//   1) NO Authorization header                   → expect 401
+//   2) Authorization with a bogus Bearer token   → expect 401
+//   3) Authorization with the real service-role  → expect NOT 401
+//      (the call may then fail validation/business logic with 4xx/5xx,
+//      we only assert that auth itself does not block the request)
+
+import 'https://deno.land/std@0.224.0/dotenv/load.ts'
+import { assert, assertEquals, assertNotEquals } from 'https://deno.land/std@0.224.0/assert/mod.ts'
+
+const SUPABASE_URL = Deno.env.get('VITE_SUPABASE_URL') ?? Deno.env.get('SUPABASE_URL')!
+const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+
+if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
+  throw new Error(
+    'Missing VITE_SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY — set them in .env or function secrets.',
+  )
+}
+
+interface FunctionUnderTest {
+  name: string
+  // POST body that would otherwise be valid; auth check happens before body
+  // parsing, so the exact contents don't matter — but we send something so
+  // the function doesn't reject for unrelated reasons when the auth passes.
+  body: unknown
+}
+
+const FUNCTIONS: FunctionUnderTest[] = [
+  {
+    name: 'on-booking-created',
+    body: {
+      type: 'INSERT',
+      table: 'bookings',
+      schema: 'public',
+      record: { id: '00000000-0000-0000-0000-000000000000' },
+      old_record: null,
+    },
+  },
+  {
+    name: 'send-booking-reminders',
+    body: { window: '24h' },
+  },
+  {
+    name: 'send-booking-no-show-followup',
+    body: {},
+  },
+  {
+    name: 'retry-dlq-emails',
+    body: {},
+  },
+]
+
+// A bogus token of identical length to the real key would defeat
+// timingSafeEqual length check too, but any non-matching value is enough
+// to assert "rejected" — the function compares character-by-character
+// after a length check.
+const BOGUS_TOKEN = 'a'.repeat(SERVICE_ROLE_KEY.length)
+
+async function callFunction(name: string, headers: HeadersInit, body: unknown) {
+  const url = `${SUPABASE_URL}/functions/v1/${name}`
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...headers,
+    },
+    body: JSON.stringify(body),
+  })
+  // Always consume the body to avoid Deno resource leaks.
+  const text = await res.text()
+  return { status: res.status, text }
+}
+
+for (const fn of FUNCTIONS) {
+  Deno.test(`[auth] ${fn.name} — rejects request with NO Authorization header`, async () => {
+    const { status, text } = await callFunction(fn.name, {}, fn.body)
+    assertEquals(
+      status,
+      401,
+      `Expected 401 from ${fn.name} without Authorization header, got ${status}: ${text}`,
+    )
+  })
+
+  Deno.test(`[auth] ${fn.name} — rejects request with WRONG Bearer token`, async () => {
+    const { status, text } = await callFunction(
+      fn.name,
+      { Authorization: `Bearer ${BOGUS_TOKEN}` },
+      fn.body,
+    )
+    assertEquals(
+      status,
+      401,
+      `Expected 401 from ${fn.name} with bogus Bearer token, got ${status}: ${text}`,
+    )
+  })
+
+  Deno.test(`[auth] ${fn.name} — accepts request with CORRECT service-role Bearer token`, async () => {
+    const { status, text } = await callFunction(
+      fn.name,
+      { Authorization: `Bearer ${SERVICE_ROLE_KEY}` },
+      fn.body,
+    )
+    // Auth must NOT block. Business logic may still 4xx/5xx (e.g., booking
+    // not found, no recipients, missing template). We only assert the
+    // request got past the auth gate.
+    assertNotEquals(
+      status,
+      401,
+      `Expected non-401 from ${fn.name} with correct service-role token, but got 401: ${text}`,
+    )
+    assert(
+      status < 500 || status === 500,
+      `Got unexpected transport-layer status ${status} from ${fn.name}: ${text}`,
+    )
+  })
+}
