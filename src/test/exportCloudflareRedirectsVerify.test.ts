@@ -340,6 +340,143 @@ describe("export-cloudflare-redirects --verify-run", () => {
 });
 
 // ──────────────────────────────────────────────────────────────────────────
+// --verify-run + --json / --html: rozszerzenie trybu walidacji o opcjonalne
+// raporty w wybranym formacie / pod własnymi ścieżkami. Domyślny
+// run_id-verification.json pod <run_dir> ZAWSZE powstaje (backwards-compat),
+// a flagi --json[=path]/--html[=path] dorzucają dodatkowe pliki rozwiązywane
+// względem CF_OUT_DIR (czyli izolowanego SUITE_OUT_DIR w testach).
+// ──────────────────────────────────────────────────────────────────────────
+describe("export-cloudflare-redirects --verify-run + --json/--html", () => {
+  it("--json=<path> i --html=<path> tworzą pliki dokładnie pod CF_OUT_DIR", () => {
+    const { runId, runDir } = makeRunDir("verify-json-html");
+    writeArtifact(
+      runDir,
+      "manifest.json",
+      JSON.stringify({ run_id: runId, artifacts: { run_dir: runDir } }),
+    );
+    writeArtifact(runDir, "run.log", `entry run_id=${runId}\n`);
+
+    // Ścieżki względne — skrypt ma je rozwiązać względem CF_OUT_DIR (nie cwd).
+    const relJson = `verify-${runId}.json`;
+    const relHtml = `verify-${runId}.html`;
+    const expectedJson = join(SUITE_OUT_DIR, relJson);
+    const expectedHtml = join(SUITE_OUT_DIR, relHtml);
+
+    const res = runScript([
+      `--verify-run=${runId}`,
+      `--json=${relJson}`,
+      `--html=${relHtml}`,
+    ]);
+    expect(res.status, res.stderr || res.stdout).toBe(0);
+    expect(res.stdout).toContain("run_id consistency OK");
+
+    // 1) Default raport ZAWSZE jest (backwards-compat).
+    const defaultReport = join(runDir, "run_id-verification.json");
+    expect(existsSync(defaultReport)).toBe(true);
+
+    // 2) --json=<rel> wylądował pod CF_OUT_DIR/<rel>.
+    expect(existsSync(expectedJson)).toBe(true);
+    const json = JSON.parse(readFileSync(expectedJson, "utf8")) as VerificationReport;
+    assertVerificationReportShape(json, { runId, mode: "verify-run", runDir });
+
+    // 3) --html=<rel> wylądował pod CF_OUT_DIR/<rel> i to faktycznie HTML.
+    expect(existsSync(expectedHtml)).toBe(true);
+    const html = readFileSync(expectedHtml, "utf8");
+    expect(html).toMatch(/<!doctype html>/i);
+    expect(html).toContain(runId);
+    expect(html).toContain("run_id verification");
+    // HTML musi referować nasz run_dir w nagłówku stats.
+    expect(html).toContain(runDir);
+
+    // 4) NIC nie wyciekło na zewnątrz CF_OUT_DIR (np. do /mnt/documents/cloudflare-report.*).
+    expect(expectedJson.startsWith(SUITE_OUT_DIR + "/")).toBe(true);
+    expect(expectedHtml.startsWith(SUITE_OUT_DIR + "/")).toBe(true);
+  });
+
+  it("samo --json (bez wartości) zapisuje raport pod <run_dir>/run_id-verification.json", () => {
+    const { runId, runDir } = makeRunDir("verify-json-default");
+    writeArtifact(
+      runDir,
+      "manifest.json",
+      JSON.stringify({ run_id: runId, artifacts: { run_dir: runDir } }),
+    );
+    writeArtifact(runDir, "run.log", `entry run_id=${runId}\n`);
+
+    const res = runScript([`--verify-run=${runId}`, "--json"]);
+    expect(res.status, res.stderr || res.stdout).toBe(0);
+
+    // Bez wartości flaga celuje w domyślny plik — to ten sam, który
+    // zawsze powstaje. Operacja idempotentna, ale plik MUSI istnieć
+    // i mieć poprawny shape.
+    const reportPath = join(runDir, "run_id-verification.json");
+    expect(existsSync(reportPath)).toBe(true);
+    const report = JSON.parse(readFileSync(reportPath, "utf8")) as VerificationReport;
+    assertVerificationReportShape(report, { runId, mode: "verify-run", runDir });
+    expect(report.run_dir).toBe(runDir);
+    expect(report.run_dir.startsWith(SUITE_OUT_DIR + "/")).toBe(true);
+  });
+
+  it("samo --html (bez wartości) tworzy run_id-verification.html pod <run_dir>", () => {
+    const { runId, runDir } = makeRunDir("verify-html-default");
+    writeArtifact(
+      runDir,
+      "manifest.json",
+      JSON.stringify({ run_id: runId, artifacts: { run_dir: runDir } }),
+    );
+    writeArtifact(runDir, "run.log", `entry run_id=${runId}\n`);
+
+    const res = runScript([`--verify-run=${runId}`, "--html"]);
+    expect(res.status, res.stderr || res.stdout).toBe(0);
+
+    const htmlPath = join(runDir, "run_id-verification.html");
+    expect(existsSync(htmlPath)).toBe(true);
+    const html = readFileSync(htmlPath, "utf8");
+    expect(html).toMatch(/<!doctype html>/i);
+    expect(html).toContain(runId);
+    expect(html).toContain("run_id verification");
+    // Path leży pod CF_OUT_DIR (proof izolacji).
+    expect(htmlPath.startsWith(SUITE_OUT_DIR + "/")).toBe(true);
+  });
+
+  it("--json/--html są respektowane także przy mismatch (exit 1) — pliki nadal powstają", () => {
+    const { runId, runDir } = makeRunDir("verify-jsonhtml-bad");
+    writeArtifact(
+      runDir,
+      "manifest.json",
+      JSON.stringify({ run_id: runId, artifacts: { run_dir: runDir } }),
+    );
+    writeArtifact(runDir, "good.log", `run_id=${runId}\n`);
+    writeArtifact(runDir, "stale.csv", "no run id here\n");
+
+    const relJson = `bad-${runId}.json`;
+    const relHtml = `bad-${runId}.html`;
+    const expectedJson = join(SUITE_OUT_DIR, relJson);
+    const expectedHtml = join(SUITE_OUT_DIR, relHtml);
+
+    const res = runScript([
+      `--verify-run=${runId}`,
+      `--json=${relJson}`,
+      `--html=${relHtml}`,
+    ]);
+    // Mismatch → exit 1, ale raporty muszą być.
+    expect(res.status).toBe(1);
+    expect(res.stderr).toContain("run_id mismatch");
+
+    expect(existsSync(expectedJson)).toBe(true);
+    const json = JSON.parse(readFileSync(expectedJson, "utf8")) as VerificationReport;
+    assertVerificationReportShape(json, { runId, mode: "verify-run", runDir });
+    expect(json.stats.mismatched).toBeGreaterThanOrEqual(1);
+    expect(json.mismatches.some((m) => m.path.endsWith("stale.csv"))).toBe(true);
+
+    expect(existsSync(expectedHtml)).toBe(true);
+    const html = readFileSync(expectedHtml, "utf8");
+    // HTML pokazuje wiersz mismatch z klasą "bad".
+    expect(html).toContain("bad");
+    expect(html).toContain("stale.csv");
+  });
+});
+
+// ──────────────────────────────────────────────────────────────────────────
 // Post-export --strict: pełny pipeline eksportu zapisuje artefakty do
 // CF_OUT_DIR (per-suite tmpdir), a następnie sprawdza spójność run_id we
 // wszystkich plikach z manifest.artifacts. W trybie --strict każda

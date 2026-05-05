@@ -380,12 +380,62 @@ if (VERIFY_RUN_ID) {
     mismatches,
     files: perFile,
   };
+  // Domyślny raport JSON walidacji ZAWSZE pod <run_dir>/run_id-verification.json
+  // (backwards-compatible). Dodatkowo, jeśli użytkownik podał --json[=path],
+  // zapisujemy KOPIĘ raportu pod wskazaną ścieżką (resolve względem OUT_DIR
+  // dla ścieżek względnych — żeby CF_OUT_DIR było respektowane także tutaj).
+  // Bez `=path` flaga --json kieruje raport do
+  //   <OUT_DIR>/cloudflare-runs/<run_id>/run_id-verification.json,
+  // czyli to samo miejsce co default — operacja idempotentna.
   const reportPath = join(runDir, "run_id-verification.json");
+  const extraJsonPaths = [];
+  if (JSON_REPORT_PATH) {
+    const p = JSON_REPORT_PATH === "/mnt/documents/cloudflare-report.json"
+      // Domyślna wartość parsera --json bez `=` — w trybie verify chcemy
+      // domyślnie raport walidacji (a nie eksportu), w katalogu OUT_DIR.
+      ? join(OUT_DIR, "cloudflare-runs", runIdPath, "run_id-verification.json")
+      : (JSON_REPORT_PATH.startsWith("/") ? JSON_REPORT_PATH : join(OUT_DIR, JSON_REPORT_PATH));
+    if (p !== reportPath) extraJsonPaths.push(p);
+  }
   try {
-    writeFileSync(reportPath, JSON.stringify(report, null, 2), "utf8");
+    const json = JSON.stringify(report, null, 2);
+    writeFileSync(reportPath, json, "utf8");
     console.log(`📝 raport walidacji: ${reportPath}`);
+    for (const extra of extraJsonPaths) {
+      try {
+        mkdirSync(dirname(extra), { recursive: true });
+        writeFileSync(extra, json, "utf8");
+        console.log(`📝 raport walidacji (--json): ${extra}`);
+      } catch (err) {
+        console.error(`⚠️  nie udało się zapisać ${extra}: ${err?.message ?? err}`);
+      }
+    }
   } catch (err) {
     console.error(`⚠️  nie udało się zapisać ${reportPath}: ${err?.message ?? err}`);
+  }
+
+  // --html[=path]: dodatkowy, czytelny raport HTML walidacji.
+  if (HTML_REPORT_PATH) {
+    const htmlPath = HTML_REPORT_PATH === "/mnt/documents/cloudflare-report.html"
+      ? join(OUT_DIR, "cloudflare-runs", runIdPath, "run_id-verification.html")
+      : (HTML_REPORT_PATH.startsWith("/") ? HTML_REPORT_PATH : join(OUT_DIR, HTML_REPORT_PATH));
+    try {
+      const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+      const rows = report.files.map((f) =>
+        `<tr class="${f.ok ? "ok" : "bad"}"><td>${f.ok ? "✓" : "✗"}</td><td>${esc(f.key ?? "")}</td><td><code>${esc(f.path)}</code></td><td>${esc(f.reason ?? "")}</td></tr>`,
+      ).join("\n");
+      const html = `<!doctype html><html lang="pl"><meta charset="utf-8"><title>run_id verification — ${esc(report.run_id)}</title>
+<style>body{font:14px/1.5 system-ui,sans-serif;margin:24px;color:#222}h1{margin:0 0 8px}table{border-collapse:collapse;width:100%;margin-top:12px}th,td{border:1px solid #ddd;padding:6px 8px;text-align:left;vertical-align:top}tr.ok{background:#f4faf5}tr.bad{background:#fdecec}code{font:12px ui-monospace,monospace}.stats{margin:8px 0;color:#555}</style>
+<h1>run_id verification</h1>
+<div class="stats">mode=<b>${esc(report.mode)}</b> · run_id=<code>${esc(report.run_id)}</code> · run_dir=<code>${esc(report.run_dir)}</code> · generated_at=${esc(report.generated_at)}</div>
+<div class="stats">checked=<b>${report.stats.checked}</b> · ok=<b>${report.stats.ok}</b> · mismatched=<b>${report.stats.mismatched}</b> · ratio=<b>${report.stats.consistency_ratio.toFixed(4)}</b></div>
+<table><thead><tr><th>OK</th><th>key</th><th>path</th><th>reason</th></tr></thead><tbody>${rows}</tbody></table></html>`;
+      mkdirSync(dirname(htmlPath), { recursive: true });
+      writeFileSync(htmlPath, html, "utf8");
+      console.log(`📝 raport walidacji (--html): ${htmlPath}`);
+    } catch (err) {
+      console.error(`⚠️  nie udało się zapisać HTML raportu walidacji: ${err?.message ?? err}`);
+    }
   }
 
   console.log(`🔎 --verify-run=${VERIFY_RUN_ID}`);
