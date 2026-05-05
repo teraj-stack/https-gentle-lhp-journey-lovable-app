@@ -7,30 +7,58 @@
  * Test odpala skrypt jako subprocess (Node) — nie importuje go, bo
  * skrypt natychmiast wywołuje pipeline na top-levelu.
  */
-import { describe, it, expect, afterAll } from "vitest";
+import { describe, it, expect, afterAll, beforeAll } from "vitest";
 import { spawnSync } from "node:child_process";
 import {
   mkdirSync,
+  mkdtempSync,
   writeFileSync,
   rmSync,
   existsSync,
   readFileSync,
 } from "node:fs";
+import { tmpdir } from "node:os";
 import { resolve, join } from "node:path";
 
 const SCRIPT = resolve(__dirname, "../../scripts/export-cloudflare-redirects.mjs");
-const RUNS_DIR = "/mnt/documents/cloudflare-runs";
 
-// Wszystkie tymczasowe katalogi run_id muszą zawierać ten prefix, żeby
-// afterAll mógł je sprzątnąć bez ryzyka uderzenia w realny artefakt.
+// Pełna izolacja przez env CF_OUT_DIR. Każdy uruchomiony skrypt pisze do
+// własnego, świeżego tmpdir-a — żaden test nie dotyka /mnt/documents,
+// więc lokalne i CI runy są bezpieczne i przenośne.
+//
+// CF_OUT_DIR (override env override) → opcjonalnie z zewnątrz, np.:
+//   CF_OUT_DIR=/some/scratch vitest run ...
+// Domyślnie używamy os.tmpdir()/cf-redirects-tests-XXXXXX dla całego suite.
 const TMP_PREFIX = "vitest-verify-";
-const created: string[] = [];
+let SUITE_OUT_DIR: string;
+let RUNS_DIR: string;
+const createdRunDirs: string[] = [];
+
+beforeAll(() => {
+  SUITE_OUT_DIR = process.env.CF_OUT_DIR
+    ? mkdtempSync(join(process.env.CF_OUT_DIR.replace(/\/+$/, ""), "cf-redirects-tests-"))
+    : mkdtempSync(join(tmpdir(), "cf-redirects-tests-"));
+  RUNS_DIR = join(SUITE_OUT_DIR, "cloudflare-runs");
+  mkdirSync(RUNS_DIR, { recursive: true });
+});
+
+afterAll(() => {
+  // Cały SUITE_OUT_DIR jest tymczasowy → kasujemy rekursywnie. Bezpieczne,
+  // bo `mkdtempSync` zwraca unikalną ścieżkę pod tmpdir().
+  if (SUITE_OUT_DIR && existsSync(SUITE_OUT_DIR)) {
+    try {
+      rmSync(SUITE_OUT_DIR, { recursive: true, force: true });
+    } catch {
+      /* ignore */
+    }
+  }
+});
 
 function makeRunDir(slug: string): { runId: string; runDir: string } {
   const runId = `${TMP_PREFIX}${slug}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   const runDir = join(RUNS_DIR, runId);
   mkdirSync(runDir, { recursive: true });
-  created.push(runDir);
+  createdRunDirs.push(runDir);
   return { runId, runDir };
 }
 
@@ -38,10 +66,15 @@ function writeArtifact(runDir: string, name: string, content: string) {
   writeFileSync(join(runDir, name), content, "utf8");
 }
 
-function runScript(args: string[]) {
+function scriptEnv(extra: Record<string, string> = {}) {
+  return { ...process.env, CF_OUT_DIR: SUITE_OUT_DIR, ...extra };
+}
+
+function runScript(args: string[], extraEnv: Record<string, string> = {}) {
   return spawnSync("node", [SCRIPT, ...args], {
     encoding: "utf8",
     timeout: 30_000,
+    env: scriptEnv(extraEnv),
   });
 }
 
@@ -131,15 +164,7 @@ function assertVerificationReportShape(
   }
 }
 
-afterAll(() => {
-  for (const dir of created) {
-    try {
-      rmSync(dir, { recursive: true, force: true });
-    } catch {
-      /* ignore */
-    }
-  }
-});
+// (cleanup całego SUITE_OUT_DIR jest w pierwszym afterAll na górze pliku)
 
 describe("export-cloudflare-redirects --verify-run", () => {
   it("exit 0 gdy wszystkie artefakty zawierają ten sam run_id", () => {
@@ -215,130 +240,85 @@ describe("export-cloudflare-redirects --verify-run", () => {
 
 // ──────────────────────────────────────────────────────────────────────────
 // Post-export --strict: pełny pipeline eksportu zapisuje artefakty do
-// /mnt/documents/ a następnie sprawdza spójność run_id we wszystkich plikach
-// z manifest.artifacts. W trybie --strict każda niezgodność → exit 1.
+// CF_OUT_DIR (per-suite tmpdir), a następnie sprawdza spójność run_id we
+// wszystkich plikach z manifest.artifacts. W trybie --strict każda
+// niezgodność → exit 1.
 //
 // Aby zasymulować niespójność bez ręcznej manipulacji plikami w trakcie
 // działania skryptu, używamy test-only env CF_TEST_CORRUPT_ARTIFACT=<key>,
 // który nadpisuje wskazany artefakt treścią bez RUN_ID tuż przed walidacją.
 //
-// Te testy NIE używają sieci (brak --upload / --clear) — eksport tylko
-// czyta src/lib/seo/redirectsMap.ts i pisze pliki na dysk. Snapshot/restore
-// współdzielonych artefaktów chroni inne testy/realne raporty przed
-// pozostawieniem skorumpowanej zawartości.
+// Testy NIE używają sieci (brak --upload / --clear) — eksport tylko czyta
+// src/lib/seo/redirectsMap.ts i pisze pliki do izolowanego tmpdir-a.
+// Cały SUITE_OUT_DIR jest sprzątany w afterAll na górze pliku.
 // ──────────────────────────────────────────────────────────────────────────
 
-const SHARED_ARTIFACTS = [
-  "/mnt/documents/cloudflare-bulk-redirects.csv",
-  "/mnt/documents/cloudflare-bulk-redirects.json",
-  "/mnt/documents/cloudflare-redirects-simple.csv",
-  "/mnt/documents/cloudflare-redirects.txt",
-];
-
-function snapshotSharedArtifacts(): Map<string, string | null> {
-  const snap = new Map<string, string | null>();
-  for (const p of SHARED_ARTIFACTS) {
-    snap.set(p, existsSync(p) ? readFileSync(p, "utf8") : null);
-  }
-  return snap;
-}
-
-function restoreSharedArtifacts(snap: Map<string, string | null>) {
-  for (const [p, content] of snap) {
-    if (content === null) {
-      if (existsSync(p)) rmSync(p, { force: true });
-    } else {
-      writeFileSync(p, content, "utf8");
-    }
-  }
-}
-
-function runExport(env: Record<string, string>, extraArgs: string[] = []) {
-  return spawnSync("node", [SCRIPT, ...extraArgs], {
-    encoding: "utf8",
-    timeout: 60_000,
-    env: { ...process.env, ...env },
-  });
+function makePostExportRunId(slug: string): string {
+  const runId = `${TMP_PREFIX}${slug}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  createdRunDirs.push(join(RUNS_DIR, runId));
+  return runId;
 }
 
 describe("export-cloudflare-redirects post-export --strict", () => {
   it("exit 0 gdy wszystkie artefakty mają spójny run_id (--strict, czysty eksport)", () => {
-    const runId = `${TMP_PREFIX}strict-ok-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-    created.push(join(RUNS_DIR, runId));
-    const snap = snapshotSharedArtifacts();
-    try {
-      const res = runExport({ CF_RUN_ID: runId }, ["--strict"]);
-      expect(res.status, res.stderr || res.stdout).toBe(0);
-      expect(res.stdout).toContain("run_id consistency");
-      expect(res.stdout).not.toContain("run_id mismatch");
+    const runId = makePostExportRunId("strict-ok");
+    const res = runScript(["--strict"], { CF_RUN_ID: runId });
+    expect(res.status, res.stderr || res.stdout).toBe(0);
+    expect(res.stdout).toContain("run_id consistency");
+    expect(res.stdout).not.toContain("run_id mismatch");
 
-      const reportPath = join(RUNS_DIR, runId, "run_id-verification.json");
-      expect(existsSync(reportPath)).toBe(true);
-      const report = JSON.parse(readFileSync(reportPath, "utf8")) as VerificationReport;
-      assertVerificationReportShape(report, { runId, mode: "post-export" });
-      expect(report.stats.mismatched).toBe(0);
-      expect(report.stats.consistency_ratio).toBe(1);
-      expect(report.stats.checked).toBeGreaterThan(0);
-      expect(report.mismatches).toEqual([]);
-      // Wszystkie pliki muszą mieć ok=true (a więc i brak `reason`).
-      expect(report.files.every((f) => f.ok === true)).toBe(true);
-    } finally {
-      restoreSharedArtifacts(snap);
-    }
+    const reportPath = join(RUNS_DIR, runId, "run_id-verification.json");
+    expect(existsSync(reportPath)).toBe(true);
+    const report = JSON.parse(readFileSync(reportPath, "utf8")) as VerificationReport;
+    assertVerificationReportShape(report, { runId, mode: "post-export" });
+    expect(report.stats.mismatched).toBe(0);
+    expect(report.stats.consistency_ratio).toBe(1);
+    expect(report.stats.checked).toBeGreaterThan(0);
+    expect(report.mismatches).toEqual([]);
+    expect(report.files.every((f) => f.ok === true)).toBe(true);
+    // run_dir musi siedzieć pod naszym SUITE_OUT_DIR (proof izolacji).
+    expect(report.run_dir.startsWith(SUITE_OUT_DIR)).toBe(true);
   });
 
   it("exit 1 gdy --strict + artefakt z niespójnym run_id (CF_TEST_CORRUPT_ARTIFACT=txt)", () => {
-    const runId = `${TMP_PREFIX}strict-bad-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-    created.push(join(RUNS_DIR, runId));
-    const snap = snapshotSharedArtifacts();
-    try {
-      const res = runExport(
-        { CF_RUN_ID: runId, CF_TEST_CORRUPT_ARTIFACT: "txt" },
-        ["--strict"],
-      );
-      expect(res.status).toBe(1);
-      expect(res.stderr).toContain("run_id mismatch");
-      expect(res.stderr).toContain("--strict");
+    const runId = makePostExportRunId("strict-bad");
+    const res = runScript(["--strict"], {
+      CF_RUN_ID: runId,
+      CF_TEST_CORRUPT_ARTIFACT: "txt",
+    });
+    expect(res.status).toBe(1);
+    expect(res.stderr).toContain("run_id mismatch");
+    expect(res.stderr).toContain("--strict");
 
-      const report = JSON.parse(
-        readFileSync(join(RUNS_DIR, runId, "run_id-verification.json"), "utf8"),
-      ) as VerificationReport;
-      assertVerificationReportShape(report, { runId, mode: "post-export" });
-      expect(report.stats.mismatched).toBeGreaterThanOrEqual(1);
-      expect(report.stats.consistency_ratio).toBeLessThan(1);
-      // Niespójność musi pochodzić z `txt` (CF_TEST_CORRUPT_ARTIFACT=txt).
-      expect(report.mismatches.some((m) => m.key === "txt")).toBe(true);
-      const txtFile = report.files.find((f) => f.key === "txt");
-      expect(txtFile).toBeDefined();
-      expect(txtFile!.ok).toBe(false);
-      expect(txtFile!.reason).toMatch(/run_id/i);
-    } finally {
-      restoreSharedArtifacts(snap);
-    }
+    const report = JSON.parse(
+      readFileSync(join(RUNS_DIR, runId, "run_id-verification.json"), "utf8"),
+    ) as VerificationReport;
+    assertVerificationReportShape(report, { runId, mode: "post-export" });
+    expect(report.stats.mismatched).toBeGreaterThanOrEqual(1);
+    expect(report.stats.consistency_ratio).toBeLessThan(1);
+    expect(report.mismatches.some((m) => m.key === "txt")).toBe(true);
+    const txtFile = report.files.find((f) => f.key === "txt");
+    expect(txtFile).toBeDefined();
+    expect(txtFile!.ok).toBe(false);
+    expect(txtFile!.reason).toMatch(/run_id/i);
   });
 
   it("exit 0 BEZ --strict mimo niespójności (--strict eskaluje, brak --strict nie)", () => {
-    const runId = `${TMP_PREFIX}nostrict-bad-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-    created.push(join(RUNS_DIR, runId));
-    const snap = snapshotSharedArtifacts();
-    try {
-      const res = runExport({
-        CF_RUN_ID: runId,
-        CF_TEST_CORRUPT_ARTIFACT: "txt",
-      });
-      expect(res.status, res.stderr || res.stdout).toBe(0);
-      expect(res.stderr).toContain("run_id mismatch");
-      // Brak komunikatu o eskalacji do exit 1 (specyficzny dla --strict).
-      expect(res.stderr).not.toContain("--strict: kończę");
+    const runId = makePostExportRunId("nostrict-bad");
+    const res = runScript([], {
+      CF_RUN_ID: runId,
+      CF_TEST_CORRUPT_ARTIFACT: "txt",
+    });
+    expect(res.status, res.stderr || res.stdout).toBe(0);
+    expect(res.stderr).toContain("run_id mismatch");
+    // Brak komunikatu o eskalacji do exit 1 (specyficzny dla --strict).
+    expect(res.stderr).not.toContain("--strict: kończę");
 
-      const report = JSON.parse(
-        readFileSync(join(RUNS_DIR, runId, "run_id-verification.json"), "utf8"),
-      ) as VerificationReport;
-      assertVerificationReportShape(report, { runId, mode: "post-export" });
-      expect(report.stats.mismatched).toBeGreaterThanOrEqual(1);
-      expect(report.mismatches.some((m) => m.key === "txt")).toBe(true);
-    } finally {
-      restoreSharedArtifacts(snap);
-    }
+    const report = JSON.parse(
+      readFileSync(join(RUNS_DIR, runId, "run_id-verification.json"), "utf8"),
+    ) as VerificationReport;
+    assertVerificationReportShape(report, { runId, mode: "post-export" });
+    expect(report.stats.mismatched).toBeGreaterThanOrEqual(1);
+    expect(report.mismatches.some((m) => m.key === "txt")).toBe(true);
   });
 });
