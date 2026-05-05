@@ -114,8 +114,18 @@ type RunExportOpts = {
   extraArgs?: string[];
 };
 
+type SpawnSyncStringResult = {
+  status: number | null;
+  signal: NodeJS.Signals | null;
+  stdout: string;
+  stderr: string;
+  pid: number;
+  output: Array<string | null>;
+  error?: Error;
+};
+
 type RunExportResult = {
-  res: ReturnType<typeof spawnSync>;
+  res: SpawnSyncStringResult;
   runId: string;
   outDir: string;
   runDir: string;
