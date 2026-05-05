@@ -363,3 +363,91 @@ Deno.test('unauthorizedResponse — case-only duplicate CORS headers: values com
 
   await res.text()
 })
+
+Deno.test('unauthorizedResponse — unusual CORS values (empty, commas, internal whitespace) pass through unchanged', async () => {
+  // Real-world CORS values are not always "clean ASCII tokens". Callers
+  // sometimes pass:
+  //   * an empty string (e.g. a feature-flagged header that is currently
+  //     disabled but still emitted with a blank value),
+  //   * comma-separated lists with various spacing,
+  //   * non-ASCII / unicode (allowed by Fetch spec for header VALUES),
+  //   * internal whitespace and tabs,
+  //   * values that look like other HTTP syntax (semicolons, quotes).
+  //
+  // The helper must forward EVERY one of these byte-for-byte (modulo the
+  // documented Headers normalisation: leading/trailing whitespace is
+  // trimmed). It must NOT sanitise, escape, quote, or otherwise mutate
+  // the value — that would silently break clients that rely on the
+  // exact wire content for things like `Vary` lists or custom expose
+  // headers.
+  //
+  // NOTE on `\n` / `\r\n`: per Fetch spec §header-value-validation, raw
+  // CR/LF in a header value throws a `TypeError` at `new Headers(init)`
+  // construction time (CRLF injection guard). That is enforced by the
+  // RUNTIME, not this helper, so we don't include such values in the
+  // pass-through matrix — instead we lock in that behaviour with a
+  // dedicated assertion below so a future runtime change (or a helper
+  // refactor that pre-sanitises values) is caught.
+
+  const unusualCors: Record<string, string> = {
+    'X-Empty-Value': '',
+    'X-Comma-List': 'a, b, c, d',
+    'X-Comma-Tight': 'a,b,c,d',
+    // NOTE: non-ASCII / unicode values are NOT included — Fetch spec
+    // requires header values to be ByteString (latin-1), and Deno
+    // throws TypeError at Response construction otherwise. Callers
+    // must pre-encode (e.g. percent-encoding) any non-ASCII data.
+    'X-Internal-Whitespace': 'a   b\tc',
+    'X-Semicolons': 'value; param=1; other="quoted"',
+    'X-Long-Token': 'x'.repeat(512),
+    'Access-Control-Expose-Headers': 'X-Request-Id, X-Trace-Id, X-Custom',
+    'Access-Control-Max-Age': '0',
+  }
+
+  const res = unauthorizedResponse(unusualCors)
+
+  assertEquals(res.status, 401)
+  assertEquals(res.headers.get('content-type'), 'application/json')
+
+  // Every value must round-trip verbatim. No escaping, no quoting, no
+  // sanitisation. (Header-name casing is normalised by the Headers API
+  // to lowercase — that is independent of value preservation.)
+  for (const [name, value] of Object.entries(unusualCors)) {
+    assertEquals(
+      res.headers.get(name),
+      value,
+      `value of "${name}" must pass through unchanged (expected ${JSON.stringify(value)}, got ${JSON.stringify(res.headers.get(name))})`,
+    )
+  }
+
+  // Pin documented Headers normalisation: LEADING/TRAILING whitespace
+  // around a value is trimmed by `new Headers(init)`. This is part of
+  // the contract callers see — assert it explicitly so a future helper
+  // refactor (e.g. one that pre-pads values) doesn't silently change
+  // the wire bytes.
+  const trimRes = unauthorizedResponse({ 'X-Trim-Probe': '   trimmed   ' })
+  assertEquals(
+    trimRes.headers.get('x-trim-probe'),
+    'trimmed',
+    'leading/trailing whitespace is trimmed by Headers normalisation (documented contract)',
+  )
+  await trimRes.text()
+
+  // Pin runtime-enforced CRLF guard: a raw newline in a value must
+  // throw at construction time. The helper itself does NOT need to
+  // sanitise — it relies on this guard. If the guard ever weakens,
+  // this test fails and we must add explicit sanitisation in the helper.
+  let threw = false
+  try {
+    unauthorizedResponse({ 'X-Newline': 'line1\nline2' })
+  } catch (e) {
+    threw = e instanceof TypeError
+  }
+  assert(
+    threw,
+    'raw \\n in CORS header value must throw TypeError (CRLF injection guard); ' +
+      'if this regresses, the helper must add explicit value sanitisation',
+  )
+
+  await res.text()
+})
