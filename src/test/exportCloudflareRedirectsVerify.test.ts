@@ -322,33 +322,3 @@ describe("export-cloudflare-redirects post-export --strict", () => {
     expect(report.mismatches.some((m) => m.key === "txt")).toBe(true);
   });
 });
-    } finally {
-      restoreSharedArtifacts(snap);
-    }
-  });
-
-  it("exit 0 BEZ --strict mimo niespójności (--strict eskaluje, brak --strict nie)", () => {
-    const runId = `${TMP_PREFIX}nostrict-bad-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-    created.push(join(RUNS_DIR, runId));
-    const snap = snapshotSharedArtifacts();
-    try {
-      const res = runExport({
-        CF_RUN_ID: runId,
-        CF_TEST_CORRUPT_ARTIFACT: "txt",
-      });
-      expect(res.status, res.stderr || res.stdout).toBe(0);
-      expect(res.stderr).toContain("run_id mismatch");
-      // Brak komunikatu o eskalacji do exit 1 (specyficzny dla --strict).
-      expect(res.stderr).not.toContain("--strict: kończę");
-
-      const report = JSON.parse(
-        readFileSync(join(RUNS_DIR, runId, "run_id-verification.json"), "utf8"),
-      ) as VerificationReport;
-      assertVerificationReportShape(report, { runId, mode: "post-export" });
-      expect(report.stats.mismatched).toBeGreaterThanOrEqual(1);
-      expect(report.mismatches.some((m) => m.key === "txt")).toBe(true);
-    } finally {
-      restoreSharedArtifacts(snap);
-    }
-  });
-});
