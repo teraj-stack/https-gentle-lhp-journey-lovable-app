@@ -17,6 +17,7 @@
 // Pre-checks email_send_log to skip already-pending/sent reminders.
 
 import { createClient, SupabaseClient } from 'npm:@supabase/supabase-js@2'
+import { unauthorizedResponse } from '../_shared/unauthorized.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -290,10 +291,7 @@ Deno.serve(async (req) => {
     okAuth = diff === 0
   }
   if (!okAuth) {
-    return new Response(
-      JSON.stringify({ error: 'Unauthorized' }),
-      { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
-    )
+    return unauthorizedResponse(corsHeaders)
   }
 
   // Parse body — default to "24h" for backward-compat with older cron calls.

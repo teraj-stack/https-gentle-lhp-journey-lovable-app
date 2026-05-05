@@ -84,39 +84,62 @@ async function callFunction(name: string, headers: HeadersInit, body: unknown) {
   const url = `${SUPABASE_URL}/functions/v1/${name}`
   const res = await fetch(url, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...headers,
-    },
+    headers: { 'Content-Type': 'application/json', ...headers },
     body: JSON.stringify(body),
   })
-  // Always consume the body to avoid Deno resource leaks.
   const text = await res.text()
-  return { status: res.status, text }
+  const contentType = res.headers.get('content-type') || ''
+  return { status: res.status, text, contentType }
+}
+
+// Asserts the unified 401 contract documented in
+// supabase/functions/_shared/unauthorized.ts:
+//   status:       401
+//   content-type: application/json
+//   body:         { "error": "Unauthorized", "code": "unauthorized" }
+function assertUnauthorizedShape(
+  fnName: string,
+  scenario: string,
+  res: { status: number; text: string; contentType: string },
+) {
+  assertEquals(
+    res.status,
+    401,
+    `[${fnName}] ${scenario}: expected status 401, got ${res.status}: ${res.text}`,
+  )
+  assert(
+    res.contentType.toLowerCase().includes('application/json'),
+    `[${fnName}] ${scenario}: expected application/json content-type, got "${res.contentType}"`,
+  )
+  let body: unknown
+  try {
+    body = JSON.parse(res.text)
+  } catch {
+    throw new Error(`[${fnName}] ${scenario}: 401 body is not valid JSON: ${res.text}`)
+  }
+  assertEquals(
+    body,
+    { error: 'Unauthorized', code: 'unauthorized' },
+    `[${fnName}] ${scenario}: 401 body shape drift. Expected ` +
+      `{error:"Unauthorized",code:"unauthorized"}, got ${res.text}`,
+  )
 }
 
 for (const fn of FUNCTIONS) {
-  Deno.test(`[auth] ${fn.name} — rejects request with NO Authorization header`, async () => {
-    const { status, text } = await callFunction(fn.name, {}, fn.body)
-    assertEquals(
-      status,
-      401,
-      `Expected 401 from ${fn.name} without Authorization header, got ${status}: ${text}`,
-    )
+  Deno.test(`[auth] ${fn.name} — rejects NO Authorization header (unified 401)`, async () => {
+    const res = await callFunction(fn.name, {}, fn.body)
+    assertUnauthorizedShape(fn.name, 'no Authorization header', res)
   })
 
-  Deno.test(`[auth] ${fn.name} — rejects request with WRONG Bearer token`, async () => {
-    const { status, text } = await callFunction(
+  Deno.test(`[auth] ${fn.name} — rejects WRONG Bearer token (unified 401)`, async () => {
+    const res = await callFunction(
       fn.name,
       { Authorization: `Bearer ${BOGUS_TOKEN}` },
       fn.body,
     )
-    assertEquals(
-      status,
-      401,
-      `Expected 401 from ${fn.name} with bogus Bearer token, got ${status}: ${text}`,
-    )
+    assertUnauthorizedShape(fn.name, 'bogus Bearer token', res)
   })
+
 
   Deno.test(`[auth] ${fn.name} — accepts request with CORRECT service-role Bearer token (smoke, best-effort)`, async () => {
     // Best-effort positive smoke. We NEVER fail this test based on auth

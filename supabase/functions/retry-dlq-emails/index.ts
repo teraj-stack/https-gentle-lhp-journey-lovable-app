@@ -16,6 +16,7 @@
 // is intentionally NOT retried — re-invoking would just fail again.
 
 import { createClient } from 'npm:@supabase/supabase-js@2'
+import { unauthorizedResponse } from '../_shared/unauthorized.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -110,10 +111,7 @@ Deno.serve(async (req) => {
   }
 
   if (!isAuthorized) {
-    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-      status: 401,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
+    return unauthorizedResponse(corsHeaders)
   }
 
   console.log(`retry-dlq-emails invoked by ${callerLabel}`)

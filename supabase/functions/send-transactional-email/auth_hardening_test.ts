@@ -60,58 +60,69 @@ async function callFn(headers: HeadersInit) {
     headers: { 'Content-Type': 'application/json', ...headers },
     body: JSON.stringify(SAMPLE_BODY),
   })
-  // Always consume to avoid Deno resource leaks.
   const text = await res.text()
-  return { status: res.status, text }
+  const contentType = res.headers.get('content-type') || ''
+  return { status: res.status, text, contentType }
 }
 
-Deno.test('[stx-auth] send-transactional-email — rejects NO Authorization header (401)', async () => {
-  const { status, text } = await callFn({})
+// Unified 401 contract — must match supabase/functions/_shared/unauthorized.ts.
+function assertUnauthorizedShape(
+  scenario: string,
+  res: { status: number; text: string; contentType: string },
+) {
   assertEquals(
-    status,
+    res.status,
     401,
-    `Expected 401 from send-transactional-email without Authorization header, got ${status}: ${text}`,
+    `[stx-auth] ${scenario}: expected 401, got ${res.status}: ${res.text}`,
+  )
+  assert(
+    res.contentType.toLowerCase().includes('application/json'),
+    `[stx-auth] ${scenario}: expected application/json content-type, got "${res.contentType}"`,
+  )
+  let body: unknown
+  try {
+    body = JSON.parse(res.text)
+  } catch {
+    throw new Error(`[stx-auth] ${scenario}: 401 body is not valid JSON: ${res.text}`)
+  }
+  assertEquals(
+    body,
+    { error: 'Unauthorized', code: 'unauthorized' },
+    `[stx-auth] ${scenario}: 401 body shape drift. Got ${res.text}`,
+  )
+}
+
+Deno.test('[stx-auth] send-transactional-email — rejects NO Authorization header (unified 401)', async () => {
+  assertUnauthorizedShape('no Authorization header', await callFn({}))
+})
+
+Deno.test('[stx-auth] send-transactional-email — rejects malformed Authorization (no "Bearer " prefix) (unified 401)', async () => {
+  assertUnauthorizedShape(
+    'malformed Authorization',
+    await callFn({ Authorization: 'NotBearer something' }),
   )
 })
 
-Deno.test('[stx-auth] send-transactional-email — rejects malformed Authorization (no "Bearer " prefix) (401)', async () => {
-  const { status, text } = await callFn({ Authorization: 'NotBearer something' })
-  assertEquals(
-    status,
-    401,
-    `Expected 401 from send-transactional-email with malformed Authorization, got ${status}: ${text}`,
+Deno.test('[stx-auth] send-transactional-email — rejects WRONG Bearer token (unified 401)', async () => {
+  assertUnauthorizedShape(
+    'bogus Bearer token',
+    await callFn({ Authorization: `Bearer ${BOGUS_TOKEN}` }),
   )
 })
 
-Deno.test('[stx-auth] send-transactional-email — rejects WRONG Bearer token (401)', async () => {
-  const { status, text } = await callFn({
-    Authorization: `Bearer ${BOGUS_TOKEN}`,
-  })
-  assertEquals(
-    status,
-    401,
-    `Expected 401 from send-transactional-email with bogus Bearer token, got ${status}: ${text}`,
-  )
-})
-
-Deno.test('[stx-auth] send-transactional-email — rejects anon JWT (publishable key) as Bearer (401)', async () => {
-  // Anon callers MUST go through `submit-contact-form` (Turnstile +
-  // validation + rate-limit), never call this function directly.
+Deno.test('[stx-auth] send-transactional-email — rejects anon JWT (publishable key) as Bearer (unified 401)', async () => {
   if (!HAS_ANON_KEY) {
     console.warn(
       '[stx-auth] anon publishable key not in local env — anon-JWT rejection test skipped.',
     )
     return
   }
-  const { status, text } = await callFn({
-    Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-  })
-  assertEquals(
-    status,
-    401,
-    `Expected 401 from send-transactional-email with anon JWT Bearer, got ${status}: ${text}`,
+  assertUnauthorizedShape(
+    'anon JWT Bearer',
+    await callFn({ Authorization: `Bearer ${SUPABASE_ANON_KEY}` }),
   )
 })
+
 
 Deno.test('[stx-auth] send-transactional-email — accepts CORRECT service-role Bearer (best-effort smoke)', async () => {
   // Best-effort: NEVER fail this test on auth outcome.

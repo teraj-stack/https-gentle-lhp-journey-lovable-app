@@ -16,6 +16,7 @@
 // reception can change booking status with a single click.
 
 import { createClient } from 'npm:@supabase/supabase-js@2'
+import { unauthorizedResponse } from '../_shared/unauthorized.ts'
 import {
   checkRateLimitDb,
   getClientIp,
@@ -199,10 +200,7 @@ Deno.serve(async (req) => {
         userAgent,
         metadata: { method: req.method },
       })
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+      return unauthorizedResponse(corsHeaders)
     }
   }
 
