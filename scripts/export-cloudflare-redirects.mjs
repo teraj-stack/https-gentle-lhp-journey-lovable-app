@@ -52,7 +52,10 @@ import { createHash, randomUUID } from "node:crypto";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const SRC = resolve(__dirname, "../src/lib/seo/redirectsMap.ts");
-const OUT_DIR = "/mnt/documents";
+// OUT_DIR — katalog docelowy artefaktów. Domyślnie /mnt/documents (środowisko
+// Lovable). Konfigurowalny przez env CF_OUT_DIR — przydatne w testach (tmpdir),
+// CI z innymi mountami i lokalnym debug bez pisania do współdzielonej lokalizacji.
+const OUT_DIR = (process.env.CF_OUT_DIR || "/mnt/documents").replace(/\/+$/, "");
 const DOMAIN = "https://cml.pl";
 
 // ── CLI flags ───────────────────────────────────────────────────────────────
