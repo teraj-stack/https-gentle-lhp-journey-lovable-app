@@ -267,17 +267,24 @@ describe("export-cloudflare-redirects post-export --strict", () => {
     expect(res.stdout).toContain("run_id consistency");
     expect(res.stdout).not.toContain("run_id mismatch");
 
-    const reportPath = join(RUNS_DIR, runId, "run_id-verification.json");
+    const expectedRunDir = join(RUNS_DIR, runId);
+    const reportPath = join(expectedRunDir, "run_id-verification.json");
     expect(existsSync(reportPath)).toBe(true);
     const report = JSON.parse(readFileSync(reportPath, "utf8")) as VerificationReport;
-    assertVerificationReportShape(report, { runId, mode: "post-export" });
+    // Dokładny runDir — musi być EXACT match z join(RUNS_DIR, runId), nie tylko prefix.
+    assertVerificationReportShape(report, {
+      runId,
+      mode: "post-export",
+      runDir: expectedRunDir,
+    });
     expect(report.stats.mismatched).toBe(0);
     expect(report.stats.consistency_ratio).toBe(1);
     expect(report.stats.checked).toBeGreaterThan(0);
     expect(report.mismatches).toEqual([]);
     expect(report.files.every((f) => f.ok === true)).toBe(true);
-    // run_dir musi siedzieć pod naszym SUITE_OUT_DIR (proof izolacji).
-    expect(report.run_dir.startsWith(SUITE_OUT_DIR)).toBe(true);
+    // run_dir EXACT pod SUITE_OUT_DIR/cloudflare-runs/<runId> — proof pełnej izolacji.
+    expect(report.run_dir).toBe(expectedRunDir);
+    expect(report.run_dir.startsWith(SUITE_OUT_DIR + "/")).toBe(true);
   });
 
   it("exit 1 gdy --strict + artefakt z niespójnym run_id (CF_TEST_CORRUPT_ARTIFACT=txt)", () => {
