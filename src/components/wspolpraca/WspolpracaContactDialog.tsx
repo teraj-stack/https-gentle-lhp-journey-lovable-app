@@ -74,63 +74,36 @@ const WspolpracaContactDialog = ({ open, onOpenChange }: Props) => {
 
     setSending(true);
     try {
-      const { data: verification } = await supabase.functions.invoke("verify-turnstile", {
-        body: { token: turnstileToken },
+      const { data, error } = await supabase.functions.invoke('submit-contact-form', {
+        body: {
+          formType: 'b2b',
+          turnstileToken,
+          email: result.data.email,
+          facility: result.data.facility?.trim() || undefined,
+          message: result.data.message,
+          source: 'wspolpraca-b2b',
+        },
       });
-      if (!verification?.success) {
+      if (error || !data?.success) {
         toast({
-          title: "Błąd weryfikacji",
-          description: "Weryfikacja CAPTCHA nie powiodła się.",
-          variant: "destructive",
+          title: 'Błąd wysyłki',
+          description: 'Nie udało się wysłać wiadomości. Spróbuj ponownie.',
+          variant: 'destructive',
         });
         setSending(false);
         setTurnstileToken(null);
         return;
       }
-    } catch {
+    } catch (err) {
+      console.error('B2B form submit failed:', err);
       toast({
-        title: "Błąd",
-        description: "Nie udało się zweryfikować CAPTCHA.",
-        variant: "destructive",
+        title: 'Błąd wysyłki',
+        description: 'Nie udało się wysłać wiadomości. Spróbuj ponownie.',
+        variant: 'destructive',
       });
       setSending(false);
+      setTurnstileToken(null);
       return;
-    }
-
-    const id = crypto.randomUUID();
-    const facilityValue = result.data.facility?.trim() || undefined;
-    try {
-      await Promise.all([
-        supabase.functions.invoke("send-transactional-email", {
-          body: {
-            templateName: "contact-confirmation",
-            recipientEmail: result.data.email,
-            idempotencyKey: `wspolpraca-b2b-confirm-${id}`,
-            templateData: {
-              name: facilityValue,
-              subject: "Współpraca B2B – CML",
-              message: result.data.message,
-            },
-          },
-        }),
-        ...["dr.bujok@cml.pl", "biuro@cml.pl"].map((recipient) =>
-          supabase.functions.invoke("send-transactional-email", {
-            body: {
-              templateName: "b2b-inquiry-notification",
-              recipientEmail: recipient,
-              idempotencyKey: `wspolpraca-b2b-notify-${id}-${recipient}`,
-              templateData: {
-                senderEmail: result.data.email,
-                facility: facilityValue,
-                message: result.data.message,
-                source: "wspolpraca-b2b",
-              },
-            },
-          })
-        ),
-      ]);
-    } catch (err) {
-      console.error("Email send failed:", err);
     }
 
     setSending(false);
