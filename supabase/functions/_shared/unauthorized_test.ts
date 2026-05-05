@@ -77,6 +77,65 @@ Deno.test('unauthorizedResponse — works with empty cors header bag', async () 
   assertEquals(await res.text(), '{"error":"Unauthorized","code":"unauthorized"}')
 })
 
+Deno.test('unauthorizedResponse({}) — 401 + application/json, ZERO CORS headers invented', async () => {
+  // Strict version of the "empty cors header bag" contract: when the
+  // caller passes an empty record, the helper must NOT invent any
+  // Access-Control-* headers on its own. The only header on the wire
+  // should be the helper-injected `Content-Type: application/json`.
+  //
+  // Why this matters:
+  //   * Some protected functions are server-to-server only and
+  //     deliberately skip CORS — silently injecting e.g.
+  //     `Access-Control-Allow-Origin: *` would broaden the function's
+  //     attack surface in the browser without anyone noticing.
+  //   * If a future refactor adds a "default cors" fallback inside the
+  //     helper, every caller that opts out by passing `{}` would suddenly
+  //     start emitting CORS — this test catches that drift.
+  //
+  // We assert THREE independent angles:
+  //   1. Status + content-type contract still holds.
+  //   2. No specific CORS header is present (spot-check canonical names).
+  //   3. Full enumeration of headers on the wire equals exactly
+  //      { 'content-type' } — no extras of any kind.
+
+  const res = unauthorizedResponse({})
+
+  // 1) Core contract.
+  assertEquals(res.status, 401)
+  assertEquals(res.headers.get('content-type'), 'application/json')
+
+  // 2) Spot-check every CORS header the codebase ever sets.
+  const forbiddenCorsHeaders = [
+    'access-control-allow-origin',
+    'access-control-allow-headers',
+    'access-control-allow-methods',
+    'access-control-allow-credentials',
+    'access-control-expose-headers',
+    'access-control-max-age',
+  ]
+  for (const name of forbiddenCorsHeaders) {
+    assertEquals(
+      res.headers.get(name),
+      null,
+      `helper must not invent "${name}" when caller passes {}`,
+    )
+  }
+
+  // 3) Full enumeration: only `content-type` should be on the wire.
+  // Catches arbitrary header injection (e.g. a debug `x-...` header
+  // sneaking in via a future refactor) that a spot-check would miss.
+  const wireNames: string[] = []
+  res.headers.forEach((_v, k) => wireNames.push(k.toLowerCase()))
+  assertEquals(
+    wireNames.sort(),
+    ['content-type'],
+    `unauthorizedResponse({}) must emit exactly one header (content-type), got: ${wireNames.join(', ')}`,
+  )
+
+  // Body still matches canonical contract.
+  assertEquals(await res.text(), '{"error":"Unauthorized","code":"unauthorized"}')
+})
+
 Deno.test('unauthorizedResponse — caller cannot accidentally override Content-Type to non-JSON', async () => {
   // Current contract: helper appends `Content-Type: application/json` AFTER
   // spreading caller's cors headers, so a caller-supplied Content-Type is
