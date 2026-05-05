@@ -198,3 +198,111 @@ Deno.test('unauthorizedResponse — preserves CORS headers regardless of caller-
 
   await res.text()
 })
+
+Deno.test('unauthorizedResponse — case-only duplicate CORS headers: last write wins, others preserved', async () => {
+  // Real-world scenario: a caller composes their cors map by spreading a
+  // shared base and then overriding one entry with a differently-cased
+  // key, e.g.
+  //
+  //   { ...BASE_CORS, 'access-control-allow-origin': dynamicOrigin }
+  //
+  // where BASE_CORS contains 'Access-Control-Allow-Origin'. Both entries
+  // survive the object literal (different string keys), get spread into
+  // `new Headers({...})` inside the helper, and Headers normalises both
+  // names to the same lowercase form. Per the Fetch spec, sequential
+  // `set()`-equivalent inserts of the same (normalised) name keep the
+  // LAST value — never concatenate, never drop, never throw.
+  //
+  // This test pins that behaviour at the helper boundary so a future
+  // refactor can't silently switch to e.g. `.append()` (which would
+  // join values with ", " and break clients) or to a key-dedup pass
+  // that picks the FIRST value (which would make spread-overrides a
+  // no-op and silently break dynamic origin selection).
+  //
+  // We also assert that NO OTHER headers in the bag are lost as a side
+  // effect of resolving the duplicate.
+
+  const corsWithCasingDuplicates: Record<string, string> = {
+    // Pair 1: canonical first, lowercase override second → lowercase wins.
+    'Access-Control-Allow-Origin': 'https://first.example',
+    'access-control-allow-origin': 'https://second.example',
+    // Pair 2: lowercase first, UPPERCASE override second → UPPERCASE wins.
+    'access-control-allow-headers': 'authorization, content-type',
+    'ACCESS-CONTROL-ALLOW-HEADERS': 'authorization, apikey, content-type, x-extra',
+    // Pair 3: three variants — last (mixed-case) must win.
+    'access-control-allow-methods': 'GET',
+    'Access-Control-Allow-Methods': 'GET, POST',
+    'ACCESS-control-allow-METHODS': 'GET, POST, OPTIONS',
+    // Untouched bystanders that must survive the dedup unchanged.
+    'Access-Control-Max-Age': '3600',
+    'X-Custom-CORS-Header': 'preserved',
+  }
+
+  const res = unauthorizedResponse(corsWithCasingDuplicates)
+
+  // Status + content-type contract still holds.
+  assertEquals(res.status, 401)
+  assertEquals(res.headers.get('content-type'), 'application/json')
+
+  // Last-write-wins for each duplicated logical header.
+  assertEquals(
+    res.headers.get('access-control-allow-origin'),
+    'https://second.example',
+    'duplicate CORS origin: last entry (lowercase) must win',
+  )
+  assertEquals(
+    res.headers.get('access-control-allow-headers'),
+    'authorization, apikey, content-type, x-extra',
+    'duplicate allow-headers: last entry (UPPERCASE) must win',
+  )
+  assertEquals(
+    res.headers.get('access-control-allow-methods'),
+    'GET, POST, OPTIONS',
+    'triple-duplicate allow-methods: final mixed-case entry must win',
+  )
+
+  // CRITICAL: values must NOT be concatenated with ", " (which would
+  // happen if the helper accidentally used Headers.append() or merged
+  // duplicates). Guard explicitly against the most likely drift modes.
+  const origin = res.headers.get('access-control-allow-origin') ?? ''
+  assert(
+    !origin.includes('first.example'),
+    `origin must drop the earlier value, got "${origin}"`,
+  )
+  assert(
+    !origin.includes(','),
+    `origin must not be a concatenation of duplicates, got "${origin}"`,
+  )
+  const allowMethods = res.headers.get('access-control-allow-methods') ?? ''
+  // Last value legitimately contains commas ("GET, POST, OPTIONS"), so
+  // assert it equals exactly the final entry — not a join of all three.
+  assert(
+    !allowMethods.includes('GET, POST, OPTIONS, GET'),
+    `allow-methods must not concatenate duplicates, got "${allowMethods}"`,
+  )
+
+  // Bystander headers (no duplicates) must be untouched.
+  assertEquals(res.headers.get('access-control-max-age'), '3600')
+  assertEquals(res.headers.get('x-custom-cors-header'), 'preserved')
+
+  // Sanity: the wire must contain exactly one entry per LOGICAL header
+  // name (after lowercase normalisation), plus the helper-injected
+  // Content-Type. No duplicates leak through, no bystanders dropped.
+  const wireNames: string[] = []
+  res.headers.forEach((_v, k) => wireNames.push(k.toLowerCase()))
+  const expectedLogicalNames = [
+    'access-control-allow-origin',
+    'access-control-allow-headers',
+    'access-control-allow-methods',
+    'access-control-max-age',
+    'x-custom-cors-header',
+    'content-type',
+  ].sort()
+  assertEquals(
+    wireNames.sort(),
+    expectedLogicalNames,
+    'wire headers must be exactly the deduplicated logical set + content-type',
+  )
+
+  await res.text()
+})
