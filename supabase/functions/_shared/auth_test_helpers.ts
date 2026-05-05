@@ -51,6 +51,12 @@ export interface CallResult {
   status: number
   text: string
   contentType: string
+  /**
+   * All response headers, lowercased keys. Captured so auth tests can also
+   * assert that 401 responses still carry the expected CORS headers
+   * (browsers refuse to expose a response — even an error — without them).
+   */
+  headers: Record<string, string>
 }
 
 /**
