@@ -344,53 +344,44 @@ describe("export-cloudflare-redirects --verify-run", () => {
 // Cały SUITE_OUT_DIR jest sprzątany w afterAll na górze pliku.
 // ──────────────────────────────────────────────────────────────────────────
 
-function makePostExportRunId(slug: string): string {
-  const runId = `${TMP_PREFIX}${slug}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-  createdRunDirs.push(join(RUNS_DIR, runId));
-  return runId;
-}
+// (Wcześniejszy makePostExportRunId został wchłonięty przez runExport — slug
+// generuje runId, a tracking createdRunDirs jest zrobiony wewnątrz helpera.)
 
 describe("export-cloudflare-redirects post-export --strict", () => {
   it("exit 0 gdy wszystkie artefakty mają spójny run_id (--strict, czysty eksport)", () => {
-    const runId = makePostExportRunId("strict-ok");
-    const res = runScript(["--strict"], { CF_RUN_ID: runId });
+    const { res, runId, runDir, reportPath } = runExport({
+      slug: "strict-ok",
+      strict: true,
+    });
     expect(res.status, res.stderr || res.stdout).toBe(0);
     expect(res.stdout).toContain("run_id consistency");
     expect(res.stdout).not.toContain("run_id mismatch");
 
-    const expectedRunDir = join(RUNS_DIR, runId);
-    const reportPath = join(expectedRunDir, "run_id-verification.json");
     expect(existsSync(reportPath)).toBe(true);
     const report = JSON.parse(readFileSync(reportPath, "utf8")) as VerificationReport;
     // Dokładny runDir — musi być EXACT match z join(RUNS_DIR, runId), nie tylko prefix.
-    assertVerificationReportShape(report, {
-      runId,
-      mode: "post-export",
-      runDir: expectedRunDir,
-    });
+    assertVerificationReportShape(report, { runId, mode: "post-export", runDir });
     expect(report.stats.mismatched).toBe(0);
     expect(report.stats.consistency_ratio).toBe(1);
     expect(report.stats.checked).toBeGreaterThan(0);
     expect(report.mismatches).toEqual([]);
     expect(report.files.every((f) => f.ok === true)).toBe(true);
     // run_dir EXACT pod SUITE_OUT_DIR/cloudflare-runs/<runId> — proof pełnej izolacji.
-    expect(report.run_dir).toBe(expectedRunDir);
+    expect(report.run_dir).toBe(runDir);
     expect(report.run_dir.startsWith(SUITE_OUT_DIR + "/")).toBe(true);
   });
 
   it("exit 1 gdy --strict + artefakt z niespójnym run_id (CF_TEST_CORRUPT_ARTIFACT=txt)", () => {
-    const runId = makePostExportRunId("strict-bad");
-    const res = runScript(["--strict"], {
-      CF_RUN_ID: runId,
-      CF_TEST_CORRUPT_ARTIFACT: "txt",
+    const { res, runId, reportPath } = runExport({
+      slug: "strict-bad",
+      strict: true,
+      corruptArtifact: "txt",
     });
     expect(res.status).toBe(1);
     expect(res.stderr).toContain("run_id mismatch");
     expect(res.stderr).toContain("--strict");
 
-    const report = JSON.parse(
-      readFileSync(join(RUNS_DIR, runId, "run_id-verification.json"), "utf8"),
-    ) as VerificationReport;
+    const report = JSON.parse(readFileSync(reportPath, "utf8")) as VerificationReport;
     assertVerificationReportShape(report, { runId, mode: "post-export" });
     expect(report.stats.mismatched).toBeGreaterThanOrEqual(1);
     expect(report.stats.consistency_ratio).toBeLessThan(1);
@@ -402,19 +393,17 @@ describe("export-cloudflare-redirects post-export --strict", () => {
   });
 
   it("exit 0 BEZ --strict mimo niespójności (--strict eskaluje, brak --strict nie)", () => {
-    const runId = makePostExportRunId("nostrict-bad");
-    const res = runScript([], {
-      CF_RUN_ID: runId,
-      CF_TEST_CORRUPT_ARTIFACT: "txt",
+    const { res, runId, reportPath } = runExport({
+      slug: "nostrict-bad",
+      strict: false,
+      corruptArtifact: "txt",
     });
     expect(res.status, res.stderr || res.stdout).toBe(0);
     expect(res.stderr).toContain("run_id mismatch");
     // Brak komunikatu o eskalacji do exit 1 (specyficzny dla --strict).
     expect(res.stderr).not.toContain("--strict: kończę");
 
-    const report = JSON.parse(
-      readFileSync(join(RUNS_DIR, runId, "run_id-verification.json"), "utf8"),
-    ) as VerificationReport;
+    const report = JSON.parse(readFileSync(reportPath, "utf8")) as VerificationReport;
     assertVerificationReportShape(report, { runId, mode: "post-export" });
     expect(report.stats.mismatched).toBeGreaterThanOrEqual(1);
     expect(report.mismatches.some((m) => m.key === "txt")).toBe(true);
