@@ -779,3 +779,108 @@ describe("export-cloudflare-redirects default OUT_DIR fallback", () => {
     },
   );
 });
+
+// ──────────────────────────────────────────────────────────────────────────
+// Tryb eksportu (BEZ --verify-run): --dry-run + --json/--html.
+//
+// Cel: potwierdzić, że wywołanie skryptu w trybie eksportu z --json i --html
+// zapisuje pliki cloudflare-report.json / cloudflare-report.html dokładnie
+// w CF_OUT_DIR (a nie w /mnt/documents ani w cwd). --dry-run zapewnia, że NIE
+// wykonujemy żadnego fetch-a do Cloudflare API (test offline / hermetyczny):
+// tryb dry-run-only pomija sanity check + GET items i tylko zapisuje raport
+// "dry-run-only" (puste lists, pełne meta + flags + walidacja).
+//
+// Używamy ścieżek absolutnych w obrębie SUITE_OUT_DIR — to jedyny sposób, by
+// w trybie eksportu wymusić zapis dokładnie tam, bo --json/--html w trybie
+// eksportu nie auto-resolve-uje względem CF_OUT_DIR (vide skrypt: tylko
+// --verify-run robi resolve relatywnych ścieżek przeciw OUT_DIR).
+// ──────────────────────────────────────────────────────────────────────────
+describe("export-cloudflare-redirects.mjs — tryb eksportu --dry-run + --json/--html", () => {
+  function runExportDryRun(opts: {
+    slug: string;
+    json?: boolean;
+    html?: boolean;
+    extraArgs?: string[];
+  }) {
+    const runId = `${TMP_PREFIX}${opts.slug}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const jsonPath = join(SUITE_OUT_DIR, `cloudflare-report.${runId}.json`);
+    const htmlPath = join(SUITE_OUT_DIR, `cloudflare-report.${runId}.html`);
+    const args = ["--dry-run"];
+    if (opts.json) args.push(`--json=${jsonPath}`);
+    if (opts.html) args.push(`--html=${htmlPath}`);
+    if (opts.extraArgs) args.push(...opts.extraArgs);
+    const res = runScript(args, { CF_RUN_ID: runId });
+    return { res, runId, jsonPath, htmlPath };
+  }
+
+  it("--json=<abs w CF_OUT_DIR>: zapisuje cloudflare-report.json dokładnie w CF_OUT_DIR", () => {
+    const { res, runId, jsonPath } = runExportDryRun({ slug: "json-only", json: true });
+
+    expect(res.status, res.stderr || res.stdout).toBe(0);
+    expect(existsSync(jsonPath)).toBe(true);
+
+    expect(jsonPath.startsWith(SUITE_OUT_DIR + "/")).toBe(true);
+    const report = JSON.parse(readFileSync(jsonPath, "utf8"));
+    expect(report.run_id).toBe(runId);
+    expect(report.schema_version).toBeDefined();
+    expect(report.flags?.dry_run).toBe(true);
+    expect(report.flags?.upload).toBe(false);
+    expect(report.flags?.clear).toBe(false);
+    expect(report.totals?.lists).toBe(0);
+    expect(Array.isArray(report.lists)).toBe(true);
+    expect(report.lists.length).toBe(0);
+  });
+
+  it("--html=<abs w CF_OUT_DIR>: zapisuje cloudflare-report.html dokładnie w CF_OUT_DIR", () => {
+    const { res, runId, htmlPath } = runExportDryRun({ slug: "html-only", html: true });
+
+    expect(res.status, res.stderr || res.stdout).toBe(0);
+    expect(existsSync(htmlPath)).toBe(true);
+    expect(htmlPath.startsWith(SUITE_OUT_DIR + "/")).toBe(true);
+
+    const html = readFileSync(htmlPath, "utf8");
+    expect(html.startsWith("<!doctype html>")).toBe(true);
+    expect(html).toContain(runId);
+  });
+
+  it("--json + --html razem: oba pliki w CF_OUT_DIR, ten sam run_id, spójna treść", () => {
+    const { res, runId, jsonPath, htmlPath } = runExportDryRun({
+      slug: "json-html",
+      json: true,
+      html: true,
+    });
+
+    expect(res.status, res.stderr || res.stdout).toBe(0);
+    expect(existsSync(jsonPath)).toBe(true);
+    expect(existsSync(htmlPath)).toBe(true);
+    expect(jsonPath.startsWith(SUITE_OUT_DIR + "/")).toBe(true);
+    expect(htmlPath.startsWith(SUITE_OUT_DIR + "/")).toBe(true);
+
+    const report = JSON.parse(readFileSync(jsonPath, "utf8"));
+    const html = readFileSync(htmlPath, "utf8");
+    expect(report.run_id).toBe(runId);
+    expect(html).toContain(runId);
+  });
+
+  it("--json + --html nie wyciekają poza CF_OUT_DIR (szczególnie do /mnt/documents)", () => {
+    const { res, jsonPath, htmlPath, runId } = runExportDryRun({
+      slug: "no-leak",
+      json: true,
+      html: true,
+    });
+
+    expect(res.status, res.stderr || res.stdout).toBe(0);
+    // Defaultowe ścieżki abort-stub-a NIE są naszym artefaktem — jeśli istnieją
+    // (z innych runów), sprawdź że nie zawierają naszego run_id.
+    const defaultJson = `${DEFAULT_OUT_DIR}/cloudflare-report.json`;
+    const defaultHtml = `${DEFAULT_OUT_DIR}/cloudflare-report.html`;
+    if (existsSync(defaultJson)) {
+      expect(readFileSync(defaultJson, "utf8").includes(runId)).toBe(false);
+    }
+    if (existsSync(defaultHtml)) {
+      expect(readFileSync(defaultHtml, "utf8").includes(runId)).toBe(false);
+    }
+    expect(jsonPath.startsWith(SUITE_OUT_DIR + "/")).toBe(true);
+    expect(htmlPath.startsWith(SUITE_OUT_DIR + "/")).toBe(true);
+  });
+});
