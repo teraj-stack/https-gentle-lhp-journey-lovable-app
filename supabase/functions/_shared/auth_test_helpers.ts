@@ -132,9 +132,16 @@ export async function callFunction(
   headers: HeadersInit,
   body: unknown,
 ): Promise<CallResult> {
+  // Use the Headers API directly so callers can pass a `Headers` instance
+  // with `.append()`-ed duplicate values (e.g. two Authorization headers)
+  // without losing them to a naive object spread.
+  const finalHeaders = new Headers(headers)
+  if (!finalHeaders.has('Content-Type')) {
+    finalHeaders.set('Content-Type', 'application/json')
+  }
   const req = new Request(`${SUPABASE_URL}/functions/v1/${name}`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...headers },
+    headers: finalHeaders,
     body: JSON.stringify(body),
   })
   return sendRequest(req)
