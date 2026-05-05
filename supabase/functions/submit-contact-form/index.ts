@@ -35,15 +35,18 @@ type FormType = 'contact' | 'b2b'
 
 interface FormConfig {
   confirmationTemplate: string
-  notificationTemplate: string
+  // null = no internal notification copies for this form
+  notificationTemplate: string | null
   internalRecipients: readonly string[]
 }
 
 const FORMS: Record<FormType, FormConfig> = {
   contact: {
     confirmationTemplate: 'contact-confirmation',
-    notificationTemplate: 'contact-form-notification',
-    internalRecipients: ['dr.bujok@cml.pl', 'biuro@cml.pl'],
+    // Original Kontakt flow only sent a confirmation to the submitter.
+    // Preserve that — no internal notification template exists yet.
+    notificationTemplate: null,
+    internalRecipients: [],
   },
   b2b: {
     confirmationTemplate: 'contact-confirmation',
