@@ -144,16 +144,17 @@ Deno.test('[scf] submit-contact-form — bogus turnstileToken is rejected by Clo
     email: 'qa+scf-bogus@example.invalid',
     message: 'hello',
   })
+  // The function MUST NOT have proceeded past Turnstile (no 200 / 2xx).
+  // 403 = Cloudflare rejected, 502/503 = Cloudflare unreachable or
+  // TURNSTILE_SECRET_KEY unset. All three prove the gate held.
   assert(
-    status === 403 || status === 503 || status === 502,
-    `Expected 403/502/503 (Turnstile rejected or unavailable), got ${status}: ${text}`,
+    status >= 400 && status < 600,
+    `submit-contact-form returned non-error status ${status} with a bogus Turnstile token — ` +
+      `Open Email Relay regression risk. Body: ${text}`,
   )
-  // The function MUST NOT have proceeded past Turnstile. Most importantly,
-  // it must not have returned 200 — that would mean an arbitrary anon
-  // caller could trigger an email send without solving CAPTCHA.
   assert(
-    status !== 200,
-    `submit-contact-form returned 200 with a bogus Turnstile token — Open Email Relay regression: ${text}`,
+    [403, 502, 503].includes(status),
+    `Expected 403/502/503 (Turnstile rejected or unavailable), got ${status}: ${text}`,
   )
 })
 
