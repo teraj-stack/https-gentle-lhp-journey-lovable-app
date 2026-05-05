@@ -11,6 +11,7 @@
 import {
   HAS_ANON_KEY,
   SUPABASE_ANON_KEY,
+  assertCorsHeaders,
   assertUnauthorizedShape,
   callFunction,
   runAuthMatrix,
