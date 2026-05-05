@@ -605,28 +605,19 @@ describe("export-cloudflare-redirects default OUT_DIR fallback", () => {
   runner(
     "bez CF_OUT_DIR używa domyślnego /mnt/documents (run_dir = /mnt/documents/cloudflare-runs/<id>)",
     () => {
-      const runId = `${TMP_PREFIX}default-out-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-      const expectedRunDir = join(DEFAULT_OUT_DIR, "cloudflare-runs", runId);
-
-      // Jawnie wyrzuć CF_OUT_DIR z env, żeby skrypt zobaczył brak override-u
-      // i wpadł w domyślne "/mnt/documents".
-      const cleanEnv: Record<string, string> = {};
-      for (const [k, v] of Object.entries(process.env)) {
-        if (k === "CF_OUT_DIR") continue;
-        if (typeof v === "string") cleanEnv[k] = v;
-      }
-      cleanEnv.CF_RUN_ID = runId;
+      // outDir:"default" → runExport jawnie usuwa CF_OUT_DIR z env, więc
+      // skrypt wpada w domyślne /mnt/documents. Helper sam wylicza poprawny
+      // expectedRunDir = /mnt/documents/cloudflare-runs/<runId>.
+      const { res, runId, runDir: expectedRunDir, reportPath } = runExport({
+        slug: "default-out",
+        strict: true,
+        outDir: "default",
+      });
 
       try {
-        const res = spawnSync("node", [SCRIPT, "--strict"], {
-          encoding: "utf8",
-          timeout: 30_000,
-          env: cleanEnv,
-        });
         expect(res.status, res.stderr || res.stdout).toBe(0);
-
-        const reportPath = join(expectedRunDir, "run_id-verification.json");
         expect(existsSync(reportPath)).toBe(true);
+
         const report = JSON.parse(readFileSync(reportPath, "utf8")) as VerificationReport;
         assertVerificationReportShape(report, {
           runId,
