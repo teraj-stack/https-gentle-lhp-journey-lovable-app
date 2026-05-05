@@ -164,15 +164,7 @@ function assertVerificationReportShape(
   }
 }
 
-afterAll(() => {
-  for (const dir of created) {
-    try {
-      rmSync(dir, { recursive: true, force: true });
-    } catch {
-      /* ignore */
-    }
-  }
-});
+// (cleanup całego SUITE_OUT_DIR jest w pierwszym afterAll na górze pliku)
 
 describe("export-cloudflare-redirects --verify-run", () => {
   it("exit 0 gdy wszystkie artefakty zawierają ten sam run_id", () => {
