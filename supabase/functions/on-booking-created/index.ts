@@ -16,8 +16,8 @@
 // reception can change booking status with a single click.
 
 import { createClient } from 'npm:@supabase/supabase-js@2'
-import {
 import { unauthorizedResponse } from '../_shared/unauthorized.ts'
+import {
   checkRateLimitDb,
   getClientIp,
   ipForLog,
