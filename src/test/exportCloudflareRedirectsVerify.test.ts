@@ -267,17 +267,24 @@ describe("export-cloudflare-redirects post-export --strict", () => {
     expect(res.stdout).toContain("run_id consistency");
     expect(res.stdout).not.toContain("run_id mismatch");
 
-    const reportPath = join(RUNS_DIR, runId, "run_id-verification.json");
+    const expectedRunDir = join(RUNS_DIR, runId);
+    const reportPath = join(expectedRunDir, "run_id-verification.json");
     expect(existsSync(reportPath)).toBe(true);
     const report = JSON.parse(readFileSync(reportPath, "utf8")) as VerificationReport;
-    assertVerificationReportShape(report, { runId, mode: "post-export" });
+    // Dokładny runDir — musi być EXACT match z join(RUNS_DIR, runId), nie tylko prefix.
+    assertVerificationReportShape(report, {
+      runId,
+      mode: "post-export",
+      runDir: expectedRunDir,
+    });
     expect(report.stats.mismatched).toBe(0);
     expect(report.stats.consistency_ratio).toBe(1);
     expect(report.stats.checked).toBeGreaterThan(0);
     expect(report.mismatches).toEqual([]);
     expect(report.files.every((f) => f.ok === true)).toBe(true);
-    // run_dir musi siedzieć pod naszym SUITE_OUT_DIR (proof izolacji).
-    expect(report.run_dir.startsWith(SUITE_OUT_DIR)).toBe(true);
+    // run_dir EXACT pod SUITE_OUT_DIR/cloudflare-runs/<runId> — proof pełnej izolacji.
+    expect(report.run_dir).toBe(expectedRunDir);
+    expect(report.run_dir.startsWith(SUITE_OUT_DIR + "/")).toBe(true);
   });
 
   it("exit 1 gdy --strict + artefakt z niespójnym run_id (CF_TEST_CORRUPT_ARTIFACT=txt)", () => {
@@ -486,4 +493,79 @@ describe("export-cloudflare-redirects parallel cleanup isolation", () => {
       }
     }
   });
+});
+
+// ──────────────────────────────────────────────────────────────────────────
+// Default OUT_DIR fallback — bez CF_OUT_DIR skrypt MUSI używać domyślnego
+// /mnt/documents. Test gated: uruchamiany tylko jeśli /mnt/documents istnieje
+// i jest writable (tak jest w sandboxie Lovable; na obcych maszynach test
+// jest po prostu pomijany przez `it.skip` zamiast wybuchać).
+// ──────────────────────────────────────────────────────────────────────────
+
+const DEFAULT_OUT_DIR = "/mnt/documents";
+
+function isDefaultOutDirWritable(): boolean {
+  try {
+    if (!existsSync(DEFAULT_OUT_DIR)) return false;
+    const probe = join(DEFAULT_OUT_DIR, `.cf-redirects-write-probe-${Date.now()}`);
+    writeFileSync(probe, "x", "utf8");
+    rmSync(probe, { force: true });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+describe("export-cloudflare-redirects default OUT_DIR fallback", () => {
+  const canRun = isDefaultOutDirWritable();
+  const runner = canRun ? it : it.skip;
+
+  runner(
+    "bez CF_OUT_DIR używa domyślnego /mnt/documents (run_dir = /mnt/documents/cloudflare-runs/<id>)",
+    () => {
+      const runId = `${TMP_PREFIX}default-out-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      const expectedRunDir = join(DEFAULT_OUT_DIR, "cloudflare-runs", runId);
+
+      // Jawnie wyrzuć CF_OUT_DIR z env, żeby skrypt zobaczył brak override-u
+      // i wpadł w domyślne "/mnt/documents".
+      const cleanEnv: Record<string, string> = {};
+      for (const [k, v] of Object.entries(process.env)) {
+        if (k === "CF_OUT_DIR") continue;
+        if (typeof v === "string") cleanEnv[k] = v;
+      }
+      cleanEnv.CF_RUN_ID = runId;
+
+      try {
+        const res = spawnSync("node", [SCRIPT, "--strict"], {
+          encoding: "utf8",
+          timeout: 30_000,
+          env: cleanEnv,
+        });
+        expect(res.status, res.stderr || res.stdout).toBe(0);
+
+        const reportPath = join(expectedRunDir, "run_id-verification.json");
+        expect(existsSync(reportPath)).toBe(true);
+        const report = JSON.parse(readFileSync(reportPath, "utf8")) as VerificationReport;
+        assertVerificationReportShape(report, {
+          runId,
+          mode: "post-export",
+          runDir: expectedRunDir,
+        });
+        // run_dir EXACT pod /mnt/documents — proof że fallback działa.
+        expect(report.run_dir).toBe(expectedRunDir);
+        expect(report.run_dir.startsWith(DEFAULT_OUT_DIR + "/cloudflare-runs/")).toBe(true);
+        // I że NIE wyciekło do naszego SUITE_OUT_DIR.
+        expect(report.run_dir.startsWith(SUITE_OUT_DIR)).toBe(false);
+        expect(report.stats.mismatched).toBe(0);
+      } finally {
+        // Sprzątanie — usuń tylko NASZ run_dir pod default. Nigdy całego
+        // /mnt/documents (są tam artefakty z innych runów / produktu).
+        try {
+          rmSync(expectedRunDir, { recursive: true, force: true });
+        } catch {
+          /* ignore */
+        }
+      }
+    },
+  );
 });
