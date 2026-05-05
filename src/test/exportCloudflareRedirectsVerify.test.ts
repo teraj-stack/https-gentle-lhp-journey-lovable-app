@@ -528,11 +528,11 @@ describe("export-cloudflare-redirects parallel cleanup isolation", () => {
     try {
       // 2) Uruchom normalny eksport pod NASZYM SUITE_OUT_DIR. Musi zapisać
       //    artefakty tylko u nas, nie u obcego.
-      const myRunId = makePostExportRunId("cleanup-iso");
-      const res = runScript(["--strict"], { CF_RUN_ID: myRunId });
+      const { res, runId: myRunId, runDir: myRunDir } = runExport({
+        slug: "cleanup-iso",
+        strict: true,
+      });
       expect(res.status, res.stderr || res.stdout).toBe(0);
-
-      const myRunDir = join(RUNS_DIR, myRunId);
       expect(existsSync(myRunDir)).toBe(true);
       // Obcy katalog ZUPEŁNIE nietknięty po naszym uruchomieniu.
       expect(existsSync(foreignArtifact)).toBe(true);
