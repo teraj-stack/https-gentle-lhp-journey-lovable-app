@@ -21,7 +21,7 @@
 //      we only assert that auth itself does not block the request)
 
 import 'https://deno.land/std@0.224.0/dotenv/load.ts'
-import { assert, assertEquals, assertNotEquals } from 'https://deno.land/std@0.224.0/assert/mod.ts'
+import { assert, assertEquals } from 'https://deno.land/std@0.224.0/assert/mod.ts'
 
 const SUPABASE_URL = Deno.env.get('VITE_SUPABASE_URL') ?? Deno.env.get('SUPABASE_URL') ?? ''
 const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
