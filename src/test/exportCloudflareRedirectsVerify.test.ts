@@ -186,10 +186,18 @@ describe("export-cloudflare-redirects --verify-run", () => {
 
     const report = JSON.parse(
       readFileSync(join(runDir, "run_id-verification.json"), "utf8"),
-    );
+    ) as VerificationReport;
+    assertVerificationReportShape(report, { runId, mode: "verify-run", runDir });
     expect(report.stats.mismatched).toBe(1);
-    expect(report.mismatches.some((m: { path: string }) => m.path.endsWith("stale.csv"))).toBe(true);
+    expect(report.stats.checked).toBeGreaterThanOrEqual(3);
+    expect(report.mismatches.some((m) => m.path.endsWith("stale.csv"))).toBe(true);
     expect(report.stats.consistency_ratio).toBeLessThan(1);
+    expect(report.stats.consistency_ratio).toBeGreaterThan(0);
+    // Plik bez run_id musi mieć ok=false z konkretnym powodem.
+    const stale = report.files.find((f) => f.path.endsWith("stale.csv"));
+    expect(stale).toBeDefined();
+    expect(stale!.ok).toBe(false);
+    expect(stale!.reason).toMatch(/run_id/i);
   });
 
   it("exit 1 gdy katalog cloudflare-runs/<id>/ nie istnieje", () => {
