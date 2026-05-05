@@ -45,6 +45,92 @@ function runScript(args: string[]) {
   });
 }
 
+// Pełna walidacja kształtu run_id-verification.json — wspólna dla obu trybów
+// (verify-run i post-export). Sprawdza schema_version, kind, mode, run_id,
+// run_dir, generated_at (ISO 8601), stats (arytmetyka spójna, ratio w [0,1]),
+// kształt każdej pozycji w `files[]` i `mismatches[]` oraz cross-spójność
+// (mismatches.length === stats.mismatched, files z ok=false === mismatches).
+type FileEntry = { key?: string; path: string; ok: boolean; reason?: string };
+type MismatchEntry = { key?: string; path: string; error?: string };
+type VerificationReport = {
+  schema_version: number;
+  kind: string;
+  mode: string;
+  run_id: string;
+  run_dir: string;
+  generated_at: string;
+  stats: {
+    checked: number;
+    ok: number;
+    mismatched: number;
+    consistency_ratio: number;
+  };
+  mismatches: MismatchEntry[];
+  files: FileEntry[];
+};
+
+function assertVerificationReportShape(
+  report: VerificationReport,
+  expected: { runId: string; mode: "verify-run" | "post-export"; runDir?: string },
+) {
+  // Top-level metadata.
+  expect(report.schema_version).toBe(1);
+  expect(report.kind).toBe("run_id-verification");
+  expect(report.mode).toBe(expected.mode);
+  expect(report.run_id).toBe(expected.runId);
+  expect(typeof report.run_dir).toBe("string");
+  expect(report.run_dir.length).toBeGreaterThan(0);
+  if (expected.runDir) expect(report.run_dir).toBe(expected.runDir);
+  expect(typeof report.generated_at).toBe("string");
+  expect(Number.isFinite(Date.parse(report.generated_at))).toBe(true);
+  expect(new Date(report.generated_at).toISOString()).toBe(report.generated_at);
+
+  // Stats — typy + arytmetyka.
+  const { stats } = report;
+  expect(typeof stats.checked).toBe("number");
+  expect(typeof stats.ok).toBe("number");
+  expect(typeof stats.mismatched).toBe("number");
+  expect(typeof stats.consistency_ratio).toBe("number");
+  expect(stats.checked).toBeGreaterThanOrEqual(0);
+  expect(stats.ok).toBeGreaterThanOrEqual(0);
+  expect(stats.mismatched).toBeGreaterThanOrEqual(0);
+  expect(stats.ok + stats.mismatched).toBe(stats.checked);
+  expect(stats.consistency_ratio).toBeGreaterThanOrEqual(0);
+  expect(stats.consistency_ratio).toBeLessThanOrEqual(1);
+  if (stats.checked > 0) {
+    expect(stats.consistency_ratio).toBeCloseTo(stats.ok / stats.checked, 6);
+  }
+
+  // Listy.
+  expect(Array.isArray(report.files)).toBe(true);
+  expect(Array.isArray(report.mismatches)).toBe(true);
+  expect(report.files.length).toBe(stats.checked);
+  expect(report.mismatches.length).toBe(stats.mismatched);
+
+  // Per-file shape + cross-spójność (ok=false ↔ obecne w mismatches po path).
+  const mismatchPaths = new Set(report.mismatches.map((m) => m.path));
+  for (const f of report.files) {
+    expect(typeof f.path).toBe("string");
+    expect(f.path.length).toBeGreaterThan(0);
+    expect(typeof f.ok).toBe("boolean");
+    if (f.ok) {
+      expect(f.reason).toBeUndefined();
+      expect(mismatchPaths.has(f.path)).toBe(false);
+    } else {
+      expect(typeof f.reason).toBe("string");
+      expect((f.reason ?? "").length).toBeGreaterThan(0);
+      expect(mismatchPaths.has(f.path)).toBe(true);
+    }
+  }
+
+  // Per-mismatch shape.
+  for (const m of report.mismatches) {
+    expect(typeof m.path).toBe("string");
+    expect(m.path.length).toBeGreaterThan(0);
+    if (m.error !== undefined) expect(typeof m.error).toBe("string");
+  }
+}
+
 afterAll(() => {
   for (const dir of created) {
     try {
