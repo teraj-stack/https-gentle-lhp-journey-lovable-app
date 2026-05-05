@@ -99,3 +99,44 @@ Deno.test('unauthorizedResponse — produces a fresh Response on each call', asy
   assert(a !== b, 'each call must return a new Response instance')
   assertEquals(await a.text(), await b.text())
 })
+
+Deno.test('unauthorizedResponse — body is canonical JSON.stringify(UNAUTHORIZED_BODY) regardless of helper refactors', async () => {
+  // Contract: the wire body must always equal the canonical
+  // `JSON.stringify(UNAUTHORIZED_BODY)` — i.e. the same key insertion
+  // order as the source constant, no pretty-printing, no whitespace,
+  // no replacer-driven reordering. If a future refactor swaps the helper
+  // to e.g. `JSON.stringify({ code, error })`, hand-builds the string,
+  // or pretty-prints, this test fails before deploy.
+  //
+  // We assert THREE independent angles so the contract can't drift
+  // silently if just one of them is "fixed" without updating the others:
+  //   1. byte-for-byte equality with JSON.stringify(UNAUTHORIZED_BODY)
+  //   2. key order on the wire matches Object.keys(UNAUTHORIZED_BODY)
+  //   3. parsed body deep-equals the source constant
+
+  const expected = JSON.stringify(UNAUTHORIZED_BODY)
+  const res = unauthorizedResponse(SAMPLE_CORS)
+  const text = await res.text()
+
+  // 1) Exact byte equality with canonical stringify.
+  assertEquals(
+    text,
+    expected,
+    'wire body must be byte-equal to JSON.stringify(UNAUTHORIZED_BODY)',
+  )
+
+  // 2) Key order on the wire must match Object.keys(UNAUTHORIZED_BODY).
+  // Extract keys in the order they appear in the serialized JSON via a
+  // regex over the top-level "key": pattern — this is independent of
+  // JSON.parse (which would normalise into an object and lose order on
+  // some engines).
+  const wireKeyOrder = [...text.matchAll(/"([^"\\]+)"\s*:/g)].map((m) => m[1])
+  assertEquals(
+    wireKeyOrder,
+    Object.keys(UNAUTHORIZED_BODY),
+    'serialized key order must match Object.keys(UNAUTHORIZED_BODY)',
+  )
+
+  // 3) Parsed body deep-equals the source constant.
+  assertEquals(JSON.parse(text), UNAUTHORIZED_BODY)
+})
