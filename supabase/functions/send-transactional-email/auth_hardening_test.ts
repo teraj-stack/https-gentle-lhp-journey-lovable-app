@@ -11,6 +11,7 @@
 import {
   HAS_ANON_KEY,
   SUPABASE_ANON_KEY,
+  assertCorsHeaders,
   assertUnauthorizedShape,
   callFunction,
   runAuthMatrix,
@@ -44,5 +45,6 @@ Deno.test(
       SAMPLE_BODY,
     )
     assertUnauthorizedShape('anon JWT Bearer', res, FN)
+    assertCorsHeaders('anon JWT Bearer', res, FN)
   },
 )

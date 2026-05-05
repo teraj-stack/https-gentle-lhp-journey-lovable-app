@@ -51,6 +51,12 @@ export interface CallResult {
   status: number
   text: string
   contentType: string
+  /**
+   * All response headers, lowercased keys. Captured so auth tests can also
+   * assert that 401 responses still carry the expected CORS headers
+   * (browsers refuse to expose a response — even an error — without them).
+   */
+  headers: Record<string, string>
 }
 
 /**
@@ -109,7 +115,11 @@ export async function sendRequest(req: Request): Promise<CallResult> {
   const res = await fetch(req)
   const text = await res.text()
   const contentType = res.headers.get('content-type') ?? ''
-  return { status: res.status, text, contentType }
+  const headers: Record<string, string> = {}
+  res.headers.forEach((value, key) => {
+    headers[key.toLowerCase()] = value
+  })
+  return { status: res.status, text, contentType, headers }
 }
 
 /**
@@ -162,6 +172,42 @@ export function assertUnauthorizedShape(
     { error: 'Unauthorized', code: 'unauthorized' },
     `${tag}: 401 body shape drift. Got ${res.text}`,
   )
+}
+
+/**
+ * Assert that a (typically 401) response carries the CORS headers required
+ * for browsers to actually expose the response body to JS. Without these,
+ * a browser caller would see an opaque network error instead of the unified
+ * 401 contract — defeating the point of returning a structured body.
+ *
+ * Required:
+ *   * `access-control-allow-origin: *` (all protected functions use `*`)
+ *   * `access-control-allow-headers` must at least allow `authorization`
+ *     and `content-type` so the preflight for the original request succeeds.
+ */
+export function assertCorsHeaders(
+  scenario: string,
+  res: CallResult,
+  fnName?: string,
+) {
+  const tag = fnName ? `[${fnName}] ${scenario}` : scenario
+  const origin = res.headers['access-control-allow-origin']
+  assertEquals(
+    origin,
+    '*',
+    `${tag}: expected Access-Control-Allow-Origin "*", got "${origin ?? '<missing>'}"`,
+  )
+  const allowHeaders = (res.headers['access-control-allow-headers'] ?? '').toLowerCase()
+  assert(
+    allowHeaders.length > 0,
+    `${tag}: missing Access-Control-Allow-Headers on 401 response`,
+  )
+  for (const required of ['authorization', 'content-type']) {
+    assert(
+      allowHeaders.includes(required),
+      `${tag}: Access-Control-Allow-Headers "${allowHeaders}" must include "${required}"`,
+    )
+  }
 }
 
 // ---------- Malformed-Authorization matrix ----------
@@ -226,6 +272,12 @@ export function runAuthMatrix(fn: FunctionUnderTest) {
     Deno.test(`[auth] ${fn.name} — rejects ${variant.label} (unified 401)`, async () => {
       const res = await callFunction(fn.name, variant.headers, fn.body)
       assertUnauthorizedShape(variant.label, res, fn.name)
+    })
+
+    Deno.test(`[auth] ${fn.name} — 401 for ${variant.label} carries CORS headers`, async () => {
+      const res = await callFunction(fn.name, variant.headers, fn.body)
+      assertEquals(res.status, 401, `expected 401 prerequisite for CORS check, got ${res.status}`)
+      assertCorsHeaders(variant.label, res, fn.name)
     })
   }
 
