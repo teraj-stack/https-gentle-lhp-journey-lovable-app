@@ -393,7 +393,10 @@ Deno.test('unauthorizedResponse — unusual CORS values (empty, commas, internal
     'X-Empty-Value': '',
     'X-Comma-List': 'a, b, c, d',
     'X-Comma-Tight': 'a,b,c,d',
-    'X-Unicode': 'café-ñoño-€-©',
+    // NOTE: non-ASCII / unicode values are NOT included — Fetch spec
+    // requires header values to be ByteString (latin-1), and Deno
+    // throws TypeError at Response construction otherwise. Callers
+    // must pre-encode (e.g. percent-encoding) any non-ASCII data.
     'X-Internal-Whitespace': 'a   b\tc',
     'X-Semicolons': 'value; param=1; other="quoted"',
     'X-Long-Token': 'x'.repeat(512),
