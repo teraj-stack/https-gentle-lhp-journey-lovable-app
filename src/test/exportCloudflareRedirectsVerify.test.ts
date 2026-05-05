@@ -22,6 +22,11 @@ import { resolve, join } from "node:path";
 
 const SCRIPT = resolve(__dirname, "../../scripts/export-cloudflare-redirects.mjs");
 
+// Domyślny OUT_DIR skryptu (używany gdy CF_OUT_DIR nie jest ustawione).
+// Jedno źródło prawdy — używane zarówno przez runExport(outDir:"default")
+// jak i przez fallback test na dole pliku.
+const DEFAULT_OUT_DIR = "/mnt/documents";
+
 // Pełna izolacja przez env CF_OUT_DIR. Każdy uruchomiony skrypt pisze do
 // własnego, świeżego tmpdir-a — żaden test nie dotyka /mnt/documents,
 // więc lokalne i CI runy są bezpieczne i przenośne.
