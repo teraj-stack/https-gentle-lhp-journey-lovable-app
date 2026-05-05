@@ -364,7 +364,7 @@ Deno.test('unauthorizedResponse — case-only duplicate CORS headers: values com
   await res.text()
 })
 
-Deno.test('unauthorizedResponse — unusual CORS values (empty, commas, unicode, internal whitespace) pass through unchanged', async () => {
+Deno.test('unauthorizedResponse — unusual CORS values (empty, commas, internal whitespace) pass through unchanged', async () => {
   // Real-world CORS values are not always "clean ASCII tokens". Callers
   // sometimes pass:
   //   * an empty string (e.g. a feature-flagged header that is currently
