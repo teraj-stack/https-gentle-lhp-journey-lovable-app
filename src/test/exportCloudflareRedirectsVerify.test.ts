@@ -161,8 +161,8 @@ describe("export-cloudflare-redirects --verify-run", () => {
 
     const reportPath = join(runDir, "run_id-verification.json");
     expect(existsSync(reportPath)).toBe(true);
-    const report = JSON.parse(readFileSync(reportPath, "utf8"));
-    expect(report.run_id).toBe(runId);
+    const report = JSON.parse(readFileSync(reportPath, "utf8")) as VerificationReport;
+    assertVerificationReportShape(report, { runId, mode: "verify-run", runDir });
     expect(report.stats.mismatched).toBe(0);
     expect(report.stats.checked).toBeGreaterThanOrEqual(3);
     expect(report.stats.consistency_ratio).toBe(1);
