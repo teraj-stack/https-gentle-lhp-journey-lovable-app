@@ -174,6 +174,42 @@ export function assertUnauthorizedShape(
   )
 }
 
+/**
+ * Assert that a (typically 401) response carries the CORS headers required
+ * for browsers to actually expose the response body to JS. Without these,
+ * a browser caller would see an opaque network error instead of the unified
+ * 401 contract — defeating the point of returning a structured body.
+ *
+ * Required:
+ *   * `access-control-allow-origin: *` (all protected functions use `*`)
+ *   * `access-control-allow-headers` must at least allow `authorization`
+ *     and `content-type` so the preflight for the original request succeeds.
+ */
+export function assertCorsHeaders(
+  scenario: string,
+  res: CallResult,
+  fnName?: string,
+) {
+  const tag = fnName ? `[${fnName}] ${scenario}` : scenario
+  const origin = res.headers['access-control-allow-origin']
+  assertEquals(
+    origin,
+    '*',
+    `${tag}: expected Access-Control-Allow-Origin "*", got "${origin ?? '<missing>'}"`,
+  )
+  const allowHeaders = (res.headers['access-control-allow-headers'] ?? '').toLowerCase()
+  assert(
+    allowHeaders.length > 0,
+    `${tag}: missing Access-Control-Allow-Headers on 401 response`,
+  )
+  for (const required of ['authorization', 'content-type']) {
+    assert(
+      allowHeaders.includes(required),
+      `${tag}: Access-Control-Allow-Headers "${allowHeaders}" must include "${required}"`,
+    )
+  }
+}
+
 // ---------- Malformed-Authorization matrix ----------
 
 /**
