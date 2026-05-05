@@ -78,6 +78,92 @@ function runScript(args: string[], extraEnv: Record<string, string> = {}) {
   });
 }
 
+// ──────────────────────────────────────────────────────────────────────────
+// runExport — central helper dla post-export testów. Scala env (CF_OUT_DIR,
+// CF_RUN_ID, opcjonalny test-only hook CF_TEST_CORRUPT_ARTIFACT + dowolne
+// dodatkowe pary), pozwala wyłączyć domyślny CF_OUT_DIR (override outDir
+// na własny katalog albo na "default" — czyli brak env), uruchamia skrypt
+// i zwraca pakiet: { res, runId, outDir, runDir, reportPath } gotowy do
+// asercji. Dzięki temu testy --strict / bez --strict / custom-out /
+// default-out współdzielą jedno miejsce konstrukcji wywołania.
+// ──────────────────────────────────────────────────────────────────────────
+type RunExportOpts = {
+  /** Slug do wygenerowania unikalnego CF_RUN_ID (jeśli runId nie podano). */
+  slug?: string;
+  /** Jawny CF_RUN_ID (wymagany jeśli brak slug). */
+  runId?: string;
+  /** Dodać --strict do argv. Domyślnie false. */
+  strict?: boolean;
+  /** Test-only: wartość CF_TEST_CORRUPT_ARTIFACT (np. "txt"). */
+  corruptArtifact?: string;
+  /**
+   * Override out dir:
+   * - undefined → użyj suite-owego SUITE_OUT_DIR (default izolacja),
+   * - string    → użyj tego konkretnego katalogu jako CF_OUT_DIR,
+   * - "default" → NIE ustawiaj CF_OUT_DIR (skrypt wpadnie w /mnt/documents).
+   */
+  outDir?: string | "default";
+  /** Dowolne dodatkowe env (override-uje powyższe per-key). */
+  extraEnv?: Record<string, string>;
+  /** Dodatkowe argumenty CLI (poza --strict). */
+  extraArgs?: string[];
+};
+
+type RunExportResult = {
+  res: ReturnType<typeof spawnSync>;
+  runId: string;
+  outDir: string;
+  runDir: string;
+  reportPath: string;
+};
+
+function runExport(opts: RunExportOpts = {}): RunExportResult {
+  const runId =
+    opts.runId ??
+    `${TMP_PREFIX}${opts.slug ?? "run"}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+  // Resolved out dir (do wyliczenia runDir/reportPath, nawet gdy w env
+  // CF_OUT_DIR jest świadomie pominięty → wtedy domyślne /mnt/documents).
+  const useDefault = opts.outDir === "default";
+  const resolvedOutDir = useDefault
+    ? DEFAULT_OUT_DIR
+    : (opts.outDir ?? SUITE_OUT_DIR);
+
+  // Zbuduj env: bazujemy na process.env, a następnie warstwowo nakładamy.
+  // Dla "default" jawnie usuwamy CF_OUT_DIR żeby zobaczyć fallback.
+  const env: Record<string, string> = {};
+  for (const [k, v] of Object.entries(process.env)) {
+    if (typeof v === "string") env[k] = v;
+  }
+  if (useDefault) {
+    delete env.CF_OUT_DIR;
+  } else {
+    env.CF_OUT_DIR = resolvedOutDir;
+  }
+  env.CF_RUN_ID = runId;
+  if (opts.corruptArtifact) env.CF_TEST_CORRUPT_ARTIFACT = opts.corruptArtifact;
+  if (opts.extraEnv) {
+    for (const [k, v] of Object.entries(opts.extraEnv)) env[k] = v;
+  }
+
+  const args: string[] = [];
+  if (opts.strict) args.push("--strict");
+  if (opts.extraArgs) args.push(...opts.extraArgs);
+
+  const res = spawnSync("node", [SCRIPT, ...args], {
+    encoding: "utf8",
+    timeout: 30_000,
+    env,
+  });
+
+  const runDir = join(resolvedOutDir, "cloudflare-runs", runId);
+  const reportPath = join(runDir, "run_id-verification.json");
+  // Tracking dla cleanup tylko gdy lądujemy pod naszym SUITE_OUT_DIR.
+  if (!useDefault && resolvedOutDir === SUITE_OUT_DIR) createdRunDirs.push(runDir);
+  return { res, runId, outDir: resolvedOutDir, runDir, reportPath };
+}
+
+
 // Pełna walidacja kształtu run_id-verification.json — wspólna dla obu trybów
 // (verify-run i post-export). Sprawdza schema_version, kind, mode, run_id,
 // run_dir, generated_at (ISO 8601), stats (arytmetyka spójna, ratio w [0,1]),
