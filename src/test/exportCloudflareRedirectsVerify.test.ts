@@ -371,9 +371,12 @@ describe("export-cloudflare-redirects CF_OUT_DIR override", () => {
       expect(report.stats.consistency_ratio).toBe(1);
       expect(report.stats.checked).toBeGreaterThan(0);
 
-      // 4) Każdy plik z `files[]` istnieje fizycznie pod customRunDir.
+      // 4) Każdy plik z `files[]` istnieje fizycznie pod customOutDir.
+      //    (część artefaktów leży bezpośrednio w CF_OUT_DIR, część w
+      //    cloudflare-runs/<id>/ — oba przypadki są pod customOutDir).
       for (const f of report.files) {
-        expect(f.path.startsWith(customRunDir)).toBe(true);
+        expect(f.path.startsWith(customOutDir)).toBe(true);
+        expect(f.path.startsWith(SUITE_OUT_DIR)).toBe(false);
         expect(existsSync(f.path)).toBe(true);
       }
 
