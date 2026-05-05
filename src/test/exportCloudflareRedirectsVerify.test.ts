@@ -274,12 +274,14 @@ describe("export-cloudflare-redirects post-export --strict", () => {
 
       const reportPath = join(RUNS_DIR, runId, "run_id-verification.json");
       expect(existsSync(reportPath)).toBe(true);
-      const report = JSON.parse(readFileSync(reportPath, "utf8"));
-      expect(report.mode).toBe("post-export");
-      expect(report.run_id).toBe(runId);
+      const report = JSON.parse(readFileSync(reportPath, "utf8")) as VerificationReport;
+      assertVerificationReportShape(report, { runId, mode: "post-export" });
       expect(report.stats.mismatched).toBe(0);
       expect(report.stats.consistency_ratio).toBe(1);
       expect(report.stats.checked).toBeGreaterThan(0);
+      expect(report.mismatches).toEqual([]);
+      // Wszystkie pliki muszą mieć ok=true (a więc i brak `reason`).
+      expect(report.files.every((f) => f.ok === true)).toBe(true);
     } finally {
       restoreSharedArtifacts(snap);
     }
