@@ -380,8 +380,8 @@ describe("export-cloudflare-redirects CF_OUT_DIR override", () => {
         expect(existsSync(f.path)).toBe(true);
       }
 
-      // 5) manifest.json też pod custom (nie default).
-      const manifestPath = join(customRunDir, "manifest.json");
+      // 5) manifest też pod custom (nie default).
+      const manifestPath = join(customRunDir, "cloudflare-export-manifest.json");
       expect(existsSync(manifestPath)).toBe(true);
       const manifest = JSON.parse(readFileSync(manifestPath, "utf8")) as {
         run_id: string;
