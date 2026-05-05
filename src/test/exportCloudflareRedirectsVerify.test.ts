@@ -22,6 +22,11 @@ import { resolve, join } from "node:path";
 
 const SCRIPT = resolve(__dirname, "../../scripts/export-cloudflare-redirects.mjs");
 
+// Domyślny OUT_DIR skryptu (używany gdy CF_OUT_DIR nie jest ustawione).
+// Jedno źródło prawdy — używane zarówno przez runExport(outDir:"default")
+// jak i przez fallback test na dole pliku.
+const DEFAULT_OUT_DIR = "/mnt/documents";
+
 // Pełna izolacja przez env CF_OUT_DIR. Każdy uruchomiony skrypt pisze do
 // własnego, świeżego tmpdir-a — żaden test nie dotyka /mnt/documents,
 // więc lokalne i CI runy są bezpieczne i przenośne.
@@ -77,6 +82,102 @@ function runScript(args: string[], extraEnv: Record<string, string> = {}) {
     env: scriptEnv(extraEnv),
   });
 }
+
+// ──────────────────────────────────────────────────────────────────────────
+// runExport — central helper dla post-export testów. Scala env (CF_OUT_DIR,
+// CF_RUN_ID, opcjonalny test-only hook CF_TEST_CORRUPT_ARTIFACT + dowolne
+// dodatkowe pary), pozwala wyłączyć domyślny CF_OUT_DIR (override outDir
+// na własny katalog albo na "default" — czyli brak env), uruchamia skrypt
+// i zwraca pakiet: { res, runId, outDir, runDir, reportPath } gotowy do
+// asercji. Dzięki temu testy --strict / bez --strict / custom-out /
+// default-out współdzielą jedno miejsce konstrukcji wywołania.
+// ──────────────────────────────────────────────────────────────────────────
+type RunExportOpts = {
+  /** Slug do wygenerowania unikalnego CF_RUN_ID (jeśli runId nie podano). */
+  slug?: string;
+  /** Jawny CF_RUN_ID (wymagany jeśli brak slug). */
+  runId?: string;
+  /** Dodać --strict do argv. Domyślnie false. */
+  strict?: boolean;
+  /** Test-only: wartość CF_TEST_CORRUPT_ARTIFACT (np. "txt"). */
+  corruptArtifact?: string;
+  /**
+   * Override out dir:
+   * - undefined → użyj suite-owego SUITE_OUT_DIR (default izolacja),
+   * - string    → użyj tego konkretnego katalogu jako CF_OUT_DIR,
+   * - "default" → NIE ustawiaj CF_OUT_DIR (skrypt wpadnie w /mnt/documents).
+   */
+  outDir?: string | "default";
+  /** Dowolne dodatkowe env (override-uje powyższe per-key). */
+  extraEnv?: Record<string, string>;
+  /** Dodatkowe argumenty CLI (poza --strict). */
+  extraArgs?: string[];
+};
+
+type SpawnSyncStringResult = {
+  status: number | null;
+  signal: NodeJS.Signals | null;
+  stdout: string;
+  stderr: string;
+  pid: number;
+  output: Array<string | null>;
+  error?: Error;
+};
+
+type RunExportResult = {
+  res: SpawnSyncStringResult;
+  runId: string;
+  outDir: string;
+  runDir: string;
+  reportPath: string;
+};
+
+function runExport(opts: RunExportOpts = {}): RunExportResult {
+  const runId =
+    opts.runId ??
+    `${TMP_PREFIX}${opts.slug ?? "run"}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+  // Resolved out dir (do wyliczenia runDir/reportPath, nawet gdy w env
+  // CF_OUT_DIR jest świadomie pominięty → wtedy domyślne /mnt/documents).
+  const useDefault = opts.outDir === "default";
+  const resolvedOutDir = useDefault
+    ? DEFAULT_OUT_DIR
+    : (opts.outDir ?? SUITE_OUT_DIR);
+
+  // Zbuduj env: bazujemy na process.env, a następnie warstwowo nakładamy.
+  // Dla "default" jawnie usuwamy CF_OUT_DIR żeby zobaczyć fallback.
+  const env: Record<string, string> = {};
+  for (const [k, v] of Object.entries(process.env)) {
+    if (typeof v === "string") env[k] = v;
+  }
+  if (useDefault) {
+    delete env.CF_OUT_DIR;
+  } else {
+    env.CF_OUT_DIR = resolvedOutDir;
+  }
+  env.CF_RUN_ID = runId;
+  if (opts.corruptArtifact) env.CF_TEST_CORRUPT_ARTIFACT = opts.corruptArtifact;
+  if (opts.extraEnv) {
+    for (const [k, v] of Object.entries(opts.extraEnv)) env[k] = v;
+  }
+
+  const args: string[] = [];
+  if (opts.strict) args.push("--strict");
+  if (opts.extraArgs) args.push(...opts.extraArgs);
+
+  const res = spawnSync("node", [SCRIPT, ...args], {
+    encoding: "utf8",
+    timeout: 30_000,
+    env,
+  });
+
+  const runDir = join(resolvedOutDir, "cloudflare-runs", runId);
+  const reportPath = join(runDir, "run_id-verification.json");
+  // Tracking dla cleanup tylko gdy lądujemy pod naszym SUITE_OUT_DIR.
+  if (!useDefault && resolvedOutDir === SUITE_OUT_DIR) createdRunDirs.push(runDir);
+  return { res, runId, outDir: resolvedOutDir, runDir, reportPath };
+}
+
 
 // Pełna walidacja kształtu run_id-verification.json — wspólna dla obu trybów
 // (verify-run i post-export). Sprawdza schema_version, kind, mode, run_id,
@@ -253,53 +354,44 @@ describe("export-cloudflare-redirects --verify-run", () => {
 // Cały SUITE_OUT_DIR jest sprzątany w afterAll na górze pliku.
 // ──────────────────────────────────────────────────────────────────────────
 
-function makePostExportRunId(slug: string): string {
-  const runId = `${TMP_PREFIX}${slug}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-  createdRunDirs.push(join(RUNS_DIR, runId));
-  return runId;
-}
+// (Wcześniejszy makePostExportRunId został wchłonięty przez runExport — slug
+// generuje runId, a tracking createdRunDirs jest zrobiony wewnątrz helpera.)
 
 describe("export-cloudflare-redirects post-export --strict", () => {
   it("exit 0 gdy wszystkie artefakty mają spójny run_id (--strict, czysty eksport)", () => {
-    const runId = makePostExportRunId("strict-ok");
-    const res = runScript(["--strict"], { CF_RUN_ID: runId });
+    const { res, runId, runDir, reportPath } = runExport({
+      slug: "strict-ok",
+      strict: true,
+    });
     expect(res.status, res.stderr || res.stdout).toBe(0);
     expect(res.stdout).toContain("run_id consistency");
     expect(res.stdout).not.toContain("run_id mismatch");
 
-    const expectedRunDir = join(RUNS_DIR, runId);
-    const reportPath = join(expectedRunDir, "run_id-verification.json");
     expect(existsSync(reportPath)).toBe(true);
     const report = JSON.parse(readFileSync(reportPath, "utf8")) as VerificationReport;
     // Dokładny runDir — musi być EXACT match z join(RUNS_DIR, runId), nie tylko prefix.
-    assertVerificationReportShape(report, {
-      runId,
-      mode: "post-export",
-      runDir: expectedRunDir,
-    });
+    assertVerificationReportShape(report, { runId, mode: "post-export", runDir });
     expect(report.stats.mismatched).toBe(0);
     expect(report.stats.consistency_ratio).toBe(1);
     expect(report.stats.checked).toBeGreaterThan(0);
     expect(report.mismatches).toEqual([]);
     expect(report.files.every((f) => f.ok === true)).toBe(true);
     // run_dir EXACT pod SUITE_OUT_DIR/cloudflare-runs/<runId> — proof pełnej izolacji.
-    expect(report.run_dir).toBe(expectedRunDir);
+    expect(report.run_dir).toBe(runDir);
     expect(report.run_dir.startsWith(SUITE_OUT_DIR + "/")).toBe(true);
   });
 
   it("exit 1 gdy --strict + artefakt z niespójnym run_id (CF_TEST_CORRUPT_ARTIFACT=txt)", () => {
-    const runId = makePostExportRunId("strict-bad");
-    const res = runScript(["--strict"], {
-      CF_RUN_ID: runId,
-      CF_TEST_CORRUPT_ARTIFACT: "txt",
+    const { res, runId, reportPath } = runExport({
+      slug: "strict-bad",
+      strict: true,
+      corruptArtifact: "txt",
     });
     expect(res.status).toBe(1);
     expect(res.stderr).toContain("run_id mismatch");
     expect(res.stderr).toContain("--strict");
 
-    const report = JSON.parse(
-      readFileSync(join(RUNS_DIR, runId, "run_id-verification.json"), "utf8"),
-    ) as VerificationReport;
+    const report = JSON.parse(readFileSync(reportPath, "utf8")) as VerificationReport;
     assertVerificationReportShape(report, { runId, mode: "post-export" });
     expect(report.stats.mismatched).toBeGreaterThanOrEqual(1);
     expect(report.stats.consistency_ratio).toBeLessThan(1);
@@ -311,19 +403,17 @@ describe("export-cloudflare-redirects post-export --strict", () => {
   });
 
   it("exit 0 BEZ --strict mimo niespójności (--strict eskaluje, brak --strict nie)", () => {
-    const runId = makePostExportRunId("nostrict-bad");
-    const res = runScript([], {
-      CF_RUN_ID: runId,
-      CF_TEST_CORRUPT_ARTIFACT: "txt",
+    const { res, runId, reportPath } = runExport({
+      slug: "nostrict-bad",
+      strict: false,
+      corruptArtifact: "txt",
     });
     expect(res.status, res.stderr || res.stdout).toBe(0);
     expect(res.stderr).toContain("run_id mismatch");
     // Brak komunikatu o eskalacji do exit 1 (specyficzny dla --strict).
     expect(res.stderr).not.toContain("--strict: kończę");
 
-    const report = JSON.parse(
-      readFileSync(join(RUNS_DIR, runId, "run_id-verification.json"), "utf8"),
-    ) as VerificationReport;
+    const report = JSON.parse(readFileSync(reportPath, "utf8")) as VerificationReport;
     assertVerificationReportShape(report, { runId, mode: "post-export" });
     expect(report.stats.mismatched).toBeGreaterThanOrEqual(1);
     expect(report.mismatches.some((m) => m.key === "txt")).toBe(true);
@@ -342,21 +432,15 @@ describe("export-cloudflare-redirects CF_OUT_DIR override", () => {
   it("zapisuje artefakty i run_id-verification.json dokładnie pod custom CF_OUT_DIR", () => {
     const customOutDir = mkdtempSync(join(tmpdir(), "cf-redirects-custom-"));
     try {
-      const runId = `${TMP_PREFIX}custom-out-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-
-      // Override CF_OUT_DIR per-call (nadpisuje suite-owy CF_OUT_DIR ze
-      // scriptEnv → spawn dostaje customOutDir).
-      const res = spawnSync("node", [SCRIPT, "--strict"], {
-        encoding: "utf8",
-        timeout: 30_000,
-        env: { ...process.env, CF_OUT_DIR: customOutDir, CF_RUN_ID: runId },
+      const { res, runId, runDir: customRunDir, reportPath } = runExport({
+        slug: "custom-out",
+        strict: true,
+        outDir: customOutDir,
       });
       expect(res.status, res.stderr || res.stdout).toBe(0);
 
       // 1) Run dir + raport leżą pod customOutDir.
       const customRunsDir = join(customOutDir, "cloudflare-runs");
-      const customRunDir = join(customRunsDir, runId);
-      const reportPath = join(customRunDir, "run_id-verification.json");
       expect(existsSync(customRunsDir)).toBe(true);
       expect(existsSync(customRunDir)).toBe(true);
       expect(existsSync(reportPath)).toBe(true);
@@ -379,8 +463,6 @@ describe("export-cloudflare-redirects CF_OUT_DIR override", () => {
       expect(report.stats.checked).toBeGreaterThan(0);
 
       // 4) Każdy plik z `files[]` istnieje fizycznie pod customOutDir.
-      //    (część artefaktów leży bezpośrednio w CF_OUT_DIR, część w
-      //    cloudflare-runs/<id>/ — oba przypadki są pod customOutDir).
       for (const f of report.files) {
         expect(f.path.startsWith(customOutDir)).toBe(true);
         expect(f.path.startsWith(SUITE_OUT_DIR)).toBe(false);
@@ -438,11 +520,11 @@ describe("export-cloudflare-redirects parallel cleanup isolation", () => {
     try {
       // 2) Uruchom normalny eksport pod NASZYM SUITE_OUT_DIR. Musi zapisać
       //    artefakty tylko u nas, nie u obcego.
-      const myRunId = makePostExportRunId("cleanup-iso");
-      const res = runScript(["--strict"], { CF_RUN_ID: myRunId });
+      const { res, runId: myRunId, runDir: myRunDir } = runExport({
+        slug: "cleanup-iso",
+        strict: true,
+      });
       expect(res.status, res.stderr || res.stdout).toBe(0);
-
-      const myRunDir = join(RUNS_DIR, myRunId);
       expect(existsSync(myRunDir)).toBe(true);
       // Obcy katalog ZUPEŁNIE nietknięty po naszym uruchomieniu.
       expect(existsSync(foreignArtifact)).toBe(true);
@@ -502,7 +584,7 @@ describe("export-cloudflare-redirects parallel cleanup isolation", () => {
 // jest po prostu pomijany przez `it.skip` zamiast wybuchać).
 // ──────────────────────────────────────────────────────────────────────────
 
-const DEFAULT_OUT_DIR = "/mnt/documents";
+// (DEFAULT_OUT_DIR jest zdefiniowany u góry pliku — jedna konstanta dla całego suite-u.)
 
 function isDefaultOutDirWritable(): boolean {
   try {
@@ -523,28 +605,19 @@ describe("export-cloudflare-redirects default OUT_DIR fallback", () => {
   runner(
     "bez CF_OUT_DIR używa domyślnego /mnt/documents (run_dir = /mnt/documents/cloudflare-runs/<id>)",
     () => {
-      const runId = `${TMP_PREFIX}default-out-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-      const expectedRunDir = join(DEFAULT_OUT_DIR, "cloudflare-runs", runId);
-
-      // Jawnie wyrzuć CF_OUT_DIR z env, żeby skrypt zobaczył brak override-u
-      // i wpadł w domyślne "/mnt/documents".
-      const cleanEnv: Record<string, string> = {};
-      for (const [k, v] of Object.entries(process.env)) {
-        if (k === "CF_OUT_DIR") continue;
-        if (typeof v === "string") cleanEnv[k] = v;
-      }
-      cleanEnv.CF_RUN_ID = runId;
+      // outDir:"default" → runExport jawnie usuwa CF_OUT_DIR z env, więc
+      // skrypt wpada w domyślne /mnt/documents. Helper sam wylicza poprawny
+      // expectedRunDir = /mnt/documents/cloudflare-runs/<runId>.
+      const { res, runId, runDir: expectedRunDir, reportPath } = runExport({
+        slug: "default-out",
+        strict: true,
+        outDir: "default",
+      });
 
       try {
-        const res = spawnSync("node", [SCRIPT, "--strict"], {
-          encoding: "utf8",
-          timeout: 30_000,
-          env: cleanEnv,
-        });
         expect(res.status, res.stderr || res.stdout).toBe(0);
-
-        const reportPath = join(expectedRunDir, "run_id-verification.json");
         expect(existsSync(reportPath)).toBe(true);
+
         const report = JSON.parse(readFileSync(reportPath, "utf8")) as VerificationReport;
         assertVerificationReportShape(report, {
           runId,
