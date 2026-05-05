@@ -12,6 +12,7 @@
 // Schedule: daily at 22:00 Warsaw time (= 20:00 UTC summer / 21:00 UTC winter).
 
 import { createClient } from 'npm:@supabase/supabase-js@2'
+import { unauthorizedResponse } from '../_shared/unauthorized.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',

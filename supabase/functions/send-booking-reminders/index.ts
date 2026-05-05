@@ -17,6 +17,7 @@
 // Pre-checks email_send_log to skip already-pending/sent reminders.
 
 import { createClient, SupabaseClient } from 'npm:@supabase/supabase-js@2'
+import { unauthorizedResponse } from '../_shared/unauthorized.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',

@@ -16,6 +16,7 @@
 // is intentionally NOT retried — re-invoking would just fail again.
 
 import { createClient } from 'npm:@supabase/supabase-js@2'
+import { unauthorizedResponse } from '../_shared/unauthorized.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
