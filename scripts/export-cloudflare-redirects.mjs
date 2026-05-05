@@ -597,8 +597,42 @@ if (errors.length) {
 if (DRY_RUN && !CLEAR && !UPLOAD) {
   console.log(`\n🔍 DRY RUN — nie zapisano żadnych plików.`);
   console.log(`   Aby wykonać eksport: node scripts/export-cloudflare-redirects.mjs\n`);
-  if (STRICT && warnings.length) process.exit(1);
-  process.exit(0);
+
+  // Gdy użytkownik podał --json/--html (lub env CF_REPORT_*), zapisz raport
+  // "dry-run-only" (puste results/counts, ale pełne meta: schema_version,
+  // run_id, flags, walidacja). Dzięki temu CI / testy integracyjne mogą
+  // archiwizować artefakty także bez --upload (bo --upload + --dry-run
+  // odpaliłby fetch do Cloudflare API). Idempotentne i backwards-compatible:
+  // bez --json/--html zachowanie się nie zmienia.
+  //
+  // setImmediate — zapis odpalamy po zakończeniu top-level evaluation, żeby
+  // uniknąć TDZ na const-ach (REPORT_SCHEMA_VERSION, helperach itd.) używanych
+  // wewnątrz writeJsonReport/buildReportInMemory/writeHtmlReport.
+  if (JSON_REPORT_PATH || HTML_REPORT_PATH) {
+    setImmediate(() => {
+      try {
+        const emptyResults = [];
+        const emptyCounts = { completed: 0, unchanged: 0, skipped: 0, failed: 0, timeout: 0 };
+        const emptyOps = [];
+        let report = null;
+        if (JSON_REPORT_PATH) {
+          report = writeJsonReport(JSON_REPORT_PATH, emptyResults, emptyCounts, emptyOps);
+        }
+        if (HTML_REPORT_PATH) {
+          const reportForHtml = report ?? buildReportInMemory(emptyResults, emptyCounts, emptyOps);
+          writeHtmlReport(HTML_REPORT_PATH, reportForHtml);
+        }
+      } catch (err) {
+        console.error(`⚠️  Nie udało się zapisać raportu dry-run: ${err?.message ?? err}`);
+        process.exit(1);
+      }
+      if (STRICT && warnings.length) process.exit(1);
+      process.exit(0);
+    });
+  } else {
+    if (STRICT && warnings.length) process.exit(1);
+    process.exit(0);
+  }
 }
 
 if (DRY_RUN && (CLEAR || UPLOAD)) {
