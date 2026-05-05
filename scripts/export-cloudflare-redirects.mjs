@@ -740,6 +740,25 @@ if (!DRY_RUN) {
 // czysto po `grep` bez polegania na nazwach plików.
 // W razie niezgodności: log błędu + (w trybie --strict) exit 1.
 if (!DRY_RUN) {
+  // ── Test-only hook: nadpisz wskazany artefakt treścią bez RUN_ID, żeby
+  // zasymulować niespójność i sprawdzić exit-code w trybie --strict. Aktywne
+  // wyłącznie gdy ustawiono CF_TEST_CORRUPT_ARTIFACT (klucz z manifest.artifacts,
+  // np. "txt", "bulk_csv"). Nigdy nie używać poza testami integracyjnymi.
+  const CORRUPT_KEY = (process.env.CF_TEST_CORRUPT_ARTIFACT || "").trim();
+  if (CORRUPT_KEY) {
+    const target = manifest.artifacts[CORRUPT_KEY];
+    if (target && existsSync(target)) {
+      try {
+        writeFileSync(target, `# CF_TEST_CORRUPT_ARTIFACT=${CORRUPT_KEY} — bez run_id\n`, "utf8");
+        console.warn(`⚠️  TEST HOOK: nadpisano ${CORRUPT_KEY} (${target}) treścią bez run_id`);
+      } catch (err) {
+        console.error(`⚠️  TEST HOOK failed: ${err?.message ?? err}`);
+      }
+    } else {
+      console.warn(`⚠️  TEST HOOK: artefakt "${CORRUPT_KEY}" nie istnieje w manifest.artifacts`);
+    }
+  }
+
   const checks = Object.entries(manifest.artifacts)
     .filter(([key, p]) => p && key !== "run_dir" && existsSync(p));
   const mismatches = [];
