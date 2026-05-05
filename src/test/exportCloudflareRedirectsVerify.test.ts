@@ -333,8 +333,10 @@ describe("export-cloudflare-redirects post-export --strict", () => {
 
       const report = JSON.parse(
         readFileSync(join(RUNS_DIR, runId, "run_id-verification.json"), "utf8"),
-      );
+      ) as VerificationReport;
+      assertVerificationReportShape(report, { runId, mode: "post-export" });
       expect(report.stats.mismatched).toBeGreaterThanOrEqual(1);
+      expect(report.mismatches.some((m) => m.key === "txt")).toBe(true);
     } finally {
       restoreSharedArtifacts(snap);
     }
