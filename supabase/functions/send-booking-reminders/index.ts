@@ -290,10 +290,7 @@ Deno.serve(async (req) => {
     okAuth = diff === 0
   }
   if (!okAuth) {
-    return new Response(
-      JSON.stringify({ error: 'Unauthorized' }),
-      { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
-    )
+    return unauthorizedResponse(corsHeaders)
   }
 
   // Parse body — default to "24h" for backward-compat with older cron calls.

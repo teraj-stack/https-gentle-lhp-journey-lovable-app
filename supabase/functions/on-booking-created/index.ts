@@ -199,10 +199,7 @@ Deno.serve(async (req) => {
         userAgent,
         metadata: { method: req.method },
       })
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+      return unauthorizedResponse(corsHeaders)
     }
   }
 

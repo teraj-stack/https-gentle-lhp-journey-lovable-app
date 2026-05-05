@@ -110,10 +110,7 @@ Deno.serve(async (req) => {
   }
 
   if (!isAuthorized) {
-    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-      status: 401,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
+    return unauthorizedResponse(corsHeaders)
   }
 
   console.log(`retry-dlq-emails invoked by ${callerLabel}`)
