@@ -76,7 +76,9 @@ const FUNCTIONS: FunctionUnderTest[] = [
 // timingSafeEqual length check too, but any non-matching value is enough
 // to assert "rejected" — the function compares character-by-character
 // after a length check.
-const BOGUS_TOKEN = 'a'.repeat(SERVICE_ROLE_KEY.length)
+// Use a fixed-length bogus token (>=64 chars) so the length is realistic even
+// when SERVICE_ROLE_KEY is empty locally. Content never matches a real key.
+const BOGUS_TOKEN = 'a'.repeat(Math.max(SERVICE_ROLE_KEY.length, 64))
 
 async function callFunction(name: string, headers: HeadersInit, body: unknown) {
   const url = `${SUPABASE_URL}/functions/v1/${name}`
