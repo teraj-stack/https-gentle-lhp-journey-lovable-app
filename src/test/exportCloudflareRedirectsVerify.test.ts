@@ -7,30 +7,58 @@
  * Test odpala skrypt jako subprocess (Node) — nie importuje go, bo
  * skrypt natychmiast wywołuje pipeline na top-levelu.
  */
-import { describe, it, expect, afterAll } from "vitest";
+import { describe, it, expect, afterAll, beforeAll } from "vitest";
 import { spawnSync } from "node:child_process";
 import {
   mkdirSync,
+  mkdtempSync,
   writeFileSync,
   rmSync,
   existsSync,
   readFileSync,
 } from "node:fs";
+import { tmpdir } from "node:os";
 import { resolve, join } from "node:path";
 
 const SCRIPT = resolve(__dirname, "../../scripts/export-cloudflare-redirects.mjs");
-const RUNS_DIR = "/mnt/documents/cloudflare-runs";
 
-// Wszystkie tymczasowe katalogi run_id muszą zawierać ten prefix, żeby
-// afterAll mógł je sprzątnąć bez ryzyka uderzenia w realny artefakt.
+// Pełna izolacja przez env CF_OUT_DIR. Każdy uruchomiony skrypt pisze do
+// własnego, świeżego tmpdir-a — żaden test nie dotyka /mnt/documents,
+// więc lokalne i CI runy są bezpieczne i przenośne.
+//
+// CF_OUT_DIR (override env override) → opcjonalnie z zewnątrz, np.:
+//   CF_OUT_DIR=/some/scratch vitest run ...
+// Domyślnie używamy os.tmpdir()/cf-redirects-tests-XXXXXX dla całego suite.
 const TMP_PREFIX = "vitest-verify-";
-const created: string[] = [];
+let SUITE_OUT_DIR: string;
+let RUNS_DIR: string;
+const createdRunDirs: string[] = [];
+
+beforeAll(() => {
+  SUITE_OUT_DIR = process.env.CF_OUT_DIR
+    ? mkdtempSync(join(process.env.CF_OUT_DIR.replace(/\/+$/, ""), "cf-redirects-tests-"))
+    : mkdtempSync(join(tmpdir(), "cf-redirects-tests-"));
+  RUNS_DIR = join(SUITE_OUT_DIR, "cloudflare-runs");
+  mkdirSync(RUNS_DIR, { recursive: true });
+});
+
+afterAll(() => {
+  // Cały SUITE_OUT_DIR jest tymczasowy → kasujemy rekursywnie. Bezpieczne,
+  // bo `mkdtempSync` zwraca unikalną ścieżkę pod tmpdir().
+  if (SUITE_OUT_DIR && existsSync(SUITE_OUT_DIR)) {
+    try {
+      rmSync(SUITE_OUT_DIR, { recursive: true, force: true });
+    } catch {
+      /* ignore */
+    }
+  }
+});
 
 function makeRunDir(slug: string): { runId: string; runDir: string } {
   const runId = `${TMP_PREFIX}${slug}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   const runDir = join(RUNS_DIR, runId);
   mkdirSync(runDir, { recursive: true });
-  created.push(runDir);
+  createdRunDirs.push(runDir);
   return { runId, runDir };
 }
 
@@ -38,10 +66,15 @@ function writeArtifact(runDir: string, name: string, content: string) {
   writeFileSync(join(runDir, name), content, "utf8");
 }
 
-function runScript(args: string[]) {
+function scriptEnv(extra: Record<string, string> = {}) {
+  return { ...process.env, CF_OUT_DIR: SUITE_OUT_DIR, ...extra };
+}
+
+function runScript(args: string[], extraEnv: Record<string, string> = {}) {
   return spawnSync("node", [SCRIPT, ...args], {
     encoding: "utf8",
     timeout: 30_000,
+    env: scriptEnv(extraEnv),
   });
 }
 
