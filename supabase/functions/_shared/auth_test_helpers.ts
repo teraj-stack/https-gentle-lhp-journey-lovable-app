@@ -115,7 +115,11 @@ export async function sendRequest(req: Request): Promise<CallResult> {
   const res = await fetch(req)
   const text = await res.text()
   const contentType = res.headers.get('content-type') ?? ''
-  return { status: res.status, text, contentType }
+  const headers: Record<string, string> = {}
+  res.headers.forEach((value, key) => {
+    headers[key.toLowerCase()] = value
+  })
+  return { status: res.status, text, contentType, headers }
 }
 
 /**
