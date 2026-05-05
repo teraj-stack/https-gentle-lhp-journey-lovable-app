@@ -593,7 +593,7 @@ describe("export-cloudflare-redirects parallel cleanup isolation", () => {
 // jest po prostu pomijany przez `it.skip` zamiast wybuchać).
 // ──────────────────────────────────────────────────────────────────────────
 
-const DEFAULT_OUT_DIR = "/mnt/documents";
+// (DEFAULT_OUT_DIR jest zdefiniowany u góry pliku — jedna konstanta dla całego suite-u.)
 
 function isDefaultOutDirWritable(): boolean {
   try {
