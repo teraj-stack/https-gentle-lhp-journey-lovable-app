@@ -273,6 +273,12 @@ export function runAuthMatrix(fn: FunctionUnderTest) {
       const res = await callFunction(fn.name, variant.headers, fn.body)
       assertUnauthorizedShape(variant.label, res, fn.name)
     })
+
+    Deno.test(`[auth] ${fn.name} — 401 for ${variant.label} carries CORS headers`, async () => {
+      const res = await callFunction(fn.name, variant.headers, fn.body)
+      assertEquals(res.status, 401, `expected 401 prerequisite for CORS check, got ${res.status}`)
+      assertCorsHeaders(variant.label, res, fn.name)
+    })
   }
 
   Deno.test(
