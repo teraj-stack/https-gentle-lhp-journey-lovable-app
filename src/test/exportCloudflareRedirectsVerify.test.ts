@@ -322,3 +322,78 @@ describe("export-cloudflare-redirects post-export --strict", () => {
     expect(report.mismatches.some((m) => m.key === "txt")).toBe(true);
   });
 });
+
+// ──────────────────────────────────────────────────────────────────────────
+// CF_OUT_DIR override — proof, że skrypt respektuje env i pisze WSZYSTKO
+// (artefakty + cloudflare-runs/<id>/ + run_id-verification.json) dokładnie
+// w katalogu wskazanym przez CF_OUT_DIR, a nie w domyślnym /mnt/documents
+// ani w SUITE_OUT_DIR. Każdy test używa własnego, świeżego custom dir-a
+// (mkdtempSync) sprzątanego w finally.
+// ──────────────────────────────────────────────────────────────────────────
+
+describe("export-cloudflare-redirects CF_OUT_DIR override", () => {
+  it("zapisuje artefakty i run_id-verification.json dokładnie pod custom CF_OUT_DIR", () => {
+    const customOutDir = mkdtempSync(join(tmpdir(), "cf-redirects-custom-"));
+    try {
+      const runId = `${TMP_PREFIX}custom-out-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+      // Override CF_OUT_DIR per-call (nadpisuje suite-owy CF_OUT_DIR ze
+      // scriptEnv → spawn dostaje customOutDir).
+      const res = spawnSync("node", [SCRIPT, "--strict"], {
+        encoding: "utf8",
+        timeout: 30_000,
+        env: { ...process.env, CF_OUT_DIR: customOutDir, CF_RUN_ID: runId },
+      });
+      expect(res.status, res.stderr || res.stdout).toBe(0);
+
+      // 1) Run dir + raport leżą pod customOutDir.
+      const customRunsDir = join(customOutDir, "cloudflare-runs");
+      const customRunDir = join(customRunsDir, runId);
+      const reportPath = join(customRunDir, "run_id-verification.json");
+      expect(existsSync(customRunsDir)).toBe(true);
+      expect(existsSync(customRunDir)).toBe(true);
+      expect(existsSync(reportPath)).toBe(true);
+
+      // 2) NIC nie pojawiło się pod suite-owym SUITE_OUT_DIR dla tego run_id
+      //    (czyli skrypt naprawdę użył CF_OUT_DIR, nie sięgnął po default).
+      expect(existsSync(join(RUNS_DIR, runId))).toBe(false);
+
+      // 3) Raport waliduje się i jego `run_dir` siedzi DOKŁADNIE pod custom.
+      const report = JSON.parse(readFileSync(reportPath, "utf8")) as VerificationReport;
+      assertVerificationReportShape(report, {
+        runId,
+        mode: "post-export",
+        runDir: customRunDir,
+      });
+      expect(report.run_dir.startsWith(customOutDir)).toBe(true);
+      expect(report.run_dir.startsWith(SUITE_OUT_DIR)).toBe(false);
+      expect(report.stats.mismatched).toBe(0);
+      expect(report.stats.consistency_ratio).toBe(1);
+      expect(report.stats.checked).toBeGreaterThan(0);
+
+      // 4) Każdy plik z `files[]` istnieje fizycznie pod customOutDir.
+      //    (część artefaktów leży bezpośrednio w CF_OUT_DIR, część w
+      //    cloudflare-runs/<id>/ — oba przypadki są pod customOutDir).
+      for (const f of report.files) {
+        expect(f.path.startsWith(customOutDir)).toBe(true);
+        expect(f.path.startsWith(SUITE_OUT_DIR)).toBe(false);
+        expect(existsSync(f.path)).toBe(true);
+      }
+
+      // 5) manifest też pod custom (nie default).
+      const manifestPath = join(customRunDir, "cloudflare-export-manifest.json");
+      expect(existsSync(manifestPath)).toBe(true);
+      const manifest = JSON.parse(readFileSync(manifestPath, "utf8")) as {
+        run_id: string;
+        artifacts: Record<string, unknown>;
+      };
+      expect(manifest.run_id).toBe(runId);
+    } finally {
+      try {
+        rmSync(customOutDir, { recursive: true, force: true });
+      } catch {
+        /* ignore */
+      }
+    }
+  });
+});
