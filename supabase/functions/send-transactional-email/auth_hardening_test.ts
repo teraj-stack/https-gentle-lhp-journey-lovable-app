@@ -45,5 +45,6 @@ Deno.test(
       SAMPLE_BODY,
     )
     assertUnauthorizedShape('anon JWT Bearer', res, FN)
+    assertCorsHeaders('anon JWT Bearer', res, FN)
   },
 )
