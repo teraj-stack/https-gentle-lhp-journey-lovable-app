@@ -140,3 +140,61 @@ Deno.test('unauthorizedResponse — body is canonical JSON.stringify(UNAUTHORIZE
   // 3) Parsed body deep-equals the source constant.
   assertEquals(JSON.parse(text), UNAUTHORIZED_BODY)
 })
+
+Deno.test('unauthorizedResponse — preserves CORS headers regardless of caller-supplied casing', async () => {
+  // HTTP header names are case-insensitive (RFC 7230 §3.2). Callers in
+  // this codebase pass cors maps with inconsistent casing — some use the
+  // canonical `Access-Control-Allow-Origin`, others the all-lowercase
+  // `access-control-allow-origin`, and a few mixed-case oddities like
+  // `Access-Control-Expose-Headers`. The helper must round-trip every
+  // value to the wire without dropping any header, regardless of casing.
+  //
+  // Note: Fetch's `Headers` class normalises names to lowercase on
+  // storage and `.get()` lookup, so we assert via lowercase keys — but
+  // the INPUT casing is intentionally varied to prove the helper does
+  // not, e.g., string-compare keys before forwarding.
+
+  const mixedCaseCors = {
+    'Access-Control-Allow-Origin': 'https://cml.pl',
+    'access-control-allow-headers': 'authorization, apikey, content-type',
+    'ACCESS-CONTROL-ALLOW-METHODS': 'POST, OPTIONS',
+    'Access-control-Expose-Headers': 'x-request-id',
+    'access-Control-Max-Age': '86400',
+    'X-Custom-CORS-Header': 'preserved',
+  }
+
+  const res = unauthorizedResponse(mixedCaseCors)
+
+  // Status + content-type contract still holds.
+  assertEquals(res.status, 401)
+  assertEquals(res.headers.get('content-type'), 'application/json')
+
+  // Every caller-supplied header must be retrievable via its
+  // case-insensitive lookup, with the original VALUE intact.
+  for (const [name, value] of Object.entries(mixedCaseCors)) {
+    assertEquals(
+      res.headers.get(name),
+      value,
+      `header "${name}" must be preserved verbatim regardless of input casing`,
+    )
+    // And via the canonical lowercase form (proves Headers normalisation
+    // didn't silently drop the entry).
+    assertEquals(
+      res.headers.get(name.toLowerCase()),
+      value,
+      `header "${name}" must be retrievable via its lowercase form`,
+    )
+  }
+
+  // Sanity: total count of caller-supplied headers present on the
+  // response equals the input count (no dedup / loss). +1 for the
+  // helper-injected Content-Type.
+  const wireNames = new Set<string>()
+  res.headers.forEach((_v, k) => wireNames.add(k.toLowerCase()))
+  const expectedNames = new Set(
+    [...Object.keys(mixedCaseCors).map((k) => k.toLowerCase()), 'content-type'],
+  )
+  assertEquals(wireNames, expectedNames)
+
+  await res.text()
+})
