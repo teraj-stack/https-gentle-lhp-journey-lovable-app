@@ -92,25 +92,39 @@ function assertUnauthorizedShape(
   )
 }
 
-Deno.test('[stx-auth] send-transactional-email — rejects NO Authorization header (unified 401)', async () => {
-  assertUnauthorizedShape('no Authorization header', await callFn({}))
-})
+// Matrix of Authorization-header malformed/missing variants. ALL must
+// produce the unified 401 contract from `_shared/unauthorized.ts`. Pinned
+// here so a future refactor cannot loosen the gate by accident.
+//
+// send-transactional-email parses identically to the other 4 protected
+// functions:
+//   const token = h.startsWith('Bearer ') ? h.slice(7).trim() : ''
+const MALFORMED_AUTH_VARIANTS: Array<{ label: string; headers: HeadersInit }> = [
+  { label: 'no Authorization header at all', headers: {} },
+  { label: 'empty Authorization value', headers: { Authorization: '' } },
+  { label: 'whitespace-only Authorization', headers: { Authorization: '   ' } },
+  { label: '"Bearer" with no space and no token', headers: { Authorization: 'Bearer' } },
+  { label: '"Bearer " with empty token', headers: { Authorization: 'Bearer ' } },
+  { label: '"Bearer " with whitespace-only token', headers: { Authorization: 'Bearer     ' } },
+  { label: 'lowercase scheme "bearer "', headers: { Authorization: `bearer ${BOGUS_TOKEN}` } },
+  { label: 'uppercase scheme "BEARER "', headers: { Authorization: `BEARER ${BOGUS_TOKEN}` } },
+  { label: 'Basic auth scheme', headers: { Authorization: `Basic ${BOGUS_TOKEN}` } },
+  { label: 'Token scheme (GitHub-style)', headers: { Authorization: `Token ${BOGUS_TOKEN}` } },
+  { label: 'NotBearer scheme prefix', headers: { Authorization: 'NotBearer something' } },
+  { label: 'raw token without any scheme', headers: { Authorization: BOGUS_TOKEN } },
+  { label: '"Bearer<token>" with no separator', headers: { Authorization: `Bearer${BOGUS_TOKEN}` } },
+  { label: 'WRONG Bearer token (correct shape, wrong content)', headers: { Authorization: `Bearer ${BOGUS_TOKEN}` } },
+]
 
-Deno.test('[stx-auth] send-transactional-email — rejects malformed Authorization (no "Bearer " prefix) (unified 401)', async () => {
-  assertUnauthorizedShape(
-    'malformed Authorization',
-    await callFn({ Authorization: 'NotBearer something' }),
-  )
-})
-
-Deno.test('[stx-auth] send-transactional-email — rejects WRONG Bearer token (unified 401)', async () => {
-  assertUnauthorizedShape(
-    'bogus Bearer token',
-    await callFn({ Authorization: `Bearer ${BOGUS_TOKEN}` }),
-  )
-})
+for (const variant of MALFORMED_AUTH_VARIANTS) {
+  Deno.test(`[stx-auth] send-transactional-email — rejects ${variant.label} (unified 401)`, async () => {
+    assertUnauthorizedShape(variant.label, await callFn(variant.headers))
+  })
+}
 
 Deno.test('[stx-auth] send-transactional-email — rejects anon JWT (publishable key) as Bearer (unified 401)', async () => {
+  // Anon callers MUST go through `submit-contact-form` (Turnstile +
+  // validation + rate-limit), never call this function directly.
   if (!HAS_ANON_KEY) {
     console.warn(
       '[stx-auth] anon publishable key not in local env — anon-JWT rejection test skipped.',
@@ -122,6 +136,7 @@ Deno.test('[stx-auth] send-transactional-email — rejects anon JWT (publishable
     await callFn({ Authorization: `Bearer ${SUPABASE_ANON_KEY}` }),
   )
 })
+
 
 
 Deno.test('[stx-auth] send-transactional-email — accepts CORRECT service-role Bearer (best-effort smoke)', async () => {

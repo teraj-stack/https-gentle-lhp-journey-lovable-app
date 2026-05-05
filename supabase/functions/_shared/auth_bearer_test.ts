@@ -125,20 +125,47 @@ function assertUnauthorizedShape(
   )
 }
 
-for (const fn of FUNCTIONS) {
-  Deno.test(`[auth] ${fn.name} — rejects NO Authorization header (unified 401)`, async () => {
-    const res = await callFunction(fn.name, {}, fn.body)
-    assertUnauthorizedShape(fn.name, 'no Authorization header', res)
-  })
+// Matrix of Authorization-header malformed/missing variants. ALL of these
+// MUST produce the unified 401 contract from `_shared/unauthorized.ts`.
+//
+// The protected functions all use the same parsing rule:
+//   const token = h.startsWith('Bearer ') ? h.slice(7).trim() : ''
+// — case-sensitive prefix, mandatory single space, trailing whitespace
+// trimmed. Anything that doesn't fit yields token = '' which fails the
+// timing-safe equality check below.
+//
+// We pin every shape that we have seen real attackers / misconfigured
+// clients send, so a future refactor cannot loosen the gate by accident.
+const MALFORMED_AUTH_VARIANTS: Array<{ label: string; headers: HeadersInit }> = [
+  { label: 'no Authorization header at all', headers: {} },
+  { label: 'empty Authorization value', headers: { Authorization: '' } },
+  { label: 'whitespace-only Authorization', headers: { Authorization: '   ' } },
+  // "Bearer" without a space or token → prefix check fails, token = ''.
+  { label: '"Bearer" with no space and no token', headers: { Authorization: 'Bearer' } },
+  // "Bearer " with the mandatory space but an empty token → token = '' after trim.
+  { label: '"Bearer " with empty token', headers: { Authorization: 'Bearer ' } },
+  // "Bearer    " with only whitespace after → token = '' after trim.
+  { label: '"Bearer " with whitespace-only token', headers: { Authorization: 'Bearer     ' } },
+  // Wrong case — startsWith('Bearer ') is case-sensitive.
+  { label: 'lowercase scheme "bearer "', headers: { Authorization: `bearer ${BOGUS_TOKEN}` } },
+  { label: 'uppercase scheme "BEARER "', headers: { Authorization: `BEARER ${BOGUS_TOKEN}` } },
+  // Wrong scheme entirely.
+  { label: 'Basic auth scheme', headers: { Authorization: `Basic ${BOGUS_TOKEN}` } },
+  { label: 'Token scheme (GitHub-style)', headers: { Authorization: `Token ${BOGUS_TOKEN}` } },
+  { label: 'raw token without any scheme', headers: { Authorization: BOGUS_TOKEN } },
+  // No space between scheme and token.
+  { label: '"Bearer<token>" with no separator', headers: { Authorization: `Bearer${BOGUS_TOKEN}` } },
+  // Correct shape but bogus token of realistic length.
+  { label: 'WRONG Bearer token (correct shape, wrong content)', headers: { Authorization: `Bearer ${BOGUS_TOKEN}` } },
+]
 
-  Deno.test(`[auth] ${fn.name} — rejects WRONG Bearer token (unified 401)`, async () => {
-    const res = await callFunction(
-      fn.name,
-      { Authorization: `Bearer ${BOGUS_TOKEN}` },
-      fn.body,
-    )
-    assertUnauthorizedShape(fn.name, 'bogus Bearer token', res)
-  })
+for (const fn of FUNCTIONS) {
+  for (const variant of MALFORMED_AUTH_VARIANTS) {
+    Deno.test(`[auth] ${fn.name} — rejects ${variant.label} (unified 401)`, async () => {
+      const res = await callFunction(fn.name, variant.headers, fn.body)
+      assertUnauthorizedShape(fn.name, variant.label, res)
+    })
+  }
 
 
   Deno.test(`[auth] ${fn.name} — accepts request with CORRECT service-role Bearer token (smoke, best-effort)`, async () => {
