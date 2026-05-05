@@ -66,27 +66,42 @@ Deno.serve(async (req) => {
 
   const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-  // 1. Authorize: admin (JWT with has_role='admin') OR service_role (cron)
+  // 1. Authorize: admin (verified JWT with has_role='admin') OR service_role
+  // (cron, identified by presenting the service-role key as Bearer token).
+  // We do NOT decode JWT payloads ourselves — payloads are unsigned input
+  // when verify_jwt=false. Instead:
+  //   - service-role: constant-time compare token to SUPABASE_SERVICE_ROLE_KEY
+  //   - admin user:   verify JWT cryptographically via supabase.auth.getUser(),
+  //                   then check has_role('admin') with their session.
   const authHeader = req.headers.get('Authorization') || ''
-  const token = authHeader.replace('Bearer ', '')
+  const token = authHeader.startsWith('Bearer ')
+    ? authHeader.slice('Bearer '.length).trim()
+    : ''
   let isAuthorized = false
   let callerLabel = 'unknown'
 
-  if (token) {
+  function timingSafeEqual(a: string, b: string): boolean {
+    if (a.length !== b.length) return false
+    let diff = 0
+    for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i)
+    return diff === 0
+  }
+
+  if (token && timingSafeEqual(token, supabaseServiceKey)) {
+    isAuthorized = true
+    callerLabel = 'service_role (cron)'
+  } else if (token) {
     try {
-      const payload = JSON.parse(atob(token.split('.')[1]))
-      if (payload.role === 'service_role') {
-        isAuthorized = true
-        callerLabel = 'service_role (cron)'
-      } else if (payload.sub) {
-        // Verify admin role for authenticated user
-        const userClient = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY') ?? '', {
-          global: { headers: { Authorization: authHeader } },
-        })
+      const userClient = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY') ?? '', {
+        global: { headers: { Authorization: authHeader } },
+      })
+      // Cryptographically verify the JWT signature against Supabase's keys.
+      const { data: userData, error: userError } = await userClient.auth.getUser(token)
+      if (!userError && userData?.user) {
         const { data: hasAdmin } = await userClient.rpc('has_role', { _role: 'admin' })
         if (hasAdmin === true) {
           isAuthorized = true
-          callerLabel = `admin:${payload.sub}`
+          callerLabel = `admin:${userData.user.id}`
         }
       }
     } catch {

@@ -55,25 +55,24 @@ Deno.serve(async (req) => {
   }
 
   // --- Authorization & Rate Limiting ---
-  // Determine caller identity: service_role calls bypass rate limiting,
-  // anon/authenticated callers are rate-limited by IP.
+  // Determine caller identity: server-to-server callers (other edge functions,
+  // pg_cron) authenticate by presenting the service-role key as a Bearer token.
+  // We compare the raw token to the env value with a constant-time check —
+  // NEVER trust an unverified JWT payload (verify_jwt = false on this function).
   const authHeader = req.headers.get('Authorization') || ''
-  const token = authHeader.replace('Bearer ', '')
+  const token = authHeader.startsWith('Bearer ')
+    ? authHeader.slice('Bearer '.length).trim()
+    : ''
   const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey)
 
-  let isServiceRole = false
-  if (token) {
-    try {
-      // Decode JWT payload to check role claim
-      const payloadB64 = token.split('.')[1]
-      if (payloadB64) {
-        const payload = JSON.parse(atob(payloadB64))
-        isServiceRole = payload.role === 'service_role'
-      }
-    } catch {
-      // Ignore decode errors — treat as non-service-role
-    }
+  function timingSafeEqual(a: string, b: string): boolean {
+    if (a.length !== b.length) return false
+    let diff = 0
+    for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i)
+    return diff === 0
   }
+
+  const isServiceRole = token.length > 0 && timingSafeEqual(token, supabaseServiceKey)
 
   if (!isServiceRole) {
     // Rate-limit by caller IP

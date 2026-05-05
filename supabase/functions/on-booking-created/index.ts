@@ -176,6 +176,36 @@ Deno.serve(async (req) => {
     return rateLimitedResponse(rl, corsHeaders)
   }
 
+  // Webhook authentication: require service-role bearer token. Configure the
+  // Supabase Database Webhook with header `Authorization: Bearer <SERVICE_ROLE_KEY>`.
+  // Prevents internet callers from POSTing fake booking payloads to trigger
+  // phishing emails from our trusted sender domain.
+  {
+    const authHeader = req.headers.get('Authorization') || ''
+    const presented = authHeader.startsWith('Bearer ')
+      ? authHeader.slice('Bearer '.length).trim()
+      : ''
+    let okAuth = false
+    if (presented.length === earlySupabaseKey.length) {
+      let diff = 0
+      for (let i = 0; i < presented.length; i++) diff |= presented.charCodeAt(i) ^ earlySupabaseKey.charCodeAt(i)
+      okAuth = diff === 0
+    }
+    if (!okAuth) {
+      logTokenFailure(supabase, {
+        endpoint: ENDPOINT,
+        reason: 'unauthorized_webhook',
+        ip: ipLog,
+        userAgent,
+        metadata: { method: req.method },
+      })
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+  }
+
   let payload: WebhookPayload
   try {
     payload = await req.json()
@@ -186,19 +216,39 @@ Deno.serve(async (req) => {
     )
   }
 
-  if (payload.type !== 'INSERT' || payload.table !== 'bookings' || !payload.record) {
+  if (payload.type !== 'INSERT' || payload.table !== 'bookings' || !payload.record?.id) {
     return new Response(
       JSON.stringify({ skipped: true, reason: 'not an INSERT on bookings' }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }
 
-  const booking = payload.record
+  // SECURITY: re-read the booking from the DB using only the id from the
+  // payload. Discard all other fields from the webhook payload — guarantees
+  // emails are only sent for real, RLS-vetted bookings.
+  const { data: dbBooking, error: dbBookingError } = await supabase
+    .from('bookings')
+    .select('id, patient_name, patient_email, patient_phone, appointment_date, appointment_time, location, message, status, cc_emails')
+    .eq('id', payload.record.id)
+    .maybeSingle<BookingRecord>()
 
-  if (!booking.id || !booking.patient_email) {
-    console.warn('Booking missing id or email — skipping', { id: booking.id })
+  if (dbBookingError || !dbBooking) {
+    console.warn('Booking not found for webhook id — skipping', {
+      id: payload.record.id,
+      error: dbBookingError?.message,
+    })
     return new Response(
-      JSON.stringify({ skipped: true, reason: 'missing id or patient_email' }),
+      JSON.stringify({ skipped: true, reason: 'booking_not_found' }),
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
+  }
+
+  const booking = dbBooking
+
+  if (!booking.patient_email) {
+    console.warn('Booking missing email — skipping', { id: booking.id })
+    return new Response(
+      JSON.stringify({ skipped: true, reason: 'missing patient_email' }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }
