@@ -20,83 +20,89 @@
 //   - submit-contact-form      = anon-callable, but only emits emails after
 //                                Turnstile + Zod-style validation + fixed
 //                                template/recipient allowlist
+//
+// All request setup goes through the shared helpers in
+// `_shared/auth_test_helpers.ts` so adding a new check is a one-liner and
+// the request shape stays consistent with the other Edge Function suites.
 
-import 'https://deno.land/std@0.224.0/dotenv/load.ts'
 import { assert, assertEquals } from 'https://deno.land/std@0.224.0/assert/mod.ts'
+import {
+  CallResult,
+  HAS_ANON_KEY,
+  SUPABASE_ANON_KEY,
+  SUPABASE_URL,
+  callFunction,
+  sendRequest,
+} from '../_shared/auth_test_helpers.ts'
 
-const SUPABASE_URL =
-  Deno.env.get('VITE_SUPABASE_URL') ?? Deno.env.get('SUPABASE_URL') ?? ''
-const SUPABASE_ANON_KEY =
-  Deno.env.get('VITE_SUPABASE_PUBLISHABLE_KEY') ??
-  Deno.env.get('SUPABASE_ANON_KEY') ??
-  ''
+const FN = 'submit-contact-form'
 
-if (!SUPABASE_URL) {
-  throw new Error(
-    'Missing VITE_SUPABASE_URL / SUPABASE_URL — required to reach the Edge Functions endpoint.',
-  )
-}
-
-const ENDPOINT = `${SUPABASE_URL}/functions/v1/submit-contact-form`
-
-// All anon-callable Edge Functions on Supabase require AT LEAST the anon
-// publishable key on the request (gateway-level check before our code runs).
-// If the local env doesn't have it, skip the suite — there is nothing
-// meaningful we can assert about the function's own validation logic.
-const HAS_ANON_KEY = SUPABASE_ANON_KEY.length > 0
+/**
+ * Build the standard anon-caller header set: Supabase API gateway requires
+ * BOTH `apikey` and `Authorization: Bearer <anon>` for anon-callable
+ * functions to even reach our handler.
+ */
 function anonHeaders(extra: HeadersInit = {}): HeadersInit {
   return {
-    'Content-Type': 'application/json',
     apikey: SUPABASE_ANON_KEY,
     Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-    ...extra,
+    ...(extra as Record<string, string>),
   }
 }
 
-async function postRaw(body: BodyInit, headers: HeadersInit) {
-  const res = await fetch(ENDPOINT, { method: 'POST', headers, body })
-  const text = await res.text()
-  return { status: res.status, text }
+/**
+ * Send a JSON POST through the shared `callFunction` helper, with the
+ * standard anon caller headers. Mirrors `callFunction`'s `CallResult`
+ * contract so assertions stay uniform across all Edge Function tests.
+ */
+function postJson(body: unknown, extra: HeadersInit = {}): Promise<CallResult> {
+  return callFunction(FN, anonHeaders(extra), body)
 }
 
-async function postJson(body: unknown, headers: HeadersInit = anonHeaders()) {
-  return postRaw(JSON.stringify(body), headers)
-}
-
-Deno.test('[scf] submit-contact-form — GET is rejected as 405', async () => {
-  if (!HAS_ANON_KEY) {
-    console.warn('[scf] anon publishable key not in local env — skipping.')
-    return
-  }
-  const res = await fetch(ENDPOINT, {
-    method: 'GET',
-    headers: {
-      apikey: SUPABASE_ANON_KEY,
-      Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-    },
+/**
+ * Send a raw (non-JSON) body to exercise the invalid-JSON path. Goes
+ * through the shared `sendRequest` so response handling (body consumption,
+ * header capture for CORS asserts) matches every other suite.
+ */
+function postRaw(body: BodyInit, extra: HeadersInit = {}): Promise<CallResult> {
+  const headers = new Headers(anonHeaders(extra))
+  if (!headers.has('Content-Type')) headers.set('Content-Type', 'application/json')
+  const req = new Request(`${SUPABASE_URL}/functions/v1/${FN}`, {
+    method: 'POST',
+    headers,
+    body,
   })
-  await res.text()
-  assertEquals(
-    res.status,
-    405,
-    `Expected 405 for GET ${ENDPOINT}, got ${res.status}`,
-  )
+  return sendRequest(req)
+}
+
+/** Skip-with-warning if the local env can't reach the gateway at all. */
+function skipIfNoAnonKey(): boolean {
+  if (HAS_ANON_KEY) return false
+  console.warn(`[scf] ${FN}: anon publishable key not in local env — skipping.`)
+  return true
+}
+
+Deno.test(`[scf] ${FN} — GET is rejected as 405`, async () => {
+  if (skipIfNoAnonKey()) return
+  // GET path: bypass POST-only helpers and hit the endpoint directly via
+  // sendRequest so the body-consumption / header-capture contract still
+  // matches the rest of the suite.
+  const req = new Request(`${SUPABASE_URL}/functions/v1/${FN}`, {
+    method: 'GET',
+    headers: new Headers(anonHeaders()),
+  })
+  const { status, text } = await sendRequest(req)
+  assertEquals(status, 405, `Expected 405 for GET ${FN}, got ${status}: ${text}`)
 })
 
-Deno.test('[scf] submit-contact-form — invalid JSON body returns 400', async () => {
-  if (!HAS_ANON_KEY) {
-    console.warn('[scf] anon publishable key not in local env — skipping.')
-    return
-  }
-  const { status, text } = await postRaw('this is not json', anonHeaders())
+Deno.test(`[scf] ${FN} — invalid JSON body returns 400`, async () => {
+  if (skipIfNoAnonKey()) return
+  const { status, text } = await postRaw('this is not json')
   assertEquals(status, 400, `Expected 400 for invalid JSON, got ${status}: ${text}`)
 })
 
-Deno.test('[scf] submit-contact-form — missing/unknown formType returns 400', async () => {
-  if (!HAS_ANON_KEY) {
-    console.warn('[scf] anon publishable key not in local env — skipping.')
-    return
-  }
+Deno.test(`[scf] ${FN} — missing/unknown formType returns 400`, async () => {
+  if (skipIfNoAnonKey()) return
   for (const payload of [
     {}, // missing
     { formType: 'unknown' }, // unknown literal
@@ -111,11 +117,8 @@ Deno.test('[scf] submit-contact-form — missing/unknown formType returns 400', 
   }
 })
 
-Deno.test('[scf] submit-contact-form — missing turnstileToken returns 400', async () => {
-  if (!HAS_ANON_KEY) {
-    console.warn('[scf] anon publishable key not in local env — skipping.')
-    return
-  }
+Deno.test(`[scf] ${FN} — missing turnstileToken returns 400`, async () => {
+  if (skipIfNoAnonKey()) return
   const { status, text } = await postJson({
     formType: 'contact',
     email: 'qa+scf@example.invalid',
@@ -128,16 +131,13 @@ Deno.test('[scf] submit-contact-form — missing turnstileToken returns 400', as
   )
 })
 
-Deno.test('[scf] submit-contact-form — bogus turnstileToken is rejected by Cloudflare (403)', async () => {
+Deno.test(`[scf] ${FN} — bogus turnstileToken is rejected by Cloudflare (403)`, async () => {
   // This call is real: it goes out to Cloudflare's siteverify API with the
   // project's TURNSTILE_SECRET_KEY and a fake response token. Cloudflare
   // returns success=false and the function maps that to 403.
   // If Cloudflare itself is unreachable, the function returns 502 — we
   // accept either as a "Turnstile gate held" signal.
-  if (!HAS_ANON_KEY) {
-    console.warn('[scf] anon publishable key not in local env — skipping.')
-    return
-  }
+  if (skipIfNoAnonKey()) return
   const { status, text } = await postJson({
     formType: 'contact',
     turnstileToken: 'bogus-token-from-integration-test',
@@ -149,7 +149,7 @@ Deno.test('[scf] submit-contact-form — bogus turnstileToken is rejected by Clo
   // TURNSTILE_SECRET_KEY unset. All three prove the gate held.
   assert(
     status >= 400 && status < 600,
-    `submit-contact-form returned non-error status ${status} with a bogus Turnstile token — ` +
+    `${FN} returned non-error status ${status} with a bogus Turnstile token — ` +
       `Open Email Relay regression risk. Body: ${text}`,
   )
   assert(
@@ -158,24 +158,24 @@ Deno.test('[scf] submit-contact-form — bogus turnstileToken is rejected by Clo
   )
 })
 
-Deno.test('[scf] submit-contact-form — does NOT require service-role auth (anon Bearer is sufficient to be parsed)', async () => {
-  // Negative-of-a-negative: prove this function is NOT mistakenly hardened
-  // to service-role-only. With anon Bearer + missing Turnstile we expect a
-  // 400 from our own validation — NOT a 401 from a service-role gate.
-  if (!HAS_ANON_KEY) {
-    console.warn('[scf] anon publishable key not in local env — skipping.')
-    return
-  }
-  const { status, text } = await postJson({ formType: 'contact' })
-  assert(
-    status !== 401,
-    `submit-contact-form unexpectedly returned 401 to an anon caller — ` +
-      `that would break the public contact form. Body: ${text}`,
-  )
-  // We expect 400 (missing turnstileToken). Allow 400/403/422 to keep this
-  // resilient if validation order changes.
-  assert(
-    [400, 403, 422].includes(status),
-    `Expected 400/403/422 from anon caller with incomplete payload, got ${status}: ${text}`,
-  )
-})
+Deno.test(
+  `[scf] ${FN} — does NOT require service-role auth (anon Bearer is sufficient to be parsed)`,
+  async () => {
+    // Negative-of-a-negative: prove this function is NOT mistakenly hardened
+    // to service-role-only. With anon Bearer + missing Turnstile we expect a
+    // 400 from our own validation — NOT a 401 from a service-role gate.
+    if (skipIfNoAnonKey()) return
+    const { status, text } = await postJson({ formType: 'contact' })
+    assert(
+      status !== 401,
+      `${FN} unexpectedly returned 401 to an anon caller — ` +
+        `that would break the public contact form. Body: ${text}`,
+    )
+    // We expect 400 (missing turnstileToken). Allow 400/403/422 to keep this
+    // resilient if validation order changes.
+    assert(
+      [400, 403, 422].includes(status),
+      `Expected 400/403/422 from anon caller with incomplete payload, got ${status}: ${text}`,
+    )
+  },
+)
