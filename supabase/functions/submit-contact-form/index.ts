@@ -175,23 +175,25 @@ Deno.serve(async (req) => {
     }),
   ]
 
-  // ----- Internal notification copies -----
-  for (const recipient of config.internalRecipients) {
-    const notifData =
-      formType === 'b2b'
-        ? { senderEmail: email, facility, message, source }
-        : { name, email, phone, message, source }
+  // ----- Internal notification copies (optional per form) -----
+  if (config.notificationTemplate) {
+    for (const recipient of config.internalRecipients) {
+      const notifData =
+        formType === 'b2b'
+          ? { senderEmail: email, facility, message, source }
+          : { name, email, phone, message, source }
 
-    sends.push(
-      supabaseAdmin.functions.invoke('send-transactional-email', {
-        body: {
-          templateName: config.notificationTemplate,
-          recipientEmail: recipient,
-          idempotencyKey: `${formType}-notify-${id}-${recipient}`,
-          templateData: notifData,
-        },
-      }),
-    )
+      sends.push(
+        supabaseAdmin.functions.invoke('send-transactional-email', {
+          body: {
+            templateName: config.notificationTemplate,
+            recipientEmail: recipient,
+            idempotencyKey: `${formType}-notify-${id}-${recipient}`,
+            templateData: notifData,
+          },
+        }),
+      )
+    }
   }
 
   const results = await Promise.allSettled(sends)
