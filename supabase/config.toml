@@ -21,3 +21,5 @@ project_id = "jowtjcyevactqmhqrytz"
     verify_jwt = false
   [functions.handle-reminder-opt-out]
     verify_jwt = false
+  [functions.submit-contact-form]
+    verify_jwt = false

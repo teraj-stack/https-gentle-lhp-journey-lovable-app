@@ -11,8 +11,30 @@ declare global {
   }
 }
 
-// Use Cloudflare test keys by default — replace with real keys in production
-const TURNSTILE_SITE_KEY = "1x00000000000000000000AA";
+// Read the production Turnstile site key from build env. Falls back to
+// Cloudflare's documented TEST key so local/preview builds still render
+// the widget. The test key always passes the client challenge and only
+// produces tokens valid against Cloudflare's test SECRET — so production
+// MUST set VITE_TURNSTILE_SITE_KEY (build secret) AND configure the
+// matching real TURNSTILE_SECRET_KEY on the verify-turnstile /
+// submit-contact-form edge functions, otherwise either bots bypass the
+// challenge or real users can't submit.
+const TURNSTILE_TEST_KEY = "1x00000000000000000000AA";
+const TURNSTILE_SITE_KEY =
+  (import.meta.env.VITE_TURNSTILE_SITE_KEY as string | undefined) ||
+  TURNSTILE_TEST_KEY;
+
+if (
+  import.meta.env.PROD &&
+  TURNSTILE_SITE_KEY === TURNSTILE_TEST_KEY &&
+  typeof console !== "undefined"
+) {
+  // eslint-disable-next-line no-console
+  console.warn(
+    "[TurnstileWidget] Using Cloudflare TEST site key in production. " +
+      "Set VITE_TURNSTILE_SITE_KEY (build secret) to a real key from dash.cloudflare.com.",
+  );
+}
 
 interface TurnstileWidgetProps {
   onVerify: (token: string) => void;

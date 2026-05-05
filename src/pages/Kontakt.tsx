@@ -109,36 +109,42 @@ const Kontakt = () => {
     setSending(true);
 
     try {
-      const { data: verification } = await supabase.functions.invoke("verify-turnstile", {
-        body: { token: turnstileToken },
+      const { data, error } = await supabase.functions.invoke('submit-contact-form', {
+        body: {
+          formType: 'contact',
+          turnstileToken,
+          name: result.data.name,
+          email: result.data.email,
+          phone: result.data.phone,
+          message: result.data.message,
+          source: 'kontakt',
+        },
       });
-      if (!verification?.success) {
-        toast({ title: "Błąd weryfikacji", description: "Weryfikacja CAPTCHA nie powiodła się.", variant: "destructive" });
+      if (error || !data?.success) {
+        toast({
+          title: 'Błąd wysyłki',
+          description: 'Nie udało się wysłać wiadomości. Spróbuj ponownie.',
+          variant: 'destructive',
+        });
         setSending(false);
         setTurnstileToken(null);
         return;
       }
-    } catch {
-      toast({ title: "Błąd", description: "Nie udało się zweryfikować CAPTCHA.", variant: "destructive" });
-      setSending(false);
-      return;
-    }
-    const id = crypto.randomUUID();
-    try {
-      await supabase.functions.invoke('send-transactional-email', {
-        body: {
-          templateName: 'contact-confirmation',
-          recipientEmail: result.data.email,
-          idempotencyKey: `contact-confirm-${id}`,
-          templateData: { name: result.data.name },
-        },
-      });
     } catch (err) {
-      console.error('Email send failed:', err);
+      console.error('Contact form submit failed:', err);
+      toast({
+        title: 'Błąd wysyłki',
+        description: 'Nie udało się wysłać wiadomości. Spróbuj ponownie.',
+        variant: 'destructive',
+      });
+      setSending(false);
+      setTurnstileToken(null);
+      return;
     }
     setSending(false);
     setForm({ name: "", email: "", phone: "", message: "" });
     setConsent(false);
+    setTurnstileToken(null);
     toast({ title: "Wiadomość wysłana", description: "Odezwiemy się w ciągu 24 godzin." });
   };
 

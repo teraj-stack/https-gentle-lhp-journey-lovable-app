@@ -74,30 +74,24 @@ Deno.serve(async (req) => {
 
   const isServiceRole = token.length > 0 && timingSafeEqual(token, supabaseServiceKey)
 
+  // CRITICAL: send-transactional-email is service-role-only. Anon/public
+  // form flows MUST go through `submit-contact-form` (or another
+  // intermediary) which validates input + Turnstile and then calls this
+  // function with the service-role key.
+  // The previous fallback per-IP rate limit allowed any caller to send
+  // up to N emails per window — easily bypassed by IP rotation. Closed.
   if (!isServiceRole) {
-    // Rate-limit by caller IP
     const callerIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
       || req.headers.get('cf-connecting-ip')
       || 'unknown'
-
-    const windowStart = new Date(Date.now() - RATE_LIMIT_WINDOW_MINUTES * 60 * 1000).toISOString()
-
-    const { count, error: countError } = await supabaseAdmin
-      .from('email_send_log')
-      .select('*', { count: 'exact', head: true })
-      .gte('created_at', windowStart)
-      .eq('metadata->>caller_ip', callerIp)
-
-    if (!countError && (count ?? 0) >= RATE_LIMIT_MAX_SENDS) {
-      console.warn('Rate limit exceeded', { callerIp, count })
-      return new Response(
-        JSON.stringify({ error: 'Too many requests. Please try again later.' }),
-        {
-          status: 429,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      )
-    }
+    console.warn('send-transactional-email: rejecting non-service-role caller', { callerIp })
+    return new Response(
+      JSON.stringify({ error: 'Unauthorized' }),
+      {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
+    )
   }
 
   // Parse request body
