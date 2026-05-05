@@ -277,6 +277,25 @@ Deno.serve(async (req) => {
     )
   }
 
+  // Cron-only endpoint — require service-role bearer token (passed by pg_cron
+  // via Vault). Reject anonymous internet callers to prevent forced sends.
+  const authHeader = req.headers.get('Authorization') || ''
+  const token = authHeader.startsWith('Bearer ')
+    ? authHeader.slice('Bearer '.length).trim()
+    : ''
+  let okAuth = false
+  if (token.length === supabaseServiceKey.length) {
+    let diff = 0
+    for (let i = 0; i < token.length; i++) diff |= token.charCodeAt(i) ^ supabaseServiceKey.charCodeAt(i)
+    okAuth = diff === 0
+  }
+  if (!okAuth) {
+    return new Response(
+      JSON.stringify({ error: 'Unauthorized' }),
+      { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+    )
+  }
+
   // Parse body — default to "24h" for backward-compat with older cron calls.
   let windowKey: WindowKey = '24h'
   try {
