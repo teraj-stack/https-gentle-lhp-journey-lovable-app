@@ -570,3 +570,124 @@ Deno.test('unauthorizedResponse — true append-style duplicate CORS headers pre
 
   await res.text()
 })
+
+Deno.test('unauthorizedResponse — preserves caller-supplied Vary header verbatim, even alongside unusual CORS values', async () => {
+  // Why a dedicated `Vary` test:
+  //
+  //   The `Vary` response header is the contract a server uses to tell
+  //   downstream caches (CDNs, browsers, shared proxies) which request
+  //   headers participated in producing the response. For CORS-aware
+  //   endpoints the canonical value is `Vary: Origin` — it prevents a
+  //   cached 401 with `Access-Control-Allow-Origin: https://a.example`
+  //   from being served to a request from `https://b.example`.
+  //
+  //   If the helper EVER mutated, dropped, or "normalised" `Vary`, every
+  //   protected function would silently get a CORS-cache-poisoning bug.
+  //   Conversely, if the helper started INVENTING `Vary` on its own,
+  //   server-to-server callers (which deliberately pass `{}`) would get
+  //   surprise cache directives. Both directions need pinning.
+  //
+  // We assert FOUR independent angles in this single test:
+  //
+  //   1. Canonical case: caller passes `Vary: Origin` → wire = `Origin`.
+  //   2. Multi-token case: caller passes `Vary: Origin, Accept-Encoding`
+  //      → wire = exact same string (no token reordering, no dedup).
+  //   3. Vary survives untouched even when the SAME cors bag contains
+  //      unusual sibling values (empty strings, comma-lists, semicolons,
+  //      long tokens) that exercise the value-pass-through code path.
+  //   4. Negative: when caller omits `Vary`, helper does NOT invent one
+  //      (parallel to the "ZERO CORS invented for {}" contract).
+
+  // ── 1) Canonical Vary: Origin ─────────────────────────────────────
+  const canonical = unauthorizedResponse({
+    'Access-Control-Allow-Origin': 'https://cml.pl',
+    'Vary': 'Origin',
+  })
+  assertEquals(canonical.status, 401)
+  assertEquals(canonical.headers.get('content-type'), 'application/json')
+  assertEquals(
+    canonical.headers.get('vary'),
+    'Origin',
+    'canonical Vary: Origin must arrive on the wire unchanged',
+  )
+  await canonical.text()
+
+  // ── 2) Multi-token Vary, exact byte preservation ──────────────────
+  // Lock in: no sort, no dedup, no whitespace normalisation beyond what
+  // `new Headers()` does to leading/trailing space (none here).
+  const multi = unauthorizedResponse({
+    'Access-Control-Allow-Origin': 'https://cml.pl',
+    'Vary': 'Origin, Accept-Encoding, Accept-Language',
+  })
+  assertEquals(
+    multi.headers.get('vary'),
+    'Origin, Accept-Encoding, Accept-Language',
+    'multi-token Vary must be byte-preserved (order, separators, casing)',
+  )
+  // Token-order assertion: catches a hypothetical refactor that sorts.
+  const varyMulti = multi.headers.get('vary') ?? ''
+  const iOrigin = varyMulti.indexOf('Origin')
+  const iEnc = varyMulti.indexOf('Accept-Encoding')
+  const iLang = varyMulti.indexOf('Accept-Language')
+  assert(
+    iOrigin >= 0 && iEnc > iOrigin && iLang > iEnc,
+    `Vary token order must be preserved (Origin < Accept-Encoding < Accept-Language), got "${varyMulti}"`,
+  )
+  await multi.text()
+
+  // ── 3) Vary survives untouched alongside unusual CORS values ──────
+  // This is the "no zmienia go przy nietypowych wartościach CORS" leg
+  // of the user's contract. We seed the bag with the same kind of edge-
+  // case values exercised in the dedicated unusual-values test, plus a
+  // canonical `Vary: Origin`, and assert Vary is byte-equal to what we
+  // passed in.
+  const noisyBag: Record<string, string> = {
+    'Access-Control-Allow-Origin': 'https://cml.pl',
+    'Vary': 'Origin',
+    // Unusual siblings that exercise the value pass-through path:
+    'X-Empty-Value': '',
+    'X-Comma-Tight': 'a,b,c,d',
+    'X-Internal-Whitespace': 'a   b\tc',
+    'X-Semicolons': 'value; param=1; other="quoted"',
+    'X-Long-Token': 'x'.repeat(512),
+    'Access-Control-Expose-Headers': 'X-Request-Id, X-Trace-Id',
+    'Access-Control-Max-Age': '86400',
+  }
+  const noisy = unauthorizedResponse(noisyBag)
+  assertEquals(noisy.status, 401)
+  assertEquals(noisy.headers.get('content-type'), 'application/json')
+  assertEquals(
+    noisy.headers.get('vary'),
+    'Origin',
+    'Vary must remain byte-equal to caller input even when bag contains unusual CORS values',
+  )
+  // Sanity: the noise siblings are independently preserved (proves the
+  // helper actually walked them and still left Vary alone — not just
+  // dropped everything).
+  assertEquals(noisy.headers.get('x-empty-value'), '')
+  assertEquals(noisy.headers.get('x-comma-tight'), 'a,b,c,d')
+  assertEquals(noisy.headers.get('x-long-token'), 'x'.repeat(512))
+  await noisy.text()
+
+  // ── 4) Negative: no Vary in input → no Vary on the wire ───────────
+  // Helper must not invent `Vary` when the caller doesn't ask for it.
+  // This protects server-to-server callers from surprise cache hints.
+  const noVary = unauthorizedResponse({
+    'Access-Control-Allow-Origin': 'https://cml.pl',
+  })
+  assertEquals(
+    noVary.headers.get('vary'),
+    null,
+    'helper must not invent a Vary header when caller omits it',
+  )
+  await noVary.text()
+
+  // And the empty-bag case: definitely no Vary.
+  const empty = unauthorizedResponse({})
+  assertEquals(
+    empty.headers.get('vary'),
+    null,
+    'unauthorizedResponse({}) must not invent Vary',
+  )
+  await empty.text()
+})
