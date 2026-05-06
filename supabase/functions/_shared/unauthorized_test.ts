@@ -451,3 +451,122 @@ Deno.test('unauthorizedResponse — unusual CORS values (empty, commas, internal
 
   await res.text()
 })
+
+Deno.test('unauthorizedResponse — true append-style duplicate CORS headers preserve order and join with ", "', async () => {
+  // Scenario: a caller builds their CORS map by `append()`-ing the same
+  // header name multiple times (the natural way to express e.g. a
+  // multi-origin `Vary` list, or to combine a static base policy with a
+  // dynamic per-request override). The helper accepts a `Record<string,
+  // string>`, so the caller must flatten before passing — but the
+  // flattened wire value MUST still preserve every appended entry in the
+  // exact order they were appended, joined by ", " per Fetch spec
+  // §concept-header-list-combine.
+  //
+  // Why we test this with a `Headers` instance as the source of truth:
+  //   * `new Headers()` + `.append()` is the only API that natively
+  //     models multi-valued headers in the Fetch spec.
+  //   * `Headers.forEach((v, k) => obj[k] = v)` collapses duplicates
+  //     into a SINGLE combined value (verified by runtime probe), so
+  //     the caller's flattened `Record` already encodes the full
+  //     ordered list. The helper must forward this verbatim.
+  //   * If a future helper refactor decided to "clean up" comma-joined
+  //     values (e.g. dedup tokens, sort alphabetically, or split on ","
+  //     and re-emit one header per token), this test would fail and
+  //     catch the silent breakage.
+  //
+  // We assert THREE independent angles:
+  //   1. The combined value matches the canonical Fetch-spec join.
+  //   2. Order of appended values is preserved (no sort, no dedup).
+  //   3. Every individual appended value is present as a substring.
+
+  // Build a Headers instance with three append()s on the same name plus
+  // a two-append pair on a second name — covers both >2 and =2 cases.
+  const source = new Headers()
+  source.append('Access-Control-Allow-Origin', 'https://alpha.example')
+  source.append('Access-Control-Allow-Origin', 'https://beta.example')
+  source.append('Access-Control-Allow-Origin', 'https://gamma.example')
+  source.append('Vary', 'Origin')
+  source.append('Vary', 'Accept-Encoding')
+  // Bystander: single value, must survive untouched.
+  source.append('X-Custom-CORS-Header', 'preserved')
+
+  // Caller flattens to Record<string, string> — Headers.forEach already
+  // returns the combined value per spec, so this preserves order.
+  const flattened: Record<string, string> = {}
+  source.forEach((value, key) => {
+    flattened[key] = value
+  })
+
+  // Sanity: the flattening step itself must produce the canonical join.
+  // (If this assertion ever fails, the runtime changed Headers semantics
+  // and the helper-level expectations below are moot.)
+  assertEquals(
+    flattened['access-control-allow-origin'],
+    'https://alpha.example, https://beta.example, https://gamma.example',
+    'Headers.forEach must yield Fetch-spec combined value (precondition)',
+  )
+  assertEquals(
+    flattened['vary'],
+    'Origin, Accept-Encoding',
+    'Headers.forEach must yield Fetch-spec combined value (precondition)',
+  )
+
+  const res = unauthorizedResponse(flattened)
+
+  // Status + content-type contract still holds.
+  assertEquals(res.status, 401)
+  assertEquals(res.headers.get('content-type'), 'application/json')
+
+  // 1) Combined value matches canonical Fetch-spec join (", " separator).
+  assertEquals(
+    res.headers.get('access-control-allow-origin'),
+    'https://alpha.example, https://beta.example, https://gamma.example',
+    'three appended origins must arrive on the wire joined by ", " in append order',
+  )
+  assertEquals(
+    res.headers.get('vary'),
+    'Origin, Accept-Encoding',
+    'two appended Vary tokens must arrive on the wire joined by ", " in append order',
+  )
+
+  // 2) Order is preserved — alpha BEFORE beta BEFORE gamma. Catches a
+  // hypothetical refactor that sorts tokens alphabetically (which would
+  // break clients relying on priority order, e.g. "preferred origin first").
+  const origin = res.headers.get('access-control-allow-origin') ?? ''
+  const idxAlpha = origin.indexOf('alpha.example')
+  const idxBeta = origin.indexOf('beta.example')
+  const idxGamma = origin.indexOf('gamma.example')
+  assert(
+    idxAlpha >= 0 && idxBeta > idxAlpha && idxGamma > idxBeta,
+    `append order must be preserved (alpha < beta < gamma), got "${origin}"`,
+  )
+  const vary = res.headers.get('vary') ?? ''
+  assert(
+    vary.indexOf('Origin') >= 0 && vary.indexOf('Accept-Encoding') > vary.indexOf('Origin'),
+    `Vary append order must be preserved (Origin < Accept-Encoding), got "${vary}"`,
+  )
+
+  // 3) Every individual appended value must be a substring of the
+  // combined header — no silent dedup, no token loss.
+  for (const expected of [
+    'https://alpha.example',
+    'https://beta.example',
+    'https://gamma.example',
+  ]) {
+    assert(
+      origin.includes(expected),
+      `combined origin must retain "${expected}", got "${origin}"`,
+    )
+  }
+  for (const expected of ['Origin', 'Accept-Encoding']) {
+    assert(
+      vary.includes(expected),
+      `combined Vary must retain "${expected}", got "${vary}"`,
+    )
+  }
+
+  // Bystander untouched.
+  assertEquals(res.headers.get('x-custom-cors-header'), 'preserved')
+
+  await res.text()
+})
