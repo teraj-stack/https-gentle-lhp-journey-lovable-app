@@ -691,3 +691,86 @@ Deno.test('unauthorizedResponse — preserves caller-supplied Vary header verbat
   )
   await empty.text()
 })
+
+Deno.test('unauthorizedResponse — raw "\\r" (CR) in CORS value throws TypeError, never silently sanitised', async () => {
+  // Sibling to the existing `\n` (LF) CRLF-guard assertion: the Fetch
+  // spec §header-value-validation forbids BOTH bare CR and bare LF
+  // bytes inside a header value. Either one in isolation, or the
+  // canonical CRLF sequence "\r\n", must trigger the runtime's CRLF
+  // injection guard at `new Headers(init)` construction time and throw
+  // a `TypeError`. The helper itself does NO sanitisation — it relies
+  // on the runtime to reject malicious input.
+  //
+  // Why this matters as its own test:
+  //   * `\r` is the harder half of the CRLF pair from a security
+  //     standpoint: a smuggled `\r` followed by a single `\n` from
+  //     downstream re-emission would fabricate a fake header line and
+  //     enable HTTP response splitting. We MUST fail loud, not strip.
+  //   * If a future runtime change started silently STRIPPING `\r`
+  //     instead of throwing (e.g. to "be lenient with bad input"),
+  //     this test fails — and that failure tells us we now have to
+  //     add explicit sanitisation in the helper before deploy.
+  //   * The `\n`-only test does not catch a hypothetical future
+  //     regression that drops the LF check but keeps the CR check
+  //     (or vice versa). Asserting both halves independently is the
+  //     only way to pin both branches of the runtime contract.
+  //
+  // We assert THREE flavours of forbidden input:
+  //   1. Bare CR in the MIDDLE of a value         ('value1\rvalue2')
+  //   2. Canonical CRLF in the MIDDLE of a value  ('value1\r\nvalue2')
+  //   3. Bare LF in the MIDDLE of a value         ('value1\nvalue2')
+  //      (re-asserted here so a single test owns the full guard contract)
+  //
+  // NOTE on edge positions: per runtime probe, a bare `\r` at the very
+  // start or end of a value is currently TRIMMED by `new Headers(init)`
+  // along with regular whitespace, NOT thrown. We deliberately do NOT
+  // assert that behaviour here because:
+  //   * it's an artifact of header-value normalisation (whitespace
+  //     trimming), not the CRLF guard itself;
+  //   * it would lock in a runtime quirk that could legitimately
+  //     change without weakening security (a `\r` that gets trimmed
+  //     to nothing cannot smuggle a fake header line).
+  //
+  // The forbidden cases are EXACTLY the ones that could enable HTTP
+  // response splitting — a CR/LF flanked by other bytes that would
+  // survive the wire write.
+
+  type ForbiddenCase = { label: string; value: string }
+  const forbidden: ForbiddenCase[] = [
+    { label: 'bare CR in middle', value: 'value1\rvalue2' },
+    { label: 'canonical CRLF in middle', value: 'value1\r\nvalue2' },
+    { label: 'bare LF in middle', value: 'value1\nvalue2' },
+  ]
+
+  for (const { label, value } of forbidden) {
+    let caught: unknown = null
+    try {
+      unauthorizedResponse({ 'X-CRLF-Probe': value })
+    } catch (e) {
+      caught = e
+    }
+    assert(
+      caught instanceof TypeError,
+      `[${label}] raw CR/LF in CORS value must throw TypeError ` +
+        `(CRLF injection guard); got ${caught === null ? 'no throw' : String(caught)}. ` +
+        `If this regresses, the helper MUST add explicit value sanitisation ` +
+        `before deploy — silent stripping enables HTTP response splitting.`,
+    )
+  }
+
+  // Sanity: the helper still works for safe values that LOOK similar
+  // but contain no raw CR/LF bytes — e.g. an escaped-as-text "\\r"
+  // (a literal backslash-r, two characters). This proves the guard
+  // is byte-precise and not a paranoid pattern match on the substring
+  // "\r" that would break legitimate values.
+  const safe = unauthorizedResponse({
+    'X-Looks-Like-CR-But-Isnt': 'value1\\rvalue2', // literal backslash + 'r'
+  })
+  assertEquals(safe.status, 401)
+  assertEquals(
+    safe.headers.get('x-looks-like-cr-but-isnt'),
+    'value1\\rvalue2',
+    'literal backslash-r (no raw CR byte) must pass through unchanged',
+  )
+  await safe.text()
+})
