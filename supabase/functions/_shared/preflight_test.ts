@@ -178,6 +178,55 @@ Deno.test('preflightResponse — preserves CORS headers regardless of caller-sup
   await res.text()
 })
 
+Deno.test('preflightResponse — propagates Access-Control-Max-Age verbatim to the OPTIONS response', async () => {
+  // The whole point of advertising `Access-Control-Max-Age` is to let
+  // the browser cache the preflight result and skip the OPTIONS
+  // round-trip for subsequent same-origin/same-method/same-headers
+  // requests within the cache window. If the helper dropped or
+  // rewrote the value, every browser caller would silently lose that
+  // optimisation — there would be no error, just doubled latency and
+  // doubled edge-function invocations.
+  //
+  // We assert two things at once:
+  //   1. A caller-supplied Max-Age survives verbatim (string identity).
+  //   2. The default `corsHeaders` exported from `_shared/cors.ts`
+  //      already carries a non-empty, integer-seconds Max-Age — so
+  //      every function that uses `preflightResponse(corsHeaders)`
+  //      benefits from caching by default, with no per-function
+  //      boilerplate.
+  const { corsHeaders, CORS_MAX_AGE_SECONDS } = await import('./cors.ts')
+
+  // (1) Caller-supplied value round-trips unchanged.
+  const customMaxAge = '3600'
+  const resCustom = preflightResponse({
+    ...FULL_CORS,
+    'Access-Control-Max-Age': customMaxAge,
+  })
+  assertEquals(resCustom.status, 204)
+  assertEquals(
+    resCustom.headers.get('access-control-max-age'),
+    customMaxAge,
+    'caller-supplied Access-Control-Max-Age must survive verbatim on the OPTIONS response',
+  )
+  await resCustom.text()
+
+  // (2) Default `corsHeaders` already carry a sane Max-Age.
+  const resDefault = preflightResponse(corsHeaders)
+  const defaultMaxAge = resDefault.headers.get('access-control-max-age')
+  assertEquals(
+    defaultMaxAge,
+    String(CORS_MAX_AGE_SECONDS),
+    'default corsHeaders must advertise Access-Control-Max-Age = CORS_MAX_AGE_SECONDS',
+  )
+  // Sanity: the value is a positive integer number of seconds, not a
+  // bogus string like "24h" or "" that browsers would silently ignore.
+  assert(
+    defaultMaxAge !== null && /^[1-9]\d*$/.test(defaultMaxAge),
+    `Access-Control-Max-Age must be a positive integer seconds string, got ${JSON.stringify(defaultMaxAge)}`,
+  )
+  await resDefault.text()
+})
+
 Deno.test('preflightResponse — returns 2xx for OPTIONS regardless of Authorization presence/absence', async () => {
   // Belt-and-braces version of the "succeeds WITHOUT Authorization"
   // test: explicitly simulate the two real-world scenarios the browser
