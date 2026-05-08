@@ -29,9 +29,31 @@
 export const CORS_ALLOW_HEADERS =
   'authorization, x-client-info, apikey, content-type'
 
+// Preflight cache lifetime (seconds) advertised via `Access-Control-Max-Age`.
+//
+// Why cache preflight at all?
+//   The browser sends an OPTIONS preflight before every non-simple
+//   cross-origin request (anything with `Authorization`, JSON body,
+//   custom headers, etc. — i.e. effectively every call this codebase
+//   makes via `supabase.functions.invoke`). Without `Max-Age`, the
+//   browser repeats the OPTIONS round-trip for EACH such request,
+//   doubling latency and edge-function invocations.
+//
+// Why 86400 (24h)?
+//   * It is the documented hard cap that Chromium honours
+//     (`PreflightResultMaxAgeSeconds`); larger values are silently
+//     clamped, smaller values waste round-trips. Firefox's cap is
+//     even higher (24h) so 86400 is the universally-respected sweet
+//     spot.
+//   * The set of allowed headers/methods in this project changes only
+//     when an edge function is redeployed — there is no per-user state
+//     in the preflight response, so caching for a day is safe.
+export const CORS_MAX_AGE_SECONDS = 86400
+
 export const corsHeaders: Readonly<Record<string, string>> = Object.freeze({
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': CORS_ALLOW_HEADERS,
+  'Access-Control-Max-Age': String(CORS_MAX_AGE_SECONDS),
 })
 
 /**
