@@ -7,12 +7,10 @@
 // Wymaga: zalogowanego admina (sprawdzane przez has_role('admin')).
 
 import { createClient } from 'npm:@supabase/supabase-js@2'
+import { buildCorsHeaders } from '../_shared/cors.ts'
+import { preflightResponse } from '../_shared/preflight.ts'
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-}
+const corsHeaders = buildCorsHeaders({ allowMethods: 'POST, OPTIONS' })
 
 const json = (status: number, payload: Record<string, unknown>) =>
   new Response(JSON.stringify(payload), {
@@ -39,7 +37,7 @@ function resolveLocationLabel(location?: string): string {
 }
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders })
+  if (req.method === 'OPTIONS') return preflightResponse(corsHeaders)
   if (req.method !== 'POST') return json(405, { error: 'Method not allowed' })
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL')

@@ -9,11 +9,8 @@ import {
   logTokenFailure,
   rateLimitedResponse,
 } from '../_shared/rate-limit.ts'
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, content-type',
-}
+import { corsHeaders } from '../_shared/cors.ts'
+import { preflightResponse } from '../_shared/preflight.ts'
 
 const ENDPOINT = 'preview-transactional-email'
 
@@ -22,7 +19,7 @@ const ENDPOINT = 'preview-transactional-email'
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
+    return preflightResponse(corsHeaders)
   }
 
   const ip = getClientIp(req)

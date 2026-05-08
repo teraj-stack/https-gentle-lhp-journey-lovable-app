@@ -6,11 +6,8 @@ import {
   logTokenFailure,
   rateLimitedResponse,
 } from "../_shared/rate-limit.ts";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { corsHeaders } from "../_shared/cors.ts";
+import { preflightResponse } from "../_shared/preflight.ts";
 
 const VERIFY_URL = "https://challenges.cloudflare.com/turnstile/v0/siteverify";
 const ENDPOINT = "verify-turnstile";
@@ -21,7 +18,7 @@ const ENDPOINT = "verify-turnstile";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return preflightResponse(corsHeaders);
   }
 
   const ip = getClientIp(req);

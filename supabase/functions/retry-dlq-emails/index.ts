@@ -17,11 +17,8 @@
 
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { unauthorizedResponse } from '../_shared/unauthorized.ts'
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+import { corsHeaders } from '../_shared/cors.ts'
+import { preflightResponse } from '../_shared/preflight.ts'
 
 const LOOKBACK_HOURS = 24
 
@@ -53,7 +50,7 @@ type DlqRow = {
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
+    return preflightResponse(corsHeaders)
   }
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL')

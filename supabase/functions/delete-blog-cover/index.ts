@@ -3,11 +3,9 @@
 // Accepts either a full public URL or a bucket path; only deletes if the file
 // belongs to the `blog-covers` bucket — external URLs are silently ignored.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { corsHeaders } from "../_shared/cors.ts";
+import { preflightResponse } from "../_shared/preflight.ts";
+import { unauthorizedResponse } from "../_shared/unauthorized.ts";
 
 const BUCKET = "blog-covers";
 
@@ -22,15 +20,12 @@ function extractBucketPath(input: string): string | null {
 }
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  if (req.method === "OPTIONS") return preflightResponse(corsHeaders);
 
   try {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return unauthorizedResponse(corsHeaders);
     }
 
     const url = Deno.env.get("SUPABASE_URL")!;
@@ -44,10 +39,7 @@ Deno.serve(async (req) => {
     const token = authHeader.replace("Bearer ", "");
     const { data: claims, error: claimsErr } = await userClient.auth.getClaims(token);
     if (claimsErr || !claims?.claims) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return unauthorizedResponse(corsHeaders);
     }
     const { data: isAdmin, error: roleErr } = await userClient.rpc("has_role", { _role: "admin" });
     if (roleErr || !isAdmin) {
