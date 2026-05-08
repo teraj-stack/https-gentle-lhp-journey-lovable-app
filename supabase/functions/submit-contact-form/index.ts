@@ -17,12 +17,8 @@
 // recipientEmail / templateName values to dispatch unrelated templates.
 
 import { createClient } from 'npm:@supabase/supabase-js@2'
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers':
-    'authorization, x-client-info, apikey, content-type',
-}
+import { corsHeaders } from '../_shared/cors.ts'
+import { preflightResponse } from '../_shared/preflight.ts'
 
 const TURNSTILE_VERIFY_URL =
   'https://challenges.cloudflare.com/turnstile/v0/siteverify'
@@ -86,7 +82,7 @@ function trimOrEmpty(value: unknown, max: number): string {
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
+    return preflightResponse(corsHeaders)
   }
   if (req.method !== 'POST') {
     return jsonResponse(405, { error: 'Method not allowed' })

@@ -1,13 +1,10 @@
 // Public sitemap of blog posts. Pulls from blog_posts where published = true.
 // Returns valid sitemap XML with <lastmod> from updated_at.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { corsHeaders } from "../_shared/cors.ts";
+import { preflightResponse } from "../_shared/preflight.ts";
 
 const SITE = "https://bestcml.io";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
 
 function escapeXml(s: string) {
   return s
@@ -19,7 +16,7 @@ function escapeXml(s: string) {
 }
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  if (req.method === "OPTIONS") return preflightResponse(corsHeaders);
 
   try {
     const url = Deno.env.get("SUPABASE_URL")!;

@@ -9,12 +9,15 @@ import { MagicLinkEmail } from '../_shared/email-templates/magic-link.tsx'
 import { RecoveryEmail } from '../_shared/email-templates/recovery.tsx'
 import { EmailChangeEmail } from '../_shared/email-templates/email-change.tsx'
 import { ReauthenticationEmail } from '../_shared/email-templates/reauthentication.tsx'
+import { buildCorsHeaders, corsHeaders as defaultCorsHeaders } from '../_shared/cors.ts'
+import { preflightResponse } from '../_shared/preflight.ts'
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers':
-    'authorization, x-client-info, apikey, content-type, x-lovable-signature, x-lovable-timestamp, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
-}
+// Webhook from Lovable email infra carries x-lovable-signature/-timestamp;
+// Supabase JS clients add x-supabase-client-platform/-runtime variants.
+const corsHeaders = buildCorsHeaders({
+  extraAllowHeaders:
+    'x-lovable-signature, x-lovable-timestamp, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
+})
 
 const EMAIL_SUBJECTS: Record<string, string> = {
   signup: 'Confirm your email',
@@ -81,13 +84,12 @@ const SAMPLE_DATA: Record<string, object> = {
 
 // Preview endpoint handler - returns rendered HTML without sending email
 async function handlePreview(req: Request): Promise<Response> {
-  const previewCorsHeaders = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'authorization, content-type',
-  }
+  // Preview endpoint reuses the canonical CORS defaults — no extra
+  // webhook-specific headers required here.
+  const previewCorsHeaders = defaultCorsHeaders
 
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: previewCorsHeaders })
+    return preflightResponse(previewCorsHeaders)
   }
 
   const apiKey = Deno.env.get('LOVABLE_API_KEY')
@@ -295,7 +297,7 @@ Deno.serve(async (req) => {
 
   // Handle CORS preflight for main endpoint
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
+    return preflightResponse(corsHeaders)
   }
 
   // Route to preview handler for /preview path

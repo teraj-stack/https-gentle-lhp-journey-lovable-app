@@ -35,11 +35,10 @@ import {
 // Globalny rate-limit wymaga Postgres-backed bucket (osobny temat).
 // ============================================================
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-}
+import { buildCorsHeaders } from '../_shared/cors.ts'
+import { preflightResponse } from '../_shared/preflight.ts'
+
+const corsHeaders = buildCorsHeaders({ allowMethods: 'GET, POST, OPTIONS' })
 
 type BookingAction = 'confirm' | 'cancel' | 'needs_contact'
 
@@ -58,7 +57,7 @@ const json = (status: number, payload: Record<string, unknown>) =>
   })
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders })
+  if (req.method === 'OPTIONS') return preflightResponse(corsHeaders)
 
   const ip = getClientIp(req)
   const userAgent = req.headers.get('user-agent')

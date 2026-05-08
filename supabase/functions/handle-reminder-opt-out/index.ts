@@ -10,12 +10,8 @@ import {
   logTokenFailure,
   rateLimitedResponse,
 } from '../_shared/rate-limit.ts'
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers':
-    'authorization, x-client-info, apikey, content-type',
-}
+import { corsHeaders } from '../_shared/cors.ts'
+import { preflightResponse } from '../_shared/preflight.ts'
 
 const ENDPOINT = 'handle-reminder-opt-out'
 
@@ -28,7 +24,7 @@ function jsonResponse(data: Record<string, unknown>, status = 200): Response {
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
+    return preflightResponse(corsHeaders)
   }
 
   if (req.method !== 'GET' && req.method !== 'POST') {

@@ -24,12 +24,8 @@ import {
   logTokenFailure,
   rateLimitedResponse,
 } from '../_shared/rate-limit.ts'
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers':
-    'authorization, x-client-info, apikey, content-type',
-}
+import { corsHeaders } from '../_shared/cors.ts'
+import { preflightResponse } from '../_shared/preflight.ts'
 
 const ENDPOINT = 'on-booking-created'
 // Limit centralized in _shared/rate-limit.ts → RATE_LIMITS[ENDPOINT].
@@ -136,7 +132,7 @@ function generateToken(): string {
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
+    return preflightResponse(corsHeaders)
   }
 
   if (req.method !== 'POST') {
