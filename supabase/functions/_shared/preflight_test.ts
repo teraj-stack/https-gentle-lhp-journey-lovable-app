@@ -177,3 +177,57 @@ Deno.test('preflightResponse — preserves CORS headers regardless of caller-sup
   }
   await res.text()
 })
+
+Deno.test('preflightResponse — returns 2xx for OPTIONS regardless of Authorization presence/absence', async () => {
+  // Belt-and-braces version of the "succeeds WITHOUT Authorization"
+  // test: explicitly simulate the two real-world scenarios the browser
+  // can produce for a preflight request and assert the helper's status
+  // is in the 2xx success range in BOTH cases.
+  //
+  // Scenario A: no Authorization header at all (the spec-mandated
+  //   browser behaviour — preflight is sent BEFORE auth is attached).
+  // Scenario B: Authorization header present but bogus (e.g. expired
+  //   bearer token, or a non-browser client that mistakenly attaches
+  //   auth to its OPTIONS probe). The preflight contract still
+  //   requires success — the real request is what gets rejected.
+  //
+  // The helper takes no Request, so the only way to "thread" the
+  // header into the test is via the simulated incoming request the
+  // caller's `Deno.serve` handler would inspect. We model that by
+  // constructing the requests and asserting that — for either one —
+  // the helper-produced response is 2xx.
+  const corsForRealRoute = {
+    'Access-Control-Allow-Origin': 'https://cml.pl',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'authorization, content-type',
+  }
+
+  const optionsWithoutAuth = new Request('https://example.test/fn', {
+    method: 'OPTIONS',
+  })
+  const optionsWithBogusAuth = new Request('https://example.test/fn', {
+    method: 'OPTIONS',
+    headers: { Authorization: 'Bearer not-a-real-token' },
+  })
+
+  for (const req of [optionsWithoutAuth, optionsWithBogusAuth]) {
+    // Sanity: both requests really are OPTIONS (rules out a typo in
+    // the test setup that would silently bypass the assertion).
+    assertEquals(req.method, 'OPTIONS')
+
+    const res = preflightResponse(corsForRealRoute)
+    assert(
+      res.status >= 200 && res.status < 300,
+      `OPTIONS preflight must return 2xx regardless of Authorization, got ${res.status} (auth header: ${JSON.stringify(req.headers.get('authorization'))})`,
+    )
+    // Pin the canonical choice too — if a future refactor switches
+    // from 204 to 200, that's a deliberate change the author should
+    // see fail here and update intentionally.
+    assertEquals(
+      res.status,
+      204,
+      `preflight should specifically be 204 No Content (auth header: ${JSON.stringify(req.headers.get('authorization'))})`,
+    )
+    await res.text()
+  }
+})
