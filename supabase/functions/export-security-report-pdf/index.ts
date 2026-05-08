@@ -7,13 +7,15 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "https://esm.sh/pdf-lib@1.17.1";
+import { buildCorsHeaders } from "../_shared/cors.ts";
+import { preflightResponse } from "../_shared/preflight.ts";
+import { unauthorizedResponse } from "../_shared/unauthorized.ts";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
+const corsHeaders = buildCorsHeaders({
+  extraAllowHeaders:
+    "x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+  allowMethods: "POST, OPTIONS",
+});
 
 type DbStatus = "pass" | "warn" | "fail";
 type CheckStatus = DbStatus | "running" | "unknown";
@@ -586,7 +588,7 @@ async function buildPdf(payload: ExportPayload): Promise<Uint8Array> {
 }
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  if (req.method === "OPTIONS") return preflightResponse(corsHeaders);
   if (req.method !== "POST") {
     return new Response(JSON.stringify({ error: "Method not allowed" }), {
       status: 405,
@@ -598,10 +600,7 @@ Deno.serve(async (req) => {
     // --- Auth: verify caller is an admin -------------------------------------
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
-      return new Response(JSON.stringify({ error: "Missing Authorization" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return unauthorizedResponse(corsHeaders);
     }
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
@@ -610,10 +609,7 @@ Deno.serve(async (req) => {
     });
     const { data: userData, error: userErr } = await userClient.auth.getUser();
     if (userErr || !userData.user) {
-      return new Response(JSON.stringify({ error: "Invalid session" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return unauthorizedResponse(corsHeaders);
     }
     const { data: isAdmin, error: roleErr } = await userClient.rpc("has_role", { _role: "admin" });
     if (roleErr || isAdmin !== true) {
