@@ -297,7 +297,7 @@ Deno.serve(async (req) => {
 
   // Handle CORS preflight for main endpoint
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
+    return preflightResponse(corsHeaders)
   }
 
   // Route to preview handler for /preview path
