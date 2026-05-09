@@ -334,13 +334,13 @@ for (const fn of FUNCTIONS) {
       assertEquals(
         postFailureOptions.status,
         204,
-        `[${fn.name}] OPTIONS after 401/403 must still be 204`,
+        `[${fn.name}] OPTIONS after 4xx must still be 204`,
       );
       for (const [name, expected] of EXPECTED_PREFLIGHT_HEADERS) {
         assertEquals(
           postFailureOptions.headers.get(name),
           expected,
-          `[${fn.name}] OPTIONS after 401/403: header "${name}" must still match preflightResponse(corsHeaders) exactly (drift after auth rejection)`,
+          `[${fn.name}] OPTIONS after 4xx: header "${name}" must still match preflightResponse(corsHeaders) exactly (drift after rejection)`,
         );
       }
     },
