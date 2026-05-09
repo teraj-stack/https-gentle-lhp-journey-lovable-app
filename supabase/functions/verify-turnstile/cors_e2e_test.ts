@@ -204,6 +204,17 @@ for (const fn of FUNCTIONS) {
       // otherwise and the test runner will fail the whole file.
       await preflightRes.text();
 
+      // (0) Confirm the request actually targeted the URL `buildFunctionUrl`
+      //     resolved for this slug. `Response.url` is the FINAL URL after
+      //     any redirects, so equality with `FN_URL` simultaneously proves
+      //     (a) we hit the canonical /functions/v1/<slug> path and (b) the
+      //     gateway did not 3xx-redirect us to a different version/host.
+      assertEquals(
+        preflightRes.url,
+        FN_URL,
+        `[${fn.name}] preflight Response.url must equal buildFunctionUrl(slug) — drift indicates a redirect or wrong target`,
+      );
+
       // (1) 2xx success. We pin 204 because that's the contract the
       //     `preflightResponse` helper documents — a future drift to 200
       //     should fail here so the author updates intentionally.
