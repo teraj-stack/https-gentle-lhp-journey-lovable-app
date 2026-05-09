@@ -44,6 +44,7 @@ import {
   assert,
   assertEquals,
 } from "https://deno.land/std@0.224.0/assert/mod.ts";
+import { CORS_ALLOW_HEADERS } from "../_shared/cors.ts";
 
 const SUPABASE_URL = Deno.env.get("VITE_SUPABASE_URL") ??
   Deno.env.get("SUPABASE_URL")!;
@@ -55,10 +56,22 @@ const SUPABASE_ANON_KEY = Deno.env.get("VITE_SUPABASE_PUBLISHABLE_KEY") ??
 // what matters is that the server doesn't reject the cross-origin probe.
 const ORIGIN = "https://cml.pl";
 
-// Canonical Supabase JS client header set — what the browser SDK always
-// sends in `Access-Control-Request-Headers` for an authenticated invoke.
-const CANONICAL_REQ_HEADERS =
-  "authorization, x-client-info, apikey, content-type";
+// Canonical Supabase JS client header set — sourced from the SAME
+// constant the production code advertises in `Access-Control-Allow-Headers`.
+// This guarantees the test's preflight `Access-Control-Request-Headers`
+// can never drift from what the server actually allows: if someone
+// shrinks (or extends) `CORS_ALLOW_HEADERS` in `_shared/cors.ts`, this
+// probe automatically follows, and the server-side assertions below
+// keep checking the exact same header names.
+const CANONICAL_REQ_HEADERS = CORS_ALLOW_HEADERS;
+// Header names we assert appear in the server's `Allow-Headers`
+// response. Derived from the shared constant so the list stays in
+// lock-step; lower-cased because HTTP header values are compared
+// case-insensitively and the server may normalise casing.
+const CANONICAL_REQ_HEADER_NAMES = CORS_ALLOW_HEADERS
+  .split(",")
+  .map((h) => h.trim().toLowerCase())
+  .filter((h) => h.length > 0);
 
 /**
  * The single source of truth for which functions this test exercises and
