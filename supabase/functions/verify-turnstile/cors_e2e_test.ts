@@ -159,6 +159,30 @@ for (const fn of FUNCTIONS) {
     ? `${CANONICAL_REQ_HEADERS}, ${fn.extraReqHeaders}`
     : CANONICAL_REQ_HEADERS;
 
+  // Pin the URL shape for this slug. If `buildFunctionUrl` (or the
+  // `FUNCTIONS_API_BASE` constant) drifts, this fails LOUD before any
+  // network call — preventing a silent regression where the test suite
+  // probes the wrong path and either 404s for unrelated reasons or, worse,
+  // hits a stale function on the old API version.
+  Deno.test(
+    `E2E CORS [${fn.name}] — buildFunctionUrl resolves to the canonical /functions/v1/<slug> path`,
+    () => {
+      assertEquals(
+        FN_URL,
+        `${SUPABASE_URL}${FUNCTIONS_API_BASE}/${fn.name}`,
+        `[${fn.name}] FN_URL must equal buildFunctionUrl(slug) — drift means tests are probing the wrong endpoint`,
+      );
+      // Also assert the helper is referentially stable: calling it twice
+      // with the same slug must yield the exact same string (no Date.now
+      // suffixes, no env-dependent rewrites).
+      assertEquals(
+        buildFunctionUrl(fn.name),
+        FN_URL,
+        `[${fn.name}] buildFunctionUrl must be deterministic for a given slug`,
+      );
+    },
+  );
+
   Deno.test(
     `E2E CORS [${fn.name}] — browser preflight (OPTIONS) is 2xx with full CORS headers + Max-Age`,
     async () => {
@@ -179,6 +203,17 @@ for (const fn of FUNCTIONS) {
       // ALWAYS consume the body, even when empty — Deno leaks resources
       // otherwise and the test runner will fail the whole file.
       await preflightRes.text();
+
+      // (0) Confirm the request actually targeted the URL `buildFunctionUrl`
+      //     resolved for this slug. `Response.url` is the FINAL URL after
+      //     any redirects, so equality with `FN_URL` simultaneously proves
+      //     (a) we hit the canonical /functions/v1/<slug> path and (b) the
+      //     gateway did not 3xx-redirect us to a different version/host.
+      assertEquals(
+        preflightRes.url,
+        FN_URL,
+        `[${fn.name}] preflight Response.url must equal buildFunctionUrl(slug) — drift indicates a redirect or wrong target`,
+      );
 
       // (1) 2xx success. We pin 204 because that's the contract the
       //     `preflightResponse` helper documents — a future drift to 200
@@ -264,6 +299,21 @@ for (const fn of FUNCTIONS) {
       // Consume the body first to avoid leaks even if assertions throw.
       const bodyText = await realRes.text();
 
+      // (0) Same URL invariant as the preflight: the real request must
+      //     have landed on the exact buildFunctionUrl(slug) endpoint, not
+      //     a redirected target where CORS headers might be re-emitted by
+      //     a different layer and mask a regression in the function code.
+      assertEquals(
+        realRes.url,
+        FN_URL,
+        `[${fn.name}] real-request Response.url must equal buildFunctionUrl(slug) — drift indicates a redirect or wrong target`,
+      );
+      assertEquals(
+        preflightRes.url,
+        FN_URL,
+        `[${fn.name}] preflight Response.url must equal buildFunctionUrl(slug)`,
+      );
+
       // (1) Status is something the function actually produced, not a
       //     gateway-level CORS rejection (which manifests as a network
       //     error, not a Response — so reaching this line at all already
@@ -305,6 +355,11 @@ for (const fn of FUNCTIONS) {
         204,
         `[${fn.name}] baseline OPTIONS must be 204 (preflightResponse contract)`,
       );
+      assertEquals(
+        baselineOptions.url,
+        FN_URL,
+        `[${fn.name}] baseline OPTIONS Response.url must equal buildFunctionUrl(slug)`,
+      );
       for (const [name, expected] of EXPECTED_PREFLIGHT_HEADERS) {
         assertEquals(
           baselineOptions.headers.get(name),
@@ -332,6 +387,11 @@ for (const fn of FUNCTIONS) {
         body: fn.body !== undefined ? JSON.stringify(fn.body) : undefined,
       });
       await unauthRealRes.text();
+      assertEquals(
+        unauthRealRes.url,
+        FN_URL,
+        `[${fn.name}] unauth real-request Response.url must equal buildFunctionUrl(slug)`,
+      );
       assert(
         unauthRealRes.status >= 400 && unauthRealRes.status < 500,
         `[${fn.name}] unauth real request must surface a 4xx to exercise the rejected path, got ${unauthRealRes.status}`,
@@ -358,6 +418,11 @@ for (const fn of FUNCTIONS) {
         postFailureOptions.status,
         204,
         `[${fn.name}] OPTIONS after 4xx must still be 204`,
+      );
+      assertEquals(
+        postFailureOptions.url,
+        FN_URL,
+        `[${fn.name}] OPTIONS-after-4xx Response.url must equal buildFunctionUrl(slug)`,
       );
       for (const [name, expected] of EXPECTED_PREFLIGHT_HEADERS) {
         assertEquals(
