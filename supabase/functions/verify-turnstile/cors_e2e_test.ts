@@ -290,12 +290,15 @@ for (const fn of FUNCTIONS) {
         );
       }
 
-      // Step 2: trigger the gateway/function 401-or-403 path by sending
-      // the real request WITHOUT apikey/Authorization. The Functions
-      // gateway returns 401 in that case for every function in this
-      // project — but the contract under test is the OPTIONS response,
-      // not this body. We only need the 4xx to prove the auth-rejected
-      // path is exercised on the same isolate.
+      // Step 2: trigger a 4xx rejection path on the SAME isolate by
+      // sending the real request without apikey/Authorization. Different
+      // functions surface this as different 4xx codes:
+      //   * gateway-enforced auth (verify_jwt = true)  → 401
+      //   * function-enforced auth (manual JWT check)  → 401 / 403
+      //   * verify_jwt = false + early body validation → 400 / 404 / 422
+      // The CORS contract under test is invariance of the OPTIONS
+      // response, not the specific 4xx — so we accept any client error
+      // and rely on the OPTIONS comparison below to do the real work.
       const unauthRealRes = await fetch(FN_URL, {
         method: fn.method,
         headers: {
@@ -307,8 +310,8 @@ for (const fn of FUNCTIONS) {
       });
       await unauthRealRes.text();
       assert(
-        unauthRealRes.status === 401 || unauthRealRes.status === 403,
-        `[${fn.name}] unauth real request must surface 401/403 to exercise the rejected-auth path, got ${unauthRealRes.status}`,
+        unauthRealRes.status >= 400 && unauthRealRes.status < 500,
+        `[${fn.name}] unauth real request must surface a 4xx to exercise the rejected path, got ${unauthRealRes.status}`,
       );
 
       // Step 3: re-run OPTIONS AFTER the 401/403. The helper contract
