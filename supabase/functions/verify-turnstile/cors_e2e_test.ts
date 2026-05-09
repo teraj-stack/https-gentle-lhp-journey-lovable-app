@@ -44,7 +44,35 @@ import {
   assert,
   assertEquals,
 } from "https://deno.land/std@0.224.0/assert/mod.ts";
-import { CORS_ALLOW_HEADERS } from "../_shared/cors.ts";
+import { CORS_ALLOW_HEADERS, corsHeaders } from "../_shared/cors.ts";
+import { preflightResponse } from "../_shared/preflight.ts";
+
+/**
+ * The exact CORS header snapshot the shared `preflightResponse(corsHeaders)`
+ * helper produces. Built ONCE here so every per-function assertion compares
+ * against the SAME source of truth — if `_shared/cors.ts` ever changes
+ * (header added/removed/renamed, Max-Age value tweaked, casing changed),
+ * this snapshot regenerates automatically and every function in the table
+ * is re-checked against the new contract in the same CI run.
+ *
+ * We snapshot the helper's actual `Response` rather than re-computing the
+ * map by hand: that way we also catch a regression in `preflightResponse`
+ * itself (e.g. someone adding a default Allow-Origin or stripping a header
+ * via `{ ...corsHeaders }`).
+ */
+const EXPECTED_PREFLIGHT_HEADERS: ReadonlyMap<string, string> = (() => {
+  const ref = preflightResponse(corsHeaders);
+  // Drain body so the helper Response doesn't leak in the test runtime.
+  void ref.body?.cancel();
+  const map = new Map<string, string>();
+  for (const [k, v] of ref.headers.entries()) {
+    // `Headers.entries()` already lower-cases names — pin that here so the
+    // comparison against the server response (also lower-cased below) is
+    // byte-exact and not subject to platform casing drift.
+    map.set(k.toLowerCase(), v);
+  }
+  return map;
+})();
 
 const SUPABASE_URL = Deno.env.get("VITE_SUPABASE_URL") ??
   Deno.env.get("SUPABASE_URL")!;
@@ -231,6 +259,90 @@ for (const fn of FUNCTIONS) {
         "*",
         `[${fn.name}] real-request response must include Access-Control-Allow-Origin (status was ${realRes.status}, body: ${bodyText.slice(0, 200)})`,
       );
+    },
+  );
+
+  Deno.test(
+    `E2E CORS [${fn.name}] — OPTIONS headers match preflightResponse(corsHeaders) exactly, even after the endpoint returns a 4xx (auth-rejected / validation-rejected)`,
+    async () => {
+      // Step 1: baseline OPTIONS, no auth context. Must match the helper
+      // snapshot byte-for-byte (modulo headers the gateway/runtime adds —
+      // we only assert the CORS-relevant subset that the helper owns).
+      const baselineOptions = await fetch(FN_URL, {
+        method: "OPTIONS",
+        headers: {
+          Origin: ORIGIN,
+          "Access-Control-Request-Method": fn.method,
+          "Access-Control-Request-Headers": requestHeaders,
+        },
+      });
+      await baselineOptions.text();
+      assertEquals(
+        baselineOptions.status,
+        204,
+        `[${fn.name}] baseline OPTIONS must be 204 (preflightResponse contract)`,
+      );
+      for (const [name, expected] of EXPECTED_PREFLIGHT_HEADERS) {
+        assertEquals(
+          baselineOptions.headers.get(name),
+          expected,
+          `[${fn.name}] baseline OPTIONS header "${name}" must match preflightResponse(corsHeaders) exactly`,
+        );
+      }
+
+      // Step 2: trigger a 4xx rejection path on the SAME isolate by
+      // sending the real request without apikey/Authorization. Different
+      // functions surface this as different 4xx codes:
+      //   * gateway-enforced auth (verify_jwt = true)  → 401
+      //   * function-enforced auth (manual JWT check)  → 401 / 403
+      //   * verify_jwt = false + early body validation → 400 / 404 / 422
+      // The CORS contract under test is invariance of the OPTIONS
+      // response, not the specific 4xx — so we accept any client error
+      // and rely on the OPTIONS comparison below to do the real work.
+      const unauthRealRes = await fetch(FN_URL, {
+        method: fn.method,
+        headers: {
+          Origin: ORIGIN,
+          "Content-Type": "application/json",
+          // intentionally NO apikey, NO Authorization
+        },
+        body: fn.body !== undefined ? JSON.stringify(fn.body) : undefined,
+      });
+      await unauthRealRes.text();
+      assert(
+        unauthRealRes.status >= 400 && unauthRealRes.status < 500,
+        `[${fn.name}] unauth real request must surface a 4xx to exercise the rejected path, got ${unauthRealRes.status}`,
+      );
+
+      // Step 3: re-run OPTIONS AFTER the 4xx. The helper contract says
+      // preflight is never authenticated and never varies — the response
+      // headers MUST be identical to the baseline (and to the helper
+      // snapshot). Catches any regression where a function accidentally
+      // lets an auth/middleware layer mutate OPTIONS headers based on
+      // prior request state.
+      // accidentally lets an auth/middleware layer mutate OPTIONS
+      // headers based on prior request state.
+      const postFailureOptions = await fetch(FN_URL, {
+        method: "OPTIONS",
+        headers: {
+          Origin: ORIGIN,
+          "Access-Control-Request-Method": fn.method,
+          "Access-Control-Request-Headers": requestHeaders,
+        },
+      });
+      await postFailureOptions.text();
+      assertEquals(
+        postFailureOptions.status,
+        204,
+        `[${fn.name}] OPTIONS after 4xx must still be 204`,
+      );
+      for (const [name, expected] of EXPECTED_PREFLIGHT_HEADERS) {
+        assertEquals(
+          postFailureOptions.headers.get(name),
+          expected,
+          `[${fn.name}] OPTIONS after 4xx: header "${name}" must still match preflightResponse(corsHeaders) exactly (drift after rejection)`,
+        );
+      }
     },
   );
 }
