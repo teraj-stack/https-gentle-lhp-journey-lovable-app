@@ -102,6 +102,29 @@ const CANONICAL_REQ_HEADER_NAMES = CORS_ALLOW_HEADERS
   .filter((h) => h.length > 0);
 
 /**
+ * Single source of truth for the Edge Functions HTTP API base path.
+ *
+ * Why a constant (and not inlined `${SUPABASE_URL}/functions/v1/...`)?
+ *   The day Supabase ships `/functions/v2/...` (or this project moves
+ *   behind a custom-domain prefix like `/api/edge/...`) we MUST be able
+ *   to bump the version in EXACTLY ONE place — not search-and-replace
+ *   across N test rows where one inevitably gets missed and silently
+ *   keeps probing the old path. Centralising via `buildFunctionUrl`
+ *   also makes the URL the test ACTUALLY hits trivially loggable, e.g.
+ *   for a one-off `console.log(buildFunctionUrl(fn.name))` while
+ *   debugging a CORS regression in CI.
+ */
+const FUNCTIONS_API_BASE = "/functions/v1";
+
+/**
+ * Resolve the absolute URL for a deployed Edge Function by slug.
+ * Pure function — safe to call at module top-level and in test bodies.
+ */
+function buildFunctionUrl(slug: string): string {
+  return `${SUPABASE_URL}${FUNCTIONS_API_BASE}/${slug}`;
+}
+
+/**
  * The single source of truth for which functions this test exercises and
  * how to safely probe them. Add a new row here to extend coverage — no
  * other code changes required.
@@ -131,7 +154,7 @@ const FUNCTIONS: ReadonlyArray<{
 ];
 
 for (const fn of FUNCTIONS) {
-  const FN_URL = `${SUPABASE_URL}/functions/v1/${fn.name}`;
+  const FN_URL = buildFunctionUrl(fn.name);
   const requestHeaders = fn.extraReqHeaders
     ? `${CANONICAL_REQ_HEADERS}, ${fn.extraReqHeaders}`
     : CANONICAL_REQ_HEADERS;
