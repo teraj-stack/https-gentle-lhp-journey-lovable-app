@@ -314,10 +314,12 @@ for (const fn of FUNCTIONS) {
         `[${fn.name}] unauth real request must surface a 4xx to exercise the rejected path, got ${unauthRealRes.status}`,
       );
 
-      // Step 3: re-run OPTIONS AFTER the 401/403. The helper contract
-      // says preflight is never authenticated and never varies — the
-      // response headers MUST be identical to the baseline (and to the
-      // helper snapshot). Catches any regression where a function
+      // Step 3: re-run OPTIONS AFTER the 4xx. The helper contract says
+      // preflight is never authenticated and never varies — the response
+      // headers MUST be identical to the baseline (and to the helper
+      // snapshot). Catches any regression where a function accidentally
+      // lets an auth/middleware layer mutate OPTIONS headers based on
+      // prior request state.
       // accidentally lets an auth/middleware layer mutate OPTIONS
       // headers based on prior request state.
       const postFailureOptions = await fetch(FN_URL, {
