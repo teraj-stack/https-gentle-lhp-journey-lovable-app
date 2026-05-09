@@ -261,4 +261,83 @@ for (const fn of FUNCTIONS) {
       );
     },
   );
+
+  Deno.test(
+    `E2E CORS [${fn.name}] — OPTIONS headers match preflightResponse(corsHeaders) exactly, even when the endpoint returns 401/403`,
+    async () => {
+      // Step 1: baseline OPTIONS, no auth context. Must match the helper
+      // snapshot byte-for-byte (modulo headers the gateway/runtime adds —
+      // we only assert the CORS-relevant subset that the helper owns).
+      const baselineOptions = await fetch(FN_URL, {
+        method: "OPTIONS",
+        headers: {
+          Origin: ORIGIN,
+          "Access-Control-Request-Method": fn.method,
+          "Access-Control-Request-Headers": requestHeaders,
+        },
+      });
+      await baselineOptions.text();
+      assertEquals(
+        baselineOptions.status,
+        204,
+        `[${fn.name}] baseline OPTIONS must be 204 (preflightResponse contract)`,
+      );
+      for (const [name, expected] of EXPECTED_PREFLIGHT_HEADERS) {
+        assertEquals(
+          baselineOptions.headers.get(name),
+          expected,
+          `[${fn.name}] baseline OPTIONS header "${name}" must match preflightResponse(corsHeaders) exactly`,
+        );
+      }
+
+      // Step 2: trigger the gateway/function 401-or-403 path by sending
+      // the real request WITHOUT apikey/Authorization. The Functions
+      // gateway returns 401 in that case for every function in this
+      // project — but the contract under test is the OPTIONS response,
+      // not this body. We only need the 4xx to prove the auth-rejected
+      // path is exercised on the same isolate.
+      const unauthRealRes = await fetch(FN_URL, {
+        method: fn.method,
+        headers: {
+          Origin: ORIGIN,
+          "Content-Type": "application/json",
+          // intentionally NO apikey, NO Authorization
+        },
+        body: fn.body !== undefined ? JSON.stringify(fn.body) : undefined,
+      });
+      await unauthRealRes.text();
+      assert(
+        unauthRealRes.status === 401 || unauthRealRes.status === 403,
+        `[${fn.name}] unauth real request must surface 401/403 to exercise the rejected-auth path, got ${unauthRealRes.status}`,
+      );
+
+      // Step 3: re-run OPTIONS AFTER the 401/403. The helper contract
+      // says preflight is never authenticated and never varies — the
+      // response headers MUST be identical to the baseline (and to the
+      // helper snapshot). Catches any regression where a function
+      // accidentally lets an auth/middleware layer mutate OPTIONS
+      // headers based on prior request state.
+      const postFailureOptions = await fetch(FN_URL, {
+        method: "OPTIONS",
+        headers: {
+          Origin: ORIGIN,
+          "Access-Control-Request-Method": fn.method,
+          "Access-Control-Request-Headers": requestHeaders,
+        },
+      });
+      await postFailureOptions.text();
+      assertEquals(
+        postFailureOptions.status,
+        204,
+        `[${fn.name}] OPTIONS after 401/403 must still be 204`,
+      );
+      for (const [name, expected] of EXPECTED_PREFLIGHT_HEADERS) {
+        assertEquals(
+          postFailureOptions.headers.get(name),
+          expected,
+          `[${fn.name}] OPTIONS after 401/403: header "${name}" must still match preflightResponse(corsHeaders) exactly (drift after auth rejection)`,
+        );
+      }
+    },
+  );
 }
