@@ -387,6 +387,11 @@ for (const fn of FUNCTIONS) {
         body: fn.body !== undefined ? JSON.stringify(fn.body) : undefined,
       });
       await unauthRealRes.text();
+      assertEquals(
+        unauthRealRes.url,
+        FN_URL,
+        `[${fn.name}] unauth real-request Response.url must equal buildFunctionUrl(slug)`,
+      );
       assert(
         unauthRealRes.status >= 400 && unauthRealRes.status < 500,
         `[${fn.name}] unauth real request must surface a 4xx to exercise the rejected path, got ${unauthRealRes.status}`,
