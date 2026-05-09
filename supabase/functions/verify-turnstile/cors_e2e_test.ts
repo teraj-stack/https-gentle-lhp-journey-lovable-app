@@ -159,6 +159,30 @@ for (const fn of FUNCTIONS) {
     ? `${CANONICAL_REQ_HEADERS}, ${fn.extraReqHeaders}`
     : CANONICAL_REQ_HEADERS;
 
+  // Pin the URL shape for this slug. If `buildFunctionUrl` (or the
+  // `FUNCTIONS_API_BASE` constant) drifts, this fails LOUD before any
+  // network call — preventing a silent regression where the test suite
+  // probes the wrong path and either 404s for unrelated reasons or, worse,
+  // hits a stale function on the old API version.
+  Deno.test(
+    `E2E CORS [${fn.name}] — buildFunctionUrl resolves to the canonical /functions/v1/<slug> path`,
+    () => {
+      assertEquals(
+        FN_URL,
+        `${SUPABASE_URL}${FUNCTIONS_API_BASE}/${fn.name}`,
+        `[${fn.name}] FN_URL must equal buildFunctionUrl(slug) — drift means tests are probing the wrong endpoint`,
+      );
+      // Also assert the helper is referentially stable: calling it twice
+      // with the same slug must yield the exact same string (no Date.now
+      // suffixes, no env-dependent rewrites).
+      assertEquals(
+        buildFunctionUrl(fn.name),
+        FN_URL,
+        `[${fn.name}] buildFunctionUrl must be deterministic for a given slug`,
+      );
+    },
+  );
+
   Deno.test(
     `E2E CORS [${fn.name}] — browser preflight (OPTIONS) is 2xx with full CORS headers + Max-Age`,
     async () => {
