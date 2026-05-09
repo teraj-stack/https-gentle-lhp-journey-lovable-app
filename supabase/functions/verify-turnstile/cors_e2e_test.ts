@@ -263,7 +263,7 @@ for (const fn of FUNCTIONS) {
   );
 
   Deno.test(
-    `E2E CORS [${fn.name}] — OPTIONS headers match preflightResponse(corsHeaders) exactly, even when the endpoint returns 401/403`,
+    `E2E CORS [${fn.name}] — OPTIONS headers match preflightResponse(corsHeaders) exactly, even after the endpoint returns a 4xx (auth-rejected / validation-rejected)`,
     async () => {
       // Step 1: baseline OPTIONS, no auth context. Must match the helper
       // snapshot byte-for-byte (modulo headers the gateway/runtime adds —
