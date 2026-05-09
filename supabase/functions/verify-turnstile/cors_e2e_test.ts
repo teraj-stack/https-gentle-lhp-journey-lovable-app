@@ -152,14 +152,14 @@ for (const fn of FUNCTIONS) {
       const allowHeaders = preflightRes.headers.get(
         "access-control-allow-headers",
       );
-      assert(
-        allowHeaders !== null &&
-          allowHeaders.toLowerCase().includes("authorization") &&
-          allowHeaders.toLowerCase().includes("apikey") &&
-          allowHeaders.toLowerCase().includes("content-type") &&
-          allowHeaders.toLowerCase().includes("x-client-info"),
-        `[${fn.name}] Allow-Headers must include the canonical Supabase set, got ${JSON.stringify(allowHeaders)}`,
-      );
+      assert(allowHeaders !== null, `[${fn.name}] Allow-Headers must be set`);
+      const allowHeadersLower = allowHeaders!.toLowerCase();
+      for (const required of CANONICAL_REQ_HEADER_NAMES) {
+        assert(
+          allowHeadersLower.includes(required),
+          `[${fn.name}] Allow-Headers must include "${required}" (from CORS_ALLOW_HEADERS), got ${JSON.stringify(allowHeaders)}`,
+        );
+      }
 
       // (3) Max-Age — the cache contract added in this iteration.
       //     Browsers silently drop a non-integer value, so we assert the
