@@ -419,6 +419,11 @@ for (const fn of FUNCTIONS) {
         204,
         `[${fn.name}] OPTIONS after 4xx must still be 204`,
       );
+      assertEquals(
+        postFailureOptions.url,
+        FN_URL,
+        `[${fn.name}] OPTIONS-after-4xx Response.url must equal buildFunctionUrl(slug)`,
+      );
       for (const [name, expected] of EXPECTED_PREFLIGHT_HEADERS) {
         assertEquals(
           postFailureOptions.headers.get(name),
