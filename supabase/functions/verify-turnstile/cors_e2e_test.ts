@@ -44,7 +44,35 @@ import {
   assert,
   assertEquals,
 } from "https://deno.land/std@0.224.0/assert/mod.ts";
-import { CORS_ALLOW_HEADERS } from "../_shared/cors.ts";
+import { CORS_ALLOW_HEADERS, corsHeaders } from "../_shared/cors.ts";
+import { preflightResponse } from "../_shared/preflight.ts";
+
+/**
+ * The exact CORS header snapshot the shared `preflightResponse(corsHeaders)`
+ * helper produces. Built ONCE here so every per-function assertion compares
+ * against the SAME source of truth — if `_shared/cors.ts` ever changes
+ * (header added/removed/renamed, Max-Age value tweaked, casing changed),
+ * this snapshot regenerates automatically and every function in the table
+ * is re-checked against the new contract in the same CI run.
+ *
+ * We snapshot the helper's actual `Response` rather than re-computing the
+ * map by hand: that way we also catch a regression in `preflightResponse`
+ * itself (e.g. someone adding a default Allow-Origin or stripping a header
+ * via `{ ...corsHeaders }`).
+ */
+const EXPECTED_PREFLIGHT_HEADERS: ReadonlyMap<string, string> = (() => {
+  const ref = preflightResponse(corsHeaders);
+  // Drain body so the helper Response doesn't leak in the test runtime.
+  void ref.body?.cancel();
+  const map = new Map<string, string>();
+  for (const [k, v] of ref.headers.entries()) {
+    // `Headers.entries()` already lower-cases names — pin that here so the
+    // comparison against the server response (also lower-cased below) is
+    // byte-exact and not subject to platform casing drift.
+    map.set(k.toLowerCase(), v);
+  }
+  return map;
+})();
 
 const SUPABASE_URL = Deno.env.get("VITE_SUPABASE_URL") ??
   Deno.env.get("SUPABASE_URL")!;
