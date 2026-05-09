@@ -299,6 +299,21 @@ for (const fn of FUNCTIONS) {
       // Consume the body first to avoid leaks even if assertions throw.
       const bodyText = await realRes.text();
 
+      // (0) Same URL invariant as the preflight: the real request must
+      //     have landed on the exact buildFunctionUrl(slug) endpoint, not
+      //     a redirected target where CORS headers might be re-emitted by
+      //     a different layer and mask a regression in the function code.
+      assertEquals(
+        realRes.url,
+        FN_URL,
+        `[${fn.name}] real-request Response.url must equal buildFunctionUrl(slug) — drift indicates a redirect or wrong target`,
+      );
+      assertEquals(
+        preflightRes.url,
+        FN_URL,
+        `[${fn.name}] preflight Response.url must equal buildFunctionUrl(slug)`,
+      );
+
       // (1) Status is something the function actually produced, not a
       //     gateway-level CORS rejection (which manifests as a network
       //     error, not a Response — so reaching this line at all already
