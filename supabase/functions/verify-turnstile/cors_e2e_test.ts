@@ -355,6 +355,11 @@ for (const fn of FUNCTIONS) {
         204,
         `[${fn.name}] baseline OPTIONS must be 204 (preflightResponse contract)`,
       );
+      assertEquals(
+        baselineOptions.url,
+        FN_URL,
+        `[${fn.name}] baseline OPTIONS Response.url must equal buildFunctionUrl(slug)`,
+      );
       for (const [name, expected] of EXPECTED_PREFLIGHT_HEADERS) {
         assertEquals(
           baselineOptions.headers.get(name),
