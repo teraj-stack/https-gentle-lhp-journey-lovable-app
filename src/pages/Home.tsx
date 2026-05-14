@@ -1,11 +1,10 @@
 import { lazy, Suspense } from "react";
-import HeroHome from "@/components/home/HeroHome";
+import DoctorSection from "@/components/home/DoctorSection";
 import TrustBar from "@/components/home/TrustBar";
 import Philosophy from "@/components/home/Philosophy";
 import SeoHead from "@/components/shared/SeoHead";
 
 const ServiceCards = lazy(() => import("@/components/home/ServiceCards"));
-const DoctorSection = lazy(() => import("@/components/home/DoctorSection"));
 const Testimonials = lazy(() => import("@/components/home/Testimonials"));
 const B2BSection = lazy(() => import("@/components/home/B2BSection"));
 const FAQTeaser = lazy(() => import("@/components/home/FAQTeaser"));
@@ -150,12 +149,11 @@ const Home = () => (
       type="application/ld+json"
       dangerouslySetInnerHTML={{ __html: JSON.stringify(localBusinessSchema) }}
     />
-    <HeroHome />
+    <DoctorSection />
     <TrustBar />
     <Philosophy />
     <Suspense fallback={null}>
       <ServiceCards />
-      <DoctorSection />
       <Testimonials />
       <B2BSection />
       <FAQTeaser />
