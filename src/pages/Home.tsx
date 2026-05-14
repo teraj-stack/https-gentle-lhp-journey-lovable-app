@@ -149,12 +149,11 @@ const Home = () => (
       type="application/ld+json"
       dangerouslySetInnerHTML={{ __html: JSON.stringify(localBusinessSchema) }}
     />
-    <HeroHome />
+    <DoctorSection />
     <TrustBar />
     <Philosophy />
     <Suspense fallback={null}>
       <ServiceCards />
-      <DoctorSection />
       <Testimonials />
       <B2BSection />
       <FAQTeaser />
