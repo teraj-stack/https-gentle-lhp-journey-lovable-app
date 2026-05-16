@@ -51,12 +51,34 @@ const DoctorSection = () => (
               </div>
             ))}
           </div>
-          <Button variant="outline" asChild>
-            <Link to="/o-nas">
-              Poznaj cały zespół
-              <ArrowRight className="w-4 h-4 ml-2" />
-            </Link>
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-4">
+            <Button variant="hero" size="lg" className="px-8 py-6 text-base" asChild>
+              <a
+                href="https://www.znanylekarz.pl/jan-bujok-2/chirurg-flebolog-proktolog/warszawa"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Umów konsultację
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </a>
+            </Button>
+            <Button variant="outline" size="lg" className="px-8 py-6 text-base" asChild>
+              <a
+                href="https://www.znanylekarz.pl/jan-bujok-2/chirurg-flebolog-proktolog/warszawa#calendar"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Sprawdź dostępne terminy
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </a>
+            </Button>
+            <Button variant="ghost" asChild>
+              <Link to="/o-nas">
+                Poznaj cały zespół
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Link>
+            </Button>
+          </div>
         </motion.div>
       </div>
     </div>
