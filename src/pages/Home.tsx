@@ -151,6 +151,7 @@ const Home = () => (
       dangerouslySetInnerHTML={{ __html: JSON.stringify(localBusinessSchema) }}
     />
     <DoctorSection />
+    <HeroFAQ />
     <TrustBar />
     <Philosophy />
     <Suspense fallback={null}>
