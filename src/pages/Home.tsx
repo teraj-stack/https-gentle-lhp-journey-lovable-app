@@ -140,7 +140,8 @@ const localBusinessSchema = {
 };
 
 const Home = () => (
-  <div className="min-h-screen pb-20 md:pb-0">
+  // pb = sticky CTA (~5rem) + safe-area-inset-bottom (notch / home indicator)
+  <div className="min-h-screen pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-0">
     <SeoHead
       title="CML – Centrum Medycyny Laserowej"
       description="Innowacyjne leczenie laserowe hemoroidów, żylaków i przetok w klinikach premium. Warszawa Wilanów i Siedlce. Umów konsultację."
