@@ -31,6 +31,12 @@ export interface CtaButtonProps extends Omit<ButtonProps, "asChild" | "onClick">
 
   /** Hook na kliknięcie (np. dodatkowa analityka). Tracking i tak idzie pierwszy. */
   onClick?: (event: MouseEvent<HTMLElement>) => void;
+
+  // ───── Feedback po kliknięciu ─────
+  /** Pokaż toast + spinner po kliknięciu (domyślnie: true dla zewnętrznych linków). */
+  showClickFeedback?: boolean;
+  /** Treść toastu (domyślnie zależy od typu linku). */
+  feedbackMessage?: string;
 }
 
 const EXTERNAL_PROTOCOL = /^(https?:|mailto:|tel:)/i;
