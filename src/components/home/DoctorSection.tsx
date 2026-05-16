@@ -1,8 +1,9 @@
 import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
+import CtaButton from "@/components/shared/CtaButton";
 import drBujokImg from "@/assets/dr-bujok.webp";
+
+const ZNANY_LEKARZ_URL = "https://www.znanylekarz.pl/jan-bujok-2/chirurg-flebolog-proktolog/warszawa";
 
 const stagger = (delay = 0) => ({
   initial: { opacity: 0, y: 28, filter: "blur(5px)" },
