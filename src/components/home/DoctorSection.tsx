@@ -52,12 +52,12 @@ const DoctorSection = () => (
               </div>
             ))}
           </div>
-          <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3 sm:gap-4">
             <CtaButton
               href={ZNANY_LEKARZ_URL}
               variant="hero"
               size="lg"
-              className="px-8 py-6 text-base"
+              className="w-full sm:w-auto min-h-12 px-5 sm:px-8 py-4 sm:py-6 text-sm sm:text-base justify-center"
               trackingId="home_hero_book_consultation"
               trackingLabel="Umów konsultację"
               trackingSource="DoctorSection"
@@ -75,7 +75,7 @@ const DoctorSection = () => (
               href={`${ZNANY_LEKARZ_URL}#calendar`}
               variant="outline"
               size="lg"
-              className="px-8 py-6 text-base"
+              className="w-full sm:w-auto min-h-12 px-5 sm:px-8 py-4 sm:py-6 text-sm sm:text-base justify-center"
               trackingId="home_hero_check_slots"
               trackingLabel="Sprawdź dostępne terminy"
               trackingSource="DoctorSection"
@@ -94,6 +94,7 @@ const DoctorSection = () => (
               variant="ghost"
               trackingId="home_hero_about_team"
               trackingSource="DoctorSection"
+              className="w-full sm:w-auto min-h-11 justify-center sm:justify-start text-sm"
             >
               Poznaj cały zespół
               <ArrowRight className="w-4 h-4 ml-2" />
