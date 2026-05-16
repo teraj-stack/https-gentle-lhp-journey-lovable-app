@@ -1,5 +1,6 @@
 import { lazy, Suspense } from "react";
 import DoctorSection from "@/components/home/DoctorSection";
+import HeroFAQ from "@/components/home/HeroFAQ";
 import TrustBar from "@/components/home/TrustBar";
 import Philosophy from "@/components/home/Philosophy";
 import SeoHead from "@/components/shared/SeoHead";
