@@ -76,12 +76,18 @@ const CtaButton = forwardRef<HTMLButtonElement, CtaButtonProps>(
       trackingSource = "unknown",
       campaign,
       onClick,
+      showClickFeedback,
+      feedbackMessage,
+      className,
       ...buttonProps
     },
     ref
   ) => {
     const treatAsExternal = external ?? isExternalHref(href);
     const resolvedHref = treatAsExternal ? appendUtmParams(href, campaign) : href;
+    const feedbackEnabled = showClickFeedback ?? treatAsExternal;
+
+    const [isPending, setIsPending] = useState(false);
 
     const handleClick = useCallback(
       (event: MouseEvent<HTMLElement>) => {
@@ -94,21 +100,66 @@ const CtaButton = forwardRef<HTMLButtonElement, CtaButtonProps>(
             campaign,
           });
         }
+
+        if (feedbackEnabled) {
+          setIsPending(true);
+          const defaultMsg = treatAsExternal
+            ? "Otwieramy stronę rezerwacji w nowej karcie…"
+            : "Przekierowujemy…";
+          toast.success(feedbackMessage ?? defaultMsg, { duration: 2500 });
+          // Spinner gaśnie po chwili – nawigacja zewnętrzna otwiera nową kartę,
+          // więc bieżąca strona zostaje aktywna.
+          window.setTimeout(() => setIsPending(false), 2000);
+        }
+
         onClick?.(event);
       },
-      [trackingId, trackingLabel, trackingSource, resolvedHref, campaign, onClick, children]
+      [
+        trackingId,
+        trackingLabel,
+        trackingSource,
+        resolvedHref,
+        campaign,
+        onClick,
+        children,
+        feedbackEnabled,
+        feedbackMessage,
+        treatAsExternal,
+      ]
     );
+
+    const content = (
+      <>
+        {isPending && (
+          <Loader2
+            className="w-4 h-4 animate-spin"
+            aria-hidden="true"
+            data-testid="cta-spinner"
+          />
+        )}
+        {children}
+        {isPending && <span className="sr-only">Trwa przekierowanie…</span>}
+      </>
+    );
+
+    const mergedClassName = cn(isPending && "cursor-progress", className);
 
     if (treatAsExternal) {
       return (
-        <Button {...buttonProps} asChild ref={ref}>
+        <Button
+          {...buttonProps}
+          className={mergedClassName}
+          asChild
+          ref={ref}
+          aria-busy={isPending || undefined}
+        >
           <a
             href={resolvedHref}
             target="_blank"
             rel="noopener noreferrer"
             onClick={handleClick}
           >
-            {children}
+            {content}
             <span className="sr-only"> {newTabSrLabel}</span>
           </a>
         </Button>
@@ -116,9 +167,15 @@ const CtaButton = forwardRef<HTMLButtonElement, CtaButtonProps>(
     }
 
     return (
-      <Button {...buttonProps} asChild ref={ref}>
+      <Button
+        {...buttonProps}
+        className={mergedClassName}
+        asChild
+        ref={ref}
+        aria-busy={isPending || undefined}
+      >
         <Link to={resolvedHref} onClick={handleClick}>
-          {children}
+          {content}
         </Link>
       </Button>
     );
