@@ -58,6 +58,15 @@ const DoctorSection = () => (
               variant="hero"
               size="lg"
               className="px-8 py-6 text-base"
+              trackingId="home_hero_book_consultation"
+              trackingLabel="Umów konsultację"
+              trackingSource="DoctorSection"
+              campaign={{
+                source: "cml_site",
+                medium: "cta_hero",
+                campaign: "home_hero_booking",
+                content: "umow_konsultacje",
+              }}
             >
               Umów konsultację
               <ArrowRight className="w-4 h-4 ml-2" />
@@ -67,11 +76,25 @@ const DoctorSection = () => (
               variant="outline"
               size="lg"
               className="px-8 py-6 text-base"
+              trackingId="home_hero_check_slots"
+              trackingLabel="Sprawdź dostępne terminy"
+              trackingSource="DoctorSection"
+              campaign={{
+                source: "cml_site",
+                medium: "cta_hero",
+                campaign: "home_hero_booking",
+                content: "sprawdz_terminy",
+              }}
             >
               Sprawdź dostępne terminy
               <ArrowRight className="w-4 h-4 ml-2" />
             </CtaButton>
-            <CtaButton href="/o-nas" variant="ghost">
+            <CtaButton
+              href="/o-nas"
+              variant="ghost"
+              trackingId="home_hero_about_team"
+              trackingSource="DoctorSection"
+            >
               Poznaj cały zespół
               <ArrowRight className="w-4 h-4 ml-2" />
             </CtaButton>
