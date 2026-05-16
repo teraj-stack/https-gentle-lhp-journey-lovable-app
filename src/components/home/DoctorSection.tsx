@@ -53,32 +53,28 @@ const DoctorSection = () => (
             ))}
           </div>
           <div className="flex flex-col sm:flex-row gap-4">
-            <Button variant="hero" size="lg" className="px-8 py-6 text-base" asChild>
-              <a
-                href="https://www.znanylekarz.pl/jan-bujok-2/chirurg-flebolog-proktolog/warszawa"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Umów konsultację
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </a>
-            </Button>
-            <Button variant="outline" size="lg" className="px-8 py-6 text-base" asChild>
-              <a
-                href="https://www.znanylekarz.pl/jan-bujok-2/chirurg-flebolog-proktolog/warszawa#calendar"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Sprawdź dostępne terminy
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </a>
-            </Button>
-            <Button variant="ghost" asChild>
-              <Link to="/o-nas">
-                Poznaj cały zespół
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </Link>
-            </Button>
+            <CtaButton
+              href={ZNANY_LEKARZ_URL}
+              variant="hero"
+              size="lg"
+              className="px-8 py-6 text-base"
+            >
+              Umów konsultację
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </CtaButton>
+            <CtaButton
+              href={`${ZNANY_LEKARZ_URL}#calendar`}
+              variant="outline"
+              size="lg"
+              className="px-8 py-6 text-base"
+            >
+              Sprawdź dostępne terminy
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </CtaButton>
+            <CtaButton href="/o-nas" variant="ghost">
+              Poznaj cały zespół
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </CtaButton>
           </div>
         </motion.div>
       </div>
