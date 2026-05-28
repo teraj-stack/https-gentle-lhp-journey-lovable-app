@@ -39,7 +39,7 @@ const locations = [
   {
     name: "Warszawa Wilanów",
     address: "Adama Branickiego 10/U6, 02-972 Warszawa",
-    phone: "+48 22 123 45 67",
+    phone: "+48 510 432 361",
     email: "warszawa@cml.pl",
     hours: "Pon–Pt: 8:00–18:00",
     image: branickiegoImg,
@@ -48,7 +48,7 @@ const locations = [
   {
     name: "Beauty & Mind Siedlce",
     address: "ul. Brzeska 125, 08-110 Siedlce",
-    phone: "+48 25 632 00 00",
+    phone: "+48 510 432 361",
     email: "siedlce@cml.pl",
     hours: "Pon–Pt: 8:00–20:00",
     image: beautyMindImg,
@@ -57,7 +57,7 @@ const locations = [
   {
     name: "IP Cliniq – Rzeszów",
     address: "al. Rejtana 53, IV piętro, 35-326 Rzeszów",
-    phone: "+48 507 025 840",
+    phone: "+48 510 432 361",
     email: "recepcja@ipcliniq.pl",
     hours: "Pon–Pt: 8:00–20:00, Sb: 8:00–16:00",
     image: ipCliniqImg,
@@ -66,7 +66,7 @@ const locations = [
   {
     name: "Fimedica – Warszawa",
     address: "ul. Giełdowa 5, 01-211 Warszawa",
-    phone: ["+48 665 666 728", "+48 22 622 19 38"],
+    phone: "+48 510 432 361",
     email: "fimedica@fimedica.pl",
     hours: "Pon–Pt: 8:00–20:00",
     image: fimedicaImg,
