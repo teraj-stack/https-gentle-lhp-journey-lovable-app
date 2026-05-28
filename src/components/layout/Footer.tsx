@@ -126,7 +126,7 @@ const Footer = () => (
             <div>
               <p className="text-xs font-semibold text-foreground/80 mb-1">Warszawa Wilanów</p>
               <p className="flex items-start gap-2"><MapPin className="w-3.5 h-3.5 mt-0.5 shrink-0 text-primary/50" /><span>ul. Branickiego 10/U6</span></p>
-              <p className="flex items-center gap-2"><Phone className="w-3.5 h-3.5 shrink-0 text-primary/50" /><span>+48 500 600 509</span></p>
+              <p className="flex items-center gap-2"><Phone className="w-3.5 h-3.5 shrink-0 text-primary/50" /><span>+48 510 432 361</span></p>
             </div>
             <div>
               <p className="text-xs font-semibold text-foreground/80 mb-1">Warszawa Fimedica</p>
@@ -135,12 +135,12 @@ const Footer = () => (
             <div>
               <p className="text-xs font-semibold text-foreground/80 mb-1">Siedlce</p>
               <p className="flex items-start gap-2"><MapPin className="w-3.5 h-3.5 mt-0.5 shrink-0 text-primary/50" /><span>ul. Brzeska 125</span></p>
-              <p className="flex items-center gap-2"><Phone className="w-3.5 h-3.5 shrink-0 text-primary/50" /><span>+48 572 001 200</span></p>
+              <p className="flex items-center gap-2"><Phone className="w-3.5 h-3.5 shrink-0 text-primary/50" /><span>+48 510 432 361</span></p>
             </div>
             <div>
               <p className="text-xs font-semibold text-foreground/80 mb-1">Rzeszów – IP Cliniq</p>
               <p className="flex items-start gap-2"><MapPin className="w-3.5 h-3.5 mt-0.5 shrink-0 text-primary/50" /><span>al. Rejtana 53, IV p.</span></p>
-              <p className="flex items-center gap-2"><Phone className="w-3.5 h-3.5 shrink-0 text-primary/50" /><span>+48 507 025 840</span></p>
+              <p className="flex items-center gap-2"><Phone className="w-3.5 h-3.5 shrink-0 text-primary/50" /><span>+48 510 432 361</span></p>
             </div>
           </div>
         </div>
