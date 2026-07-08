@@ -135,7 +135,6 @@ const Footer = () => (
             <div>
               <p className="text-xs font-semibold text-foreground/80 mb-1">Siedlce</p>
               <p className="flex items-start gap-2"><MapPin className="w-3.5 h-3.5 mt-0.5 shrink-0 text-primary/50" /><span>ul. Brzeska 125</span></p>
-              <p className="flex items-center gap-2"><Phone className="w-3.5 h-3.5 shrink-0 text-primary/50" /><span>+48 510 432 361</span></p>
             </div>
             <div>
               <p className="text-xs font-semibold text-foreground/80 mb-1">Rzeszów – IP Cliniq</p>
