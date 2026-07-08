@@ -73,29 +73,6 @@ const localBusinessSchema = {
     },
     {
       "@type": "MedicalClinic",
-      "name": "CML Siedlce – Beauty & Mind",
-      "telephone": "+48 500 600 509",
-      "address": {
-        "@type": "PostalAddress",
-        "streetAddress": "ul. Brzeska 125",
-        "addressLocality": "Siedlce",
-        "postalCode": "08-110",
-        "addressCountry": "PL"
-      },
-      "geo": {
-        "@type": "GeoCoordinates",
-        "latitude": 52.1681,
-        "longitude": 22.2901
-      },
-      "openingHoursSpecification": {
-        "@type": "OpeningHoursSpecification",
-        "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
-        "opens": "08:00",
-        "closes": "20:00"
-      }
-    },
-    {
-      "@type": "MedicalClinic",
       "name": "IP Cliniq – Rzeszów",
       "telephone": "+48 507 025 840",
       "address": {
@@ -144,7 +121,7 @@ const Home = () => (
   <div className="min-h-screen pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-0">
     <SeoHead
       title="CML – Centrum Medycyny Laserowej"
-      description="Innowacyjne leczenie laserowe hemoroidów, żylaków i przetok w klinikach premium. Warszawa Wilanów i Siedlce. Umów konsultację."
+      description="Innowacyjne leczenie laserowe hemoroidów, żylaków i przetok w klinikach premium. Warszawa Wilanów. Umów konsultację."
       path="/"
       type="website"
     />

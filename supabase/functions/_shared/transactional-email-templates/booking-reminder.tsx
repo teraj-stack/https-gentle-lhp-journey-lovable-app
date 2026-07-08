@@ -18,7 +18,7 @@ interface BookingReminderProps {
 const LOCATION_LABELS: Record<string, string> = {
   'warszawa-wilanow': 'Warszawa Wilanów, ul. Adama Branickiego 10/U6',
   'fimedica-warszawa': 'Fimedica Warszawa, ul. Giełdowa 4D',
-  'siedlce': 'Beauty & Mind – Siedlce, ul. Brzeska 125',
+  
   'rzeszow': 'IP Cliniq – Rzeszów, al. Rejtana 53',
 }
 

@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { MapPin, Phone, Clock, Mail, ExternalLink } from "lucide-react";
 import branickiegoImg from "@/assets/locations/branickiego.jpg";
-import beautyMindImg from "@/assets/locations/beauty-and-mind.jpg";
+
 import ipCliniqImg from "@/assets/locations/ip-cliniq.jpg";
 import fimedicaImg from "@/assets/locations/fimedica.jpg";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -44,15 +44,6 @@ const locations = [
     hours: "Pon–Pt: 8:00–18:00",
     image: branickiegoImg,
     mapsUrl: "https://maps.google.com/?q=Adama+Branickiego+10,+02-972+Warszawa",
-  },
-  {
-    name: "Beauty & Mind Siedlce",
-    address: "ul. Brzeska 125, 08-110 Siedlce",
-    phone: "+48 510 432 361",
-    email: "siedlce@cml.pl",
-    hours: "Pon–Pt: 8:00–20:00",
-    image: beautyMindImg,
-    mapsUrl: "https://maps.google.com/?q=Brzeska+125,+08-110+Siedlce",
   },
   {
     name: "IP Cliniq – Rzeszów",

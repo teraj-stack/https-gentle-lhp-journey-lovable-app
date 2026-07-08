@@ -47,10 +47,6 @@ const LOCATION_LABELS: Record<string, { match: string[]; label: string }> = {
     match: ['fimedica', 'gieldowa', 'giełdowa'],
     label: 'Fimedica Warszawa, ul. Giełdowa 4D',
   },
-  siedlce: {
-    match: ['siedlce', 'beauty-and-mind', 'beauty', 'brzeska'],
-    label: 'Beauty & Mind – Siedlce, ul. Brzeska 125',
-  },
   rzeszow: {
     match: ['rzeszow', 'rzeszów', 'ipcliniq', 'ip-cliniq', 'rejtana'],
     label: 'IP Cliniq – Rzeszów, al. Rejtana 53',

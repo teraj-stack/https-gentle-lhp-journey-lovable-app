@@ -10,7 +10,7 @@ const stagger = (i: number) => ({
 
 const trustItems = [
   { icon: Shield, label: "Certyfikowane systemy laserowe", sub: "ELVeS · FiLaC · SiLaC" },
-  { icon: Award, label: "Kliniki premium", sub: "Warszawa Wilanów · Siedlce" },
+  { icon: Award, label: "Kliniki premium", sub: "Warszawa Wilanów" },
   { icon: Star, label: "Zweryfikowane opinie", sub: "4.9/5 – Google & ZnanyLekarz" },
   { icon: Users, label: "Doświadczony zespół", sub: "Autorskie szkolenia dla lekarzy" },
 ];

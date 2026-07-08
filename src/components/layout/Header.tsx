@@ -125,7 +125,7 @@ const wiedzaColumns: MegaColumn[] = [
 // --- KLINIKA (single dropdown, top-level housekeeping) ---
 const klinikaItems: NavItem[] = [
   { label: "O nas", href: "/o-nas", desc: "Zespół, misja, dr Jan Bujok" },
-  { label: "Lokalizacje", href: "/kontakt", desc: "Warszawa · Siedlce · Rzeszów" },
+  { label: "Lokalizacje", href: "/kontakt", desc: "Warszawa · Rzeszów" },
   { label: "Współpraca (B2B)", href: "/wspolpraca", desc: "Dla lekarzy i partnerów" },
 ];
 

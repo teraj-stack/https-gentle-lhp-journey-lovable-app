@@ -28,7 +28,7 @@ export type StatusFilter =
   | "needs_contact"
   | "completed";
 
-export type LocationFilter = "all" | "wilanow" | "fimedica" | "siedlce" | "rzeszow";
+export type LocationFilter = "all" | "wilanow" | "fimedica" | "rzeszow";
 
 export type DatePresetFilter = "today" | "week" | "all" | "custom";
 
@@ -77,11 +77,6 @@ const LOCATION_OPTIONS: Array<{
     value: "fimedica",
     label: "Fimedica Warszawa",
     match: ["fimedica", "gieldowa", "giełdowa"],
-  },
-  {
-    value: "siedlce",
-    label: "Beauty & Mind – Siedlce",
-    match: ["siedlce", "beauty-and-mind", "beauty", "brzeska"],
   },
   {
     value: "rzeszow",

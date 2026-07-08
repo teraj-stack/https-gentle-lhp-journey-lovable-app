@@ -25,7 +25,7 @@ const cards = [
   { icon: Sparkles, title: "Proktologia Estetyczna", desc: "Pierwszy w Polsce" },
   { icon: BookOpen, title: "Preedukacja Pacjenta", desc: "Autorski e-book" },
   { icon: Users, title: "Szkolenia Lekarzy", desc: "100+ przeszkolonych" },
-  { icon: Award, title: "Kliniki Premium", desc: "Wilanów · Siedlce" },
+  { icon: Award, title: "Kliniki Premium", desc: "Wilanów" },
 ];
 
 const AboutModel = () => (
