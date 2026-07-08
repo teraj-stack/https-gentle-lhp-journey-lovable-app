@@ -41,7 +41,7 @@ const SiLaC = () => (
     <div className="min-h-screen bg-background pt-20">
       <SeoHead
         title="SiLaC – Laserowe leczenie torbieli pilonidalnej"
-        description="SiLaC (Sinus Laser Closure) – laserowe zamykanie torbieli pilonidalnej w CML. Mały otwór, szybkie gojenie. Warszawa, Siedlce."
+        description="SiLaC (Sinus Laser Closure) – laserowe zamykanie torbieli pilonidalnej w CML. Mały otwór, szybkie gojenie. Warszawa."
         path="/leczenie/silac"
       />
       <MedicalWebPageSchema

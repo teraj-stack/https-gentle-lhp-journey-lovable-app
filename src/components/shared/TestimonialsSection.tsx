@@ -63,7 +63,7 @@ const TestimonialsSection = () => (
         Zaufali nam
       </h2>
       <a
-        href="https://www.znanylekarz.pl/jan-bujok-2/chirurg-flebolog-proktolog/siedlce"
+        href="https://www.znanylekarz.pl/jan-bujok-2/chirurg-flebolog-proktolog/warszawa"
         target="_blank"
         rel="noopener noreferrer"
         className="inline-flex items-center gap-2 bg-card border border-border rounded-full px-5 py-2 hover:border-primary/40 transition-colors group text-sm"
@@ -117,7 +117,7 @@ const TestimonialsSection = () => (
 
     <motion.div {...fadeUp} transition={{ duration: 0.5, delay: 0.3 }} className="text-center mt-8">
       <a
-        href="https://www.znanylekarz.pl/jan-bujok-2/chirurg-flebolog-proktolog/siedlce"
+        href="https://www.znanylekarz.pl/jan-bujok-2/chirurg-flebolog-proktolog/warszawa"
         target="_blank"
         rel="noopener noreferrer"
         className="inline-flex items-center gap-2 text-sm text-primary hover:text-primary/80 transition-colors font-medium"
