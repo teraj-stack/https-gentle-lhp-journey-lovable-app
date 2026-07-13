@@ -14,6 +14,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { z } from "zod";
 import SeoHead from "@/components/shared/SeoHead";
 import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
+import ClinicJsonLd from "@/components/shared/ClinicJsonLd";
 
 import TurnstileWidget from "@/components/shared/TurnstileWidget";
 
@@ -130,6 +131,7 @@ const Kontakt = () => {
         description="Skontaktuj się z CML. Przyjmujemy w Warszawie Wilanów, ul. Branickiego 10/U6. Umów wizytę proktologiczną lub flebologiczną."
         path="/kontakt"
       />
+      <ClinicJsonLd />
       {/* Hero */}
       <section className="gradient-bg py-16 md:py-24 px-4">
         <motion.div

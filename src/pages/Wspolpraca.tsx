@@ -8,6 +8,7 @@ import WspolpracaCTA from "@/components/wspolpraca/WspolpracaCTA";
 import SeoHead from "@/components/shared/SeoHead";
 import FaqSchema from "@/components/shared/FaqSchema";
 import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
+import ClinicJsonLd from "@/components/shared/ClinicJsonLd";
 import {
   Clock,
   Shield,
@@ -102,6 +103,7 @@ const Wspolpraca = () => (
       audienceType="Clinician"
     />
     <FaqSchema faqs={faq} name="FAQ – Współpraca B2B dla placówek medycznych" url="https://bestcml.io/wspolpraca" />
+    <ClinicJsonLd />
     <WspolpracaHero />
 
     {/* EBM */}

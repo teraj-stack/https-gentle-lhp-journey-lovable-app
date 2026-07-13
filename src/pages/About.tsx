@@ -8,13 +8,14 @@ import AboutAdvantages from "@/components/about/AboutAdvantages";
 import AboutCTA from "@/components/about/AboutCTA";
 import ScalesCards from "@/components/about/ScalesCards";
 import SeoHead from "@/components/shared/SeoHead";
+import ClinicJsonLd from "@/components/shared/ClinicJsonLd";
 
 const medicalWebPageSchema = {
   "@context": "https://schema.org",
   "@type": "MedicalWebPage",
   "name": "O nas – CML Centrum Medycyny Laserowej",
-  "description": "Poznaj dr. Jana Bujoka, twórcę projektu S.C.A.L.E., i filozofię CML. Innowacyjne leczenie laserowe hemoroidów, żylaków i przetok.",
-  "url": "https://bestcml.io/o-nas",
+  "description": "Poznaj dr. Jana Bujoka, twórcę projektu S.C.A.L.E., i filozofię CML. Innowacyjne leczenie laserowe hemoroidów, żylaków i przetok w Warszawie Wilanów.",
+  "url": "https://mcml.pro/o-nas",
   "inLanguage": "pl-PL",
   "medicalAudience": {
     "@type": "MedicalAudience",
@@ -26,39 +27,14 @@ const medicalWebPageSchema = {
     "name": "lek. med. Jan Bujok",
     "jobTitle": "Chirurg ogólny, proktolog, flebolog",
     "description": "Twórca projektu S.C.A.L.E. (Safety, Clinical Trust, Aesthetic, Lasers, Empathy). Pionier proktologii estetycznej w Polsce.",
-    "worksFor": {
-      "@type": "MedicalBusiness",
-      "name": "CML – Centrum Medycyny Laserowej"
-    }
+    "worksFor": { "@id": "https://mcml.pro/#clinic" }
   },
-  "publisher": {
-    "@type": "MedicalBusiness",
-    "name": "CML – Centrum Medycyny Laserowej",
-    "telephone": "+48 572 001 200",
-    "address": {
-      "@type": "PostalAddress",
-      "streetAddress": "ul. Adama Branickiego 10/U6",
-      "addressLocality": "Warszawa",
-      "postalCode": "02-972",
-      "addressCountry": "PL"
-    }
-  },
+  "publisher": { "@id": "https://mcml.pro/#clinic" },
   "specialty": [
     { "@type": "MedicalSpecialty", "name": "Proctology" },
     { "@type": "MedicalSpecialty", "name": "Phlebology" }
   ],
-  "mainEntity": {
-    "@type": "MedicalBusiness",
-    "name": "CML – Centrum Medycyny Laserowej",
-    "telephone": "+48 572 001 200",
-    "address": {
-      "@type": "PostalAddress",
-      "streetAddress": "ul. Adama Branickiego 10/U6",
-      "addressLocality": "Warszawa",
-      "postalCode": "02-972",
-      "addressCountry": "PL"
-    }
-  }
+  "mainEntity": { "@id": "https://mcml.pro/#clinic" }
 };
 
 const About = () => (
@@ -68,6 +44,7 @@ const About = () => (
       description="Poznaj dr. Jana Bujoka, twórcę projektu S.C.A.L.E., i filozofię CML. Innowacyjne leczenie laserowe hemoroidów, żylaków i przetok w Warszawie Wilanów."
       path="/o-nas"
     />
+    <ClinicJsonLd />
     <script
       type="application/ld+json"
       dangerouslySetInnerHTML={{ __html: JSON.stringify(medicalWebPageSchema) }}
