@@ -1,5 +1,15 @@
 import { test, expect, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
+import { mkdirSync, writeFileSync } from "node:fs";
+import { resolve } from "node:path";
+
+const REPORT_DIR = resolve(process.cwd(), "a11y-report");
+mkdirSync(REPORT_DIR, { recursive: true });
+
+function slugify(s: string) {
+  return s.replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "").toLowerCase() || "root";
+}
+
 
 /**
  * Automated a11y regression suite driven by axe-core.
