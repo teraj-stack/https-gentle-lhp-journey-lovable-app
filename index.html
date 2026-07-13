@@ -38,7 +38,29 @@
     <meta name="twitter:title" content="CML – Centrum Medycyny Laserowej | Warszawa Wilanów">
     <meta name="twitter:description" content="Innowacyjne leczenie laserowe hemoroidów, żylaków i przetok w Warszawie Wilanów (ul. Branickiego 10/U6). Skuteczność, empatia, zaufanie. Umów konsultację.">
 
-
+    <!-- Global WebSite schema — sitewide, statyczne, jedno źródło prawdy.
+         Rich Results: Sitelinks Searchbox (SearchAction) + tożsamość witryny (WebSite).
+         `target` musi wskazywać na realną stronę wyszukiwania — /szukaj?q={search_term_string}. -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "@id": "https://mcml.pro/#website",
+      "url": "https://mcml.pro/",
+      "name": "CML – Centrum Medycyny Laserowej",
+      "alternateName": "CML Warszawa Wilanów",
+      "inLanguage": "pl-PL",
+      "publisher": { "@id": "https://mcml.pro/#clinic" },
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": {
+          "@type": "EntryPoint",
+          "urlTemplate": "https://mcml.pro/szukaj?q={search_term_string}"
+        },
+        "query-input": "required name=search_term_string"
+      }
+    }
+    </script>
 </head>
   <body>
     <div id="root"></div>
