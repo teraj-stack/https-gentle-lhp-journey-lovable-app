@@ -44,7 +44,7 @@ const ROUTES: Route[] = [
 ];
 
 
-async function runAxe(page: Page, route: Route) {
+async function runAxe(page: Page, route: Route, profile: "desktop" | "mobile" = "desktop") {
   await page.goto(route.path, { waitUntil: "networkidle" });
   // Give framer-motion entry animations a beat so DOM is settled.
   await page.waitForLoadState("domcontentloaded");
