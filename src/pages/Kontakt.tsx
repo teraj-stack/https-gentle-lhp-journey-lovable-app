@@ -14,6 +14,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { z } from "zod";
 import SeoHead from "@/components/shared/SeoHead";
 import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
+import ClinicJsonLd from "@/components/shared/ClinicJsonLd";
 
 import TurnstileWidget from "@/components/shared/TurnstileWidget";
 
