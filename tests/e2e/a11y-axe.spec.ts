@@ -134,7 +134,7 @@ test.describe("axe-core a11y — public routes (mobile 390×844)", () => {
 
   for (const route of ROUTES) {
     test(`[mobile] ${route.label} (${route.path}) has no serious/critical a11y violations`, async ({ page }) => {
-      await runAxe(page, route);
+      await runAxe(page, route, "mobile");
     });
   }
 });
