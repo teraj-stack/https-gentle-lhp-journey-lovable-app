@@ -25,13 +25,14 @@ const ROUTES: Route[] = [
   { path: "/", label: "Home" },
   { path: "/kontakt", label: "Contact / clinic locations" },
   { path: "/o-nas", label: "About / clinic info" },
-  { path: "/flebologia", label: "Phlebology hub" },
-  { path: "/proktologia", label: "Proctology hub" },
+  { path: "/leczenie/flebologia", label: "Phlebology hub" },
+  { path: "/leczenie/proktologia", label: "Proctology hub" },
   { path: "/blog", label: "Blog index" },
   { path: "/blog/jak-rozpoznac-hemoroidy", label: "Blog post" },
   { path: "/szukaj", label: "Search (empty)" },
   { path: "/szukaj?q=hemoroidy", label: "Search (with query)" },
 ];
+
 
 async function runAxe(page: Page, route: Route) {
   await page.goto(route.path, { waitUntil: "networkidle" });
