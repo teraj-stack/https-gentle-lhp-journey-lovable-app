@@ -32,7 +32,7 @@ const SeoHead = ({ title, description, path, type = "article", image }: SeoHeadP
       "og:site_name": "CML – Centrum Medycyny Laserowej",
       "og:locale": "pl_PL",
       "twitter:card": "summary_large_image",
-      "twitter:title": title,
+      "twitter:title": fullTitle,
       "twitter:description": description,
       "twitter:image": ogImage,
     };
