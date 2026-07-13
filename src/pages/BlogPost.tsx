@@ -56,6 +56,33 @@ const BlogPost = () => {
     );
   }
 
+  const articleSchema = {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    headline: post.title,
+    description: post.excerpt || post.title,
+    datePublished: post.published_at || undefined,
+    dateModified: post.updated_at || post.published_at || undefined,
+    image: post.cover_image_url || "https://mcml.pro/og-image.png",
+    author: {
+      "@type": "Person",
+      name: "lek. med. Jan Bujok",
+    },
+    publisher: {
+      "@type": "MedicalOrganization",
+      "@id": "https://mcml.pro/#clinic",
+      name: "CML – Centrum Medycyny Laserowej",
+      logo: {
+        "@type": "ImageObject",
+        url: "https://mcml.pro/og-image.png",
+      },
+    },
+    mainEntityOfPage: {
+      "@type": "WebPage",
+      "@id": `https://mcml.pro/blog/${post.slug}`,
+    },
+  };
+
   return (
     <>
       <SeoHead
@@ -64,6 +91,12 @@ const BlogPost = () => {
         path={`/blog/${post.slug}`}
         image={post.cover_image_url || undefined}
       />
+      <script
+        type="application/ld+json"
+        // eslint-disable-next-line react/no-danger
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }}
+      />
+
 
       <article className="pt-32 pb-24">
         <div className="max-w-3xl mx-auto px-4 md:px-8">
