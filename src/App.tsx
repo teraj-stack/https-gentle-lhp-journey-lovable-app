@@ -164,6 +164,7 @@ const App = () => (
               <Route path="/leczenie/spazm-lonowoodbytniczy" element={<SpazmLonowoodbytniczy />} />
               <Route path="/kontakt" element={<Kontakt />} />
               <Route path="/blog" element={<Blog />} />
+              <Route path="/szukaj" element={<Szukaj />} />
               <Route path="/blog/:slug" element={<BlogPost />} />
               <Route path="/polityka-prywatnosci" element={<PolitykaPrywatnosci />} />
               <Route path="/regulamin" element={<Regulamin />} />
