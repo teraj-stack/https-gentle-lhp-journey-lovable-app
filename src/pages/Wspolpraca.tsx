@@ -8,6 +8,7 @@ import WspolpracaCTA from "@/components/wspolpraca/WspolpracaCTA";
 import SeoHead from "@/components/shared/SeoHead";
 import FaqSchema from "@/components/shared/FaqSchema";
 import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
+import ClinicJsonLd from "@/components/shared/ClinicJsonLd";
 import {
   Clock,
   Shield,
