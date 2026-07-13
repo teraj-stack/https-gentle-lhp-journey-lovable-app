@@ -2,6 +2,7 @@ import { test, expect, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { loadA11yConfig, classifyViolation } from "./a11y-config";
 
 const REPORT_DIR = resolve(process.cwd(), "a11y-report");
 mkdirSync(REPORT_DIR, { recursive: true });
@@ -14,20 +15,20 @@ function slugify(s: string) {
 /**
  * Automated a11y regression suite driven by axe-core.
  *
- * Scope: WCAG 2.0/2.1 A + AA rules on the key public routes. We intentionally
- * disable `color-contrast` because axe evaluates gradients/tokens differently
- * than Lighthouse (already covered by the Lighthouse CI accessibility budget)
- * and would produce noisy false positives against our design-system tokens.
+ * Rule policy lives in tests/e2e/a11y-config.json (schema next to it) so
+ * whitelisting/blacklisting individual axe rules never requires touching this
+ * file. Layered configuration:
  *
- * Any *serious* or *critical* violation fails the build. Minor/moderate
- * findings are printed to the console for triage but don't fail — flip
- * AXE_STRICT=1 to fail on those too.
+ *   1. tests/e2e/a11y-config.json          — committed defaults
+ *   2. $A11Y_CONFIG (path to JSON)         — per-run override file
+ *   3. $AXE_CRITICAL_RULES / _WARNING_RULES / _DISABLED_RULES (CSV env vars)
+ *   4. $AXE_STRICT=1                       — promote minor+moderate to failing
+ *
+ * See classifyViolation() for precedence.
  */
 
-const STRICT = process.env.AXE_STRICT === "1";
-const FAIL_IMPACTS = STRICT
-  ? new Set(["minor", "moderate", "serious", "critical"])
-  : new Set(["serious", "critical"]);
+const A11Y_CFG = loadA11yConfig();
+
 
 type Route = { path: string; label: string };
 
