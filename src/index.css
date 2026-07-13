@@ -78,7 +78,31 @@
     font-weight: 400;
     letter-spacing: 0.02em;
   }
+
+  /*
+    Global keyboard focus baseline — WCAG 2.4.7 (Focus Visible).
+    Ensures every natively-interactive element (<a>, <button>, form fields,
+    [tabindex]) shows a gold ring on keyboard focus, even if a component
+    forgets to add focus-visible utilities. Uses :focus-visible so pointer
+    clicks stay clean. shadcn / Radix components already override with their
+    own tokens where needed.
+  */
+  a:focus-visible,
+  button:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible,
+  [tabindex]:not([tabindex="-1"]):focus-visible,
+  [role="button"]:focus-visible,
+  [role="link"]:focus-visible,
+  [role="menuitem"]:focus-visible,
+  [role="tab"]:focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
 }
+
 
 @layer components {
   .glass-card {
