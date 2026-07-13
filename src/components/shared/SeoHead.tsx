@@ -8,12 +8,15 @@ interface SeoHeadProps {
   image?: string;
 }
 
-const BASE_URL = "https://bestcml.io";
+const BASE_URL = "https://mcml.pro";
 const OG_IMAGE = `${BASE_URL}/og-image.png`;
+const BRAND = "CML – Centrum Medycyny Laserowej";
+const BRAND_RE = /\bCML\b/i;
 
 const SeoHead = ({ title, description, path, type = "article", image }: SeoHeadProps) => {
   useEffect(() => {
-    const fullTitle = `${title} | CML – Centrum Medycyny Laserowej`;
+    const hasBrand = BRAND_RE.test(title);
+    const fullTitle = hasBrand ? title : `${title} | ${BRAND}`;
     const url = `${BASE_URL}${path}`;
     const ogImage = image || OG_IMAGE;
 
@@ -21,7 +24,7 @@ const SeoHead = ({ title, description, path, type = "article", image }: SeoHeadP
 
     const metaTags: Record<string, string> = {
       description,
-      "og:title": title,
+      "og:title": fullTitle,
       "og:description": description,
       "og:type": type,
       "og:url": url,
