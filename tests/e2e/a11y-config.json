@@ -1,0 +1,46 @@
+{
+  "$schema": "./a11y-config.schema.json",
+  "_doc": [
+    "Configurable axe-core policy for tests/e2e/a11y-axe.spec.ts.",
+    "Edit this file to tune a11y gating without touching test code.",
+    "",
+    "Fields:",
+    "  tags              Axe rule tags to include (WCAG levels, best-practice, etc.).",
+    "  disabledRules     Rule IDs completely skipped — no violation object is emitted.",
+    "                    Use for confirmed false positives (Radix useId, gradient tokens).",
+    "  criticalRules     Rule IDs that ALWAYS fail the build, even if axe rates them",
+    "                    minor/moderate. Whitelist of 'must never regress' rules.",
+    "  warningRules      Rule IDs that NEVER fail the build, even if axe rates them",
+    "                    serious/critical. They still appear in the report as advisory.",
+    "                    Use as a temporary escape hatch while remediating.",
+    "  failImpacts       Default impact levels that fail the build for rules not in",
+    "                    criticalRules / warningRules. Standard: serious + critical.",
+    "                    Env override: AXE_STRICT=1 adds minor + moderate.",
+    "",
+    "Precedence (highest first): disabledRules → warningRules → criticalRules → failImpacts."
+  ],
+
+  "tags": ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"],
+
+  "disabledRules": [
+    "color-contrast",
+    "aria-valid-attr-value"
+  ],
+
+  "criticalRules": [
+    "image-alt",
+    "button-name",
+    "link-name",
+    "label",
+    "html-has-lang",
+    "document-title",
+    "duplicate-id-aria"
+  ],
+
+  "warningRules": [
+    "target-size",
+    "link-in-text-block"
+  ],
+
+  "failImpacts": ["serious", "critical"]
+}
