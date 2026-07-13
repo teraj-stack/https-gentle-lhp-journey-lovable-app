@@ -54,7 +54,7 @@ const FAQS: HeroFaq[] = [
   },
   {
     q: "Gdzie znajdują się kliniki CML?",
-    a: "Przyjmujemy w Warszawie (Wilanów, Giełdowa), Siedlcach i Rzeszowie. Pełne adresy, telefony i godziny pracy znajdziesz na stronie kontaktu.",
+    a: "Przyjmujemy w Warszawie – Wilanów. Pełny adres, telefon i godziny pracy znajdziesz na stronie kontaktu.",
     links: [{ label: "Lokalizacje i kontakt", to: "/kontakt" }],
   },
   {

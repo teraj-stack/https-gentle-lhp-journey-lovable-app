@@ -10,9 +10,6 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { MapPin, Phone, Clock, Mail, ExternalLink } from "lucide-react";
 import branickiegoImg from "@/assets/locations/branickiego.jpg";
-
-import ipCliniqImg from "@/assets/locations/ip-cliniq.jpg";
-import fimedicaImg from "@/assets/locations/fimedica.jpg";
 import { Checkbox } from "@/components/ui/checkbox";
 import { z } from "zod";
 import SeoHead from "@/components/shared/SeoHead";
@@ -44,24 +41,6 @@ const locations = [
     hours: "Pon–Pt: 8:00–18:00",
     image: branickiegoImg,
     mapsUrl: "https://maps.google.com/?q=Adama+Branickiego+10,+02-972+Warszawa",
-  },
-  {
-    name: "IP Cliniq – Rzeszów",
-    address: "al. Rejtana 53, IV piętro, 35-326 Rzeszów",
-    phone: "+48 510 432 361",
-    email: "recepcja@ipcliniq.pl",
-    hours: "Pon–Pt: 8:00–20:00, Sb: 8:00–16:00",
-    image: ipCliniqImg,
-    mapsUrl: "https://maps.google.com/?q=al.+Rejtana+53,+35-326+Rzeszów",
-  },
-  {
-    name: "Fimedica – Warszawa",
-    address: "ul. Giełdowa 5, 01-211 Warszawa",
-    phone: "+48 510 432 361",
-    email: "fimedica@fimedica.pl",
-    hours: "Pon–Pt: 8:00–20:00",
-    image: fimedicaImg,
-    mapsUrl: "https://maps.google.com/?q=Giełdowa+5,+01-211+Warszawa",
   },
 ];
 
