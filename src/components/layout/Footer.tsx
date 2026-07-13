@@ -32,7 +32,7 @@ const Footer = () => (
 
         {/* PROBLEM */}
         <div>
-          <h4 className="font-semibold text-foreground mb-4 font-sans text-sm uppercase tracking-wider text-primary">Problem</h4>
+          <h3 className="font-semibold text-foreground mb-4 font-sans text-sm uppercase tracking-wider text-primary">Problem</h3>
           <ul className="space-y-2.5 text-sm text-muted-foreground">
             <li><Link to="/dla-pacjenta/hemoroidy" className={linkCls}>Hemoroidy</Link></li>
             <li><Link to="/leczenie/szczelina" className={linkCls}>Szczelina odbytu</Link></li>
@@ -49,7 +49,7 @@ const Footer = () => (
 
         {/* ZABIEG */}
         <div>
-          <h4 className="font-semibold text-foreground mb-4 font-sans text-sm uppercase tracking-wider text-primary">Zabieg</h4>
+          <h3 className="font-semibold text-foreground mb-4 font-sans text-sm uppercase tracking-wider text-primary">Zabieg</h3>
           <div className="space-y-5">
             <div>
               <p className="text-xs font-semibold text-foreground/80 mb-2">
@@ -88,7 +88,7 @@ const Footer = () => (
 
         {/* WIEDZA */}
         <div>
-          <h4 className="font-semibold text-foreground mb-4 font-sans text-sm uppercase tracking-wider text-primary">Wiedza</h4>
+          <h3 className="font-semibold text-foreground mb-4 font-sans text-sm uppercase tracking-wider text-primary">Wiedza</h3>
           <div className="space-y-5">
             <div>
               <p className="text-xs font-semibold text-foreground/80 mb-2">Edukacja</p>
@@ -121,7 +121,7 @@ const Footer = () => (
 
         {/* KLINIKA */}
         <div>
-          <h4 className="font-semibold text-foreground mb-4 font-sans text-sm uppercase tracking-wider text-primary">Klinika</h4>
+          <h3 className="font-semibold text-foreground mb-4 font-sans text-sm uppercase tracking-wider text-primary">Klinika</h3>
           <div className="space-y-4 text-sm text-muted-foreground">
             <div>
               <p className="text-xs font-semibold text-foreground/80 mb-1">Warszawa Wilanów</p>
@@ -132,11 +132,11 @@ const Footer = () => (
         </div>
       </div>
 
-      <div className="border-t border-border mt-12 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-muted-foreground/60">
+      <div className="border-t border-border mt-12 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-muted-foreground">
         <p>&copy; {new Date().getFullYear()} CML – Centrum Medycyny Laserowej. Wszelkie prawa zastrzeżone.</p>
         <div className="flex gap-6">
-          <Link to="/polityka-prywatnosci" className="hover:text-foreground/60 transition-colors">Polityka prywatności</Link>
-          <Link to="/regulamin" className="hover:text-foreground/60 transition-colors">Regulamin</Link>
+          <Link to="/polityka-prywatnosci" className="hover:text-foreground transition-colors">Polityka prywatności</Link>
+          <Link to="/regulamin" className="hover:text-foreground transition-colors">Regulamin</Link>
         </div>
       </div>
     </div>
