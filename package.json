@@ -21,6 +21,7 @@
     "e2e:seed": "node scripts/e2e-seed-cli.mjs seed",
     "e2e:reset-and-seed": "node scripts/e2e-seed-cli.mjs reset-and-seed",
     "test:e2e": "playwright test",
+    "test:a11y": "playwright test tests/e2e/a11y-axe.spec.ts",
     "test:visual:report": "node scripts/visual-snapshot-report.mjs",
     "test:visual:report:pack": "node scripts/visual-snapshot-report-pack.mjs",
     "test:visual:report:ci": "node scripts/visual-snapshot-report.mjs && node scripts/visual-snapshot-report-pack.mjs",
@@ -89,6 +90,7 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.12.1",
     "@eslint/js": "^9.32.0",
     "@playwright/test": "^1.57.0",
     "@tailwindcss/typography": "^0.5.16",
@@ -100,6 +102,7 @@
     "@types/react-dom": "^18.3.7",
     "@vitejs/plugin-react-swc": "3.11.0",
     "autoprefixer": "^10.4.21",
+    "axe-core": "^4.12.1",
     "eslint": "^9.32.0",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.20",
