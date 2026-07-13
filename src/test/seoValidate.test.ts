@@ -10,7 +10,7 @@ import { resolve } from "node:path";
  */
 describe("scripts/seo-validate.mjs", () => {
   it("passes static SEO validation on the current project", () => {
-    const script = resolve(__dirname, "../scripts/seo-validate.mjs");
+    const script = resolve(process.cwd(), "scripts/seo-validate.mjs");
     let out = "";
     let code = 0;
     try {
