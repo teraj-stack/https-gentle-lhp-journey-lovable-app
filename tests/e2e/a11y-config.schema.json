@@ -1,0 +1,18 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "axe-core a11y policy",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["tags", "disabledRules", "criticalRules", "warningRules", "failImpacts"],
+  "properties": {
+    "_doc": { "type": ["array", "string"] },
+    "tags": { "type": "array", "items": { "type": "string" } },
+    "disabledRules": { "type": "array", "items": { "type": "string" } },
+    "criticalRules": { "type": "array", "items": { "type": "string" } },
+    "warningRules": { "type": "array", "items": { "type": "string" } },
+    "failImpacts": {
+      "type": "array",
+      "items": { "enum": ["minor", "moderate", "serious", "critical"] }
+    }
+  }
+}
