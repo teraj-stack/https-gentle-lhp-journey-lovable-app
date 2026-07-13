@@ -37,11 +37,13 @@ export const CLINIC_OPENING_HOURS = [
 /**
  * Kanoniczny obiekt organizacji — używany zarówno jako main entity strony,
  * jak i jako `publisher` / `worksFor` / `provider` w innych schematach.
- * `@type` jako tablica: MedicalOrganization + LocalBusiness (rich results dla obu).
+ * `MedicalClinic` extends `MedicalOrganization` AND `MedicalBusiness` (→ LocalBusiness),
+ * więc pojedynczy typ pokrywa wszystkie trzy hierarchie w rich results.
+ * Zostawiamy `LocalBusiness` obok dla starszych parserów, które nie znają subklasy.
  */
 export const CLINIC_ORGANIZATION = {
   "@context": "https://schema.org",
-  "@type": ["MedicalOrganization", "MedicalClinic", "LocalBusiness"],
+  "@type": ["MedicalClinic", "LocalBusiness"],
   "@id": `${SITE_URL}/#clinic`,
   name: "CML – Centrum Medycyny Laserowej",
   alternateName: "CML Warszawa Wilanów",
