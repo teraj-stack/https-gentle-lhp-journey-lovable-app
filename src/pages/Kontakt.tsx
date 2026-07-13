@@ -122,12 +122,12 @@ const Kontakt = () => {
     <div className="min-h-screen bg-background pt-20">
       <SeoHead
         title="Kontakt – umów wizytę"
-        description="Skontaktuj się z CML. Przyjmujemy w Warszawie Wilanów i Siedlcach. Umów wizytę proktologiczną lub flebologiczną."
+        description="Skontaktuj się z CML. Przyjmujemy w Warszawie Wilanów, ul. Branickiego 10/U6. Umów wizytę proktologiczną lub flebologiczną."
         path="/kontakt"
       />
       <MedicalWebPageSchema
         name="Kontakt – CML Centrum Medycyny Laserowej"
-        description="Skontaktuj się z CML. Przyjmujemy w Warszawie Wilanów i Siedlcach. Umów wizytę proktologiczną lub flebologiczną."
+        description="Skontaktuj się z CML. Przyjmujemy w Warszawie Wilanów, ul. Branickiego 10/U6. Umów wizytę proktologiczną lub flebologiczną."
         path="/kontakt"
       />
       {/* Hero */}

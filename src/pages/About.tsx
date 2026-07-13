@@ -65,7 +65,7 @@ const About = () => (
   <div className="min-h-screen pt-20">
     <SeoHead
       title="O nas – dr Jan Bujok | CML Centrum Medycyny Laserowej"
-      description="Poznaj dr. Jana Bujoka, twórcę projektu S.C.A.L.E., i filozofię CML. Innowacyjne leczenie laserowe hemoroidów, żylaków i przetok w Warszawie i Siedlcach."
+      description="Poznaj dr. Jana Bujoka, twórcę projektu S.C.A.L.E., i filozofię CML. Innowacyjne leczenie laserowe hemoroidów, żylaków i przetok w Warszawie Wilanów."
       path="/o-nas"
     />
     <script

@@ -42,7 +42,7 @@ const LHP = () => {
     <div className="min-h-screen bg-background pt-20">
       <SeoHead
         title="LHP – Laserowe leczenie hemoroidów"
-        description="Laserowa plastyka hemoroidów (LHP) w CML. Bez skalpela, krótka rekonwalescencja. Umów konsultację w Warszawie lub Siedlcach."
+        description="Laserowa plastyka hemoroidów (LHP) w CML. Bez skalpela, krótka rekonwalescencja. Umów konsultację w Warszawie Wilanów."
         path="/leczenie/lhp"
       />
       <MedicalWebPageSchema
