@@ -63,7 +63,7 @@ const B2BSection = () => (
             <div className="w-10 h-10 rounded-lg bg-accent flex items-center justify-center mb-4">
               <item.icon className="w-5 h-5 text-primary" />
             </div>
-            <h4 className="font-semibold text-foreground mb-2 font-sans text-sm">{item.title}</h4>
+            <h3 className="font-semibold text-foreground mb-2 font-sans text-sm">{item.title}</h3>
             <p className="text-xs text-muted-foreground leading-relaxed">{item.desc}</p>
           </motion.div>
         ))}
