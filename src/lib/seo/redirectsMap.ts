@@ -138,6 +138,29 @@ export const SEO_REDIRECTS: SeoRedirectEntry[] = [
   //   Przykład: { from: "/usugi/laser-zylakow", to: "/leczenie/evlt", reason: "Stary WordPress slug" },
   // ─────────────────────────────────────────────────────────────────────────
 
-  // TODO: dopisz tutaj swoje stare URL-e
+  // ─────────────────────────────────────────────────────────────────────────
+  // FAZA 4 — Konsolidacja lokalizacji: jedyny gabinet to Warszawa Wilanów,
+  // ul. Adama Branickiego 10/U6. Stare URL-e zawierające inne miasta lub
+  // frazę „kliniki premium" (l.mn.) → /kontakt (jedyna, aktualna lokalizacja).
+  // ─────────────────────────────────────────────────────────────────────────
 
+  // Inne miasta (stare lokalizacje / partnerzy)
+  { from: "/siedlce", to: "/kontakt", reason: "Stara lokalizacja Siedlce → jedyny gabinet Wilanów" },
+  { from: "/rzeszow", to: "/kontakt", reason: "Stara lokalizacja Rzeszów → jedyny gabinet Wilanów" },
+  { from: "/rzeszów", to: "/kontakt", reason: "Polskie znaki Rzeszów → jedyny gabinet Wilanów" },
+  { from: "/warszawa", to: "/kontakt", reason: "Vanity miejscowości → strona kontaktu (Wilanów)" },
+  { from: "/warszawa-centrum", to: "/kontakt", reason: "Stara lokalizacja Warszawa Centrum → Wilanów" },
+  { from: "/warszawa-gieldowa", to: "/kontakt", reason: "Stara lokalizacja Giełdowa → Wilanów" },
+  { from: "/warszawa-brzeska", to: "/kontakt", reason: "Stara lokalizacja Brzeska → Wilanów" },
+  { from: "/fimedica", to: "/kontakt", reason: "Stary partner Fimedica → Wilanów" },
+  { from: "/beauty-and-mind", to: "/kontakt", reason: "Stary partner Beauty & Mind → Wilanów" },
+  { from: "/ip-cliniq", to: "/kontakt", reason: "Stary partner IP Cliniq → Wilanów" },
+  { from: "/lokalizacje", to: "/kontakt", reason: "Historyczna lista lokalizacji → jedyny gabinet Wilanów" },
+  { from: "/nasze-kliniki", to: "/kontakt", reason: "L.mn. „kliniki” → jedyny gabinet Wilanów" },
+  { from: "/kliniki", to: "/kontakt", reason: "L.mn. „kliniki” → jedyny gabinet Wilanów" },
+  { from: "/kliniki-premium", to: "/kontakt", reason: "Fraza „kliniki premium” (l.mn.) → jedyny gabinet Wilanów" },
+  { from: "/klinika-premium", to: "/kontakt", reason: "Vanity „klinika premium” → strona kontaktu (Wilanów)" },
+  { from: "/wilanow", to: "/kontakt", reason: "Vanity Wilanów → strona kontaktu" },
+  { from: "/warszawa-wilanow", to: "/kontakt", reason: "Vanity Warszawa Wilanów → strona kontaktu" },
+  { from: "/branickiego", to: "/kontakt", reason: "Vanity nazwa ulicy → strona kontaktu" },
 ];
