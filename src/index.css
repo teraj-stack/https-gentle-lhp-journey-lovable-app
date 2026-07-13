@@ -1,4 +1,6 @@
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Inter:wght@300;400;500;600;700&display=swap');
+/* Fonts are loaded via <link rel="preload"/stylesheet"> in index.html with display=swap.
+   Removed duplicate @import here — it was blocking CSS parsing until fetched. */
+
 
 @tailwind base;
 @tailwind components;

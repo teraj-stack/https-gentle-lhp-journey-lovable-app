@@ -7,12 +7,14 @@ import heroImage from "@/assets/hero-clinic-fixed.webp";
 
 
 
-// Preload hero image as soon as module loads
+// Preload hero image as soon as module loads (LCP candidate — high priority)
 const preloadLink = document.createElement("link");
 preloadLink.rel = "preload";
 preloadLink.as = "image";
 preloadLink.href = heroImage;
+preloadLink.setAttribute("fetchpriority", "high");
 document.head.appendChild(preloadLink);
+
 
 const HeroHome = () => {
   const sectionRef = useRef<HTMLElement>(null);
