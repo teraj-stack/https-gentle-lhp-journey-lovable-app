@@ -103,7 +103,24 @@
     outline-offset: 2px;
     border-radius: 4px;
   }
+
+  /*
+    Inline links in prose — WCAG 1.4.1 (Use of Color).
+    Links inside paragraphs, list items, and other text blocks must not
+    rely on color alone to be identifiable. We underline them at rest
+    across text-block containers so the color+underline combo satisfies
+    axe's `link-in-text-block` and Lighthouse's identical check.
+    Non-prose links (nav, buttons, cards, standalone CTAs) are exempt
+    via the `no-underline` utility on the anchor, or by not sitting
+    inside one of these containers.
+  */
+  :where(p, li, figcaption, blockquote, dd, dt) a:not(.no-underline) {
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+  }
 }
+
 
 
 @layer components {
