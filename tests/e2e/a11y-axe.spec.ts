@@ -83,27 +83,28 @@ async function runAxe(page: Page, route: Route, profile: "desktop" | "mobile" = 
   await page.waitForTimeout(300);
 
   const results = await new AxeBuilder({ page })
-    .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
-    .disableRules([
-      // Axe evaluates gradients/design-tokens differently than Lighthouse;
-      // Lighthouse CI already gates contrast at 0.95 on the built app.
-      "color-contrast",
-      // Radix UI + React 18 useId() emit IDs like `:r4:` which are valid
-      // per HTML5 but axe-core (4.12.x) still flags them via aria-controls.
-      // Tracked upstream; not a real user-facing issue.
-      "aria-valid-attr-value",
-    ])
+    .withTags(A11Y_CFG.tags)
+    .disableRules(A11Y_CFG.disabledRules)
     .analyze();
 
-
-  const blocking = results.violations.filter((v) => FAIL_IMPACTS.has(v.impact ?? ""));
-  const advisory = results.violations.filter((v) => !FAIL_IMPACTS.has(v.impact ?? ""));
+  const blocking = results.violations.filter(
+    (v) => classifyViolation(v.id, v.impact, A11Y_CFG) === "blocking",
+  );
+  const advisory = results.violations.filter(
+    (v) => classifyViolation(v.id, v.impact, A11Y_CFG) === "advisory",
+  );
 
   if (advisory.length > 0) {
     // eslint-disable-next-line no-console
     console.log(
       `[axe] ${route.label} (${route.path}) — ${advisory.length} advisory finding(s):\n` +
-        advisory.map((v) => `  • [${v.impact}] ${v.id}: ${v.help} (${v.nodes.length} node(s))`).join("\n"),
+        advisory
+          .map(
+            (v) =>
+              `  • [${v.impact}] ${v.id}: ${v.help} (${v.nodes.length} node(s))` +
+              (A11Y_CFG.warningRules.includes(v.id) ? " [config: warning]" : ""),
+          )
+          .join("\n"),
     );
   }
 
@@ -112,8 +113,10 @@ async function runAxe(page: Page, route: Route, profile: "desktop" | "mobile" = 
     impact: v.impact,
     help: v.help,
     helpUrl: v.helpUrl,
+    forcedCritical: A11Y_CFG.criticalRules.includes(v.id),
     nodes: v.nodes.map((n) => ({ target: n.target, failureSummary: n.failureSummary })),
   }));
+
 
   // Persist full axe results (all violations, incl. advisory + passes count) for CI artifacts.
   const reportSlug = `${profile}-${slugify(route.path)}`;
