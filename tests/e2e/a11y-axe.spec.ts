@@ -1,5 +1,15 @@
 import { test, expect, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
+import { mkdirSync, writeFileSync } from "node:fs";
+import { resolve } from "node:path";
+
+const REPORT_DIR = resolve(process.cwd(), "a11y-report");
+mkdirSync(REPORT_DIR, { recursive: true });
+
+function slugify(s: string) {
+  return s.replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "").toLowerCase() || "root";
+}
+
 
 /**
  * Automated a11y regression suite driven by axe-core.
@@ -34,7 +44,7 @@ const ROUTES: Route[] = [
 ];
 
 
-async function runAxe(page: Page, route: Route) {
+async function runAxe(page: Page, route: Route, profile: "desktop" | "mobile" = "desktop") {
   await page.goto(route.path, { waitUntil: "networkidle" });
   // Give framer-motion entry animations a beat so DOM is settled.
   await page.waitForLoadState("domcontentloaded");
@@ -73,13 +83,34 @@ async function runAxe(page: Page, route: Route) {
     nodes: v.nodes.map((n) => ({ target: n.target, failureSummary: n.failureSummary })),
   }));
 
+  // Persist full axe results (all violations, incl. advisory + passes count) for CI artifacts.
+  const reportSlug = `${profile}-${slugify(route.path)}`;
+  const payload = {
+    profile,
+    route: { path: route.path, label: route.label },
+    url: page.url(),
+    timestamp: new Date().toISOString(),
+    summary: {
+      violations: results.violations.length,
+      blocking: blocking.length,
+      advisory: advisory.length,
+      passes: results.passes.length,
+      incomplete: results.incomplete.length,
+    },
+    violations: results.violations,
+    incomplete: results.incomplete,
+  };
+  writeFileSync(resolve(REPORT_DIR, `${reportSlug}.json`), JSON.stringify(payload, null, 2));
+
   expect(formatted, `Accessibility violations on ${route.label} (${route.path})`).toEqual([]);
 }
+
 
 test.describe("axe-core a11y — public routes (desktop)", () => {
   for (const route of ROUTES) {
     test(`${route.label} (${route.path}) has no serious/critical a11y violations`, async ({ page }) => {
-      await runAxe(page, route);
+      await runAxe(page, route, "desktop");
+
     });
   }
 });
@@ -103,7 +134,7 @@ test.describe("axe-core a11y — public routes (mobile 390×844)", () => {
 
   for (const route of ROUTES) {
     test(`[mobile] ${route.label} (${route.path}) has no serious/critical a11y violations`, async ({ page }) => {
-      await runAxe(page, route);
+      await runAxe(page, route, "mobile");
     });
   }
 });
