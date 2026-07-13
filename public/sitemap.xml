@@ -9,79 +9,79 @@
 -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <!-- ─── Strony główne ─── -->
-  <url><loc>https://bestcml.io/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>
-  <url><loc>https://bestcml.io/o-nas</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://bestcml.io/kontakt</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://bestcml.io/cennik</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://bestcml.io/wspolpraca</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
-  <url><loc>https://bestcml.io/blog</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://mcml.pro/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>
+  <url><loc>https://mcml.pro/o-nas</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://mcml.pro/kontakt</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://mcml.pro/cennik</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://mcml.pro/wspolpraca</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://mcml.pro/blog</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
 
   <!-- ─── Huby zabiegowe ─── -->
-  <url><loc>https://bestcml.io/leczenie/proktologia</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
-  <url><loc>https://bestcml.io/leczenie/flebologia</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
-  <url><loc>https://bestcml.io/leczenie/ginekomastia</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://mcml.pro/leczenie/proktologia</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://mcml.pro/leczenie/flebologia</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://mcml.pro/leczenie/ginekomastia</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
 
   <!-- ─── Metody / zabiegi ─── -->
-  <url><loc>https://bestcml.io/leczenie/lhp</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
-  <url><loc>https://bestcml.io/leczenie/filac</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
-  <url><loc>https://bestcml.io/leczenie/silac</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
-  <url><loc>https://bestcml.io/leczenie/szczelina</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
-  <url><loc>https://bestcml.io/leczenie/plastyka</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://bestcml.io/leczenie/anusitis</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://bestcml.io/leczenie/spazm-lonowoodbytniczy</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://bestcml.io/leczenie/evlt</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
-  <url><loc>https://bestcml.io/leczenie/skleroterapia</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://bestcml.io/leczenie/clacs</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://bestcml.io/leczenie/mikroflebektomia</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://bestcml.io/leczenie/fototerapia</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://bestcml.io/leczenie/ginekomastia-gruczolowa</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://bestcml.io/leczenie/ginekomastia-tluszczowa</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://bestcml.io/leczenie/ginekomastia-mieszana</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://mcml.pro/leczenie/lhp</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://mcml.pro/leczenie/filac</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://mcml.pro/leczenie/silac</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://mcml.pro/leczenie/szczelina</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://mcml.pro/leczenie/plastyka</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://mcml.pro/leczenie/anusitis</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://mcml.pro/leczenie/spazm-lonowoodbytniczy</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://mcml.pro/leczenie/evlt</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://mcml.pro/leczenie/skleroterapia</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://mcml.pro/leczenie/clacs</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://mcml.pro/leczenie/mikroflebektomia</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://mcml.pro/leczenie/fototerapia</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://mcml.pro/leczenie/ginekomastia-gruczolowa</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://mcml.pro/leczenie/ginekomastia-tluszczowa</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://mcml.pro/leczenie/ginekomastia-mieszana</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
 
   <!-- ─── Strefa pacjenta — huby edukacyjne ─── -->
-  <url><loc>https://bestcml.io/dla-pacjenta</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
-  <url><loc>https://bestcml.io/dla-pacjenta/hemoroidy</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
-  <url><loc>https://bestcml.io/dla-pacjenta/pajaczki</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
-  <url><loc>https://bestcml.io/dla-pacjenta/proktolog-faq</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
-  <url><loc>https://bestcml.io/dla-pacjenta/edukacja</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
-  <url><loc>https://bestcml.io/dla-pacjenta/pielegnacja-nog</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
-  <url><loc>https://bestcml.io/dla-pacjenta/profilaktyka-zylakow</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
-  <url><loc>https://bestcml.io/dla-pacjenta/faldy-odbytu</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
-  <url><loc>https://bestcml.io/wiedza/seks-analny-a-hemoroidy</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://mcml.pro/dla-pacjenta</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://mcml.pro/dla-pacjenta/hemoroidy</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://mcml.pro/dla-pacjenta/pajaczki</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://mcml.pro/dla-pacjenta/proktolog-faq</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://mcml.pro/dla-pacjenta/edukacja</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://mcml.pro/dla-pacjenta/pielegnacja-nog</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://mcml.pro/dla-pacjenta/profilaktyka-zylakow</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://mcml.pro/dla-pacjenta/faldy-odbytu</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://mcml.pro/wiedza/seks-analny-a-hemoroidy</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
 
   <!-- ─── Strefa pacjenta — narzędzia interaktywne (EBM, quizy, infografiki) ─── -->
-  <url><loc>https://bestcml.io/dla-pacjenta/quiz-hemoroidy</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
-  <url><loc>https://bestcml.io/dla-pacjenta/ebm-hemoroidy</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
-  <url><loc>https://bestcml.io/dla-pacjenta/dziennik-hemoroidy</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
-  <url><loc>https://bestcml.io/dla-pacjenta/hemoroidy-infografika</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
-  <url><loc>https://bestcml.io/dla-pacjenta/ebook-pajaczki</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://mcml.pro/dla-pacjenta/quiz-hemoroidy</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://mcml.pro/dla-pacjenta/ebm-hemoroidy</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://mcml.pro/dla-pacjenta/dziennik-hemoroidy</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://mcml.pro/dla-pacjenta/hemoroidy-infografika</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://mcml.pro/dla-pacjenta/ebook-pajaczki</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
 
   <!-- ─── Przygotowanie do zabiegów ─── -->
-  <url><loc>https://bestcml.io/dla-pacjenta/przygotowanie-evlt</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
-  <url><loc>https://bestcml.io/dla-pacjenta/przygotowanie-lhp</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
-  <url><loc>https://bestcml.io/dla-pacjenta/przygotowanie-filac</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
-  <url><loc>https://bestcml.io/dla-pacjenta/przygotowanie-silac</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
-  <url><loc>https://bestcml.io/dla-pacjenta/przygotowanie-clacs</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
-  <url><loc>https://bestcml.io/dla-pacjenta/przygotowanie-skleroterapia</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
-  <url><loc>https://bestcml.io/dla-pacjenta/przygotowanie-mikroflebektomia</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
-  <url><loc>https://bestcml.io/dla-pacjenta/przygotowanie-plastyka</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
-  <url><loc>https://bestcml.io/dla-pacjenta/przygotowanie-ginekomastii</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
-  <url><loc>https://bestcml.io/dla-pacjenta/przygotowanie-ginekomastia-gruczolowa</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
-  <url><loc>https://bestcml.io/dla-pacjenta/przygotowanie-ginekomastia-tluszczowa</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
-  <url><loc>https://bestcml.io/dla-pacjenta/przygotowanie-ginekomastia-mieszana</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://mcml.pro/dla-pacjenta/przygotowanie-evlt</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://mcml.pro/dla-pacjenta/przygotowanie-lhp</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://mcml.pro/dla-pacjenta/przygotowanie-filac</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://mcml.pro/dla-pacjenta/przygotowanie-silac</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://mcml.pro/dla-pacjenta/przygotowanie-clacs</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://mcml.pro/dla-pacjenta/przygotowanie-skleroterapia</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://mcml.pro/dla-pacjenta/przygotowanie-mikroflebektomia</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://mcml.pro/dla-pacjenta/przygotowanie-plastyka</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://mcml.pro/dla-pacjenta/przygotowanie-ginekomastii</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://mcml.pro/dla-pacjenta/przygotowanie-ginekomastia-gruczolowa</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://mcml.pro/dla-pacjenta/przygotowanie-ginekomastia-tluszczowa</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://mcml.pro/dla-pacjenta/przygotowanie-ginekomastia-mieszana</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
 
   <!-- ─── Zalecenia po zabiegach ─── -->
-  <url><loc>https://bestcml.io/dla-pacjenta/zalecenia-po-evlt</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
-  <url><loc>https://bestcml.io/dla-pacjenta/zalecenia-po-lhp</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
-  <url><loc>https://bestcml.io/dla-pacjenta/zalecenia-po-filac</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
-  <url><loc>https://bestcml.io/dla-pacjenta/zalecenia-po-silac</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
-  <url><loc>https://bestcml.io/dla-pacjenta/zalecenia-po-clacs</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
-  <url><loc>https://bestcml.io/dla-pacjenta/zalecenia-po-skleroterapii</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
-  <url><loc>https://bestcml.io/dla-pacjenta/zalecenia-po-mikroflebektomii</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
-  <url><loc>https://bestcml.io/dla-pacjenta/zalecenia-po-plastyce</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
-  <url><loc>https://bestcml.io/dla-pacjenta/zalecenia-po-ginekomastii</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://mcml.pro/dla-pacjenta/zalecenia-po-evlt</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://mcml.pro/dla-pacjenta/zalecenia-po-lhp</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://mcml.pro/dla-pacjenta/zalecenia-po-filac</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://mcml.pro/dla-pacjenta/zalecenia-po-silac</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://mcml.pro/dla-pacjenta/zalecenia-po-clacs</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://mcml.pro/dla-pacjenta/zalecenia-po-skleroterapii</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://mcml.pro/dla-pacjenta/zalecenia-po-mikroflebektomii</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://mcml.pro/dla-pacjenta/zalecenia-po-plastyce</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://mcml.pro/dla-pacjenta/zalecenia-po-ginekomastii</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
 
   <!-- ─── Strony prawne ─── -->
-  <url><loc>https://bestcml.io/polityka-prywatnosci</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
-  <url><loc>https://bestcml.io/regulamin</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
+  <url><loc>https://mcml.pro/polityka-prywatnosci</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
+  <url><loc>https://mcml.pro/regulamin</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
 </urlset>
