@@ -74,7 +74,6 @@ const Szukaj = () => {
         title={title}
         description="Wyszukaj artykuły, poradniki i informacje o zabiegach w CML Warszawa Wilanów."
         path={q ? `/szukaj?q=${encodeURIComponent(q)}` : "/szukaj"}
-        noindex
       />
       <section className="py-16 md:py-20 px-4">
         <div className="max-w-3xl mx-auto">
