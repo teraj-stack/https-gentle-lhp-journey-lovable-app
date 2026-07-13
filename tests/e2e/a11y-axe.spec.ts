@@ -66,10 +66,35 @@ async function runAxe(page: Page, route: Route) {
   expect(formatted, `Accessibility violations on ${route.label} (${route.path})`).toEqual([]);
 }
 
-test.describe("axe-core a11y — public routes", () => {
+test.describe("axe-core a11y — public routes (desktop)", () => {
   for (const route of ROUTES) {
     test(`${route.label} (${route.path}) has no serious/critical a11y violations`, async ({ page }) => {
       await runAxe(page, route);
     });
   }
 });
+
+/**
+ * Mobile viewport profile — iPhone 13 dimensions (390×844, DPR 3), touch enabled.
+ * Same axe ruleset as desktop; catches issues that only appear in the mobile
+ * layout: burger menu, sticky CTA, collapsed nav, off-canvas drawers.
+ */
+const MOBILE_VIEWPORT = { width: 390, height: 844 } as const;
+
+test.describe("axe-core a11y — public routes (mobile 390×844)", () => {
+  test.use({
+    viewport: MOBILE_VIEWPORT,
+    deviceScaleFactor: 3,
+    hasTouch: true,
+    isMobile: true,
+    userAgent:
+      "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
+  });
+
+  for (const route of ROUTES) {
+    test(`[mobile] ${route.label} (${route.path}) has no serious/critical a11y violations`, async ({ page }) => {
+      await runAxe(page, route);
+    });
+  }
+});
+
