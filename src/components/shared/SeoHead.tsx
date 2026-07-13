@@ -16,7 +16,7 @@ const BRAND_RE = /\bCML\b/i;
 const SeoHead = ({ title, description, path, type = "article", image }: SeoHeadProps) => {
   useEffect(() => {
     const hasBrand = BRAND_RE.test(title);
-    const fullTitle = hasBrand ? title : `${title} | ${BRAND}`;
+    const fullTitle = hasBrand ? title : (title.length > 55 ? title : `${title} | CML`);
     const url = `${BASE_URL}${path}`;
     const ogImage = image || OG_IMAGE;
 
