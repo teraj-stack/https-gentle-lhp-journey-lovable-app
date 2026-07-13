@@ -109,7 +109,8 @@ async function runAxe(page: Page, route: Route, profile: "desktop" | "mobile" = 
 test.describe("axe-core a11y — public routes (desktop)", () => {
   for (const route of ROUTES) {
     test(`${route.label} (${route.path}) has no serious/critical a11y violations`, async ({ page }) => {
-      await runAxe(page, route);
+      await runAxe(page, route, "desktop");
+
     });
   }
 });
