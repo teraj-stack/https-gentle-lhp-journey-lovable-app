@@ -22,6 +22,8 @@
     "e2e:reset-and-seed": "node scripts/e2e-seed-cli.mjs reset-and-seed",
     "test:e2e": "playwright test",
     "test:a11y": "playwright test tests/e2e/a11y-axe.spec.ts",
+    "test:a11y:report": "playwright test tests/e2e/a11y-axe.spec.ts; node scripts/a11y-report-html.mjs",
+    "a11y:report:html": "node scripts/a11y-report-html.mjs",
     "test:visual:report": "node scripts/visual-snapshot-report.mjs",
     "test:visual:report:pack": "node scripts/visual-snapshot-report-pack.mjs",
     "test:visual:report:ci": "node scripts/visual-snapshot-report.mjs && node scripts/visual-snapshot-report-pack.mjs",
