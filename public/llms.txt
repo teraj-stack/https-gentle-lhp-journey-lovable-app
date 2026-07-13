@@ -1,0 +1,47 @@
+# CML – Centrum Medycyny Laserowej
+
+> Warszawa Wilanów (ul. Adama Branickiego 10/U6): laserowe leczenie hemoroidów (LHP), przetok (FiLaC), zatoki włosowej (SiLaC), żylaków (EVLT, CLaCS) i pajączków. Ginekomastia (Vaser Lipo HD). Lekarz prowadzący: Dr Jan Bujok.
+
+CML to premium klinika medycyny laserowej z jedną lokalizacją — Warszawa Wilanów, ul. Adama Branickiego 10/U6. Specjalizacje: flebologia (~70%), proktologia, ginekomastia. Podejście: Evidence-Based Medicine, „pacjent jako świadomy partner".
+
+## Pages
+
+- [Strona główna](/): Przegląd oferty i lokalizacji.
+- [O nas](/o-nas): Dr Jan Bujok, filozofia i statystyki kliniki.
+- [Kontakt](/kontakt): Adres Branickiego 10/U6, formularz i mapa.
+- [Cennik](/cennik): Konsultacje i zabiegi.
+- [Blog](/blog): Artykuły edukacyjne EBM.
+- [Współpraca](/wspolpraca): Model kooperacyjny S.C.A.L.E.
+- [Dla pacjenta](/dla-pacjenta): Materiały edukacyjne i przewodniki.
+
+## Proktologia
+
+- [Hub proktologia](/leczenie/proktologia): Wszystkie zabiegi proktologiczne.
+- [LHP – hemoroidy laserowo](/leczenie/lhp): Laserowa hemoroidoplastyka.
+- [FiLaC – przetoka odbytu](/leczenie/filac): Laser 1470 nm.
+- [SiLaC – zatoka włosowa](/leczenie/silac): Laserowe zamknięcie zatoki.
+- [Szczelina odbytu](/leczenie/szczelina): Leczenie zachowawcze i zabiegowe.
+- [Plastyka odbytu](/leczenie/plastyka): Zabieg bez szwów.
+- [Anusitis](/leczenie/anusitis): Zapalenie kanału odbytu.
+- [Fałdy odbytu](/leczenie/faldy-odbytu): Anatomiczna zmienność vs wskazania estetyczne.
+
+## Flebologia
+
+- [Hub flebologia](/leczenie/flebologia): Żylaki i pajączki.
+- [EVLT – żylaki laserowo](/leczenie/evlt): Termiczna ablacja żył.
+- [CLaCS – pajączki hybrydowo](/leczenie/clacs): Metoda hybrydowa 85–95%.
+- [Mikroflebektomia](/leczenie/mikroflebektomia): Etapowy zabieg piankowy.
+- [Profilaktyka żylaków](/leczenie/profilaktyka-zylakow): 6 filarów prewencji.
+
+## Ginekomastia
+
+- [Hub ginekomastia](/leczenie/ginekomastia): Diagnostyka i leczenie.
+- [Ginekomastia tłuszczowa](/leczenie/ginekomastia-tluszczowa): Vaser Lipo HD.
+
+## Optional
+
+- [Fototerapia PBM](/leczenie/fototerapia): LED terapia gojenia.
+- [Pielęgnacja nóg](/pielegnacja-nog): 3-etapowa aplikacja i 4 zasady.
+- [Dziennik hemoroidów](/dla-pacjenta/dziennik-hemoroidy): Interaktywny dziennik objawów.
+- [Ebook: Powrót do komfortu](/dla-pacjenta/ebook-hemoroidy): Online reader.
+- [Infografika hemoroidów](/dla-pacjenta/hemoroidy-infografika): Statystyki wizualne.
