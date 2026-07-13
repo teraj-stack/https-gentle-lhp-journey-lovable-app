@@ -1,11 +1,12 @@
 {
   "ci": {
     "collect": {
-      "staticDistDir": "./dist",
+      "startServerCommand": "npm run preview -- --port 4173",
+      "startServerReadyPattern": "Local:",
       "url": [
-        "http://localhost/index.html",
-        "http://localhost/kontakt/index.html",
-        "http://localhost/o-nas/index.html"
+        "http://localhost:4173/",
+        "http://localhost:4173/kontakt",
+        "http://localhost:4173/o-nas"
       ],
       "numberOfRuns": 1,
       "settings": {
