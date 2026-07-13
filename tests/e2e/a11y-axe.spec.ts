@@ -83,8 +83,28 @@ async function runAxe(page: Page, route: Route, profile: "desktop" | "mobile" = 
     nodes: v.nodes.map((n) => ({ target: n.target, failureSummary: n.failureSummary })),
   }));
 
+  // Persist full axe results (all violations, incl. advisory + passes count) for CI artifacts.
+  const reportSlug = `${profile}-${slugify(route.path)}`;
+  const payload = {
+    profile,
+    route: { path: route.path, label: route.label },
+    url: page.url(),
+    timestamp: new Date().toISOString(),
+    summary: {
+      violations: results.violations.length,
+      blocking: blocking.length,
+      advisory: advisory.length,
+      passes: results.passes.length,
+      incomplete: results.incomplete.length,
+    },
+    violations: results.violations,
+    incomplete: results.incomplete,
+  };
+  writeFileSync(resolve(REPORT_DIR, `${reportSlug}.json`), JSON.stringify(payload, null, 2));
+
   expect(formatted, `Accessibility violations on ${route.label} (${route.path})`).toEqual([]);
 }
+
 
 test.describe("axe-core a11y — public routes (desktop)", () => {
   for (const route of ROUTES) {
