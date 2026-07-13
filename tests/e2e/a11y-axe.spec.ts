@@ -32,16 +32,47 @@ const FAIL_IMPACTS = STRICT
 type Route = { path: string; label: string };
 
 const ROUTES: Route[] = [
+  // Top-level
   { path: "/", label: "Home" },
-  { path: "/kontakt", label: "Contact / clinic locations" },
   { path: "/o-nas", label: "About / clinic info" },
+  { path: "/kontakt", label: "Contact / clinic locations" },
+  { path: "/cennik", label: "Pricing" },
+  { path: "/wspolpraca", label: "B2B cooperation" },
+  { path: "/dla-pacjenta", label: "For patient hub" },
+
+  // Hubs
   { path: "/leczenie/flebologia", label: "Phlebology hub" },
   { path: "/leczenie/proktologia", label: "Proctology hub" },
+
+  // Phlebology procedures
+  { path: "/leczenie/evlt", label: "EVLT" },
+  { path: "/leczenie/clacs", label: "CLaCS" },
+  { path: "/leczenie/skleroterapia", label: "Sclerotherapy" },
+  { path: "/leczenie/mikroflebektomia", label: "Microphlebectomy" },
+  { path: "/leczenie/fototerapia", label: "Phototherapy (PBM)" },
+
+  // Proctology procedures
+  { path: "/leczenie/lhp", label: "LHP hemorrhoids" },
+  { path: "/leczenie/filac", label: "FiLaC fistulas" },
+  { path: "/leczenie/silac", label: "SiLaC pilonidal sinus" },
+  { path: "/leczenie/szczelina", label: "Anal fissure" },
+  { path: "/leczenie/plastyka", label: "Anal plasty" },
+  { path: "/leczenie/anusitis", label: "Anusitis" },
+  { path: "/leczenie/spazm-lonowoodbytniczy", label: "Puborectalis spasm" },
+
+  // Gynecomastia
+  { path: "/leczenie/ginekomastia", label: "Gynecomastia hub" },
+  { path: "/leczenie/ginekomastia-gruczolowa", label: "Gynecomastia — glandular" },
+  { path: "/leczenie/ginekomastia-tluszczowa", label: "Gynecomastia — fatty" },
+  { path: "/leczenie/ginekomastia-mieszana", label: "Gynecomastia — mixed" },
+
+  // Content / discovery
   { path: "/blog", label: "Blog index" },
   { path: "/blog/jak-rozpoznac-hemoroidy", label: "Blog post" },
   { path: "/szukaj", label: "Search (empty)" },
   { path: "/szukaj?q=hemoroidy", label: "Search (with query)" },
 ];
+
 
 
 async function runAxe(page: Page, route: Route, profile: "desktop" | "mobile" = "desktop") {
