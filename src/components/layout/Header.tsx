@@ -125,7 +125,7 @@ const wiedzaColumns: MegaColumn[] = [
 // --- KLINIKA (single dropdown, top-level housekeeping) ---
 const klinikaItems: NavItem[] = [
   { label: "O nas", href: "/o-nas", desc: "Zespół, misja, dr Jan Bujok" },
-  { label: "Lokalizacje", href: "/kontakt", desc: "Warszawa · Rzeszów" },
+  { label: "Lokalizacje", href: "/kontakt", desc: "Warszawa Wilanów" },
   { label: "Współpraca (B2B)", href: "/wspolpraca", desc: "Dla lekarzy i partnerów" },
 ];
 
@@ -845,9 +845,9 @@ const Header = () => {
                       <span>Zadzwoń</span>
                     </a>
                     <a
-                      href="mailto:fimedica@fimedica.pl"
+                      href="mailto:warszawa@cml.pl"
                       className="flex items-center justify-center gap-2 px-3 py-3 rounded-lg bg-accent/40 border border-border text-sm font-medium text-foreground hover:bg-accent/60 transition-colors"
-                      aria-label="Wyślij e-mail: fimedica@fimedica.pl"
+                      aria-label="Wyślij e-mail: warszawa@cml.pl"
                     >
                       <Mail className="w-4 h-4 shrink-0" aria-hidden="true" />
                       <span>Napisz</span>

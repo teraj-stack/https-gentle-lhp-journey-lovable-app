@@ -22,9 +22,6 @@ type ReminderVariant = '24h' | '2h'
 
 const LOCATION_LABELS: Array<{ match: string[]; label: string }> = [
   { match: ['wilanow', 'wilanów', 'branickiego'], label: 'Warszawa Wilanów, ul. Adama Branickiego 10/U6' },
-  { match: ['fimedica', 'gieldowa', 'giełdowa'], label: 'Fimedica Warszawa, ul. Giełdowa 4D' },
-  
-  { match: ['rzeszow', 'rzeszów', 'ipcliniq', 'rejtana'], label: 'IP Cliniq – Rzeszów, al. Rejtana 53' },
 ]
 
 function resolveLocationLabel(location?: string): string {

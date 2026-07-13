@@ -32,14 +32,6 @@ const LOCATION_LABELS: Record<string, { match: string[]; label: string }> = {
     match: ['wilanow', 'wilanów', 'branickiego', 'warszawa-wilanow'],
     label: 'Warszawa Wilanów, ul. Adama Branickiego 10/U6',
   },
-  fimedica: {
-    match: ['fimedica', 'gieldowa', 'giełdowa'],
-    label: 'Fimedica Warszawa, ul. Giełdowa 4D',
-  },
-  rzeszow: {
-    match: ['rzeszow', 'rzeszów', 'ipcliniq', 'ip-cliniq', 'rejtana'],
-    label: 'IP Cliniq – Rzeszów, al. Rejtana 53',
-  },
 }
 
 function resolveLocationLabel(location?: string): string {

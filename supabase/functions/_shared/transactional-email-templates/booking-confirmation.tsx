@@ -17,9 +17,6 @@ interface BookingConfirmationProps {
 // Map location codes to friendly Polish labels
 const LOCATION_LABELS: Record<string, string> = {
   'warszawa-wilanow': 'Warszawa Wilanów, ul. Adama Branickiego 10/U6',
-  'fimedica-warszawa': 'Fimedica Warszawa, ul. Giełdowa 4D',
-  'tychy': 'Tychy',
-  'pszczyna': 'Pszczyna',
 }
 
 const formatLocation = (loc?: string) => {

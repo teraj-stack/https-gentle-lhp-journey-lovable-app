@@ -28,7 +28,7 @@ export type StatusFilter =
   | "needs_contact"
   | "completed";
 
-export type LocationFilter = "all" | "wilanow" | "fimedica" | "rzeszow";
+export type LocationFilter = "all" | "wilanow";
 
 export type DatePresetFilter = "today" | "week" | "all" | "custom";
 
@@ -72,16 +72,6 @@ const LOCATION_OPTIONS: Array<{
     value: "wilanow",
     label: "Warszawa Wilanów",
     match: ["wilanow", "wilanów", "branickiego", "warszawa-wilanow"],
-  },
-  {
-    value: "fimedica",
-    label: "Fimedica Warszawa",
-    match: ["fimedica", "gieldowa", "giełdowa"],
-  },
-  {
-    value: "rzeszow",
-    label: "IP Cliniq – Rzeszów",
-    match: ["rzeszow", "rzeszów", "ipcliniq", "ip-cliniq", "rejtana"],
   },
 ];
 

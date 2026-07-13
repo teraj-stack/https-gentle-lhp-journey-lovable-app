@@ -75,7 +75,7 @@ interface NotificationRecipientRow {
 }
 
 // Strip Polish/Latin diacritics so location_match in DB can stay ASCII
-// (e.g. "wilanow" matches "Wilanów", "rzeszow" matches "Rzeszów").
+// (e.g. "wilanow" matches "Wilanów").
 function stripDiacritics(input: string): string {
   return input.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
 }

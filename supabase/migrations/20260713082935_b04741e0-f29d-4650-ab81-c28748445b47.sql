@@ -1,0 +1,1 @@
+DELETE FROM public.notification_recipients WHERE location_match IN ('rzeszow','fimedica') OR (location_match_patterns && ARRAY['rzeszow','rzeszów','ipcliniq','ip-cliniq','rejtana','fimedica','gieldowa','giełdowa']);
