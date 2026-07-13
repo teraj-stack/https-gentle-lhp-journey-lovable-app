@@ -132,6 +132,13 @@ async function runAxe(page: Page, route: Route, profile: "desktop" | "mobile" = 
       passes: results.passes.length,
       incomplete: results.incomplete.length,
     },
+    config: {
+      tags: A11Y_CFG.tags,
+      disabledRules: A11Y_CFG.disabledRules,
+      criticalRules: A11Y_CFG.criticalRules,
+      warningRules: A11Y_CFG.warningRules,
+      failImpacts: A11Y_CFG.failImpacts,
+    },
     violations: results.violations,
     incomplete: results.incomplete,
   };
