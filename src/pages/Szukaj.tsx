@@ -38,6 +38,7 @@ const Szukaj = () => {
     return () => el.remove();
   }, []);
 
+  useEffect(() => {
     let cancelled = false;
     const query = q.trim();
     if (!query) {
