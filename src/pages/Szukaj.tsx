@@ -29,7 +29,15 @@ const Szukaj = () => {
 
   useEffect(() => setInput(q), [q]);
 
+  // Internal search results — noindex,follow (Google best practice).
   useEffect(() => {
+    const el = document.createElement("meta");
+    el.setAttribute("name", "robots");
+    el.setAttribute("content", "noindex,follow");
+    document.head.appendChild(el);
+    return () => el.remove();
+  }, []);
+
     let cancelled = false;
     const query = q.trim();
     if (!query) {
