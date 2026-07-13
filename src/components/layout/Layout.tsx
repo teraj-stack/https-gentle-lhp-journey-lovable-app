@@ -16,8 +16,19 @@ const Layout = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
+      {/*
+        Skip link — WCAG 2.4.1 (Bypass Blocks). Visually hidden until focused,
+        then anchors at top-left. Lets keyboard users jump past the header
+        dropdowns straight into the page's <main>.
+      */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[100] focus:rounded-md focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-foreground focus:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+      >
+        Przejdź do treści
+      </a>
       <Header />
-      <main className="flex-1">
+      <main id="main-content" tabIndex={-1} className="flex-1 focus:outline-none">
         <Outlet />
       </main>
       <Footer />
@@ -28,3 +39,4 @@ const Layout = () => {
 };
 
 export default Layout;
+
