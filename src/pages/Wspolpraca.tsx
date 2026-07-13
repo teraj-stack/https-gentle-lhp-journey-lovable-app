@@ -103,6 +103,7 @@ const Wspolpraca = () => (
       audienceType="Clinician"
     />
     <FaqSchema faqs={faq} name="FAQ – Współpraca B2B dla placówek medycznych" url="https://bestcml.io/wspolpraca" />
+    <ClinicJsonLd />
     <WspolpracaHero />
 
     {/* EBM */}
