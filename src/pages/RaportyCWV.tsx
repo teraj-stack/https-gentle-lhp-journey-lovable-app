@@ -74,7 +74,7 @@ export default function RaportyCWV() {
       <SeoHead
         title="Raport Core Web Vitals · CML"
         description="Aktualne wyniki Core Web Vitals (LCP, INP, CLS) mierzone na podstawie prawdziwych wizyt użytkowników na mcml.pro."
-        canonical="/raporty/cwv"
+        path="/raporty/cwv"
       />
       <main className="container mx-auto px-4 py-8 md:py-12 max-w-6xl">
         <Button variant="ghost" size="sm" asChild className="mb-4">
