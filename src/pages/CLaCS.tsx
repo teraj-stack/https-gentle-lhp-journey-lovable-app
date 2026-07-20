@@ -24,7 +24,7 @@ const clacsSummary = [
   { label: "Rekonwalescencja", value: "Natychmiastowy powrót do aktywności. Pończocha uciskowa wg zaleceń, filtr SPF 50+ przez 4–6 tygodni." },
   { label: "Efekty", value: "Trwałe zamknięcie pajączków, teleangiektazji i drobnych żyłek do 3 mm. Zwykle 1–3 sesje w zależności od rozległości." },
   { label: "Możliwe powikłania", value: "Przejściowe zaczerwienienie, drobne siniaki, przebarwienia (ustępują samoistnie)." },
-  { label: "Cena", value: "1 500 zł — cena obejmuje zabieg i wszystkie wizyty kontrolne do czasu wygojenia" },
+  { label: "Cena", value: "od 500 zł — cena obejmuje zabieg i wszystkie wizyty kontrolne do czasu wygojenia" },
 ];
 
 const fadeUp = {

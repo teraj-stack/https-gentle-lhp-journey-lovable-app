@@ -27,7 +27,7 @@ const lhpSummary = [
   { label: "Rekonwalescencja", value: "Powrót do domu tego samego dnia. Dieta bogata w błonnik, nawadnianie, unikanie wysiłku przez kilka dni." },
   { label: "Efekty", value: "Znaczne zmniejszenie lub całkowite usunięcie hemoroidów, ustąpienie krwawienia i bólu. Brak blizn." },
   { label: "Możliwe powikłania", value: "Przejściowy obrzęk, niewielkie krwawienie, dyskomfort. Minimalne ryzyko nietrzymania stolca." },
-  { label: "Cena", value: "6 000 zł — cena obejmuje zabieg i wszystkie wizyty kontrolne do czasu wygojenia" },
+  { label: "Cena", value: "od 4 500 zł — cena obejmuje zabieg i wszystkie wizyty kontrolne do czasu wygojenia" },
 ];
 
 const sectionAnim = {
