@@ -15,8 +15,8 @@ const stagger = (delay = 0) => ({
 const DoctorSection = () => (
   <section className="py-20 md:py-28 bg-card">
     <div className="max-w-7xl mx-auto px-4 md:px-8">
-      <div className="grid lg:grid-cols-2 gap-16 items-center">
-        <motion.div {...stagger(0.15)} className="flex justify-center lg:order-2">
+      <div className="grid md:grid-cols-2 gap-10 md:gap-12 lg:gap-16 items-center">
+        <motion.div {...stagger(0.15)} className="flex justify-center md:order-2">
           <div className="relative">
             <img
               src={drBujokImg}
