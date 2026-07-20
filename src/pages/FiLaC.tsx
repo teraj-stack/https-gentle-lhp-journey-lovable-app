@@ -28,7 +28,7 @@ const filacSummary = [
   { label: "Rekonwalescencja", value: "Szybki powrót do aktywności (kilka dni). Ból pooperacyjny minimalny vs klasyczne operacje." },
   { label: "Efekty", value: "Trwałe zamknięcie kanału przetoki przy zachowaniu pełnego trzymania stolca i gazów" },
   { label: "Możliwe powikłania", value: "Ropień w miejscu po przetoce, nawrót przetoki, przejściowy wyciek wydzieliny" },
-  { label: "Cena", value: "od 6 000 zł — cena obejmuje zabieg i wszystkie wizyty kontrolne do czasu wygojenia" },
+  { label: "Cena", value: "od 4 300 zł — cena obejmuje zabieg i wszystkie wizyty kontrolne do czasu wygojenia" },
 ];
 
 const fadeUp = {
