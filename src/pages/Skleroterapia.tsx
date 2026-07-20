@@ -23,7 +23,7 @@ const skleroterapiaSummary = [
   { label: "Rekonwalescencja", value: "Natychmiastowy powrót do aktywności. Pończocha uciskowa przez 5–7 dni." },
   { label: "Efekty", value: "Zanik widocznych żylaków i żył siateczkowatych" },
   { label: "Możliwe powikłania", value: "Przebarwienia (brązowe paski), zgrubienia, siniaki w miejscu wkłucia" },
-  { label: "Cena", value: "od 1 000 zł (1–2 ampułki) / od 1 500 zł (duże żylaki) — cena obejmuje zabieg i wszystkie wizyty kontrolne do czasu wygojenia" },
+  { label: "Cena", value: "od 600 zł (1–2 ampułki) / od 1 500 zł (duże żylaki) — cena obejmuje zabieg i wszystkie wizyty kontrolne do czasu wygojenia" },
 ];
 
 const fadeUp = {
