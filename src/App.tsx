@@ -186,6 +186,8 @@ const App = () => (
             <Route path="/admin/scroll-test" element={<AdminScrollTest />} />
             <Route path="/admin/vein-images" element={<AdminVeinImages />} />
             <Route path="/admin/seo-redirects" element={<AdminSeoRedirects />} />
+            <Route path="/admin/cwv" element={<AdminCWV />} />
+            <Route path="/raporty/cwv" element={<RaportyCWV />} />
             
             <Route path="/unsubscribe" element={<Unsubscribe />} />
             <Route path="/reminder-opt-out" element={<ReminderOptOut />} />
