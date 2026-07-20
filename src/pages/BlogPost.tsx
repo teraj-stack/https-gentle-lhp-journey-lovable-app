@@ -49,6 +49,7 @@ const BlogPost = () => {
     return (
       <div className="pt-32 pb-24 max-w-3xl mx-auto px-4 md:px-8 text-center">
         <h1 className="text-2xl font-bold text-foreground mb-4">Nie znaleziono artykułu</h1>
+
         <Link to="/blog" className="text-primary hover:underline">
           ← Wróć do bloga
         </Link>

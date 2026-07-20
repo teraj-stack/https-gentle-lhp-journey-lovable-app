@@ -15,6 +15,7 @@
   <url><loc>https://mcml.pro/cennik</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
   <url><loc>https://mcml.pro/wspolpraca</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
   <url><loc>https://mcml.pro/blog</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://mcml.pro/szukaj</loc><changefreq>monthly</changefreq><priority>0.3</priority></url>
 
   <!-- ─── Huby zabiegowe ─── -->
   <url><loc>https://mcml.pro/leczenie/proktologia</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
