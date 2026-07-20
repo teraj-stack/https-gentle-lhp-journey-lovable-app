@@ -34,7 +34,7 @@ export default function AdminCWV() {
   const [session, setSession] = useState<Session | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [days, setDays] = useState<1 | 7 | 28>(7);
-  const { data: isAdmin, isLoading: adminLoading } = useIsAdmin(session);
+  const { isAdmin, loading: adminLoading } = useIsAdmin();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
