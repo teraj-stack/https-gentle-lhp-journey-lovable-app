@@ -45,14 +45,10 @@ const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
         <p className="text-foreground/50 text-sm font-sans uppercase tracking-[0.25em] mb-6" style={{ textShadow: "none" }}>
           CML · Dr Jan Bujok
         </p>
-        <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-foreground leading-[1.1] mb-3">
-          Medycyna premium.
-        </h1>
-        <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold leading-[1.1] mb-3 italic text-primary drop-shadow-lg">
-          Nowoczesne technologie laserowe.
-        </h1>
-        <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-foreground leading-[1.1] mb-10">
-          Jeden standard.
+        <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold leading-[1.1] mb-10">
+          <span className="block text-foreground mb-3">Medycyna premium.</span>
+          <span className="block italic text-primary drop-shadow-lg mb-3">Nowoczesne technologie laserowe.</span>
+          <span className="block text-foreground">Jeden standard.</span>
         </h1>
         <motion.p
           initial={{ opacity: 0, y: 20, filter: "blur(4px)" }}
