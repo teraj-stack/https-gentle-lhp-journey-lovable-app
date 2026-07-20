@@ -114,7 +114,8 @@
     via the `no-underline` utility on the anchor, or by not sitting
     inside one of these containers.
   */
-  :where(p, li, figcaption, blockquote, dd, dt) a:not(.no-underline) {
+  :where(p, figcaption, blockquote, dd, dt) a:not(.no-underline),
+  :where(.prose li, article li, .article li) a:not(.no-underline) {
     text-decoration: underline;
     text-decoration-thickness: 1px;
     text-underline-offset: 3px;
