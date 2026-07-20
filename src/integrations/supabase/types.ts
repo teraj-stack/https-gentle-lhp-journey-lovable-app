@@ -644,6 +644,42 @@ export type Database = {
         }
         Relationships: []
       }
+      web_vitals: {
+        Row: {
+          connection: string | null
+          created_at: string
+          id: string
+          metric: string
+          navigation_type: string | null
+          path: string
+          rating: string
+          user_agent: string | null
+          value: number
+        }
+        Insert: {
+          connection?: string | null
+          created_at?: string
+          id?: string
+          metric: string
+          navigation_type?: string | null
+          path: string
+          rating: string
+          user_agent?: string | null
+          value: number
+        }
+        Update: {
+          connection?: string | null
+          created_at?: string
+          id?: string
+          metric?: string
+          navigation_type?: string | null
+          path?: string
+          rating?: string
+          user_agent?: string | null
+          value?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       recent_token_abuse_ips: {

@@ -1,0 +1,103 @@
+import { supabase } from "@/integrations/supabase/client";
+
+export type MetricName = "LCP" | "INP" | "CLS" | "FCP" | "TTFB";
+
+export interface WebVitalRow {
+  id: string;
+  metric: MetricName;
+  value: number;
+  rating: "good" | "needs-improvement" | "poor";
+  path: string;
+  navigation_type: string | null;
+  connection: string | null;
+  user_agent: string | null;
+  created_at: string;
+}
+
+export interface MetricSummary {
+  metric: MetricName;
+  p75: number | null;
+  count: number;
+  good: number;
+  needsImprovement: number;
+  poor: number;
+  unit: "ms" | "score";
+}
+
+// Google Core Web Vitals thresholds
+export const CWV_THRESHOLDS: Record<MetricName, { good: number; poor: number; unit: "ms" | "score" }> = {
+  LCP: { good: 2500, poor: 4000, unit: "ms" },
+  INP: { good: 200, poor: 500, unit: "ms" },
+  CLS: { good: 0.1, poor: 0.25, unit: "score" },
+  FCP: { good: 1800, poor: 3000, unit: "ms" },
+  TTFB: { good: 800, poor: 1800, unit: "ms" },
+};
+
+export function rateValue(metric: MetricName, value: number): "good" | "needs-improvement" | "poor" {
+  const t = CWV_THRESHOLDS[metric];
+  if (value <= t.good) return "good";
+  if (value <= t.poor) return "needs-improvement";
+  return "poor";
+}
+
+export function percentile(values: number[], p: number): number | null {
+  if (values.length === 0) return null;
+  const sorted = [...values].sort((a, b) => a - b);
+  const idx = Math.min(sorted.length - 1, Math.floor((p / 100) * sorted.length));
+  return sorted[idx];
+}
+
+export function formatMetricValue(metric: MetricName, value: number | null): string {
+  if (value === null) return "—";
+  const unit = CWV_THRESHOLDS[metric].unit;
+  if (unit === "score") return value.toFixed(3);
+  return `${Math.round(value)} ms`;
+}
+
+export async function fetchRecentVitals(days: number, pathFilter?: string): Promise<WebVitalRow[]> {
+  const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+  let q = supabase
+    .from("web_vitals")
+    .select("*")
+    .gte("created_at", since)
+    .order("created_at", { ascending: false })
+    .limit(10000);
+  if (pathFilter) q = q.eq("path", pathFilter);
+  const { data, error } = await q;
+  if (error) throw error;
+  return (data ?? []) as WebVitalRow[];
+}
+
+export function summarize(rows: WebVitalRow[]): MetricSummary[] {
+  const groups: Record<MetricName, WebVitalRow[]> = {
+    LCP: [], INP: [], CLS: [], FCP: [], TTFB: [],
+  };
+  for (const r of rows) {
+    if (groups[r.metric]) groups[r.metric].push(r);
+  }
+  return (Object.keys(groups) as MetricName[]).map((metric) => {
+    const values = groups[metric].map((r) => Number(r.value));
+    const p75 = percentile(values, 75);
+    return {
+      metric,
+      p75,
+      count: values.length,
+      good: groups[metric].filter((r) => r.rating === "good").length,
+      needsImprovement: groups[metric].filter((r) => r.rating === "needs-improvement").length,
+      poor: groups[metric].filter((r) => r.rating === "poor").length,
+      unit: CWV_THRESHOLDS[metric].unit,
+    };
+  });
+}
+
+export function summarizeByPath(rows: WebVitalRow[]): Map<string, MetricSummary[]> {
+  const byPath = new Map<string, WebVitalRow[]>();
+  for (const r of rows) {
+    const arr = byPath.get(r.path) ?? [];
+    arr.push(r);
+    byPath.set(r.path, arr);
+  }
+  const result = new Map<string, MetricSummary[]>();
+  for (const [path, arr] of byPath) result.set(path, summarize(arr));
+  return result;
+}
