@@ -88,6 +88,8 @@ const ZaleceniaPoLHP = lazy(() => import("@/pages/ZaleceniaPoLHP"));
 const ZaleceniaPoClacs = lazy(() => import("@/pages/ZaleceniaPoClacs"));
 const ZaleceniaPoFilac = lazy(() => import("@/pages/ZaleceniaPoFilac"));
 const ZaleceniaPoSilac = lazy(() => import("@/pages/ZaleceniaPoSilac"));
+const RaportyCWV = lazy(() => import("@/pages/RaportyCWV"));
+const AdminCWV = lazy(() => import("@/pages/AdminCWV"));
 const ZaleceniaPoSkleroterapii = lazy(() => import("@/pages/ZaleceniaPoSkleroterapii"));
 const ZaleceniaPoPlastyce = lazy(() => import("@/pages/ZaleceniaPoPlastyce"));
 const ZaleceniaPoMikroflebektomii = lazy(() => import("@/pages/ZaleceniaPoMikroflebektomii"));
