@@ -43,12 +43,12 @@ const consultations = [
 ];
 
 const procedures = [
-  { name: "Żylaki – EVLT", price: "4 500 zł", href: "/leczenie/evlt" },
+  { name: "Żylaki – EVLT", price: "od 5 500 zł", href: "/leczenie/evlt" },
   { name: "Mikroflebektomia piankowa", price: "3 500 zł", href: "/leczenie/mikroflebektomia" },
-  { name: "Skleroterapia", price: "od 1 000 zł", href: "/leczenie/skleroterapia" },
-  { name: "Pajączki – CLaCS", price: "1 500 zł", href: "/leczenie/clacs" },
-  { name: "Leczenie hemoroidów – LHP", price: "6 000 zł", href: "/leczenie/lhp" },
-  { name: "Leczenie przetok – FiLaC", price: "od 6 000 zł", href: "/leczenie/filac" },
+  { name: "Skleroterapia", price: "od 600 zł", href: "/leczenie/skleroterapia" },
+  { name: "Pajączki – CLaCS", price: "od 500 zł", href: "/leczenie/clacs" },
+  { name: "Leczenie hemoroidów – LHP", price: "od 4 500 zł", href: "/leczenie/lhp" },
+  { name: "Leczenie przetok – FiLaC", price: "od 4 300 zł", href: "/leczenie/filac" },
   { name: "Torbiel pilonidalna – SiLaC", price: "8 000 zł", href: "/leczenie/silac" },
   { name: "Ginekomastia gruczołowa", price: "od 8 000 zł", href: "/leczenie/ginekomastia-gruczolowa" },
   { name: "Ginekomastia tłuszczowa", price: "od 6 000 zł", href: "/leczenie/ginekomastia-tluszczowa" },
