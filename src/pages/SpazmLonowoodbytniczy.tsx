@@ -134,8 +134,11 @@ const SpazmLonowoodbytniczy = () => (
             <img
               src={miesnieDnaMiednicy}
               alt="Schemat anatomiczny mięśni dna miednicy — m. biodrowo-guziczny, m. łonowo-odbytniczy, m. łonowo-kroczowy, m. zwieracz zewnętrzny odbytu, m. łonowo-odbytowy"
+              width={800}
+              height={600}
               className="w-full max-w-lg mx-auto rounded-xl"
               loading="lazy"
+              decoding="async"
             />
             <figcaption className="text-xs text-muted-foreground text-center mt-3">
               Schemat anatomiczny mięśni dna miednicy z zaznaczonym m.&nbsp;łonowo-odbytniczym (puborectalis)

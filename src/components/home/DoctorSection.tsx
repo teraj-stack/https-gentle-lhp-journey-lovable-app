@@ -21,8 +21,12 @@ const DoctorSection = () => (
             <img
               src={drBujokImg}
               alt="Dr Jan Bujok – chirurg, proktolog, flebolog"
+              width={720}
+              height={960}
               className="w-72 md:w-80 aspect-[3/4] rounded-2xl object-cover shadow-2xl"
-              loading="lazy"
+              loading="eager"
+              fetchPriority="high"
+              decoding="async"
             />
             <div className="absolute -bottom-4 -right-4 w-72 md:w-80 aspect-[3/4] rounded-2xl bg-primary/20 -z-10" />
           </div>

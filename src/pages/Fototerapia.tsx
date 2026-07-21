@@ -232,8 +232,11 @@ const Fototerapia = () => (
           <img
             src={fototerapiaColorsImg}
             alt="7 kolorów światła LED stosowanych w fototerapii – fioletowy, niebieski, cyjanowy, żółty, pomarańczowy, biały i czerwony z opisami długości fal"
+            width={1600}
+            height={400}
             className="w-full rounded-2xl border border-border"
             loading="lazy"
+            decoding="async"
           />
         </motion.div>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">

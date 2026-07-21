@@ -37,8 +37,11 @@ const RecoveryBoostBanner = () => (
       <img
         src={fototerapiaPbmImg}
         alt="Wpływ światła na regenerację komórkową — schemat fotobiomodulacji (PBM) pokazujący wzrost proliferacji, ATP i migracji komórek"
+        width={1200}
+        height={675}
         className="w-full max-w-2xl mx-auto rounded-2xl border border-border object-contain"
         loading="lazy"
+        decoding="async"
       />
       <figcaption className="text-center text-sm text-muted-foreground mt-3">
         Wpływ światła na regenerację — fotobiomodulacja stymuluje proliferację, produkcję ATP i migrację komórek
