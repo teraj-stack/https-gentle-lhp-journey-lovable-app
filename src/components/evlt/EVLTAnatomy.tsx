@@ -1,9 +1,9 @@
 import { useState, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
-import zylakiAnatomia from "@/assets/zylaki-anatomia.jpg";
-import ukladZyl from "@/assets/uklad-zyl-powierzchownych.png";
-import zylakiSchemat from "@/assets/zylaki-schemat.png";
+import zylakiAnatomia from "@/assets/zylaki-anatomia.webp";
+import ukladZyl from "@/assets/uklad-zyl-powierzchownych.webp";
+import zylakiSchemat from "@/assets/zylaki-schemat.webp";
 
 const images = [
   { src: zylakiAnatomia, alt: "Anatomia żył kończyny dolnej — powięź, mięsień, żylak, żyła głęboka, perforator", title: "Przekrój żył kończyny", desc: "Żyła głęboka, perforatory i żylak powierzchowny w kontekście powięzi i mięśni." },

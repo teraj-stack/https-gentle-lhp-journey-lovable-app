@@ -1,1 +1,1 @@
-UPDATE blog_posts SET cover_image_url = 'https://jowtjcyevactqmhqrytz.supabase.co/storage/v1/object/public/blog-covers/blog-cover-pajaczki-v2.jpg' WHERE slug = 'pajaczki-zylne-leczenie';
+UPDATE blog_posts SET cover_image_url = 'https://jowtjcyevactqmhqrytz.supabase.co/storage/v1/object/public/blog-covers/blog-cover-pajaczki-v2.webp' WHERE slug = 'pajaczki-zylne-leczenie';

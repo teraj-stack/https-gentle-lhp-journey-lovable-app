@@ -24,7 +24,7 @@ import {
   CheckCircle2,
   Upload,
 } from "lucide-react";
-import schematImg from "@/assets/profilaktyka-zylakow-schemat.png";
+import schematImg from "@/assets/profilaktyka-zylakow-schemat.webp";
 import RiskQuiz from "@/components/profilaktyka/RiskQuiz";
 import ExercisesSection from "@/components/profilaktyka/ExercisesSection";
 import VenousInsufficiencyImage from "@/components/shared/VenousInsufficiencyImage";

@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { MapPin, Phone, Clock, Mail, ExternalLink } from "lucide-react";
-import branickiegoImg from "@/assets/locations/branickiego.jpg";
+import branickiegoImg from "@/assets/locations/branickiego.webp";
 import { Checkbox } from "@/components/ui/checkbox";
 import { z } from "zod";
 import SeoHead from "@/components/shared/SeoHead";

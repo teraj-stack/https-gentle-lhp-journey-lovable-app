@@ -10,7 +10,7 @@ import { BookOpen, Download, FileText, Shield, Clock, Heart, ArrowRight, Sparkle
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { StaggeredListItem } from "@/components/shared/StaggeredList";
-import ebookCoverImg from "@/assets/ebook-cover-powrot.png";
+import ebookCoverImg from "@/assets/ebook-cover-powrot.webp";
 
 const fadeUp = {
   initial: { opacity: 0, y: 30 },
