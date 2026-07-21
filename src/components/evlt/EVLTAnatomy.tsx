@@ -57,8 +57,11 @@ const EVLTAnatomy = ({ fadeUp }: Props) => {
                 <img
                   src={img.src}
                   alt={img.alt}
+                  width={560}
+                  height={560}
                   className="w-full max-w-[280px] h-[280px] object-contain mx-auto rounded-xl mb-4 cursor-zoom-in hover:opacity-90 transition-opacity"
                   loading="lazy"
+                  decoding="async"
                 />
               </button>
               <div className="mt-auto">

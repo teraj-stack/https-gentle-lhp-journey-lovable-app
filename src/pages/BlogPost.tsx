@@ -123,8 +123,12 @@ const BlogPost = () => {
                 <img
                   src={post.cover_image_url}
                   alt={post.title}
+                  width={1200}
+                  height={630}
                   className="w-full h-auto max-h-[480px] object-cover"
                   loading="eager"
+                  fetchPriority="high"
+                  decoding="async"
                 />
                 {/* Subtelny ciemny gradient harmonizujący z dark theme — spójny z listą /blog */}
                 <div

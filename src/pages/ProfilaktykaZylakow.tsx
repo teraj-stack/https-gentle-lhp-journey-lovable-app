@@ -244,8 +244,11 @@ const ProfilaktykaZylakow = () => {
             <img
               src={schematImg}
               alt="Infografika: czynniki ryzyka żylaków, objawy przewlekłej niewydolności żylnej i metody profilaktyki — schemat poglądowy"
+              width={1200}
+              height={800}
               className="w-full max-w-3xl mx-auto rounded-xl"
               loading="lazy"
+              decoding="async"
             />
           </div>
         </motion.section>
