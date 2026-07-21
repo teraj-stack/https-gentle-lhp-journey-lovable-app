@@ -76,8 +76,11 @@ const AnatomyDiagram = ({ fadeUp }: Props) => {
           <img
             src={pajaczkiAnatomia}
             alt="Schemat anatomiczny powstawania pajączków żylnych — przekrój skóry pokazujący epidermis, dermis i hypodermis z żyłą zasilającą i pajączkiem żylnym"
+            width={1200}
+            height={800}
             className="w-full h-auto rounded-xl"
             loading="lazy"
+            decoding="async"
           />
 
           {/* SVG connector lines */}
