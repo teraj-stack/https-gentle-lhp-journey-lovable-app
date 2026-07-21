@@ -24,8 +24,11 @@ const CEAPSection = ({ fadeUp }: Props) => (
       <img
         src={ceapSkala}
         alt="Skala CEAP — ocena kliniczna niewydolności żylnej od C1 (pajączki naczyniowe) do C6 (aktywne owrzodzenie)"
+        width={1200}
+        height={600}
         className="w-full rounded-xl mb-8"
         loading="lazy"
+        decoding="async"
       />
       <div className="grid sm:grid-cols-2 gap-4">
         {stages.map((item, i) => (
