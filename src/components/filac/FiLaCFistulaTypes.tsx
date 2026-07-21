@@ -59,8 +59,11 @@ const FiLaCFistulaTypes = ({ fadeUp }: Props) => (
         <img
           src={fistulaImg}
           alt="Schemat anatomiczny klasyfikacji Parksa — przekrój kanału odbytu z zaznaczonymi typami przetok A–E"
+          width={600}
+          height={800}
           className="w-full max-w-xs mx-auto"
           loading="lazy"
+          decoding="async"
         />
         <p className="text-xs text-muted-foreground mt-3 text-center">
           Klasyfikacja Parksa — przekrój kanału odbytu
