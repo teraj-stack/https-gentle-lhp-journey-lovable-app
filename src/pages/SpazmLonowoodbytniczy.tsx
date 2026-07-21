@@ -4,7 +4,7 @@ import Breadcrumbs from "@/components/layout/Breadcrumbs";
 import { BREADCRUMBS_MAP } from "@/lib/breadcrumbsMap";
 import { ArrowRight, CheckCircle2, AlertTriangle, Brain, Activity, HeartPulse } from "lucide-react";
 import { StaggeredListItem } from "@/components/shared/StaggeredList";
-import miesnieDnaMiednicy from "@/assets/miesnie-dna-miednicy.jpeg";
+import miesnieDnaMiednicy from "@/assets/miesnie-dna-miednicy.webp";
 import ParallaxSection from "@/components/ui/parallax-section";
 import ProcedureSummaryTable from "@/components/shared/ProcedureSummaryTable";
 import MedicalProcedureSchema from "@/components/shared/MedicalProcedureSchema";

@@ -3,7 +3,7 @@ import { Download, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
-import ebookCoverLhp from "@/assets/ebook-cover-powrot.png";
+import ebookCoverLhp from "@/assets/ebook-cover-powrot.webp";
 
 const EbookBanner = () => {
   const isMobile = useIsMobile();
