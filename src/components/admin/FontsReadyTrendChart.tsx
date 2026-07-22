@@ -251,12 +251,13 @@ export default function FontsReadyTrendChart({ rows: parentRows, days: parentDay
     const a = document.createElement("a");
     const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
     a.href = url;
-    a.download = `fonts-ready-trend_${days}d_${stamp}.csv`;
+    const rangeSlug = preset === "custom" ? "custom" : `${preset}d`;
+    a.download = `fonts-ready-trend_${rangeSlug}_${stamp}.csv`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-  }, [data, days]);
+  }, [data, preset]);
 
   return (
     <Card className="mb-6">
