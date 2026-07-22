@@ -30,6 +30,8 @@
     "test:visual:live-preview": "playwright test tests/visual/admin-vein-images-live-preview; node scripts/visual-snapshot-report.mjs"
   },
   "dependencies": {
+    "@fontsource/cormorant-garamond": "^5.3.0",
+    "@fontsource/inter": "^5.3.0",
     "@hookform/resolvers": "^3.10.0",
     "@lovable.dev/cloud-auth-js": "^1.0.0",
     "@radix-ui/react-accordion": "^1.2.11",
