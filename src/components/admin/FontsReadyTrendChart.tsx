@@ -101,6 +101,39 @@ export default function FontsReadyTrendChart({ rows: parentRows, days: parentDay
     window.localStorage.setItem(`${RANGE_STORAGE_KEY}.to`, customTo);
   }, [customFrom, customTo]);
 
+  // --- Saved custom ranges (user-defined, separate from presets) ---
+  const [savedRanges, setSavedRanges] = useState<SavedRange[]>(() => loadSavedRanges());
+  const [saveName, setSaveName] = useState("");
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(SAVED_RANGES_KEY, JSON.stringify(savedRanges));
+  }, [savedRanges]);
+
+  const handleSaveRange = useCallback(() => {
+    const name = saveName.trim();
+    if (!name || !customFrom || !customTo) return;
+    setSavedRanges((prev) => {
+      const filtered = prev.filter((r) => r.name.toLowerCase() !== name.toLowerCase());
+      return [
+        ...filtered,
+        { id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, name, from: customFrom, to: customTo },
+      ];
+    });
+    setSaveName("");
+  }, [saveName, customFrom, customTo]);
+
+  const handleApplySavedRange = useCallback((r: SavedRange) => {
+    setPreset("custom");
+    setCustomFrom(r.from);
+    setCustomTo(r.to);
+  }, []);
+
+  const handleDeleteSavedRange = useCallback((id: string) => {
+    setSavedRanges((prev) => prev.filter((r) => r.id !== id));
+  }, []);
+
+
   // Resolve current range window into [since, until] + hourly flag.
   const rangeWindow = useMemo(() => {
     const now = new Date();
