@@ -120,6 +120,37 @@ export default function FontsReadyTrendChart({ rows: parentRows, days: parentDay
     staleTime: 60_000,
   });
 
+  // Previous period window (same length, immediately before `since`).
+  const prevWindow = useMemo(() => {
+    if (!rangeWindow) return null;
+    const spanMs = rangeWindow.until.getTime() - rangeWindow.since.getTime();
+    return {
+      since: new Date(rangeWindow.since.getTime() - spanMs),
+      until: new Date(rangeWindow.since.getTime()),
+    };
+  }, [rangeWindow]);
+
+  const [comparePrev, setComparePrev] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem("fontsReady.comparePrev") === "1";
+  });
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem("fontsReady.comparePrev", comparePrev ? "1" : "0");
+  }, [comparePrev]);
+
+  const { data: prevRows, isFetching: isFetchingPrev } = useQuery({
+    queryKey: [
+      "fonts-ready-range-prev",
+      prevWindow?.since.toISOString(),
+      prevWindow?.until.toISOString(),
+    ],
+    queryFn: () =>
+      fetchVitalsRange(prevWindow!.since.toISOString(), prevWindow!.until.toISOString(), "FONTS_READY"),
+    enabled: comparePrev && !!prevWindow,
+    staleTime: 60_000,
+  });
+
   const rows: WebVitalRow[] = canReuseParent ? (parentRows ?? []) : (fetchedRows ?? []);
   const hourly = rangeWindow?.hourly ?? false;
   const rangeLabel =
