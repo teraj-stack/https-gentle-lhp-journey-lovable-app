@@ -40,11 +40,33 @@ function bucketRows(rows: WebVitalRow[], days: number): Bucket[] {
   return Array.from(map.values()).sort((a, b) => a.key.localeCompare(b.key));
 }
 
+function bucketKeyForDate(d: Date, hourly: boolean): string {
+  const c = new Date(d);
+  if (hourly) {
+    c.setMinutes(0, 0, 0);
+    return c.toISOString();
+  }
+  c.setHours(0, 0, 0, 0);
+  return c.toISOString().slice(0, 10);
+}
+
 export default function FontsReadyTrendChart({ rows, days }: Props) {
+  const [deployAt, setDeployAt] = useState<string>(() => {
+    if (typeof window === "undefined") return "";
+    return window.localStorage.getItem(DEPLOY_STORAGE_KEY) ?? "";
+  });
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (deployAt) window.localStorage.setItem(DEPLOY_STORAGE_KEY, deployAt);
+    else window.localStorage.removeItem(DEPLOY_STORAGE_KEY);
+  }, [deployAt]);
+
   const data = useMemo(() => {
     return bucketRows(rows, days).map((b) => {
       const sorted = [...b.values].sort((a, z) => a - z);
       return {
+        key: b.key,
         label: b.label,
         p90: percentile(b.values, 90),
         p75: percentile(b.values, 75),
@@ -57,6 +79,42 @@ export default function FontsReadyTrendChart({ rows, days }: Props) {
   }, [rows, days]);
 
   const t = CWV_THRESHOLDS.FONTS_READY;
+
+  const deployDate = useMemo(() => (deployAt ? new Date(deployAt) : null), [deployAt]);
+  const deployBucketLabel = useMemo(() => {
+    if (!deployDate || Number.isNaN(deployDate.getTime()) || data.length === 0) return null;
+    const key = bucketKeyForDate(deployDate, days <= 1);
+    // exact match, otherwise first bucket >= key
+    const exact = data.find((d) => d.key === key);
+    if (exact) return exact.label;
+    const after = data.find((d) => d.key >= key);
+    return after?.label ?? null;
+  }, [deployDate, data, days]);
+
+  const comparison = useMemo(() => {
+    if (!deployDate || Number.isNaN(deployDate.getTime())) return null;
+    const before: number[] = [];
+    const after: number[] = [];
+    for (const r of rows) {
+      if (r.metric !== "FONTS_READY") continue;
+      const v = Number(r.value);
+      if (!Number.isFinite(v)) continue;
+      const ts = new Date(r.created_at).getTime();
+      if (ts < deployDate.getTime()) before.push(v);
+      else after.push(v);
+    }
+    const summarize = (arr: number[]) =>
+      arr.length === 0
+        ? null
+        : {
+            count: arr.length,
+            p75: percentile(arr, 75),
+            p50: percentile(arr, 50),
+          };
+    return { before: summarize(before), after: summarize(after) };
+  }, [rows, deployDate]);
+
+
 
   type Row = (typeof data)[number];
   const CustomTooltip = ({ active, payload, label }: {
