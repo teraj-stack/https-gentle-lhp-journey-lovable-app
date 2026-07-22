@@ -144,7 +144,7 @@ export default function FontsReadyTrendChart({ rows: parentRows, days: parentDay
   }, [deployAt]);
 
   const data = useMemo(() => {
-    return bucketRows(rows, days).map((b) => {
+    return bucketRows(rows, hourly).map((b) => {
       const sorted = [...b.values].sort((a, z) => a - z);
       return {
         key: b.key,
@@ -157,7 +157,7 @@ export default function FontsReadyTrendChart({ rows: parentRows, days: parentDay
         count: b.values.length,
       };
     });
-  }, [rows, days]);
+  }, [rows, hourly]);
 
   const t = CWV_THRESHOLDS.FONTS_READY;
 
