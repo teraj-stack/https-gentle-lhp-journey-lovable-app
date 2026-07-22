@@ -11,6 +11,21 @@ import { CWV_THRESHOLDS, percentile, fetchVitalsRange, type WebVitalRow } from "
 
 const DEPLOY_STORAGE_KEY = "fontsReady.deployAt";
 const RANGE_STORAGE_KEY = "fontsReady.range";
+const SAVED_RANGES_KEY = "fontsReady.savedRanges";
+
+type SavedRange = { id: string; name: string; from: string; to: string };
+
+function loadSavedRanges(): SavedRange[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(SAVED_RANGES_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.filter((r) => r && r.id && r.name && r.from && r.to) : [];
+  } catch {
+    return [];
+  }
+}
 
 type Preset = "1" | "7" | "28" | "custom";
 
