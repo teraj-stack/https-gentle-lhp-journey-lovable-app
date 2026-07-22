@@ -1,6 +1,8 @@
-import { useMemo } from "react";
+import { useMemo, useCallback } from "react";
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine, Legend } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Download } from "lucide-react";
 import { CWV_THRESHOLDS, percentile, type WebVitalRow } from "@/lib/webVitalsAnalytics";
 
 interface Props {
@@ -81,13 +83,60 @@ export default function FontsReadyTrendChart({ rows, days }: Props) {
     );
   };
 
+  const handleExportCsv = useCallback(() => {
+    const header = ["bucket", "count", "min_ms", "p50_ms", "p75_ms", "p90_ms", "max_ms"];
+    const escape = (v: string | number | null) => {
+      if (v === null || v === undefined) return "";
+      const s = String(v);
+      return /[",\n;]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    const lines = [header.join(",")];
+    for (const d of data) {
+      lines.push([
+        d.label,
+        d.count,
+        d.min !== null ? Math.round(d.min) : "",
+        d.p50 !== null ? Math.round(d.p50) : "",
+        d.p75 !== null ? Math.round(d.p75) : "",
+        d.p90 !== null ? Math.round(d.p90) : "",
+        d.max !== null ? Math.round(d.max) : "",
+      ].map(escape).join(","));
+    }
+    const csv = "\ufeff" + lines.join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+    a.href = url;
+    a.download = `fonts-ready-trend_${days}d_${stamp}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, [data, days]);
+
   return (
     <Card className="mb-6">
       <CardHeader>
-        <CardTitle>FONTS_READY — trend</CardTitle>
-        <CardDescription>
-          Czas do `document.fonts.ready` (p90 / p75 / mediana, min–max w tooltipie) — {days <= 1 ? "co godzinę" : "dziennie"}. Cel: p75 ≤ {t.good} ms.
-        </CardDescription>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <CardTitle>FONTS_READY — trend</CardTitle>
+            <CardDescription>
+              Czas do `document.fonts.ready` (p90 / p75 / mediana, min–max w tooltipie) — {days <= 1 ? "co godzinę" : "dziennie"}. Cel: p75 ≤ {t.good} ms.
+            </CardDescription>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExportCsv}
+            disabled={data.length === 0}
+            className="shrink-0"
+            aria-label="Eksportuj dane FONTS_READY do CSV"
+          >
+            <Download className="mr-2 h-4 w-4" aria-hidden="true" />
+            Eksportuj CSV
+          </Button>
+        </div>
       </CardHeader>
       <CardContent>
         {data.length === 0 ? (
