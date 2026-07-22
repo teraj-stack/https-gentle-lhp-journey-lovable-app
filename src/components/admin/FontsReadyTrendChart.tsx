@@ -546,7 +546,6 @@ export default function FontsReadyTrendChart({ rows: parentRows, days: parentDay
                   tickFormatter={(v) => `${v} ms`}
                 />
                 <Tooltip content={<CustomTooltip />} />
-                <Legend wrapperStyle={{ fontSize: 12 }} />
                 {deployBucketLabel && data.length > 0 && (
                   <ReferenceArea
                     x1={deployBucketLabel}
@@ -577,69 +576,58 @@ export default function FontsReadyTrendChart({ rows: parentRows, days: parentDay
                   strokeDasharray="4 4"
                   label={{ value: `poor > ${t.poor}`, fill: "hsl(0 70% 55%)", fontSize: 10, position: "insideTopRight" }}
                 />
-                <Line
-                  type="monotone"
-                  dataKey="max"
-                  name="max"
-                  stroke="hsl(0 60% 60%)"
-                  strokeWidth={1}
-                  strokeDasharray="2 4"
-                  dot={false}
-                  connectNulls
-                />
-                <Line
-                  type="monotone"
-                  dataKey="p90"
-                  name="p90"
-                  stroke="hsl(30 90% 55%)"
-                  strokeWidth={1.75}
-                  dot={{ r: 2 }}
-                  connectNulls
-                />
-                <Line
-                  type="monotone"
-                  dataKey="p75"
-                  name="p75"
-                  stroke="hsl(var(--primary))"
-                  strokeWidth={2}
-                  dot={{ r: 3 }}
-                  activeDot={{ r: 5 }}
-                  connectNulls
-                />
-                <Line
-                  type="monotone"
-                  dataKey="p50"
-                  name="mediana"
-                  stroke="hsl(var(--muted-foreground))"
-                  strokeWidth={1.5}
-                  strokeDasharray="4 4"
-                  dot={false}
-                  connectNulls
-                />
-                <Line
-                  type="monotone"
-                  dataKey="min"
-                  name="min"
-                  stroke="hsl(142 50% 55%)"
-                  strokeWidth={1}
-                  strokeDasharray="2 4"
-                  dot={false}
-                  connectNulls
-                />
-                {comparePrev && (
-                  <Line
-                    type="monotone"
-                    dataKey="prev_p75"
-                    name="p75 (poprz. okres)"
-                    stroke="hsl(280 70% 60%)"
-                    strokeWidth={1.75}
-                    strokeDasharray="5 3"
-                    dot={{ r: 2 }}
-                    connectNulls
-                  />
+                {visible.max && (
+                  <Line type="monotone" dataKey="max" name="max" stroke="hsl(0 60% 60%)" strokeWidth={1} strokeDasharray="2 4" dot={false} connectNulls isAnimationActive={false} />
+                )}
+                {visible.p90 && (
+                  <Line type="monotone" dataKey="p90" name="p90" stroke="hsl(30 90% 55%)" strokeWidth={1.75} dot={{ r: 2 }} connectNulls isAnimationActive={false} />
+                )}
+                {visible.p75 && (
+                  <Line type="monotone" dataKey="p75" name="p75" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} connectNulls isAnimationActive={false} />
+                )}
+                {visible.p50 && (
+                  <Line type="monotone" dataKey="p50" name="mediana" stroke="hsl(var(--muted-foreground))" strokeWidth={1.5} strokeDasharray="4 4" dot={false} connectNulls isAnimationActive={false} />
+                )}
+                {visible.min && (
+                  <Line type="monotone" dataKey="min" name="min" stroke="hsl(142 50% 55%)" strokeWidth={1} strokeDasharray="2 4" dot={false} connectNulls isAnimationActive={false} />
+                )}
+                {comparePrev && visible.prev_p75 && (
+                  <Line type="monotone" dataKey="prev_p75" name="p75 (poprz. okres)" stroke="hsl(280 70% 60%)" strokeWidth={1.75} strokeDasharray="5 3" dot={{ r: 2 }} connectNulls isAnimationActive={false} />
                 )}
               </LineChart>
             </ResponsiveContainer>
+            <div className="mt-3 flex flex-wrap items-center gap-2" role="group" aria-label="Widoczność serii na wykresie">
+              {SERIES_META.map((s) => {
+                const on = visible[s.key];
+                return (
+                  <button
+                    key={s.key}
+                    type="button"
+                    onClick={() => toggleSeries(s.key)}
+                    aria-pressed={on}
+                    className={`inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs transition-opacity ${on ? "" : "opacity-40"}`}
+                  >
+                    <span
+                      aria-hidden="true"
+                      className="inline-block h-2.5 w-3 rounded-sm"
+                      style={{ backgroundColor: s.color }}
+                    />
+                    {s.label}
+                  </button>
+                );
+              })}
+              {comparePrev && (
+                <button
+                  type="button"
+                  onClick={() => toggleSeries("prev_p75")}
+                  aria-pressed={visible.prev_p75}
+                  className={`inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs transition-opacity ${visible.prev_p75 ? "" : "opacity-40"}`}
+                >
+                  <span aria-hidden="true" className="inline-block h-2.5 w-3 rounded-sm" style={{ backgroundColor: "hsl(280 70% 60%)" }} />
+                  p75 (poprz. okres)
+                </button>
+              )}
+            </div>
           </div>
         )}
       </CardContent>
