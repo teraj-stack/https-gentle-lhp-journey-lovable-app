@@ -1,9 +1,13 @@
-import { useMemo, useCallback } from "react";
-import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine, Legend } from "recharts";
+import { useMemo, useCallback, useState, useEffect } from "react";
+import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine, ReferenceArea, Legend } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Download } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Download, Rocket, X } from "lucide-react";
 import { CWV_THRESHOLDS, percentile, type WebVitalRow } from "@/lib/webVitalsAnalytics";
+
+const DEPLOY_STORAGE_KEY = "fontsReady.deployAt";
 
 interface Props {
   rows: WebVitalRow[];
@@ -36,11 +40,33 @@ function bucketRows(rows: WebVitalRow[], days: number): Bucket[] {
   return Array.from(map.values()).sort((a, b) => a.key.localeCompare(b.key));
 }
 
+function bucketKeyForDate(d: Date, hourly: boolean): string {
+  const c = new Date(d);
+  if (hourly) {
+    c.setMinutes(0, 0, 0);
+    return c.toISOString();
+  }
+  c.setHours(0, 0, 0, 0);
+  return c.toISOString().slice(0, 10);
+}
+
 export default function FontsReadyTrendChart({ rows, days }: Props) {
+  const [deployAt, setDeployAt] = useState<string>(() => {
+    if (typeof window === "undefined") return "";
+    return window.localStorage.getItem(DEPLOY_STORAGE_KEY) ?? "";
+  });
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (deployAt) window.localStorage.setItem(DEPLOY_STORAGE_KEY, deployAt);
+    else window.localStorage.removeItem(DEPLOY_STORAGE_KEY);
+  }, [deployAt]);
+
   const data = useMemo(() => {
     return bucketRows(rows, days).map((b) => {
       const sorted = [...b.values].sort((a, z) => a - z);
       return {
+        key: b.key,
         label: b.label,
         p90: percentile(b.values, 90),
         p75: percentile(b.values, 75),
@@ -53,6 +79,42 @@ export default function FontsReadyTrendChart({ rows, days }: Props) {
   }, [rows, days]);
 
   const t = CWV_THRESHOLDS.FONTS_READY;
+
+  const deployDate = useMemo(() => (deployAt ? new Date(deployAt) : null), [deployAt]);
+  const deployBucketLabel = useMemo(() => {
+    if (!deployDate || Number.isNaN(deployDate.getTime()) || data.length === 0) return null;
+    const key = bucketKeyForDate(deployDate, days <= 1);
+    // exact match, otherwise first bucket >= key
+    const exact = data.find((d) => d.key === key);
+    if (exact) return exact.label;
+    const after = data.find((d) => d.key >= key);
+    return after?.label ?? null;
+  }, [deployDate, data, days]);
+
+  const comparison = useMemo(() => {
+    if (!deployDate || Number.isNaN(deployDate.getTime())) return null;
+    const before: number[] = [];
+    const after: number[] = [];
+    for (const r of rows) {
+      if (r.metric !== "FONTS_READY") continue;
+      const v = Number(r.value);
+      if (!Number.isFinite(v)) continue;
+      const ts = new Date(r.created_at).getTime();
+      if (ts < deployDate.getTime()) before.push(v);
+      else after.push(v);
+    }
+    const summarize = (arr: number[]) =>
+      arr.length === 0
+        ? null
+        : {
+            count: arr.length,
+            p75: percentile(arr, 75),
+            p50: percentile(arr, 50),
+          };
+    return { before: summarize(before), after: summarize(after) };
+  }, [rows, deployDate]);
+
+
 
   type Row = (typeof data)[number];
   const CustomTooltip = ({ active, payload, label }: {
@@ -137,6 +199,61 @@ export default function FontsReadyTrendChart({ rows, days }: Props) {
             Eksportuj CSV
           </Button>
         </div>
+        <div className="mt-3 flex flex-wrap items-end gap-3">
+          <div className="flex flex-col gap-1">
+            <Label htmlFor="fonts-ready-deploy" className="text-xs text-muted-foreground">
+              Data wdrożenia (porównanie przed/po)
+            </Label>
+            <div className="flex items-center gap-2">
+              <Rocket className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+              <Input
+                id="fonts-ready-deploy"
+                type="datetime-local"
+                value={deployAt}
+                onChange={(e) => setDeployAt(e.target.value)}
+                className="h-9 w-[220px]"
+              />
+              {deployAt && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setDeployAt("")}
+                  aria-label="Wyczyść datę wdrożenia"
+                  className="h-9"
+                >
+                  <X className="h-4 w-4" aria-hidden="true" />
+                </Button>
+              )}
+            </div>
+          </div>
+          {comparison && (comparison.before || comparison.after) && (
+            <div className="flex flex-wrap gap-2 text-xs tabular-nums">
+              <span className="rounded-md border px-2 py-1">
+                <span className="text-muted-foreground">przed · </span>
+                {comparison.before
+                  ? `p75 ${Math.round(comparison.before.p75 ?? 0)} ms · med ${Math.round(comparison.before.p50 ?? 0)} ms · n=${comparison.before.count}`
+                  : "brak danych"}
+              </span>
+              <span className="rounded-md border px-2 py-1">
+                <span className="text-muted-foreground">po · </span>
+                {comparison.after
+                  ? `p75 ${Math.round(comparison.after.p75 ?? 0)} ms · med ${Math.round(comparison.after.p50 ?? 0)} ms · n=${comparison.after.count}`
+                  : "brak danych"}
+              </span>
+              {comparison.before?.p75 != null && comparison.after?.p75 != null && (() => {
+                const delta = (comparison.after.p75 as number) - (comparison.before.p75 as number);
+                const better = delta < 0;
+                return (
+                  <span
+                    className={`rounded-md border px-2 py-1 ${better ? "border-emerald-500/40 text-emerald-600 dark:text-emerald-400" : delta > 0 ? "border-red-500/40 text-red-600 dark:text-red-400" : ""}`}
+                  >
+                    Δ p75: {delta > 0 ? "+" : ""}{Math.round(delta)} ms
+                  </span>
+                );
+              })()}
+            </div>
+          )}
+        </div>
       </CardHeader>
       <CardContent>
         {data.length === 0 ? (
@@ -153,6 +270,24 @@ export default function FontsReadyTrendChart({ rows, days }: Props) {
                 />
                 <Tooltip content={<CustomTooltip />} />
                 <Legend wrapperStyle={{ fontSize: 12 }} />
+                {deployBucketLabel && data.length > 0 && (
+                  <ReferenceArea
+                    x1={deployBucketLabel}
+                    x2={data[data.length - 1].label}
+                    fill="hsl(var(--primary))"
+                    fillOpacity={0.06}
+                    ifOverflow="extendDomain"
+                  />
+                )}
+                {deployBucketLabel && (
+                  <ReferenceLine
+                    x={deployBucketLabel}
+                    stroke="hsl(var(--primary))"
+                    strokeWidth={1.5}
+                    strokeDasharray="6 3"
+                    label={{ value: "deploy", fill: "hsl(var(--primary))", fontSize: 10, position: "top" }}
+                  />
+                )}
                 <ReferenceLine
                   y={t.good}
                   stroke="hsl(142 70% 45%)"
