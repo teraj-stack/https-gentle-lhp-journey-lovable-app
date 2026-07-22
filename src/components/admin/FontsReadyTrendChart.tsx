@@ -1,6 +1,6 @@
 import { useMemo, useCallback, useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine, ReferenceArea, Legend } from "recharts";
+import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine, ReferenceArea } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -162,6 +162,35 @@ export default function FontsReadyTrendChart({ rows: parentRows, days: parentDay
         ? "ostatnie 24h"
         : `ostatnie ${preset} dni`;
 
+
+  // Series visibility toggles (persisted).
+  type SeriesKey = "p90" | "p75" | "p50" | "min" | "max" | "prev_p75";
+  const SERIES_STORAGE_KEY = "fontsReady.visibleSeries";
+  const DEFAULT_VISIBLE: Record<SeriesKey, boolean> = { p90: true, p75: true, p50: true, min: false, max: false, prev_p75: true };
+  const [visible, setVisible] = useState<Record<SeriesKey, boolean>>(() => {
+    if (typeof window === "undefined") return DEFAULT_VISIBLE;
+    try {
+      const raw = window.localStorage.getItem(SERIES_STORAGE_KEY);
+      if (!raw) return DEFAULT_VISIBLE;
+      const parsed = JSON.parse(raw);
+      return { ...DEFAULT_VISIBLE, ...parsed };
+    } catch {
+      return DEFAULT_VISIBLE;
+    }
+  });
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(SERIES_STORAGE_KEY, JSON.stringify(visible));
+  }, [visible]);
+  const toggleSeries = (k: SeriesKey) => setVisible((v) => ({ ...v, [k]: !v[k] }));
+
+  const SERIES_META: Array<{ key: SeriesKey; label: string; color: string }> = [
+    { key: "max", label: "max", color: "hsl(0 60% 60%)" },
+    { key: "p90", label: "p90", color: "hsl(30 90% 55%)" },
+    { key: "p75", label: "p75", color: "hsl(var(--primary))" },
+    { key: "p50", label: "mediana", color: "hsl(var(--muted-foreground))" },
+    { key: "min", label: "min", color: "hsl(142 50% 55%)" },
+  ];
 
   const [deployAt, setDeployAt] = useState<string>(() => {
     if (typeof window === "undefined") return "";
@@ -517,7 +546,6 @@ export default function FontsReadyTrendChart({ rows: parentRows, days: parentDay
                   tickFormatter={(v) => `${v} ms`}
                 />
                 <Tooltip content={<CustomTooltip />} />
-                <Legend wrapperStyle={{ fontSize: 12 }} />
                 {deployBucketLabel && data.length > 0 && (
                   <ReferenceArea
                     x1={deployBucketLabel}
@@ -548,69 +576,58 @@ export default function FontsReadyTrendChart({ rows: parentRows, days: parentDay
                   strokeDasharray="4 4"
                   label={{ value: `poor > ${t.poor}`, fill: "hsl(0 70% 55%)", fontSize: 10, position: "insideTopRight" }}
                 />
-                <Line
-                  type="monotone"
-                  dataKey="max"
-                  name="max"
-                  stroke="hsl(0 60% 60%)"
-                  strokeWidth={1}
-                  strokeDasharray="2 4"
-                  dot={false}
-                  connectNulls
-                />
-                <Line
-                  type="monotone"
-                  dataKey="p90"
-                  name="p90"
-                  stroke="hsl(30 90% 55%)"
-                  strokeWidth={1.75}
-                  dot={{ r: 2 }}
-                  connectNulls
-                />
-                <Line
-                  type="monotone"
-                  dataKey="p75"
-                  name="p75"
-                  stroke="hsl(var(--primary))"
-                  strokeWidth={2}
-                  dot={{ r: 3 }}
-                  activeDot={{ r: 5 }}
-                  connectNulls
-                />
-                <Line
-                  type="monotone"
-                  dataKey="p50"
-                  name="mediana"
-                  stroke="hsl(var(--muted-foreground))"
-                  strokeWidth={1.5}
-                  strokeDasharray="4 4"
-                  dot={false}
-                  connectNulls
-                />
-                <Line
-                  type="monotone"
-                  dataKey="min"
-                  name="min"
-                  stroke="hsl(142 50% 55%)"
-                  strokeWidth={1}
-                  strokeDasharray="2 4"
-                  dot={false}
-                  connectNulls
-                />
-                {comparePrev && (
-                  <Line
-                    type="monotone"
-                    dataKey="prev_p75"
-                    name="p75 (poprz. okres)"
-                    stroke="hsl(280 70% 60%)"
-                    strokeWidth={1.75}
-                    strokeDasharray="5 3"
-                    dot={{ r: 2 }}
-                    connectNulls
-                  />
+                {visible.max && (
+                  <Line type="monotone" dataKey="max" name="max" stroke="hsl(0 60% 60%)" strokeWidth={1} strokeDasharray="2 4" dot={false} connectNulls isAnimationActive={false} />
+                )}
+                {visible.p90 && (
+                  <Line type="monotone" dataKey="p90" name="p90" stroke="hsl(30 90% 55%)" strokeWidth={1.75} dot={{ r: 2 }} connectNulls isAnimationActive={false} />
+                )}
+                {visible.p75 && (
+                  <Line type="monotone" dataKey="p75" name="p75" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} connectNulls isAnimationActive={false} />
+                )}
+                {visible.p50 && (
+                  <Line type="monotone" dataKey="p50" name="mediana" stroke="hsl(var(--muted-foreground))" strokeWidth={1.5} strokeDasharray="4 4" dot={false} connectNulls isAnimationActive={false} />
+                )}
+                {visible.min && (
+                  <Line type="monotone" dataKey="min" name="min" stroke="hsl(142 50% 55%)" strokeWidth={1} strokeDasharray="2 4" dot={false} connectNulls isAnimationActive={false} />
+                )}
+                {comparePrev && visible.prev_p75 && (
+                  <Line type="monotone" dataKey="prev_p75" name="p75 (poprz. okres)" stroke="hsl(280 70% 60%)" strokeWidth={1.75} strokeDasharray="5 3" dot={{ r: 2 }} connectNulls isAnimationActive={false} />
                 )}
               </LineChart>
             </ResponsiveContainer>
+            <div className="mt-3 flex flex-wrap items-center gap-2" role="group" aria-label="Widoczność serii na wykresie">
+              {SERIES_META.map((s) => {
+                const on = visible[s.key];
+                return (
+                  <button
+                    key={s.key}
+                    type="button"
+                    onClick={() => toggleSeries(s.key)}
+                    aria-pressed={on}
+                    className={`inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs transition-opacity ${on ? "" : "opacity-40"}`}
+                  >
+                    <span
+                      aria-hidden="true"
+                      className="inline-block h-2.5 w-3 rounded-sm"
+                      style={{ backgroundColor: s.color }}
+                    />
+                    {s.label}
+                  </button>
+                );
+              })}
+              {comparePrev && (
+                <button
+                  type="button"
+                  onClick={() => toggleSeries("prev_p75")}
+                  aria-pressed={visible.prev_p75}
+                  className={`inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs transition-opacity ${visible.prev_p75 ? "" : "opacity-40"}`}
+                >
+                  <span aria-hidden="true" className="inline-block h-2.5 w-3 rounded-sm" style={{ backgroundColor: "hsl(280 70% 60%)" }} />
+                  p75 (poprz. okres)
+                </button>
+              )}
+            </div>
           </div>
         )}
       </CardContent>
