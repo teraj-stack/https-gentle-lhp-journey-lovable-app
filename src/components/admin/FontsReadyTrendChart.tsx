@@ -304,6 +304,7 @@ export default function FontsReadyTrendChart({ rows: parentRows, days: parentDay
 
   const handleExportCsv = useCallback(() => {
     const header = ["bucket", "count", "min_ms", "p50_ms", "p75_ms", "p90_ms", "max_ms"];
+    if (comparePrev) header.push("prev_count", "prev_p50_ms", "prev_p75_ms");
     const escape = (v: string | number | null) => {
       if (v === null || v === undefined) return "";
       const s = String(v);
@@ -311,7 +312,7 @@ export default function FontsReadyTrendChart({ rows: parentRows, days: parentDay
     };
     const lines = [header.join(",")];
     for (const d of data) {
-      lines.push([
+      const row: Array<string | number> = [
         d.label,
         d.count,
         d.min !== null ? Math.round(d.min) : "",
@@ -319,7 +320,15 @@ export default function FontsReadyTrendChart({ rows: parentRows, days: parentDay
         d.p75 !== null ? Math.round(d.p75) : "",
         d.p90 !== null ? Math.round(d.p90) : "",
         d.max !== null ? Math.round(d.max) : "",
-      ].map(escape).join(","));
+      ];
+      if (comparePrev) {
+        row.push(
+          d.prev_count,
+          d.prev_p50 !== null ? Math.round(d.prev_p50) : "",
+          d.prev_p75 !== null ? Math.round(d.prev_p75) : "",
+        );
+      }
+      lines.push(row.map(escape).join(","));
     }
     const csv = "\ufeff" + lines.join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
