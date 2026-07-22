@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
-import ceapSkala from "@/assets/ceap-skala.webp";
+import ResponsiveImage from "@/components/shared/ResponsiveImage";
+import ceapSkalaPicture from "@/assets/ceap-skala.webp?w=480;768;1024;1280&format=avif;webp&as=picture";
 
 const stages = [
   { stage: "C1", label: "Pajączki naczyniowe", desc: "Drobne, rozszerzone naczynka widoczne tuż pod skórą. Zwykle problem estetyczny, ale mogą sygnalizować początek niewydolności żylnej." },
@@ -21,14 +22,12 @@ const CEAPSection = ({ fadeUp }: Props) => (
       Klasyfikacja CEAP to międzynarodowy standard oceny zaawansowania przewlekłej choroby żylnej. Pozwala lekarzowi precyzyjnie określić stadium choroby i dobrać optymalne leczenie.
     </p>
     <div className="glass-card rounded-2xl p-6 md:p-10 max-w-3xl mx-auto">
-      <img
-        src={ceapSkala}
+      <ResponsiveImage
+        picture={ceapSkalaPicture}
         alt="Skala CEAP — ocena kliniczna niewydolności żylnej od C1 (pajączki naczyniowe) do C6 (aktywne owrzodzenie)"
-        width={1200}
-        height={600}
-        className="w-full rounded-xl mb-8"
-        loading="lazy"
-        decoding="async"
+        sizes="(min-width: 768px) 704px, 100vw"
+        className="block mb-8"
+        imgClassName="w-full h-auto rounded-xl"
       />
       <div className="grid sm:grid-cols-2 gap-4">
         {stages.map((item, i) => (

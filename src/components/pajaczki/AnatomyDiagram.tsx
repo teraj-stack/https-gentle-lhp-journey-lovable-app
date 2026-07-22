@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import pajaczkiAnatomia from "@/assets/pajaczki-anatomia.webp";
+import ResponsiveImage from "@/components/shared/ResponsiveImage";
+import pajaczkiAnatomiaPicture from "@/assets/pajaczki-anatomia.webp?w=480;768;1024;1280&format=avif;webp&as=picture";
 
 interface Hotspot {
   id: string;
@@ -73,14 +74,12 @@ const AnatomyDiagram = ({ fadeUp }: Props) => {
       <div className="glass-card rounded-2xl p-6 md:p-10">
         {/* Image with hotspots */}
         <div className="relative rounded-xl overflow-hidden bg-background/50">
-          <img
-            src={pajaczkiAnatomia}
+          <ResponsiveImage
+            picture={pajaczkiAnatomiaPicture}
             alt="Schemat anatomiczny powstawania pajączków żylnych — przekrój skóry pokazujący epidermis, dermis i hypodermis z żyłą zasilającą i pajączkiem żylnym"
-            width={1200}
-            height={800}
-            className="w-full h-auto rounded-xl"
-            loading="lazy"
-            decoding="async"
+            sizes="(min-width: 1024px) 896px, 100vw"
+            className="block"
+            imgClassName="w-full h-auto rounded-xl"
           />
 
           {/* SVG connector lines */}

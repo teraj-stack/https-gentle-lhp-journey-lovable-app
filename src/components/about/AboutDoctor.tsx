@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
-import drBujokImg from "@/assets/dr-bujok.webp";
+import ResponsiveImage from "@/components/shared/ResponsiveImage";
+import drBujokPicture from "@/assets/dr-bujok.webp?w=360;540;720;1080&format=avif;webp&as=picture";
 
 const fadeUp = {
   initial: { opacity: 0, y: 30 },
@@ -14,15 +15,12 @@ const AboutDoctor = () => (
       <div className="grid lg:grid-cols-2 gap-16 items-start">
         <motion.div {...fadeUp} className="flex justify-center lg:sticky lg:top-28">
           <div className="relative">
-            <img
-              src={drBujokImg}
+            <ResponsiveImage
+              picture={drBujokPicture}
               alt="Dr Jan Bujok – chirurg, proktolog, flebolog"
-              width={720}
-              height={960}
-              className="w-72 md:w-80 aspect-[3/4] rounded-2xl object-cover shadow-2xl"
-              loading="eager"
-              fetchPriority="high"
-              decoding="async"
+              sizes="(min-width: 768px) 320px, 288px"
+              imgClassName="w-72 md:w-80 aspect-[3/4] rounded-2xl object-cover shadow-2xl"
+              priority
             />
             <div className="absolute -bottom-4 -right-4 w-72 md:w-80 aspect-[3/4] rounded-2xl bg-primary/20 -z-10" />
           </div>

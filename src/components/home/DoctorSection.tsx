@@ -1,7 +1,8 @@
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import CtaButton from "@/components/shared/CtaButton";
-import drBujokImg from "@/assets/dr-bujok.webp";
+import ResponsiveImage from "@/components/shared/ResponsiveImage";
+import drBujokPicture from "@/assets/dr-bujok.webp?w=360;540;720;1080&format=avif;webp&as=picture";
 
 const ZNANY_LEKARZ_URL = "https://www.znanylekarz.pl/jan-bujok-2/chirurg-flebolog-proktolog/warszawa";
 
@@ -18,15 +19,12 @@ const DoctorSection = () => (
       <div className="grid md:grid-cols-2 gap-10 md:gap-12 lg:gap-16 items-start">
         <motion.div {...stagger(0.15)} className="flex justify-center md:order-2 md:pt-10">
           <div className="relative">
-            <img
-              src={drBujokImg}
+            <ResponsiveImage
+              picture={drBujokPicture}
               alt="Dr Jan Bujok – chirurg, proktolog, flebolog"
-              width={720}
-              height={960}
-              className="w-72 md:w-80 aspect-[3/4] rounded-2xl object-cover shadow-2xl"
-              loading="eager"
-              fetchPriority="high"
-              decoding="async"
+              sizes="(min-width: 768px) 320px, 288px"
+              imgClassName="w-72 md:w-80 aspect-[3/4] rounded-2xl object-cover shadow-2xl"
+              priority
             />
             <div className="absolute -bottom-4 -right-4 w-72 md:w-80 aspect-[3/4] rounded-2xl bg-primary/20 -z-10" />
           </div>
