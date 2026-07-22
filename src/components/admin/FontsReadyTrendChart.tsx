@@ -588,6 +588,18 @@ export default function FontsReadyTrendChart({ rows: parentRows, days: parentDay
                   dot={false}
                   connectNulls
                 />
+                {comparePrev && (
+                  <Line
+                    type="monotone"
+                    dataKey="prev_p75"
+                    name="p75 (poprz. okres)"
+                    stroke="hsl(280 70% 60%)"
+                    strokeWidth={1.75}
+                    strokeDasharray="5 3"
+                    dot={{ r: 2 }}
+                    connectNulls
+                  />
+                )}
               </LineChart>
             </ResponsiveContainer>
           </div>
