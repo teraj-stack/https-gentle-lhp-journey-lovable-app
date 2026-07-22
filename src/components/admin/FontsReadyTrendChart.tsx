@@ -270,6 +270,24 @@ export default function FontsReadyTrendChart({ rows, days }: Props) {
                 />
                 <Tooltip content={<CustomTooltip />} />
                 <Legend wrapperStyle={{ fontSize: 12 }} />
+                {deployBucketLabel && data.length > 0 && (
+                  <ReferenceArea
+                    x1={deployBucketLabel}
+                    x2={data[data.length - 1].label}
+                    fill="hsl(var(--primary))"
+                    fillOpacity={0.06}
+                    ifOverflow="extendDomain"
+                  />
+                )}
+                {deployBucketLabel && (
+                  <ReferenceLine
+                    x={deployBucketLabel}
+                    stroke="hsl(var(--primary))"
+                    strokeWidth={1.5}
+                    strokeDasharray="6 3"
+                    label={{ value: "deploy", fill: "hsl(var(--primary))", fontSize: 10, position: "top" }}
+                  />
+                )}
                 <ReferenceLine
                   y={t.good}
                   stroke="hsl(142 70% 45%)"
