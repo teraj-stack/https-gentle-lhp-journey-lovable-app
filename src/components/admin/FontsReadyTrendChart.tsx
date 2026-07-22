@@ -1,9 +1,13 @@
-import { useMemo, useCallback } from "react";
-import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine, Legend } from "recharts";
+import { useMemo, useCallback, useState, useEffect } from "react";
+import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine, ReferenceArea, Legend } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Download } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Download, Rocket, X } from "lucide-react";
 import { CWV_THRESHOLDS, percentile, type WebVitalRow } from "@/lib/webVitalsAnalytics";
+
+const DEPLOY_STORAGE_KEY = "fontsReady.deployAt";
 
 interface Props {
   rows: WebVitalRow[];
