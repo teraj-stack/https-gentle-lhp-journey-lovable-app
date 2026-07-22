@@ -342,7 +342,7 @@ export default function FontsReadyTrendChart({ rows: parentRows, days: parentDay
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-  }, [data, preset]);
+  }, [data, preset, comparePrev]);
 
   return (
     <Card className="mb-6">
