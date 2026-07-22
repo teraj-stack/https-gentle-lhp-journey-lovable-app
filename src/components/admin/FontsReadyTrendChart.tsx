@@ -282,6 +282,21 @@ export default function FontsReadyTrendChart({ rows: parentRows, days: parentDay
           <span className="text-muted-foreground">min</span><span>{fmt(d.min)}</span>
           <span className="text-muted-foreground">max</span><span>{fmt(d.max)}</span>
           <span className="text-muted-foreground">ocena (p75)</span><span>{rating}</span>
+          {comparePrev && (
+            <>
+              <span className="text-muted-foreground border-t pt-1 mt-1 col-span-2">poprzedni okres · n={d.prev_count}</span>
+              <span className="text-muted-foreground">p75 prev</span><span>{fmt(d.prev_p75)}</span>
+              <span className="text-muted-foreground">mediana prev</span><span>{fmt(d.prev_p50)}</span>
+              {d.p75 !== null && d.prev_p75 !== null && (
+                <>
+                  <span className="text-muted-foreground">Δ p75</span>
+                  <span className={d.p75 - d.prev_p75 < 0 ? "text-emerald-600 dark:text-emerald-400" : d.p75 - d.prev_p75 > 0 ? "text-red-600 dark:text-red-400" : ""}>
+                    {d.p75 - d.prev_p75 > 0 ? "+" : ""}{Math.round(d.p75 - d.prev_p75)} ms
+                  </span>
+                </>
+              )}
+            </>
+          )}
         </div>
       </div>
     );
