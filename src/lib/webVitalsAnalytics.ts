@@ -70,6 +70,20 @@ export async function fetchRecentVitals(days: number, pathFilter?: string): Prom
   return (data ?? []) as WebVitalRow[];
 }
 
+export async function fetchVitalsRange(sinceISO: string, untilISO: string, metric?: MetricName): Promise<WebVitalRow[]> {
+  let q = supabase
+    .from("web_vitals")
+    .select("*")
+    .gte("created_at", sinceISO)
+    .lte("created_at", untilISO)
+    .order("created_at", { ascending: false })
+    .limit(10000);
+  if (metric) q = q.eq("metric", metric);
+  const { data, error } = await q;
+  if (error) throw error;
+  return (data ?? []) as WebVitalRow[];
+}
+
 /**
  * Public aggregate summary via SECURITY DEFINER RPC.
  * Safe to call anonymously; returns only aggregated counts and p75 (no raw rows, no user agents).
