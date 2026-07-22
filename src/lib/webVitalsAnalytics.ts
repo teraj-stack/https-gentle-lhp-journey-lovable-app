@@ -1,6 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 
-export type MetricName = "LCP" | "INP" | "CLS" | "FCP" | "TTFB";
+export type MetricName = "LCP" | "INP" | "CLS" | "FCP" | "TTFB" | "FONTS_READY";
 
 export interface WebVitalRow {
   id: string;
@@ -24,14 +24,16 @@ export interface MetricSummary {
   unit: "ms" | "score";
 }
 
-// Google Core Web Vitals thresholds
+// Google Core Web Vitals thresholds (+ custom FONTS_READY)
 export const CWV_THRESHOLDS: Record<MetricName, { good: number; poor: number; unit: "ms" | "score" }> = {
   LCP: { good: 2500, poor: 4000, unit: "ms" },
   INP: { good: 200, poor: 500, unit: "ms" },
   CLS: { good: 0.1, poor: 0.25, unit: "score" },
   FCP: { good: 1800, poor: 3000, unit: "ms" },
   TTFB: { good: 800, poor: 1800, unit: "ms" },
+  FONTS_READY: { good: 1500, poor: 3000, unit: "ms" },
 };
+
 
 export function rateValue(metric: MetricName, value: number): "good" | "needs-improvement" | "poor" {
   const t = CWV_THRESHOLDS[metric];
@@ -85,7 +87,7 @@ export async function fetchPublicVitalsSummary(days: number): Promise<MetricSumm
       poor: Number(row.poor),
     });
   }
-  return (["LCP", "INP", "CLS", "FCP", "TTFB"] as MetricName[]).map((metric) => {
+  return (["LCP", "INP", "CLS", "FCP", "TTFB", "FONTS_READY"] as MetricName[]).map((metric) => {
     const r = byMetric.get(metric);
     return {
       metric,
@@ -101,8 +103,9 @@ export async function fetchPublicVitalsSummary(days: number): Promise<MetricSumm
 
 export function summarize(rows: WebVitalRow[]): MetricSummary[] {
   const groups: Record<MetricName, WebVitalRow[]> = {
-    LCP: [], INP: [], CLS: [], FCP: [], TTFB: [],
+    LCP: [], INP: [], CLS: [], FCP: [], TTFB: [], FONTS_READY: [],
   };
+
   for (const r of rows) {
     if (groups[r.metric]) groups[r.metric].push(r);
   }

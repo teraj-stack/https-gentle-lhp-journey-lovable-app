@@ -88,6 +88,34 @@ export function initWebVitals() {
   onFCP(handle);
   onTTFB(handle);
 
+  // Custom: measure web-font impact on LCP.
+  // FONTS_READY = time from navigation start to document.fonts.ready.
+  const fontsApi = (document as Document & { fonts?: { ready: Promise<unknown> } }).fonts;
+  if (fontsApi?.ready) {
+    fontsApi.ready
+      .then(() => {
+        const value = Math.round(performance.now());
+        if (!Number.isFinite(value) || value < 0 || value >= 10_000_000) return;
+        const good = 1500;
+        const poor = 3000;
+        const rating: "good" | "needs-improvement" | "poor" =
+          value <= good ? "good" : value <= poor ? "needs-improvement" : "poor";
+        buffer.push({
+          metric: "FONTS_READY",
+          value,
+          rating,
+          path: sanitizePath(),
+          navigation_type: null,
+          connection: getConnection(),
+          user_agent: navigator.userAgent.slice(0, 500),
+        });
+        schedule();
+      })
+      .catch(() => {
+        /* ignore */
+      });
+  }
+
   // Ensure buffered metrics flush before unload.
   const flushNow = () => flush();
   window.addEventListener("pagehide", flushNow, { capture: true });
@@ -95,3 +123,4 @@ export function initWebVitals() {
     if (document.visibilityState === "hidden") flushNow();
   });
 }
+
