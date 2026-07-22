@@ -725,6 +725,17 @@ export type Database = {
         Args: { payload: Json; queue_name: string }
         Returns: number
       }
+      get_public_web_vitals_summary: {
+        Args: { p_days?: number }
+        Returns: {
+          count: number
+          good: number
+          metric: string
+          needs_improvement: number
+          p75: number
+          poor: number
+        }[]
+      }
       get_top_rate_limited_ips: {
         Args: { p_limit?: number }
         Returns: {

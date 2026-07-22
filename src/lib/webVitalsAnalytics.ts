@@ -68,6 +68,37 @@ export async function fetchRecentVitals(days: number, pathFilter?: string): Prom
   return (data ?? []) as WebVitalRow[];
 }
 
+/**
+ * Public aggregate summary via SECURITY DEFINER RPC.
+ * Safe to call anonymously; returns only aggregated counts and p75 (no raw rows, no user agents).
+ */
+export async function fetchPublicVitalsSummary(days: number): Promise<MetricSummary[]> {
+  const { data, error } = await supabase.rpc("get_public_web_vitals_summary", { p_days: days });
+  if (error) throw error;
+  const byMetric = new Map<string, { p75: number | null; count: number; good: number; ni: number; poor: number }>();
+  for (const row of (data ?? []) as Array<{ metric: string; p75: number | null; count: number | string; good: number | string; needs_improvement: number | string; poor: number | string }>) {
+    byMetric.set(row.metric, {
+      p75: row.p75 === null ? null : Number(row.p75),
+      count: Number(row.count),
+      good: Number(row.good),
+      ni: Number(row.needs_improvement),
+      poor: Number(row.poor),
+    });
+  }
+  return (["LCP", "INP", "CLS", "FCP", "TTFB"] as MetricName[]).map((metric) => {
+    const r = byMetric.get(metric);
+    return {
+      metric,
+      p75: r?.p75 ?? null,
+      count: r?.count ?? 0,
+      good: r?.good ?? 0,
+      needsImprovement: r?.ni ?? 0,
+      poor: r?.poor ?? 0,
+      unit: CWV_THRESHOLDS[metric].unit,
+    };
+  });
+}
+
 export function summarize(rows: WebVitalRow[]): MetricSummary[] {
   const groups: Record<MetricName, WebVitalRow[]> = {
     LCP: [], INP: [], CLS: [], FCP: [], TTFB: [],

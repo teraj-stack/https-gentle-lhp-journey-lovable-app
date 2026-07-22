@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { ArrowLeft, TrendingUp, Users, Activity } from "lucide-react";
@@ -9,9 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   CWV_THRESHOLDS,
-  fetchRecentVitals,
+  fetchPublicVitalsSummary,
   formatMetricValue,
-  summarize,
   type MetricName,
   type MetricSummary,
 } from "@/lib/webVitalsAnalytics";
@@ -60,13 +59,12 @@ function MetricCard({ s }: { s: MetricSummary }) {
 
 export default function RaportyCWV() {
   const [days, setDays] = useState<7 | 28>(7);
-  const { data: rows, isLoading, error } = useQuery({
-    queryKey: ["public-web-vitals", days],
-    queryFn: () => fetchRecentVitals(days),
+  const { data: summaries = [], isLoading, error } = useQuery({
+    queryKey: ["public-web-vitals-summary", days],
+    queryFn: () => fetchPublicVitalsSummary(days),
     staleTime: 5 * 60 * 1000,
   });
 
-  const summaries = useMemo(() => summarize(rows ?? []), [rows]);
   const totalMeasurements = summaries.reduce((s, m) => s + m.count, 0);
 
   return (
