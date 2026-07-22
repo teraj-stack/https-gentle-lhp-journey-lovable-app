@@ -449,12 +449,51 @@ export default function FontsReadyTrendChart({ rows: parentRows, days: parentDay
             </CardDescription>
           </div>
           <div className="flex items-center gap-2 shrink-0">
+            <div className="flex items-center gap-1">
+              <Label htmlFor="fonts-ready-auto-refresh" className="sr-only">
+                Automatyczne odświeżanie
+              </Label>
+              <select
+                id="fonts-ready-auto-refresh"
+                value={autoRefreshMs}
+                onChange={(e) => setAutoRefreshMs(Number(e.target.value))}
+                disabled={canReuseParent}
+                aria-label="Interwał automatycznego odświeżania trendu FONTS_READY"
+                title={
+                  canReuseParent
+                    ? "Auto-odświeżanie niedostępne dla presetów współdzielonych z rodzicem"
+                    : "Automatyczne odświeżanie danych trendu"
+                }
+                className="h-9 rounded-md border border-input bg-background px-2 text-xs text-foreground disabled:opacity-50"
+              >
+                <option value={0}>Auto: wył.</option>
+                <option value={30_000}>Auto: 30s</option>
+                <option value={60_000}>Auto: 1 min</option>
+                <option value={300_000}>Auto: 5 min</option>
+              </select>
+              {autoRefreshMs > 0 && !canReuseParent && (
+                <span
+                  className="inline-block h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.7)]"
+                  aria-hidden="true"
+                  title="Auto-odświeżanie aktywne"
+                />
+              )}
+            </div>
             <Button
               variant="ghost"
               size="icon"
               onClick={() => refetch()}
               disabled={isFetching || canReuseParent}
-              aria-label="Odśwież dane FONTS_READY"
+              aria-label={
+                dataUpdatedAt
+                  ? `Odśwież dane FONTS_READY. Ostatnia aktualizacja: ${new Date(dataUpdatedAt).toLocaleTimeString("pl-PL")}`
+                  : "Odśwież dane FONTS_READY"
+              }
+              title={
+                dataUpdatedAt
+                  ? `Ostatnia aktualizacja: ${new Date(dataUpdatedAt).toLocaleTimeString("pl-PL")}`
+                  : undefined
+              }
               className="h-9 w-9"
             >
               <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} aria-hidden="true" />
