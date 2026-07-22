@@ -120,6 +120,37 @@ export default function FontsReadyTrendChart({ rows: parentRows, days: parentDay
     staleTime: 60_000,
   });
 
+  // Previous period window (same length, immediately before `since`).
+  const prevWindow = useMemo(() => {
+    if (!rangeWindow) return null;
+    const spanMs = rangeWindow.until.getTime() - rangeWindow.since.getTime();
+    return {
+      since: new Date(rangeWindow.since.getTime() - spanMs),
+      until: new Date(rangeWindow.since.getTime()),
+    };
+  }, [rangeWindow]);
+
+  const [comparePrev, setComparePrev] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem("fontsReady.comparePrev") === "1";
+  });
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem("fontsReady.comparePrev", comparePrev ? "1" : "0");
+  }, [comparePrev]);
+
+  const { data: prevRows, isFetching: isFetchingPrev } = useQuery({
+    queryKey: [
+      "fonts-ready-range-prev",
+      prevWindow?.since.toISOString(),
+      prevWindow?.until.toISOString(),
+    ],
+    queryFn: () =>
+      fetchVitalsRange(prevWindow!.since.toISOString(), prevWindow!.until.toISOString(), "FONTS_READY"),
+    enabled: comparePrev && !!prevWindow,
+    staleTime: 60_000,
+  });
+
   const rows: WebVitalRow[] = canReuseParent ? (parentRows ?? []) : (fetchedRows ?? []);
   const hourly = rangeWindow?.hourly ?? false;
   const rangeLabel =
@@ -144,7 +175,7 @@ export default function FontsReadyTrendChart({ rows: parentRows, days: parentDay
   }, [deployAt]);
 
   const data = useMemo(() => {
-    return bucketRows(rows, hourly).map((b) => {
+    const buckets = bucketRows(rows, hourly).map((b) => {
       const sorted = [...b.values].sort((a, z) => a - z);
       return {
         key: b.key,
@@ -155,9 +186,39 @@ export default function FontsReadyTrendChart({ rows: parentRows, days: parentDay
         min: sorted.length ? sorted[0] : null,
         max: sorted.length ? sorted[sorted.length - 1] : null,
         count: b.values.length,
+        prev_p75: null as number | null,
+        prev_p50: null as number | null,
+        prev_count: 0,
       };
     });
-  }, [rows, hourly]);
+    if (comparePrev && prevRows && prevRows.length > 0) {
+      const prevBuckets = bucketRows(prevRows, hourly);
+      // Align by index (same-length window → same bucket count expected).
+      for (let i = 0; i < buckets.length && i < prevBuckets.length; i++) {
+        const pb = prevBuckets[i];
+        buckets[i].prev_p75 = percentile(pb.values, 75);
+        buckets[i].prev_p50 = percentile(pb.values, 50);
+        buckets[i].prev_count = pb.values.length;
+      }
+    }
+    return buckets;
+  }, [rows, hourly, comparePrev, prevRows]);
+
+  // Aggregate p75 delta vs. previous period (same-length window).
+  const prevDelta = useMemo(() => {
+    if (!comparePrev || !prevRows) return null;
+    const curr: number[] = [];
+    const prev: number[] = [];
+    for (const r of rows) if (r.metric === "FONTS_READY") curr.push(Number(r.value));
+    for (const r of prevRows) if (r.metric === "FONTS_READY") prev.push(Number(r.value));
+    if (curr.length === 0 || prev.length === 0) {
+      return { currP75: curr.length ? percentile(curr, 75) : null, prevP75: prev.length ? percentile(prev, 75) : null, currCount: curr.length, prevCount: prev.length, delta: null as number | null };
+    }
+    const currP75 = percentile(curr, 75);
+    const prevP75 = percentile(prev, 75);
+    return { currP75, prevP75, currCount: curr.length, prevCount: prev.length, delta: currP75 - prevP75 };
+  }, [comparePrev, prevRows, rows]);
+
 
   const t = CWV_THRESHOLDS.FONTS_READY;
 
@@ -221,6 +282,21 @@ export default function FontsReadyTrendChart({ rows: parentRows, days: parentDay
           <span className="text-muted-foreground">min</span><span>{fmt(d.min)}</span>
           <span className="text-muted-foreground">max</span><span>{fmt(d.max)}</span>
           <span className="text-muted-foreground">ocena (p75)</span><span>{rating}</span>
+          {comparePrev && (
+            <>
+              <span className="text-muted-foreground border-t pt-1 mt-1 col-span-2">poprzedni okres · n={d.prev_count}</span>
+              <span className="text-muted-foreground">p75 prev</span><span>{fmt(d.prev_p75)}</span>
+              <span className="text-muted-foreground">mediana prev</span><span>{fmt(d.prev_p50)}</span>
+              {d.p75 !== null && d.prev_p75 !== null && (
+                <>
+                  <span className="text-muted-foreground">Δ p75</span>
+                  <span className={d.p75 - d.prev_p75 < 0 ? "text-emerald-600 dark:text-emerald-400" : d.p75 - d.prev_p75 > 0 ? "text-red-600 dark:text-red-400" : ""}>
+                    {d.p75 - d.prev_p75 > 0 ? "+" : ""}{Math.round(d.p75 - d.prev_p75)} ms
+                  </span>
+                </>
+              )}
+            </>
+          )}
         </div>
       </div>
     );
@@ -228,6 +304,7 @@ export default function FontsReadyTrendChart({ rows: parentRows, days: parentDay
 
   const handleExportCsv = useCallback(() => {
     const header = ["bucket", "count", "min_ms", "p50_ms", "p75_ms", "p90_ms", "max_ms"];
+    if (comparePrev) header.push("prev_count", "prev_p50_ms", "prev_p75_ms");
     const escape = (v: string | number | null) => {
       if (v === null || v === undefined) return "";
       const s = String(v);
@@ -235,7 +312,7 @@ export default function FontsReadyTrendChart({ rows: parentRows, days: parentDay
     };
     const lines = [header.join(",")];
     for (const d of data) {
-      lines.push([
+      const row: Array<string | number> = [
         d.label,
         d.count,
         d.min !== null ? Math.round(d.min) : "",
@@ -243,7 +320,15 @@ export default function FontsReadyTrendChart({ rows: parentRows, days: parentDay
         d.p75 !== null ? Math.round(d.p75) : "",
         d.p90 !== null ? Math.round(d.p90) : "",
         d.max !== null ? Math.round(d.max) : "",
-      ].map(escape).join(","));
+      ];
+      if (comparePrev) {
+        row.push(
+          d.prev_count,
+          d.prev_p50 !== null ? Math.round(d.prev_p50) : "",
+          d.prev_p75 !== null ? Math.round(d.prev_p75) : "",
+        );
+      }
+      lines.push(row.map(escape).join(","));
     }
     const csv = "\ufeff" + lines.join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
@@ -257,7 +342,7 @@ export default function FontsReadyTrendChart({ rows: parentRows, days: parentDay
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-  }, [data, preset]);
+  }, [data, preset, comparePrev]);
 
   return (
     <Card className="mb-6">
@@ -381,6 +466,42 @@ export default function FontsReadyTrendChart({ rows: parentRows, days: parentDay
             </div>
           )}
         </div>
+        <div className="mt-3 flex flex-wrap items-center gap-3">
+          <Button
+            variant={comparePrev ? "default" : "outline"}
+            size="sm"
+            onClick={() => setComparePrev((v) => !v)}
+            aria-pressed={comparePrev}
+            className="h-8"
+          >
+            {comparePrev ? "✓ " : ""}Porównaj z poprzednim okresem
+          </Button>
+          {comparePrev && prevWindow && (
+            <span className="text-xs text-muted-foreground tabular-nums">
+              poprzedni: {prevWindow.since.toLocaleString("pl-PL")} – {prevWindow.until.toLocaleString("pl-PL")}
+              {isFetchingPrev ? " · ładowanie…" : ""}
+            </span>
+          )}
+          {comparePrev && prevDelta && (
+            <div className="flex flex-wrap gap-2 text-xs tabular-nums">
+              <span className="rounded-md border px-2 py-1">
+                <span className="text-muted-foreground">poprz. · </span>
+                {prevDelta.prevP75 != null ? `p75 ${Math.round(prevDelta.prevP75)} ms · n=${prevDelta.prevCount}` : "brak danych"}
+              </span>
+              <span className="rounded-md border px-2 py-1">
+                <span className="text-muted-foreground">bież. · </span>
+                {prevDelta.currP75 != null ? `p75 ${Math.round(prevDelta.currP75)} ms · n=${prevDelta.currCount}` : "brak danych"}
+              </span>
+              {prevDelta.delta != null && (
+                <span
+                  className={`rounded-md border px-2 py-1 ${prevDelta.delta < 0 ? "border-emerald-500/40 text-emerald-600 dark:text-emerald-400" : prevDelta.delta > 0 ? "border-red-500/40 text-red-600 dark:text-red-400" : ""}`}
+                >
+                  Δ p75 vs poprz.: {prevDelta.delta > 0 ? "+" : ""}{Math.round(prevDelta.delta)} ms
+                </span>
+              )}
+            </div>
+          )}
+        </div>
       </CardHeader>
       <CardContent>
         {data.length === 0 ? (
@@ -476,6 +597,18 @@ export default function FontsReadyTrendChart({ rows: parentRows, days: parentDay
                   dot={false}
                   connectNulls
                 />
+                {comparePrev && (
+                  <Line
+                    type="monotone"
+                    dataKey="prev_p75"
+                    name="p75 (poprz. okres)"
+                    stroke="hsl(280 70% 60%)"
+                    strokeWidth={1.75}
+                    strokeDasharray="5 3"
+                    dot={{ r: 2 }}
+                    connectNulls
+                  />
+                )}
               </LineChart>
             </ResponsiveContainer>
           </div>
