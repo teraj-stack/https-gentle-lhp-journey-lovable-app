@@ -269,17 +269,62 @@ export default function FontsReadyTrendChart({ rows: parentRows, days: parentDay
               Czas do `document.fonts.ready` (p90 / p75 / mediana, min–max w tooltipie) — {hourly ? "co godzinę" : "dziennie"} · {rangeLabel}. Cel: p75 ≤ {t.good} ms.
             </CardDescription>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleExportCsv}
-            disabled={data.length === 0}
-            className="shrink-0"
-            aria-label="Eksportuj dane FONTS_READY do CSV"
-          >
-            <Download className="mr-2 h-4 w-4" aria-hidden="true" />
-            Eksportuj CSV
-          </Button>
+          <div className="flex items-center gap-2 shrink-0">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => refetch()}
+              disabled={isFetching || canReuseParent}
+              aria-label="Odśwież dane FONTS_READY"
+              className="h-9 w-9"
+            >
+              <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} aria-hidden="true" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExportCsv}
+              disabled={data.length === 0}
+              aria-label="Eksportuj dane FONTS_READY do CSV"
+            >
+              <Download className="mr-2 h-4 w-4" aria-hidden="true" />
+              Eksportuj CSV
+            </Button>
+          </div>
+        </div>
+        <div className="mt-3 flex flex-wrap items-end gap-3">
+          <Tabs value={preset} onValueChange={(v) => setPreset(v as Preset)}>
+            <TabsList>
+              <TabsTrigger value="1">24h</TabsTrigger>
+              <TabsTrigger value="7">7 dni</TabsTrigger>
+              <TabsTrigger value="28">28 dni</TabsTrigger>
+              <TabsTrigger value="custom">Niestandardowy</TabsTrigger>
+            </TabsList>
+          </Tabs>
+          {preset === "custom" && (
+            <div className="flex flex-wrap items-end gap-2">
+              <div className="flex flex-col gap-1">
+                <Label htmlFor="fonts-ready-from" className="text-xs text-muted-foreground">Od</Label>
+                <Input
+                  id="fonts-ready-from"
+                  type="datetime-local"
+                  value={customFrom}
+                  onChange={(e) => setCustomFrom(e.target.value)}
+                  className="h-9 w-[220px]"
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <Label htmlFor="fonts-ready-to" className="text-xs text-muted-foreground">Do</Label>
+                <Input
+                  id="fonts-ready-to"
+                  type="datetime-local"
+                  value={customTo}
+                  onChange={(e) => setCustomTo(e.target.value)}
+                  className="h-9 w-[220px]"
+                />
+              </div>
+            </div>
+          )}
         </div>
         <div className="mt-3 flex flex-wrap items-end gap-3">
           <div className="flex flex-col gap-1">
