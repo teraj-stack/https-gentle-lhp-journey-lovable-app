@@ -36,22 +36,57 @@ function bucketRows(rows: WebVitalRow[], days: number): Bucket[] {
 
 export default function FontsReadyTrendChart({ rows, days }: Props) {
   const data = useMemo(() => {
-    return bucketRows(rows, days).map((b) => ({
-      label: b.label,
-      p75: percentile(b.values, 75),
-      p50: percentile(b.values, 50),
-      count: b.values.length,
-    }));
+    return bucketRows(rows, days).map((b) => {
+      const sorted = [...b.values].sort((a, z) => a - z);
+      return {
+        label: b.label,
+        p90: percentile(b.values, 90),
+        p75: percentile(b.values, 75),
+        p50: percentile(b.values, 50),
+        min: sorted.length ? sorted[0] : null,
+        max: sorted.length ? sorted[sorted.length - 1] : null,
+        count: b.values.length,
+      };
+    });
   }, [rows, days]);
 
   const t = CWV_THRESHOLDS.FONTS_READY;
+
+  type Row = (typeof data)[number];
+  const CustomTooltip = ({ active, payload, label }: {
+    active?: boolean;
+    payload?: Array<{ payload: Row }>;
+    label?: string;
+  }) => {
+    if (!active || !payload?.length) return null;
+    const d = payload[0].payload;
+    const fmt = (v: number | null) => (v === null ? "—" : `${Math.round(v)} ms`);
+    const rating =
+      d.p75 === null ? "—" : d.p75 <= t.good ? "dobry" : d.p75 <= t.poor ? "do poprawy" : "słaby";
+    return (
+      <div
+        className="rounded-md border bg-card text-foreground text-xs p-3 shadow-md"
+        style={{ borderColor: "hsl(var(--border))" }}
+      >
+        <div className="font-medium mb-2">{label} · n={d.count}</div>
+        <div className="grid grid-cols-[auto_auto] gap-x-3 gap-y-1 tabular-nums">
+          <span className="text-muted-foreground">p90</span><span>{fmt(d.p90)}</span>
+          <span className="text-muted-foreground">p75</span><span>{fmt(d.p75)}</span>
+          <span className="text-muted-foreground">mediana</span><span>{fmt(d.p50)}</span>
+          <span className="text-muted-foreground">min</span><span>{fmt(d.min)}</span>
+          <span className="text-muted-foreground">max</span><span>{fmt(d.max)}</span>
+          <span className="text-muted-foreground">ocena (p75)</span><span>{rating}</span>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <Card className="mb-6">
       <CardHeader>
         <CardTitle>FONTS_READY — trend</CardTitle>
         <CardDescription>
-          Czas do `document.fonts.ready` (p75 / mediana) — {days <= 1 ? "co godzinę" : "dziennie"}. Cel: p75 ≤ {t.good} ms.
+          Czas do `document.fonts.ready` (p90 / p75 / mediana, min–max w tooltipie) — {days <= 1 ? "co godzinę" : "dziennie"}. Cel: p75 ≤ {t.good} ms.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -67,17 +102,7 @@ export default function FontsReadyTrendChart({ rows, days }: Props) {
                   tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
                   tickFormatter={(v) => `${v} ms`}
                 />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "hsl(var(--card))",
-                    border: "1px solid hsl(var(--border))",
-                    borderRadius: 8,
-                    color: "hsl(var(--foreground))",
-                  }}
-                  formatter={(value: number | null, name) =>
-                    value === null ? ["—", name] : [`${Math.round(value)} ms`, name]
-                  }
-                />
+                <Tooltip content={<CustomTooltip />} />
                 <Legend wrapperStyle={{ fontSize: 12 }} />
                 <ReferenceLine
                   y={t.good}
@@ -90,6 +115,25 @@ export default function FontsReadyTrendChart({ rows, days }: Props) {
                   stroke="hsl(0 70% 55%)"
                   strokeDasharray="4 4"
                   label={{ value: `poor > ${t.poor}`, fill: "hsl(0 70% 55%)", fontSize: 10, position: "insideTopRight" }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="max"
+                  name="max"
+                  stroke="hsl(0 60% 60%)"
+                  strokeWidth={1}
+                  strokeDasharray="2 4"
+                  dot={false}
+                  connectNulls
+                />
+                <Line
+                  type="monotone"
+                  dataKey="p90"
+                  name="p90"
+                  stroke="hsl(30 90% 55%)"
+                  strokeWidth={1.75}
+                  dot={{ r: 2 }}
+                  connectNulls
                 />
                 <Line
                   type="monotone"
@@ -108,6 +152,16 @@ export default function FontsReadyTrendChart({ rows, days }: Props) {
                   stroke="hsl(var(--muted-foreground))"
                   strokeWidth={1.5}
                   strokeDasharray="4 4"
+                  dot={false}
+                  connectNulls
+                />
+                <Line
+                  type="monotone"
+                  dataKey="min"
+                  name="min"
+                  stroke="hsl(142 50% 55%)"
+                  strokeWidth={1}
+                  strokeDasharray="2 4"
                   dot={false}
                   connectNulls
                 />
