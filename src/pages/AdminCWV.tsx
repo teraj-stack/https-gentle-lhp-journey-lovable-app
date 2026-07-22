@@ -152,6 +152,8 @@ export default function AdminCWV() {
           ))}
         </section>
 
+        <FontsReadyTrendChart rows={rows ?? []} days={days} />
+
         <Card>
           <CardHeader>
             <CardTitle>Top ścieżki wg liczby pomiarów</CardTitle>
