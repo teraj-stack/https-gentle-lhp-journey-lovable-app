@@ -163,6 +163,35 @@ export default function FontsReadyTrendChart({ rows: parentRows, days: parentDay
         : `ostatnie ${preset} dni`;
 
 
+  // Series visibility toggles (persisted).
+  type SeriesKey = "p90" | "p75" | "p50" | "min" | "max" | "prev_p75";
+  const SERIES_STORAGE_KEY = "fontsReady.visibleSeries";
+  const DEFAULT_VISIBLE: Record<SeriesKey, boolean> = { p90: true, p75: true, p50: true, min: false, max: false, prev_p75: true };
+  const [visible, setVisible] = useState<Record<SeriesKey, boolean>>(() => {
+    if (typeof window === "undefined") return DEFAULT_VISIBLE;
+    try {
+      const raw = window.localStorage.getItem(SERIES_STORAGE_KEY);
+      if (!raw) return DEFAULT_VISIBLE;
+      const parsed = JSON.parse(raw);
+      return { ...DEFAULT_VISIBLE, ...parsed };
+    } catch {
+      return DEFAULT_VISIBLE;
+    }
+  });
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(SERIES_STORAGE_KEY, JSON.stringify(visible));
+  }, [visible]);
+  const toggleSeries = (k: SeriesKey) => setVisible((v) => ({ ...v, [k]: !v[k] }));
+
+  const SERIES_META: Array<{ key: SeriesKey; label: string; color: string }> = [
+    { key: "max", label: "max", color: "hsl(0 60% 60%)" },
+    { key: "p90", label: "p90", color: "hsl(30 90% 55%)" },
+    { key: "p75", label: "p75", color: "hsl(var(--primary))" },
+    { key: "p50", label: "mediana", color: "hsl(var(--muted-foreground))" },
+    { key: "min", label: "min", color: "hsl(142 50% 55%)" },
+  ];
+
   const [deployAt, setDeployAt] = useState<string>(() => {
     if (typeof window === "undefined") return "";
     return window.localStorage.getItem(DEPLOY_STORAGE_KEY) ?? "";
