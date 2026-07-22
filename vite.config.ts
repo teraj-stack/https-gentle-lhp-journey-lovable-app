@@ -2,6 +2,7 @@ import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
+import { imagetools } from "vite-imagetools";
 // @ts-expect-error — plain Node ESM script without type declarations
 import { validateEbmAnchors } from "./scripts/validate-ebm-anchors.mjs";
 
@@ -53,6 +54,9 @@ export default defineConfig(({ mode }) => ({
   },
   plugins: [
     ebmAnchorsValidator(),
+    // Generates responsive AVIF/WebP variants for imports using `?as=picture`.
+    // No-op for imports without the query string, so existing `<img>` refs stay intact.
+    imagetools(),
     react(),
     mode === "development" && componentTagger(),
   ].filter(Boolean),

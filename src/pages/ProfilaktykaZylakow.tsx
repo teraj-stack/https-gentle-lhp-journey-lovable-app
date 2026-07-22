@@ -24,7 +24,8 @@ import {
   CheckCircle2,
   Upload,
 } from "lucide-react";
-import schematImg from "@/assets/profilaktyka-zylakow-schemat.webp";
+import ResponsiveImage from "@/components/shared/ResponsiveImage";
+import schematPicture from "@/assets/profilaktyka-zylakow-schemat.webp?w=480;768;1024;1280&format=avif;webp&as=picture";
 import RiskQuiz from "@/components/profilaktyka/RiskQuiz";
 import ExercisesSection from "@/components/profilaktyka/ExercisesSection";
 import VenousInsufficiencyImage from "@/components/shared/VenousInsufficiencyImage";
@@ -241,14 +242,12 @@ const ProfilaktykaZylakow = () => {
             </p>
           </div>
           <div className="glass-card rounded-2xl p-4 md:p-8">
-            <img
-              src={schematImg}
+            <ResponsiveImage
+              picture={schematPicture}
               alt="Infografika: czynniki ryzyka żylaków, objawy przewlekłej niewydolności żylnej i metody profilaktyki — schemat poglądowy"
-              width={1200}
-              height={800}
-              className="w-full max-w-3xl mx-auto rounded-xl"
-              loading="lazy"
-              decoding="async"
+              sizes="(min-width: 768px) 768px, 100vw"
+              className="block max-w-3xl mx-auto"
+              imgClassName="w-full h-auto rounded-xl"
             />
           </div>
         </motion.section>
