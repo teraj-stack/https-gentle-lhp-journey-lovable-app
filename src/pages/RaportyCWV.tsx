@@ -59,13 +59,12 @@ function MetricCard({ s }: { s: MetricSummary }) {
 
 export default function RaportyCWV() {
   const [days, setDays] = useState<7 | 28>(7);
-  const { data: rows, isLoading, error } = useQuery({
-    queryKey: ["public-web-vitals", days],
-    queryFn: () => fetchRecentVitals(days),
+  const { data: summaries = [], isLoading, error } = useQuery({
+    queryKey: ["public-web-vitals-summary", days],
+    queryFn: () => fetchPublicVitalsSummary(days),
     staleTime: 5 * 60 * 1000,
   });
 
-  const summaries = useMemo(() => summarize(rows ?? []), [rows]);
   const totalMeasurements = summaries.reduce((s, m) => s + m.count, 0);
 
   return (
