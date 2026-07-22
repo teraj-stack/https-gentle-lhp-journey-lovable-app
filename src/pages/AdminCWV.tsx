@@ -20,6 +20,7 @@ import {
   summarizeByPath,
   type MetricName,
 } from "@/lib/webVitalsAnalytics";
+import FontsReadyTrendChart from "@/components/admin/FontsReadyTrendChart";
 
 function RatingBadge({ p75, metric }: { p75: number | null; metric: MetricName }) {
   if (p75 === null) return <Badge variant="outline">—</Badge>;
@@ -150,6 +151,8 @@ export default function AdminCWV() {
             </Card>
           ))}
         </section>
+
+        <FontsReadyTrendChart rows={rows ?? []} days={days} />
 
         <Card>
           <CardHeader>
