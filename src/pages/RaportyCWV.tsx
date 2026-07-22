@@ -9,9 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   CWV_THRESHOLDS,
-  fetchRecentVitals,
+  fetchPublicVitalsSummary,
   formatMetricValue,
-  summarize,
   type MetricName,
   type MetricSummary,
 } from "@/lib/webVitalsAnalytics";
