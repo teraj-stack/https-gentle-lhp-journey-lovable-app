@@ -11,6 +11,21 @@ import { CWV_THRESHOLDS, percentile, fetchVitalsRange, type WebVitalRow } from "
 
 const DEPLOY_STORAGE_KEY = "fontsReady.deployAt";
 const RANGE_STORAGE_KEY = "fontsReady.range";
+const SAVED_RANGES_KEY = "fontsReady.savedRanges";
+
+type SavedRange = { id: string; name: string; from: string; to: string };
+
+function loadSavedRanges(): SavedRange[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(SAVED_RANGES_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.filter((r) => r && r.id && r.name && r.from && r.to) : [];
+  } catch {
+    return [];
+  }
+}
 
 type Preset = "1" | "7" | "28" | "custom";
 
@@ -85,6 +100,39 @@ export default function FontsReadyTrendChart({ rows: parentRows, days: parentDay
     window.localStorage.setItem(`${RANGE_STORAGE_KEY}.from`, customFrom);
     window.localStorage.setItem(`${RANGE_STORAGE_KEY}.to`, customTo);
   }, [customFrom, customTo]);
+
+  // --- Saved custom ranges (user-defined, separate from presets) ---
+  const [savedRanges, setSavedRanges] = useState<SavedRange[]>(() => loadSavedRanges());
+  const [saveName, setSaveName] = useState("");
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(SAVED_RANGES_KEY, JSON.stringify(savedRanges));
+  }, [savedRanges]);
+
+  const handleSaveRange = useCallback(() => {
+    const name = saveName.trim();
+    if (!name || !customFrom || !customTo) return;
+    setSavedRanges((prev) => {
+      const filtered = prev.filter((r) => r.name.toLowerCase() !== name.toLowerCase());
+      return [
+        ...filtered,
+        { id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, name, from: customFrom, to: customTo },
+      ];
+    });
+    setSaveName("");
+  }, [saveName, customFrom, customTo]);
+
+  const handleApplySavedRange = useCallback((r: SavedRange) => {
+    setPreset("custom");
+    setCustomFrom(r.from);
+    setCustomTo(r.to);
+  }, []);
+
+  const handleDeleteSavedRange = useCallback((id: string) => {
+    setSavedRanges((prev) => prev.filter((r) => r.id !== id));
+  }, []);
+
 
   // Resolve current range window into [since, until] + hourly flag.
   const rangeWindow = useMemo(() => {
@@ -437,9 +485,76 @@ export default function FontsReadyTrendChart({ rows: parentRows, days: parentDay
                   className="h-9 w-[220px]"
                 />
               </div>
+              <div className="flex flex-col gap-1">
+                <Label htmlFor="fonts-ready-save-name" className="text-xs text-muted-foreground">
+                  Zapisz jako
+                </Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="fonts-ready-save-name"
+                    type="text"
+                    placeholder="np. Moje 10 dni"
+                    value={saveName}
+                    onChange={(e) => setSaveName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleSaveRange();
+                      }
+                    }}
+                    className="h-9 w-[200px]"
+                    maxLength={40}
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleSaveRange}
+                    disabled={!saveName.trim() || !customFrom || !customTo}
+                  >
+                    Zapisz zakres
+                  </Button>
+                </div>
+              </div>
             </div>
           )}
         </div>
+        {savedRanges.length > 0 && (
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <span className="text-xs text-muted-foreground">Moje zakresy:</span>
+            {savedRanges.map((r) => {
+              const active =
+                preset === "custom" && customFrom === r.from && customTo === r.to;
+              return (
+                <div
+                  key={r.id}
+                  className={`inline-flex items-center gap-1 rounded-full border px-2 py-1 text-xs transition-colors ${
+                    active
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-border bg-muted/40 text-foreground hover:bg-muted"
+                  }`}
+                >
+                  <button
+                    type="button"
+                    onClick={() => handleApplySavedRange(r)}
+                    className="font-medium"
+                    aria-pressed={active}
+                    aria-label={`Zastosuj zakres ${r.name}`}
+                  >
+                    {r.name}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteSavedRange(r.id)}
+                    aria-label={`Usuń zapisany zakres ${r.name}`}
+                    className="ml-1 opacity-60 hover:opacity-100"
+                  >
+                    <X className="h-3 w-3" aria-hidden="true" />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        )}
         <div className="mt-3 flex flex-wrap items-end gap-3">
           <div className="flex flex-col gap-1">
             <Label htmlFor="fonts-ready-deploy" className="text-xs text-muted-foreground">
