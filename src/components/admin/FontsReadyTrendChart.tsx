@@ -155,7 +155,19 @@ export default function FontsReadyTrendChart({ rows: parentRows, days: parentDay
   const canReuseParent =
     !!parentRows && preset !== "custom" && Number(preset) === parentDays;
 
-  const { data: fetchedRows, isFetching, refetch } = useQuery({
+  // --- Auto-refresh (0 = off, else ms) ---
+  const AUTO_REFRESH_KEY = "fontsReady.autoRefreshMs";
+  const [autoRefreshMs, setAutoRefreshMs] = useState<number>(() => {
+    if (typeof window === "undefined") return 0;
+    const raw = Number(window.localStorage.getItem(AUTO_REFRESH_KEY));
+    return [0, 30_000, 60_000, 300_000].includes(raw) ? raw : 0;
+  });
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(AUTO_REFRESH_KEY, String(autoRefreshMs));
+  }, [autoRefreshMs]);
+
+  const { data: fetchedRows, isFetching, refetch, dataUpdatedAt } = useQuery({
     queryKey: [
       "fonts-ready-range",
       preset,
@@ -166,6 +178,8 @@ export default function FontsReadyTrendChart({ rows: parentRows, days: parentDay
       fetchVitalsRange(rangeWindow!.since.toISOString(), rangeWindow!.until.toISOString(), "FONTS_READY"),
     enabled: !canReuseParent && !!rangeWindow,
     staleTime: 60_000,
+    refetchInterval: !canReuseParent && autoRefreshMs > 0 ? autoRefreshMs : false,
+    refetchIntervalInBackground: false,
   });
 
   // Previous period window (same length, immediately before `since`).
@@ -197,7 +211,10 @@ export default function FontsReadyTrendChart({ rows: parentRows, days: parentDay
       fetchVitalsRange(prevWindow!.since.toISOString(), prevWindow!.until.toISOString(), "FONTS_READY"),
     enabled: comparePrev && !!prevWindow,
     staleTime: 60_000,
+    refetchInterval: comparePrev && autoRefreshMs > 0 ? autoRefreshMs : false,
+    refetchIntervalInBackground: false,
   });
+
 
   const rows: WebVitalRow[] = canReuseParent ? (parentRows ?? []) : (fetchedRows ?? []);
   const hourly = rangeWindow?.hourly ?? false;
