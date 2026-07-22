@@ -164,13 +164,13 @@ export default function FontsReadyTrendChart({ rows: parentRows, days: parentDay
   const deployDate = useMemo(() => (deployAt ? new Date(deployAt) : null), [deployAt]);
   const deployBucketLabel = useMemo(() => {
     if (!deployDate || Number.isNaN(deployDate.getTime()) || data.length === 0) return null;
-    const key = bucketKeyForDate(deployDate, days <= 1);
+    const key = bucketKeyForDate(deployDate, hourly);
     // exact match, otherwise first bucket >= key
     const exact = data.find((d) => d.key === key);
     if (exact) return exact.label;
     const after = data.find((d) => d.key >= key);
     return after?.label ?? null;
-  }, [deployDate, data, days]);
+  }, [deployDate, data, hourly]);
 
   const comparison = useMemo(() => {
     if (!deployDate || Number.isNaN(deployDate.getTime())) return null;
