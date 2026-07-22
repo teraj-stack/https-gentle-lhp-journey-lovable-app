@@ -266,7 +266,7 @@ export default function FontsReadyTrendChart({ rows: parentRows, days: parentDay
           <div>
             <CardTitle>FONTS_READY — trend</CardTitle>
             <CardDescription>
-              Czas do `document.fonts.ready` (p90 / p75 / mediana, min–max w tooltipie) — {days <= 1 ? "co godzinę" : "dziennie"}. Cel: p75 ≤ {t.good} ms.
+              Czas do `document.fonts.ready` (p90 / p75 / mediana, min–max w tooltipie) — {hourly ? "co godzinę" : "dziennie"} · {rangeLabel}. Cel: p75 ≤ {t.good} ms.
             </CardDescription>
           </div>
           <Button
