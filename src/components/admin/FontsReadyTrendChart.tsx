@@ -199,6 +199,61 @@ export default function FontsReadyTrendChart({ rows, days }: Props) {
             Eksportuj CSV
           </Button>
         </div>
+        <div className="mt-3 flex flex-wrap items-end gap-3">
+          <div className="flex flex-col gap-1">
+            <Label htmlFor="fonts-ready-deploy" className="text-xs text-muted-foreground">
+              Data wdrożenia (porównanie przed/po)
+            </Label>
+            <div className="flex items-center gap-2">
+              <Rocket className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+              <Input
+                id="fonts-ready-deploy"
+                type="datetime-local"
+                value={deployAt}
+                onChange={(e) => setDeployAt(e.target.value)}
+                className="h-9 w-[220px]"
+              />
+              {deployAt && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setDeployAt("")}
+                  aria-label="Wyczyść datę wdrożenia"
+                  className="h-9"
+                >
+                  <X className="h-4 w-4" aria-hidden="true" />
+                </Button>
+              )}
+            </div>
+          </div>
+          {comparison && (comparison.before || comparison.after) && (
+            <div className="flex flex-wrap gap-2 text-xs tabular-nums">
+              <span className="rounded-md border px-2 py-1">
+                <span className="text-muted-foreground">przed · </span>
+                {comparison.before
+                  ? `p75 ${Math.round(comparison.before.p75 ?? 0)} ms · med ${Math.round(comparison.before.p50 ?? 0)} ms · n=${comparison.before.count}`
+                  : "brak danych"}
+              </span>
+              <span className="rounded-md border px-2 py-1">
+                <span className="text-muted-foreground">po · </span>
+                {comparison.after
+                  ? `p75 ${Math.round(comparison.after.p75 ?? 0)} ms · med ${Math.round(comparison.after.p50 ?? 0)} ms · n=${comparison.after.count}`
+                  : "brak danych"}
+              </span>
+              {comparison.before?.p75 != null && comparison.after?.p75 != null && (() => {
+                const delta = (comparison.after.p75 as number) - (comparison.before.p75 as number);
+                const better = delta < 0;
+                return (
+                  <span
+                    className={`rounded-md border px-2 py-1 ${better ? "border-emerald-500/40 text-emerald-600 dark:text-emerald-400" : delta > 0 ? "border-red-500/40 text-red-600 dark:text-red-400" : ""}`}
+                  >
+                    Δ p75: {delta > 0 ? "+" : ""}{Math.round(delta)} ms
+                  </span>
+                );
+              })()}
+            </div>
+          )}
+        </div>
       </CardHeader>
       <CardContent>
         {data.length === 0 ? (
