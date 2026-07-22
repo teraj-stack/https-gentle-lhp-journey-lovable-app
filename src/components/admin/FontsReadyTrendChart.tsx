@@ -1,23 +1,27 @@
 import { useMemo, useCallback, useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine, ReferenceArea, Legend } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Download, Rocket, X } from "lucide-react";
-import { CWV_THRESHOLDS, percentile, type WebVitalRow } from "@/lib/webVitalsAnalytics";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Download, Rocket, X, RefreshCw } from "lucide-react";
+import { CWV_THRESHOLDS, percentile, fetchVitalsRange, type WebVitalRow } from "@/lib/webVitalsAnalytics";
 
 const DEPLOY_STORAGE_KEY = "fontsReady.deployAt";
+const RANGE_STORAGE_KEY = "fontsReady.range";
+
+type Preset = "1" | "7" | "28" | "custom";
 
 interface Props {
-  rows: WebVitalRow[];
-  days: number;
+  rows?: WebVitalRow[];
+  days?: number;
 }
 
 type Bucket = { key: string; label: string; values: number[] };
 
-function bucketRows(rows: WebVitalRow[], days: number): Bucket[] {
-  const hourly = days <= 1;
+function bucketRows(rows: WebVitalRow[], hourly: boolean): Bucket[] {
   const filtered = rows.filter((r) => r.metric === "FONTS_READY");
   const map = new Map<string, Bucket>();
   for (const r of filtered) {
@@ -27,7 +31,7 @@ function bucketRows(rows: WebVitalRow[], days: number): Bucket[] {
     if (hourly) {
       d.setMinutes(0, 0, 0);
       key = d.toISOString();
-      label = `${d.getHours().toString().padStart(2, "0")}:00`;
+      label = `${d.getDate().toString().padStart(2, "0")}.${(d.getMonth() + 1).toString().padStart(2, "0")} ${d.getHours().toString().padStart(2, "0")}:00`;
     } else {
       d.setHours(0, 0, 0, 0);
       key = d.toISOString().slice(0, 10);
@@ -50,7 +54,84 @@ function bucketKeyForDate(d: Date, hourly: boolean): string {
   return c.toISOString().slice(0, 10);
 }
 
-export default function FontsReadyTrendChart({ rows, days }: Props) {
+function toLocalInputValue(d: Date): string {
+  const pad = (n: number) => n.toString().padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+export default function FontsReadyTrendChart({ rows: parentRows, days: parentDays = 7 }: Props) {
+  // --- Range state (24h / 7 / 28 / custom) with localStorage persistence ---
+  const [preset, setPreset] = useState<Preset>(() => {
+    if (typeof window === "undefined") return String(parentDays) as Preset;
+    const saved = window.localStorage.getItem(RANGE_STORAGE_KEY);
+    if (saved === "1" || saved === "7" || saved === "28" || saved === "custom") return saved;
+    return String(parentDays) as Preset;
+  });
+  const [customFrom, setCustomFrom] = useState<string>(() => {
+    if (typeof window === "undefined") return "";
+    return window.localStorage.getItem(`${RANGE_STORAGE_KEY}.from`) ?? toLocalInputValue(new Date(Date.now() - 7 * 86400000));
+  });
+  const [customTo, setCustomTo] = useState<string>(() => {
+    if (typeof window === "undefined") return "";
+    return window.localStorage.getItem(`${RANGE_STORAGE_KEY}.to`) ?? toLocalInputValue(new Date());
+  });
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(RANGE_STORAGE_KEY, preset);
+  }, [preset]);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(`${RANGE_STORAGE_KEY}.from`, customFrom);
+    window.localStorage.setItem(`${RANGE_STORAGE_KEY}.to`, customTo);
+  }, [customFrom, customTo]);
+
+  // Resolve current range window into [since, until] + hourly flag.
+  const rangeWindow = useMemo(() => {
+    const now = new Date();
+    if (preset === "custom") {
+      const from = customFrom ? new Date(customFrom) : null;
+      const to = customTo ? new Date(customTo) : null;
+      if (!from || !to || Number.isNaN(from.getTime()) || Number.isNaN(to.getTime()) || from >= to) {
+        return null;
+      }
+      const spanMs = to.getTime() - from.getTime();
+      return { since: from, until: to, hourly: spanMs <= 48 * 3600 * 1000, days: spanMs / 86400000 };
+    }
+    const days = Number(preset);
+    const since = new Date(now.getTime() - days * 86400000);
+    return { since, until: now, hourly: days <= 1, days };
+  }, [preset, customFrom, customTo]);
+
+  // Reuse parent rows only when the preset matches parent's global range and rows are provided.
+  const canReuseParent =
+    !!parentRows && preset !== "custom" && Number(preset) === parentDays;
+
+  const { data: fetchedRows, isFetching, refetch } = useQuery({
+    queryKey: [
+      "fonts-ready-range",
+      preset,
+      rangeWindow?.since.toISOString(),
+      rangeWindow?.until.toISOString(),
+    ],
+    queryFn: () =>
+      fetchVitalsRange(rangeWindow!.since.toISOString(), rangeWindow!.until.toISOString(), "FONTS_READY"),
+    enabled: !canReuseParent && !!rangeWindow,
+    staleTime: 60_000,
+  });
+
+  const rows: WebVitalRow[] = canReuseParent ? (parentRows ?? []) : (fetchedRows ?? []);
+  const hourly = rangeWindow?.hourly ?? false;
+  const rangeLabel =
+    preset === "custom"
+      ? rangeWindow
+        ? `${rangeWindow.since.toLocaleString("pl-PL")} – ${rangeWindow.until.toLocaleString("pl-PL")}`
+        : "wybierz poprawny zakres"
+      : preset === "1"
+        ? "ostatnie 24h"
+        : `ostatnie ${preset} dni`;
+
+
   const [deployAt, setDeployAt] = useState<string>(() => {
     if (typeof window === "undefined") return "";
     return window.localStorage.getItem(DEPLOY_STORAGE_KEY) ?? "";
