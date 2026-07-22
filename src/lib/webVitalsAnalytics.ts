@@ -87,7 +87,7 @@ export async function fetchPublicVitalsSummary(days: number): Promise<MetricSumm
       poor: Number(row.poor),
     });
   }
-  return (["LCP", "INP", "CLS", "FCP", "TTFB"] as MetricName[]).map((metric) => {
+  return (["LCP", "INP", "CLS", "FCP", "TTFB", "FONTS_READY"] as MetricName[]).map((metric) => {
     const r = byMetric.get(metric);
     return {
       metric,
@@ -103,8 +103,9 @@ export async function fetchPublicVitalsSummary(days: number): Promise<MetricSumm
 
 export function summarize(rows: WebVitalRow[]): MetricSummary[] {
   const groups: Record<MetricName, WebVitalRow[]> = {
-    LCP: [], INP: [], CLS: [], FCP: [], TTFB: [],
+    LCP: [], INP: [], CLS: [], FCP: [], TTFB: [], FONTS_READY: [],
   };
+
   for (const r of rows) {
     if (groups[r.metric]) groups[r.metric].push(r);
   }
