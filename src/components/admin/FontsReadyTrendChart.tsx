@@ -83,7 +83,6 @@ export default function FontsReadyTrendChart({ rows, days }: Props) {
     );
   };
 
-  return (
   const handleExportCsv = useCallback(() => {
     const header = ["bucket", "count", "min_ms", "p50_ms", "p75_ms", "p90_ms", "max_ms"];
     const escape = (v: string | number | null) => {
