@@ -457,6 +457,42 @@ export default function FontsReadyTrendChart({ rows: parentRows, days: parentDay
             </div>
           )}
         </div>
+        <div className="mt-3 flex flex-wrap items-center gap-3">
+          <Button
+            variant={comparePrev ? "default" : "outline"}
+            size="sm"
+            onClick={() => setComparePrev((v) => !v)}
+            aria-pressed={comparePrev}
+            className="h-8"
+          >
+            {comparePrev ? "✓ " : ""}Porównaj z poprzednim okresem
+          </Button>
+          {comparePrev && prevWindow && (
+            <span className="text-xs text-muted-foreground tabular-nums">
+              poprzedni: {prevWindow.since.toLocaleString("pl-PL")} – {prevWindow.until.toLocaleString("pl-PL")}
+              {isFetchingPrev ? " · ładowanie…" : ""}
+            </span>
+          )}
+          {comparePrev && prevDelta && (
+            <div className="flex flex-wrap gap-2 text-xs tabular-nums">
+              <span className="rounded-md border px-2 py-1">
+                <span className="text-muted-foreground">poprz. · </span>
+                {prevDelta.prevP75 != null ? `p75 ${Math.round(prevDelta.prevP75)} ms · n=${prevDelta.prevCount}` : "brak danych"}
+              </span>
+              <span className="rounded-md border px-2 py-1">
+                <span className="text-muted-foreground">bież. · </span>
+                {prevDelta.currP75 != null ? `p75 ${Math.round(prevDelta.currP75)} ms · n=${prevDelta.currCount}` : "brak danych"}
+              </span>
+              {prevDelta.delta != null && (
+                <span
+                  className={`rounded-md border px-2 py-1 ${prevDelta.delta < 0 ? "border-emerald-500/40 text-emerald-600 dark:text-emerald-400" : prevDelta.delta > 0 ? "border-red-500/40 text-red-600 dark:text-red-400" : ""}`}
+                >
+                  Δ p75 vs poprz.: {prevDelta.delta > 0 ? "+" : ""}{Math.round(prevDelta.delta)} ms
+                </span>
+              )}
+            </div>
+          )}
+        </div>
       </CardHeader>
       <CardContent>
         {data.length === 0 ? (
