@@ -175,7 +175,7 @@ export default function FontsReadyTrendChart({ rows: parentRows, days: parentDay
   }, [deployAt]);
 
   const data = useMemo(() => {
-    return bucketRows(rows, hourly).map((b) => {
+    const buckets = bucketRows(rows, hourly).map((b) => {
       const sorted = [...b.values].sort((a, z) => a - z);
       return {
         key: b.key,
@@ -186,9 +186,39 @@ export default function FontsReadyTrendChart({ rows: parentRows, days: parentDay
         min: sorted.length ? sorted[0] : null,
         max: sorted.length ? sorted[sorted.length - 1] : null,
         count: b.values.length,
+        prev_p75: null as number | null,
+        prev_p50: null as number | null,
+        prev_count: 0,
       };
     });
-  }, [rows, hourly]);
+    if (comparePrev && prevRows && prevRows.length > 0) {
+      const prevBuckets = bucketRows(prevRows, hourly);
+      // Align by index (same-length window → same bucket count expected).
+      for (let i = 0; i < buckets.length && i < prevBuckets.length; i++) {
+        const pb = prevBuckets[i];
+        buckets[i].prev_p75 = percentile(pb.values, 75);
+        buckets[i].prev_p50 = percentile(pb.values, 50);
+        buckets[i].prev_count = pb.values.length;
+      }
+    }
+    return buckets;
+  }, [rows, hourly, comparePrev, prevRows]);
+
+  // Aggregate p75 delta vs. previous period (same-length window).
+  const prevDelta = useMemo(() => {
+    if (!comparePrev || !prevRows) return null;
+    const curr: number[] = [];
+    const prev: number[] = [];
+    for (const r of rows) if (r.metric === "FONTS_READY") curr.push(Number(r.value));
+    for (const r of prevRows) if (r.metric === "FONTS_READY") prev.push(Number(r.value));
+    if (curr.length === 0 || prev.length === 0) {
+      return { currP75: curr.length ? percentile(curr, 75) : null, prevP75: prev.length ? percentile(prev, 75) : null, currCount: curr.length, prevCount: prev.length, delta: null as number | null };
+    }
+    const currP75 = percentile(curr, 75);
+    const prevP75 = percentile(prev, 75);
+    return { currP75, prevP75, currCount: curr.length, prevCount: prev.length, delta: currP75 - prevP75 };
+  }, [comparePrev, prevRows, rows]);
+
 
   const t = CWV_THRESHOLDS.FONTS_READY;
 
