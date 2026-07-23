@@ -89,18 +89,12 @@ export async function fetchVitalsRange(sinceISO: string, untilISO: string, metri
  * Safe to call anonymously; returns only aggregated counts and p75 (no raw rows, no user agents).
  */
 export async function fetchPublicVitalsSummary(days: number): Promise<MetricSummary[]> {
-  const { data: payload, error } = await supabase.functions.invoke("public-web-vitals-summary", {
-    method: "GET",
-    // Pass ?days=N via query string on the invoke URL.
-    body: undefined as never,
-    headers: {},
-    // supabase-js appends this as a query string when method is GET.
-    // Falls back to POST body if the runtime ignores it.
-  } as never);
+  const { data: payload, error } = await supabase.functions.invoke<{ data?: unknown[] }>(
+    `public-web-vitals-summary?days=${encodeURIComponent(String(days))}`,
+    { method: "GET" },
+  );
   if (error) throw error;
-  const data = (payload as { data?: unknown[] } | null)?.data ?? [];
-  // Preserve prior filtering behavior in edge cases where days is unused server-side.
-  void days;
+  const data = payload?.data ?? [];
   const byMetric = new Map<string, { p75: number | null; count: number; good: number; ni: number; poor: number }>();
   for (const row of (data ?? []) as Array<{ metric: string; p75: number | null; count: number | string; good: number | string; needs_improvement: number | string; poor: number | string }>) {
     byMetric.set(row.metric, {
