@@ -839,9 +839,9 @@ const Header = () => {
                     className="grid grid-cols-2 gap-2 mb-3"
                   >
                     <a
-                      href="tel:+48665666728"
+                      href="tel:+48510432361"
                       className="flex items-center justify-center gap-2 px-3 py-3 rounded-lg bg-primary/10 border border-primary/20 text-sm font-medium text-primary hover:bg-primary/15 transition-colors"
-                      aria-label="Zadzwoń: +48 665 666 728"
+                      aria-label="Zadzwoń: +48 510 432 361"
                     >
                       <Phone className="w-4 h-4 shrink-0" aria-hidden="true" />
                       <span>Zadzwoń</span>
