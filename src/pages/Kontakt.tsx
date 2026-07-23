@@ -39,7 +39,7 @@ const locations = [
     address: "Adama Branickiego 10/U6, 02-972 Warszawa",
     phone: "+48 510 432 361",
     email: "warszawa@cml.pl",
-    hours: "Pon–Pt: 8:00–18:00",
+    hours: "Pon–Pt: 12:00–20:00",
     image: branickiegoImg,
     mapsUrl: "https://maps.google.com/?q=Adama+Branickiego+10,+02-972+Warszawa",
   },
