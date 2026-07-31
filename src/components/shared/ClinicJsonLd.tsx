@@ -29,8 +29,8 @@ export const CLINIC_OPENING_HOURS = [
   {
     "@type": "OpeningHoursSpecification" as const,
     dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
-    opens: "08:00",
-    closes: "18:00",
+    opens: "12:00",
+    closes: "20:00",
   },
 ];
 
