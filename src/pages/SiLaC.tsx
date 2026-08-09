@@ -11,6 +11,8 @@ import SiLaCIndications from "@/components/silac/SiLaCIndications";
 import SiLaCRecovery from "@/components/silac/SiLaCRecovery";
 import SiLaCFAQ from "@/components/silac/SiLaCFAQ";
 import ProcedureSummaryTable from "@/components/shared/ProcedureSummaryTable";
+import ProcedureDeepDive from "@/components/shared/ProcedureDeepDive";
+import { silacDeepDive } from "@/content/procedures/silacDeepDive";
 import MedicalProcedureSchema from "@/components/shared/MedicalProcedureSchema";
 import SeoHead from "@/components/shared/SeoHead";
 import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
@@ -70,6 +72,7 @@ const SiLaC = () => (
       <SiLaCComparison fadeUp={fadeUp} />
       <SiLaCIndications fadeUp={fadeUp} />
       <SiLaCRecovery fadeUp={fadeUp} />
+      <ProcedureDeepDive content={silacDeepDive} fadeUp={fadeUp} />
       <SiLaCFAQ fadeUp={fadeUp} />
       <ProcedureSummaryTable rows={silacSummary} fadeUp={fadeUp} />
 
