@@ -18,6 +18,8 @@ import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 import TestimonialsSection from "@/components/shared/TestimonialsSection";
 import RecoveryBoostBanner from "@/components/shared/RecoveryBoostBanner";
 import PreparationRecoveryCards from "@/components/shared/PreparationRecoveryCards";
+import ProcedureDeepDive from "@/components/shared/ProcedureDeepDive";
+import { lhpDeepDive } from "@/content/procedures/lhpDeepDive";
 
 const lhpSummary = [
   { label: "Przygotowanie", value: "Badanie proktologiczne (anoskopia), ocena stopnia zaawansowania choroby" },
@@ -126,6 +128,8 @@ const LHP = () => {
           </p>
           <QualificationScale />
         </motion.section>
+
+        <ProcedureDeepDive content={lhpDeepDive} fadeUp={sectionAnim} />
 
         <LHPFAQ fadeUp={sectionAnim} />
 
