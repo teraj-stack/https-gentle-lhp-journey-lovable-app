@@ -148,7 +148,7 @@ const Kontakt = () => {
           </h1>
           <div className="w-16 h-0.5 mx-auto bg-primary-foreground/30 mb-6" />
           <p className="text-primary-foreground/80 text-base md:text-lg leading-relaxed max-w-2xl mx-auto">
-            Przyjmujemy w czterech lokalizacjach. Wybierz wygodne miejsce i skontaktuj się z nami.
+            Przyjmuję w Warszawie na Wilanowie, przy ul. Branickiego 10/U6. Napisz lub zadzwoń — pomożemy dobrać termin.
           </p>
         </motion.div>
       </section>
