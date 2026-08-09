@@ -12,6 +12,7 @@ const Testimonials = lazy(() => import("@/components/home/Testimonials"));
 const B2BSection = lazy(() => import("@/components/home/B2BSection"));
 const FAQTeaser = lazy(() => import("@/components/home/FAQTeaser"));
 const HomePreparationSection = lazy(() => import("@/components/home/HomePreparationSection"));
+const HomeKeywordLinks = lazy(() => import("@/components/home/HomeKeywordLinks"));
 
 const Home = () => (
   // pb = sticky CTA (~5rem) + safe-area-inset-bottom (notch / home indicator)
@@ -29,6 +30,7 @@ const Home = () => (
     <Philosophy />
     <Suspense fallback={null}>
       <ServiceCards />
+      <HomeKeywordLinks />
       <Testimonials />
       <HomePreparationSection />
       <B2BSection />

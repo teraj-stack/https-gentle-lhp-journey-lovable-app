@@ -30,6 +30,7 @@ import RiskQuiz from "@/components/profilaktyka/RiskQuiz";
 import ExercisesSection from "@/components/profilaktyka/ExercisesSection";
 import VenousInsufficiencyImage from "@/components/shared/VenousInsufficiencyImage";
 import VeinImageDevOverlay from "@/components/dev/VeinImageDevOverlay";
+import RelatedLinks from "@/components/shared/RelatedLinks";
 
 const easeOut = [0.16, 1, 0.3, 1] as const;
 
@@ -519,6 +520,7 @@ const ProfilaktykaZylakow = () => {
             </a>
           </Button>
         </motion.section>
+        <RelatedLinks path="/dla-pacjenta/profilaktyka-zylakow" />
       </div>
     </div>
   );

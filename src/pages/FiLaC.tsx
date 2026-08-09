@@ -22,6 +22,7 @@ import PreparationChecklistSection from "@/components/shared/PreparationChecklis
 import { preparationChecklists } from "@/content/procedures/preparationChecklists";
 import ProcedureDeepDive from "@/components/shared/ProcedureDeepDive";
 import { filacDeepDive } from "@/content/procedures/filacDeepDive";
+import RelatedLinks from "@/components/shared/RelatedLinks";
 
 
 const filacSummary = [
@@ -114,6 +115,8 @@ const FiLaC = () => (
         </Button>
       </motion.section>
     </div>
+      <RelatedLinks path="/leczenie/filac" />
+
   </div>
 );
 

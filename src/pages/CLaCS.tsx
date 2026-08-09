@@ -17,6 +17,7 @@ import PreparationChecklistSection from "@/components/shared/PreparationChecklis
 import { preparationChecklists } from "@/content/procedures/preparationChecklists";
 import TestimonialsSection from "@/components/shared/TestimonialsSection";
 import VeinAnatomyImage from "@/components/shared/VeinAnatomyImage";
+import RelatedLinks from "@/components/shared/RelatedLinks";
 
 const clacsSummary = [
   { label: "Przygotowanie", value: "Konsultacja flebologiczna, ocena zmian naczyniowych. Unikać opalania 2 tygodnie przed zabiegiem, bez kremów na nogi w dniu zabiegu." },
@@ -305,6 +306,8 @@ const CLaCS = () => (
         </Button>
       </motion.section>
     </div>
+      <RelatedLinks path="/leczenie/clacs" />
+
   </div>
 );
 

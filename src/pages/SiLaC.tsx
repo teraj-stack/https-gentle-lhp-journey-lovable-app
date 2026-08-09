@@ -21,6 +21,7 @@ import RecoveryBoostBanner from "@/components/shared/RecoveryBoostBanner";
 import PreparationRecoveryCards from "@/components/shared/PreparationRecoveryCards";
 import PreparationChecklistSection from "@/components/shared/PreparationChecklistSection";
 import { preparationChecklists } from "@/content/procedures/preparationChecklists";
+import RelatedLinks from "@/components/shared/RelatedLinks";
 
 
 const silacSummary = [
@@ -110,6 +111,8 @@ const SiLaC = () => (
         </Button>
       </motion.section>
     </div>
+      <RelatedLinks path="/leczenie/silac" />
+
   </div>
 );
 

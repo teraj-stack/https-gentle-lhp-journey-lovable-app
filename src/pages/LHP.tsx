@@ -22,6 +22,7 @@ import PreparationChecklistSection from "@/components/shared/PreparationChecklis
 import { preparationChecklists } from "@/content/procedures/preparationChecklists";
 import ProcedureDeepDive from "@/components/shared/ProcedureDeepDive";
 import { lhpDeepDive } from "@/content/procedures/lhpDeepDive";
+import RelatedLinks from "@/components/shared/RelatedLinks";
 
 const lhpSummary = [
   { label: "Przygotowanie", value: "Badanie proktologiczne (anoskopia), ocena stopnia zaawansowania choroby" },
@@ -157,6 +158,7 @@ const LHP = () => {
         <TestimonialsSection />
 
         <CTASection />
+        <RelatedLinks path="/leczenie/lhp" />
       </div>
     </div>
   );

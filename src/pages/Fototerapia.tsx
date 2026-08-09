@@ -11,6 +11,7 @@ import FototerapiaFAQ from "@/components/fototerapia/FototerapiaFAQ";
 import ProcedureSummaryTable from "@/components/shared/ProcedureSummaryTable";
 import TestimonialsSection from "@/components/shared/TestimonialsSection";
 import fototerapiaColorsImg from "@/assets/fototerapia-colors.webp";
+import RelatedLinks from "@/components/shared/RelatedLinks";
 
 
 const fadeUp = {
@@ -434,6 +435,8 @@ const Fototerapia = () => (
         </motion.div>
       </div>
     </section>
+      <RelatedLinks path="/leczenie/fototerapia" />
+
   </div>
 );
 

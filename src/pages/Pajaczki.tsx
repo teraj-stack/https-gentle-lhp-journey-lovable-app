@@ -13,6 +13,7 @@ import VeinAnatomyImage from "@/components/shared/VeinAnatomyImage";
 import PajaczkiTestimonials from "@/components/pajaczki/PajaczkiTestimonials";
 import RecoveryBoostBanner from "@/components/shared/RecoveryBoostBanner";
 import TestimonialsSection from "@/components/shared/TestimonialsSection";
+import RelatedLinks from "@/components/shared/RelatedLinks";
 
 const fadeUp = {
   initial: { opacity: 0, y: 24, filter: "blur(4px)" },
@@ -236,6 +237,8 @@ const Pajaczki = () => (
         </div>
       </motion.section>
     </div>
+      <RelatedLinks path="/dla-pacjenta/pajaczki" />
+
   </div>
 );
 

@@ -8,6 +8,7 @@ import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 import RecoveryBoostBanner from "@/components/shared/RecoveryBoostBanner";
 import TestimonialsSection from "@/components/shared/TestimonialsSection";
 import { StaggeredListItem } from "@/components/shared/StaggeredList";
+import RelatedLinks from "@/components/shared/RelatedLinks";
 
 const fadeUp = {
   initial: { opacity: 0, y: 24 },
@@ -487,6 +488,7 @@ const Hemoroidy = () => {
             Sprawd{"\u017A"} dost{"\u0119"}pne terminy
           </a>
         </Button>
+        <RelatedLinks path="/dla-pacjenta/hemoroidy" />
       </section>
     </div>
   </div>

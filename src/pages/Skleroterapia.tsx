@@ -16,6 +16,7 @@ import PreparationChecklistSection from "@/components/shared/PreparationChecklis
 import { preparationChecklists } from "@/content/procedures/preparationChecklists";
 import TestimonialsSection from "@/components/shared/TestimonialsSection";
 import VeinAnatomyImage from "@/components/shared/VeinAnatomyImage";
+import RelatedLinks from "@/components/shared/RelatedLinks";
 
 const skleroterapiaSummary = [
   { label: "Przygotowanie", value: "USG Doppler żył" },
@@ -286,6 +287,7 @@ const Skleroterapia = () => {
           <a href="https://www.znanylekarz.pl/jan-bujok-2/chirurg-flebolog-proktolog/warszawa" target="_blank" rel="noopener noreferrer">Umów konsultację</a>
         </Button>
       </motion.section>
+      <RelatedLinks path="/leczenie/skleroterapia" />
     </div>
   </div>
   );

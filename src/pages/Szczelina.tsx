@@ -14,6 +14,7 @@ import SzczelinaFAQ from "@/components/szczelina/SzczelinaFAQ";
 
 import RecoveryBoostBanner from "@/components/shared/RecoveryBoostBanner";
 import TestimonialsSection from "@/components/shared/TestimonialsSection";
+import RelatedLinks from "@/components/shared/RelatedLinks";
 
 const szczelinaSummary = [
   { label: "Przygotowanie", value: "Badanie proktologiczne, ocena napięcia zwieraczy. Wykluczenie innych chorób jelit." },
@@ -270,6 +271,8 @@ const Szczelina = () => (
         </Button>
       </motion.section>
     </div>
+      <RelatedLinks path="/leczenie/szczelina" />
+
   </div>
 );
 

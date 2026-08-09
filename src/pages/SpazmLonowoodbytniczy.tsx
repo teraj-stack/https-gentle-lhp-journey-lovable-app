@@ -14,6 +14,7 @@ import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 import RecoveryBoostBanner from "@/components/shared/RecoveryBoostBanner";
 import TestimonialsSection from "@/components/shared/TestimonialsSection";
 import SpazmFAQ from "@/components/spazm/SpazmFAQ";
+import RelatedLinks from "@/components/shared/RelatedLinks";
 
 const spazmSummary = [
   { label: "Przygotowanie", value: "Badanie proktologiczne, ocena napięcia mięśni dna miednicy, wykluczenie przyczyn organicznych (szczelina, ropień, guz)." },
@@ -304,6 +305,8 @@ const SpazmLonowoodbytniczy = () => (
         </Button>
       </motion.section>
     </div>
+      <RelatedLinks path="/leczenie/spazm-lonowoodbytniczy" />
+
   </div>
 );
 

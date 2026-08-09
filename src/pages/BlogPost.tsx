@@ -10,6 +10,8 @@ import CategoryBadge from "@/components/blog/CategoryBadge";
 import RelatedPosts from "@/components/blog/RelatedPosts";
 import { detectCategory } from "@/lib/blogCategories";
 import RiskFactorsAccordion from "@/components/blog/RiskFactorsAccordion";
+import RelatedLinks from "@/components/shared/RelatedLinks";
+import { BLOG_CATEGORY_LINKS } from "@/lib/internalLinks";
 
 const RISK_MARKER = "<!-- RISK_FACTORS_ACCORDION -->";
 
@@ -176,6 +178,8 @@ const BlogPost = () => {
           ) : (
             <MarkdownRenderer content={post.content} className="prose-custom" />
           )}
+
+          <RelatedLinks group={BLOG_CATEGORY_LINKS[detectCategory(post)]} className="!px-0" />
 
           <RelatedPosts currentSlug={post.slug} category={detectCategory(post)} />
         </div>
