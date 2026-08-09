@@ -157,7 +157,7 @@ const Kontakt = () => {
         <Breadcrumbs items={BREADCRUMBS_MAP["/kontakt"]} className="mb-4" />
         {/* Lokalizacje */}
         <motion.section {...fadeUp}>
-          <h2 className="section-title mb-10 text-center">Nasze lokalizacje</h2>
+          <h2 className="section-title mb-10 text-center">Nasza lokalizacja</h2>
           <div className="grid md:grid-cols-2 gap-8">
             {locations.map((loc, i) => (
               <motion.div
