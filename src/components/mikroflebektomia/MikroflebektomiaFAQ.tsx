@@ -36,6 +36,10 @@ const faqs = [
     q: "Ile kosztuje zabieg i co zawiera cena?",
     a: "Koszt mikroflebektomii piankowej to 3 500 zł. W cenie zawarty jest kompletny pakiet: zabieg mikrochirurgiczny, uzupełniająca skleroterapia piankowa, jednorazowy sprzęt najwyższej jakości oraz wszystkie wizyty kontrolne aż do pełnego wygojenia. Nie ma ukrytych kosztów.",
   },
+  {
+    q: "Kto powinien unikać mikroflebektomii?",
+    a: "Zabiegu nie wykonujemy w ciąży, przy aktywnej zakrzepicy żył głębokich, ciężkim niedokrwieniu kończyny, aktywnej infekcji skóry w leczonym miejscu oraz przy nieuregulowanych zaburzeniach krzepnięcia. Kwalifikację poprzedza badanie USG Doppler.",
+  },
 ];
 
 interface MikroflebektomiaFAQProps {
