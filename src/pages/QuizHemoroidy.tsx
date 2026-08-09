@@ -13,6 +13,7 @@ import EBMSourcesSection from "@/components/hemoroidy/EBMSourcesSection";
 import RedFlagsFAQ from "@/components/hemoroidy/RedFlagsFAQ";
 import DiaryFullModule from "@/components/hemoroidy/DiaryFullModule";
 import { ClipboardList, Sparkles, BookOpen, Stethoscope, CalendarDays, ArrowRight } from "lucide-react";
+import RelatedLinks from "@/components/shared/RelatedLinks";
 
 const easeOut = [0.16, 1, 0.3, 1] as const;
 
@@ -188,6 +189,7 @@ const QuizHemoroidy = () => {
               </p>
             </Link>
           </motion.div>
+          <RelatedLinks path="/dla-pacjenta/quiz-hemoroidy" />
         </div>
       </section>
     </>

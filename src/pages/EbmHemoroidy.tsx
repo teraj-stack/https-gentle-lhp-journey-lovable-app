@@ -16,6 +16,7 @@ import { BREADCRUMBS_MAP } from "@/lib/breadcrumbsMap";
 import SeoHead from "@/components/shared/SeoHead";
 import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 import EBMSourcesSection from "@/components/hemoroidy/EBMSourcesSection";
+import RelatedLinks from "@/components/shared/RelatedLinks";
 
 const easeOut = [0.16, 1, 0.3, 1] as const;
 
@@ -581,6 +582,7 @@ const EbmHemoroidy = () => {
               </p>
             </Link>
           </motion.div>
+          <RelatedLinks path="/dla-pacjenta/ebm-hemoroidy" />
         </div>
       </section>
     </>

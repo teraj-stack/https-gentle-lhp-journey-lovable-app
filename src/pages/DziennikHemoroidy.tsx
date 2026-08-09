@@ -6,6 +6,7 @@ import { BREADCRUMBS_MAP } from "@/lib/breadcrumbsMap";
 import SeoHead from "@/components/shared/SeoHead";
 import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 import DiaryFullModule from "@/components/hemoroidy/DiaryFullModule";
+import RelatedLinks from "@/components/shared/RelatedLinks";
 
 const easeOut = [0.16, 1, 0.3, 1] as const;
 
@@ -103,6 +104,7 @@ const DziennikHemoroidy = () => {
               </p>
             </Link>
           </motion.div>
+          <RelatedLinks path="/dla-pacjenta/dziennik-hemoroidy" />
         </div>
       </section>
     </>

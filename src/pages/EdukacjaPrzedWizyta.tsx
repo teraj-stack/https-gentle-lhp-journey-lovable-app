@@ -14,6 +14,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import {
+import RelatedLinks from "@/components/shared/RelatedLinks";
   GraduationCap,
   Clock,
   Brain,
@@ -435,6 +436,7 @@ const EdukacjaPrzedWizyta = () => {
           </div>
         </div>
       </motion.section>
+      <RelatedLinks path="/dla-pacjenta/edukacja" />
     </div>
   </div>
   );

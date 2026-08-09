@@ -12,6 +12,7 @@ import { StaggeredListItem } from "@/components/shared/StaggeredList";
 import { Button } from "@/components/ui/button";
 import TestimonialsSection from "@/components/shared/TestimonialsSection";
 import PostOpExercises from "@/components/profilaktyka/PostOpExercises";
+import RelatedLinks from "@/components/shared/RelatedLinks";
 
 const easeOut = [0.16, 1, 0.3, 1] as const;
 
@@ -351,6 +352,7 @@ const PielegnacjaNog = () => {
           </a>
         </Button>
       </motion.section>
+      <RelatedLinks path="/dla-pacjenta/pielegnacja-nog" />
     </div>
   </div>
   );
