@@ -7,7 +7,7 @@ interface SeoRedirectProps {
   to: string;
 }
 
-const BASE_URL = "https://bestcml.io";
+const BASE_URL = "https://mcml.pro";
 
 /** Marker atrybutu — pozwala namierzyć i usunąć tylko tagi dodane przez nas. */
 const OWNER_ATTR = "data-seo-redirect";

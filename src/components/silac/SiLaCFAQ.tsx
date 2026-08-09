@@ -40,7 +40,7 @@ interface Props {
 
 const SiLaCFAQ = ({ fadeUp }: Props) => (
   <motion.section {...fadeUp}>
-    <FaqSchema faqs={faqs} name="FAQ – SiLaC laserowe zamknięcie torbieli" url="https://bestcml.io/leczenie/silac" />
+    <FaqSchema faqs={faqs} name="FAQ – SiLaC laserowe zamknięcie torbieli" url="https://mcml.pro/leczenie/silac" />
     <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3 text-center">
       Najczęściej zadawane pytania
     </h2>

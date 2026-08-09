@@ -52,7 +52,7 @@ const WspolpracaCTA = () => {
                   const end = new Date(start);
                   end.setMinutes(15);
                   const fmt = (d: Date) => d.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
-                  return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent("Wirtualna kawa – współpraca B2B z CML")}&dates=${fmt(start)}/${fmt(end)}&details=${encodeURIComponent("Niezobowiązująca, 15-minutowa rozmowa z dr. Janem Bujokiem na temat modelu kooperacyjnego CML.\n\nStrona: https://bestcml.io/wspolpraca")}&location=${encodeURIComponent("Online (Google Meet)")}`;
+                  return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent("Wirtualna kawa – współpraca B2B z CML")}&dates=${fmt(start)}/${fmt(end)}&details=${encodeURIComponent("Niezobowiązująca, 15-minutowa rozmowa z dr. Janem Bujokiem na temat modelu kooperacyjnego CML.\n\nStrona: https://mcml.pro/wspolpraca")}&location=${encodeURIComponent("Online (Google Meet)")}`;
                 })()}
                 target="_blank"
                 rel="noopener noreferrer"

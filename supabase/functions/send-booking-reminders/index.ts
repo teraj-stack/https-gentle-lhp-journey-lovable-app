@@ -336,7 +336,7 @@ Deno.serve(async (req) => {
   }
 
   const handledKeys = await preloadHandledKeys(supabase, cfg.templateName, bookings)
-  const siteUrl = Deno.env.get('SITE_URL') ?? 'https://mcml.pl'
+  const siteUrl = Deno.env.get('SITE_URL') ?? 'https://mcml.pro'
 
   const results = await Promise.all(
     bookings.map((b) => dispatchOne(supabase, cfg, b, handledKeys, siteUrl)),

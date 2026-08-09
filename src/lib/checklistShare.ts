@@ -73,7 +73,7 @@ export const buildChecklistShareUrl = (selectedIds: string[]): string => {
   const base =
     typeof window !== "undefined"
       ? `${window.location.origin}/dla-pacjenta/hemoroidy`
-      : "https://www.mcml.pl/dla-pacjenta/hemoroidy";
+      : "https://mcml.pro/dla-pacjenta/hemoroidy";
   if (!payload) return `${base}#moja-checklista-ryzyka`;
   return `${base}?c=${payload}#moja-checklista-ryzyka`;
 };

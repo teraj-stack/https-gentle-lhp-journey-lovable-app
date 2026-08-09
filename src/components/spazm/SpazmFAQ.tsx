@@ -48,7 +48,7 @@ interface SpazmFAQProps {
 
 const SpazmFAQ = ({ fadeUp }: SpazmFAQProps) => (
   <motion.section {...fadeUp}>
-    <FaqSchema faqs={spazmFaqs} name="FAQ – Spazm mięśnia łonowo-odbytniczego" url="https://bestcml.io/leczenie/spazm-lonowoodbytniczy" />
+    <FaqSchema faqs={spazmFaqs} name="FAQ – Spazm mięśnia łonowo-odbytniczego" url="https://mcml.pro/leczenie/spazm-lonowoodbytniczy" />
     <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3 text-center font-serif">
       Najczęściej zadawane pytania
     </h2>

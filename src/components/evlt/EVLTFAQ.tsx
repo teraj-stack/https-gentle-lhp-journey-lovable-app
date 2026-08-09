@@ -36,7 +36,7 @@ interface EVLTFAQProps {
 
 const EVLTFAQ = ({ fadeUp }: EVLTFAQProps) => (
   <motion.section {...fadeUp}>
-    <FaqSchema faqs={faqs} name="FAQ – Zabieg EVLT na żylaki" url="https://bestcml.io/leczenie/evlt" />
+    <FaqSchema faqs={faqs} name="FAQ – Zabieg EVLT na żylaki" url="https://mcml.pro/leczenie/evlt" />
     <h2 className="section-title mb-3 text-center">Najczęściej zadawane pytania</h2>
     <p className="section-subtitle mb-10 text-center">
       Wszystko, co chcesz wiedzieć przed pierwszą wizytą

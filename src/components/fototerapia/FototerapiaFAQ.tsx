@@ -47,7 +47,7 @@ const FototerapiaFAQ = ({ fadeUp }: FototerapiaFAQProps) => (
     <FaqSchema
       faqs={faqs}
       name="FAQ – Fototerapia LED (PBM)"
-      url="https://bestcml.io/leczenie/fototerapia"
+      url="https://mcml.pro/leczenie/fototerapia"
     />
     <h2 className="text-2xl md:text-3xl font-serif font-bold text-foreground mb-3 text-center">
       Najczęściej zadawane pytania

@@ -17,7 +17,7 @@ import SeoRedirect from "./SeoRedirect";
 
 const TARGET = "/dla-pacjenta/hemoroidy";
 const SOURCE = "/hemoroidy";
-const ABSOLUTE_TARGET = `https://bestcml.io${TARGET}`;
+const ABSOLUTE_TARGET = `https://mcml.pro${TARGET}`;
 
 function renderRedirect(from = SOURCE, to = TARGET) {
   // CELOWO bez Route dla `to` — chcemy żeby SeoRedirect pozostał zamontowany
@@ -96,7 +96,7 @@ describe("SeoRedirect — manipulacja <head>", () => {
     renderRedirect("/zylaki", "/leczenie/evlt");
     const canonicals = document.head.querySelectorAll('link[rel="canonical"]');
     expect(canonicals.length).toBe(1); // brak duplikatów
-    expect(canonicals[0].getAttribute("href")).toBe("https://bestcml.io/leczenie/evlt");
+    expect(canonicals[0].getAttribute("href")).toBe("https://mcml.pro/leczenie/evlt");
   });
 
   it("oznacza utworzone tagi atrybutem data-seo-redirect (debugowalne)", () => {

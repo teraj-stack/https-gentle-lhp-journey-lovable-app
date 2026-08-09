@@ -4,7 +4,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { corsHeaders } from "../_shared/cors.ts";
 import { preflightResponse } from "../_shared/preflight.ts";
 
-const SITE = "https://bestcml.io";
+const SITE = "https://mcml.pro";
 
 function escapeXml(s: string) {
   return s
