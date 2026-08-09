@@ -13,6 +13,8 @@ import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 
 import RecoveryBoostBanner from "@/components/shared/RecoveryBoostBanner";
 import PreparationRecoveryCards from "@/components/shared/PreparationRecoveryCards";
+import PreparationChecklistSection from "@/components/shared/PreparationChecklistSection";
+import { preparationChecklists } from "@/content/procedures/preparationChecklists";
 import TestimonialsSection from "@/components/shared/TestimonialsSection";
 
 const plastykaSummary = [
@@ -211,6 +213,11 @@ const Plastyka = () => (
       <ProcedureSummaryTable rows={plastykaSummary} fadeUp={fadeUp} />
 
       
+
+      <PreparationChecklistSection
+        checklist={preparationChecklists.plastyka}
+        pageUrl="https://mcml.pro/leczenie/plastyka"
+      />
 
       <PreparationRecoveryCards
         procedureLabel="Plastyka okolicy odbytu — laserowo, bez szwów"

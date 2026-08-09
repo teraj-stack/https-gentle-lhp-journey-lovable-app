@@ -18,6 +18,8 @@ import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 import TestimonialsSection from "@/components/shared/TestimonialsSection";
 import RecoveryBoostBanner from "@/components/shared/RecoveryBoostBanner";
 import PreparationRecoveryCards from "@/components/shared/PreparationRecoveryCards";
+import PreparationChecklistSection from "@/components/shared/PreparationChecklistSection";
+import { preparationChecklists } from "@/content/procedures/preparationChecklists";
 import ProcedureDeepDive from "@/components/shared/ProcedureDeepDive";
 import { lhpDeepDive } from "@/content/procedures/lhpDeepDive";
 
@@ -134,6 +136,11 @@ const LHP = () => {
         <LHPFAQ fadeUp={sectionAnim} />
 
         <ProcedureSummaryTable rows={lhpSummary} fadeUp={sectionAnim} />
+
+        <PreparationChecklistSection
+          checklist={preparationChecklists.lhp}
+          pageUrl="https://mcml.pro/leczenie/lhp"
+        />
 
         <PreparationRecoveryCards
           procedureLabel="LHP — laserowe leczenie hemoroidów"
