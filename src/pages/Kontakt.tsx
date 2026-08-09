@@ -158,7 +158,7 @@ const Kontakt = () => {
         {/* Lokalizacje */}
         <motion.section {...fadeUp}>
           <h2 className="section-title mb-10 text-center">Nasza lokalizacja</h2>
-          <div className="grid md:grid-cols-2 gap-8">
+          <div className="flex justify-center">
             {locations.map((loc, i) => (
               <motion.div
                 key={loc.name}
