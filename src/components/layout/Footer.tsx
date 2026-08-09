@@ -43,7 +43,7 @@ const Footer = () => (
             <li><Link to="/dla-pacjenta/faldy-odbytu" className={linkCls}>Fałdy odbytu</Link></li>
             <li><Link to="/leczenie/flebologia" className={linkCls}>Żylaki kończyn</Link></li>
             <li><Link to="/leczenie/clacs" className={linkCls}>Pajączki naczyniowe</Link></li>
-            <li><Link to="/leczenie/ginekomastia" className={linkCls}>Ginekomastia</Link></li>
+            
           </ul>
         </div>
 
