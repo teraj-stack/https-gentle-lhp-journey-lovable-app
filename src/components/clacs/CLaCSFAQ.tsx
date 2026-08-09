@@ -32,6 +32,22 @@ const faqs = [
     q: "Czym CLaCS różni się od zwykłej skleroterapii?",
     a: "Klasyczna skleroterapia polega wyłącznie na iniekcji środka zamykającego. CLaCS łączy trzy techniki — kriochłodzenie zmniejsza ból i obkurcza naczynia, laser zamyka je od zewnątrz, a mikroskleroterapia dopełnia efekt. Ta synergia daje lepsze rezultaty estetyczne i większy komfort.",
   },
+  {
+    q: "Ile trwa jedna sesja CLaCS?",
+    a: "Pojedyncza sesja trwa zazwyczaj 30–60 minut, w zależności od powierzchni leczonych zmian. Wraz z konsultacją i mapowaniem naczyń wizyta zajmuje ok. 1–1,5 godziny.",
+  },
+  {
+    q: "Ile kosztuje zabieg CLaCS?",
+    a: "Cena zaczyna się od 500 zł za sesję i zależy od rozległości leczonego obszaru. Konsultacja flebologiczna kosztuje 400 zł, a z USG Doppler 500 zł. Pełny plan leczenia wyceniamy indywidualnie po badaniu — aktualne stawki znajdziesz w cenniku.",
+  },
+  {
+    q: "Kto powinien unikać zabiegu CLaCS?",
+    a: "Zabiegu nie wykonujemy w ciąży i podczas karmienia piersią, przy aktywnej infekcji lub stanie zapalnym skóry w leczonym miejscu, przy świeżej opaleniźnie, nieleczonej niewydolności żył głównych oraz przy zaburzeniach krzepnięcia. Kwalifikację zawsze poprzedza badanie USG Doppler.",
+  },
+  {
+    q: "Czy mogę pracować następnego dnia po CLaCS?",
+    a: "Tak — CLaCS nie wymaga zwolnienia lekarskiego. Do pracy i codziennych aktywności wracasz od razu. Przez 1–2 tygodnie odradzamy jedynie intensywny sport, saunę i gorące kąpiele.",
+  },
 ];
 
 interface CLaCSFAQProps {
