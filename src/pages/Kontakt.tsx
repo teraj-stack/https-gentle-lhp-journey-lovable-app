@@ -223,7 +223,7 @@ const Kontakt = () => {
         <motion.section {...fadeUp}>
           <h2 className="section-title mb-3 text-center">Zarezerwuj wizytę</h2>
           <p className="section-subtitle mb-10 text-center max-w-2xl mx-auto">
-            Zapisy na wizyty prowadzi recepcja kliniki na Wilanowie. Skontaktuj się bezpośrednio — pomożemy dobrać dogodny termin.
+            Zapisy pacjentów dr. Jana Bujoka prowadzi osobiście jego partnerka i asystentka. Skontaktuj się bezpośrednio — pomożemy dobrać dogodny termin.
           </p>
           <div className="flex justify-center max-w-3xl mx-auto">
             {locations.map((loc) => (
