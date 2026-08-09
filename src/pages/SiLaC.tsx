@@ -19,6 +19,8 @@ import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 import TestimonialsSection from "@/components/shared/TestimonialsSection";
 import RecoveryBoostBanner from "@/components/shared/RecoveryBoostBanner";
 import PreparationRecoveryCards from "@/components/shared/PreparationRecoveryCards";
+import PreparationChecklistSection from "@/components/shared/PreparationChecklistSection";
+import { preparationChecklists } from "@/content/procedures/preparationChecklists";
 
 
 const silacSummary = [
@@ -75,6 +77,11 @@ const SiLaC = () => (
       <ProcedureDeepDive content={silacDeepDive} fadeUp={fadeUp} />
       <SiLaCFAQ fadeUp={fadeUp} />
       <ProcedureSummaryTable rows={silacSummary} fadeUp={fadeUp} />
+
+      <PreparationChecklistSection
+        checklist={preparationChecklists.silac}
+        pageUrl="https://mcml.pro/leczenie/silac"
+      />
 
       <PreparationRecoveryCards
         procedureLabel="SiLaC — laserowe zamknięcie torbieli pilonidalnej"

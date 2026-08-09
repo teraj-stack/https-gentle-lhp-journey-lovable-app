@@ -18,6 +18,8 @@ import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 import TestimonialsSection from "@/components/shared/TestimonialsSection";
 import RecoveryBoostBanner from "@/components/shared/RecoveryBoostBanner";
 import PreparationRecoveryCards from "@/components/shared/PreparationRecoveryCards";
+import PreparationChecklistSection from "@/components/shared/PreparationChecklistSection";
+import { preparationChecklists } from "@/content/procedures/preparationChecklists";
 import ProcedureDeepDive from "@/components/shared/ProcedureDeepDive";
 import { filacDeepDive } from "@/content/procedures/filacDeepDive";
 
@@ -79,6 +81,11 @@ const FiLaC = () => (
       <ProcedureSummaryTable rows={filacSummary} fadeUp={fadeUp} />
 
 
+
+      <PreparationChecklistSection
+        checklist={preparationChecklists.filac}
+        pageUrl="https://mcml.pro/leczenie/filac"
+      />
 
       <PreparationRecoveryCards
         procedureLabel="FiLaC — laserowe zamknięcie przetoki"

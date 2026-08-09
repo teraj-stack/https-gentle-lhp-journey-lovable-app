@@ -10,6 +10,8 @@ import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 
 import RecoveryBoostBanner from "@/components/shared/RecoveryBoostBanner";
 import PreparationRecoveryCards from "@/components/shared/PreparationRecoveryCards";
+import PreparationChecklistSection from "@/components/shared/PreparationChecklistSection";
+import { preparationChecklists } from "@/content/procedures/preparationChecklists";
 import TestimonialsSection from "@/components/shared/TestimonialsSection";
 import MikroflebektomiaFAQ from "@/components/mikroflebektomia/MikroflebektomiaFAQ";
 import VenousInsufficiencyImage from "@/components/shared/VenousInsufficiencyImage";
@@ -213,6 +215,11 @@ const Mikroflebektomia = () => (
       <ProcedureSummaryTable rows={summary} fadeUp={fadeUp} />
 
       
+
+      <PreparationChecklistSection
+        checklist={preparationChecklists.mikroflebektomia}
+        pageUrl="https://mcml.pro/leczenie/mikroflebektomia"
+      />
 
       <PreparationRecoveryCards
         procedureLabel="Mikroflebektomia piankowa"

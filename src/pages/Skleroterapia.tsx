@@ -12,6 +12,8 @@ import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 
 import RecoveryBoostBanner from "@/components/shared/RecoveryBoostBanner";
 import PreparationRecoveryCards from "@/components/shared/PreparationRecoveryCards";
+import PreparationChecklistSection from "@/components/shared/PreparationChecklistSection";
+import { preparationChecklists } from "@/content/procedures/preparationChecklists";
 import TestimonialsSection from "@/components/shared/TestimonialsSection";
 import VeinAnatomyImage from "@/components/shared/VeinAnatomyImage";
 
@@ -255,6 +257,11 @@ const Skleroterapia = () => {
       <ProcedureSummaryTable rows={skleroterapiaSummary} fadeUp={fadeUp} />
 
       
+
+      <PreparationChecklistSection
+        checklist={preparationChecklists.skleroterapia}
+        pageUrl="https://mcml.pro/leczenie/skleroterapia"
+      />
 
       <PreparationRecoveryCards
         procedureLabel="Skleroterapia żył"

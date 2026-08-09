@@ -15,6 +15,8 @@ import SeoHead from "@/components/shared/SeoHead";
 import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 import RecoveryBoostBanner from "@/components/shared/RecoveryBoostBanner";
 import PreparationRecoveryCards from "@/components/shared/PreparationRecoveryCards";
+import PreparationChecklistSection from "@/components/shared/PreparationChecklistSection";
+import { preparationChecklists } from "@/content/procedures/preparationChecklists";
 import ProcedureDeepDive from "@/components/shared/ProcedureDeepDive";
 import { evltDeepDive } from "@/content/procedures/evltDeepDive";
 import TestimonialsSection from "@/components/shared/TestimonialsSection";
@@ -210,6 +212,11 @@ const EVLT = () => (
       <EVLTFAQ fadeUp={fadeUp} />
       <ProcedureDeepDive content={evltDeepDive} fadeUp={fadeUp} />
       <ProcedureSummaryTable rows={evltSummary} fadeUp={fadeUp} />
+
+      <PreparationChecklistSection
+        checklist={preparationChecklists.evlt}
+        pageUrl="https://mcml.pro/leczenie/evlt"
+      />
 
       <PreparationRecoveryCards
         procedureLabel="EVLT — laserowe zamknięcie żył"

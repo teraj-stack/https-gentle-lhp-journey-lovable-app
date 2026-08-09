@@ -13,6 +13,8 @@ import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 
 import RecoveryBoostBanner from "@/components/shared/RecoveryBoostBanner";
 import PreparationRecoveryCards from "@/components/shared/PreparationRecoveryCards";
+import PreparationChecklistSection from "@/components/shared/PreparationChecklistSection";
+import { preparationChecklists } from "@/content/procedures/preparationChecklists";
 import TestimonialsSection from "@/components/shared/TestimonialsSection";
 import VeinAnatomyImage from "@/components/shared/VeinAnatomyImage";
 
@@ -273,6 +275,11 @@ const CLaCS = () => (
       </motion.section>
 
       
+
+      <PreparationChecklistSection
+        checklist={preparationChecklists.clacs}
+        pageUrl="https://mcml.pro/leczenie/clacs"
+      />
 
       <PreparationRecoveryCards
         procedureLabel="CLaCS — hybrydowe usuwanie pajączków"
