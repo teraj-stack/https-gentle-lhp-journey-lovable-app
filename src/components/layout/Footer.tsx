@@ -73,16 +73,6 @@ const Footer = () => (
                 <li><Link to="/leczenie/clacs" className={linkCls}>CLaCS – pajączki</Link></li>
               </ul>
             </div>
-            <div>
-              <p className="text-xs font-semibold text-foreground/80 mb-2">
-                <Link to="/leczenie/ginekomastia" className={linkCls}>Ginekomastia</Link>
-              </p>
-              <ul className="space-y-1.5 text-sm text-muted-foreground">
-                <li><Link to="/leczenie/ginekomastia-gruczolowa" className={linkCls}>Gruczołowa</Link></li>
-                <li><Link to="/leczenie/ginekomastia-tluszczowa" className={linkCls}>Tłuszczowa</Link></li>
-                <li><Link to="/leczenie/ginekomastia-mieszana" className={linkCls}>Mieszana</Link></li>
-              </ul>
-            </div>
           </div>
         </div>
 
