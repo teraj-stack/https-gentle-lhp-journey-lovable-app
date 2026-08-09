@@ -4,6 +4,7 @@ import Breadcrumbs from "@/components/layout/Breadcrumbs";
 import { BREADCRUMBS_MAP } from "@/lib/breadcrumbsMap";
 import SeoHead from "@/components/shared/SeoHead";
 import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
+import ProktologiaGuide from "@/components/proktologia/ProktologiaGuide";
 import ProcedureSearch, { type ProcedureItem } from "@/components/shared/ProcedureSearch";
 import { ArrowRight, Zap, Shield, Scissors, Flame, Bug, Activity, CircleDot } from "lucide-react";
 
@@ -119,6 +120,8 @@ const Proktologia = () => {
         subtitle="Każdy zabieg dobieramy indywidualnie — po dokładnej diagnostyce i rozmowie z pacjentem."
         searchPlaceholder="Szukaj zabiegu (np. hemoroidy, szczelina, przetoka)…"
       />
+
+      <ProktologiaGuide />
 
       {/* CTA */}
       <motion.section {...sectionAnim} className="py-16 md:py-24 bg-card/30">
