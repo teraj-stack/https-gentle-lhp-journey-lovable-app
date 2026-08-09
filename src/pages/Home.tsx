@@ -30,6 +30,7 @@ const Home = () => (
     <Suspense fallback={null}>
       <ServiceCards />
       <Testimonials />
+      <HomePreparationSection />
       <B2BSection />
       <FAQTeaser />
     </Suspense>
