@@ -16,6 +16,7 @@ import PreparationRecoveryCards from "@/components/shared/PreparationRecoveryCar
 import PreparationChecklistSection from "@/components/shared/PreparationChecklistSection";
 import { preparationChecklists } from "@/content/procedures/preparationChecklists";
 import TestimonialsSection from "@/components/shared/TestimonialsSection";
+import RelatedLinks from "@/components/shared/RelatedLinks";
 
 const plastykaSummary = [
   { label: "Przygotowanie", value: "Konsultacja proktologiczna, ocena zmian skórnych" },
@@ -247,6 +248,8 @@ const Plastyka = () => (
         </Button>
       </motion.section>
     </div>
+      <RelatedLinks path="/leczenie/plastyka" />
+
   </div>
 );
 

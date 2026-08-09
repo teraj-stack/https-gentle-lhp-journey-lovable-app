@@ -8,6 +8,7 @@ import StatsCountUp from "@/components/hemoroidy/StatsCountUp";
 import SeoHead from "@/components/shared/SeoHead";
 import { StaggeredListItem } from "@/components/shared/StaggeredList";
 import {
+import RelatedLinks from "@/components/shared/RelatedLinks";
   User, Layers, Clock, Monitor, Dumbbell, Baby, TrendingUp,
   Apple, PersonStanding, ShieldCheck, ShieldX, Search,
   AlertTriangle, Zap, Home, Timer, CheckCircle2, XCircle,
@@ -606,6 +607,8 @@ const HemoroidyInfografika = () => (
         </div>
       </motion.section>
     </div>
+      <RelatedLinks path="/dla-pacjenta/hemoroidy-infografika" />
+
   </>
 );
 

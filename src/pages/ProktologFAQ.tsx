@@ -12,6 +12,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { AlertTriangle, Baby, ShieldCheck, Stethoscope } from "lucide-react";
+import RelatedLinks from "@/components/shared/RelatedLinks";
 
 const fadeUp = {
   initial: { opacity: 0, y: 30 },
@@ -234,6 +235,8 @@ const ProktologFAQ = () => (
         </Button>
       </motion.section>
     </div>
+      <RelatedLinks path="/dla-pacjenta/proktolog-faq" />
+
   </div>
 );
 

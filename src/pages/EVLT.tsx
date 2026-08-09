@@ -22,6 +22,7 @@ import { evltDeepDive } from "@/content/procedures/evltDeepDive";
 import TestimonialsSection from "@/components/shared/TestimonialsSection";
 import VenousInsufficiencyImage from "@/components/shared/VenousInsufficiencyImage";
 import VeinImageDevOverlay from "@/components/dev/VeinImageDevOverlay";
+import RelatedLinks from "@/components/shared/RelatedLinks";
 
 const evltSummary = [
   { label: "Przygotowanie", value: "Konsultacja flebologiczna oraz USG Doppler w celu mapowania niewydolnych żył" },
@@ -253,6 +254,8 @@ const EVLT = () => (
         </Button>
       </motion.section>
     </div>
+      <RelatedLinks path="/leczenie/evlt" />
+
   </div>
 );
 

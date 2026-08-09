@@ -11,6 +11,7 @@ import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 import RecoveryBoostBanner from "@/components/shared/RecoveryBoostBanner";
 import TestimonialsSection from "@/components/shared/TestimonialsSection";
 import FaldyFAQ from "@/components/faldy/FaldyFAQ";
+import RelatedLinks from "@/components/shared/RelatedLinks";
 
 const fadeUp = {
   initial: { opacity: 0, y: 24, filter: "blur(4px)" },
@@ -269,6 +270,8 @@ const FaldyOdbytu = () => (
         </Button>
       </motion.section>
     </div>
+      <RelatedLinks path="/dla-pacjenta/faldy-odbytu" />
+
   </div>
 );
 

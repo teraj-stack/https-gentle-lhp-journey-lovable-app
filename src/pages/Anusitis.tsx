@@ -13,6 +13,7 @@ import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 
 import RecoveryBoostBanner from "@/components/shared/RecoveryBoostBanner";
 import TestimonialsSection from "@/components/shared/TestimonialsSection";
+import RelatedLinks from "@/components/shared/RelatedLinks";
 
 const anusitisSummary = [
   { label: "Przygotowanie", value: "Badanie proktologiczne (anoskopia), wywiad w kierunku alergii, infekcji i chorób współistniejących." },
@@ -223,6 +224,8 @@ const Anusitis = () => (
         </Button>
       </motion.section>
     </div>
+      <RelatedLinks path="/leczenie/anusitis" />
+
   </div>
 );
 

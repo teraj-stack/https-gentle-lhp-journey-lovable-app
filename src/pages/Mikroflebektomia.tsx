@@ -16,6 +16,7 @@ import TestimonialsSection from "@/components/shared/TestimonialsSection";
 import MikroflebektomiaFAQ from "@/components/mikroflebektomia/MikroflebektomiaFAQ";
 import VenousInsufficiencyImage from "@/components/shared/VenousInsufficiencyImage";
 import VeinImageDevOverlay from "@/components/dev/VeinImageDevOverlay";
+import RelatedLinks from "@/components/shared/RelatedLinks";
 
 const summary = [
   { label: "Przygotowanie", value: "Konsultacja flebologiczna oraz USG Doppler w celu mapowania żył" },
@@ -245,6 +246,8 @@ const Mikroflebektomia = () => (
         </Button>
       </motion.section>
     </div>
+      <RelatedLinks path="/leczenie/mikroflebektomia" />
+
   </div>
 );
 
