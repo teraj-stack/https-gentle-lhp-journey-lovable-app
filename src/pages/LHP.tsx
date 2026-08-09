@@ -129,6 +129,8 @@ const LHP = () => {
           <QualificationScale />
         </motion.section>
 
+        <ProcedureDeepDive content={lhpDeepDive} fadeUp={sectionAnim} />
+
         <LHPFAQ fadeUp={sectionAnim} />
 
         <ProcedureSummaryTable rows={lhpSummary} fadeUp={sectionAnim} />
