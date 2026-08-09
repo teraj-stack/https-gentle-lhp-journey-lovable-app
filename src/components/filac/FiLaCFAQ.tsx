@@ -32,6 +32,18 @@ const faqs = [
     q: "Jak przygotować się do zabiegu FiLaC?",
     a: "Przed zabiegiem wykonujemy badanie MRI lub USG endorektalne, aby precyzyjnie zmapować przebieg przetoki. W dniu zabiegu zalecamy lekką dietę i oczyszczenie jelita (wlewka).",
   },
+  {
+    q: "Ile kosztuje zabieg FiLaC?",
+    a: "Cena zaczyna się od 4 300 zł i zależy od złożoności przetoki oraz zakresu diagnostyki. Konsultacja proktologiczna kosztuje 400 zł. Ostateczną wycenę podajemy po ocenie obrazowej — pełny cennik znajdziesz na stronie Cennik.",
+  },
+  {
+    q: "Kiedy będą widoczne wyniki leczenia?",
+    a: "Kanał przetoki zamyka się stopniowo — wyciek zwykle ustępuje w ciągu 2–4 tygodni, a pełne wygojenie ocenia się po 6–12 tygodniach. Kontrolę wykonujemy po ok. 4 i 12 tygodniach od zabiegu.",
+  },
+  {
+    q: "Kto powinien unikać zabiegu FiLaC?",
+    a: "FiLaC nie jest właściwy przy aktywnym, nieodbarczonym ropniu (najpierw drenaż), przy rozległych przetokach podkowiastych z licznymi odgałęzieniami oraz w aktywnej fazie choroby Leśniowskiego-Crohna bez leczenia biologicznego. Decyzję podejmujemy na podstawie MRI lub USG endorektalnego.",
+  },
 ];
 
 interface FiLaCFAQProps {
