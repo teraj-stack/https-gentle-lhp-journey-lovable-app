@@ -32,6 +32,22 @@ const faqs = [
     q: "Jak przygotować się do zabiegu SiLaC?",
     a: "Przed zabiegiem zalecamy dokładną depilację okolicy kości ogonowej (najlepiej laserową) oraz wykonanie USG tkanek miękkich. W dniu zabiegu nie jest wymagane specjalne przygotowanie.",
   },
+  {
+    q: "Ile kosztuje zabieg SiLaC?",
+    a: "Koszt zabiegu wynosi 8 000 zł. Konsultacja proktologiczna kosztuje 400 zł. W cenie zabiegu zawarte są jednorazowy światłowód, znieczulenie oraz wizyty kontrolne — aktualny cennik znajdziesz na stronie Cennik.",
+  },
+  {
+    q: "Kiedy będą widoczne wyniki leczenia?",
+    a: "Wyciek i sączenie zwykle ustępują w ciągu 1–2 tygodni. Pełne wygojenie kanału zatoki ocenia się po 4–8 tygodniach. Kontrolę wykonujemy po ok. 2 i 8 tygodniach od zabiegu.",
+  },
+  {
+    q: "Kto powinien unikać zabiegu SiLaC?",
+    a: "SiLaC nie jest właściwy przy aktywnym, nieodbarczonym ropniu (najpierw drenaż), przy bardzo rozległych zatokach z licznymi otworami oraz przy nieuregulowanej cukrzycy lub zaburzeniach gojenia. U palaczy zalecamy odstawienie papierosów przed zabiegiem.",
+  },
+  {
+    q: "Czy mogę pracować następnego dnia po SiLaC?",
+    a: "Praca biurowa jest zwykle możliwa po 1–2 dniach, choć długie siedzenie warto ograniczyć w pierwszym tygodniu. Praca fizyczna wymaga 7–10 dni przerwy, a sport i jazda na rowerze — ok. 3 tygodni.",
+  },
 ];
 
 interface Props {
