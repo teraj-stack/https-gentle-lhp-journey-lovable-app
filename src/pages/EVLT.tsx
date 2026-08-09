@@ -15,6 +15,8 @@ import SeoHead from "@/components/shared/SeoHead";
 import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 import RecoveryBoostBanner from "@/components/shared/RecoveryBoostBanner";
 import PreparationRecoveryCards from "@/components/shared/PreparationRecoveryCards";
+import ProcedureDeepDive from "@/components/shared/ProcedureDeepDive";
+import { evltDeepDive } from "@/content/procedures/evltDeepDive";
 import TestimonialsSection from "@/components/shared/TestimonialsSection";
 import VenousInsufficiencyImage from "@/components/shared/VenousInsufficiencyImage";
 import VeinImageDevOverlay from "@/components/dev/VeinImageDevOverlay";
@@ -206,6 +208,7 @@ const EVLT = () => (
       </motion.section>
 
       <EVLTFAQ fadeUp={fadeUp} />
+      <ProcedureDeepDive content={evltDeepDive} fadeUp={fadeUp} />
       <ProcedureSummaryTable rows={evltSummary} fadeUp={fadeUp} />
 
       <PreparationRecoveryCards
