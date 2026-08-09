@@ -18,6 +18,8 @@ import MedicalWebPageSchema from "@/components/shared/MedicalWebPageSchema";
 import TestimonialsSection from "@/components/shared/TestimonialsSection";
 import RecoveryBoostBanner from "@/components/shared/RecoveryBoostBanner";
 import PreparationRecoveryCards from "@/components/shared/PreparationRecoveryCards";
+import ProcedureDeepDive from "@/components/shared/ProcedureDeepDive";
+import { filacDeepDive } from "@/content/procedures/filacDeepDive";
 
 
 const filacSummary = [
@@ -73,7 +75,10 @@ const FiLaC = () => (
       <FiLaCFistulaTypes fadeUp={fadeUp} />
       <FiLaCRecovery fadeUp={fadeUp} />
       <FiLaCFAQ fadeUp={fadeUp} />
+      <ProcedureDeepDive content={filacDeepDive} fadeUp={fadeUp} />
       <ProcedureSummaryTable rows={filacSummary} fadeUp={fadeUp} />
+
+
 
       <PreparationRecoveryCards
         procedureLabel="FiLaC — laserowe zamknięcie przetoki"
