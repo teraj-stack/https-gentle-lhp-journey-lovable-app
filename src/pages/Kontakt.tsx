@@ -225,7 +225,7 @@ const Kontakt = () => {
           <p className="section-subtitle mb-10 text-center max-w-2xl mx-auto">
             Zapisy na wizyty prowadzi recepcja kliniki na Wilanowie. Skontaktuj się bezpośrednio — pomożemy dobrać dogodny termin.
           </p>
-          <div className="grid sm:grid-cols-2 gap-6 max-w-3xl mx-auto">
+          <div className="flex justify-center max-w-3xl mx-auto">
             {locations.map((loc) => (
               <div key={loc.name} className="glass-card rounded-2xl p-6 text-center space-y-3">
                 <h3 className="text-lg font-bold text-foreground">{loc.name}</h3>
