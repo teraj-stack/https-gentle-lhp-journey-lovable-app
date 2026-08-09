@@ -76,9 +76,6 @@ const B2BSection = () => (
             <ArrowRight className="w-4 h-4 ml-2" />
           </Link>
         </Button>
-        <p className="text-xs text-muted-foreground mt-4">
-          Umów 15-minutową wirtualną kawę z dr. Janem Bujokiem
-        </p>
       </motion.div>
     </div>
   </section>
