@@ -34,9 +34,10 @@ const DoctorSection = () => (
           <p className="text-sm font-sans uppercase tracking-[0.15em] text-primary mb-4">
             TWÓRCA CML - CENTRUM MEDYCYNY LASEROWEJ
           </p>
-          <h2 className="font-heading text-3xl md:text-4xl text-foreground mb-6 leading-tight">
+          <h1 className="font-heading text-3xl md:text-4xl text-foreground mb-6 leading-tight">
             Dr Jan Bujok
-          </h2>
+          </h1>
+
           <div className="premium-divider !mx-0 mb-8" />
           <p className="text-muted-foreground leading-relaxed mb-4">
             Specjalista chirurgii ogólnej, którego zawodową pasją są nowoczesne technologie stosowane w medycynie. Twórca Centrum Medycyny Laserowej — połączył wieloletnie doświadczenie chirurgiczne z głębokim zrozumieniem potrzeb pacjenta, budując nowy model opieki proktologicznej i flebologicznej w Polsce.
