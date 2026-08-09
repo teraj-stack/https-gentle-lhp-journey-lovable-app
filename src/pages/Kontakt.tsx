@@ -223,7 +223,7 @@ const Kontakt = () => {
         <motion.section {...fadeUp}>
           <h2 className="section-title mb-3 text-center">Zarezerwuj wizytę</h2>
           <p className="section-subtitle mb-10 text-center max-w-2xl mx-auto">
-            Zapisy na wizyty odbywają się za pośrednictwem klinik, z którymi współpracuję. Skontaktuj się bezpośrednio z wybraną lokalizacją — recepcja pomoże dobrać termin.
+            Zapisy na wizyty prowadzi recepcja kliniki na Wilanowie. Skontaktuj się bezpośrednio — pomożemy dobrać dogodny termin.
           </p>
           <div className="grid sm:grid-cols-2 gap-6 max-w-3xl mx-auto">
             {locations.map((loc) => (
