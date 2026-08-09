@@ -148,7 +148,7 @@ const Kontakt = () => {
           </h1>
           <div className="w-16 h-0.5 mx-auto bg-primary-foreground/30 mb-6" />
           <p className="text-primary-foreground/80 text-base md:text-lg leading-relaxed max-w-2xl mx-auto">
-            Przyjmujemy w czterech lokalizacjach. Wybierz wygodne miejsce i skontaktuj się z nami.
+            Przyjmuję w Warszawie na Wilanowie, przy ul. Branickiego 10/U6. Napisz lub zadzwoń — pomożemy dobrać termin.
           </p>
         </motion.div>
       </section>
@@ -157,7 +157,7 @@ const Kontakt = () => {
         <Breadcrumbs items={BREADCRUMBS_MAP["/kontakt"]} className="mb-4" />
         {/* Lokalizacje */}
         <motion.section {...fadeUp}>
-          <h2 className="section-title mb-10 text-center">Nasze lokalizacje</h2>
+          <h2 className="section-title mb-10 text-center">Nasza lokalizacja</h2>
           <div className="grid md:grid-cols-2 gap-8">
             {locations.map((loc, i) => (
               <motion.div
@@ -223,7 +223,7 @@ const Kontakt = () => {
         <motion.section {...fadeUp}>
           <h2 className="section-title mb-3 text-center">Zarezerwuj wizytę</h2>
           <p className="section-subtitle mb-10 text-center max-w-2xl mx-auto">
-            Zapisy na wizyty odbywają się za pośrednictwem klinik, z którymi współpracuję. Skontaktuj się bezpośrednio z wybraną lokalizacją — recepcja pomoże dobrać termin.
+            Zapisy na wizyty prowadzi recepcja kliniki na Wilanowie. Skontaktuj się bezpośrednio — pomożemy dobrać dogodny termin.
           </p>
           <div className="grid sm:grid-cols-2 gap-6 max-w-3xl mx-auto">
             {locations.map((loc) => (
