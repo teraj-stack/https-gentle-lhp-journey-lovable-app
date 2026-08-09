@@ -44,7 +44,7 @@ interface FaldyFAQProps {
 
 const FaldyFAQ = ({ fadeUp }: FaldyFAQProps) => (
   <motion.section {...fadeUp}>
-    <FaqSchema faqs={faqs} name="FAQ – Fałdy okolicy odbytu" url="https://bestcml.io/dla-pacjenta/faldy-odbytu" />
+    <FaqSchema faqs={faqs} name="FAQ – Fałdy okolicy odbytu" url="https://mcml.pro/dla-pacjenta/faldy-odbytu" />
     <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3 text-center font-serif">
       Najczęściej zadawane pytania
     </h2>

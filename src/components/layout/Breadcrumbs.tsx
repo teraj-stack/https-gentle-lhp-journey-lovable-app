@@ -23,7 +23,7 @@ const Breadcrumbs = ({ items, className = "" }: Props) => {
       "@type": "ListItem",
       position: i + 1,
       name: item.label,
-      ...(item.href ? { item: `https://bestcml.io${item.href}` } : {}),
+      ...(item.href ? { item: `https://mcml.pro${item.href}` } : {}),
     })),
   };
 

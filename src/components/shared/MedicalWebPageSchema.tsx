@@ -18,7 +18,7 @@ const MedicalWebPageSchema = ({
     "@type": "MedicalWebPage",
     name,
     description,
-    url: `https://bestcml.io${path}`,
+    url: `https://mcml.pro${path}`,
     inLanguage: "pl-PL",
     lastReviewed: "2026-03-25",
     specialty: {

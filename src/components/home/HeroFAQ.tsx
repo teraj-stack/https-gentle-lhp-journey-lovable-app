@@ -75,7 +75,7 @@ const HeroFAQ = () => (
   >
     <FaqSchema
       name="CML – Najczęstsze pytania o leczenie laserowe"
-      url="https://mcml.pl/#faq"
+      url="https://mcml.pro/#faq"
       faqs={FAQS.map(({ q, a }) => ({ q, a }))}
     />
 

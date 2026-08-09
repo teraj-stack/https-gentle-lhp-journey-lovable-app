@@ -40,7 +40,7 @@ interface FiLaCFAQProps {
 
 const FiLaCFAQ = ({ fadeUp }: FiLaCFAQProps) => (
   <motion.section {...fadeUp}>
-    <FaqSchema faqs={faqs} name="FAQ – FiLaC laserowe zamknięcie przetoki" url="https://bestcml.io/leczenie/filac" />
+    <FaqSchema faqs={faqs} name="FAQ – FiLaC laserowe zamknięcie przetoki" url="https://mcml.pro/leczenie/filac" />
     <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3 text-center">
       Najczęściej zadawane pytania
     </h2>

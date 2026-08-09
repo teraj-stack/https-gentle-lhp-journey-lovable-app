@@ -49,7 +49,7 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 // Public site origin used in booking-action links inside emails.
 // Falls back to the canonical custom domain if env not set.
-const ACTION_SITE_ORIGIN = (Deno.env.get('PUBLIC_SITE_URL') ?? 'https://www.bestcml.io').replace(/\/+$/, '')
+const ACTION_SITE_ORIGIN = (Deno.env.get('PUBLIC_SITE_URL') ?? 'https://mcml.pro').replace(/\/+$/, '')
 
 // Token TTL — 7 days, jednorazowy (decision: 7 dni, jednorazowy).
 const TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000

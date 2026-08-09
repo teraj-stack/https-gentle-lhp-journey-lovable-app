@@ -91,7 +91,7 @@ const PielegnacjaNog = () => {
       "@type": "MedicalWebPage",
       name: "Pielęgnacja nóg po zabiegu laserowym Nd:YAG",
       description: "Instrukcja prawidłowej pielęgnacji nóg po zabiegu laserem Nd:YAG. Oś czasu aplikacji kremu z witaminą K i arniką, zasady ochrony UV oraz objawy wymagające kontaktu z lekarzem.",
-      url: "https://bestcml.io/dla-pacjenta/pielegnacja-nog",
+      url: "https://mcml.pro/dla-pacjenta/pielegnacja-nog",
       lastReviewed: "2025-01-01",
       medicalAudience: {
         "@type": "PatientAudience",
@@ -119,7 +119,7 @@ const PielegnacjaNog = () => {
       publisher: {
         "@type": "MedicalClinic",
         name: "CML – Centrum Medycyny Laserowej",
-        url: "https://bestcml.io",
+        url: "https://mcml.pro",
       },
     };
 

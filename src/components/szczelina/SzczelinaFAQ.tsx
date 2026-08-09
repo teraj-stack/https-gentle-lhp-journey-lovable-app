@@ -40,7 +40,7 @@ interface SzczelinaFAQProps {
 
 const SzczelinaFAQ = ({ fadeUp }: SzczelinaFAQProps) => (
   <motion.section {...fadeUp}>
-    <FaqSchema faqs={szczelinaFaqs} name="FAQ – Szczelina odbytu" url="https://bestcml.io/leczenie/szczelina" />
+    <FaqSchema faqs={szczelinaFaqs} name="FAQ – Szczelina odbytu" url="https://mcml.pro/leczenie/szczelina" />
     <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3 text-center font-serif">
       Najczęściej zadawane pytania
     </h2>

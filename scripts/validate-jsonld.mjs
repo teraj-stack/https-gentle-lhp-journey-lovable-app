@@ -6,14 +6,14 @@
  * and validates required fields for MedicalWebPage, FAQPage and BreadcrumbList.
  *
  * Usage:
- *   node scripts/validate-jsonld.mjs                       # default: https://bestcml.io
- *   node scripts/validate-jsonld.mjs https://mcml.pl       # custom base
- *   BASE_URL=https://www.bestcml.io node scripts/validate-jsonld.mjs
+ *   node scripts/validate-jsonld.mjs                       # default: https://mcml.pro
+ *   node scripts/validate-jsonld.mjs https://mcml.pro       # custom base
+ *   BASE_URL=https://mcml.pro node scripts/validate-jsonld.mjs
  */
 import { chromium } from "playwright";
 
-const BASE_URL = (process.argv[2] || process.env.BASE_URL || "https://bestcml.io").replace(/\/$/, "");
-const EXPECTED_DOMAIN = "https://bestcml.io";
+const BASE_URL = (process.argv[2] || process.env.BASE_URL || "https://mcml.pro").replace(/\/$/, "");
+const EXPECTED_DOMAIN = "https://mcml.pro";
 
 const ROUTES = [
   { path: "/", label: "Home" },

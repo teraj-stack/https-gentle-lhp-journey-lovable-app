@@ -169,9 +169,9 @@ export const template = {
     locationLabel: 'Warszawa Wilanów (ul. Adama Branickiego 10/U6)',
     message: 'Pierwsza wizyta — konsultacja flebologiczna.',
     bookingId: '00000000-0000-0000-0000-000000000999',
-    confirmUrl: 'https://www.bestcml.io/booking-action?token=preview-confirm-token',
-    cancelUrl: 'https://www.bestcml.io/booking-action?token=preview-cancel-token',
-    needsContactUrl: 'https://www.bestcml.io/booking-action?token=preview-contact-token',
+    confirmUrl: 'https://mcml.pro/booking-action?token=preview-confirm-token',
+    cancelUrl: 'https://mcml.pro/booking-action?token=preview-cancel-token',
+    needsContactUrl: 'https://mcml.pro/booking-action?token=preview-contact-token',
   },
 } satisfies TemplateEntry
 

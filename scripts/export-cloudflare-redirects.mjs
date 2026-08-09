@@ -56,7 +56,7 @@ const SRC = resolve(__dirname, "../src/lib/seo/redirectsMap.ts");
 // Lovable). Konfigurowalny przez env CF_OUT_DIR — przydatne w testach (tmpdir),
 // CI z innymi mountami i lokalnym debug bez pisania do współdzielonej lokalizacji.
 const OUT_DIR = (process.env.CF_OUT_DIR || "/mnt/documents").replace(/\/+$/, "");
-const DOMAIN = "https://cml.pl";
+const DOMAIN = "https://mcml.pro";
 
 // ── CLI flags ───────────────────────────────────────────────────────────────
 // --dry-run / -n  : nie zapisuj plików; pokaż diff vs poprzedni eksport + walidację.

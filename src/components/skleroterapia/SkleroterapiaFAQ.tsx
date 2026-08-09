@@ -40,7 +40,7 @@ interface SkleroterapiaFAQProps {
 
 const SkleroterapiaFAQ = ({ fadeUp }: SkleroterapiaFAQProps) => (
   <motion.section {...fadeUp}>
-    <FaqSchema faqs={faqs} name="FAQ – Skleroterapia żylaków" url="https://bestcml.io/leczenie/skleroterapia" />
+    <FaqSchema faqs={faqs} name="FAQ – Skleroterapia żylaków" url="https://mcml.pro/leczenie/skleroterapia" />
     <h2 className="section-title mb-3 text-center">
       Najczęściej zadawane pytania
     </h2>
