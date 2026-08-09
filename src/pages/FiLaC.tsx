@@ -75,7 +75,10 @@ const FiLaC = () => (
       <FiLaCFistulaTypes fadeUp={fadeUp} />
       <FiLaCRecovery fadeUp={fadeUp} />
       <FiLaCFAQ fadeUp={fadeUp} />
+      <ProcedureDeepDive content={filacDeepDive} fadeUp={fadeUp} />
       <ProcedureSummaryTable rows={filacSummary} fadeUp={fadeUp} />
+
+
 
       <PreparationRecoveryCards
         procedureLabel="FiLaC — laserowe zamknięcie przetoki"
