@@ -130,7 +130,6 @@ const MedicalProcedureSchema = ({
           reviewCount: CLINIC_RATING.reviewCount,
           bestRating: CLINIC_RATING.bestRating,
           worstRating: CLINIC_RATING.worstRating,
-          itemReviewed: { "@id": `${pageUrl}#service` },
         };
       }
 
