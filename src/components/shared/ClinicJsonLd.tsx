@@ -51,7 +51,7 @@ export const CLINIC_ORGANIZATION = {
     "Innowacyjne leczenie laserowe hemoroidów, żylaków i przetok. Proktologia i flebologia laserowa w Warszawie Wilanów.",
   url: SITE_URL,
   logo: `${SITE_URL}/logo.png`,
-  image: `${SITE_URL}/og-image.jpg`,
+  image: `${SITE_URL}/og-image.png`,
   telephone: "+48 510 432 361",
   email: "warszawa@cml.pl",
   priceRange: "$$",

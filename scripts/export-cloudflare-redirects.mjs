@@ -16,7 +16,7 @@
  *  3. cloudflare-redirects.txt — czytelna lista par "from → to" (#reason)
  *     dla code review / dokumentacji wewnętrznej.
  *
- * Domena: cml.pl (zgodnie z core memory: "Must use https://cml.pl ONLY").
+ * Domena: mcml.pro (jedyna kanoniczna domena projektu).
  *
  * Uruchom:
  *   node scripts/export-cloudflare-redirects.mjs              # pełny eksport (pliki)
@@ -726,7 +726,7 @@ if (!DRY_RUN) writeFileSync(`${OUT_DIR}/cloudflare-redirects.txt`, txtLines.join
 //   generated_at   : ISO-8601 UTC, wspólny dla całego runu
 //   config_hash    : sha256 (skrócony) źródłowej mapy SEO_REDIRECTS + DOMAIN +
 //                    schema_version → wykrywanie zmian konfiguracji między runami
-//   domain         : docelowa domena (https://cml.pl)
+//   domain         : docelowa domena (https://mcml.pro)
 //   totals         : agregaty (na razie liczba wpisów)
 //   inputs         : pliki źródłowe pipeline'u (do reprodukcji runu)
 //   artifacts      : ścieżki WSZYSTKICH artefaktów (pośrednich i finalnych);
