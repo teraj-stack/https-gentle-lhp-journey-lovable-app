@@ -206,6 +206,7 @@ const EVLT = () => (
       </motion.section>
 
       <EVLTFAQ fadeUp={fadeUp} />
+      <ProcedureDeepDive content={evltDeepDive} fadeUp={fadeUp} />
       <ProcedureSummaryTable rows={evltSummary} fadeUp={fadeUp} />
 
       <PreparationRecoveryCards
