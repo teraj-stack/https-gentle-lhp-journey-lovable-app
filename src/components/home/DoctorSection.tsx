@@ -17,7 +17,7 @@ const DoctorSection = () => (
   <section className="py-20 md:py-28 bg-card">
     <div className="max-w-7xl mx-auto px-4 md:px-8">
       <div className="grid md:grid-cols-2 gap-10 md:gap-12 lg:gap-16 items-start">
-        <motion.div {...stagger(0.15)} className="flex justify-center md:order-2 md:pt-10">
+        <motion.div {...stagger(0.15)} className="flex justify-center md:order-2">
           <div className="relative">
             <ResponsiveImage
               picture={drBujokPicture}
@@ -31,8 +31,10 @@ const DoctorSection = () => (
         </motion.div>
 
         <motion.div {...stagger(0)}>
-          <p className="text-sm font-sans uppercase tracking-[0.15em] text-primary mb-4">Twórca CML – Centrum Medycyny Laserowej</p>
-          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-6 leading-tight">
+          <p className="text-sm font-sans uppercase tracking-[0.15em] text-primary mb-4">
+            TWÓRCA CML - CENTRUM MEDYCYNY LASEROWEJ
+          </p>
+          <h2 className="font-heading text-3xl md:text-4xl text-foreground mb-6 leading-tight">
             Dr Jan Bujok
           </h2>
           <div className="premium-divider !mx-0 mb-8" />
