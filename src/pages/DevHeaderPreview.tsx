@@ -63,7 +63,7 @@ type ReportState = {
 const REQUIRED_MOBILE_SECTIONS = [
   "Proktologia",
   "Flebologia",
-  "Ginekomastia",
+  
   "Wiedza",
   "Klinika",
 ] as const;
@@ -513,7 +513,7 @@ export default function DevHeaderPreview() {
           <p className="text-xs text-muted-foreground max-w-2xl">
             Test automatycznie klika burger w iframe, czeka na animację panelu
             (~700ms) i waliduje obecność wszystkich 5 sekcji (Proktologia,
-            Flebologia, Ginekomastia, Wiedza, Klinika) oraz przepełnienia
+            Flebologia, Wiedza, Klinika) oraz przepełnienia
             tekstu w linkach. Zielone chipy = sekcja zsynchronizowana.
             Wykonywany tylko na szerokościach &lt; 1024px (powyżej menu mobilne
             jest ukryte: <code>lg:hidden</code>).

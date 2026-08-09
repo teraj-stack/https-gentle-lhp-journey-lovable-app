@@ -50,9 +50,6 @@ const procedures = [
   { name: "Leczenie hemoroidów – LHP", price: "od 4 500 zł", href: "/leczenie/lhp" },
   { name: "Leczenie przetok – FiLaC", price: "od 4 300 zł", href: "/leczenie/filac" },
   { name: "Torbiel pilonidalna – SiLaC", price: "8 000 zł", href: "/leczenie/silac" },
-  { name: "Ginekomastia gruczołowa", price: "od 8 000 zł", href: "/leczenie/ginekomastia-gruczolowa" },
-  { name: "Ginekomastia tłuszczowa", price: "od 6 000 zł", href: "/leczenie/ginekomastia-tluszczowa" },
-  { name: "Ginekomastia mieszana", price: "od 10 000 zł", href: "/leczenie/ginekomastia-mieszana" },
 ];
 
 const Cennik = () => (

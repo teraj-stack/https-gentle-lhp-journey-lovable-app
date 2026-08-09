@@ -30,7 +30,7 @@ interface MegaColumn {
 }
 
 // =============================================================================
-// Nowy podział: dziedziny medyczne (Proktologia, Flebologia, Ginekomastia)
+// Nowy podział: dziedziny medyczne (Proktologia, Flebologia)
 // + Wiedza + Klinika. Mniej popularne pozycje przeniesione do hubów
 // (/leczenie/proktologia, /leczenie/flebologia, /dla-pacjenta).
 // =============================================================================
@@ -85,14 +85,6 @@ const flebologiaColumns: MegaColumn[] = [
       },
     ],
   },
-];
-
-// --- GINEKOMASTIA (single-column, krótka lista) ---
-const ginekomastiaItems: NavItem[] = [
-  { label: "O zabiegu", href: "/leczenie/ginekomastia", desc: "Powiększenie piersi u mężczyzn" },
-  { label: "Typ gruczołowy", href: "/leczenie/ginekomastia-gruczolowa" },
-  { label: "Typ tłuszczowy", href: "/leczenie/ginekomastia-tluszczowa" },
-  { label: "Typ mieszany", href: "/leczenie/ginekomastia-mieszana" },
 ];
 
 // --- WIEDZA (skrócona; resztę w hubie /dla-pacjenta) ---
@@ -379,7 +371,6 @@ const Header = () => {
    * - Flebologia analogicznie: hub + dzieci `/leczenie/{evlt,filac,silac,clacs,
    *   skleroterapia,mikroflebektomia,fototerapia}` (wspólne z proktologią pod
    *   `/leczenie/`, ale dyskryminowane przez explicit listę zabiegów flebo).
-   * - Ginekomastia: hub `/leczenie/ginekomastia` + warianty `-gruczolowa/-tluszczowa/-mieszana`.
    * - Wiedza: cały subtree `/dla-pacjenta/*` + edukacyjne `/wiedza/*` + `/blog`.
    *
    * UWAGA: kolejność dopasowania ma znaczenie tylko wizualnie (wiele dropdownów
@@ -427,12 +418,6 @@ const Header = () => {
       "/dla-pacjenta/zalecenia-po-silac",
       "/dla-pacjenta/zalecenia-po-skleroterapii",
       "/dla-pacjenta/zalecenia-po-mikroflebektomii",
-    ],
-    ginekomastia: [
-      "/leczenie/ginekomastia",
-      "/dla-pacjenta/przygotowanie-ginekomastii",
-      "/dla-pacjenta/przygotowanie-ginekomastia",
-      "/dla-pacjenta/zalecenia-po-ginekomastii",
     ],
     wiedza: [
       "/dla-pacjenta",
@@ -735,7 +720,6 @@ const Header = () => {
           <nav className="hidden lg:flex flex-1 items-center justify-center gap-0 xl:gap-0.5 2xl:gap-1 min-w-0">
             <MegaDropdown keyName="proktologia" label="Proktologia" columns={proktologiaColumns} />
             <MegaDropdown keyName="flebologia" label="Flebologia" columns={flebologiaColumns} />
-            <SingleDropdown keyName="ginekomastia" label="Ginekomastia" items={ginekomastiaItems} />
             <MegaDropdown keyName="wiedza" label="Wiedza" columns={wiedzaColumns} />
             <SingleDropdown keyName="klinika" label="Klinika" items={klinikaItems} />
 
@@ -918,26 +902,6 @@ const Header = () => {
                     ]),
                   ])),
 
-                  <div
-                    key="ginekomastia-label"
-                    className="px-4 py-2 text-xs font-semibold text-primary uppercase tracking-wider mt-2"
-                  >
-                    Ginekomastia
-                  </div>,
-                  ...ginekomastiaItems.map((item) => (
-                    <Link
-                      key={`ginekomastia-${item.href}`}
-                      to={item.href}
-                      title={item.label}
-                      className={`flex items-center min-h-[44px] px-5 py-2 rounded-lg text-[14px] hover:bg-accent/50 truncate ${
-                        isActive(item.href)
-                          ? "text-primary bg-accent/50 font-medium"
-                          : "text-foreground/85"
-                      }`}
-                    >
-                      <span className="truncate">{item.label}</span>
-                    </Link>
-                  )),
 
                   ...wiedzaColumns.flatMap((col, i) => [
                     <div

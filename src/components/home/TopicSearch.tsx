@@ -72,7 +72,7 @@ const TopicSearch = () => {
           }}
           onFocus={() => setOpen(true)}
           onKeyDown={handleKey}
-          placeholder="Szukaj tematu: hemoroidy, pajączki, EVLT, ginekomastia…"
+          placeholder="Szukaj tematu: hemoroidy, pajączki, EVLT, przetoki…"
           aria-label="Wyszukaj temat"
           className="flex-1 bg-transparent py-4 pr-4 text-foreground placeholder:text-muted-foreground/70 outline-none text-base"
         />
@@ -94,7 +94,7 @@ const TopicSearch = () => {
       {/* Quick-tag chips when empty + focused */}
       {open && query.trim().length < 2 && (
         <div className="mt-3 flex flex-wrap gap-2">
-          {["Hemoroidy", "Pajączki", "EVLT", "FiLaC", "Ginekomastia", "Profilaktyka żylaków"].map(
+          {["Hemoroidy", "Pajączki", "EVLT", "FiLaC", "SiLaC", "Profilaktyka żylaków"].map(
             (tag) => (
               <button
                 key={tag}

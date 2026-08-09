@@ -4,7 +4,6 @@
 export type SearchCategory =
   | "Proktologia"
   | "Flebologia"
-  | "Ginekomastia"
   | "Edukacja"
   | "Przygotowanie"
   | "Po zabiegu";
@@ -120,36 +119,6 @@ export const SEARCH_INDEX: SearchEntry[] = [
     keywords: ["flebologia", "flebolog", "żyły"],
   },
 
-  // ===== GINEKOMASTIA =====
-  {
-    title: "Ginekomastia – przegląd",
-    path: "/leczenie/ginekomastia",
-    category: "Ginekomastia",
-    excerpt: "Trzy podtypy, jedna premium technologia Vaser Lipo HD.",
-    keywords: ["ginekomastia", "piersi męskie", "vaser"],
-  },
-  {
-    title: "Ginekomastia gruczołowa",
-    path: "/leczenie/ginekomastia-gruczolowa",
-    category: "Ginekomastia",
-    excerpt: "Usunięcie tkanki gruczołowej + Vaser Lipo HD.",
-    keywords: ["gruczołowa", "gruczoł"],
-  },
-  {
-    title: "Ginekomastia tłuszczowa",
-    path: "/leczenie/ginekomastia-tluszczowa",
-    category: "Ginekomastia",
-    excerpt: "Pseudoginekomastia – Vaser Lipo HD bez nacięć.",
-    keywords: ["tłuszczowa", "pseudoginekomastia", "lipo"],
-  },
-  {
-    title: "Ginekomastia mieszana",
-    path: "/leczenie/ginekomastia-mieszana",
-    category: "Ginekomastia",
-    excerpt: "Kombinacja gruczołu i tkanki tłuszczowej.",
-    keywords: ["mieszana", "kombinowana"],
-  },
-
   // ===== EDUKACJA =====
   {
     title: "Hemoroidy – kompendium A do Z",
@@ -240,7 +209,6 @@ export const SEARCH_INDEX: SearchEntry[] = [
   { title: "Zalecenia po skleroterapii", path: "/dla-pacjenta/zalecenia-po-skleroterapii", category: "Po zabiegu", excerpt: "Pielęgnacja kończyn po skleroterapii.", keywords: ["zalecenia", "skleroterapia"] },
   { title: "Zalecenia po plastyce", path: "/dla-pacjenta/zalecenia-po-plastyce", category: "Po zabiegu", excerpt: "Pielęgnacja po plastyce okolicy odbytu.", keywords: ["zalecenia", "plastyka"] },
   { title: "Zalecenia po mikroflebektomii", path: "/dla-pacjenta/zalecenia-po-mikroflebektomii", category: "Po zabiegu", excerpt: "Powrót do formy po mikroflebektomii.", keywords: ["zalecenia", "mikroflebektomia"] },
-  { title: "Zalecenia po ginekomastii", path: "/dla-pacjenta/zalecenia-po-ginekomastii", category: "Po zabiegu", excerpt: "Powrót do aktywności po Vaser Lipo HD.", keywords: ["zalecenia", "ginekomastia"] },
 ];
 
 /** Normalizacja PL: usuwa diakrytyki i lower-case dla tolerancyjnego matchowania. */
