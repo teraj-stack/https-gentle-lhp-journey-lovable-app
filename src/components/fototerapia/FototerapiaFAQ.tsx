@@ -36,6 +36,10 @@ const faqs = [
     q: "Dla kogo fototerapia jest przeciwwskazana?",
     a: "Bezwzględnych przeciwwskazań jest bardzo niewiele. Odradza się naświetlanie powłok brzusznych u kobiet w ciąży (ze względów medyczno-prawnych) oraz chrząstek wzrostowych u noworodków. Tatuaże nie stanowią przeciwwskazania, mogą jedynie powodować przejściowe odczucie ciepła.",
   },
+  {
+    q: "Ile kosztuje fototerapia LED?",
+    a: "Cenę pojedynczej sesji oraz pakietów ustalamy indywidualnie w zależności od protokołu i powierzchni naświetlania. Gdy PBM stanowi element zabiegu CLaCS lub gojenia po EVLT, jest zwykle wliczona w cenę pakietu — szczegóły omawiamy na konsultacji.",
+  },
 ];
 
 interface FototerapiaFAQProps {

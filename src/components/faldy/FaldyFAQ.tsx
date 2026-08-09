@@ -36,6 +36,10 @@ const faqs = [
     q: "Kiedy powinienem/powinnam zgłosić się do lekarza?",
     a: "Warto skonsultować się z proktologiem, jeśli fałd pojawił się nagle i boli (może to być zakrzepica), towarzyszą mu krwawienia, świąd lub wyciek, zmiana rośnie lub zmienia kolor, albo po prostu chcesz mieć pewność diagnozy.",
   },
+  {
+    q: "Czy mogę pracować następnego dnia po usunięciu fałdów?",
+    a: "Tak — zabieg jest ambulatoryjny i praca biurowa jest zwykle możliwa już następnego dnia. Praca fizyczna oraz sport wymagają ok. 7–10 dni przerwy, do czasu wygojenia rany.",
+  },
 ];
 
 interface FaldyFAQProps {

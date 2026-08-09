@@ -32,6 +32,18 @@ export const lhpFaqs = [
     q: "Jak przygotować się do zabiegu LHP?",
     a: "Przed zabiegiem wykonujemy badanie proktologiczne z anoskopią. W dniu zabiegu zalecamy lekką dietę i oczyszczenie jelita (wlewka). Po zabiegu kluczowa jest dieta bogata w błonnik i odpowiednie nawadnianie.",
   },
+  {
+    q: "Ile kosztuje zabieg LHP?",
+    a: "Cena zaczyna się od 4 500 zł i zależy od stopnia zaawansowania hemoroidów oraz liczby leczonych guzków. Konsultacja proktologiczna z anoskopią kosztuje 400 zł. Ostateczną wycenę podajemy po badaniu — pełny cennik znajdziesz na stronie Cennik.",
+  },
+  {
+    q: "Kiedy zobaczę efekty zabiegu?",
+    a: "Krwawienia zwykle ustępują w ciągu kilku dni. Zmniejszenie i cofnięcie guzków postępuje przez 4–6 tygodni, gdy tkanka obkurcza się po zamknięciu naczyń. Ostateczny efekt oceniamy na wizycie kontrolnej po ok. 6–8 tygodniach.",
+  },
+  {
+    q: "Czy mogę pracować następnego dnia po LHP?",
+    a: "Praca zdalna lub lekka biurowa jest zwykle możliwa po 1–2 dniach, choć większość pacjentów woli odpocząć 3–5 dni. Praca fizyczna i podnoszenie ciężarów wymagają 7–14 dni przerwy.",
+  },
 ];
 
 interface LHPFAQProps {

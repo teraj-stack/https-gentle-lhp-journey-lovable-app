@@ -32,6 +32,19 @@ const faqs = [
     q: "Jak długo muszę nosić pończochę uciskową?",
     a: "Zazwyczaj zalecamy noszenie pończochy uciskowej klasy II przez 2–3 tygodnie po zabiegu — całodobowo przez pierwsze 3 dni, potem w ciągu dnia. Dokładne zalecenia ustalamy indywidualnie na podstawie rozległości leczonych zmian.",
   },
+  {
+    q: "Ile trwa zabieg skleroterapii i kiedy widać wyniki?",
+    a: "Pojedyncza sesja trwa 20–40 minut. Pierwsze efekty widoczne są po 2–4 tygodniach, gdy organizm wchłania zamknięte naczynia, a pełny rezultat estetyczny oceniamy po 2–3 miesiącach od ostatniej sesji.",
+  },
+  {
+    q: "Ile kosztuje skleroterapia?",
+    a: "Cena zaczyna się od 600 zł za sesję i zależy od rozległości leczonych zmian. Konsultacja flebologiczna kosztuje 400 zł, a z USG Doppler 500 zł. Liczbę sesji i całkowity koszt szacujemy po badaniu — pełny cennik znajdziesz na stronie Cennik.",
+  },
+  {
+    q: "Kto powinien unikać skleroterapii?",
+    a: "Zabiegu nie wykonujemy w ciąży i podczas karmienia piersią, przy aktywnej zakrzepicy żył głębokich, przy alergii na sklerosant, w ciężkim niedokrwieniu kończyny oraz przy aktywnej infekcji skóry w leczonym miejscu. Kwalifikację poprzedza badanie USG Doppler.",
+  },
+
 ];
 
 interface SkleroterapiaFAQProps {

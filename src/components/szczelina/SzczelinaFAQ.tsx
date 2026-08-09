@@ -32,6 +32,18 @@ export const szczelinaFaqs = [
     q: "Jak zapobiegać nawrotom szczeliny?",
     a: "Kluczowe jest utrzymanie miękkiego stolca: dieta bogata w błonnik (30 g/dzień), nawadnianie (2–2,5 l/dzień), regularna aktywność fizyczna. Unikaj długiego siedzenia na toalecie i nadmiernego parcia podczas wypróżniania.",
   },
+  {
+    q: "Ile kosztuje leczenie szczeliny odbytu?",
+    a: "Konsultacja proktologiczna z badaniem kosztuje 400 zł. Koszt iniekcji botoksu lub laserowej sfinkterotomii ustalamy indywidualnie po kwalifikacji — aktualne stawki znajdziesz na stronie Cennik.",
+  },
+  {
+    q: "Kto powinien unikać zabiegowego leczenia szczeliny?",
+    a: "Szczególnej ostrożności wymagają pacjenci z wcześniejszym nietrzymaniem stolca, po porodach z uszkodzeniem zwieracza, z chorobą Leśniowskiego-Crohna oraz z zaburzeniami krzepnięcia. U nich preferujemy leczenie zachowawcze lub botoks zamiast sfinkterotomii.",
+  },
+  {
+    q: "Czy mogę pracować następnego dnia?",
+    a: "Po botoksie wracasz do pracy praktycznie od razu — zabieg trwa kilka minut i nie wymaga rekonwalescencji. Po laserowej sfinkterotomii praca biurowa jest zwykle możliwa po 1–3 dniach, a praca fizyczna po ok. tygodniu.",
+  },
 ];
 
 interface SzczelinaFAQProps {
