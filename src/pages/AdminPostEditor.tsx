@@ -339,6 +339,55 @@ const AdminPostEditor = () => {
             </Tabs>
           </div>
 
+          <PostSeoAudit
+            title={title}
+            slug={slug}
+            excerpt={excerpt}
+            content={content}
+            focusKeyword={focusKeyword}
+          />
+
+          <div className="space-y-2">
+            <Label htmlFor="scheduled-at">Zaplanowana publikacja</Label>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Input
+                id="scheduled-at"
+                type="datetime-local"
+                value={scheduledAt}
+                onChange={(e) => setScheduledAt(e.target.value)}
+                className="sm:max-w-xs"
+              />
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setScheduledAt(toLocalInput(getUpcomingSlots(1)[0].toISOString()))}
+                >
+                  Najbliższy slot
+                </Button>
+                {scheduledAt && (
+                  <Button type="button" variant="ghost" size="sm" onClick={() => setScheduledAt("")}>
+                    Wyczyść
+                  </Button>
+                )}
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Wpis oznaczony jako opublikowany z datą w przyszłości pozostaje ukryty przed
+              czytelnikami do wskazanego terminu.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <Switch
+              id="needs-medical-review"
+              checked={needsMedicalReview}
+              onCheckedChange={setNeedsMedicalReview}
+            />
+            <Label htmlFor="needs-medical-review">Wymaga weryfikacji medycznej (dr Bujok)</Label>
+          </div>
+
           <div className="flex items-center gap-3">
             <Switch id="published" checked={published} onCheckedChange={setPublished} />
             <Label htmlFor="published">Opublikowany</Label>
