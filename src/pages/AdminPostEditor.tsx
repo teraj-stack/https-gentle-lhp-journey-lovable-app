@@ -68,6 +68,9 @@ const AdminPostEditor = () => {
       setContent(existingPost.content);
       setPublished(existingPost.published);
       setCoverImageUrl(existingPost.cover_image_url || "");
+      setScheduledAt(toLocalInput(existingPost.scheduled_at));
+      setFocusKeyword(existingPost.focus_keyword || "");
+      setNeedsMedicalReview(existingPost.needs_medical_review ?? false);
     }
   }, [existingPost]);
 
