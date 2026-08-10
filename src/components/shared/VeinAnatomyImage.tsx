@@ -44,7 +44,7 @@ const VeinAnatomyImage = ({
       <figure className="glass-card rounded-xl sm:rounded-2xl p-2.5 sm:p-4 md:p-6">
         <img
           src={veinAnatomy}
-          alt="Żylaki i pajączki na nogach — schemat anatomiczny pajączka żylnego — przekrój skóry pokazujący naskórek (epidermis), skórę właściwą (dermis) z pajączkiem (wenulektazja) i żyłą zasilającą oraz tkankę podskórną (hypodermis) z żyłą głęboką"
+          alt="Żylaki i pajączki na nogach — schemat anatomiczny pajączka żylnego, przekrój skóry pokazujący naskórek (epidermis), skórę właściwą (dermis) z pajączkiem (wenulektazja) i żyłą zasilającą oraz tkankę podskórną (hypodermis) z żyłą głęboką"
           loading="lazy"
           decoding="async"
           width={1456}
