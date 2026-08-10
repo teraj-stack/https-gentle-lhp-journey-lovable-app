@@ -10,7 +10,9 @@
  *     hardcoded z kodu jako `placeholderData`, tak żeby `<Route>` nie czekał na sieć.
  */
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+// UWAGA: klient backendu jest importowany dynamicznie wewnątrz `fetchActiveDbRedirects`.
+// Ten hook renderuje się na KAŻDEJ podstronie (mapa przekierowań), a statyczny import
+// wciągał ~46 kB gzip supabase-js do bundla wejściowego, opóźniając LCP.
 import {
   SEO_REDIRECTS,
   type SeoRedirectEntry,
