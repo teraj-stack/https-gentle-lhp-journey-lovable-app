@@ -159,6 +159,9 @@ const AdminDashboard = () => {
         <header className="border-b border-border px-4 py-4 md:px-8 flex items-center justify-between">
           <h1 className="text-xl font-bold font-serif text-foreground">Panel bloga</h1>
           <div className="flex items-center gap-3">
+            <Button variant="ghost" size="sm" onClick={() => navigate("/admin/kalendarz")}>
+              <CalendarClock className="h-4 w-4 mr-2" /> Kalendarz
+            </Button>
             <Button variant="ghost" size="sm" onClick={() => navigate("/admin/bookings")}>
               Rezerwacje
             </Button>
