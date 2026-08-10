@@ -110,7 +110,7 @@ const ZaleceniaPoFilac = () => {
     <>
       <SeoHead
         title="Zalecenia po zabiegu FiLaC | Rekonwalescencja | CML"
-        description="Higiena rany, kąpiele nasiadowe, dieta, kontrole gojenia i sygnały alarmowe po laserowym leczeniu przetoki FiLaC. Poradnik rekonwalescencji od CML."
+        description="Higiena rany, kąpiele nasiadowe, dieta, kontrole gojenia i sygnały alarmowe po laserowym leczeniu przetoki FiLaC. Poradnik rekonwalescencji od CML. Zapraszamy."
         path="/dla-pacjenta/zalecenia-po-filac"
       />
 

@@ -46,7 +46,7 @@ const SiLaC = () => (
     <div className="min-h-screen bg-background pt-20">
       <SeoHead
         title="SiLaC w CML | Leczenie torbieli pilonidalnej | Warszawa"
-        description="SiLaC zamyka torbiel pilonidalną laserem przez nakłucie 2–3 mm, bez rozległej rany i blizny. Szybki powrót do normalności. Umów konsultację w CML."
+        description="SiLaC zamyka torbiel pilonidalną laserem przez nakłucie 2–3 mm, bez rozległej rany i blizny. Szybki powrót do normalności. Umów konsultację w CML. Zapraszamy."
         path="/leczenie/silac"
       />
       <MedicalWebPageSchema

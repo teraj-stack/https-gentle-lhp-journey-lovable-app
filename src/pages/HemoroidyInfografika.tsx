@@ -25,8 +25,8 @@ const sectionAnim = {
 const HemoroidyInfografika = () => (
   <>
     <SeoHead
-      title="Hemoroidy — infografika | Laser vs operacja | CML"
-      description="Infografika CML: porównanie lasera LHP z metodami klasycznymi, przebieg zabiegu krok po kroku i okno terapeutyczne. Zobacz dane w czytelnej formie."
+      title="Hemoroidy — infografika | Laser vs operacja | CML Wilanów"
+      description="Infografika CML: porównanie lasera LHP z metodami klasycznymi, przebieg zabiegu krok po kroku i okno terapeutyczne. Zobacz dane w czytelnej formie. Zapraszamy."
       path="/dla-pacjenta/hemoroidy-infografika"
     />
 

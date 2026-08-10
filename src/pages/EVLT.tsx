@@ -53,7 +53,7 @@ const EVLT = () => (
   <div className="min-h-screen bg-background pt-20">
     <SeoHead
       title="EVLT w CML | Laserowe leczenie żylaków nóg | Warszawa"
-      description="EVLT to endowenozna ablacja laserowa żylaków: zabieg ambulatoryjny, bez narkozy i bez szwów. Szybki powrót do normalności. Umów konsultację w CML."
+      description="EVLT to endowenozna ablacja laserowa żylaków: zabieg ambulatoryjny, bez narkozy i bez szwów. Szybki powrót do normalności. Umów konsultację w CML. Zapraszamy."
       path="/leczenie/evlt"
     />
     <MedicalWebPageSchema

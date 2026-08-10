@@ -112,7 +112,7 @@ const ZaleceniaPoPlastyce = () => {
     <>
       <SeoHead
         title="Zalecenia po plastyce odbytu | Rekonwalescencja | CML"
-        description="Higiena rany, kąpiele nasiadowe, dieta bogatoresztkowa, aktywność i sygnały alarmowe po laserowej plastyce okolicy odbytu. Poradnik proktologów CML."
+        description="Higiena rany, kąpiele nasiadowe, dieta bogatoresztkowa, aktywność i sygnały alarmowe po laserowej plastyce okolicy odbytu. Poradnik proktologów CML. Zapraszamy."
         path="/dla-pacjenta/zalecenia-po-plastyce"
       />
 

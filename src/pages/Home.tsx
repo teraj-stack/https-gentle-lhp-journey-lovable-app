@@ -19,7 +19,7 @@ const Home = () => (
   <div className="min-h-screen pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-0">
     <SeoHead
       title="CML Warszawa | Laserowe leczenie hemoroidów i żylaków"
-      description="Laserowe leczenie hemoroidów, żylaków, przetok i szczeliny odbytu w Warszawie Wilanów. Dyskrecja, krótka rekonwalescencja. Umów konsultację w CML."
+      description="Laserowe leczenie hemoroidów, żylaków, przetok i szczeliny odbytu w Warszawie Wilanów. Dyskrecja, krótka rekonwalescencja. Umów konsultację w CML. Zapraszamy."
       path="/"
       type="website"
     />

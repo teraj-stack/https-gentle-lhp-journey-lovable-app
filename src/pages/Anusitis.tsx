@@ -36,7 +36,7 @@ const Anusitis = () => (
     <div className="min-h-screen pt-20">
       <SeoHead
         title="Anusitis w CML | Leczenie zapalenia odbytu | Warszawa"
-        description="Zapalenie odbytu (anusitis) leczymy ambulatoryjnie: diagnostyka przyczyn i celowana farmakoterapia, bez chirurgii. Umów konsultację w CML Warszawa."
+        description="Zapalenie odbytu (anusitis) leczymy ambulatoryjnie: diagnostyka przyczyn i celowana farmakoterapia, bez chirurgii. Umów konsultację w CML Warszawa. Zapraszamy."
         path="/leczenie/anusitis"
       />
       <MedicalWebPageSchema

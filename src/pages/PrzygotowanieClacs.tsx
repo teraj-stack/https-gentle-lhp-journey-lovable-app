@@ -77,8 +77,8 @@ const PrzygotowanieClacs = () => (
     procedureName="CLaCS"
     procedureHref="/leczenie/clacs"
     recoveryHref="/dla-pacjenta/zalecenia-po-clacs"
-    seoTitle="Przygotowanie do zabiegu CLaCS | Checklista | CML"
-    seoDescription="Opalanie, kosmetyki, leki i ubranie — o czym pamiętać przed hybrydowym usuwaniem pajączków metodą CLaCS. Checklista flebologów CML Warszawa Wilanów."
+    seoTitle="Przygotowanie do zabiegu CLaCS | Checklista | CML Wilanów"
+    seoDescription="Opalanie, kosmetyki, leki i ubranie — o czym pamiętać przed hybrydowym usuwaniem pajączków metodą CLaCS. Checklista flebologów CML Warszawa Wilanów. Zapraszamy."
     path="/dla-pacjenta/przygotowanie-clacs"
     intro="CLaCS to hybrydowa metoda usuwania pajączków łącząca laser przezskórny, krioterapię powietrzną i mikroskleroterapię. Te kilka kroków pomoże nam uzyskać najczystsze efekty."
     sections={sections}

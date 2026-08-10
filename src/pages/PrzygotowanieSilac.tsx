@@ -77,7 +77,7 @@ const PrzygotowanieSilac = () => (
     procedureName="SiLaC"
     procedureHref="/leczenie/silac"
     recoveryHref="/dla-pacjenta/zalecenia-po-silac"
-    seoTitle="Przygotowanie do zabiegu SiLaC | Checklista | CML"
+    seoTitle="Przygotowanie do zabiegu SiLaC | Checklista | CML Wilanów"
     seoDescription="Nawodnienie, brak golenia okolicy zatoki, luźne ubranie i dokumenty — checklista przed laserowym zamknięciem torbieli pilonidalnej SiLaC w CML Warszawa."
     path="/dla-pacjenta/przygotowanie-silac"
     intro="SiLaC trwa około 30 minut, a Twoje przygotowanie jest minimalistyczne. Te kilka kroków sprawi, że zabieg pójdzie sprawnie, a regeneracja zatoki włosowej będzie szybsza."

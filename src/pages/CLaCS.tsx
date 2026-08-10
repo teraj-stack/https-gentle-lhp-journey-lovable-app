@@ -75,7 +75,7 @@ const CLaCS = () => (
   <div className="min-h-screen bg-background pt-20">
     <SeoHead
       title="CLaCS w CML | Usuwanie pajączków naczyniowych | Warszawa"
-      description="CLaCS łączy laser i krioterapię, usuwając pajączki naczyniowe skuteczniej niż pojedyncze metody. Szybki powrót do normalności. Umów wizytę w CML."
+      description="CLaCS łączy laser i krioterapię, usuwając pajączki naczyniowe skuteczniej niż pojedyncze metody. Szybki powrót do normalności. Umów wizytę w CML. Zapraszamy."
       path="/leczenie/clacs"
     />
     <MedicalWebPageSchema

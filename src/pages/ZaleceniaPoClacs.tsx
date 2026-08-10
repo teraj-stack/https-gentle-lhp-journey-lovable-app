@@ -108,7 +108,7 @@ const ZaleceniaPoClacs = () => {
     <>
       <SeoHead
         title="Zalecenia po zabiegu CLaCS | Rekonwalescencja | CML"
-        description="Kompresja, pielęgnacja skóry, ochrona przeciwsłoneczna i sygnały alarmowe po zabiegu CLaCS na pajączki naczyniowe. Poradnik flebologów CML Warszawa."
+        description="Kompresja, pielęgnacja skóry, ochrona przeciwsłoneczna i sygnały alarmowe po zabiegu CLaCS na pajączki naczyniowe. Poradnik flebologów CML Warszawa. Zapraszamy."
         path="/dla-pacjenta/zalecenia-po-clacs"
       />
 

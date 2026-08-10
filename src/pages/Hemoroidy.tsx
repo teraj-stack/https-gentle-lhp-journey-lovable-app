@@ -125,7 +125,7 @@ const Hemoroidy = () => {
   return (
   <div className="min-h-screen bg-background pt-20">
     <SeoHead
-      title="Hemoroidy od A do Z | Przewodnik pacjenta | CML"
+      title="Hemoroidy od A do Z | Przewodnik pacjenta | CML Wilanów"
       description="Skąd biorą się hemoroidy, jak rozpoznać stopnie choroby i czym różni się laser LHP od klasycznej operacji. Przewodnik dr. Jana Bujoka dla pacjentów CML."
       path="/dla-pacjenta/hemoroidy"
     />

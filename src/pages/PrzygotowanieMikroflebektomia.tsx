@@ -78,7 +78,7 @@ const PrzygotowanieMikroflebektomia = () => (
     procedureHref="/leczenie/mikroflebektomia"
     recoveryHref="/dla-pacjenta/zalecenia-po-mikroflebektomii"
     seoTitle="Przygotowanie do mikroflebektomii | Checklista | CML"
-    seoDescription="Leki, posiłek, higiena nóg i pończochy uciskowe — praktyczna checklista przed mikroflebektomią piankową żylaków. Wskazówki flebologów CML Warszawa."
+    seoDescription="Leki, posiłek, higiena nóg i pończochy uciskowe — praktyczna checklista przed mikroflebektomią piankową żylaków. Wskazówki flebologów CML Warszawa. Zapraszamy."
     path="/dla-pacjenta/przygotowanie-mikroflebektomia"
     intro="Mikroflebektomia piankowa to małoinwazyjne usunięcie żylaków przez mikronakłucia. Te proste kroki przed zabiegiem zapewnią sterylność, precyzję i komfort regeneracji."
     sections={sections}

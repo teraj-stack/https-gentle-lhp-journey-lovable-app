@@ -79,7 +79,7 @@ const Proktologia = () => {
   return (
     <div className="min-h-screen bg-background pt-20">
       <SeoHead
-        title="Proktologia laserowa w CML | Zabiegi w Warszawie"
+        title="Proktologia laserowa w CML | Zabiegi w Warszawie Wilanów"
         description="Hemoroidy, przetoki, szczelina i torbiel pilonidalna — leczenie laserowe LHP, FiLaC i SiLaC bez skalpela. Szybki powrót do normalności. Umów wizytę w CML."
         path="/leczenie/proktologia"
       />

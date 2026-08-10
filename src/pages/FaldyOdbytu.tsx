@@ -29,7 +29,7 @@ const FaldyOdbytu = () => (
   <div className="min-h-screen pt-20">
     <SeoHead
       title="Fałdy okolicy odbytu | Norma czy wskazanie do zabiegu"
-      description="Fałdy brzeżne odbytu: skąd się biorą, kiedy są wariantem anatomii, a kiedy warto je usunąć. Rzetelna wiedza bez oceniania — poradnik CML Warszawa."
+      description="Fałdy brzeżne odbytu: skąd się biorą, kiedy są wariantem anatomii, a kiedy warto je usunąć. Rzetelna wiedza bez oceniania — poradnik CML Warszawa. Zapraszamy."
       path="/dla-pacjenta/faldy-odbytu"
     />
     <MedicalWebPageSchema
