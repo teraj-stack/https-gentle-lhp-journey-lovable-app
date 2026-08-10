@@ -80,7 +80,9 @@ export default defineConfig(({ mode }) => ({
           if (id.includes("@supabase")) return "vendor-supabase";
           if (id.includes("@radix-ui")) return "vendor-radix";
           if (id.includes("@tanstack")) return "vendor-query";
-          return "vendor";
+          // Everything else keeps Rollup's default per-import chunking so heavy,
+          // route-only libs (recharts, jspdf, html2canvas) stay lazy.
+          return undefined;
         },
       },
     },
