@@ -46,8 +46,8 @@ const LHP = () => {
   return (
     <div className="min-h-screen bg-background pt-20">
       <SeoHead
-        title="LHP w CML | Laserowe leczenie hemoroidów | Warszawa"
-        description="Laserowa plastyka hemoroidów LHP bez skalpela i bez szwów, w znieczuleniu miejscowym. Szybki powrót do normalności. Umów konsultację w CML Warszawa. Zapraszamy."
+        title="Hemoroidy: leczenie laserem w Warszawie | LHP w CML"
+        description="Hemoroidy — leczenie laserem w Warszawie bez skalpela i bez szwów. Metoda LHP szybko uwalnia od bólu, w znieczuleniu miejscowym. Umów konsultację w CML Wilanów."
         path="/leczenie/lhp"
       />
       <MedicalWebPageSchema
@@ -98,7 +98,7 @@ const LHP = () => {
 
         <motion.section {...sectionAnim}>
           <h2 className="section-title mb-3">
-            3. Rozbrojenie bomby: Pierwszy Stolec
+            3. Hemoroidy a ból — jak szybko przynieść ulgę po zabiegu
           </h2>
           <p className="section-subtitle mb-8">
             Wiemy, że boisz się pierwszej wizyty w toalecie. Nie zostawimy Cię z tym samego. Przygotowaliśmy precyzyjny "Zestaw Ratunkowy", który zamienia wielką niewiadomą w zarządzalny proces.

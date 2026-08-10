@@ -13,12 +13,11 @@ const FiLaCHero = () => (
         Proktologia laserowa
       </p>
       <h1 className="text-3xl md:text-5xl font-bold text-primary-foreground mb-4 leading-tight">
-        FiLaC — Laserowe zamykanie przetok
+        Przetoki analne — kiedy operacja? Laserowe zamykanie FiLaC
       </h1>
       <div className="w-16 h-0.5 mx-auto bg-primary-foreground/30 mb-6" />
       <p className="text-primary-foreground/90 text-base md:text-lg leading-relaxed max-w-2xl mx-auto">
-        Fistula Laser Closure — precyzyjna energia lasera 1470 nm zamyka kanał przetoki od wewnątrz, 
-        chroniąc zwieracze i skracając rekonwalescencję do minimum.
+        Przetoka odbytu nie zagoi się sama — pytanie brzmi tylko, kiedy i jaką metodą ją zamknąć. FiLaC (Fistula Laser Closure) wykorzystuje energię lasera 1470 nm, która zamyka kanał przetoki od wewnątrz, chroniąc zwieracze i skracając rekonwalescencję do minimum.
       </p>
       <div className="flex justify-center gap-4 md:gap-8 mt-8 px-4">
         <div className="text-center min-w-0">

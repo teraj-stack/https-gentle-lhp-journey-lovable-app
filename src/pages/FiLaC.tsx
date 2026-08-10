@@ -46,8 +46,8 @@ const fadeUp = {
 const FiLaC = () => (
     <div className="min-h-screen bg-background pt-20">
       <SeoHead
-        title="FiLaC w CML | Leczenie przetok odbytu laserem | Warszawa"
-        description="FiLaC zamyka przetokę odbytu laserem, bez rozcinania zwieraczy i ryzyka nietrzymania stolca. Szybki powrót do normalności. Umów konsultację w CML. Zapraszamy."
+        title="Przetoki analne: kiedy operacja? FiLaC w CML Warszawa"
+        description="Przetoki analne — kiedy operacja jest konieczna i jak wygląda leczenie laserem FiLaC bez rozcinania zwieraczy. Umów konsultację proktologiczną w CML Warszawa."
         path="/leczenie/filac"
       />
       <MedicalWebPageSchema

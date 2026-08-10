@@ -65,8 +65,8 @@ const Flebologia = () => {
   return (
     <div className="min-h-screen bg-background pt-20">
       <SeoHead
-        title="Flebologia laserowa w CML | Leczenie żylaków | Warszawa"
-        description="Żylaki i pajączki: EVLT, skleroterapia, CLaCS i mikroflebektomia — minimalnie inwazyjnie, bez blizn. Szybki powrót do normalności. Umów wizytę w CML Wilanów."
+        title="Żylaki nóg: jak się pozbyć? Flebologia CML Warszawa"
+        description="Żylaki nóg — jak się ich pozbyć bez operacji: EVLT, skleroterapia, CLaCS i mikroflebektomia. Minimalnie inwazyjnie, bez blizn. Umów wizytę w CML Wilanów."
         path="/leczenie/flebologia"
       />
       <MedicalWebPageSchema
@@ -94,8 +94,8 @@ const Flebologia = () => {
               Flebologia <span className="italic text-primary">laserowa</span>
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground leading-relaxed max-w-2xl">
-              Kompleksowe leczenie żylaków i pajączków żylnych nowoczesnymi, minimalnie inwazyjnymi metodami.
-              Bez strippingu, bez blizn — z szybkim powrotem do aktywności.
+              Żylaki nóg — jak się ich pozbyć? Leczymy żylaki i pajączki żylne nowoczesnymi, minimalnie
+              inwazyjnymi metodami. Bez strippingu, bez blizn — z szybkim powrotem do aktywności.
             </p>
           </motion.div>
         </div>

@@ -10,14 +10,14 @@ export const SEO_META = {
       "Laserowe leczenie hemoroidów, żylaków, przetok i szczeliny odbytu w Warszawie Wilanów. Dyskrecja, krótka rekonwalescencja. Umów konsultację w CML. Zapraszamy.",
   },
   "/leczenie/lhp": {
-    title: "LHP w CML | Laserowe leczenie hemoroidów | Warszawa",
+    title: "Hemoroidy: leczenie laserem w Warszawie | LHP w CML",
     description:
-      "Laserowa plastyka hemoroidów LHP bez skalpela i bez szwów, w znieczuleniu miejscowym. Szybki powrót do normalności. Umów konsultację w CML Warszawa. Zapraszamy.",
+      "Hemoroidy — leczenie laserem w Warszawie bez skalpela i bez szwów. Metoda LHP szybko uwalnia od bólu, w znieczuleniu miejscowym. Umów konsultację w CML Wilanów.",
   },
   "/leczenie/filac": {
-    title: "FiLaC w CML | Leczenie przetok odbytu laserem | Warszawa",
+    title: "Przetoki analne: kiedy operacja? FiLaC w CML Warszawa",
     description:
-      "FiLaC zamyka przetokę odbytu laserem, bez rozcinania zwieraczy i ryzyka nietrzymania stolca. Szybki powrót do normalności. Umów konsultację w CML. Zapraszamy.",
+      "Przetoki analne — kiedy operacja jest konieczna i jak wygląda leczenie laserem FiLaC bez rozcinania zwieraczy. Umów konsultację proktologiczną w CML Warszawa.",
   },
   "/leczenie/silac": {
     title: "SiLaC w CML | Leczenie torbieli pilonidalnej | Warszawa",
@@ -25,9 +25,9 @@ export const SEO_META = {
       "SiLaC zamyka torbiel pilonidalną laserem przez nakłucie 2–3 mm, bez rozległej rany i blizny. Szybki powrót do normalności. Umów konsultację w CML. Zapraszamy.",
   },
   "/leczenie/evlt": {
-    title: "EVLT w CML | Laserowe leczenie żylaków nóg | Warszawa",
+    title: "Żylaki nóg: jak się pozbyć? EVLT laser w CML Warszawa",
     description:
-      "EVLT to endowenozna ablacja laserowa żylaków: zabieg ambulatoryjny, bez narkozy i bez szwów. Szybki powrót do normalności. Umów konsultację w CML. Zapraszamy.",
+      "Żylaki nóg — jak się ich pozbyć bez operacji? EVLT to laserowe zamknięcie chorej żyły: bez narkozy, bez szwów, ambulatoryjnie. Umów konsultację w CML Warszawa.",
   },
   "/leczenie/skleroterapia": {
     title: "Skleroterapia w CML | Leczenie żylaków bez operacji",
@@ -70,14 +70,14 @@ export const SEO_META = {
       "Fotobiomodulacja LED przyspiesza gojenie po zabiegach laserowych i wspiera redukcję naczynek — bezboleśnie i bez rekonwalescencji. Umów wizytę w CML Warszawa.",
   },
   "/leczenie/proktologia": {
-    title: "Proktologia laserowa w CML | Zabiegi laserowe w Warszawie",
+    title: "Hemoroidy i przetoki: leczenie laserem | CML Warszawa",
     description:
-      "Hemoroidy, przetoki, szczelina i torbiel pilonidalna — leczenie laserowe LHP, FiLaC i SiLaC bez skalpela. Szybki powrót do normalności. Umów wizytę w CML.",
+      "Hemoroidy, przetoki analne, szczelina i torbiel pilonidalna — leczenie laserem w Warszawie metodami LHP, FiLaC i SiLaC, bez skalpela. Umów wizytę w CML Wilanów.",
   },
   "/leczenie/flebologia": {
-    title: "Flebologia laserowa w CML | Leczenie żylaków | Warszawa",
+    title: "Żylaki nóg: jak się pozbyć? Flebologia CML Warszawa",
     description:
-      "Żylaki i pajączki: EVLT, skleroterapia, CLaCS i mikroflebektomia — minimalnie inwazyjnie, bez blizn. Szybki powrót do normalności. Umów wizytę w CML Wilanów.",
+      "Żylaki nóg — jak się ich pozbyć bez operacji: EVLT, skleroterapia, CLaCS i mikroflebektomia. Minimalnie inwazyjnie, bez blizn. Umów wizytę w CML Wilanów.",
   },
   "/leczenie/ginekomastia": {
     title: "Ginekomastia w CML | Leczenie chirurgiczne | Warszawa",

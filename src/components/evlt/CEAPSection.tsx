@@ -24,7 +24,7 @@ const CEAPSection = ({ fadeUp }: Props) => (
     <div className="glass-card rounded-2xl p-6 md:p-10 max-w-3xl mx-auto">
       <ResponsiveImage
         picture={ceapSkalaPicture}
-        alt="Skala CEAP — ocena kliniczna niewydolności żylnej od C1 (pajączki naczyniowe) do C6 (aktywne owrzodzenie)"
+        alt="Żylaki nóg — jak się pozbyć: skala CEAP od C1 (pajączki naczyniowe) do C6 (aktywne owrzodzenie) w ocenie niewydolności żylnej"
         sizes="(min-width: 768px) 704px, 100vw"
         className="block mb-8"
         imgClassName="w-full h-auto rounded-xl"
