@@ -36,7 +36,7 @@ const fadeUp = {
 const SpazmLonowoodbytniczy = () => (
   <div className="min-h-screen pt-20">
     <SeoHead
-      title="Spazm w CML | Leczenie przewlekłego bólu odbytu Wilanów"
+      title="Spazm w CML | Leczenie przewlekłego bólu odbytu | Warszawa"
       description="Przewlekły ból odbytu ze spazmu mięśnia łonowo-odbytniczego: diagnostyka, botoks, fizjoterapia i leki. Ulga bez operacji. Umów konsultację w CML Warszawa."
       path="/leczenie/spazm-lonowoodbytniczy"
     />

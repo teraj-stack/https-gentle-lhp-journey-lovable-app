@@ -271,7 +271,7 @@ const EbmHemoroidy = () => {
   return (
     <>
       <SeoHead
-        title="Hemoroidy w świetle badań (EBM) | Ryzyko i profilaktyka"
+        title="Hemoroidy w badaniach EBM | Ryzyko i profilaktyka | CML"
         description="Sześć czynników ryzyka i sześć filarów profilaktyki hemoroidów z odnośnikami do PubMed, ASCRS, ESCP i Cochrane. Kompendium Evidence-Based Medicine CML."
         path="/dla-pacjenta/ebm-hemoroidy"
       />

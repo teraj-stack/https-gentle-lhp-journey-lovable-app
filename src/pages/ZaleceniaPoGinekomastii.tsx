@@ -114,7 +114,7 @@ const ZaleceniaPoGinekomastii = () => {
   return (
     <>
       <SeoHead
-        title="Zalecenia po zabiegu ginekomastii | Rekonwalescencja"
+        title="Zalecenia po ginekomastii | Rekonwalescencja | CML"
         description="Kamizelka uciskowa, pielęgnacja ran, powrót do treningu i sygnały alarmowe po korekcji ginekomastii metodą Vaser Lipo HD. Poradnik chirurgów CML Warszawa."
         path="/dla-pacjenta/zalecenia-po-ginekomastii"
       />

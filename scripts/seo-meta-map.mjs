@@ -60,7 +60,7 @@ export const SEO_META = {
       "Zapalenie odbytu (anusitis) leczymy ambulatoryjnie: diagnostyka przyczyn i celowana farmakoterapia, bez chirurgii. Umów konsultację w CML Warszawa. Zapraszamy.",
   },
   "/leczenie/spazm-lonowoodbytniczy": {
-    title: "Spazm w CML | Leczenie przewlekłego bólu odbytu Wilanów",
+    title: "Spazm w CML | Leczenie przewlekłego bólu odbytu | Warszawa",
     description:
       "Przewlekły ból odbytu ze spazmu mięśnia łonowo-odbytniczego: diagnostyka, botoks, fizjoterapia i leki. Ulga bez operacji. Umów konsultację w CML Warszawa.",
   },
@@ -70,7 +70,7 @@ export const SEO_META = {
       "Fotobiomodulacja LED przyspiesza gojenie po zabiegach laserowych i wspiera redukcję naczynek — bezboleśnie i bez rekonwalescencji. Umów wizytę w CML Warszawa.",
   },
   "/leczenie/proktologia": {
-    title: "Proktologia laserowa w CML | Zabiegi w Warszawie Wilanów",
+    title: "Proktologia laserowa w CML | Zabiegi laserowe w Warszawie",
     description:
       "Hemoroidy, przetoki, szczelina i torbiel pilonidalna — leczenie laserowe LHP, FiLaC i SiLaC bez skalpela. Szybki powrót do normalności. Umów wizytę w CML.",
   },
@@ -90,12 +90,12 @@ export const SEO_META = {
       "Prawdziwa ginekomastia gruczołowa: chirurgiczne usunięcie rozrośniętego gruczołu z dyskretnym cięciem i trwałym efektem. Umów konsultację w CML Warszawa.",
   },
   "/leczenie/ginekomastia-tluszczowa": {
-    title: "Ginekomastia tłuszczowa w CML | Vaser Lipo HD Wilanów",
+    title: "Ginekomastia tłuszczowa w CML | Vaser Lipo HD | Warszawa",
     description:
       "Pseudoginekomastia: liposukcja ultradźwiękowa Vaser Lipo HD modeluje klatkę piersiową bez blizn. Szybki powrót do formy. Umów konsultację w CML Warszawa.",
   },
   "/leczenie/ginekomastia-mieszana": {
-    title: "Ginekomastia mieszana w CML | Vaser i wycięcie Wilanów",
+    title: "Ginekomastia mieszana w CML | Vaser i wycięcie | Warszawa",
     description:
       "Ginekomastia mieszana: liposukcja Vaser Lipo HD i wycięcie gruczołu w jednej sesji, trwały i naturalny efekt. Umów konsultację w CML Warszawa Wilanów.",
   },
@@ -150,7 +150,7 @@ export const SEO_META = {
       "Sześć filarów profilaktyki żylaków: ruch, kompresja, waga, dieta, praca stojąca i sygnały ostrzegawcze. Praktyczny przewodnik flebologów CML Warszawa.",
   },
   "/dla-pacjenta/faldy-odbytu": {
-    title: "Fałdy okolicy odbytu | Norma czy wskazanie do zabiegu",
+    title: "Fałdy okolicy odbytu | Norma czy zabieg? | CML Warszawa",
     description:
       "Fałdy brzeżne odbytu: skąd się biorą, kiedy są wariantem anatomii, a kiedy warto je usunąć. Rzetelna wiedza bez oceniania — poradnik CML Warszawa. Zapraszamy.",
   },
@@ -160,7 +160,7 @@ export const SEO_META = {
       "Oś czasu aplikacji kremu, cztery złote zasady bezpieczeństwa i objawy wymagające kontaktu z lekarzem po laserze Nd:YAG. Instrukcja krok po kroku od CML.",
   },
   "/dla-pacjenta/edukacja": {
-    title: "Edukacja przed wizytą | Jak przygotować się do wizyty",
+    title: "Edukacja przed wizytą u proktologa | Poradnik CML Wilanów",
     description:
       "Przygotowanie merytoryczne skraca konsultację i podnosi jakość leczenia. Zobacz, co warto wiedzieć przed wizytą u proktologa lub flebologa w CML Warszawa.",
   },
@@ -170,7 +170,7 @@ export const SEO_META = {
       "Jak wygląda badanie proktologiczne, czy boli, jak się przygotować i jakie są metody leczenia hemoroidów. Odpowiedzi specjalistów CML Warszawa Wilanów.",
   },
   "/dla-pacjenta/ebm-hemoroidy": {
-    title: "Hemoroidy w świetle badań (EBM) | Ryzyko i profilaktyka",
+    title: "Hemoroidy w badaniach EBM | Ryzyko i profilaktyka | CML",
     description:
       "Sześć czynników ryzyka i sześć filarów profilaktyki hemoroidów z odnośnikami do PubMed, ASCRS, ESCP i Cochrane. Kompendium Evidence-Based Medicine CML.",
   },
@@ -185,7 +185,7 @@ export const SEO_META = {
       "Codzienny quiz, notatki i wykres trendu ryzyka przez 14 dni — zobacz, co realnie poprawia objawy. Bez konta, dane zapisują się lokalnie w przeglądarce.",
   },
   "/wiedza/seks-analny-a-hemoroidy": {
-    title: "Seks analny a hemoroidy | Fakty i mity w świetle EBM",
+    title: "Seks analny a hemoroidy | Fakty i mity (EBM) | CML",
     description:
       "Czy seks analny powoduje hemoroidy? Analiza badań, profilaktyka, lubrykanty i powrót do aktywności po zabiegu. Rzetelny raport specjalistów CML Warszawa.",
   },
@@ -290,7 +290,7 @@ export const SEO_META = {
       "Higiena rany, kąpiele nasiadowe, dieta bogatoresztkowa, aktywność i sygnały alarmowe po laserowej plastyce okolicy odbytu. Poradnik proktologów CML. Zapraszamy.",
   },
   "/dla-pacjenta/zalecenia-po-ginekomastii": {
-    title: "Zalecenia po zabiegu ginekomastii | Rekonwalescencja",
+    title: "Zalecenia po ginekomastii | Rekonwalescencja | CML",
     description:
       "Kamizelka uciskowa, pielęgnacja ran, powrót do treningu i sygnały alarmowe po korekcji ginekomastii metodą Vaser Lipo HD. Poradnik chirurgów CML Warszawa.",
   },
@@ -300,7 +300,7 @@ export const SEO_META = {
       "Jak CML przetwarza dane osobowe pacjentów zgodnie z RODO: cele, podstawy prawne, okresy przechowywania, pliki cookie i Twoje prawa. Sprawdź szczegóły.",
   },
   "/regulamin": {
-    title: "Regulamin usług | CML Centrum Medycyny Laserowej Wilanów",
+    title: "Regulamin usług | CML Centrum Medycyny Laserowej Warszawa",
     description:
       "Warunki świadczenia usług medycznych w CML: zasady umawiania i odwoływania wizyt, płatności, reklamacje oraz prawa pacjenta. Zapoznaj się przed wizytą.",
   },

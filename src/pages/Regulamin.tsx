@@ -5,7 +5,7 @@ import SeoHead from "@/components/shared/SeoHead";
 const Regulamin = () => (
   <div className="min-h-screen pt-20">
     <SeoHead
-      title="Regulamin usług | CML Centrum Medycyny Laserowej Wilanów"
+      title="Regulamin usług | CML Centrum Medycyny Laserowej Warszawa"
       description="Warunki świadczenia usług medycznych w CML: zasady umawiania i odwoływania wizyt, płatności, reklamacje oraz prawa pacjenta. Zapoznaj się przed wizytą."
       path="/regulamin"
     />
