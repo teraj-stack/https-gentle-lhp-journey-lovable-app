@@ -23,8 +23,8 @@ const QuizHemoroidy = () => {
   return (
     <>
       <SeoHead
-        title="Test ryzyka hemoroidów — quiz 9 pytań | CML"
-        description="Sprawdź swoje ryzyko hemoroidów w 2 minuty. 9 pytań o styl życia (błonnik, zaparcia, woda, toaleta, telefon, ruch, siedzenie, ciąża/BMI, objawy), 3 poziomy ryzyka i dopasowane zalecenia EBM."
+        title="Test ryzyka hemoroidów | Quiz 9 pytań online | CML"
+        description="Sprawdź ryzyko hemoroidów w 2 minuty: 9 pytań o styl życia, trzy poziomy ryzyka i zalecenia oparte na badaniach. Bez konta, dane zostają w przeglądarce."
         path="/dla-pacjenta/quiz-hemoroidy"
       />
       <MedicalWebPageSchema

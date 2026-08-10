@@ -94,8 +94,8 @@ const PrzygotowanieEVLT = () => {
   return (
     <>
       <SeoHead
-        title="Przygotowanie do zabiegu EVLT – laserowe usuwanie żylaków"
-        description="Jak przygotować się do zabiegu EVLT (laserowego usuwania żylaków) w znieczuleniu miejscowym. Praktyczna checklista i wskazówki od specjalisty."
+        title="Przygotowanie do zabiegu EVLT | Checklista | CML"
+        description="Jak przygotować się do laserowego usuwania żylaków EVLT w znieczuleniu miejscowym: leki, posiłek, ubranie i pończochy. Checklista specjalistów CML Warszawa."
         path="/dla-pacjenta/przygotowanie-evlt"
       />
 

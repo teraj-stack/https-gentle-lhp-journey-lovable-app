@@ -109,8 +109,8 @@ const ZaleceniaPoLHP = () => {
   return (
     <>
       <SeoHead
-        title="Zalecenia po zabiegu LHP – rekonwalescencja krok po kroku"
-        description="Praktyczne wskazówki po laserowym leczeniu hemoroidów LHP. Higiena, dieta, aktywność, sygnały alarmowe. Poradnik od specjalisty."
+        title="Zalecenia po zabiegu LHP | Rekonwalescencja | CML"
+        description="Higiena, dieta, leki przeciwbólowe, aktywność i sygnały alarmowe po laserowym leczeniu hemoroidów LHP. Poradnik rekonwalescencji od specjalistów CML."
         path="/dla-pacjenta/zalecenia-po-lhp"
       />
 

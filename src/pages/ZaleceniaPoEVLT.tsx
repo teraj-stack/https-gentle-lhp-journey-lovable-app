@@ -107,8 +107,8 @@ const ZaleceniaPoEVLT = () => {
   return (
     <>
       <SeoHead
-        title="Zalecenia po zabiegu EVLT – rekonwalescencja krok po kroku"
-        description="Praktyczne wskazówki po laserowym usuwaniu żylaków EVLT. Kompresja, aktywność, pielęgnacja, sygnały alarmowe. Poradnik od specjalisty."
+        title="Zalecenia po zabiegu EVLT | Rekonwalescencja | CML"
+        description="Kompresja, spacery, praca, kąpiele i sygnały alarmowe po laserowym usuwaniu żylaków EVLT. Praktyczny poradnik rekonwalescencji od flebologów CML Warszawa."
         path="/dla-pacjenta/zalecenia-po-evlt"
       />
 

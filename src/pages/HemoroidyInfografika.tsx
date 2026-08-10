@@ -25,8 +25,8 @@ const sectionAnim = {
 const HemoroidyInfografika = () => (
   <>
     <SeoHead
-      title="Hemoroidy od A do Z – Infografika"
-      description="Kompleksowy przewodnik po nowoczesnym leczeniu hemoroidów. Laser vs. metody klasyczne — porównanie, procedura krok po kroku, okno terapeutyczne."
+      title="Hemoroidy — infografika | Laser vs operacja | CML"
+      description="Infografika CML: porównanie lasera LHP z metodami klasycznymi, przebieg zabiegu krok po kroku i okno terapeutyczne. Zobacz dane w czytelnej formie."
       path="/dla-pacjenta/hemoroidy-infografika"
     />
 

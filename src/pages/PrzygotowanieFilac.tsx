@@ -77,8 +77,8 @@ const PrzygotowanieFilac = () => (
     procedureName="FiLaC"
     procedureHref="/leczenie/filac"
     recoveryHref="/dla-pacjenta/zalecenia-po-filac"
-    seoTitle="Przygotowanie do zabiegu FiLaC – CML"
-    seoDescription="Jak przygotować się do laserowego leczenia przetoki okołoodbytniczej (FiLaC) — checklista krok po kroku."
+    seoTitle="Przygotowanie do zabiegu FiLaC | Checklista | CML"
+    seoDescription="Badania, leki, dieta i higiena okolicy przed laserowym zamknięciem przetoki FiLaC — checklista krok po kroku od specjalistów CML w Warszawie Wilanowie."
     path="/dla-pacjenta/przygotowanie-filac"
     intro="Krótka, jasna lista kroków, które zapewnią bezpieczny i komfortowy zabieg laserowego zamknięcia przetoki (FiLaC). Wszystko, co warto zrobić w tygodniu, dniu i poranku przed zabiegiem."
     sections={sections}

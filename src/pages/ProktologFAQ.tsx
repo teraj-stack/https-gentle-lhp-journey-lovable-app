@@ -140,8 +140,8 @@ faqSchema.mainEntity = qaItems.map((item, i) => ({
 const ProktologFAQ = () => (
   <div className="min-h-screen bg-background pt-20">
     <SeoHead
-      title="Jak przygotować się do wizyty u proktologa"
-      description="Najczęstsze pytania o wizytę proktologiczną. Dowiedz się jak wygląda badanie, czym są hemoroidy i jakie są metody leczenia."
+      title="Wizyta u proktologa | Najczęstsze pytania | CML"
+      description="Jak wygląda badanie proktologiczne, czy boli, jak się przygotować i jakie są metody leczenia hemoroidów. Odpowiedzi specjalistów CML Warszawa Wilanów."
       path="/dla-pacjenta/proktolog-faq"
     />
     <script

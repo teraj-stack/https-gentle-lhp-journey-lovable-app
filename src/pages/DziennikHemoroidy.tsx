@@ -16,8 +16,8 @@ const DziennikHemoroidy = () => {
   return (
     <>
       <SeoHead
-        title="Dziennik 14 dni — hemoroidy | śledź trend ryzyka | CML"
-        description="14-dniowy dziennik objawów i nawyków: codzienny quiz 9 pytań, miejsce na notatki, przycisk zapisu dnia, wykres trendu ryzyka. Dane lokalnie w przeglądarce — bez konta."
+        title="Dziennik hemoroidów 14 dni | Śledź trend objawów | CML"
+        description="Codzienny quiz, notatki i wykres trendu ryzyka przez 14 dni — zobacz, co realnie poprawia objawy. Bez konta, dane zapisują się lokalnie w przeglądarce."
         path="/dla-pacjenta/dziennik-hemoroidy"
       />
       <MedicalWebPageSchema

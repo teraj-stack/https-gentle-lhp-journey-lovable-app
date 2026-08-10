@@ -60,8 +60,8 @@ const packageItems = [
 const Mikroflebektomia = () => (
   <div className="min-h-screen bg-background pt-20">
     <SeoHead
-      title="Mikroflebektomia piankowa – usuwanie żylaków bez skalpela"
-      description="Mikroflebektomia piankowa w BM Clinic. Usuwanie dużych, wypukłych żylaków przez mikronakłucia 1–2 mm, bez narkozy, bez szwów. Warszawa."
+      title="Mikroflebektomia w CML | Usuwanie żylaków | Warszawa"
+      description="Mikroflebektomia piankowa usuwa duże, wypukłe żylaki przez nakłucia 1–2 mm, bez narkozy i szwów. Szybki powrót do normalności. Umów wizytę w CML."
       path="/leczenie/mikroflebektomia"
     />
     <MedicalWebPageSchema

@@ -108,8 +108,8 @@ const PrzygotowanieLHP = () => {
   return (
     <>
       <SeoHead
-        title="Przygotowanie do zabiegu LHP – laserowe leczenie hemoroidów"
-        description="Jak przygotować się do zabiegu LHP (laserowej plastyki hemoroidów). Praktyczna checklista, wskazówki żywieniowe i informacje od specjalisty."
+        title="Przygotowanie do zabiegu LHP | Checklista | CML"
+        description="Leki, dieta z błonnikiem, higiena i co zabrać ze sobą — praktyczna checklista przed laserową plastyką hemoroidów LHP. Wskazówki specjalistów CML Warszawa."
         path="/dla-pacjenta/przygotowanie-lhp"
       />
       <MedicalWebPageSchema

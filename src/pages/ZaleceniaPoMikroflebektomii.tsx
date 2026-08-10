@@ -111,8 +111,8 @@ const ZaleceniaPoMikroflebektomii = () => {
   return (
     <>
       <SeoHead
-        title="Zalecenia po mikroflebektomii – rekonwalescencja"
-        description="Praktyczne wskazówki po mikroflebektomii piankowej. Pończochy uciskowe, spacery, pielęgnacja nacięć, ochrona przed słońcem, sygnały alarmowe."
+        title="Zalecenia po mikroflebektomii | Rekonwalescencja | CML"
+        description="Pończochy uciskowe, spacery, pielęgnacja nakłuć, ochrona przed słońcem i sygnały alarmowe po mikroflebektomii piankowej. Poradnik flebologów CML Warszawa."
         path="/dla-pacjenta/zalecenia-po-mikroflebektomii"
       />
 

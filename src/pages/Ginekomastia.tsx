@@ -85,8 +85,8 @@ const advantages = [
 const Ginekomastia = () => (
   <div className="min-h-screen pt-20">
     <SeoHead
-      title="Ginekomastia – leczenie chirurgiczne powiększonych piersi u mężczyzn"
-      description="Skuteczne leczenie ginekomastii w CML Warszawa. Liposukcja ultradźwiękowa Vaser Lipo HD i wycięcie gruczołu piersiowego. Trwałe efekty, minimalne blizny, szybka rekonwalescencja."
+      title="Ginekomastia w CML | Leczenie chirurgiczne | Warszawa"
+      description="Korekcja ginekomastii metodą Vaser Lipo HD i wycięcie gruczołu piersiowego — trwały efekt, minimalne blizny. Szybki powrót do formy. Umów konsultację."
       path="/leczenie/ginekomastia"
     />
     <MedicalWebPageSchema

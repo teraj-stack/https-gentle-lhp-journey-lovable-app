@@ -138,8 +138,8 @@ const PielegnacjaNog = () => {
   return (
   <div className="min-h-screen bg-background pt-20">
     <SeoHead
-      title="Pielęgnacja nóg po zabiegu laserowym – instrukcja"
-      description="Jak prawidłowo pielęgnować nogi po zabiegu laserem Nd:YAG. Oś czasu aplikacji kremu, złote zasady bezpieczeństwa i objawy wymagające kontaktu z lekarzem."
+      title="Pielęgnacja nóg po zabiegu laserowym | Instrukcja CML"
+      description="Oś czasu aplikacji kremu, cztery złote zasady bezpieczeństwa i objawy wymagające kontaktu z lekarzem po laserze Nd:YAG. Instrukcja krok po kroku od CML."
       path="/dla-pacjenta/pielegnacja-nog"
     />
 

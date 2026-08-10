@@ -46,8 +46,8 @@ const faqItems = [
 const GinekomastiaMieszana = () => (
   <div className="min-h-screen pt-20">
     <SeoHead
-      title="Ginekomastia mieszana – liposukcja + wycięcie gruczołu piersiowego"
-      description="Kompleksowe leczenie ginekomastii mieszanej w CML Warszawa. Liposukcja ultradźwiękowa Vaser Lipo HD + chirurgiczne wycięcie gruczołu w jednej sesji. Trwałe efekty."
+      title="Ginekomastia mieszana w CML | Vaser i wycięcie"
+      description="Ginekomastia mieszana: liposukcja Vaser Lipo HD i wycięcie gruczołu w jednej sesji, trwały i naturalny efekt. Umów konsultację w CML Warszawa Wilanów."
       path="/leczenie/ginekomastia-mieszana"
     />
     <MedicalWebPageSchema

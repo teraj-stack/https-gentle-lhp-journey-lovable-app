@@ -46,8 +46,8 @@ const faqItems = [
 const GinekomastiaTluszczowa = () => (
   <div className="min-h-screen pt-20">
     <SeoHead
-      title="Ginekomastia tłuszczowa – liposukcja ultradźwiękowa Vaser Lipo HD"
-      description="Leczenie pseudoginekomastii (lipoginekomastii) liposukcją ultradźwiękową Vaser Lipo HD w CML Warszawa. Minimalne blizny, szybka rekonwalescencja, naturalny efekt."
+      title="Ginekomastia tłuszczowa w CML | Vaser Lipo HD"
+      description="Pseudoginekomastia: liposukcja ultradźwiękowa Vaser Lipo HD modeluje klatkę piersiową bez blizn. Szybki powrót do formy. Umów konsultację w CML Warszawa."
       path="/leczenie/ginekomastia-tluszczowa"
     />
     <MedicalWebPageSchema

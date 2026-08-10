@@ -46,8 +46,8 @@ const LHP = () => {
   return (
     <div className="min-h-screen bg-background pt-20">
       <SeoHead
-        title="LHP – Laserowe leczenie hemoroidów"
-        description="Laserowa plastyka hemoroidów (LHP) w CML. Bez skalpela, krótka rekonwalescencja. Umów konsultację w Warszawie Wilanów."
+        title="LHP w CML | Laserowe leczenie hemoroidów | Warszawa"
+        description="Laserowa plastyka hemoroidów LHP bez skalpela i bez szwów, w znieczuleniu miejscowym. Szybki powrót do normalności. Umów konsultację w CML Warszawa."
         path="/leczenie/lhp"
       />
       <MedicalWebPageSchema

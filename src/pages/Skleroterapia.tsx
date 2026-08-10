@@ -73,8 +73,8 @@ const Skleroterapia = () => {
   return (
     <div className="min-h-screen bg-background pt-20">
       <SeoHead
-        title="Skleroterapia piankowa żylaków"
-        description="Skleroterapia piankowa w CML – zamykanie żylaków bez operacji. Zabieg bezbolesny, natychmiastowy powrót do aktywności."
+        title="Skleroterapia w CML | Leczenie żylaków bez operacji"
+        description="Skleroterapia piankowa zamyka żylaki i pajączki bez operacji i bez znieczulenia, w kilkanaście minut. Szybki powrót do normalności. Umów wizytę w CML."
         path="/leczenie/skleroterapia"
       />
       <MedicalWebPageSchema

@@ -175,8 +175,8 @@ const ProfilaktykaZylakow = () => {
   return (
     <div className="min-h-screen bg-background pt-20">
       <SeoHead
-        title="Profilaktyka żylaków — jak dbać o nogi, by uniknąć żylaków | CML"
-        description="Praktyczny przewodnik profilaktyki żylaków: czynniki ryzyka, objawy ostrzegawcze, codzienne nawyki i metody leczenia. Opracowanie flebologów CML."
+        title="Profilaktyka żylaków | Jak uniknąć żylaków nóg | CML"
+        description="Sześć filarów profilaktyki żylaków: ruch, kompresja, waga, dieta, praca stojąca i sygnały ostrzegawcze. Praktyczny przewodnik flebologów CML Warszawa."
         path="/dla-pacjenta/profilaktyka-zylakow"
       />
       <MedicalWebPageSchema

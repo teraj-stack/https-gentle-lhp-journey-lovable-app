@@ -44,8 +44,8 @@ const clacsSteps = [
 const Pajaczki = () => (
   <div className="min-h-screen bg-background pt-20">
     <SeoHead
-      title="Pajączki naczyniowe – przyczyny i leczenie"
-      description="Wszystko o pajączkach naczyniowych: przyczyny, diagnostyka i nowoczesne metody leczenia laserowego. Skleroterapia i CLaCS w CML."
+      title="Pajączki naczyniowe | Przyczyny i leczenie | CML"
+      description="Dlaczego powstają pajączki naczyniowe, jak wygląda diagnostyka i które metody działają: skleroterapia i CLaCS. Poradnik flebologów CML Warszawa Wilanów."
       path="/dla-pacjenta/pajaczki"
     />
     <MedicalWebPageSchema

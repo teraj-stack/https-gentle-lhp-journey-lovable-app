@@ -109,8 +109,8 @@ const ZaleceniaPoSkleroterapii = () => {
   return (
     <>
       <SeoHead
-        title="Zalecenia po skleroterapii żylaków – rekonwalescencja"
-        description="Praktyczne wskazówki po skleroterapii żylaków i pajączków. Pończochy uciskowe, spacery, higiena, ochrona przed słońcem, sygnały alarmowe."
+        title="Zalecenia po skleroterapii | Rekonwalescencja | CML"
+        description="Pończochy uciskowe, spacery, higiena, ochrona przed słońcem i sygnały alarmowe po skleroterapii żylaków i pajączków. Poradnik flebologów CML Warszawa."
         path="/dla-pacjenta/zalecenia-po-skleroterapii"
       />
 

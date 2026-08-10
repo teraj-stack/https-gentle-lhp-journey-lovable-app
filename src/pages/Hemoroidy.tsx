@@ -125,8 +125,8 @@ const Hemoroidy = () => {
   return (
   <div className="min-h-screen bg-background pt-20">
     <SeoHead
-      title="Hemoroidy od A do Z — Kompleksowy Przewodnik Pacjenta"
-      description="Mechanizm choroby hemoroidalnej, stopnie zaawansowania, porównanie metod leczenia (laser LHP vs klasyka) i styl życia. Dr Jan Bujok."
+      title="Hemoroidy od A do Z | Przewodnik pacjenta | CML"
+      description="Skąd biorą się hemoroidy, jak rozpoznać stopnie choroby i czym różni się laser LHP od klasycznej operacji. Przewodnik dr. Jana Bujoka dla pacjentów CML."
       path="/dla-pacjenta/hemoroidy"
     />
     <MedicalWebPageSchema

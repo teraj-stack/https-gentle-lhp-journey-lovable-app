@@ -77,8 +77,8 @@ const PrzygotowaniePlastyka = () => (
     procedureName="plastyki okolicy odbytu"
     procedureHref="/leczenie/plastyka"
     recoveryHref="/dla-pacjenta/zalecenia-po-plastyce"
-    seoTitle="Przygotowanie do plastyki okolicy odbytu – CML"
-    seoDescription="Jak przygotować się do laserowej plastyki okolicy odbytu — krótka checklista przed wizytą."
+    seoTitle="Przygotowanie do plastyki odbytu | Checklista | CML"
+    seoDescription="Dieta, wypróżnienie, higiena okolicy i co zabrać ze sobą przed laserową plastyką okolicy odbytu. Checklista proktologów CML Warszawa Wilanów krok po kroku."
     path="/dla-pacjenta/przygotowanie-plastyka"
     intro="Plastyka okolicy odbytu wykonywana jest laserowo, bez szwów. Te proste kroki przygotują Twój organizm i okolicę zabiegową do bezpiecznego, komfortowego zabiegu."
     sections={sections}

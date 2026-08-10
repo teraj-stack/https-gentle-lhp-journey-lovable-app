@@ -43,8 +43,8 @@ const stagger = (i: number) => ({
 const Plastyka = () => (
     <div className="min-h-screen pt-20">
       <SeoHead
-        title="Plastyka odbytu – estetyka i komfort"
-        description="Laserowa plastyka odbytu w CML – usunięcie naddatków skórnych i poprawka estetyki. Precyzja lasera CO₂, szybkie gojenie."
+        title="Plastyka odbytu w CML | Usuwanie fałdów | Warszawa"
+        description="Laserowa plastyka odbytu usuwa naddatki skórne i poprawia estetykę okolicy — bez szwów. Szybki powrót do normalności. Umów konsultację w CML Warszawa."
         path="/leczenie/plastyka"
       />
       <MedicalWebPageSchema

@@ -122,8 +122,8 @@ const Kontakt = () => {
   return (
     <div className="min-h-screen bg-background pt-20">
       <SeoHead
-        title="Kontakt – umów wizytę"
-        description="Skontaktuj się z CML. Przyjmujemy w Warszawie Wilanów, ul. Branickiego 10/U6. Umów wizytę proktologiczną lub flebologiczną."
+        title="Kontakt CML Warszawa Wilanów | Umów wizytę u proktologa"
+        description="CML, ul. Branickiego 10/U6, Warszawa Wilanów. Zadzwoń lub napisz — pomożemy dobrać dogodny termin wizyty proktologicznej albo flebologicznej. Zapraszamy."
         path="/kontakt"
       />
       <MedicalWebPageSchema

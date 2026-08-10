@@ -103,8 +103,8 @@ const SeksAnalnyHemoroidy = () => {
   return (
     <>
       <SeoHead
-        title="Seks analny a choroba hemoroidalna — kompleksowy raport medyczny | CML"
-        description="Pełna analiza EBM zależności między aktywnością seksualną a etiopatogenezą, diagnostyką i leczeniem hemoroidów. Mit a fakty, profilaktyka, lubrykanty, rekonwalescencja."
+        title="Seks analny a hemoroidy | Fakty i mity w świetle EBM"
+        description="Czy seks analny powoduje hemoroidy? Analiza badań, profilaktyka, lubrykanty i powrót do aktywności po zabiegu. Rzetelny raport specjalistów CML Warszawa."
         path="/wiedza/seks-analny-a-hemoroidy"
         type="article"
       />
