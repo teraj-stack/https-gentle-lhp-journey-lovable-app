@@ -13,8 +13,8 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import {
 import RelatedLinks from "@/components/shared/RelatedLinks";
+import {
   GraduationCap,
   Clock,
   Brain,
