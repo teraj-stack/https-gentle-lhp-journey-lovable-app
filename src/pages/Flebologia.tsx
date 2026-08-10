@@ -66,7 +66,7 @@ const Flebologia = () => {
     <div className="min-h-screen bg-background pt-20">
       <SeoHead
         title="Flebologia laserowa w CML | Leczenie żylaków | Warszawa"
-        description="Żylaki i pajączki: EVLT, skleroterapia, CLaCS i mikroflebektomia — minimalnie inwazyjnie, bez blizn. Szybki powrót do normalności. Umów wizytę w CML."
+        description="Żylaki i pajączki: EVLT, skleroterapia, CLaCS i mikroflebektomia — minimalnie inwazyjnie, bez blizn. Szybki powrót do normalności. Umów wizytę w CML Wilanów."
         path="/leczenie/flebologia"
       />
       <MedicalWebPageSchema

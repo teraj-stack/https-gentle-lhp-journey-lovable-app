@@ -110,7 +110,7 @@ const ZaleceniaPoLHP = () => {
     <>
       <SeoHead
         title="Zalecenia po zabiegu LHP | Rekonwalescencja | CML Wilanów"
-        description="Higiena, dieta, leki przeciwbólowe, aktywność i sygnały alarmowe po laserowym leczeniu hemoroidów LHP. Poradnik rekonwalescencji od specjalistów CML."
+        description="Higiena, dieta, leki przeciwbólowe, aktywność i sygnały alarmowe po laserowym leczeniu hemoroidów LHP. Poradnik rekonwalescencji od specjalistów CML Warszawa."
         path="/dla-pacjenta/zalecenia-po-lhp"
       />
 

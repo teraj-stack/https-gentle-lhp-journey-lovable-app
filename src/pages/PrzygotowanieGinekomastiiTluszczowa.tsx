@@ -91,7 +91,7 @@ const PrzygotowanieGinekomastiiTluszczowa = () => (
     procedureHref="/leczenie/ginekomastia-tluszczowa"
     recoveryHref="/dla-pacjenta/zalecenia-po-ginekomastii"
     seoTitle="Przygotowanie do Vaser Lipo HD | Ginekomastia | CML"
-    seoDescription="Stabilna waga, nawodnienie, leki i kamizelka uciskowa — checklista przed liposukcją ultradźwiękową Vaser Lipo HD przy ginekomastii tłuszczowej w CML."
+    seoDescription="Stabilna waga, nawodnienie, leki i kamizelka uciskowa — checklista przed liposukcją ultradźwiękową Vaser Lipo HD przy ginekomastii tłuszczowej w CML Warszawa."
     path="/dla-pacjenta/przygotowanie-ginekomastia-tluszczowa"
     intro="Vaser Lipo HD to precyzyjna liposukcja ultradźwiękowa, która rzeźbi kontury klatki piersiowej z minimalnym uszkodzeniem tkanek. Aby uzyskać najlepszy efekt — gładką, dobrze obkurczającą się skórę — warto się świadomie przygotować."
     sections={sections}

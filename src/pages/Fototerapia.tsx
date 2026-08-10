@@ -133,7 +133,7 @@ const Fototerapia = () => (
   <div className="min-h-screen bg-background pt-20">
     <SeoHead
       title="Fototerapia LED w CML | Szybsze gojenie po zabiegu"
-      description="Fotobiomodulacja LED przyspiesza gojenie po zabiegach laserowych i wspiera redukcję naczynek — bezboleśnie i bez rekonwalescencji. Umów wizytę w CML."
+      description="Fotobiomodulacja LED przyspiesza gojenie po zabiegach laserowych i wspiera redukcję naczynek — bezboleśnie i bez rekonwalescencji. Umów wizytę w CML Warszawa."
       path="/leczenie/fototerapia"
     />
     <MedicalWebPageSchema

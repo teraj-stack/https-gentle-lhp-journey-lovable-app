@@ -67,7 +67,7 @@ export const SEO_META = {
   "/leczenie/fototerapia": {
     title: "Fototerapia LED w CML | Szybsze gojenie po zabiegu",
     description:
-      "Fotobiomodulacja LED przyspiesza gojenie po zabiegach laserowych i wspiera redukcję naczynek — bezboleśnie i bez rekonwalescencji. Umów wizytę w CML.",
+      "Fotobiomodulacja LED przyspiesza gojenie po zabiegach laserowych i wspiera redukcję naczynek — bezboleśnie i bez rekonwalescencji. Umów wizytę w CML Warszawa.",
   },
   "/leczenie/proktologia": {
     title: "Proktologia laserowa w CML | Zabiegi w Warszawie Wilanów",
@@ -77,7 +77,7 @@ export const SEO_META = {
   "/leczenie/flebologia": {
     title: "Flebologia laserowa w CML | Leczenie żylaków | Warszawa",
     description:
-      "Żylaki i pajączki: EVLT, skleroterapia, CLaCS i mikroflebektomia — minimalnie inwazyjnie, bez blizn. Szybki powrót do normalności. Umów wizytę w CML.",
+      "Żylaki i pajączki: EVLT, skleroterapia, CLaCS i mikroflebektomia — minimalnie inwazyjnie, bez blizn. Szybki powrót do normalności. Umów wizytę w CML Wilanów.",
   },
   "/leczenie/ginekomastia": {
     title: "Ginekomastia w CML | Leczenie chirurgiczne | Warszawa",
@@ -102,7 +102,7 @@ export const SEO_META = {
   "/cennik": {
     title: "Cennik zabiegów laserowych w CML | Warszawa Wilanów",
     description:
-      "Przejrzysty cennik CML: konsultacja proktologiczna i flebologiczna 400 zł, z USG Doppler 500 zł, zabiegi laserowe od 3 000 zł. Sprawdź i umów wizytę.",
+      "Przejrzysty cennik CML: konsultacja proktologiczna i flebologiczna 400 zł, z USG Doppler 500 zł, zabiegi laserowe od 3 000 zł. Sprawdź cennik i umów wizytę.",
   },
   "/kontakt": {
     title: "Kontakt CML Warszawa Wilanów | Umów wizytę u proktologa",
@@ -242,7 +242,7 @@ export const SEO_META = {
   "/dla-pacjenta/przygotowanie-ginekomastia-tluszczowa": {
     title: "Przygotowanie do Vaser Lipo HD | Ginekomastia | CML",
     description:
-      "Stabilna waga, nawodnienie, leki i kamizelka uciskowa — checklista przed liposukcją ultradźwiękową Vaser Lipo HD przy ginekomastii tłuszczowej w CML.",
+      "Stabilna waga, nawodnienie, leki i kamizelka uciskowa — checklista przed liposukcją ultradźwiękową Vaser Lipo HD przy ginekomastii tłuszczowej w CML Warszawa.",
   },
   "/dla-pacjenta/przygotowanie-ginekomastia-mieszana": {
     title: "Przygotowanie do ginekomastii mieszanej | Checklista CML",
@@ -252,7 +252,7 @@ export const SEO_META = {
   "/dla-pacjenta/zalecenia-po-lhp": {
     title: "Zalecenia po zabiegu LHP | Rekonwalescencja | CML Wilanów",
     description:
-      "Higiena, dieta, leki przeciwbólowe, aktywność i sygnały alarmowe po laserowym leczeniu hemoroidów LHP. Poradnik rekonwalescencji od specjalistów CML.",
+      "Higiena, dieta, leki przeciwbólowe, aktywność i sygnały alarmowe po laserowym leczeniu hemoroidów LHP. Poradnik rekonwalescencji od specjalistów CML Warszawa.",
   },
   "/dla-pacjenta/zalecenia-po-filac": {
     title: "Zalecenia po zabiegu FiLaC | Rekonwalescencja | CML",
