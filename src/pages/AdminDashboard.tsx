@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Pencil, Trash2, LogOut, Eye, EyeOff, ShieldAlert, Activity, Mail, ShieldCheck, Image as ImageIcon, Link2 } from "lucide-react";
+import { Plus, Pencil, Trash2, LogOut, Eye, EyeOff, ShieldAlert, Activity, Mail, ShieldCheck, Image as ImageIcon, Link2, CalendarClock } from "lucide-react";
 import { toast } from "sonner";
 import SeoHead from "@/components/shared/SeoHead";
 
