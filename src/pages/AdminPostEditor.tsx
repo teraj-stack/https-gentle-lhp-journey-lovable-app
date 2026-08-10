@@ -254,6 +254,19 @@ const AdminPostEditor = () => {
             <Textarea id="excerpt" value={excerpt} onChange={(e) => setExcerpt(e.target.value)} placeholder="Krótki opis artykułu..." rows={2} />
           </div>
 
+          <div className="space-y-2">
+            <Label htmlFor="focus-keyword">Fraza kluczowa (long-tail)</Label>
+            <Input
+              id="focus-keyword"
+              value={focusKeyword}
+              onChange={(e) => setFocusKeyword(e.target.value)}
+              placeholder="np. jak rozpoznać wczesne hemoroidy"
+            />
+            <p className="text-xs text-muted-foreground">
+              Jedna fraza na wpis — powinna pojawić się w tytule, leadzie i nagłówku H2.
+            </p>
+          </div>
+
           {/* Cover image upload */}
           <div className="space-y-2">
             <Label>Obrazek okładki</Label>
