@@ -79,8 +79,8 @@ const Proktologia = () => {
   return (
     <div className="min-h-screen bg-background pt-20">
       <SeoHead
-        title="Proktologia laserowa w CML | Zabiegi laserowe w Warszawie"
-        description="Hemoroidy, przetoki, szczelina i torbiel pilonidalna — leczenie laserowe LHP, FiLaC i SiLaC bez skalpela. Szybki powrót do normalności. Umów wizytę w CML."
+        title="Hemoroidy i przetoki: leczenie laserem | Warszawa"
+        description="Hemoroidy, przetoki analne, szczelina i torbiel pilonidalna — leczenie laserem w Warszawie metodami LHP, FiLaC i SiLaC, bez skalpela. Umów wizytę w CML Wilanów."
         path="/leczenie/proktologia"
       />
       <MedicalWebPageSchema
@@ -107,8 +107,8 @@ const Proktologia = () => {
               Proktologia <span className="italic text-primary">laserowa</span>
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground leading-relaxed max-w-2xl">
-              Nowoczesne, minimalnie inwazyjne zabiegi proktologiczne. Bez wycinania, bez szwów —
-              z zachowaniem pełnej funkcji zwieraczy i szybkim powrotem do codziennych aktywności.
+              Hemoroidy, przetoki analne i szczelina odbytu — leczenie laserem w Warszawie, bez wycinania
+              i bez szwów, z zachowaniem pełnej funkcji zwieraczy i szybkim powrotem do codziennych aktywności.
             </p>
           </motion.div>
         </div>

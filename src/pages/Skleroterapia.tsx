@@ -110,7 +110,7 @@ const Skleroterapia = () => {
         </h1>
         <div className="w-16 h-0.5 mx-auto bg-primary-foreground/30 mb-6" />
         <p className="text-primary-foreground/80 text-base md:text-lg leading-relaxed max-w-2xl mx-auto">
-          Skuteczna metoda zamykania żylakowato zmienionych naczyń — precyzyjne podanie sklerosantu pod kontrolą USG eliminuje chore żyły bez nacięć.
+          Żylaki nóg — jak się ich pozbyć bez operacji? Skleroterapia zamyka żylakowato zmienione naczynia precyzyjnym podaniem sklerosantu pod kontrolą USG, bez nacięć i bez znieczulenia.
         </p>
       </motion.div>
     </ParallaxSection>
