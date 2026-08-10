@@ -90,6 +90,7 @@ const ZaleceniaPoFilac = lazy(() => import("@/pages/ZaleceniaPoFilac"));
 const ZaleceniaPoSilac = lazy(() => import("@/pages/ZaleceniaPoSilac"));
 const RaportyCWV = lazy(() => import("@/pages/RaportyCWV"));
 const AdminCWV = lazy(() => import("@/pages/AdminCWV"));
+const AdminEditorialCalendar = lazy(() => import("@/pages/AdminEditorialCalendar"));
 const ZaleceniaPoSkleroterapii = lazy(() => import("@/pages/ZaleceniaPoSkleroterapii"));
 const ZaleceniaPoPlastyce = lazy(() => import("@/pages/ZaleceniaPoPlastyce"));
 const ZaleceniaPoMikroflebektomii = lazy(() => import("@/pages/ZaleceniaPoMikroflebektomii"));
@@ -187,6 +188,7 @@ const App = () => (
             <Route path="/admin/vein-images" element={<AdminVeinImages />} />
             <Route path="/admin/seo-redirects" element={<AdminSeoRedirects />} />
             <Route path="/admin/cwv" element={<AdminCWV />} />
+            <Route path="/admin/kalendarz" element={<AdminEditorialCalendar />} />
             <Route path="/raporty/cwv" element={<RaportyCWV />} />
             
             <Route path="/unsubscribe" element={<Unsubscribe />} />

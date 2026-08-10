@@ -13,6 +13,16 @@ import { ArrowLeft, Save, Eye, Pencil, X, ImageIcon, ShieldAlert, LogOut } from 
 import { toast } from "sonner";
 import SeoHead from "@/components/shared/SeoHead";
 import MarkdownRenderer from "@/components/shared/MarkdownRenderer";
+import PostSeoAudit from "@/components/admin/PostSeoAudit";
+import { getUpcomingSlots } from "@/lib/blog/editorialSchedule";
+
+/** ISO -> wartość dla <input type="datetime-local"> w czasie lokalnym */
+const toLocalInput = (iso: string | null | undefined) => {
+  if (!iso) return "";
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+};
 
 const AdminPostEditor = () => {
   const { id } = useParams<{ id: string }>();
@@ -25,6 +35,9 @@ const AdminPostEditor = () => {
   const [content, setContent] = useState("");
   const [published, setPublished] = useState(false);
   const [coverImageUrl, setCoverImageUrl] = useState("");
+  const [scheduledAt, setScheduledAt] = useState("");
+  const [focusKeyword, setFocusKeyword] = useState("");
+  const [needsMedicalReview, setNeedsMedicalReview] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -55,6 +68,9 @@ const AdminPostEditor = () => {
       setContent(existingPost.content);
       setPublished(existingPost.published);
       setCoverImageUrl(existingPost.cover_image_url || "");
+      setScheduledAt(toLocalInput(existingPost.scheduled_at));
+      setFocusKeyword(existingPost.focus_keyword || "");
+      setNeedsMedicalReview(existingPost.needs_medical_review ?? false);
     }
   }, [existingPost]);
 
@@ -158,13 +174,23 @@ const AdminPostEditor = () => {
   const saveMutation = useMutation({
     mutationFn: async () => {
       const newCoverUrl = coverImageUrl || null;
+      const scheduledIso = scheduledAt ? new Date(scheduledAt).toISOString() : null;
+      // Data publikacji: zaplanowany termin, a przy braku planu zachowujemy
+      // pierwotną datę (nie resetujemy jej przy każdej edycji).
+      const publishedAt = published
+        ? scheduledIso ?? existingPost?.published_at ?? new Date().toISOString()
+        : null;
       const postData = {
         title,
         slug: slug || generateSlug(title),
         excerpt: excerpt || null,
         content,
         published,
-        published_at: published ? new Date().toISOString() : null,
+        published_at: publishedAt,
+        scheduled_at: scheduledIso,
+        focus_keyword: focusKeyword.trim() || null,
+        needs_medical_review: needsMedicalReview,
+        last_reviewed_at: needsMedicalReview ? null : new Date().toISOString(),
         cover_image_url: newCoverUrl,
       };
 
@@ -226,6 +252,19 @@ const AdminPostEditor = () => {
           <div className="space-y-2">
             <Label htmlFor="excerpt">Streszczenie</Label>
             <Textarea id="excerpt" value={excerpt} onChange={(e) => setExcerpt(e.target.value)} placeholder="Krótki opis artykułu..." rows={2} />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="focus-keyword">Fraza kluczowa (long-tail)</Label>
+            <Input
+              id="focus-keyword"
+              value={focusKeyword}
+              onChange={(e) => setFocusKeyword(e.target.value)}
+              placeholder="np. jak rozpoznać wczesne hemoroidy"
+            />
+            <p className="text-xs text-muted-foreground">
+              Jedna fraza na wpis — powinna pojawić się w tytule, leadzie i nagłówku H2.
+            </p>
           </div>
 
           {/* Cover image upload */}
@@ -298,6 +337,55 @@ const AdminPostEditor = () => {
                 </div>
               </TabsContent>
             </Tabs>
+          </div>
+
+          <PostSeoAudit
+            title={title}
+            slug={slug}
+            excerpt={excerpt}
+            content={content}
+            focusKeyword={focusKeyword}
+          />
+
+          <div className="space-y-2">
+            <Label htmlFor="scheduled-at">Zaplanowana publikacja</Label>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Input
+                id="scheduled-at"
+                type="datetime-local"
+                value={scheduledAt}
+                onChange={(e) => setScheduledAt(e.target.value)}
+                className="sm:max-w-xs"
+              />
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setScheduledAt(toLocalInput(getUpcomingSlots(1)[0].toISOString()))}
+                >
+                  Najbliższy slot
+                </Button>
+                {scheduledAt && (
+                  <Button type="button" variant="ghost" size="sm" onClick={() => setScheduledAt("")}>
+                    Wyczyść
+                  </Button>
+                )}
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Wpis oznaczony jako opublikowany z datą w przyszłości pozostaje ukryty przed
+              czytelnikami do wskazanego terminu.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <Switch
+              id="needs-medical-review"
+              checked={needsMedicalReview}
+              onCheckedChange={setNeedsMedicalReview}
+            />
+            <Label htmlFor="needs-medical-review">Wymaga weryfikacji medycznej (dr Bujok)</Label>
           </div>
 
           <div className="flex items-center gap-3">
