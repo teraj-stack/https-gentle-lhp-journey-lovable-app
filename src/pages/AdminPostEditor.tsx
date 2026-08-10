@@ -174,13 +174,23 @@ const AdminPostEditor = () => {
   const saveMutation = useMutation({
     mutationFn: async () => {
       const newCoverUrl = coverImageUrl || null;
+      const scheduledIso = scheduledAt ? new Date(scheduledAt).toISOString() : null;
+      // Data publikacji: zaplanowany termin, a przy braku planu zachowujemy
+      // pierwotną datę (nie resetujemy jej przy każdej edycji).
+      const publishedAt = published
+        ? scheduledIso ?? existingPost?.published_at ?? new Date().toISOString()
+        : null;
       const postData = {
         title,
         slug: slug || generateSlug(title),
         excerpt: excerpt || null,
         content,
         published,
-        published_at: published ? new Date().toISOString() : null,
+        published_at: publishedAt,
+        scheduled_at: scheduledIso,
+        focus_keyword: focusKeyword.trim() || null,
+        needs_medical_review: needsMedicalReview,
+        last_reviewed_at: needsMedicalReview ? null : new Date().toISOString(),
         cover_image_url: newCoverUrl,
       };
 
