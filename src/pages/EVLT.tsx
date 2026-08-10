@@ -52,7 +52,7 @@ const warnings = [
 const EVLT = () => (
   <div className="min-h-screen bg-background pt-20">
     <SeoHead
-      title="Żylaki nóg: jak się pozbyć? EVLT laser | Warszawa"
+      title="Żylaki nóg: jak się pozbyć? EVLT laser w CML Warszawa"
       description="Żylaki nóg — jak się ich pozbyć bez operacji? EVLT to laserowe zamknięcie chorej żyły: bez narkozy, bez szwów, ambulatoryjnie. Umów konsultację w CML Warszawa."
       path="/leczenie/evlt"
     />

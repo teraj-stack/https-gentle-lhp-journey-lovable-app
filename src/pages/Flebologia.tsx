@@ -65,8 +65,8 @@ const Flebologia = () => {
   return (
     <div className="min-h-screen bg-background pt-20">
       <SeoHead
-        title="Żylaki nóg: jak się pozbyć? Flebologia | Warszawa"
-        description="Żylaki nóg — jak się ich pozbyć bez operacji: EVLT, skleroterapia, CLaCS i mikroflebektomia. Minimalnie inwazyjnie, bez blizn. Umów wizytę w CML Warszawa Wilanów."
+        title="Żylaki nóg: jak się pozbyć? Flebologia CML Warszawa"
+        description="Żylaki nóg — jak się ich pozbyć bez operacji: EVLT, skleroterapia, CLaCS i mikroflebektomia. Minimalnie inwazyjnie, bez blizn. Umów wizytę w CML Wilanów."
         path="/leczenie/flebologia"
       />
       <MedicalWebPageSchema

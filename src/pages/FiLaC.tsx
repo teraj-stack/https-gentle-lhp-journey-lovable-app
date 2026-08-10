@@ -46,7 +46,7 @@ const fadeUp = {
 const FiLaC = () => (
     <div className="min-h-screen bg-background pt-20">
       <SeoHead
-        title="Przetoki analne: kiedy operacja? FiLaC | Warszawa"
+        title="Przetoki analne: kiedy operacja? FiLaC w CML Warszawa"
         description="Przetoki analne — kiedy operacja jest konieczna i jak wygląda leczenie laserem FiLaC bez rozcinania zwieraczy. Umów konsultację proktologiczną w CML Warszawa."
         path="/leczenie/filac"
       />
