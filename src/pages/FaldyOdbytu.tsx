@@ -28,8 +28,8 @@ const stagger = (i: number) => ({
 const FaldyOdbytu = () => (
   <div className="min-h-screen pt-20">
     <SeoHead
-      title="Fałdy okolicy odbytu – wariant anatomiczny czy powód kompleksów?"
-      description="Fałdy brzeżne odbytu: czym są, skąd się biorą i kiedy warto skonsultować się z proktologiem. Rzetelna wiedza bez oceniania — CML Warszawa."
+      title="Fałdy okolicy odbytu | Norma czy zabieg? | CML Warszawa"
+      description="Fałdy brzeżne odbytu: skąd się biorą, kiedy są wariantem anatomii, a kiedy warto je usunąć. Rzetelna wiedza bez oceniania — poradnik CML Warszawa. Zapraszamy."
       path="/dla-pacjenta/faldy-odbytu"
     />
     <MedicalWebPageSchema

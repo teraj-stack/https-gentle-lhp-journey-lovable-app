@@ -1,0 +1,1 @@
+- [SEO Meta Map](mem://features/seo-meta-map) — scripts/seo-meta-map.mjs: unikalne title 50–60 zn. i description 150–160 zn. dla wszystkich stron publicznych

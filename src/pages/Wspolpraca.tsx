@@ -92,8 +92,8 @@ const faq = [
 const Wspolpraca = () => (
   <div className="min-h-screen">
     <SeoHead
-      title="Współpraca B2B dla placówek medycznych"
-      description="Model kooperacyjny CML dla klinik i gabinetów. Procedury tkankowo-oszczędzające, preedukacja pacjenta, cross-referrals."
+      title="Współpraca B2B z CML | Dla klinik i gabinetów | Warszawa"
+      description="Model kooperacyjny CML: procedury tkankowo-oszczędzające, preedukacja pacjenta i cross-referrals bez utraty pacjenta. Poznaj zasady i nawiąż współpracę."
       path="/wspolpraca"
     />
     <MedicalWebPageSchema

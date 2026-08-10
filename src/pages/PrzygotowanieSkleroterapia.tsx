@@ -77,8 +77,8 @@ const PrzygotowanieSkleroterapia = () => (
     procedureName="skleroterapii"
     procedureHref="/leczenie/skleroterapia"
     recoveryHref="/dla-pacjenta/zalecenia-po-skleroterapii"
-    seoTitle="Przygotowanie do skleroterapii – CML"
-    seoDescription="Jak przygotować się do skleroterapii żył — krótka checklista przed wizytą."
+    seoTitle="Przygotowanie do skleroterapii żylaków | Checklista CML"
+    seoDescription="Co zrobić przed skleroterapią żylaków i pajączków: leki, kosmetyki, ubranie i pończochy uciskowe. Krótka checklista od flebologów CML Warszawa Wilanów."
     path="/dla-pacjenta/przygotowanie-skleroterapia"
     intro="Skleroterapia jest mało inwazyjna, ale kilka prostych kroków sprawi, że zabieg będzie efektywniejszy, a powrót do aktywności — szybszy."
     sections={sections}

@@ -55,8 +55,8 @@ const procedures = [
 const Cennik = () => (
   <div className="min-h-screen">
     <SeoHead
-      title="Cennik – CML Centrum Medycyny Laserowej"
-      description="Cennik konsultacji i zabiegów proktologicznych oraz flebologicznych. Konsultacja proktologiczna 400 zł, flebologiczna 400 zł, z USG Doppler 500 zł."
+      title="Cennik zabiegów laserowych w CML | Warszawa Wilanów"
+      description="Przejrzysty cennik CML: konsultacja proktologiczna i flebologiczna 400 zł, z USG Doppler 500 zł, zabiegi laserowe od 3 000 zł. Sprawdź cennik i umów wizytę."
       path="/cennik"
     />
     <MedicalWebPageSchema

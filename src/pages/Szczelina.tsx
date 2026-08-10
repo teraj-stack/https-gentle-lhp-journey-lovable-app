@@ -41,8 +41,8 @@ const stagger = (i: number) => ({
 const Szczelina = () => (
     <div className="min-h-screen pt-20">
       <SeoHead
-        title="Szczelina odbytu – od diety do lasera"
-        description="Leczenie szczeliny odbytu w CML – botoks, laser, farmakoterapia. Skuteczne metody bez długiej rekonwalescencji."
+        title="Szczelina odbytu w CML | Leczenie laserem | Warszawa"
+        description="Leczenie szczeliny odbytu w CML: farmakoterapia, botoks i laser, bez rozcinania zwieracza. Szybki powrót do normalności. Umów konsultację w Warszawie."
         path="/leczenie/szczelina"
       />
       <MedicalWebPageSchema

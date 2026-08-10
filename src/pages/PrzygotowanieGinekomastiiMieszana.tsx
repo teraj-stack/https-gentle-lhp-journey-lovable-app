@@ -96,8 +96,8 @@ const PrzygotowanieGinekomastiiMieszana = () => (
     procedureName="ginekomastii mieszanej"
     procedureHref="/leczenie/ginekomastia-mieszana"
     recoveryHref="/dla-pacjenta/zalecenia-po-ginekomastii"
-    seoTitle="Przygotowanie do zabiegu ginekomastii mieszanej – CML"
-    seoDescription="Jak przygotować się do leczenia ginekomastii mieszanej (Vaser Lipo HD + wycięcie gruczołu) — checklista i wskazówki."
+    seoTitle="Przygotowanie do ginekomastii mieszanej | Checklista CML"
+    seoDescription="Badania, leki, waga i kamizelka — checklista przed połączeniem Vaser Lipo HD z wycięciem gruczołu w jednej sesji. Wskazówki chirurgów CML Warszawa Wilanów."
     path="/dla-pacjenta/przygotowanie-ginekomastia-mieszana"
     intro="Ginekomastia mieszana — najczęstszy typ — wymaga podwójnego podejścia: liposukcji Vaser HD do tkanki tłuszczowej i mikronacięcia do wycięcia gruczołu. Te przygotowania pomogą Twojemu ciału zoptymalizować gojenie obu komponentów jednocześnie."
     sections={sections}

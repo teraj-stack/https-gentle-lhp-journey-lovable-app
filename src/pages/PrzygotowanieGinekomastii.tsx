@@ -84,8 +84,8 @@ const PrzygotowanieGinekomastii = () => (
     procedureName="ginekomastii"
     procedureHref="/leczenie/ginekomastia"
     recoveryHref="/dla-pacjenta/zalecenia-po-ginekomastii"
-    seoTitle="Przygotowanie do zabiegu ginekomastii – CML"
-    seoDescription="Jak przygotować się do zabiegu korekcji ginekomastii (Vaser Lipo HD, gruczołowa, mieszana) — checklista przed wizytą krok po kroku."
+    seoTitle="Przygotowanie do zabiegu ginekomastii | Checklista CML"
+    seoDescription="Badania, leki, stabilna waga i kamizelka uciskowa — checklista przed korekcją ginekomastii (Vaser Lipo HD, gruczołowa, mieszana) w CML Warszawa Wilanów."
     path="/dla-pacjenta/przygotowanie-ginekomastii"
     intro="Korekcja ginekomastii to zabieg, który wymaga spokojnego, przemyślanego przygotowania. Te kilka kroków zminimalizują ryzyko powikłań, przyspieszą gojenie i zapewnią Ci komfort w dniu zabiegu — niezależnie od wariantu (Vaser Lipo HD, wycięcie gruczołu lub kombinacja)."
     sections={sections}

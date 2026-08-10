@@ -46,8 +46,8 @@ const faqItems = [
 const GinekomastiaGruczolowa = () => (
   <div className="min-h-screen pt-20">
     <SeoHead
-      title="Ginekomastia gruczołowa – chirurgiczne wycięcie gruczołu piersiowego"
-      description="Leczenie prawdziwej ginekomastii gruczołowej w CML Warszawa. Chirurgiczne usunięcie rozrośniętego gruczołu piersiowego. Trwały efekt, dyskretne blizny."
+      title="Ginekomastia gruczołowa w CML | Wycięcie | Warszawa"
+      description="Prawdziwa ginekomastia gruczołowa: chirurgiczne usunięcie rozrośniętego gruczołu z dyskretnym cięciem i trwałym efektem. Umów konsultację w CML Warszawa."
       path="/leczenie/ginekomastia-gruczolowa"
     />
     <MedicalWebPageSchema

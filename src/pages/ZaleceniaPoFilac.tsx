@@ -109,8 +109,8 @@ const ZaleceniaPoFilac = () => {
   return (
     <>
       <SeoHead
-        title="Zalecenia po operacji przetoki – FiLaC – rekonwalescencja"
-        description="Praktyczne wskazówki po laserowym leczeniu przetoki okołoodbytniczej FiLaC. Higiena rany, kąpiele nasiadowe, dieta, sygnały alarmowe."
+        title="Zalecenia po zabiegu FiLaC | Rekonwalescencja | CML"
+        description="Higiena rany, kąpiele nasiadowe, dieta, kontrole gojenia i sygnały alarmowe po laserowym leczeniu przetoki FiLaC. Poradnik rekonwalescencji od CML. Zapraszamy."
         path="/dla-pacjenta/zalecenia-po-filac"
       />
 

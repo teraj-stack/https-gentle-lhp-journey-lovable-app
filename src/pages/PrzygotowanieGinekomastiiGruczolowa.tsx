@@ -90,8 +90,8 @@ const PrzygotowanieGinekomastiiGruczolowa = () => (
     procedureName="ginekomastii gruczołowej"
     procedureHref="/leczenie/ginekomastia-gruczolowa"
     recoveryHref="/dla-pacjenta/zalecenia-po-ginekomastii"
-    seoTitle="Przygotowanie do zabiegu ginekomastii gruczołowej – CML"
-    seoDescription="Jak przygotować się do wycięcia gruczołu piersiowego (ginekomastia gruczołowa) — badania, leki, kamizelka. Krok po kroku."
+    seoTitle="Przygotowanie do wycięcia gruczołu | Ginekomastia | CML"
+    seoDescription="Badania, odstawienie leków, kamizelka i opieka po zabiegu — checklista przed chirurgicznym wycięciem gruczołu piersiowego w CML Warszawa Wilanów. Zapraszamy."
     path="/dla-pacjenta/przygotowanie-ginekomastia-gruczolowa"
     intro="Zabieg wycięcia gruczołu piersiowego (ginekomastia gruczołowa, prawdziwa) wymaga małego nacięcia w okolicy brodawki. Poniższe kroki przygotują Twój organizm i zminimalizują ryzyko powikłań — przeczytanie zajmie 5 minut, a może oszczędzić tygodnia rekonwalescencji."
     sections={sections}

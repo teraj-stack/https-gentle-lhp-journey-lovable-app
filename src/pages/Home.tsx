@@ -18,8 +18,8 @@ const Home = () => (
   // pb = sticky CTA (~5rem) + safe-area-inset-bottom (notch / home indicator)
   <div className="min-h-screen pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-0">
     <SeoHead
-      title="CML – Centrum Medycyny Laserowej"
-      description="Innowacyjne leczenie laserowe hemoroidów, żylaków i przetok w Warszawie Wilanów (ul. Branickiego 10/U6). Umów konsultację."
+      title="CML Warszawa | Laserowe leczenie hemoroidów i żylaków"
+      description="Laserowe leczenie hemoroidów, żylaków, przetok i szczeliny odbytu w Warszawie Wilanów. Dyskrecja, krótka rekonwalescencja. Umów konsultację w CML. Zapraszamy."
       path="/"
       type="website"
     />

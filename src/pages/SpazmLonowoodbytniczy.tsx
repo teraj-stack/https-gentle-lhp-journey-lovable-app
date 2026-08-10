@@ -36,8 +36,8 @@ const fadeUp = {
 const SpazmLonowoodbytniczy = () => (
   <div className="min-h-screen pt-20">
     <SeoHead
-      title="Przewlekły ból odbytu – spazm mięśnia łonowo-odbytniczego"
-      description="Diagnostyka i leczenie przewlekłego bólu odbytu wywołanego spazmem mięśnia łonowo-odbytniczego. Botoks, fizjoterapia, farmakoterapia – CML Warszawa."
+      title="Spazm w CML | Leczenie przewlekłego bólu odbytu | Warszawa"
+      description="Przewlekły ból odbytu ze spazmu mięśnia łonowo-odbytniczego: diagnostyka, botoks, fizjoterapia i leki. Ulga bez operacji. Umów konsultację w CML Warszawa."
       path="/leczenie/spazm-lonowoodbytniczy"
     />
     <MedicalWebPageSchema

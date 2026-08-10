@@ -111,8 +111,8 @@ const ZaleceniaPoSilac = () => {
   return (
     <>
       <SeoHead
-        title="Zalecenia po operacji torbieli pilonidalnej – SiLaC – rekonwalescencja"
-        description="Praktyczne wskazówki po laserowym leczeniu torbieli pilonidalnej SiLaC. Higiena rany, kąpiele nasiadowe, aktywność, sygnały alarmowe."
+        title="Zalecenia po zabiegu SiLaC | Rekonwalescencja | CML"
+        description="Pielęgnacja rany, kąpiele, siedzenie, aktywność i sygnały alarmowe po laserowym leczeniu torbieli pilonidalnej SiLaC. Poradnik rekonwalescencji od CML."
         path="/dla-pacjenta/zalecenia-po-silac"
       />
 

@@ -40,8 +40,8 @@ const medicalWebPageSchema = {
 const About = () => (
   <div className="min-h-screen pt-20">
     <SeoHead
-      title="O nas – dr Jan Bujok | CML Centrum Medycyny Laserowej"
-      description="Poznaj dr. Jana Bujoka, twórcę projektu S.C.A.L.E., i filozofię CML. Innowacyjne leczenie laserowe hemoroidów, żylaków i przetok w Warszawie Wilanów."
+      title="O nas | Dr Jan Bujok, chirurg proktolog i flebolog | CML"
+      description="Poznaj dr. Jana Bujoka i filozofię S.C.A.L.E.: bezpieczeństwo, laser, empatia i pacjent jako świadomy partner. Umów konsultację w CML Warszawa Wilanów."
       path="/o-nas"
     />
     <ClinicJsonLd />

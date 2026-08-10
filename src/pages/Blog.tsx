@@ -92,8 +92,8 @@ const Blog = () => {
   return (
     <>
       <SeoHead
-        title="Blog"
-        description="Artykuły o proktologii, flebologii i nowoczesnych metodach leczenia laserowego. Wiedza prosto od specjalistów CML."
+        title="Blog CML | Proktologia i flebologia bez tabu | Warszawa"
+        description="Artykuły o hemoroidach, żylakach i leczeniu laserowym pisane przez specjalistów CML. Rzetelna wiedza EBM, konkretne odpowiedzi i praktyczne poradniki."
         path="/blog"
       />
 

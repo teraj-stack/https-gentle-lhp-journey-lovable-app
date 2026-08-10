@@ -132,8 +132,8 @@ const howItWorks = [
 const Fototerapia = () => (
   <div className="min-h-screen bg-background pt-20">
     <SeoHead
-      title="Fototerapia LED (PBM) – gojenie i usuwanie naczynek"
-      description="Fotobiomodulacja (PBM) — nieinwazyjna terapia światłem LED przyspieszająca gojenie po zabiegach laserowych i wspierająca redukcję pajączków naczyniowych. EBM."
+      title="Fototerapia LED w CML | Szybsze gojenie po zabiegu"
+      description="Fotobiomodulacja LED przyspiesza gojenie po zabiegach laserowych i wspiera redukcję naczynek — bezboleśnie i bez rekonwalescencji. Umów wizytę w CML Warszawa."
       path="/leczenie/fototerapia"
     />
     <MedicalWebPageSchema

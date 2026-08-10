@@ -13,8 +13,8 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import {
 import RelatedLinks from "@/components/shared/RelatedLinks";
+import {
   GraduationCap,
   Clock,
   Brain,
@@ -177,8 +177,8 @@ const EdukacjaPrzedWizyta = () => {
   return (
   <div className="min-h-screen bg-background pt-20">
     <SeoHead
-      title="Dlaczego edukacja przed wizytą jest kluczowa"
-      description="Dowiedz się, jak przygotowanie merytoryczne przed wizytą u proktologa lub flebologa optymalizuje czas konsultacji i podnosi jakość leczenia."
+      title="Edukacja przed wizytą u proktologa | Poradnik CML Wilanów"
+      description="Przygotowanie merytoryczne skraca konsultację i podnosi jakość leczenia. Zobacz, co warto wiedzieć przed wizytą u proktologa lub flebologa w CML Warszawa."
       path="/dla-pacjenta/edukacja"
     />
     <FaqSchema

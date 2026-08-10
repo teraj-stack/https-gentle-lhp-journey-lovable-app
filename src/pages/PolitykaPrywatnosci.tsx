@@ -5,8 +5,8 @@ import SeoHead from "@/components/shared/SeoHead";
 const PolitykaPrywatnosci = () => (
   <div className="min-h-screen pt-20">
     <SeoHead
-      title="Polityka prywatności – CML"
-      description="Polityka prywatności Centrum Medycyny Laserowej. Informacje o przetwarzaniu danych osobowych zgodnie z RODO."
+      title="Polityka prywatności | CML Centrum Medycyny Laserowej"
+      description="Jak CML przetwarza dane osobowe pacjentów zgodnie z RODO: cele, podstawy prawne, okresy przechowywania, pliki cookie i Twoje prawa. Sprawdź szczegóły."
       path="/polityka-prywatnosci"
     />
     <div className="max-w-4xl mx-auto px-4 md:px-8 py-12">

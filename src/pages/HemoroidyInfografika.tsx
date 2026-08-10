@@ -7,8 +7,8 @@ import SatisfactionChart from "@/components/hemoroidy/SatisfactionChart";
 import StatsCountUp from "@/components/hemoroidy/StatsCountUp";
 import SeoHead from "@/components/shared/SeoHead";
 import { StaggeredListItem } from "@/components/shared/StaggeredList";
-import {
 import RelatedLinks from "@/components/shared/RelatedLinks";
+import {
   User, Layers, Clock, Monitor, Dumbbell, Baby, TrendingUp,
   Apple, PersonStanding, ShieldCheck, ShieldX, Search,
   AlertTriangle, Zap, Home, Timer, CheckCircle2, XCircle,
@@ -25,8 +25,8 @@ const sectionAnim = {
 const HemoroidyInfografika = () => (
   <>
     <SeoHead
-      title="Hemoroidy od A do Z – Infografika"
-      description="Kompleksowy przewodnik po nowoczesnym leczeniu hemoroidów. Laser vs. metody klasyczne — porównanie, procedura krok po kroku, okno terapeutyczne."
+      title="Hemoroidy — infografika | Laser vs operacja | CML Wilanów"
+      description="Infografika CML: porównanie lasera LHP z metodami klasycznymi, przebieg zabiegu krok po kroku i okno terapeutyczne. Zobacz dane w czytelnej formie. Zapraszamy."
       path="/dla-pacjenta/hemoroidy-infografika"
     />
 

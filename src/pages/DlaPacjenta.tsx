@@ -127,8 +127,8 @@ const DlaPacjenta = () => {
   return (
   <div className="min-h-screen bg-background pt-20">
     <SeoHead
-      title="Dla Pacjenta – materiały edukacyjne"
-      description="E-booki, poradniki i odpowiedzi na najczęstsze pytania pacjentów. Przygotuj się do wizyty proktologicznej i flebologicznej."
+      title="Dla pacjenta | Poradniki przed i po zabiegu | CML Wilanów"
+      description="E-booki, checklisty i poradniki CML: jak przygotować się do wizyty, jak przebiega zabieg i jak wygląda rekonwalescencja. Wejdź na wizytę przygotowany."
       path="/dla-pacjenta"
     />
     {/* Hero */}
