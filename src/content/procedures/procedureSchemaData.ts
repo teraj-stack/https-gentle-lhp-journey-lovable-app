@@ -22,7 +22,7 @@ export interface ProcedureSchemaEntry {
 /** Ocena kliniki z profilu ZnanyLekarz dr. Jana Bujoka */
 export const CLINIC_RATING = {
   ratingValue: 5,
-  reviewCount: 312,
+  reviewCount: 325,
   bestRating: 5,
   worstRating: 1,
 } as const;
