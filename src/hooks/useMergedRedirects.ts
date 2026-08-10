@@ -30,6 +30,7 @@ const QUERY_KEY = ["seo-redirects-runtime"] as const;
 async function fetchActiveDbRedirects(): Promise<
   Array<{ id: string; from_path: string; to_path: string; reason: string | null }>
 > {
+  const { supabase } = await import("@/integrations/supabase/client");
   const { data, error } = await supabase
     .from("seo_redirects")
     .select("id, from_path, to_path, reason")
