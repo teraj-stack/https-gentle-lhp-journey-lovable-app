@@ -20,9 +20,14 @@ export type Database = {
           cover_image_url: string | null
           created_at: string
           excerpt: string | null
+          focus_keyword: string | null
           id: string
+          last_reviewed_at: string | null
+          needs_medical_review: boolean
           published: boolean
           published_at: string | null
+          review_interval_days: number
+          scheduled_at: string | null
           slug: string
           title: string
           updated_at: string
@@ -32,9 +37,14 @@ export type Database = {
           cover_image_url?: string | null
           created_at?: string
           excerpt?: string | null
+          focus_keyword?: string | null
           id?: string
+          last_reviewed_at?: string | null
+          needs_medical_review?: boolean
           published?: boolean
           published_at?: string | null
+          review_interval_days?: number
+          scheduled_at?: string | null
           slug: string
           title: string
           updated_at?: string
@@ -44,9 +54,14 @@ export type Database = {
           cover_image_url?: string | null
           created_at?: string
           excerpt?: string | null
+          focus_keyword?: string | null
           id?: string
+          last_reviewed_at?: string | null
+          needs_medical_review?: boolean
           published?: boolean
           published_at?: string | null
+          review_interval_days?: number
+          scheduled_at?: string | null
           slug?: string
           title?: string
           updated_at?: string
