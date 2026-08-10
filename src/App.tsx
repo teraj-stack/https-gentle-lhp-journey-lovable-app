@@ -188,6 +188,7 @@ const App = () => (
             <Route path="/admin/vein-images" element={<AdminVeinImages />} />
             <Route path="/admin/seo-redirects" element={<AdminSeoRedirects />} />
             <Route path="/admin/cwv" element={<AdminCWV />} />
+            <Route path="/admin/kalendarz" element={<AdminEditorialCalendar />} />
             <Route path="/raporty/cwv" element={<RaportyCWV />} />
             
             <Route path="/unsubscribe" element={<Unsubscribe />} />
