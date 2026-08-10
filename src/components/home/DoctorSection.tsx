@@ -31,7 +31,8 @@ const DoctorSection = () => (
             />
             <div className="absolute -bottom-4 -right-4 w-72 md:w-80 aspect-[3/4] rounded-2xl bg-primary/20 -z-10" />
           </div>
-        </motion.div>
+        </div>
+
 
         <motion.div {...stagger(0)}>
           <p className="text-sm font-sans uppercase tracking-[0.15em] text-primary mb-4">
