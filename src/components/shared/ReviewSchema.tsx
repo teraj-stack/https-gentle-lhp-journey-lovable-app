@@ -1,4 +1,4 @@
-import { Helmet } from "react-helmet-async";
+import { useEffect } from "react";
 import {
   testimonials as allTestimonials,
   CLINIC_AGGREGATE_RATING,
@@ -16,60 +16,69 @@ interface ReviewSchemaProps {
 
 /**
  * JSON-LD Review + AggregateRating dla profilu lekarza.
- * Wszystkie recenzje pochodzą z publicznego profilu ZnanyLekarz
- * (publisher wskazany jawnie — brak self-serving reviews).
+ * Wszystkie recenzje pochodzą z publicznego profilu ZnanyLekarz —
+ * publisher wskazany jawnie (brak "self-serving reviews").
  */
 const ReviewSchema = ({ items, includeAggregate = true }: ReviewSchemaProps) => {
-  const list = items ?? allTestimonials;
+  useEffect(() => {
+    const list = items ?? allTestimonials;
 
-  const schema: Record<string, unknown> = {
-    "@context": "https://schema.org",
-    "@type": "Physician",
-    "@id": "https://mcml.pro/#physician",
-    name: "Dr Jan Bujok — CML Centrum Medycyny Laserowej",
-    url: "https://mcml.pro/",
-    medicalSpecialty: ["Phlebology", "Surgical"],
-    address: {
-      "@type": "PostalAddress",
-      streetAddress: "Branickiego 10/U6",
-      addressLocality: "Warszawa",
-      addressRegion: "mazowieckie",
-      addressCountry: "PL",
-    },
-    review: list.map((t) => ({
-      "@type": "Review",
-      author: { "@type": "Person", name: t.name },
-      datePublished: t.dateISO,
-      reviewBody: t.text,
-      reviewRating: {
-        "@type": "Rating",
-        ratingValue: t.rating,
-        bestRating: 5,
-        worstRating: 1,
+    const schema: Record<string, unknown> = {
+      "@context": "https://schema.org",
+      "@type": "Physician",
+      "@id": "https://mcml.pro/#physician",
+      name: "Dr Jan Bujok — CML Centrum Medycyny Laserowej",
+      url: "https://mcml.pro/",
+      telephone: "+48 510 432 361",
+      medicalSpecialty: ["Phlebology", "Surgical"],
+      address: {
+        "@type": "PostalAddress",
+        streetAddress: "ul. Adama Branickiego 10/U6",
+        addressLocality: "Warszawa",
+        postalCode: "02-972",
+        addressCountry: "PL",
       },
-      publisher: {
-        "@type": "Organization",
-        name: TESTIMONIALS_SOURCE,
-        url: TESTIMONIALS_SOURCE_URL,
-      },
-    })),
-  };
-
-  if (includeAggregate) {
-    schema.aggregateRating = {
-      "@type": "AggregateRating",
-      ratingValue: CLINIC_AGGREGATE_RATING.ratingValue,
-      reviewCount: CLINIC_AGGREGATE_RATING.reviewCount,
-      bestRating: CLINIC_AGGREGATE_RATING.bestRating,
-      worstRating: CLINIC_AGGREGATE_RATING.worstRating,
+      review: list.map((t) => ({
+        "@type": "Review",
+        author: { "@type": "Person", name: t.name },
+        datePublished: t.dateISO,
+        reviewBody: t.text,
+        reviewRating: {
+          "@type": "Rating",
+          ratingValue: t.rating,
+          bestRating: 5,
+          worstRating: 1,
+        },
+        publisher: {
+          "@type": "Organization",
+          name: TESTIMONIALS_SOURCE,
+          url: TESTIMONIALS_SOURCE_URL,
+        },
+      })),
     };
-  }
 
-  return (
-    <Helmet>
-      <script type="application/ld+json">{JSON.stringify(schema)}</script>
-    </Helmet>
-  );
+    if (includeAggregate) {
+      schema.aggregateRating = {
+        "@type": "AggregateRating",
+        ratingValue: CLINIC_AGGREGATE_RATING.ratingValue,
+        reviewCount: CLINIC_AGGREGATE_RATING.reviewCount,
+        bestRating: CLINIC_AGGREGATE_RATING.bestRating,
+        worstRating: CLINIC_AGGREGATE_RATING.worstRating,
+      };
+    }
+
+    const script = document.createElement("script");
+    script.type = "application/ld+json";
+    script.setAttribute("data-review-schema", "true");
+    script.textContent = JSON.stringify(schema);
+    document.head.appendChild(script);
+
+    return () => {
+      script.remove();
+    };
+  }, [items, includeAggregate]);
+
+  return null;
 };
 
 export default ReviewSchema;
