@@ -52,8 +52,8 @@ const warnings = [
 const EVLT = () => (
   <div className="min-h-screen bg-background pt-20">
     <SeoHead
-      title="EVLT w CML | Laserowe leczenie żylaków nóg | Warszawa"
-      description="EVLT to endowenozna ablacja laserowa żylaków: zabieg ambulatoryjny, bez narkozy i bez szwów. Szybki powrót do normalności. Umów konsultację w CML. Zapraszamy."
+      title="Żylaki nóg: jak się pozbyć? EVLT laser | Warszawa"
+      description="Żylaki nóg — jak się ich pozbyć bez operacji? EVLT to laserowe zamknięcie chorej żyły: bez narkozy, bez szwów, ambulatoryjnie. Umów konsultację w CML Warszawa."
       path="/leczenie/evlt"
     />
     <MedicalWebPageSchema
@@ -86,11 +86,11 @@ const EVLT = () => (
           Nowoczesna Flebologia
         </p>
         <h1 className="text-3xl md:text-5xl font-bold text-primary-foreground mb-4 leading-tight">
-          Żylaki nóg: Odzyskaj zdrowie i lekkość kroku
+          Żylaki nóg — jak się ich pozbyć bez operacji
         </h1>
         <div className="w-16 h-0.5 mx-auto bg-primary-foreground/30 mb-6" />
         <p className="text-primary-foreground/80 text-base md:text-lg leading-relaxed max-w-2xl mx-auto">
-          Bez skalpela, bez narkozy i bez długiej rekonwalescencji. Jednak zależy mi na tym, aby pacjent był świadomy, że przewlekła choroba żylna jest chorobą przewlekłą i postępującą. To zmienia perspektywę, ponieważ pozwala zrozumieć dlaczego tak ważne jest okresowe badanie USG Doppler żył.
+          Laser zamyka chorą żyłę od środka — bez skalpela, bez narkozy i bez długiej rekonwalescencji. Zależy mi jednak na tym, aby pacjent był świadomy, że przewlekła choroba żylna jest chorobą postępującą. To zmienia perspektywę, ponieważ pozwala zrozumieć, dlaczego tak ważne jest okresowe badanie USG Doppler żył.
         </p>
       </motion.div>
     </ParallaxSection>
