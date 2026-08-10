@@ -13,6 +13,16 @@ import { ArrowLeft, Save, Eye, Pencil, X, ImageIcon, ShieldAlert, LogOut } from 
 import { toast } from "sonner";
 import SeoHead from "@/components/shared/SeoHead";
 import MarkdownRenderer from "@/components/shared/MarkdownRenderer";
+import PostSeoAudit from "@/components/admin/PostSeoAudit";
+import { getUpcomingSlots } from "@/lib/blog/editorialSchedule";
+
+/** ISO -> wartość dla <input type="datetime-local"> w czasie lokalnym */
+const toLocalInput = (iso: string | null | undefined) => {
+  if (!iso) return "";
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+};
 
 const AdminPostEditor = () => {
   const { id } = useParams<{ id: string }>();
@@ -25,6 +35,9 @@ const AdminPostEditor = () => {
   const [content, setContent] = useState("");
   const [published, setPublished] = useState(false);
   const [coverImageUrl, setCoverImageUrl] = useState("");
+  const [scheduledAt, setScheduledAt] = useState("");
+  const [focusKeyword, setFocusKeyword] = useState("");
+  const [needsMedicalReview, setNeedsMedicalReview] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
