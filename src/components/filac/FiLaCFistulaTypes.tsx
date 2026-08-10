@@ -58,7 +58,7 @@ const FiLaCFistulaTypes = ({ fadeUp }: Props) => (
       <div className="glass-card rounded-2xl p-6 flex flex-col items-center">
         <img
           src={fistulaImg}
-          alt="Schemat anatomiczny klasyfikacji Parksa — przekrój kanału odbytu z zaznaczonymi typami przetok A–E"
+          alt="Przetoki analne — kiedy operacja: schemat klasyfikacji Parksa z przekrojem kanału odbytu i typami przetok A–E"
           width={600}
           height={800}
           className="w-full max-w-xs mx-auto"
