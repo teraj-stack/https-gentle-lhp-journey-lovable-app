@@ -17,7 +17,10 @@ const DoctorSection = () => (
   <section className="py-20 md:py-28 bg-card">
     <div className="max-w-7xl mx-auto px-4 md:px-8">
       <div className="grid md:grid-cols-2 gap-10 md:gap-12 lg:gap-16 items-start">
-        <motion.div {...stagger(0.15)} className="flex justify-center md:order-2">
+        {/* LCP candidate: rendered opaque from the first paint — no opacity/blur
+            entry animation, which would delay Largest Contentful Paint until JS runs. */}
+        <div className="flex justify-center md:order-2">
+
           <div className="relative">
             <ResponsiveImage
               picture={drBujokPicture}
@@ -28,7 +31,8 @@ const DoctorSection = () => (
             />
             <div className="absolute -bottom-4 -right-4 w-72 md:w-80 aspect-[3/4] rounded-2xl bg-primary/20 -z-10" />
           </div>
-        </motion.div>
+        </div>
+
 
         <motion.div {...stagger(0)}>
           <p className="text-sm font-sans uppercase tracking-[0.15em] text-primary mb-4">

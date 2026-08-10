@@ -11,7 +11,8 @@
  * Wysyłka: `navigator.sendBeacon` (przeżyje unload przy redirect), fallback `fetch keepalive`.
  * Failure-tolerant: błędy sieci / brak supabase NIE blokują UX.
  */
-import { supabase } from "@/integrations/supabase/client";
+// Klient backendu ładowany dynamicznie — ten moduł jest w bundlu wejściowym,
+// a supabase-js (~46 kB gzip) nie jest potrzebny do pierwszego renderu.
 
 export type RedirectLogKind = "redirect" | "not_found" | "suggested";
 
@@ -104,6 +105,7 @@ async function sendRemote(payload: RemotePayload): Promise<void> {
     return;
   }
   try {
+    const { supabase } = await import("@/integrations/supabase/client");
     const { error } = await supabase.from("seo_redirect_hits").insert(payload);
     if (error && isBrowser()) {
       console.debug("[redirectLog] remote insert failed:", error.message);

@@ -65,4 +65,26 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    // Split long-lived vendor code out of the app entry so a content change
+    // does not invalidate the whole ~200 kB gzip bundle, and so the browser
+    // can download the chunks in parallel (better LCP on cold + repeat visits).
+    rollupOptions: {
+      output: {
+        manualChunks(id: string) {
+          if (!id.includes("node_modules")) return;
+          if (/[\\/]node_modules[\\/](react|react-dom|scheduler)[\\/]/.test(id)) return "vendor-react";
+          if (id.includes("react-router")) return "vendor-router";
+          if (id.includes("framer-motion") || id.includes("motion-dom") || id.includes("motion-utils"))
+            return "vendor-motion";
+          if (id.includes("@supabase")) return "vendor-supabase";
+          if (id.includes("@radix-ui")) return "vendor-radix";
+          if (id.includes("@tanstack")) return "vendor-query";
+          // Everything else keeps Rollup's default per-import chunking so heavy,
+          // route-only libs (recharts, jspdf, html2canvas) stay lazy.
+          return undefined;
+        },
+      },
+    },
+  },
 }));
