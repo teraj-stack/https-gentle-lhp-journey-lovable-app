@@ -2,6 +2,7 @@ import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
 import { initWebVitals } from "./lib/webVitals";
+import { registerServiceWorker } from "./lib/pwa/registerServiceWorker";
 import drBujokPicture from "@/assets/dr-bujok.webp?w=360;540;720;1080&format=avif;webp&as=picture";
 
 // Preload the LCP image (Dr Bujok) using the responsive AVIF srcset generated
