@@ -145,7 +145,7 @@ export const SEO_REDIRECTS: SeoRedirectEntry[] = [
   // ─────────────────────────────────────────────────────────────────────────
 
   // Inne miasta (stare lokalizacje / partnerzy)
-  { from: "/siedlce", to: "/kontakt", reason: "Stara lokalizacja → jedyny gabinet Wilanów" },
+  
   { from: "/rzeszow", to: "/kontakt", reason: "Stara lokalizacja Rzeszów → jedyny gabinet Wilanów" },
   { from: "/rzeszów", to: "/kontakt", reason: "Polskie znaki Rzeszów → jedyny gabinet Wilanów" },
   { from: "/warszawa", to: "/kontakt", reason: "Vanity miejscowości → strona kontaktu (Wilanów)" },
