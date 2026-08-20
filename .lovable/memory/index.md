@@ -1,1 +1,2 @@
 - [SEO Meta Map](mem://features/seo-meta-map) — scripts/seo-meta-map.mjs: unikalne title 50–60 zn. i description 150–160 zn. dla wszystkich stron publicznych
+- [PWA Offline](mem://features/pwa-offline) — Tryb offline: vite-plugin-pwa generateSW /sw.js, manifest, guardowany registerServiceWorker (nigdy w dev/preview), kill-switch ?sw=off

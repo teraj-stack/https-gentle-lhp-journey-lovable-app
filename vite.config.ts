@@ -3,6 +3,7 @@ import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
 import { imagetools } from "vite-imagetools";
+import { VitePWA } from "vite-plugin-pwa";
 // @ts-expect-error — plain Node ESM script without type declarations
 import { validateEbmAnchors } from "./scripts/validate-ebm-anchors.mjs";
 
@@ -59,7 +60,77 @@ export default defineConfig(({ mode }) => ({
     imagetools(),
     react(),
     mode === "development" && componentTagger(),
+    VitePWA({
+      registerType: "autoUpdate",
+      // The guarded wrapper in src/lib/pwa/registerServiceWorker.ts is the ONLY registrar.
+      injectRegister: null,
+      devOptions: { enabled: false },
+      filename: "sw.js",
+      includeAssets: [
+        "favicon.ico",
+        "favicon-32x32.png",
+        "favicon-16x16.png",
+        "apple-touch-icon.png",
+        "fonts/*.woff2",
+      ],
+      manifest: {
+        name: "CML – Centrum Medycyny Laserowej",
+        short_name: "CML",
+        description:
+          "Laserowe leczenie hemoroidów, żylaków, przetok i szczelin odbytu — CML Warszawa Wilanów.",
+        lang: "pl",
+        start_url: "/",
+        scope: "/",
+        display: "standalone",
+        background_color: "#0f0f11",
+        theme_color: "#c9a84c",
+        icons: [
+          { src: "/pwa-192x192.png", sizes: "192x192", type: "image/png" },
+          { src: "/pwa-512x512.png", sizes: "512x512", type: "image/png" },
+          { src: "/pwa-512x512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+        ],
+      },
+      workbox: {
+        globPatterns: ["**/*.{js,css,html,woff2,ico,png,svg,webp,avif}"],
+        maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
+        cleanupOutdatedCaches: true,
+        clientsClaim: true,
+        skipWaiting: true,
+        navigateFallback: "/index.html",
+        // OAuth callbacks must always hit the network.
+        navigateFallbackDenylist: [/^\/~oauth/, /^\/api\//],
+        runtimeCaching: [
+          {
+            // HTML navigations: always try network first so content stays fresh.
+            urlPattern: ({ request }) => request.mode === "navigate",
+            handler: "NetworkFirst",
+            options: {
+              cacheName: "html-navigations",
+              networkTimeoutSeconds: 4,
+              expiration: { maxEntries: 60, maxAgeSeconds: 60 * 60 * 24 * 14 },
+            },
+          },
+          {
+            // Same-origin hashed build assets are immutable.
+            urlPattern: ({ url, request, sameOrigin }) =>
+              sameOrigin &&
+              (request.destination === "script" ||
+                request.destination === "style" ||
+                request.destination === "font" ||
+                request.destination === "image") &&
+              !url.pathname.startsWith("/~oauth"),
+            handler: "CacheFirst",
+            options: {
+              cacheName: "static-assets",
+              expiration: { maxEntries: 300, maxAgeSeconds: 60 * 60 * 24 * 60 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+        ],
+      },
+    }),
   ].filter(Boolean),
+
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
