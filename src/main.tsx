@@ -39,3 +39,10 @@ try {
 } catch {
   /* ignore */
 }
+
+// Offline support (published site only — never in dev/preview iframes).
+try {
+  registerServiceWorker();
+} catch {
+  /* ignore */
+}
