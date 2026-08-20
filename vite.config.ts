@@ -3,6 +3,7 @@ import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
 import { imagetools } from "vite-imagetools";
+import { VitePWA } from "vite-plugin-pwa";
 // @ts-expect-error — plain Node ESM script without type declarations
 import { validateEbmAnchors } from "./scripts/validate-ebm-anchors.mjs";
 
