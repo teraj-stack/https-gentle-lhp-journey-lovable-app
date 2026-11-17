@@ -82,7 +82,7 @@ const Cennik = () => (
         >
           Przejrzyste ceny bez ukrytych kosztów. Każda cena zabiegu obejmuje procedurę oraz wszystkie wizyty kontrolne do pełnego wygojenia.
 
-          Przed konsultacją gorąco zachęcam do zapoznania się z treciami i opisami na stronie, to umożliwi Nam. Przygotowałem je dla Ciebie. Dzięki temu na samej konsultacji będziemy mogli się skupić na Twoich oczekiwaniach, obawach i zaplanowaniu dogodnego terminu. Edukacja najskuteczniej niwelują strach i dolegliwości bólowe, a negatywne emocje związane z badaniem zmniejszają się o ponad połowę. Zostań partnerem w rozwiązywaniu problemów zdrowotnych. Jestem po to, żeby pomóc, nie oceniać. 3 filary nowoczesnego podejjcia to "Zaufanie, Skutecznoć i i bezpieczeństwo.
+          Przed konsultacją gorąco zachęcam do zapoznania się z treściami i opisami na stronie — przygotowałem je dla Ciebie. Dzięki temu na samej konsultacji będziemy mogli skupić się na Twoich oczekiwaniach, obawach i zaplanowaniu dogodnego terminu. Edukacja najskuteczniej niweluje strach i dolegliwości bólowe, a negatywne emocje związane z badaniem zmniejszają się o ponad połowę. Zostań partnerem w rozwiązywaniu problemów zdrowotnych. Jestem po to, żeby pomóc, nie oceniać. Trzy filary nowoczesnego podejścia to: zaufanie, skuteczność i bezpieczeństwo.
         </motion.p>
       </div>
     </section>

@@ -1114,15 +1114,13 @@ const SeksAnalnyHemoroidy = () => {
             </p>
             <ul>
               <li>
-                <strong>Dieta osłonowa formująca pasaż:</strong> ponownie błonnik w granulacie z dużą
-                pulą hydro-wody.<Sup n={10} />
+                <strong>Dieta osłonowa formująca pasaż:</strong> ponownie błonnik w granulacie
+                popijany dużą ilością wody.<Sup n={10} />
               </li>
               <li>
-                <strong>Kąpiele posiadówkowe (sitz baths):</strong> protokół nakazuje systematyczne
-                namaczanie krocza w miedniczce uformowanej z czystą bardzo ciepłą (nieskaleczoną) wodą
-                w czasie co najmniej od 10 do 15 minut z zaleceniem aplikowania w interwałach
-                przynajmniej dwóch lub trzech procedur rygorystycznie podczas dziennej aktywacji
-                dobowej.<Sup n={13} /> Biomechanizm ciepła wpływa kojąco zmniejszając spastyczny kurcz
+                <strong>Kąpiele nasiadówkowe (sitz baths):</strong> zaleca się regularne namaczanie
+                krocza w miedniczce z czystą, bardzo ciepłą wodą przez 10–15 minut, co najmniej
+                2–3 razy dziennie.<Sup n={13} /> Ciepło działa kojąco, zmniejszając spastyczny kurcz
                 zamykający opuchniętą tkankę układu zewnętrznego i udrażnia drogi przepływu stłoczonej
                 ciemnej, martwej obrzękowej krwi. Wykorzystuje się proste i tanie instalowane muszle
                 osadzone nad kołnierzem sanitarnym pacjenta dla zminimalizowania wysiłku siadania.

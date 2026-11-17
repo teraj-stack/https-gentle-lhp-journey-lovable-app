@@ -43,10 +43,10 @@ const EbookBanner = () => {
       </div>
       <div className="flex-1 text-center md:text-left">
         <h3 className="text-xl font-bold text-foreground mb-2">
-          📖 Pobierz darmowy e-book: „Powrót do Komfortu"
+          📖 Pobierz darmowy e-book: „Powrót do komfortu”
         </h3>
         <p className="text-muted-foreground leading-relaxed mb-4 text-sm">
-          Kompleksowy przewodnik Dr. Jana Bujoka — 13 stron o mechanizmie hemoroidów, porównanie lasera vs. skalpela, 
+          Kompleksowy przewodnik Dr Jana Bujoka — 13 stron o mechanizmie hemoroidów, porównanie lasera ze skalpelem,
           opis zabiegu krok po kroku i plan rekonwalescencji. Przeczytaj w domu, w spokoju i bez pośpiechu.
         </p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center md:justify-start">

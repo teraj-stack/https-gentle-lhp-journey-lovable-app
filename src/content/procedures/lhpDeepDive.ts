@@ -175,7 +175,7 @@ export const lhpDeepDive: ProcedureDeepDiveContent = {
       note: "Sprawdza się przy niewielkim krwawieniu we wczesnym stadium. Efekt często czasowy.",
     },
     {
-      method: "HAL-RAR (podkłucie tętnic pod USG)",
+      method: "HAL-RAR (podwiązanie tętnic pod USG)",
       effectiveness: "85–90%",
       invasiveness: "Niska — szwy bez wycinania",
       recovery: "3–7 dni",

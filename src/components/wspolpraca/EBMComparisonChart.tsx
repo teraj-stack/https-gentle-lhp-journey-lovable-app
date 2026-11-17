@@ -72,8 +72,8 @@ const EBMComparisonChart = () => (
           <Legend
             formatter={(value) =>
               value === "silosowa"
-                ? "Opieka Silosowa (Bez preedukacji)"
-                : "Standard CML (Z preedukacją)"
+                ? "Opieka silosowa (bez edukacji wstępnej)"
+                : "Standard CML (z edukacją wstępną)"
             }
             wrapperStyle={{ fontSize: 12, paddingTop: 12 }}
           />
