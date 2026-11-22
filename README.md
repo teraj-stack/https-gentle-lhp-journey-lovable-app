@@ -1,5 +1,19 @@
 # Welcome to your Lovable project
 
+## Zastrzeżenie właściciela — brak zgody dla Vercel
+
+Właściciel projektu nie wyraża zgody na pobieranie, klonowanie, importowanie ani kopiowanie kodu strony, jej treści lub zasobów przez Vercel ani na przekazywanie ich do usług Vercel. Zakaz obejmuje także wdrażanie i hosting strony w Vercel oraz automatyczne pobieranie repozytorium przez integracje Vercel, bez odrębnej, uprzedniej zgody właściciela.
+
+Umieszczenie projektu w GitHub nie stanowi zgody na powyższe działania. Repozytorium powinno pozostać prywatne i nie należy udzielać integracjom Vercel dostępu do niego.
+
+**Ograniczenie:** ten zapis dokumentuje brak zgody, ale sam nie blokuje technicznie dostępu. Dostęp aplikacji i integracji należy kontrolować w ustawieniach GitHub.
+
+### Eksport strony do GitHub
+
+W Lovable otwórz **Ustawienia projektu → Git → GitHub**, wybierz połączenie z kontem i połącz projekt. Lovable utworzy nowe prywatne repozytorium i będzie synchronizować kod projektu, w tym tę dokumentację. Połączenie wymaga działania uprawnionego użytkownika w ustawieniach Lovable; agent czatu nie może go wykonać ani potwierdzić jego statusu.
+
+Synchronizacja obejmuje kod i pliki zapisane w projekcie, ale nie rekordy bazy danych, pliki przechowywane w Lovable Cloud ani dokumenty udostępnione wyłącznie w czacie. Te materiały wymagają osobnego eksportu. Sekrety i dane pacjentów nie powinny być umieszczane w repozytorium.
+
 ## Project info
 
 **URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
