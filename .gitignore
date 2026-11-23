@@ -24,3 +24,13 @@ dist-ssr
 *.sw?
 
 a11y-report/
+
+# Added by Antigravity sync
+.env
+.env.local
+.env.*.local
+node_modules/
+.next/
+tsconfig.tsbuildinfo
+release/
+*.app/
